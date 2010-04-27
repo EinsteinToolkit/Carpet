@@ -14,44 +14,62 @@ using namespace std;
 
 
 // Constructors
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D>::bboxset () {
   assert (invariant());
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D>::bboxset (const box& b) {
   //S if (!b.empty()) bs.insert(b);
   if (!b.empty()) bs.push_back(b);
   assert (invariant());
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D>::bboxset (const bboxset& s): bs(s.bs) {
   assert (invariant());
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D>::bboxset (const list<box>& lb) {
   for (typename list<box>::const_iterator
          li = lb.begin(); li != lb.end(); ++ li)
   {
     *this |= *li;
   }
-  normalize();
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D>::bboxset (const vector<list<box> >& vlb) {
   for (typename vector<list<box> >::const_iterator
          vli = vlb.begin(); vli != vlb.end(); ++ vli)
   {
     *this |= bboxset (*vli);
   }
-  normalize();
 }
 
-template<class T, int D>
+template<typename T, int D>
+template<typename U>
+bboxset<T,D>::bboxset (const vector<U>& vb, const bbox<T,D> U::* const v) {
+  for (typename vector<U>::const_iterator
+         vi = vb.begin(); vi != vb.end(); ++ vi)
+  {
+    *this |= (*vi).*v;
+  }
+}
+
+template<typename T, int D>
+template<typename U>
+bboxset<T,D>::bboxset (const vector<U>& vb, const bboxset U::* const v) {
+  for (typename vector<U>::const_iterator
+         vi = vb.begin(); vi != vb.end(); ++ vi)
+  {
+    *this |= (*vi).*v;
+  }
+}
+
+template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::poison () {
   return bboxset (bbox<T,D>::poison());
 }
@@ -59,7 +77,7 @@ bboxset<T,D> bboxset<T,D>::poison () {
 
 
 // Invariant
-template<class T, int D>
+template<typename T, int D>
 bool bboxset<T,D>::invariant () const {
 // This is very slow when there are many bboxes
 #if 0 && defined(CARPET_DEBUG)
@@ -78,7 +96,7 @@ bool bboxset<T,D>::invariant () const {
 
 
 // Normalisation
-template<class T, int D>
+template<typename T, int D>
 void bboxset<T,D>::normalize ()
 {
   assert (invariant());
@@ -200,14 +218,15 @@ void bboxset<T,D>::normalize ()
   
   size_type const newsize = this->size();
   
-  assert (*this == oldbs);
+  // Can't use operators on *this since these would call normalize again
+  // assert (*this == oldbs);
   assert (newsize <= oldsize);
 }
 
 
 
 // Accessors
-template<class T, int D>
+template<typename T, int D>
 typename bboxset<T,D>::size_type bboxset<T,D>::size () const {
   size_type s=0;
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
@@ -224,7 +243,7 @@ typename bboxset<T,D>::size_type bboxset<T,D>::size () const {
 // Queries
 
 // Intersection
-template<class T, int D>
+template<typename T, int D>
 bool bboxset<T,D>::intersects (const box& b) const {
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
     if ((*bi).intersects(b)) return true;
@@ -235,7 +254,7 @@ bool bboxset<T,D>::intersects (const box& b) const {
 
 
 // Add (bboxes that don't overlap)
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::operator+= (const bboxset& s) {
   for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
     *this += *bi;
@@ -244,14 +263,15 @@ bboxset<T,D>& bboxset<T,D>::operator+= (const bboxset& s) {
   return *this;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::add_transfer (bboxset& s) {
   bs.splice (bs.end(), s.bs);
   assert (invariant());
+  normalize();
   return *this;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::operator+ (const box& b) const {
   bboxset r(*this);
   r += b;
@@ -259,7 +279,7 @@ bboxset<T,D> bboxset<T,D>::operator+ (const box& b) const {
   return r;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::operator+ (const bboxset& s) const {
   bboxset r(*this);
   r += s;
@@ -270,7 +290,7 @@ bboxset<T,D> bboxset<T,D>::operator+ (const bboxset& s) const {
 
 
 // Union
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::operator|= (const box& b) {
   bboxset tmp = b - *this;
   add_transfer (tmp);
@@ -278,7 +298,7 @@ bboxset<T,D>& bboxset<T,D>::operator|= (const box& b) {
   return *this;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::operator|= (const bboxset& s) {
   bboxset tmp = s - *this;
   add_transfer (tmp);
@@ -286,7 +306,7 @@ bboxset<T,D>& bboxset<T,D>::operator|= (const bboxset& s) {
   return *this;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::operator| (const box& b) const {
   bboxset r(*this);
   r |= b;
@@ -294,7 +314,7 @@ bboxset<T,D> bboxset<T,D>::operator| (const box& b) const {
   return r;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::operator| (const bboxset& s) const {
   bboxset r(*this);
   r |= s;
@@ -305,7 +325,7 @@ bboxset<T,D> bboxset<T,D>::operator| (const bboxset& s) const {
 
 
 // Intersection
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::operator& (const box& b) const {
   // start with an empty set
   bboxset r;
@@ -318,7 +338,7 @@ bboxset<T,D> bboxset<T,D>::operator& (const box& b) const {
   return r;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::operator& (const bboxset& s) const {
   // start with an empty set
   bboxset r;
@@ -332,14 +352,14 @@ bboxset<T,D> bboxset<T,D>::operator& (const bboxset& s) const {
   return r;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::operator&= (const box& b) {
   *this = *this & b;
   assert (invariant());
   return *this;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::operator&= (const bboxset& s) {
   *this = *this & s;
   assert (invariant());
@@ -349,7 +369,7 @@ bboxset<T,D>& bboxset<T,D>::operator&= (const bboxset& s) {
 
 
 // Difference
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b1, const bbox<T,D>& b2) {
   assert (b1.is_aligned_with(b2));
   if (b1.empty()) return bboxset<T,D>();
@@ -387,7 +407,7 @@ bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b1, const bbox<T,D>& b2) {
   return r;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::operator- (const box& b) const {
   // start with an empty set
   bboxset r;
@@ -401,7 +421,7 @@ bboxset<T,D> bboxset<T,D>::operator- (const box& b) const {
   return r;
 }
   
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::operator-= (const bboxset& s) {
   for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
     *this -= *bi;
@@ -410,7 +430,7 @@ bboxset<T,D>& bboxset<T,D>::operator-= (const bboxset& s) {
   return *this;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::operator- (const bboxset& s) const {
   bboxset r(*this);
   r -= s;
@@ -418,7 +438,7 @@ bboxset<T,D> bboxset<T,D>::operator- (const bboxset& s) const {
   return r;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b, const bboxset<T,D>& s) {
   bboxset<T,D> r = bboxset<T,D>(b) - s;
   assert (r.invariant());
@@ -427,33 +447,80 @@ bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b, const bboxset<T,D>& s) {
 
 
 
+template<typename T, int D>
+typename bboxset<T,D>::box bboxset<T,D>::container () const {
+  box b;
+  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    b = b.expanded_containing(*bi);
+  }
+  return b;
+}
+
+template<typename T, int D>
+bboxset<T,D> bboxset<T,D>::pseudo_inverse (const int n) const {
+  assert (not empty());
+  box const c = container().expand(n,n);
+  return c - *this;
+}
+
+template<typename T, int D>
+bboxset<T,D> bboxset<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
+  // We don't know (yet?) how to shrink a set
+  assert (all (lo>=0 and hi>=0));
+  bboxset res;
+  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    res |= (*bi).expand(lo,hi);
+  }
+  return res;
+}
+
+template<typename T, int D>
+bboxset<T,D> bboxset<T,D>::expanded_for (const box& b) const {
+  bboxset res;
+  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    res |= (*bi).expanded_for(b);
+  }
+  return res;
+}
+
+template<typename T, int D>
+bboxset<T,D> bboxset<T,D>::contracted_for (const box& b) const {
+  bboxset res;
+  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    res |= (*bi).contracted_for(b);
+  }
+  return res;
+}
+
+
+
 // Equality
-template<class T, int D>
+template<typename T, int D>
 bool bboxset<T,D>::operator<= (const bboxset<T,D>& s) const {
   return (*this - s).empty();
 }
 
-template<class T, int D>
+template<typename T, int D>
 bool bboxset<T,D>::operator< (const bboxset<T,D>& s) const {
   return (*this - s).empty() && ! (s - *this).empty();
 }
 
-template<class T, int D>
+template<typename T, int D>
 bool bboxset<T,D>::operator>= (const bboxset<T,D>& s) const {
   return s <= *this;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bool bboxset<T,D>::operator> (const bboxset<T,D>& s) const {
   return s < *this;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bool bboxset<T,D>::operator== (const bboxset<T,D>& s) const {
   return (*this <= s) && (*this >= s);
 }
 
-template<class T, int D>
+template<typename T, int D>
 bool bboxset<T,D>::operator!= (const bboxset<T,D>& s) const {
   return ! (*this == s);
 }
@@ -461,7 +528,7 @@ bool bboxset<T,D>::operator!= (const bboxset<T,D>& s) const {
 
 
 // Input
-template<class T,int D>
+template<typename T,int D>
 istream& bboxset<T,D>::input (istream& is) {
   T Tdummy;
   try {
@@ -491,13 +558,14 @@ istream& bboxset<T,D>::input (istream& is) {
     cout << "Input error while reading a bboxset<" << typestring(Tdummy) << "," << D << ">" << endl;
     throw err;
   }
+  normalize();
   return is;
 }
 
 
 
 // Output
-template<class T,int D>
+template<typename T,int D>
 ostream& bboxset<T,D>::output (ostream& os) const {
   T Tdummy;
   os << "bboxset<" << typestring(Tdummy) << "," << D << ">:{"
@@ -511,3 +579,13 @@ ostream& bboxset<T,D>::output (ostream& os) const {
 
 
 template class bboxset<int,dim>;
+template size_t memoryof (const bboxset<int,dim>& s);
+template istream& operator>> (istream& is, bboxset<int,dim>& s);
+template ostream& operator<< (ostream& os, const bboxset<int,dim>& s);
+
+#include "dh.hh"
+#include "region.hh"
+
+template bboxset<int,dim>::bboxset (const vector<dh::full_dboxes>& vb, const bbox<int,dim> dh::full_dboxes::* const v);
+template bboxset<int,dim>::bboxset (const vector<dh::full_dboxes>& vb, const bboxset<int,dim> dh::full_dboxes::* const v);
+template bboxset<int,dim>::bboxset (const vector<region_t>& vb, const bbox<int,dim> region_t::* const v);

@@ -84,7 +84,6 @@ namespace CarpetEvolutionMask {
 	refcomp = refcomp.expand(expand_left,expand_right);
 	refined |= refcomp;
       }
-      refined.normalize();
       
 
       //      cout << "refined: " << refined << endl;
@@ -101,15 +100,10 @@ namespace CarpetEvolutionMask {
       for (int d=0; d<dim;d++) {
 	antishrinkby[d] = cctkGH->cctk_nghostzones[d] + buffer_width;
       }
-      ibset antishrunk;
-      for (ibset::const_iterator bi = antirefined.begin();
-             bi != antirefined.end();
-             ++bi)
-        {
-          antishrunk |= (*bi).expand(antishrinkby, antishrinkby).expanded_for(coarsebase);
-        }
-      antishrunk.normalize();
-
+      ibset antishrunk
+        (antirefined.expand(antishrinkby, antishrinkby).
+         expanded_for(coarsebase));
+      
       //      cout << "antishrunk1: " << antishrunk << endl;
 
       // now cut away dangling edges
@@ -118,7 +112,7 @@ namespace CarpetEvolutionMask {
       //      cout << "antishrunk2: " << antishrunk << endl;
 
       // cut holes into coarsebase
-      ibset shrunk = coarsebase - antishrunk;
+      ibset const shrunk = coarsebase - antishrunk;
 
       //      cout << "shrunk: " << shrunk << endl;
 
@@ -127,13 +121,11 @@ namespace CarpetEvolutionMask {
       for (int c=0; c<hh.components(reflevel-1); ++c) {
         parent |= hh.extent(mglevel,reflevel-1,c);
       }
-      parent.normalize();
 
       //      cout << "parent: " << parent << endl;
       
       // Subtract the refined region
-      ibset notrefined = parent - shrunk;
-      notrefined.normalize();
+      ibset const notrefined = parent - shrunk;
 
       //      cout << "notrefined: " << notrefined << endl;
 
@@ -143,23 +135,14 @@ namespace CarpetEvolutionMask {
 	enlargeby[d] = cctkGH->cctk_nghostzones[d] + buffer_width +
 	  stencil_size;
       }
-      ibset enlarged;
-      for (ibset::const_iterator bi = notrefined.begin();
-             bi != notrefined.end();
-             ++bi)
-        {
-          enlarged |= (*bi).expand(enlargeby, enlargeby);
-        }
-      enlarged.normalize();
+      ibset const enlarged (notrefined.expand(enlargeby, enlargeby));
 
       //      cout << "enlarged: " << enlarged << endl;
       
       // Intersect with the original union      
-      ibset evolveon = parent & enlarged;
-      evolveon.normalize();
+      ibset const evolveon = parent & enlarged;
 
-      ibset notevolveon = parent - evolveon;
-      notevolveon.normalize();
+      ibset const notevolveon = parent - evolveon;
 
       //      cout << "notevolveon: " << notevolveon << endl;
       
@@ -178,7 +161,7 @@ namespace CarpetEvolutionMask {
           DECLARE_CCTK_ARGUMENTS;
           
           ibbox const & ext
-            = dd.boxes.at(mglevel).at(reflevel).at(component).exterior;
+            = dd.light_boxes.at(mglevel).at(reflevel).at(component).exterior;
           
           for (ibset::const_iterator bi = notevolveon.begin();
                bi != notevolveon.end();

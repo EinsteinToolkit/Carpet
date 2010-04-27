@@ -1,4 +1,4 @@
-# Parameter definitions for thorn CarpetInterp
+# Parameter definitions for thorn CarpetInterp2
 
 BOOLEAN verbose "Produce info output" STEERABLE=always
 {

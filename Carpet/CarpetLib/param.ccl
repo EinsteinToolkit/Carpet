@@ -99,9 +99,9 @@ BOOLEAN use_ipm_timing_regions "Call IPM (via MPI_Pcontrol) to define regions" S
 INT print_memstats_every "Report periodically how much memory is used per process" STEERABLE=always
 {
   -1  :: "don't report"
-  0   :: "don't report"
+  0   :: "report after setting up initial data"
   1:* :: "report every so many iterations"
-} 0
+} -1
 
 INT max_allowed_memory_MB "Maximum allowed amount of memory per process that can be allocated for grid variables (in Megabytes)" STEERABLE=always
 {

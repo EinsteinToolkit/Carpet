@@ -434,6 +434,48 @@ namespace Carpet {
   
   
   
+  // Loop over a bounding box
+  
+  void ibbox2iminimax (ibbox const& ext, // component extent
+                       ibbox const& box, // this bbox
+                       ivect& imin, ivect& imax);
+  
+#define LOOP_OVER_BBOX(cctkGH, box_, box, imin, imax)                   \
+  do {                                                                  \
+    bool bbox_loop_ = true;                                             \
+    assert (Carpet::is_local_mode());                                   \
+    dh::light_mboxes const& light_boxes_ =                              \
+      Carpet::vdd.AT(Carpet::map)->light_boxes;                         \
+    ibbox const& ext_ =                                                 \
+      light_boxes_.AT(mglevel).AT(reflevel).AT(component).exterior;     \
+    ibbox const box = (box_) & ext_;                                    \
+    if (not box.empty()) {                                              \
+      ivect imin;                                                       \
+      ivect imax;                                                       \
+      Carpet::ibbox2iminimax (ext_, box, imin, imax);                   \
+      {
+#define END_LOOP_OVER_BBOX                      \
+      }                                         \
+    } /* if not empty */                        \
+    assert (bbox_loop_);                        \
+    bbox_loop_ = false;                         \
+  } while (false)
+
+#define LOOP_OVER_BSET(cctkGH, set_, box, imin, imax)                   \
+  do {                                                                  \
+    bool bset_loop_ = true;                                             \
+    ibset const& set1_ (set_);                                          \
+    for (ibset::const_iterator bi = set1_.begin(); bi != set1_.end(); ++bi) { \
+      LOOP_OVER_BBOX(cctkGH, *bi, box, imin, imax) {
+#define END_LOOP_OVER_BSET                      \
+      } END_LOOP_OVER_BBOX;                     \
+    } /* for */                                 \
+    assert (bset_loop_);                        \
+    bset_loop_ = false;                         \
+  } while (false)
+  
+  
+  
 } // namespace Carpet
 
 #endif // #ifndef MODES_HH

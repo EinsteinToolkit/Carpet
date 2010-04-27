@@ -4,6 +4,7 @@
 #include "cctk.h"
 
 #include "defs.hh"
+#include "bboxset.hh"
 
 #include "vect.hh"
 
@@ -12,7 +13,7 @@ using namespace std;
 
 
 // Input
-template<class T,int D>
+template<typename T,int D>
 void vect<T,D>::input (istream& is) {
   skipws (is);
   consume (is, '[');
@@ -31,7 +32,7 @@ void vect<T,D>::input (istream& is) {
 
 
 // Output
-template<class T,int D>
+template<typename T,int D>
 void vect<T,D>::output (ostream& os) const {
   os << "[";
   for (int d=0; d<D; ++d) {
@@ -83,3 +84,37 @@ template void vect<vect<bool,2>,dim>::output (ostream& os) const;
 template void vect<vect<int,2>,dim>::output (ostream& os) const;
 template void vect<vect<bool,dim>,2>::output (ostream& os) const;
 template void vect<vect<int,dim>,2>::output (ostream& os) const;
+template void vect<vect<CCTK_REAL,dim>,2>::output (ostream& os) const;
+
+
+
+// Instantiate for bboxset class
+
+#define DEFINE_FAKE_VECT_OPERATIONS(T,D)                                \
+template<> vect<T,D> vect<T,D>::dir (const int d) { assert(0); }        \
+template<> vect<T,D> vect<T,D>::seq () { assert(0); }                   \
+template<> vect<T,D> vect<T,D>::seq (const int n) { assert(0); }        \
+template<> vect<T,D> vect<T,D>::seq (const int n, const int s) { assert(0); } \
+template<> vect<T,D>& vect<T,D>::operator*= (const vect<T,D>&) { assert(0); } \
+template<> vect<T,D>& vect<T,D>::operator*= (const T&) { assert(0); }   \
+template<> vect<T,D>& vect<T,D>::operator/= (const vect<T,D>&) { assert(0); } \
+template<> vect<T,D>& vect<T,D>::operator/= (const T&) { assert(0); }   \
+template<> vect<T,D>& vect<T,D>::operator%= (const vect<T,D>&) { assert(0); } \
+template<> vect<T,D>& vect<T,D>::operator%= (const T&) { assert(0); }   \
+template<> vect<T,D>& vect<T,D>::operator^= (const vect<T,D>&) { assert(0); } \
+template<> vect<T,D>& vect<T,D>::operator^= (const T&) { assert(0); }   \
+template<> vect<T,D> vect<T,D>::operator+ () const { assert(0); }       \
+template<> vect<T,D> vect<T,D>::operator- () const { assert(0); }       \
+template<> vect<T,D> vect<T,D>::operator~ () const { assert(0); }       \
+template class vect<T,D>;                                               \
+template size_t memoryof (const vect<T,D>&);                            \
+template istream& operator>> (istream& is, vect<T,D>&);                 \
+template ostream& operator<< (ostream& os, const vect<T,D>&);
+
+typedef bboxset<int,dim> T1;
+typedef vect<bboxset<int,dim>,2> T2;
+
+DEFINE_FAKE_VECT_OPERATIONS(T1,dim)
+DEFINE_FAKE_VECT_OPERATIONS(T2,dim)
+
+#undef DEFINE_FAKE_VECT_OPERATIONS

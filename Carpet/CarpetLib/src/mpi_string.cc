@@ -471,9 +471,9 @@ namespace CarpetLib
   
   
   template
-  vector <vector <dh::dboxes> >
+  vector <vector <dh::light_dboxes> >
   allgatherv (MPI_Comm comm,
-              vector <dh::dboxes> const & data);
+              vector <dh::light_dboxes> const & data);
   
   template
   vector <sendrecv_pseudoregion_t>

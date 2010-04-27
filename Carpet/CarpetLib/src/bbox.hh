@@ -22,12 +22,12 @@ using namespace std;
 
 
 // Forward declaration
-template<class T, int D> class bbox;
+template<typename T, int D> class bbox;
 
 // Input/Output
-template<class T, int D>
+template<typename T, int D>
 istream& operator>> (istream& is, bbox<T,D>& b);
-template<class T, int D>
+template<typename T, int D>
 ostream& operator<< (ostream& os, const bbox<T,D>& b);
 
 
@@ -36,7 +36,7 @@ ostream& operator<< (ostream& os, const bbox<T,D>& b);
  * A bounding box, i.e., a rectangle with lower and upper bound and a
  * stride.
  */
-template<class T, int D>
+template<typename T, int D>
 class bbox {
   
   // Fields
@@ -215,9 +215,9 @@ public:
 
 // Memory usage
 
-template<class T, int D>
+template<typename T, int D>
 inline size_t memoryof (bbox<T,D> const & b) CCTK_ATTRIBUTE_CONST;
-template<class T, int D>
+template<typename T, int D>
 inline size_t memoryof (bbox<T,D> const & b) { return b.memory(); }
 
 
@@ -225,7 +225,7 @@ inline size_t memoryof (bbox<T,D> const & b) { return b.memory(); }
 // Input
 
 /** Read a formatted bbox from a stream.  */
-template<class T,int D>
+template<typename T,int D>
 inline istream& operator>> (istream& is, bbox<T,D>& b) {
   b.input(is);
   return is;
@@ -236,7 +236,7 @@ inline istream& operator>> (istream& is, bbox<T,D>& b) {
 // Output
 
 /** Write a bbox formatted to a stream.  */
-template<class T,int D>
+template<typename T,int D>
 inline ostream& operator<< (ostream& os, const bbox<T,D>& b) {
   b.output(os);
   return os;

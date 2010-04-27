@@ -94,7 +94,6 @@ call_operator (void
   }
 #  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
   if (not (allregbboxes == ibset (regbbox))) {
-    allregbboxes.normalize();
     cout << "allregbboxes=" << allregbboxes << endl
          << "regbbox=" << regbbox << endl;
   }
@@ -163,7 +162,6 @@ call_operator (void
   }
 #  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
   if (not (allregbboxes == ibset (regbbox))) {
-    allregbboxes.normalize();
     cout << "allregbboxes=" << allregbboxes << endl
          << "regbbox=" << regbbox << endl;
   }

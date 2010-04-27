@@ -1583,7 +1583,8 @@ namespace Carpet {
             baseextents.AT(ml).AT(rl) = baseextent;
           } else {
             // Refine next coarser refinement level
-            if (refcentering == vertex_centered) {
+            switch (refcentering) {
+            case vertex_centered: {
               ibbox const & cbox = baseextents.AT(ml).AT(rl-1);
               assert (not any (any (is_staggered)));
               i2vect const bnd_shift =
@@ -1595,7 +1596,9 @@ namespace Carpet {
                 ibbox (cbox_phys.lower(), cbox_phys.upper(), fstride);
               ibbox const fbox = fbox_phys.expand (bnd_shift);
               baseextents.AT(ml).AT(rl) = fbox;
-            } else {
+              break;
+            }
+            case cell_centered: {
               ibbox const & cbox = baseextents.AT(ml).AT(rl-1);
               assert (all (all (is_staggered)));
               ivect const cstride = cbox.stride();
@@ -1621,6 +1624,10 @@ namespace Carpet {
                  fbox_phys.upper() + bnd_shift_fstride[1],
                  fbox_phys.stride());
               baseextents.AT(ml).AT(rl) = fbox;
+              break;
+            }
+            default:
+              assert (0);
             }
           }
         } else {

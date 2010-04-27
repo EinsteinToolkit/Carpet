@@ -220,7 +220,7 @@ namespace CarpetSlab {
         
         // Calculate overlapping extents
         const bboxset<int,dim> myextents =
-          mydd->boxes.at(mglevel).at(rl).at(component).interior & hextent;
+          mydd->light_boxes.at(mglevel).at(rl).at(component).interior & hextent;
         
         // Loop over overlapping extents
         for (bboxset<int,dim>::const_iterator ext_iter = myextents.begin();

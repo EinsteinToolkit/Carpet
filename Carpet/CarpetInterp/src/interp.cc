@@ -1342,8 +1342,7 @@ namespace CarpetInterp {
         ENTER_LEVEL_MODE (cctkGH, rl) {
 
           // Number of neccessary time levels
-          CCTK_REAL const level_time =
-            cctkGH->cctk_time;
+          CCTK_REAL const level_time = cctkGH->cctk_time;
           vector<int> num_tl (N_input_arrays, 0);
           vector<bool> need_time_interp (N_output_arrays);
           for (int m=0; m<N_output_arrays; ++m) {

@@ -77,14 +77,11 @@ int WriteVarUnchunked (const cGH* const cctkGH,
       // Using "interior" removes ghost zones and refinement boundaries.
 #if 0
       bboxes += arrdata.at(gindex).at(Carpet::map).dd->
-                boxes.at(mglevel).at(refinementlevel).at(c).interior;
+                light_boxes.at(mglevel).at(refinementlevel).at(c).interior;
 #endif
       bboxes += arrdata.at(gindex).at(Carpet::map).dd->
-                boxes.at(mglevel).at(refinementlevel).at(c).exterior;
+                light_boxes.at(mglevel).at(refinementlevel).at(c).exterior;
     }
-
-    // Normalise the set, i.e., try to represent the set with fewer bboxes.
-    bboxes.normalize();
 
 #if 0
     // According to Cactus conventions, DISTRIB=CONSTANT arrays
@@ -177,10 +174,10 @@ int WriteVarUnchunked (const cGH* const cctkGH,
         dh const * const dd = arrdata.at(gindex).at(Carpet::map).dd;
 #if 0
         ibbox const overlap = *bbox &
-          dd->boxes.at(mglevel).at(refinementlevel).at(component).interior;
+          dd->light_boxes.at(mglevel).at(refinementlevel).at(component).interior;
 #endif
         ibbox const overlap = *bbox &
-          dd->boxes.at(mglevel).at(refinementlevel).at(component).exterior;
+          dd->light_boxes.at(mglevel).at(refinementlevel).at(component).exterior;
 
         // Continue if this component is not part of this combination
         if (overlap.empty()) continue;
@@ -341,7 +338,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
       gh const * const hh = arrdata.at(gindex).at(Carpet::map).hh;
       dh const * const dd = arrdata.at(gindex).at(Carpet::map).dd;
       ibbox const& bbox =
-        dd->boxes.at(mglevel).at(refinementlevel).at(component).exterior;
+        dd->light_boxes.at(mglevel).at(refinementlevel).at(component).exterior;
 
       // Get the shape of the HDF5 dataset (in Fortran index order)
       hsize_t shape[dim];
@@ -405,7 +402,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
             datasetname << " rl=" << refinementlevel;
           }
           if (arrdata.at(gindex).at(Carpet::map).dd->
-              boxes.at(mglevel).at(refinementlevel).size () > 1 and
+              light_boxes.at(mglevel).at(refinementlevel).size () > 1 and
               group.disttype != CCTK_DISTRIB_CONSTANT) {
             datasetname << " c=" << component;
           }
@@ -517,7 +514,7 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       //                            0 : component, mglevel)->extent();
       const dh* dd = arrdata.at(gindex).at(Carpet::map).dd;
       const ibbox& bbox =
-        dd->boxes.AT(mglevel).AT(refinementlevel)
+        dd->light_boxes.AT(mglevel).AT(refinementlevel)
         .AT(group.disttype == CCTK_DISTRIB_CONSTANT ? 0 : component).exterior;
 
       // Don't create zero-sized components
@@ -566,7 +563,7 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
         datasetname << " rl=" << refinementlevel;
       }
       if (arrdata.at(gindex).at(Carpet::map).dd->
-          boxes.at(mglevel).at(refinementlevel).size () > 1 and
+          light_boxes.at(mglevel).at(refinementlevel).size () > 1 and
           group.disttype != CCTK_DISTRIB_CONSTANT) {
         datasetname << " c=" << component;
       }

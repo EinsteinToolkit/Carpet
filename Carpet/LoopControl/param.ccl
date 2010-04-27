@@ -15,30 +15,6 @@ BOOLEAN debug "Output debug information" STEERABLE=always
 {
 } "no"
 
-######################################
-# LoopControl demonstration parameters
-
-BOOLEAN run_demo "Run the embedded wavetoy as a LoopControl demo application"
-{
-} "no"
-
-CCTK_INT nx "Number of grid points in X dimension (for the embedded wavetoy example)"
-{
-  1:* :: "a positive integer"
-} 100
-CCTK_INT ny "Number of grid points in Y dimension (for the embedded wavetoy example)"
-{
-  1:* :: "a positive integer"
-} 100
-CCTK_INT nz "Number of grid points in Z dimension (for the embedded wavetoy example)"
-{
-  1:* :: "a positive integer"
-} 100
-CCTK_INT nsteps "Number of time steps (for the embedded wavetoy example)"
-{
-  1:* :: "a positive integer"
-} 100
-
 
 
 #################

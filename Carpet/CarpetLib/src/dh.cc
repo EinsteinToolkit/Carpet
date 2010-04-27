@@ -1,8 +1,9 @@
 #include <cassert>
 #include <cstddef>
+#include <sstream>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
 #include "CarpetTimers.hh"
 
@@ -120,36 +121,39 @@ bool there_was_an_error = false;
 static
 void
 assert_error (char const * restrict const checkstring,
+              char const * restrict const file, int const line,
               int const ml, int const rl,
               char const * restrict const message)
 {
   CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-              "[ml=%d rl=%d] The following grid structure consistency check failed:\n   %s\n   %s",
-              ml, rl, message, checkstring);
+              "\n%s:%d:\n   [ml=%d rl=%d] The following grid structure consistency check failed:\n   %s\n   %s",
+              file, line, ml, rl, message, checkstring);
   there_was_an_error = true;
 }
 
 static
 void
 assert_error (char const * restrict const checkstring,
+              char const * restrict const file, int const line,
               int const ml, int const rl, int const c,
               char const * restrict const message)
 {
   CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-              "[ml=%d rl=%d c=%d] The following grid structure consistency check failed:\n   %s\n   %s",
-              ml, rl, c, message, checkstring);
+              "\n%s:%d:\n   [ml=%d rl=%d c=%d] The following grid structure consistency check failed:\n   %s\n   %s",
+              file, line, ml, rl, c, message, checkstring);
   there_was_an_error = true;
 }
 
 static
 void
 assert_error (char const * restrict const checkstring,
+              char const * restrict const file, int const line,
               int const ml, int const rl, int const c, int const cc,
               char const * restrict const message)
 {
   CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-              "[ml=%d rl=%d c=%d cc=%d] The following grid structure consistency check failed:\n   %s\n   %s",
-              ml, rl, c, cc, message, checkstring);
+              "\n%s:%d:\n   [ml=%d rl=%d c=%d cc=%d] The following grid structure consistency check failed:\n   %s\n   %s",
+              file, line, ml, rl, c, cc, message, checkstring);
   there_was_an_error = true;
 }
 
@@ -162,25 +166,25 @@ assert_error (char const * restrict const checkstring,
 
 #else
 
-#define ASSERT_rl(check, message)                       \
-  do {                                                  \
-    if (not (check)) {                                  \
-      assert_error (#check, ml, rl, message);           \
-    }                                                   \
+#define ASSERT_rl(check, message)                                       \
+  do {                                                                  \
+    if (not (check)) {                                                  \
+      assert_error (#check, __FILE__, __LINE__, ml, rl, message);       \
+    }                                                                   \
   } while (false)
 
-#define ASSERT_c(check, message)                        \
-  do {                                                  \
-    if (not (check)) {                                  \
-      assert_error (#check, ml, rl, c, message);        \
-    }                                                   \
+#define ASSERT_c(check, message)                                        \
+  do {                                                                  \
+    if (not (check)) {                                                  \
+      assert_error (#check, __FILE__, __LINE__, ml, rl, c, message);    \
+    }                                                                   \
   } while (false)
 
-#define ASSERT_cc(check, message)                       \
-  do {                                                  \
-    if (not (check)) {                                  \
-      assert_error (#check, ml, rl, c, cc, message);    \
-    }                                                   \
+#define ASSERT_cc(check, message)                                       \
+  do {                                                                  \
+    if (not (check)) {                                                  \
+      assert_error (#check, __FILE__, __LINE__, ml, rl, c, cc, message); \
+    }                                                                   \
   } while (false)
 
 #endif
@@ -201,8 +205,8 @@ regrid (bool const do_init)
   static Timer total ("CarpetLib::dh::regrid");
   total.start ();
   
-  mboxes oldboxes;
-  swap (boxes, oldboxes);
+  light_mboxes old_light_boxes;
+  swap (light_boxes, old_light_boxes);
   
   full_mboxes full_boxes;
   
@@ -210,21 +214,22 @@ regrid (bool const do_init)
   
   
   
-  // cerr << "QQQ: regrid[1]" << endl;
-  boxes.resize (h.mglevels());
+  light_boxes.resize (h.mglevels());
+  local_boxes.resize (h.mglevels());
   full_boxes.resize (h.mglevels());
   fast_boxes.resize (h.mglevels());
   for (int ml = 0; ml < h.mglevels(); ++ ml) {
-    // cerr << "QQQ: regrid[2] ml=" << ml << endl;
-    boxes.AT(ml).resize (h.reflevels());
+    light_boxes.AT(ml).resize (h.reflevels());
+    local_boxes.AT(ml).resize (h.reflevels());
     full_boxes.AT(ml).resize (h.reflevels());
     fast_boxes.AT(ml).resize (h.reflevels());
     for (int rl = 0; rl < h.reflevels(); ++ rl) {
-      // cerr << "QQQ: regrid[3] rl=" << rl << endl;
-      boxes.AT(ml).AT(rl).resize (h.components(rl));
+      light_boxes.AT(ml).AT(rl).resize (h.components(rl));
+      local_boxes.AT(ml).AT(rl).resize (h.local_components(rl));
       full_boxes.AT(ml).AT(rl).resize (h.components(rl));
       
-      cboxes & level = boxes.AT(ml).AT(rl);
+      light_cboxes & light_level = light_boxes.AT(ml).AT(rl);
+      local_cboxes & local_level = local_boxes.AT(ml).AT(rl);
       full_cboxes & full_level = full_boxes.AT(ml).AT(rl);
       fast_dboxes & fast_level = fast_boxes.AT(ml).AT(rl);
       
@@ -238,7 +243,6 @@ regrid (bool const do_init)
       
       
       // Domain:
-      // cerr << "QQQ: regrid[a]" << endl;
       
       static Carpet::Timer timer_domain ("CarpetLib::dh::regrid::domain");
       timer_domain.start();
@@ -259,8 +263,7 @@ regrid (bool const do_init)
       ASSERT_rl (domain_active <= domain_exterior,
                  "The active part of the domain must be contained in the exterior part of the domain");
       
-      ibset domain_boundary = domain_exterior - domain_active;
-      domain_boundary.normalize();
+      ibset const domain_boundary = domain_exterior - domain_active;
       
       timer_domain.stop();
       
@@ -269,7 +272,6 @@ regrid (bool const do_init)
       static Carpet::Timer timer_region ("CarpetLib::dh::regrid::region");
       timer_region.start();
       
-      // cerr << "QQQ: regrid[b]" << endl;
       for (int c = 0; c < h.components(rl); ++ c) {
         
         full_dboxes & box = full_level.AT(c);
@@ -330,7 +332,7 @@ regrid (bool const do_init)
         // (The exterior must not be empty)
         // Variables may have size zero
         // ASSERT_c (not extr.empty(),
-        //           "The experior must not be empty");
+        //           "The exterior must not be empty");
         
         // The exterior must be contained in the domain
         ASSERT_c (extr <= domain_exterior,
@@ -344,7 +346,6 @@ regrid (bool const do_init)
         ghosts = ibset::poison();
         
         ghosts = extr - intr;
-        ghosts.normalize();
         
         // The ghosts must be contained in the domain.  Different from
         // the boundaries, the ghost can include part of the outer
@@ -379,7 +380,6 @@ regrid (bool const do_init)
         outer_boundaries = ibset::poison();
         
         outer_boundaries = extr - comm;
-        outer_boundaries.normalize();
         
         // The outer boundary must be contained in the outer boundary
         // of the domain
@@ -422,7 +422,6 @@ regrid (bool const do_init)
         boundaries = ibset::poison();
         
         boundaries = comm - owned;
-        boundaries.normalize();
         
         // The boundary must be contained in the active part of the
         // domain.  This prevents that a region is too close to the
@@ -438,7 +437,6 @@ regrid (bool const do_init)
       
       
       // Conjunction of all buffer zones:
-      // cerr << "QQQ: regrid[c]" << endl;
       
       static Carpet::Timer timer_buffers ("CarpetLib::dh::regrid::buffers");
       timer_buffers.start();
@@ -448,37 +446,67 @@ regrid (bool const do_init)
       ibbox const domain_enlarged = domain_active.expand (safedist);
       
       // All owned regions
-      ibset allowned;
-      for (int c = 0; c < h.components(rl); ++ c) {
-        full_dboxes const & box = full_level.AT(c);
-        allowned += box.owned;
-      }
-      allowned.normalize();
+      ibset const allowned (full_level, & full_dboxes::owned);
       ASSERT_rl (allowned <= domain_active,
                  "The owned regions must be contained in the active part of the domain");
       
       // All not-owned regions
-      ibset notowned = domain_enlarged - allowned;
-      notowned.normalize();
+      ibset const notowned = domain_enlarged - allowned;
       
       // All not-active points
-      ibset notactive;
-      for (ibset::const_iterator
-             ri = notowned.begin(); ri != notowned.end(); ++ ri)
-      {
-        ibbox const & r = * ri;
-        ibbox const r_enlarged = r.expand (buffer_width);
-        notactive |= r_enlarged;
+      ibset const notactive = notowned.expand (buffer_width);
+      
+      // All not-active points, in stages
+      int const num_substeps =
+        any (any (ghost_width == 0)) ?
+        0 :
+        minval (minval (buffer_width / ghost_width));
+      if (not all (all (buffer_width == num_substeps * ghost_width))) {
+        ostringstream buf;
+        buf << "The buffer width " << buffer_width << " is not a multiple of the ghost width " << ghost_width << " on level " << rl;
+        CCTK_WARN (CCTK_WARN_COMPLAIN, buf.str().c_str());
       }
-      notactive.normalize();
+      
+      vector<ibset> notactive_stepped (num_substeps+1);
+      notactive_stepped.AT(0) = notowned;
+      for (int substep = 1; substep <= num_substeps; ++ substep) {
+        notactive_stepped.AT(substep) =
+          notactive_stepped.AT(substep-1).expand (ghost_width);
+      }
+      if (all (all (buffer_width == num_substeps * ghost_width))) {
+        ASSERT_rl (notactive_stepped.AT(num_substeps) == notactive,
+                   "The stepped not-active region must be equal to the not-active region");
+      }
       
       // All buffer zones
-      ibset allbuffers = allowned & notactive;
-      allbuffers.normalize();
+      ibset const allbuffers = allowned & notactive;
+      
+      // All active points
+      ibset const allactive = allowned - notactive;
+      
+      // All stepped buffer zones
+      vector<ibset> allbuffers_stepped (num_substeps);
+      ibset allbuffers_stepped_combined;
+      for (int substep = 0; substep < num_substeps; ++ substep) {
+        allbuffers_stepped.AT(substep) = 
+          allowned &
+          (notactive_stepped.AT(substep+1) - notactive_stepped.AT(substep));
+        allbuffers_stepped_combined += allbuffers_stepped.AT(substep);
+      }
+      if (all (all (buffer_width == num_substeps * ghost_width))) {
+        ASSERT_rl (allbuffers_stepped_combined == allbuffers,
+                   "The stepped buffer zones must be equal to the buffer zones");
+      }
       
       // Buffer zones must be in the active part of the domain
+      ASSERT_rl (allactive <= domain_active,
+                 "The active region must be in the active part of the domain");
       ASSERT_rl (allbuffers <= domain_active,
                  "The buffer zones must be in the active part of the domain");
+      ASSERT_rl ((allactive & allbuffers).empty(), 
+                 "The active points and the buffer zones cannot overlap");
+      ASSERT_rl (allactive + allbuffers == allowned,
+                 "The active points and the buffer points together must be exactly the owned region");
       
       
       
@@ -487,25 +515,34 @@ regrid (bool const do_init)
         
         // Buffer zones:
         box.buffers = box.owned & allbuffers;
-        box.buffers.normalize();
         
         // Active region:
-        box.active = box.owned - box.buffers;
-        box.active.normalize();
-        
+        box.active = box.owned  & allactive;
+        ASSERT_c (box.active == box.owned - box.buffers,
+                  "The active region must equal the owned region minus the buffer zones");
       } // for c
+      
+      for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+        int const c = h.get_component (rl, lc);
+        local_dboxes & local_box = local_level.AT(lc);
+        full_dboxes const& box = full_level.AT(c);
+        
+        // Stepped buffer zones:
+        local_box.buffers = box.buffers;
+        
+        local_box.buffers_stepped.resize (num_substeps);
+        for (int substep = 0; substep < num_substeps; ++ substep) {
+          local_box.buffers_stepped.AT(substep) =
+            box.owned & allbuffers_stepped.AT(substep);
+        }
+        
+        local_box.active = box.active;
+      } // for lc
       
       
       
       // The conjunction of all buffer zones must equal allbuffers
-      // cerr << "QQQ: regrid[d]" << endl;
-      
-      ibset allbuffers1;
-      for (int c = 0; c < h.components(rl); ++ c) {
-        full_dboxes const & box = full_level.AT(c);
-        allbuffers1 += box.buffers;
-      }
-      allbuffers1.normalize();
+      ibset const allbuffers1 (full_level, & full_dboxes::buffers);
       ASSERT_rl (allbuffers1 == allbuffers,
                  "Buffer zone consistency check");
       
@@ -514,7 +551,6 @@ regrid (bool const do_init)
       
       
       // Test constituency relations:
-      // cerr << "QQQ: regrid[e]" << endl;
       
       static Carpet::Timer timer_test ("CarpetLib::dh::regrid::test");
       timer_test.start();
@@ -548,18 +584,16 @@ regrid (bool const do_init)
       } // for c
       
       timer_test.stop();
-      
+       
       
       
       // Communication schedule:
-      // cerr << "QQQ: regrid[4]" << endl;
       
       static Carpet::Timer timer_comm ("CarpetLib::dh::regrid::comm");
       timer_comm.start();
       
       for (int lc = 0; lc < h.local_components(rl); ++ lc) {
         int const c = h.get_component (rl, lc);
-        // cerr << "QQQ: regrid[4a] lc=" << lc << " c=" << c << endl;
         
         full_dboxes & box = full_level.AT(c);
         
@@ -580,17 +614,9 @@ regrid (bool const do_init)
           
           ibset needrecv = box.active;
           
-          ibset contracted_oactive;
-          for (ibset::const_iterator
-                 ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-          {
-            ibbox const & oactive = * ai;
-            contracted_oactive += oactive.contracted_for (box.interior);
-          }
-          contracted_oactive.normalize();
-          
-          ibset ovlp = needrecv & contracted_oactive;
-          ovlp.normalize();
+          ibset const contracted_oactive
+            (obox.active.contracted_for (box.interior));
+          ibset const ovlp = needrecv & contracted_oactive;
           
           for (ibset::const_iterator
                  ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -604,7 +630,6 @@ regrid (bool const do_init)
           }
           
           needrecv -= ovlp;
-          needrecv.normalize();
           
           // All points must have been received
           ASSERT_c (needrecv.empty(),
@@ -617,7 +642,6 @@ regrid (bool const do_init)
         
         
         // Multigrid prolongation:
-        // cerr << "QQQ: regrid[f]" << endl;
         
         static Carpet::Timer timer_comm_mgprol
           ("CarpetLib::dh::regrid::comm::mprol");
@@ -635,17 +659,8 @@ regrid (bool const do_init)
           
           i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
           
-          ibset expanded_active;
-          for (ibset::const_iterator
-                 ai = box.active.begin(); ai != box.active.end(); ++ ai)
-          {
-            ibbox const & active = * ai;
-            expanded_active += active.expanded_for (obox.interior);
-          }
-          expanded_active.normalize();
-          
-          ibset ovlp = oneedrecv & expanded_active;
-          ovlp.normalize();
+          ibset const expanded_active (box.active.expanded_for (obox.interior));
+          ibset const ovlp = oneedrecv & expanded_active;
           
           for (ibset::const_iterator
                  ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -660,7 +675,6 @@ regrid (bool const do_init)
           }
           
           oneedrecv -= ovlp;
-          oneedrecv.normalize();
           
           // All points must have been received
           ASSERT_c (oneedrecv.empty(),
@@ -673,7 +687,6 @@ regrid (bool const do_init)
         
         
         // Refinement prolongation:
-        // cerr << "QQQ: regrid[g]" << endl;
         
         static Carpet::Timer timer_comm_refprol
           ("CarpetLib::dh::regrid::comm::refprol");
@@ -696,19 +709,15 @@ regrid (bool const do_init)
           for (int cc = 0; cc < h.components(orl); ++ cc) {
             full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
             
-            ibset contracted_oactive;
-            for (ibset::const_iterator
-                   ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-            {
-              ibbox const & oactive = * ai;
-              // untested for cell centering
-              contracted_oactive +=
-                oactive.contracted_for (box.interior).expand (reffact);
-            }
-            contracted_oactive.normalize();
-            
-            ibset ovlp = needrecv & contracted_oactive;
-            ovlp.normalize();
+#if 0
+            // untested for cell centering
+            ibset const expanded_oactive
+              (obox.active.contracted_for (box.interior).expand (reffact));
+#else
+            ibset const expanded_oactive
+              (obox.active.expanded_for (box.interior).expand (reffact));
+#endif
+            ibset const ovlp = needrecv & expanded_oactive;
             
             for (ibset::const_iterator
                    ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -733,7 +742,6 @@ regrid (bool const do_init)
           } // for cc
           
           // All points must have been received
-          needrecv.normalize();
           ASSERT_c (needrecv.empty(),
                     "Refinement prolongation: All points must have been received");
           
@@ -744,7 +752,6 @@ regrid (bool const do_init)
         
         
         // Synchronisation:
-        // cerr << "QQQ: regrid[h]" << endl;
         
         static Carpet::Timer timer_comm_sync
           ("CarpetLib::dh::regrid::comm::sync");
@@ -765,7 +772,6 @@ regrid (bool const do_init)
           // compatibility.
           ibset needrecv = box.ghosts;
 #endif
-          ibset const needrecv_orig = needrecv;
           
           ibset & sync = box.sync;
           
@@ -773,11 +779,10 @@ regrid (bool const do_init)
             full_dboxes const & obox = full_level.AT(cc);
             
 #if 0
-            ibset ovlp = needrecv & obox.owned;
+            ibset const ovlp = needrecv & obox.owned;
 #else
-            ibset ovlp = needrecv & obox.interior;
+            ibset const ovlp = needrecv & obox.interior;
 #endif
-            ovlp.normalize();
             
             if (cc == c) {
               ASSERT_cc (ovlp.empty(),
@@ -804,7 +809,6 @@ regrid (bool const do_init)
             
           } // for cc
           
-          sync.normalize();
           
         }
         
@@ -813,7 +817,6 @@ regrid (bool const do_init)
         
         
         // Boundary prolongation:
-        // cerr << "QQQ: regrid[i]" << endl;
         
         static Carpet::Timer timer_comm_refbndprol
           ("CarpetLib::dh::regrid::comm::refbndprol");
@@ -844,9 +847,6 @@ regrid (bool const do_init)
           // also all buffer zones
           needrecv += box.buffers;
           
-          needrecv.normalize();
-          ibset const needrecv_orig = needrecv;
-          
           ibset & bndref = box.bndref;
           
           i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
@@ -860,19 +860,15 @@ regrid (bool const do_init)
           for (int cc = 0; cc < h.components(orl); ++ cc) {
             full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
             
-            ibset contracted_oactive;
-            for (ibset::const_iterator
-                   ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-            {
-              ibbox const & oactive = * ai;
-              // untested for cell centering
-              contracted_oactive +=
-                oactive.contracted_for (box.interior).expand (reffact);
-            }
-            contracted_oactive.normalize();
-            
-            ibset ovlp = needrecv & contracted_oactive;
-            ovlp.normalize();
+#if 0
+            // untested for cell centering
+            ibset const expanded_oactive
+              (obox.active.contracted_for (box.interior).expand (reffact));
+#else
+            ibset const expanded_oactive
+              (obox.active.expanded_for (box.interior).expand (reffact));
+#endif
+            ibset const ovlp = needrecv & expanded_oactive;
             
             for (ibset::const_iterator
                    ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -897,11 +893,8 @@ regrid (bool const do_init)
             
           } // for cc
           
-          bndref.normalize();
-          
           // All points must now have been received, either through
           // synchronisation or through boundary prolongation
-          needrecv.normalize();
           ASSERT_c (needrecv.empty(),
                     "Synchronisation and boundary prolongation: All points must have been received");
           
@@ -914,7 +907,6 @@ regrid (bool const do_init)
       
       
       // Refinement restriction:
-      // cerr << "QQQ: regrid[j]" << endl;
       
       static Carpet::Timer timer_comm_refrest
         ("CarpetLib::dh::regrid::comm::refrest");
@@ -934,29 +926,14 @@ regrid (bool const do_init)
             // Refinement restriction may fill all active points, and
             // must use all active points
             
-            ibset needrecv;
-            for (ibset::const_iterator
-                   ai = box.active.begin(); ai != box.active.end(); ++ ai)
-            {
-              ibbox const & active = * ai;
-              needrecv += active.contracted_for (obox0.interior);
-            }
-            needrecv.normalize();
+            ibset needrecv (box.active.contracted_for (obox0.interior));
             
             for (int cc = 0; cc < h.components(orl); ++ cc) {
               full_dboxes & obox = full_boxes.AT(ml).AT(orl).AT(cc);
               
-              ibset contracted_active;
-              for (ibset::const_iterator
-                     ai = box.active.begin(); ai != box.active.end(); ++ ai)
-              {
-                ibbox const & active = * ai;
-                contracted_active += active.contracted_for (obox0.interior);
-              }
-              contracted_active.normalize();
-              
-              ibset ovlp = obox.active & contracted_active;
-              ovlp.normalize();
+              ibset const contracted_active
+                (box.active.contracted_for (obox0.interior));
+              ibset const ovlp = obox.active & contracted_active;
               
               for (ibset::const_iterator
                      ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -980,7 +957,6 @@ regrid (bool const do_init)
             } // for cc
             
             // All points must have been received
-            needrecv.normalize();
             ASSERT_rl (needrecv.empty(),
                        "Refinement restriction: All points must have been received");
             
@@ -995,8 +971,260 @@ regrid (bool const do_init)
       
       
       
+      // Mask:
+      static Carpet::Timer timer_mask ("CarpetLib::dh::regrid::mask");
+      timer_mask.start();
+      
+      if (rl > 0) {
+        int const orl = rl - 1;
+        full_cboxes const& full_olevel = full_boxes.AT(ml).AT(orl);
+        // Local boxes are not communicated or post-processed, and
+        // thus can be modified even for coarser levels
+        local_cboxes& local_olevel = local_boxes.AT(ml).AT(orl);
+        
+        ivect const reffact = h.reffacts.AT(rl) / h.reffacts.AT(orl);
+        
+        // This works only when the refinement factor is 2
+        if (all (reffact == 2)) {
+          
+          ibbox const& base = domain_exterior;
+          ibbox const& obase = h.baseextent(ml,orl);
+          
+          // Calculate the union of all coarse regions
+          ibset const allointr (full_olevel, & full_dboxes::interior);
+          
+          // Project to current level
+          ivect const rf(reffact);
+          // TODO: Why expand by rf-1?  This expansion shouldn't
+          // matter, since the coarse grid is larger than the fine
+          // grid anyway, except at the outer boundary
+          // ibset const parent (allointr.expand(rf-1,rf-1).contracted_for(base));
+          ibset const parent (allointr.expanded_for(base));
+          
+          // Subtract the active region
+          ibset const notrefined = parent - allactive;
+          
+          // Enlarge this set
+          vect<ibset,dim> enlarged;
+          for (int d=0; d<dim; ++d) {
+            switch (h.refcent) {
+            case vertex_centered: {
+              ivect const dir = ivect::dir(d);
+              enlarged[d] = ibset (notrefined.expand(dir, dir));
+              break;
+            }
+            case cell_centered: {
+              enlarged[d] = notrefined;
+#warning "TODO: restriction boundaries are wrong (they are empty, but should not be) with cell centring when fine cell cut coarse cells"
+              bool const old_there_was_an_error = there_was_an_error;
+              ASSERT_rl (notrefined.contracted_for(obase).expanded_for(base) ==
+                         notrefined,
+                         "Refinement mask: Fine grid boundaries must be aligned with coarse grid cells");
+              // Do not abort because of this problem
+              there_was_an_error = old_there_was_an_error;
+              break;
+            }
+            default:
+              assert (0);
+            }
+          }
+          
+          // Intersect with the active region
+          vect<ibset,dim> all_boundaries;
+          for (int d=0; d<dim; ++d) {
+            all_boundaries[d] = allactive & enlarged[d];
+          }
+          
+#warning "TODO: Ensure that the prolongation boundaries all_boundaries are contained in the boundary prolongated region"
+          
+#warning "TODO: Ensure that the restriction boundaries and the restricted region are contained in the restricted region"
+          
+          // Subtract the boundaries from the refined region
+          ibset all_refined = allactive;
+          for (int d=0; d<dim; ++d) {
+            all_refined -= all_boundaries[d];
+          }
+          
+          for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+            int const c = h.get_component(rl, lc);
+            full_dboxes & box = full_level.AT(c);
+            full_dboxes const& obox = full_olevel.AT(c);
+            local_dboxes & local_box = local_level.AT(lc);
+            // Local boxes are not communicated or post-processed, and
+            // thus can be modified even for coarser levels
+            local_dboxes & local_obox = local_olevel.AT(lc);
+            
+            // Set restriction information for next coarser level
+            local_obox.restricted_region =
+              all_refined.contracted_for(obox.exterior) & obox.owned;
+            
+            // Set prolongation information for current level
+            for (int d=0; d<dim; ++d) {
+              local_obox.restriction_boundaries[d] =
+                all_boundaries[d].contracted_for(obox.exterior) & obox.owned;
+            }
+            
+            // Set prolongation information for current level
+            for (int d=0; d<dim; ++d) {
+              local_box.prolongation_boundaries[d] =
+                all_boundaries[d] & box.owned;
+            }
+            
+          } // for lc
+          
+        } // if reffact != 2
+        
+      } // if not coarsest level
+      
+      timer_mask.stop();
+      
+      
+      
+      // Refluxing:
+      static Carpet::Timer timer_reflux ("CarpetLib::dh::regrid::reflux");
+      timer_reflux.start();
+      
+      // If there is no coarser level, do nothing
+      if (rl > 0) {
+        int const orl = rl - 1;
+        full_cboxes const& full_olevel = full_boxes.AT(ml).AT(orl);
+        local_cboxes & local_olevel = local_boxes.AT(ml).AT(orl);
+        
+        // This works only with cell centred grids
+        if (h.refcent == cell_centered) {
+          
+          // Fine grids
+          ibset const& fine_level = allactive;
+          
+          ivect const izero = ivect (0);
+          ivect const ione  = ivect (1);
+          
+          vect<vect<ibset,2>,dim> all_fine_boundary;
+          
+          for (int dir=0; dir<dim; ++dir) {
+            // Unit vector
+            ivect const idir = ivect::dir(dir);
+            
+            // Fine grids with boundary
+            ibset fine_level_plus;
+            for (ibset::const_iterator fine_level_i = fine_level.begin();
+                 fine_level_i != fine_level.end();
+                 ++ fine_level_i)
+            {
+              // Expand region to the left (but not to the right),
+              // since the fluxes are staggered by one half to the
+              // right
+              fine_level_plus |= fine_level_i->expand (idir, izero);
+            }
+            
+            // Fine grids without boundary
+            ibset fine_level_minus;
+            for (ibset::const_iterator fine_level_i = fine_level.begin();
+                 fine_level_i != fine_level.end();
+                 ++ fine_level_i)
+            {
+              // Shrink region at the left boundary (but not at the
+              // right boundary), since the fluxes are staggered by
+              // one half to the right
+              fine_level_minus |= fine_level_i->expand (izero, -idir);
+            }
+            
+            // Fine boundary only
+            all_fine_boundary[dir][0] = fine_level_plus - fine_level      ;
+            all_fine_boundary[dir][1] = fine_level      - fine_level_minus;
+          } // for dir
+          
+          
+          
+          // Coarse grids
+          ibbox const& coarse_domain_exterior = h.baseextent(ml, orl);
+          ibbox const& coarse_ext = coarse_domain_exterior;
+          
+          // Coarse equivalent of fine boundary
+          vect<vect<ibset,2>,dim> all_coarse_boundary;
+          for (int dir=0; dir<3; ++dir) {
+            // Unit vector
+            ivect const idir = ivect::dir(dir);
+            for (int face=0; face<2; ++face) {
+              for (ibset::const_iterator
+                     all_fine_boundary_i = all_fine_boundary[dir][face].begin();
+                   all_fine_boundary_i != all_fine_boundary[dir][face].end();
+                   ++ all_fine_boundary_i)
+              {
+                ibbox const& fb = *all_fine_boundary_i;
+                
+                ivect const cstr = coarse_ext.stride();
+                
+                ivect const flo  = fb.lower();
+                ivect const fup  = fb.upper();
+                ivect const fstr = fb.stride();
+                
+                assert (all (h.reffacts.AT(rl) % h.reffacts.AT(orl) == 0));
+                ivect const reffact = h.reffacts.AT(rl) / h.reffacts.AT(orl);
+                assert (all (reffact % 2 == 0));
+                assert (all (fstr % 2 == 0));
+                assert (all (cstr % 2 == 0));
+                
+                ibbox const ftmp (flo + idir*(fstr/2-cstr/2),
+                                  fup + idir*(fstr/2-cstr/2),
+                                  fstr);
+                ibbox const ctmp = ftmp.contracted_for (coarse_ext);
+                
+                ivect const clo = ctmp.lower();
+                ivect const cup = ctmp.upper();
+                ibbox const cb (clo, cup, cstr);
+                
+                all_coarse_boundary[dir][face] += cb;
+              }
+            } // for face
+          }   // for dir
+          
+          
+          
+          for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+            int const c = h.get_component(rl, lc);
+            full_dboxes & box = full_level.AT(c);
+            local_dboxes & local_box = local_level.AT(lc);
+            
+            for (int dir = 0; dir < dim; ++ dir) {
+              for (int face = 0; face < 2; ++ face) {
+                
+                // This is not really used (only for debugging)
+                local_box.fine_boundary[dir][face] =
+                  box.exterior & all_fine_boundary[dir][face];
+                
+              } // for face
+            }   // for dir
+            
+          } // for lc
+          
+          for (int lc = 0; lc < h.local_components(orl); ++ lc) {
+            int const c = h.get_component(orl, lc);
+            full_dboxes const & obox = full_olevel.AT(c);
+            local_dboxes & local_obox = local_olevel.AT(lc);
+            
+            for (int dir = 0; dir < dim; ++ dir) {
+              for (int face = 0; face < 2; ++ face) {
+                
+#warning "TODO: Set up communication schedule for refluxing"
+                
+                local_obox.coarse_boundary[dir][face] =
+                  obox.exterior & all_coarse_boundary[dir][face];
+                
+              } // for face
+            }   // for dir
+            
+          } // for lc
+          
+        } // if cell centered
+        
+      } // if rl > 0
+      
+      timer_reflux.stop();
+      
+      
+      
       // Regridding schedule:
-      // cerr << "QQQ: regrid[5]" << endl;
       
       fast_level.do_init = do_init;
       if (do_init) {
@@ -1006,7 +1234,6 @@ regrid (bool const do_init)
         
         for (int lc = 0; lc < h.local_components(rl); ++ lc) {
           int const c = h.get_component (rl, lc);
-          // cerr << "QQQ: regrid[5a] lc=" << lc << " c=" << c << endl;
           
           full_dboxes & box = full_level.AT(c);
           
@@ -1014,27 +1241,26 @@ regrid (bool const do_init)
           
           
           
-          // Synchronisation:
-          // cerr << "QQQ: regrid[k]" << endl;
+          // Regridding synchronisation:
           
           static Carpet::Timer timer_regrid_sync
             ("CarpetLib::dh::regrid::regrid::sync");
           timer_regrid_sync.start();
           
-          if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > rl)
+          if (int (old_light_boxes.size()) > ml and
+              int (old_light_boxes.AT(ml).size()) > rl)
           {
             
-            int const oldcomponents = oldboxes.AT(ml).AT(rl).size();
+            int const oldcomponents = old_light_boxes.AT(ml).AT(rl).size();
             
             // Synchronisation copies from the same level of the old
             // grid structure.  It should fill as many active points
             // as possible.
             
             for (int cc = 0; cc < oldcomponents; ++ cc) {
-              dboxes const & obox = oldboxes.AT(ml).AT(rl).AT(cc);
+              light_dboxes const & obox = old_light_boxes.AT(ml).AT(rl).AT(cc);
               
-              ibset ovlp = needrecv & obox.owned;
-              ovlp.normalize();
+              ibset const ovlp = needrecv & obox.owned;
               
               for (ibset::const_iterator
                      ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -1055,16 +1281,13 @@ regrid (bool const do_init)
               
             } // for cc
             
-            needrecv.normalize();
-            
-          } // if not oldboxes.empty
+          } // if not old_light_boxes.empty
           
           timer_regrid_sync.stop();
           
           
           
-          // Prolongation:
-          // cerr << "QQQ: regrid[l]" << endl;
+          // Regridding prolongation:
           
           static Carpet::Timer timer_regrid_prolongate
             ("CarpetLib::dh::regrid::regrid::prolongate");
@@ -1087,19 +1310,15 @@ regrid (bool const do_init)
             for (int cc = 0; cc < h.components(orl); ++ cc) {
               full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
               
-              ibset contracted_oactive;
-              for (ibset::const_iterator
-                     ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-              {
-                ibbox const & oactive = * ai;
-                // untested for cell centering
-                contracted_oactive +=
-                  oactive.contracted_for (box.interior).expand (reffact);
-              }
-              contracted_oactive.normalize();
-              
-              ibset ovlp = needrecv & contracted_oactive;
-              ovlp.normalize();
+#if 0
+              // untested for cell centering
+              ibset const expanded_oactive
+                (obox.active.contracted_for (box.interior).expand (reffact));
+#else
+              ibset const expanded_oactive
+                (obox.active.expanded_for (box.interior).expand (reffact));
+#endif
+              ibset const ovlp = needrecv & expanded_oactive;
               
               for (ibset::const_iterator
                      ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -1123,11 +1342,11 @@ regrid (bool const do_init)
               
             } // for cc
             
-            needrecv.normalize();
-            
           } // if rl > 0
           
-          if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > 0) {
+          if (int (old_light_boxes.size()) > ml and
+              int (old_light_boxes.AT(ml).size()) > 0)
+          {
             // All points must now have been received, either through
             // synchronisation or through prolongation
             ASSERT_c (needrecv.empty(),
@@ -1144,26 +1363,27 @@ regrid (bool const do_init)
       
       
       
-      // cerr << "QQQ: regrid[6]" << endl;
       for (int lc = 0; lc < h.local_components(rl); ++ lc) {
         int const c = h.get_component (rl, lc);
         
-        level.AT(c).exterior = full_level.AT(c).exterior;
-        level.AT(c).owned    = full_level.AT(c).owned;
-        level.AT(c).interior = full_level.AT(c).interior;
+        light_level.AT(c).exterior = full_level.AT(c).exterior;
+        light_level.AT(c).owned    = full_level.AT(c).owned;
+        light_level.AT(c).interior = full_level.AT(c).interior;
+#if 0
         dh::dboxes::ibset2ibboxs (full_level.AT(c).active,
-                                  level.AT(c).active, level.AT(c).numactive);
+                                  light_level.AT(c).active,
+                                  light_level.AT(c).numactive);
+#endif
         
-        level.AT(c).exterior_size = full_level.AT(c).exterior.size();
-        level.AT(c).owned_size    = full_level.AT(c).owned.size();
-        level.AT(c).active_size   = full_level.AT(c).active.size();
+        light_level.AT(c).exterior_size = full_level.AT(c).exterior.size();
+        light_level.AT(c).owned_size    = full_level.AT(c).owned.size();
+        light_level.AT(c).active_size   = full_level.AT(c).active.size();
         
       } // for lc
       
       
       
       // Broadcast grid structure and communication schedule
-      // cerr << "QQQ: regrid[7]" << endl;
       
       {
         
@@ -1172,20 +1392,18 @@ regrid (bool const do_init)
         timer_bcast_boxes.start();
         
         int const count_send = h.local_components(rl);
-        vector<dboxes> level_send (count_send);
+        vector<light_dboxes> level_send (count_send);
         for (int lc = 0; lc < h.local_components(rl); ++ lc) {
           int const c = h.get_component (rl, lc);
-          level_send.AT(lc) = level.AT(c);
+          level_send.AT(lc) = light_level.AT(c);
         }
-        // cerr << "QQQ: regrid[7a]" << endl;
-        vector<vector<dboxes> > const level_recv =
+        vector<vector<light_dboxes> > const level_recv =
           allgatherv (dist::comm(), level_send);
-        // cerr << "QQQ: regrid[7b]" << endl;
         vector<int> count_recv (dist::size(), 0);
         for (int c = 0; c < h.components(rl); ++ c) {
           int const p = this_proc (rl, c);
           if (p != dist::rank()) {
-            level.AT(c) = level_recv.AT(p).AT(count_recv.AT(p));
+            light_level.AT(c) = level_recv.AT(p).AT(count_recv.AT(p));
             ++ count_recv.AT(p);
           }
         }
@@ -1194,7 +1412,6 @@ regrid (bool const do_init)
             assert (count_recv.AT(p) == int(level_recv.AT(p).size()));
           }
         }
-        // cerr << "QQQ: regrid[7c]" << endl;
         
         timer_bcast_boxes.stop();
         
@@ -1263,17 +1480,41 @@ regrid (bool const do_init)
       // Output:
       if (output_bboxes or there_was_an_error) {
         
+        cout << eol;
+        cout << "ml=" << ml << " rl=" << rl << eol;
+        cout << "baseextent=" << h.baseextent(ml,rl) << eol;
+        
+        for (int c = 0; c < h.components(rl); ++ c) {
+          cout << eol;
+          cout << "ml=" << ml << " rl=" << rl << " c=" << c << eol;
+          cout << "extent=" << h.extent(ml,rl,c) << eol;
+          cout << "outer_boundaries=" << h.outer_boundaries(rl,c) << eol;
+          cout << "processor=" << h.outer_boundaries(rl,c) << eol;
+        } // for c
+        
         for (int c = 0; c < h.components(rl); ++ c) {
           full_dboxes const & box = full_boxes.AT(ml).AT(rl).AT(c);
-          
           cout << eol;
           cout << "ml=" << ml << " rl=" << rl << " c=" << c << eol;
           cout << box;
-          
         } // for c
         
-        fast_dboxes const & fast_box = fast_boxes.AT(ml).AT(rl);
+        for (int c = 0; c < h.components(rl); ++ c) {
+          light_dboxes const & box = light_boxes.AT(ml).AT(rl).AT(c);
+          cout << eol;
+          cout << "ml=" << ml << " rl=" << rl << " c=" << c << eol;
+          cout << box;
+        } // for c
         
+        for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+          int const c = h.get_component (rl, lc);
+          local_dboxes const & box = local_boxes.AT(ml).AT(rl).AT(lc);
+          cout << eol;
+          cout << "ml=" << ml << " rl=" << rl << " lc=" << lc << " c=" << c << eol;
+          cout << box;
+        } // for lc
+        
+        fast_dboxes const & fast_box = fast_boxes.AT(ml).AT(rl);
         cout << eol;
         cout << "ml=" << ml << " rl=" << rl << eol;
         cout << fast_box;
@@ -1283,8 +1524,10 @@ regrid (bool const do_init)
       
       
       // Free memory early to save space
-      if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > rl) {
-        oldboxes.AT(ml).AT(rl).clear();
+      if (int (old_light_boxes.size()) > ml and
+          int (old_light_boxes.AT(ml).size()) > rl)
+      {
+        old_light_boxes.AT(ml).AT(rl).clear();
       }
       
       if (ml > 0) {
@@ -1323,7 +1566,8 @@ regrid (bool const do_init)
     cout << eol;
     cout << "memoryof(gh)=" << memoryof(h) << eol;
     cout << "memoryof(dh)=" << memoryof(*this) << eol;
-    cout << "memoryof(dh.boxes)=" << memoryof(boxes) << eol;
+    cout << "memoryof(dh.light_boxes)=" << memoryof(light_boxes) << eol;
+    cout << "memoryof(dh.local_boxes)=" << memoryof(local_boxes) << eol;
     cout << "memoryof(dh.fast_boxes)=" << memoryof(fast_boxes) << eol;
     int gfcount = 0;
     size_t gfmemory = 0;
@@ -1357,7 +1601,6 @@ broadcast_schedule (vector<fast_dboxes> & fast_level_otherprocs,
                     fast_dboxes & fast_level,
                     srpvect fast_dboxes::* const schedule_item)
 {
-  // cerr << "QQQ: broadcast_schedule[1]" << endl;
   static Carpet::Timer timer_bs1 ("CarpetLib::dh::bs1");
   timer_bs1.start();
   vector <srpvect> send (dist::size());
@@ -1376,7 +1619,6 @@ broadcast_schedule (vector<fast_dboxes> & fast_level_otherprocs,
   (fast_level.*schedule_item).insert
     ((fast_level.*schedule_item).end(), recv.begin(), recv.end());
   timer_bs3.stop();
-  // cerr << "QQQ: broadcast_schedule[2]" << endl;
 }
 
 
@@ -1512,12 +1754,12 @@ operator== (full_dboxes const & b) const
 // MPI datatypes
 
 MPI_Datatype
-mpi_datatype (dh::dboxes const &)
+mpi_datatype (dh::light_dboxes const &)
 {
   static bool initialised = false;
   static MPI_Datatype newtype;
   if (not initialised) {
-    static dh::dboxes s;
+    static dh::light_dboxes s;
 #define ENTRY(type, name)                                               \
     {                                                                   \
       sizeof s.name / sizeof(type), /* count elements */                \
@@ -1530,17 +1772,19 @@ mpi_datatype (dh::dboxes const &)
       ENTRY(int, exterior),
       ENTRY(int, owned),
       ENTRY(int, interior),
+#if 0
       ENTRY(int, numactive),
       ENTRY(int, active),
-      ENTRY(dh::dboxes::size_type, exterior_size),
-      ENTRY(dh::dboxes::size_type, owned_size),
-      ENTRY(dh::dboxes::size_type, active_size),
+#endif
+      ENTRY(dh::light_dboxes::size_type, exterior_size),
+      ENTRY(dh::light_dboxes::size_type, owned_size),
+      ENTRY(dh::light_dboxes::size_type, active_size),
       {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}
     };
 #undef ENTRY
     newtype =
       dist::create_mpi_datatype (sizeof descr / sizeof descr[0], descr,
-                                 "dh::dboxes", sizeof s);
+                                 "dh::light::dboxes", sizeof s);
 #if 0
     int type_size;
     MPI_Type_size (newtype, & type_size);
@@ -1606,7 +1850,7 @@ memory ()
     memoryof (ghost_widths) +
     memoryof (buffer_widths) +
     memoryof (prolongation_orders_space) +
-    memoryof (boxes) +
+    memoryof (light_boxes) +
     memoryof (fast_boxes) +
     memoryof (gfs);
 }
@@ -1624,10 +1868,11 @@ allmemory ()
   return mem;
 }
 
-int const dh::dboxes::maxactive;
+#if 0
+int const dh::light::dboxes::maxactive;
 
 void
-dh::dboxes::
+dh::light_dboxes::
 ibset2ibboxs (ibset const& s, ibbox* const bs, int& nbs)
 {
   assert (s.setsize() <= maxactive);
@@ -1638,7 +1883,7 @@ ibset2ibboxs (ibset const& s, ibbox* const bs, int& nbs)
 }
 
 void
-dh::dboxes::
+dh::light_dboxes::
 ibboxs2ibset (ibbox const* const bs, int const& nbs, ibset& s)
 {
   s = ibset();
@@ -1647,9 +1892,10 @@ ibboxs2ibset (ibbox const* const bs, int const& nbs, ibset& s)
     s += bs[n];
   }
 }
+#endif
 
 size_t
-dh::dboxes::
+dh::light_dboxes::
 memory ()
   const
 {
@@ -1657,7 +1903,29 @@ memory ()
     memoryof (exterior) +
     memoryof (owned) +
     memoryof (interior) +
-    memoryof (active);
+#if 0
+    memoryof (numactive) +
+    memoryof (active) +
+#endif
+    memoryof (exterior_size) +
+    memoryof (owned_size) +
+    memoryof (active_size);
+}
+
+size_t
+dh::local_dboxes::
+memory ()
+  const
+{
+  return
+    memoryof (buffers) +
+    memoryof (buffers_stepped) +
+    memoryof (active) +
+    memoryof (restricted_region) +
+    memoryof (restriction_boundaries) +
+    memoryof (prolongation_boundaries) +
+    memoryof (coarse_boundary) +
+    memoryof (fine_boundary);
 }
 
 size_t
@@ -1701,13 +1969,13 @@ memory ()
 // Input
 
 istream &
-dh::dboxes::
+dh::light_dboxes::
 input (istream & is)
 {
   // Regions:
   try {
     skipws (is);
-    consume (is, "dh::dboxes:{");
+    consume (is, "dh::light_dboxes:{");
     skipws (is);
     consume (is, "exterior:");
     is >> exterior;
@@ -1725,7 +1993,48 @@ input (istream & is)
     skipws (is);
     consume (is, "}");
   } catch (input_error & err) {
-    cout << "Input error while reading a dh::full_dboxes" << endl;
+    cout << "Input error while reading a dh::light_dboxes" << endl;
+    throw err;
+  }
+  return is;
+}
+
+istream &
+dh::local_dboxes::
+input (istream & is)
+{
+  // Regions:
+  try {
+    skipws (is);
+    consume (is, "dh::local_dboxes:{");
+    skipws (is);
+    consume (is, "buffers:");
+    is >> buffers;
+    skipws (is);
+    consume (is, "buffers_stepped:");
+    is >> buffers_stepped;
+    skipws (is);
+    consume (is, "active:");
+    is >> active;
+    skipws (is);
+    consume (is, "restricted_region:");
+    is >> restricted_region;
+    skipws (is);
+    consume (is, "restriction_boundaries:");
+    is >> restriction_boundaries;
+    skipws (is);
+    consume (is, "prolongation_boundaries:");
+    is >> prolongation_boundaries;
+    skipws (is);
+    consume (is, "coarse_boundary:");
+    is >> coarse_boundary;
+    skipws (is);
+    consume (is, "fine_boundary:");
+    is >> fine_boundary;
+    skipws (is);
+    consume (is, "}");
+  } catch (input_error & err) {
+    cout << "Input error while reading a dh::local_dboxes" << endl;
     throw err;
   }
   return is;
@@ -1838,7 +2147,7 @@ output (ostream & os)
      << "ghost_widths=" << ghost_widths << ","
      << "buffer_widths=" << buffer_widths << ","
      << "prolongation_orders_space=" << prolongation_orders_space << ","
-     << "boxes=" << boxes << ","
+     << "light_boxes=" << light_boxes << ","
      << "fast_boxes=" << fast_boxes << ","
      << "gfs={";
   {
@@ -1855,16 +2164,35 @@ output (ostream & os)
 }
 
 ostream &
-dh::dboxes::
+dh::light_dboxes::
 output (ostream & os)
   const
 {
   // Regions:
-  os << "dh::dboxes:{" << eol
+  os << "dh::light_dboxes:{" << eol
      << "   exterior: " << exterior << eol
      << "   owned: " << owned << eol
      << "   interior: " << interior << eol
      << "   active_size: " << active_size << eol
+     << "}" << eol;
+  return os;
+}
+
+ostream &
+dh::local_dboxes::
+output (ostream & os)
+  const
+{
+  // Regions:
+  os << "dh::local_dboxes:{" << eol
+     << "   buffers: " << buffers << eol
+     << "   buffers_stepped: " << buffers_stepped << eol
+     << "   active: " << active << eol
+     << "   restricted_region: " << restricted_region << eol
+     << "   restriction_boundaries: " << restriction_boundaries << eol
+     << "   prolongation_boundaries: " << prolongation_boundaries << eol
+     << "   coarse_boundary: " << coarse_boundary << eol
+     << "   fine_boundary: " << fine_boundary << eol
      << "}" << eol;
   return os;
 }

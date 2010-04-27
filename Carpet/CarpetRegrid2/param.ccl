@@ -4,6 +4,10 @@ BOOLEAN verbose "Display regridding information on the terminal" STEERABLE=alway
 {
 } "no"
 
+BOOLEAN veryverbose "Display much regridding information on the terminal" STEERABLE=always
+{
+} "no"
+
 
 
 CCTK_INT min_distance "Minimum distance (in grid points) between coarse and fine grid boundaries" STEERABLE=always

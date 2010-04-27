@@ -250,10 +250,10 @@ namespace CarpetReduce {
   
 #ifdef HAVE_CCTK_REAL4
   
-  template<> inline int myisnan (complex<CCTK_REAL4> const x)
-  {
-    return isnan (x.real()) or isnan (x.imag());
-  }
+  // template<> inline int myisnan (complex<CCTK_REAL4> const x)
+  // {
+  //   return isnan (x.real()) or isnan (x.imag());
+  // }
   
   template<> inline complex<CCTK_REAL4>
   mymin (const complex<CCTK_REAL4> x, const complex<CCTK_REAL4> y)
@@ -299,10 +299,10 @@ namespace CarpetReduce {
   
 #ifdef HAVE_CCTK_REAL8
   
-  template<> inline int myisnan (complex<CCTK_REAL8> const x)
-  {
-    return isnan (x.real()) or isnan (x.imag());
-  }
+  // template<> inline int myisnan (complex<CCTK_REAL8> const x)
+  // {
+  //   return isnan (x.real()) or isnan (x.imag());
+  // }
   
   template<> inline complex<CCTK_REAL8>
   mymin (const complex<CCTK_REAL8> x, const complex<CCTK_REAL8> y)
@@ -348,10 +348,10 @@ namespace CarpetReduce {
   
 #ifdef HAVE_CCTK_REAL16
   
-  template<> inline int myisnan (complex<CCTK_REAL16> const x)
-  {
-    return isnan (x.real()) or isnan (x.imag());
-  }
+  // template<> inline int myisnan (complex<CCTK_REAL16> const x)
+  // {
+  //   return isnan (x.real()) or isnan (x.imag());
+  // }
   
   template<> inline complex<CCTK_REAL16>
   mymin (const complex<CCTK_REAL16> x, const complex<CCTK_REAL16> y)
