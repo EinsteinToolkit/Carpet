@@ -213,8 +213,8 @@ regrid (bool const do_init)
   
   
   
-  // cerr << "QQQ: regrid[1]" << endl;
-  boxes.resize (h.mglevels());
+  light_boxes.resize (h.mglevels());
+  local_boxes.resize (h.mglevels());
   full_boxes.resize (h.mglevels());
   fast_boxes.resize (h.mglevels());
   for (int ml = 0; ml < h.mglevels(); ++ ml) {
@@ -241,7 +241,6 @@ regrid (bool const do_init)
       
       
       // Domain:
-      // cerr << "QQQ: regrid[a]" << endl;
       
       static Carpet::Timer timer_domain ("CarpetLib::dh::regrid::domain");
       timer_domain.start();
@@ -271,7 +270,6 @@ regrid (bool const do_init)
       static Carpet::Timer timer_region ("CarpetLib::dh::regrid::region");
       timer_region.start();
       
-      // cerr << "QQQ: regrid[b]" << endl;
       for (int c = 0; c < h.components(rl); ++ c) {
         
         full_dboxes & box = full_level.AT(c);
@@ -437,7 +435,6 @@ regrid (bool const do_init)
       
       
       // Conjunction of all buffer zones:
-      // cerr << "QQQ: regrid[c]" << endl;
       
       static Carpet::Timer timer_buffers ("CarpetLib::dh::regrid::buffers");
       timer_buffers.start();
@@ -499,7 +496,6 @@ regrid (bool const do_init)
       
       
       // Test constituency relations:
-      // cerr << "QQQ: regrid[e]" << endl;
       
       static Carpet::Timer timer_test ("CarpetLib::dh::regrid::test");
       timer_test.start();
@@ -537,14 +533,12 @@ regrid (bool const do_init)
       
       
       // Communication schedule:
-      // cerr << "QQQ: regrid[4]" << endl;
       
       static Carpet::Timer timer_comm ("CarpetLib::dh::regrid::comm");
       timer_comm.start();
       
       for (int lc = 0; lc < h.local_components(rl); ++ lc) {
         int const c = h.get_component (rl, lc);
-        // cerr << "QQQ: regrid[4a] lc=" << lc << " c=" << c << endl;
         
         full_dboxes & box = full_level.AT(c);
         
@@ -593,7 +587,6 @@ regrid (bool const do_init)
         
         
         // Multigrid prolongation:
-        // cerr << "QQQ: regrid[f]" << endl;
         
         static Carpet::Timer timer_comm_mgprol
           ("CarpetLib::dh::regrid::comm::mprol");
@@ -639,7 +632,6 @@ regrid (bool const do_init)
         
         
         // Refinement prolongation:
-        // cerr << "QQQ: regrid[g]" << endl;
         
         static Carpet::Timer timer_comm_refprol
           ("CarpetLib::dh::regrid::comm::refprol");
@@ -705,7 +697,6 @@ regrid (bool const do_init)
         
         
         // Synchronisation:
-        // cerr << "QQQ: regrid[h]" << endl;
         
         static Carpet::Timer timer_comm_sync
           ("CarpetLib::dh::regrid::comm::sync");
@@ -772,7 +763,6 @@ regrid (bool const do_init)
         
         
         // Boundary prolongation:
-        // cerr << "QQQ: regrid[i]" << endl;
         
         static Carpet::Timer timer_comm_refbndprol
           ("CarpetLib::dh::regrid::comm::refbndprol");
@@ -863,7 +853,6 @@ regrid (bool const do_init)
       
       
       // Refinement restriction:
-      // cerr << "QQQ: regrid[j]" << endl;
       
       static Carpet::Timer timer_comm_refrest
         ("CarpetLib::dh::regrid::comm::refrest");
@@ -929,7 +918,6 @@ regrid (bool const do_init)
       
       
       // Regridding schedule:
-      // cerr << "QQQ: regrid[5]" << endl;
       
       fast_level.do_init = do_init;
       if (do_init) {
@@ -939,7 +927,6 @@ regrid (bool const do_init)
         
         for (int lc = 0; lc < h.local_components(rl); ++ lc) {
           int const c = h.get_component (rl, lc);
-          // cerr << "QQQ: regrid[5a] lc=" << lc << " c=" << c << endl;
           
           full_dboxes & box = full_level.AT(c);
           
@@ -947,8 +934,7 @@ regrid (bool const do_init)
           
           
           
-          // Synchronisation:
-          // cerr << "QQQ: regrid[k]" << endl;
+          // Regridding synchronisation:
           
           static Carpet::Timer timer_regrid_sync
             ("CarpetLib::dh::regrid::regrid::sync");
@@ -993,8 +979,7 @@ regrid (bool const do_init)
           
           
           
-          // Prolongation:
-          // cerr << "QQQ: regrid[l]" << endl;
+          // Regridding prolongation:
           
           static Carpet::Timer timer_regrid_prolongate
             ("CarpetLib::dh::regrid::regrid::prolongate");
@@ -1068,7 +1053,6 @@ regrid (bool const do_init)
       
       
       
-      // cerr << "QQQ: regrid[6]" << endl;
       for (int lc = 0; lc < h.local_components(rl); ++ lc) {
         int const c = h.get_component (rl, lc);
         
@@ -1087,7 +1071,6 @@ regrid (bool const do_init)
       
       
       // Broadcast grid structure and communication schedule
-      // cerr << "QQQ: regrid[7]" << endl;
       
       {
         
@@ -1104,7 +1087,6 @@ regrid (bool const do_init)
         // cerr << "QQQ: regrid[7a]" << endl;
         vector<vector<dboxes> > const level_recv =
           allgatherv (dist::comm(), level_send);
-        // cerr << "QQQ: regrid[7b]" << endl;
         vector<int> count_recv (dist::size(), 0);
         for (int c = 0; c < h.components(rl); ++ c) {
           int const p = this_proc (rl, c);
@@ -1118,7 +1100,6 @@ regrid (bool const do_init)
             assert (count_recv.AT(p) == int(level_recv.AT(p).size()));
           }
         }
-        // cerr << "QQQ: regrid[7c]" << endl;
         
         timer_bcast_boxes.stop();
         
@@ -1281,7 +1262,6 @@ broadcast_schedule (vector<fast_dboxes> & fast_level_otherprocs,
                     fast_dboxes & fast_level,
                     srpvect fast_dboxes::* const schedule_item)
 {
-  // cerr << "QQQ: broadcast_schedule[1]" << endl;
   static Carpet::Timer timer_bs1 ("CarpetLib::dh::bs1");
   timer_bs1.start();
   vector <srpvect> send (dist::size());
@@ -1300,7 +1280,6 @@ broadcast_schedule (vector<fast_dboxes> & fast_level_otherprocs,
   (fast_level.*schedule_item).insert
     ((fast_level.*schedule_item).end(), recv.begin(), recv.end());
   timer_bs3.stop();
-  // cerr << "QQQ: broadcast_schedule[2]" << endl;
 }
 
 
