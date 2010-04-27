@@ -150,7 +150,8 @@ public:
   
   virtual gdata* typed_data (int tl, int rl, int lc, int ml) const = 0;
   
-  virtual gdata* new_typed_data () const = 0;
+  virtual gdata*
+  new_typed_data () const = 0;
   
   
   

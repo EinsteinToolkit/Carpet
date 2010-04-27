@@ -58,7 +58,8 @@ public:
                        vl);
   }
   
-  virtual gdata* new_typed_data () const
+  virtual gdata*
+  new_typed_data () const
   {
     return new data<T>(this->varindex,
                        h.refcent, this->transport_operator,

@@ -167,7 +167,6 @@ public:
                  int order_time);
   
 protected:
-  static
   void
   find_source_timelevel (vector <CCTK_REAL> const & times,
                          CCTK_REAL time,

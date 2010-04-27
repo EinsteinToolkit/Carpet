@@ -347,7 +347,7 @@ locate_position (rvect const & rpos,
   assert (ml>=0 and ml<mglevels());
   assert (minrl>=0 and minrl<=maxrl and maxrl<=reflevels());
   
-  if (any(not CarpetLib::good::isfinite(rpos))) {
+  if (any(not isfinite(rpos))) {
     rl = -1;
     c = -1;
     return;
