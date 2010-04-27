@@ -1352,6 +1352,30 @@ namespace Carpet {
   
   
   //
+  // Loop over a bounding box
+  //
+  
+  void ibbox2iminimax (ibbox const& ext, // component extent
+                       ibbox const& box, // this bbox
+                       ivect& imin, ivect& imax)
+  {
+    ivect const izero = ivect(0);
+    
+    assert (all ((box.lower() - ext.lower()               ) >= 0));
+    assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
+    assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
+    assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
+    
+    imin = (box.lower() - ext.lower()               ) / ext.stride();
+    imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
+    
+    assert (all (0 <= imin));
+    assert (box.empty() xor all (imin <= imax));
+  }
+  
+  
+  
+  //
   // Call a scheduling group
   //
   
