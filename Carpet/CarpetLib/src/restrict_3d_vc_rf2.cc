@@ -221,9 +221,9 @@ namespace CarpetLib {
     int const dstjoff = dstoff[1];
     int const dstkoff = dstoff[2];
     
-    size_t const srcdi = 1;
-    size_t const srcdj = srcdi * srciext;
-    size_t const srcdk = srcdj * srcjext;
+    size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
+    size_t const srcdj = SRCIND3(0,1,0) - SRCIND3(0,0,0);
+    size_t const srcdk = SRCIND3(0,0,1) - SRCIND3(0,0,0);
     
     
     
