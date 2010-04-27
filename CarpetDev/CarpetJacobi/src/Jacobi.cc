@@ -468,9 +468,7 @@ namespace CarpetJacobi {
         if (verbose || veryverbose) {
           const time_t currenttime = time(0);
           if ((iter % icoarsestep == 0 && iter >= maxiters)
-#if HAVE_ISNAN
               || isnan(norm2)
-#endif
               || norm2 <= minerror
               || (iter % outevery == 0 && currenttime >= nexttime)) {
             if (verbose || veryverbose) {
@@ -502,7 +500,6 @@ namespace CarpetJacobi {
           }
         }
         
-#if HAVE_ISNAN
         // Exit if things go bad
         if (isnan(norm2)) {
           if (verbose || veryverbose) {
@@ -511,7 +508,6 @@ namespace CarpetJacobi {
           }
           break;
         }
-#endif
         
         // Return when desired accuracy is reached
         if (norm2 <= minerror) {
