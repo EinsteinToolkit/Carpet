@@ -120,36 +120,39 @@ bool there_was_an_error = false;
 static
 void
 assert_error (char const * restrict const checkstring,
+              char const * restrict const file, int const line,
               int const ml, int const rl,
               char const * restrict const message)
 {
   CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-              "[ml=%d rl=%d] The following grid structure consistency check failed:\n   %s\n   %s",
-              ml, rl, message, checkstring);
+              "\n%s:%d:\n   [ml=%d rl=%d] The following grid structure consistency check failed:\n   %s\n   %s",
+              file, line, ml, rl, message, checkstring);
   there_was_an_error = true;
 }
 
 static
 void
 assert_error (char const * restrict const checkstring,
+              char const * restrict const file, int const line,
               int const ml, int const rl, int const c,
               char const * restrict const message)
 {
   CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-              "[ml=%d rl=%d c=%d] The following grid structure consistency check failed:\n   %s\n   %s",
-              ml, rl, c, message, checkstring);
+              "\n%s:%d:\n   [ml=%d rl=%d c=%d] The following grid structure consistency check failed:\n   %s\n   %s",
+              file, line, ml, rl, c, message, checkstring);
   there_was_an_error = true;
 }
 
 static
 void
 assert_error (char const * restrict const checkstring,
+              char const * restrict const file, int const line,
               int const ml, int const rl, int const c, int const cc,
               char const * restrict const message)
 {
   CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-              "[ml=%d rl=%d c=%d cc=%d] The following grid structure consistency check failed:\n   %s\n   %s",
-              ml, rl, c, cc, message, checkstring);
+              "\n%s:%d:\n   [ml=%d rl=%d c=%d cc=%d] The following grid structure consistency check failed:\n   %s\n   %s",
+              file, line, ml, rl, c, cc, message, checkstring);
   there_was_an_error = true;
 }
 
@@ -162,25 +165,25 @@ assert_error (char const * restrict const checkstring,
 
 #else
 
-#define ASSERT_rl(check, message)                       \
-  do {                                                  \
-    if (not (check)) {                                  \
-      assert_error (#check, ml, rl, message);           \
-    }                                                   \
+#define ASSERT_rl(check, message)                                       \
+  do {                                                                  \
+    if (not (check)) {                                                  \
+      assert_error (#check, __FILE__, __LINE__, ml, rl, message);       \
+    }                                                                   \
   } while (false)
 
-#define ASSERT_c(check, message)                        \
-  do {                                                  \
-    if (not (check)) {                                  \
-      assert_error (#check, ml, rl, c, message);        \
-    }                                                   \
+#define ASSERT_c(check, message)                                        \
+  do {                                                                  \
+    if (not (check)) {                                                  \
+      assert_error (#check, __FILE__, __LINE__, ml, rl, c, message);    \
+    }                                                                   \
   } while (false)
 
-#define ASSERT_cc(check, message)                       \
-  do {                                                  \
-    if (not (check)) {                                  \
-      assert_error (#check, ml, rl, c, cc, message);    \
-    }                                                   \
+#define ASSERT_cc(check, message)                                       \
+  do {                                                                  \
+    if (not (check)) {                                                  \
+      assert_error (#check, __FILE__, __LINE__, ml, rl, c, cc, message); \
+    }                                                                   \
   } while (false)
 
 #endif
