@@ -433,7 +433,6 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
           group_bboxes[gindex][m] |=
             data.dd->boxes.at(mglevel).at(reflevel).at(c).exterior;
         }
-        group_bboxes[gindex][m].normalize();
       }
     } else {
       if (mglevel==0 and reflevel==0) {
@@ -441,8 +440,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
         struct arrdesc& data = arrdata.at(gindex).at(m);
         int const c=dist::rank();
         group_bboxes[gindex][m] |=
-          data.dd->boxes.at(mglevel).at(reflevel).at(c).exterior;
-        group_bboxes[gindex][m].normalize();
+          data.dd->light_boxes.at(mglevel).at(reflevel).at(c).exterior;
       }
     }
   }
@@ -658,7 +656,6 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
                       "variable '%s' timelevel %d has been read only partially",
                       fullname, tl);
           // for (int m = 0; m < maps; m++) {
-          //   bboxes_read[vindex][tl][m].normalize();
           //   const int gindex = CCTK_GroupIndexFromVarI (vindex);
           //   cout << "Need: " << group_bboxes[gindex][m] << endl;
           //   cout << "Read: " << bboxes_read[vindex][tl][m] << endl;
@@ -1193,7 +1190,6 @@ static int ReadVar (const cGH* const cctkGH,
       const ibbox overlap = membox & filebox;
       // cout << "Overlap: " << overlap << endl;
       bboxes_read.at(Carpet::map) |= overlap;
-      bboxes_read.at(Carpet::map).normalize();
       // cout << "New read: " << bboxes_read.at(Carpet::map) << endl;
 
       // calculate hyperslab selection parameters

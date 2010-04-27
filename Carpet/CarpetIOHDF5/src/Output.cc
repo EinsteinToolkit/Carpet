@@ -83,9 +83,6 @@ int WriteVarUnchunked (const cGH* const cctkGH,
                 boxes.at(mglevel).at(refinementlevel).at(c).exterior;
     }
 
-    // Normalise the set, i.e., try to represent the set with fewer bboxes.
-    bboxes.normalize();
-
 #if 0
     // According to Cactus conventions, DISTRIB=CONSTANT arrays
     // (including grid scalars) are assumed to be the same on all
