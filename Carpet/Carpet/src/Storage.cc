@@ -22,7 +22,7 @@ namespace Carpet {
   
   static int
   GroupStorageCrease (const cGH* cgh, int n_groups, const int* groups,
-                      const int* timelevels, int* status,
+                      const int* tls, int* status,
                       const bool inc);
   
   static void
@@ -34,7 +34,7 @@ namespace Carpet {
   
   int
   GroupStorageCrease (const cGH* cgh, int n_groups, const int* groups,
-                      const int* timelevels, int* status,
+                      const int* tls, int* status,
                       const bool inc)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -42,7 +42,7 @@ namespace Carpet {
     assert (cgh);
     assert (n_groups >= 0);
     assert (groups);
-    assert (timelevels);
+    assert (tls);
     for (int n=0; n<n_groups; ++n) {
       if (groups[n] < 0 or groups[n] >= CCTK_NumGroups()) {
         CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -50,9 +50,9 @@ namespace Carpet {
         return -1;
       }
       assert (groups[n] >= 0 and groups[n] < CCTK_NumGroups());
-      // TODO: timelevels[n] can also be -1; in that case, all time
+      // TODO: tls[n] can also be -1; in that case, all time
       // levels should be activated / deactivated
-      assert (timelevels[n] >= 0);
+      assert (tls[n] >= 0);
     }
     
     bool const can_do = is_meta_mode() or is_global_mode() or is_level_mode();
@@ -70,7 +70,7 @@ namespace Carpet {
         char * const groupname = CCTK_GroupName (group);
         assert (groupname);
         Checkpoint ("  %s: %screase to %d",
-                    groupname, inc ? "in" : "de", timelevels[n]);
+                    groupname, inc ? "in" : "de", tls[n]);
         free (groupname);
       }
       
@@ -103,9 +103,9 @@ namespace Carpet {
           // needs to be changed -- do nothing otherwise
           
           const bool do_increase
-            =     inc and timelevels[n] > groupdata.AT(group).activetimelevels.AT(ml).AT(rl);
+            =     inc and tls[n] > groupdata.AT(group).activetimelevels.AT(ml).AT(rl);
           const bool do_decrease
-            = not inc and timelevels[n] < groupdata.AT(group).activetimelevels.AT(ml).AT(rl);
+            = not inc and tls[n] < groupdata.AT(group).activetimelevels.AT(ml).AT(rl);
           if (do_increase or do_decrease) {
             
             if (not can_do) {
@@ -133,7 +133,7 @@ namespace Carpet {
             }
             
             // Set the new number of active time levels
-            groupdata.AT(group).activetimelevels.AT(ml).AT(rl) = timelevels[n];
+            groupdata.AT(group).activetimelevels.AT(ml).AT(rl) = tls[n];
             
             for (int m=0; m<(int)arrdata.AT(group).size(); ++m) {
               for (int var=0; var<gp.numvars; ++var) {
@@ -178,7 +178,7 @@ namespace Carpet {
                 } // if not allocated
                 
                 arrdata.AT(group).AT(m).data.AT(var)->set_timelevels
-                  (ml, rl, timelevels[n]);
+                  (ml, rl, tls[n]);
                 
                 // Set the data pointers for grid arrays
                 if (gp.grouptype != CCTK_GF) {
@@ -219,7 +219,7 @@ namespace Carpet {
   
   int
   GroupStorageIncrease (const cGH* cgh, int n_groups, const int* groups,
-                        const int* timelevels, int* status)
+                        const int* tls, int* status)
   {
     DECLARE_CCTK_PARAMETERS
 
@@ -227,14 +227,14 @@ namespace Carpet {
       Checkpoint ("GroupStorageIncrease");
     }
     return
-      GroupStorageCrease (cgh, n_groups, groups, timelevels, status, true);
+      GroupStorageCrease (cgh, n_groups, groups, tls, status, true);
   }
   
   
   
   int
   GroupStorageDecrease (const cGH* cgh, int n_groups, const int* groups,
-                        const int* timelevels, int* status)
+                        const int* tls, int* status)
   {
     DECLARE_CCTK_PARAMETERS
 
@@ -242,7 +242,7 @@ namespace Carpet {
       Checkpoint ("GroupStorageDecrease");
     }
     return
-      GroupStorageCrease (cgh, n_groups, groups, timelevels, status, false);
+      GroupStorageCrease (cgh, n_groups, groups, tls, status, false);
   }
   
   
@@ -252,9 +252,9 @@ namespace Carpet {
   {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 and group<CCTK_NumGroups());
-    const int timelevels = CCTK_MaxTimeLevelsGI(group);
+    const int tls = CCTK_MaxTimeLevelsGI(group);
     int status;
-    GroupStorageIncrease (cgh, 1, &group, &timelevels, &status);
+    GroupStorageIncrease (cgh, 1, &group, &tls, &status);
     // Return whether storage was allocated previously
     return status;
   }
@@ -266,9 +266,9 @@ namespace Carpet {
   {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 and group<CCTK_NumGroups());
-    const int timelevels = 0;
+    const int tls = 0;
     int status;
-    GroupStorageDecrease (cgh, 1, &group, &timelevels, &status);
+    GroupStorageDecrease (cgh, 1, &group, &tls, &status);
     // Return whether storage was allocated previously
     return status;
   }
