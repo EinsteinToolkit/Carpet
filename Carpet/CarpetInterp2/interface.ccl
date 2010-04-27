@@ -1,4 +1,4 @@
-# Interface definition for thorn CarpetInterp
+# Interface definition for thorn CarpetInterp2
 
 IMPLEMENTS: interp2
 
@@ -33,6 +33,22 @@ CCTK_INT FUNCTION                          \
 REQUIRES FUNCTION GetCoordRange
 
 
+
+CCTK_INT FUNCTION                               \
+    MultiPatch_LocalToGlobal                    \
+        (CCTK_POINTER_TO_CONST IN cctkGH,       \
+         CCTK_INT              IN ndims,        \
+         CCTK_INT              IN npoints,      \
+         CCTK_INT        ARRAY IN patch,        \
+         CCTK_POINTER_TO_CONST IN localcoords,  \
+         CCTK_POINTER          IN globalcoords, \
+         CCTK_POINTER          IN dxda,         \
+         CCTK_POINTER          IN det_dxda,     \
+         CCTK_POINTER          IN dadx,         \
+         CCTK_POINTER          IN ddxdada,      \
+         CCTK_POINTER          IN ddadxdx,      \
+         CCTK_POINTER          IN dddxdadada)
+USES FUNCTION MultiPatch_LocalToGlobal
 
 CCTK_INT FUNCTION                                \
     MultiPatch_GlobalToLocal                     \

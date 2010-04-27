@@ -643,6 +643,15 @@ namespace CarpetInterp2 {
           ostringstream msg;
           msg << "Interpolation point " << n << " on map " << m << " "
               << "at " << pos << " is outside of the grid hierarchy";
+          msg << "\n"
+              << "rl=" << rl << " c=" << c << "\n"
+              << "rpos=" << rpos << "\n"
+              << "ipos=" << ipos << "\n"
+              << "lower=" << lower << "\n"
+              << "upper=" << upper << "\n"
+              << "delta=" << delta << "\n"
+              << "idelta=" << idelta << "\n"
+              << "hh=" << *hh << "\n";
           CCTK_WARN (CCTK_WARN_ABORT, msg.str().c_str());
         }
       }
@@ -656,6 +665,11 @@ namespace CarpetInterp2 {
       assert (all (ipos % ext.stride() == ivect(0)));
       ipos /= ext.stride();
       dpos /= rvect(ext.stride());
+      if (not (all (abs(dpos) <= rvect(0.5)))) {
+        cout << "fasterp.cc:659\n"
+             << "   dpos=" << dpos << "\n"
+             << "   ext=" << ext << "\n";
+      }
       assert (all (abs(dpos) <= rvect(0.5)));
       
       ivect const ind = ipos - ext.lower() / ext.stride();
