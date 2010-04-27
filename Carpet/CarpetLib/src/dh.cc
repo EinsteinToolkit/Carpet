@@ -772,7 +772,6 @@ regrid (bool const do_init)
           // compatibility.
           ibset needrecv = box.ghosts;
 #endif
-          ibset const needrecv_orig = needrecv;
           
           ibset & sync = box.sync;
           
@@ -780,9 +779,9 @@ regrid (bool const do_init)
             full_dboxes const & obox = full_level.AT(cc);
             
 #if 0
-            ibset ovlp = needrecv & obox.owned;
+            ibset const ovlp = needrecv & obox.owned;
 #else
-            ibset ovlp = needrecv & obox.interior;
+            ibset const ovlp = needrecv & obox.interior;
 #endif
             
             if (cc == c) {
