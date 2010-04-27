@@ -168,6 +168,9 @@ int WriteVarUnchunked (const cGH* const cctkGH,
       // Loop over all components
       bool first_time = true;
       BEGIN_COMPONENT_LOOP (cctkGH, group.grouptype) {
+        // Continue if this processor is not involved
+        if (local_component==-1 and dist::rank()!=0) continue;
+
         // Get the intersection of the current component with this combination
         // (use either the interior or exterior here, as we did above)
         gh const * const hh = arrdata.at(gindex).at(Carpet::map).hh;
@@ -189,9 +192,13 @@ int WriteVarUnchunked (const cGH* const cctkGH,
           ? (*ff) (request->timelevel, refinementlevel,
                    local_component, mglevel)
           : NULL;
+#if 0
         // TODO: This does not work; data may be NULL
         gdata* const processor_component =
           data->make_typed (request->vindex, error_centered, op_sync);
+#else
+        gdata* const processor_component = ff->new_typed_data ();
+#endif
 
         processor_component->allocate (overlap, 0);
         for (comm_state state; not state.done(); state.step()) {
@@ -334,6 +341,9 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
   // Traverse all maps
   BEGIN_MAP_LOOP (cctkGH, group.grouptype) {
     BEGIN_COMPONENT_LOOP (cctkGH, group.grouptype) {
+      // Continue if this processor is not involved
+      if (local_component==-1 and dist::rank()!=0) continue;
+      
       // Using "exterior" includes ghost zones and refinement boundaries.
       gh const * const hh = arrdata.at(gindex).at(Carpet::map).hh;
       dh const * const dd = arrdata.at(gindex).at(Carpet::map).dd;
@@ -359,9 +369,13 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
         ? (*ff) (request->timelevel, refinementlevel,
                  local_component, mglevel)
         : NULL;
+#if 0
       // TODO: This does not work; data may be NULL
       gdata* const processor_component =
         data->make_typed (request->vindex, error_centered, op_sync);
+#else
+      gdata* const processor_component = ff->new_typed_data ();
+#endif
 
       processor_component->allocate (bbox, 0);
       for (comm_state state; not state.done(); state.step()) {
