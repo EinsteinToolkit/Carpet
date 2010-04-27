@@ -100,15 +100,10 @@ namespace CarpetEvolutionMask {
       for (int d=0; d<dim;d++) {
 	antishrinkby[d] = cctkGH->cctk_nghostzones[d] + buffer_width;
       }
-      ibset antishrunk;
-      for (ibset::const_iterator bi = antirefined.begin();
-             bi != antirefined.end();
-             ++bi)
-        {
-          antishrunk |= (*bi).expand(antishrinkby, antishrinkby).expanded_for(coarsebase);
-        }
-      antishrunk.normalize();
-
+      ibset antishrunk
+        (antirefined.expand(antishrinkby, antishrinkby).
+         expanded_for(coarsebase));
+      
       //      cout << "antishrunk1: " << antishrunk << endl;
 
       // now cut away dangling edges
@@ -117,7 +112,7 @@ namespace CarpetEvolutionMask {
       //      cout << "antishrunk2: " << antishrunk << endl;
 
       // cut holes into coarsebase
-      ibset shrunk = coarsebase - antishrunk;
+      ibset const shrunk = coarsebase - antishrunk;
 
       //      cout << "shrunk: " << shrunk << endl;
 
@@ -140,14 +135,7 @@ namespace CarpetEvolutionMask {
 	enlargeby[d] = cctkGH->cctk_nghostzones[d] + buffer_width +
 	  stencil_size;
       }
-      ibset enlarged;
-      for (ibset::const_iterator bi = notrefined.begin();
-             bi != notrefined.end();
-             ++bi)
-        {
-          enlarged |= (*bi).expand(enlargeby, enlargeby);
-        }
-      enlarged.normalize();
+      ibset const enlarged (notrefined.expand(enlargeby, enlargeby));
 
       //      cout << "enlarged: " << enlarged << endl;
       
