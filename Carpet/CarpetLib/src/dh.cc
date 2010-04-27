@@ -332,7 +332,7 @@ regrid (bool const do_init)
         // (The exterior must not be empty)
         // Variables may have size zero
         // ASSERT_c (not extr.empty(),
-        //           "The experior must not be empty");
+        //           "The exterior must not be empty");
         
         // The exterior must be contained in the domain
         ASSERT_c (extr <= domain_exterior,
@@ -584,7 +584,7 @@ regrid (bool const do_init)
       } // for c
       
       timer_test.stop();
-      
+       
       
       
       // Communication schedule:
