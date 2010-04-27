@@ -971,6 +971,259 @@ regrid (bool const do_init)
       
       
       
+      // Mask:
+      static Carpet::Timer timer_mask ("CarpetLib::dh::regrid::mask");
+      timer_mask.start();
+      
+      if (rl > 0) {
+        int const orl = rl - 1;
+        full_cboxes const& full_olevel = full_boxes.AT(ml).AT(orl);
+        // Local boxes are not communicated or post-processed, and
+        // thus can be modified even for coarser levels
+        local_cboxes& local_olevel = local_boxes.AT(ml).AT(orl);
+        
+        ivect const reffact = h.reffacts.AT(rl) / h.reffacts.AT(orl);
+        
+        // This works only when the refinement factor is 2
+        if (all (reffact == 2)) {
+          
+          ibbox const& base = domain_exterior;
+          ibbox const& obase = h.baseextent(ml,orl);
+          
+          // Calculate the union of all coarse regions
+          ibset const allointr (full_olevel, & full_dboxes::interior);
+          
+          // Project to current level
+          ivect const rf(reffact);
+          // TODO: Why expand by rf-1?  This expansion shouldn't
+          // matter, since the coarse grid is larger than the fine
+          // grid anyway, except at the outer boundary
+          // ibset const parent (allointr.expand(rf-1,rf-1).contracted_for(base));
+          ibset const parent (allointr.expanded_for(base));
+          
+          // Subtract the active region
+          ibset const notrefined = parent - allactive;
+          
+          // Enlarge this set
+          vect<ibset,dim> enlarged;
+          for (int d=0; d<dim; ++d) {
+            switch (h.refcent) {
+            case vertex_centered: {
+              ivect const dir = ivect::dir(d);
+              enlarged[d] = ibset (notrefined.expand(dir, dir));
+              break;
+            }
+            case cell_centered: {
+              enlarged[d] = notrefined;
+#warning "TODO: restriction boundaries are wrong (they are empty, but should not be) with cell centring when fine cell cut coarse cells"
+              bool const old_there_was_an_error = there_was_an_error;
+              ASSERT_rl (notrefined.contracted_for(obase).expanded_for(base) ==
+                         notrefined,
+                         "Refinement mask: Fine grid boundaries must be aligned with coarse grid cells");
+              // Do not abort because of this problem
+              there_was_an_error = old_there_was_an_error;
+              break;
+            }
+            default:
+              assert (0);
+            }
+          }
+          
+          // Intersect with the active region
+          vect<ibset,dim> all_boundaries;
+          for (int d=0; d<dim; ++d) {
+            all_boundaries[d] = allactive & enlarged[d];
+          }
+          
+#warning "TODO: Ensure that the prolongation boundaries all_boundaries are contained in the boundary prolongated region"
+          
+#warning "TODO: Ensure that the restriction boundaries and the restricted region are contained in the restricted region"
+          
+          // Subtract the boundaries from the refined region
+          ibset all_refined = allactive;
+          for (int d=0; d<dim; ++d) {
+            all_refined -= all_boundaries[d];
+          }
+          
+          for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+            int const c = h.get_component(rl, lc);
+            full_dboxes & box = full_level.AT(c);
+            full_dboxes const& obox = full_olevel.AT(c);
+            local_dboxes & local_box = local_level.AT(lc);
+            // Local boxes are not communicated or post-processed, and
+            // thus can be modified even for coarser levels
+            local_dboxes & local_obox = local_olevel.AT(lc);
+            
+            // Set restriction information for next coarser level
+            local_obox.restricted_region =
+              all_refined.contracted_for(obox.exterior) & obox.owned;
+            
+            // Set prolongation information for current level
+            for (int d=0; d<dim; ++d) {
+              local_obox.restriction_boundaries[d] =
+                all_boundaries[d].contracted_for(obox.exterior) & obox.owned;
+            }
+            
+            // Set prolongation information for current level
+            for (int d=0; d<dim; ++d) {
+              local_box.prolongation_boundaries[d] =
+                all_boundaries[d] & box.owned;
+            }
+            
+          } // for lc
+          
+        } // if reffact != 2
+        
+      } // if not coarsest level
+      
+      timer_mask.stop();
+      
+      
+      
+      // Refluxing:
+      static Carpet::Timer timer_reflux ("CarpetLib::dh::regrid::reflux");
+      timer_reflux.start();
+      
+      // If there is no coarser level, do nothing
+      if (rl > 0) {
+        int const orl = rl - 1;
+        full_cboxes const& full_olevel = full_boxes.AT(ml).AT(orl);
+        local_cboxes & local_olevel = local_boxes.AT(ml).AT(orl);
+        
+        // This works only with cell centred grids
+        if (h.refcent == cell_centered) {
+          
+          // Fine grids
+          ibset const& fine_level = allactive;
+          
+          ivect const izero = ivect (0);
+          ivect const ione  = ivect (1);
+          
+          vect<vect<ibset,2>,dim> all_fine_boundary;
+          
+          for (int dir=0; dir<dim; ++dir) {
+            // Unit vector
+            ivect const idir = ivect::dir(dir);
+            
+            // Fine grids with boundary
+            ibset fine_level_plus;
+            for (ibset::const_iterator fine_level_i = fine_level.begin();
+                 fine_level_i != fine_level.end();
+                 ++ fine_level_i)
+            {
+              // Expand region to the left (but not to the right),
+              // since the fluxes are staggered by one half to the
+              // right
+              fine_level_plus |= fine_level_i->expand (idir, izero);
+            }
+            
+            // Fine grids without boundary
+            ibset fine_level_minus;
+            for (ibset::const_iterator fine_level_i = fine_level.begin();
+                 fine_level_i != fine_level.end();
+                 ++ fine_level_i)
+            {
+              // Shrink region at the left boundary (but not at the
+              // right boundary), since the fluxes are staggered by
+              // one half to the right
+              fine_level_minus |= fine_level_i->expand (izero, -idir);
+            }
+            
+            // Fine boundary only
+            all_fine_boundary[dir][0] = fine_level_plus - fine_level      ;
+            all_fine_boundary[dir][1] = fine_level      - fine_level_minus;
+          } // for dir
+          
+          
+          
+          // Coarse grids
+          ibbox const& coarse_domain_exterior = h.baseextent(ml, orl);
+          ibbox const& coarse_ext = coarse_domain_exterior;
+          
+          // Coarse equivalent of fine boundary
+          vect<vect<ibset,2>,dim> all_coarse_boundary;
+          for (int dir=0; dir<3; ++dir) {
+            // Unit vector
+            ivect const idir = ivect::dir(dir);
+            for (int face=0; face<2; ++face) {
+              for (ibset::const_iterator
+                     all_fine_boundary_i = all_fine_boundary[dir][face].begin();
+                   all_fine_boundary_i != all_fine_boundary[dir][face].end();
+                   ++ all_fine_boundary_i)
+              {
+                ibbox const& fb = *all_fine_boundary_i;
+                
+                ivect const cstr = coarse_ext.stride();
+                
+                ivect const flo  = fb.lower();
+                ivect const fup  = fb.upper();
+                ivect const fstr = fb.stride();
+                
+                assert (all (h.reffacts.AT(rl) % h.reffacts.AT(orl) == 0));
+                ivect const reffact = h.reffacts.AT(rl) / h.reffacts.AT(orl);
+                assert (all (reffact % 2 == 0));
+                assert (all (fstr % 2 == 0));
+                assert (all (cstr % 2 == 0));
+                
+                ibbox const ftmp (flo + idir*(fstr/2-cstr/2),
+                                  fup + idir*(fstr/2-cstr/2),
+                                  fstr);
+                ibbox const ctmp = ftmp.contracted_for (coarse_ext);
+                
+                ivect const clo = ctmp.lower();
+                ivect const cup = ctmp.upper();
+                ibbox const cb (clo, cup, cstr);
+                
+                all_coarse_boundary[dir][face] += cb;
+              }
+            } // for face
+          }   // for dir
+          
+          
+          
+          for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+            int const c = h.get_component(rl, lc);
+            full_dboxes & box = full_level.AT(c);
+            local_dboxes & local_box = local_level.AT(lc);
+            
+            for (int dir = 0; dir < dim; ++ dir) {
+              for (int face = 0; face < 2; ++ face) {
+                
+                // This is not really used (only for debugging)
+                local_box.fine_boundary[dir][face] =
+                  box.exterior & all_fine_boundary[dir][face];
+                
+              } // for face
+            }   // for dir
+            
+          } // for lc
+          
+          for (int lc = 0; lc < h.local_components(orl); ++ lc) {
+            int const c = h.get_component(orl, lc);
+            full_dboxes const & obox = full_olevel.AT(c);
+            local_dboxes & local_obox = local_olevel.AT(lc);
+            
+            for (int dir = 0; dir < dim; ++ dir) {
+              for (int face = 0; face < 2; ++ face) {
+                
+#warning "TODO: Set up communication schedule for refluxing"
+                
+                local_obox.coarse_boundary[dir][face] =
+                  obox.exterior & all_coarse_boundary[dir][face];
+                
+              } // for face
+            }   // for dir
+            
+          } // for lc
+          
+        } // if cell centered
+        
+      } // if rl > 0
+      
+      timer_reflux.stop();
+      
+      
+      
       // Regridding schedule:
       
       fast_level.do_init = do_init;
