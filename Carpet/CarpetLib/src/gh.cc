@@ -330,6 +330,75 @@ get_local_component (int const rl, int const c)
 {
   return local_components_.AT(rl).AT(c);
 }
+  
+  
+  
+#if 0
+// Convert an index location to a coordinate location
+rvect
+gh::
+ipos2rpos (ivect const & ipos,
+           rvect const & origin, rvect const & scale,
+           int const ml, int const rl)
+  const
+{
+  return rvect(ipos) / scale + origin;
+}
+
+
+
+// Convert a coordinate location to the nearest index location,
+// rounding downwards to break ties.  For cell centring, shift
+// upwards.
+ivect
+gh::
+rpos2ipos (rvect const & rpos,
+           rvect const & origin, rvect const & scale,
+           int const ml, int const rl)
+  const
+{
+  ivect const& istride = baseextents.at(ml).at(rl).stride();
+  
+  if (refcent == cell_centered) {
+    assert (all (istride % 2 == 0));
+  }
+  
+  rvect const spos = (rpos - origin) * scale;
+  ivect const ipos =
+    refcent == vertex_centered
+    ? ivect (floor (spos / rvect(istride) + rvect(0.5))) * istride
+    : ivect (floor (spos / rvect(istride)             )) * istride + istride/2;
+  
+  return ipos;
+}
+
+
+
+// Convert a coordinate location to the nearest index location,
+// rounding upwards to break ties.  For cell centring, shift downwards
+// instead of upwards.
+ivect
+gh::
+rpos2ipos1 (rvect const & rpos,
+            rvect const & origin, rvect const & scale,
+            int const ml, int const rl)
+  const
+{
+  ivect const& istride = baseextents.at(ml).at(rl).stride();
+  
+  if (refcent == cell_centered) {
+    assert (all (istride % 2 == 0));
+  }
+  
+  rvect const spos = (rpos - origin) * scale;
+  ivect const ipos =
+    refcent == vertex_centered
+    ? ivect (ceil (spos / rvect(istride) - rvect(0.5))) * istride
+    : ivect (ceil (spos / rvect(istride)             )) * istride - istride/2;
+  
+  return ipos;
+}
+#endif
 
 
 

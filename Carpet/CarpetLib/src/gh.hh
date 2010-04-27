@@ -141,6 +141,19 @@ public:
   int get_component (int rl, int lc) const CCTK_ATTRIBUTE_PURE;
   int get_local_component (int rl, int c) const CCTK_ATTRIBUTE_PURE;
   
+#if 0
+  // Convert between index positions and coordinate positions
+  rvect ipos2rpos (ivect const & ipos,
+                   rvect const & origin, rvect const & scale,
+                   int const ml, int const rl) const;
+  ivect rpos2ipos (rvect const & rpos,
+                   rvect const & origin, rvect const & scale,
+                   int const ml, int const rl) const;
+  ivect rpos2ipos1 (rvect const & rpos,
+                    rvect const & origin, rvect const & scale,
+                    int const ml, int const rl) const;
+#endif
+  
   void locate_position (rvect const & rpos,
                         int const ml,
                         int const minrl, int const maxrl,
