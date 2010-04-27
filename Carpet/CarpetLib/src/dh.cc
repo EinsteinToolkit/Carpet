@@ -444,12 +444,7 @@ regrid (bool const do_init)
       ibbox const domain_enlarged = domain_active.expand (safedist);
       
       // All owned regions
-      ibset allowned;
-      for (int c = 0; c < h.components(rl); ++ c) {
-        full_dboxes const & box = full_level.AT(c);
-        allowned += box.owned;
-      }
-      allowned.normalize();
+      ibset const allowned (full_level, & full_dboxes::owned);
       ASSERT_rl (allowned <= domain_active,
                  "The owned regions must be contained in the active part of the domain");
       
@@ -492,14 +487,7 @@ regrid (bool const do_init)
       
       
       // The conjunction of all buffer zones must equal allbuffers
-      // cerr << "QQQ: regrid[d]" << endl;
-      
-      ibset allbuffers1;
-      for (int c = 0; c < h.components(rl); ++ c) {
-        full_dboxes const & box = full_level.AT(c);
-        allbuffers1 += box.buffers;
-      }
-      allbuffers1.normalize();
+      ibset const allbuffers1 (full_level, & full_dboxes::buffers);
       ASSERT_rl (allbuffers1 == allbuffers,
                  "Buffer zone consistency check");
       
@@ -574,17 +562,9 @@ regrid (bool const do_init)
           
           ibset needrecv = box.active;
           
-          ibset contracted_oactive;
-          for (ibset::const_iterator
-                 ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-          {
-            ibbox const & oactive = * ai;
-            contracted_oactive += oactive.contracted_for (box.interior);
-          }
-          contracted_oactive.normalize();
-          
-          ibset ovlp = needrecv & contracted_oactive;
-          ovlp.normalize();
+          ibset const contracted_oactive
+            (obox.active.contracted_for (box.interior));
+          ibset const ovlp = needrecv & contracted_oactive;
           
           for (ibset::const_iterator
                  ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -628,17 +608,8 @@ regrid (bool const do_init)
           
           i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
           
-          ibset expanded_active;
-          for (ibset::const_iterator
-                 ai = box.active.begin(); ai != box.active.end(); ++ ai)
-          {
-            ibbox const & active = * ai;
-            expanded_active += active.expanded_for (obox.interior);
-          }
-          expanded_active.normalize();
-          
-          ibset ovlp = oneedrecv & expanded_active;
-          ovlp.normalize();
+          ibset const expanded_active (box.active.expanded_for (obox.interior));
+          ibset const ovlp = oneedrecv & expanded_active;
           
           for (ibset::const_iterator
                  ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -688,19 +659,15 @@ regrid (bool const do_init)
           for (int cc = 0; cc < h.components(orl); ++ cc) {
             full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
             
-            ibset contracted_oactive;
-            for (ibset::const_iterator
-                   ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-            {
-              ibbox const & oactive = * ai;
-              // untested for cell centering
-              contracted_oactive +=
-                oactive.contracted_for (box.interior).expand (reffact);
-            }
-            contracted_oactive.normalize();
-            
-            ibset ovlp = needrecv & contracted_oactive;
-            ovlp.normalize();
+#if 0
+            // untested for cell centering
+            ibset const expanded_oactive
+              (obox.active.contracted_for (box.interior).expand (reffact));
+#else
+            ibset const expanded_oactive
+              (obox.active.expanded_for (box.interior).expand (reffact));
+#endif
+            ibset const ovlp = needrecv & expanded_oactive;
             
             for (ibset::const_iterator
                    ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -846,19 +813,15 @@ regrid (bool const do_init)
           for (int cc = 0; cc < h.components(orl); ++ cc) {
             full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
             
-            ibset contracted_oactive;
-            for (ibset::const_iterator
-                   ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-            {
-              ibbox const & oactive = * ai;
-              // untested for cell centering
-              contracted_oactive +=
-                oactive.contracted_for (box.interior).expand (reffact);
-            }
-            contracted_oactive.normalize();
-            
-            ibset ovlp = needrecv & contracted_oactive;
-            ovlp.normalize();
+#if 0
+            // untested for cell centering
+            ibset const expanded_oactive
+              (obox.active.contracted_for (box.interior).expand (reffact));
+#else
+            ibset const expanded_oactive
+              (obox.active.expanded_for (box.interior).expand (reffact));
+#endif
+            ibset const ovlp = needrecv & expanded_oactive;
             
             for (ibset::const_iterator
                    ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -917,29 +880,14 @@ regrid (bool const do_init)
             // Refinement restriction may fill all active points, and
             // must use all active points
             
-            ibset needrecv;
-            for (ibset::const_iterator
-                   ai = box.active.begin(); ai != box.active.end(); ++ ai)
-            {
-              ibbox const & active = * ai;
-              needrecv += active.contracted_for (obox0.interior);
-            }
-            needrecv.normalize();
+            ibset needrecv (box.active.contracted_for (obox0.interior));
             
             for (int cc = 0; cc < h.components(orl); ++ cc) {
               full_dboxes & obox = full_boxes.AT(ml).AT(orl).AT(cc);
               
-              ibset contracted_active;
-              for (ibset::const_iterator
-                     ai = box.active.begin(); ai != box.active.end(); ++ ai)
-              {
-                ibbox const & active = * ai;
-                contracted_active += active.contracted_for (obox0.interior);
-              }
-              contracted_active.normalize();
-              
-              ibset ovlp = obox.active & contracted_active;
-              ovlp.normalize();
+              ibset const contracted_active
+                (box.active.contracted_for (obox0.interior));
+              ibset const ovlp = obox.active & contracted_active;
               
               for (ibset::const_iterator
                      ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -1066,19 +1014,15 @@ regrid (bool const do_init)
             for (int cc = 0; cc < h.components(orl); ++ cc) {
               full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
               
-              ibset contracted_oactive;
-              for (ibset::const_iterator
-                     ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-              {
-                ibbox const & oactive = * ai;
-                // untested for cell centering
-                contracted_oactive +=
-                  oactive.contracted_for (box.interior).expand (reffact);
-              }
-              contracted_oactive.normalize();
-              
-              ibset ovlp = needrecv & contracted_oactive;
-              ovlp.normalize();
+#if 0
+              // untested for cell centering
+              ibset const expanded_oactive
+                (obox.active.contracted_for (box.interior).expand (reffact));
+#else
+              ibset const expanded_oactive
+                (obox.active.expanded_for (box.interior).expand (reffact));
+#endif
+              ibset const ovlp = needrecv & expanded_oactive;
               
               for (ibset::const_iterator
                      ri = ovlp.begin(); ri != ovlp.end(); ++ ri)

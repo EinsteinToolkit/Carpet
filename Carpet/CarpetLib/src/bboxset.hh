@@ -63,6 +63,10 @@ public:
   
   bboxset (const list<box>& lb);
   bboxset (const vector<list<box> >& vlb);
+  template<typename U>
+  bboxset (const vector<U>& vb, const bbox<T,D> U::* const v);
+  template<typename U>
+  bboxset (const vector<U>& vb, const bboxset U::* const v);
   
   static bboxset poison ();
   
@@ -132,6 +136,23 @@ public:
   bboxset operator- (const bboxset& s) const;
   // friend bboxset operator- <T,D>(const box& b, const bboxset& s);
   static bboxset minus (const box& b, const bboxset& s);
+  
+  /** Find a bbox containing the whole set.  */
+  box container () const;
+  /** Find the pseudo-inverse.  */
+  bboxset pseudo_inverse (const int n) const;
+  
+  /** Expand (enlarge) the bbox by multiples of the stride.  */
+  bboxset expand (const vect<T,D>& lo, const vect<T,D>& hi) const;
+  bboxset expand (const vect<vect<T,D>,2>& lohi) const
+  { return expand (lohi[0], lohi[1]); }
+  
+  /** Find the smallest b-compatible box around this bbox.
+      ("compatible" means having the same stride.)  */
+  bboxset expanded_for (const box& b) const;
+  
+  /** Find the largest b-compatible box inside this bbox.  */
+  bboxset contracted_for (const box& b) const;
   
   // Equality
   bool operator== (const bboxset& s) const;

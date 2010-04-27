@@ -49,7 +49,27 @@ bboxset<T,D>::bboxset (const vector<list<box> >& vlb) {
   }
 }
 
-template<class T, int D>
+template<typename T, int D>
+template<typename U>
+bboxset<T,D>::bboxset (const vector<U>& vb, const bbox<T,D> U::* const v) {
+  for (typename vector<U>::const_iterator
+         vi = vb.begin(); vi != vb.end(); ++ vi)
+  {
+    *this |= (*vi).*v;
+  }
+}
+
+template<typename T, int D>
+template<typename U>
+bboxset<T,D>::bboxset (const vector<U>& vb, const bboxset U::* const v) {
+  for (typename vector<U>::const_iterator
+         vi = vb.begin(); vi != vb.end(); ++ vi)
+  {
+    *this |= (*vi).*v;
+  }
+}
+
+template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::poison () {
   return bboxset (bbox<T,D>::poison());
 }
@@ -427,6 +447,53 @@ bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b, const bboxset<T,D>& s) {
 
 
 
+template<typename T, int D>
+typename bboxset<T,D>::box bboxset<T,D>::container () const {
+  box b;
+  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    b = b.expanded_containing(*bi);
+  }
+  return b;
+}
+
+template<typename T, int D>
+bboxset<T,D> bboxset<T,D>::pseudo_inverse (const int n) const {
+  assert (not empty());
+  box const c = container().expand(n,n);
+  return c - *this;
+}
+
+template<typename T, int D>
+bboxset<T,D> bboxset<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
+  // We don't know (yet?) how to shrink a set
+  assert (all (lo>=0 and hi>=0));
+  bboxset res;
+  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    res |= (*bi).expand(lo,hi);
+  }
+  return res;
+}
+
+template<typename T, int D>
+bboxset<T,D> bboxset<T,D>::expanded_for (const box& b) const {
+  bboxset res;
+  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    res |= (*bi).expanded_for(b);
+  }
+  return res;
+}
+
+template<typename T, int D>
+bboxset<T,D> bboxset<T,D>::contracted_for (const box& b) const {
+  bboxset res;
+  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    res |= (*bi).contracted_for(b);
+  }
+  return res;
+}
+
+
+
 // Equality
 template<typename T, int D>
 bool bboxset<T,D>::operator<= (const bboxset<T,D>& s) const {
@@ -512,3 +579,13 @@ ostream& bboxset<T,D>::output (ostream& os) const {
 
 
 template class bboxset<int,dim>;
+template size_t memoryof (const bboxset<int,dim>& s);
+template istream& operator>> (istream& is, bboxset<int,dim>& s);
+template ostream& operator<< (ostream& os, const bboxset<int,dim>& s);
+
+#include "dh.hh"
+#include "region.hh"
+
+template bboxset<int,dim>::bboxset (const vector<dh::full_dboxes>& vb, const bbox<int,dim> dh::full_dboxes::* const v);
+template bboxset<int,dim>::bboxset (const vector<dh::full_dboxes>& vb, const bboxset<int,dim> dh::full_dboxes::* const v);
+template bboxset<int,dim>::bboxset (const vector<region_t>& vb, const bbox<int,dim> region_t::* const v);
