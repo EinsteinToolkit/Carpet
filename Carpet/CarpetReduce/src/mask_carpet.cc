@@ -22,28 +22,6 @@ namespace CarpetMask {
   
   
   
-  void ibbox2iminimax (ibbox const& ext, // component extent
-                       ibbox const& box, // this bbox
-                       ivect const& lsh, // component's lsh 
-                       ivect& imin, ivect& imax)
-  {
-    ivect const izero = ivect(0);
-    
-    assert (all ((box.lower() - ext.lower()               ) >= 0));
-    assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
-    assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
-    assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
-    
-    imin = (box.lower() - ext.lower()               ) / ext.stride();
-    imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
-    
-    assert (all (izero <= imin));
-    assert (box.empty() xor all (imin <= imax));
-    assert (all (imax <= lsh));
-  }
-  
-  
-  
   /**
    * Reduce the weight on the current and the next coarser level to
    * make things consistent.  Set the weight to 0 inside the
@@ -76,86 +54,27 @@ namespace CarpetMask {
       
       
       
-      // Calculate the union of all refined regions
-      ibset active;
-      for (int c=0; c<hh.components(reflevel); ++c) {
-        // refined |= hh.extent(mglevel,reflevel,c);
-        ibset this_active;
-        dh::dboxes const& box = dd.boxes.AT(mglevel).AT(reflevel).AT(c);
-        dh::dboxes::ibboxs2ibset (box.active, box.numactive, this_active);
-        active += this_active;
-      }
-      active.normalize();
-      
-      // Calculate the union of all coarse regions
-      ibset parent;
-      for (int c=0; c<hh.components(reflevel-1); ++c) {
-        parent |= hh.extent(mglevel,reflevel-1,c)
-          .expand(ivect(reffact-1),ivect(reffact-1)).contracted_for(base);
-      }
-      parent.normalize();
-      
-      // Subtract the refined region
-      ibset notrefined = parent - active;
-      notrefined.normalize();
-      
-      // Enlarge this set
-      ibset enlarged[dim];
-      for (int d=0; d<dim; ++d) {
-        for (ibset::const_iterator
-               bi = notrefined.begin(); bi != notrefined.end(); ++bi)
-        {
-          if (hh.refcent == vertex_centered) {
-            enlarged[d] |= (*bi).expand(ivect::dir(d), ivect::dir(d));
-          } else {
-            enlarged[d] |= *bi;
-          }
-        }
-        enlarged[d].normalize();
-      }
-      
-      // Intersect with the union of refined regions
-      ibset boundaries[dim];
-      for (int d=0; d<dim; ++d) {
-        boundaries[d] = active & enlarged[d];
-        boundaries[d].normalize();
-      }
-      
-      // Subtract the boundaries from the refined region
-      ibset refined = active;
-      for (int d=0; d<dim; ++d) {
-        refined -= boundaries[d];
-      }
-      refined.normalize();
-      
-      
-      
       // Set prolongation boundaries of this level
       {
         BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
           
           DECLARE_CCTK_ARGUMENTS;
           
-          ibbox const & ext
-            = dd.boxes.at(mglevel).at(reflevel).at(component).exterior;
+          ibbox const & ext =
+            dd.light_boxes.AT(mglevel).AT(reflevel).AT(component).exterior;
+          ibset const & active = 
+            dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).active;
           
-          ibset notactive = ext - active;
-          notactive.normalize();
+          vect<ibset,dim> const & boundaries =
+            dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).prolongation_boundaries;
+          
+          ibset const notactive = ext - active;
           
           for (int d=0; d<dim; ++d) {
             assert ((notactive & boundaries[d]).empty());
           }
           
-          for (ibset::const_iterator bi = notactive.begin();
-               bi != notactive.end();
-               ++bi)
-          {
-            ibbox const& box = *bi;
-            assert (box <= ext);
-            assert (not box.empty());
-            
-            ivect imin, imax;
-            ibbox2iminimax (ext, box, ivect::ref(cctk_lsh), imin, imax);
+          LOOP_OVER_BSET (cctkGH, notactive, box, imin, imax) {
             
             if (verbose) {
               ostringstream buf;
@@ -175,41 +94,31 @@ namespace CarpetMask {
               weight[ind] = 0.0;
             } LC_ENDLOOP3(CarpetMaskSetup_buffers);
             
-          } // for box
+          } END_LOOP_OVER_BSET;
           
           for (int d=0; d<dim; ++d) {
-            for (ibset::const_iterator bi = boundaries[d].begin();
-                 bi != boundaries[d].end();
-                 ++bi)
-            {
+            LOOP_OVER_BSET (cctkGH, boundaries[d], box, imin, imax) {
               
-              ibbox const & box = (*bi) & ext;
-              if (not box.empty()) {
-                
-                ivect imin, imax;
-                ibbox2iminimax (ext, box, ivect::ref(cctk_lsh), imin, imax);
-                
-                if (verbose) {
-                  ostringstream buf;
-                  buf << "Setting prolongation boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
-                  CCTK_INFO (buf.str().c_str());
-                }
-                
-                // Set weight on the boundary to 1/2
-                assert (dim == 3);
+              if (verbose) {
+                ostringstream buf;
+                buf << "Setting prolongation boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
+                CCTK_INFO (buf.str().c_str());
+              }
+              
+              // Set weight on the boundary to 1/2
+              assert (dim == 3);
 #pragma omp parallel
-                LC_LOOP3(CarpetMaskSetup_prolongation,
-                         i,j,k,
-                         imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                         cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-                {
-                  int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                  weight[ind] *= 0.5;
-                } LC_ENDLOOP3(CarpetMaskSetup_prolongation);
-                
-              } // if box not empty
+              LC_LOOP3(CarpetMaskSetup_prolongation,
+                       i,j,k,
+                       imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+              {
+                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                weight[ind] *= 0.5;
+              } LC_ENDLOOP3(CarpetMaskSetup_prolongation);
               
-            } // for box
+              
+            } END_LOOP_OVER_BSET;
           } // for d
           
         } END_LOCAL_COMPONENT_LOOP;
@@ -231,41 +140,32 @@ namespace CarpetMask {
           
           DECLARE_CCTK_ARGUMENTS;
           
-          ibbox const & ext
-            = dd.boxes.at(mglevel).at(reflevel).at(component).exterior;
+          ibset const & refined =
+            dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).restricted_region;
+          vect<ibset,dim> const & boundaries =
+            dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).restriction_boundaries;
           
-          for (ibset::const_iterator bi = refined.begin();
-               bi != refined.end();
-               ++bi)
-          {
+          LOOP_OVER_BSET (cctkGH, refined, box, imin, imax) {
             
-            ibbox const & box = (*bi).contracted_for(ext) & ext;
-            if (not box.empty()) {
-              
-              ivect imin, imax;
-              ibbox2iminimax (ext, box, ivect::ref(cctk_lsh), imin, imax);
-              
-              if (verbose) {
-                ostringstream buf;
-                buf << "Setting restricted region on level " << reflevel << " to weight 0: " << imin << ":" << imax-ione;
-                CCTK_INFO (buf.str().c_str());
-              }
-              
-              // Set weight in the restricted region to 0
-              assert (dim == 3);
+            if (verbose) {
+              ostringstream buf;
+              buf << "Setting restricted region on level " << reflevel << " to weight 0: " << imin << ":" << imax-ione;
+              CCTK_INFO (buf.str().c_str());
+            }
+            
+            // Set weight in the restricted region to 0
+            assert (dim == 3);
 #pragma omp parallel
-              LC_LOOP3(CarpetMaskSetup_restriction,
-                       i,j,k,
-                       imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-              {
-                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                weight[ind] = 0;
-              } LC_ENDLOOP3(CarpetMaskSetup_restriction);
-              
-            } // if box not empty
-              
-          } // for box
+            LC_LOOP3(CarpetMaskSetup_restriction,
+                     i,j,k,
+                     imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+            {
+              int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+              weight[ind] = 0;
+            } LC_ENDLOOP3(CarpetMaskSetup_restriction);
+            
+          } END_LOOP_OVER_BSET;
           
           assert (dim == 3);
           vector<int> mask (cctk_lsh[0] * cctk_lsh[1] * cctk_lsh[2]);
@@ -282,41 +182,30 @@ namespace CarpetMask {
           } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_init);
           
           for (int d=0; d<dim; ++d) {
-            for (ibset::const_iterator bi = boundaries[d].begin();
-                 bi != boundaries[d].end();
-                 ++bi)
-            {
+            LOOP_OVER_BSET (cctkGH, boundaries[d], box, imin, imax) {
               
-              ibbox const & box = (*bi).contracted_for(ext) & ext;
-              if (not box.empty()) {
-                
-                ivect imin, imax;
-                ibbox2iminimax (ext, box, ivect::ref(cctk_lsh), imin, imax);
-                
-                if (verbose) {
-                  ostringstream buf;
-                  buf << "Setting restriction boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
-                  CCTK_INFO (buf.str().c_str());
-                }
-                
-                // Set weight on the boundary to 1/2
-                assert (dim == 3);
+              if (verbose) {
+                ostringstream buf;
+                buf << "Setting restriction boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
+                CCTK_INFO (buf.str().c_str());
+              }
+              
+              // Set weight on the boundary to 1/2
+              assert (dim == 3);
 #pragma omp parallel
-                LC_LOOP3(CarpetMaskSetup_restriction_boundary_partial,
-                         i,j,k,
-                         imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                         cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-                {
-                  int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                  if (mask[ind] == 0) {
-                    mask[ind] = 1;
-                  }
-                  mask[ind] *= 2;
-                } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_partial);
-                
-              } // if box not empty
+              LC_LOOP3(CarpetMaskSetup_restriction_boundary_partial,
+                       i,j,k,
+                       imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+              {
+                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                if (mask[ind] == 0) {
+                  mask[ind] = 1;
+                }
+                mask[ind] *= 2;
+              } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_partial);
               
-            } // for box
+            } END_LOOP_OVER_BSET;
           } // for d
           
           assert (dim == 3);
