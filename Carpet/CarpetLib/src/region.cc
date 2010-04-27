@@ -130,12 +130,6 @@ combine_regions (vector<region_t> const & oldregs,
       }
     }
   }
-  comps.normalize();
-  for (int f = 0; f < 2; ++ f) {
-    for (int d = 0; d < dim; ++ d) {
-      cobnds[f][d].normalize();
-    }
-  }
   
   // Reserve (generous) memory for the result
   size_t const needsize = newregs.size() + comps.setsize();

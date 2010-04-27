@@ -38,7 +38,6 @@ bboxset<T,D>::bboxset (const list<box>& lb) {
   {
     *this |= *li;
   }
-  normalize();
 }
 
 template<typename T, int D>
@@ -48,7 +47,6 @@ bboxset<T,D>::bboxset (const vector<list<box> >& vlb) {
   {
     *this |= bboxset (*vli);
   }
-  normalize();
 }
 
 template<class T, int D>
@@ -200,7 +198,8 @@ void bboxset<T,D>::normalize ()
   
   size_type const newsize = this->size();
   
-  assert (*this == oldbs);
+  // Can't use operators on *this since these would call normalize again
+  // assert (*this == oldbs);
   assert (newsize <= oldsize);
 }
 
@@ -248,6 +247,7 @@ template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::add_transfer (bboxset& s) {
   bs.splice (bs.end(), s.bs);
   assert (invariant());
+  normalize();
   return *this;
 }
 
@@ -491,6 +491,7 @@ istream& bboxset<T,D>::input (istream& is) {
     cout << "Input error while reading a bboxset<" << typestring(Tdummy) << "," << D << ">" << endl;
     throw err;
   }
+  normalize();
   return is;
 }
 

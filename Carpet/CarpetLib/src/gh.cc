@@ -161,7 +161,6 @@ regrid (rregs const & superregs, mregs const & regs, bool const do_init)
           for (int c=0; c<components(rl-1); ++c) {
             coarse += extent(ml,rl-1,c);
           }
-          coarse.normalize();
           // then check all fine grids
           for (int c=0; c<components(rl); ++c) {
             ibbox const & fine =

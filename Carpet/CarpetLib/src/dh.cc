@@ -259,8 +259,7 @@ regrid (bool const do_init)
       ASSERT_rl (domain_active <= domain_exterior,
                  "The active part of the domain must be contained in the exterior part of the domain");
       
-      ibset domain_boundary = domain_exterior - domain_active;
-      domain_boundary.normalize();
+      ibset const domain_boundary = domain_exterior - domain_active;
       
       timer_domain.stop();
       
@@ -344,7 +343,6 @@ regrid (bool const do_init)
         ghosts = ibset::poison();
         
         ghosts = extr - intr;
-        ghosts.normalize();
         
         // The ghosts must be contained in the domain.  Different from
         // the boundaries, the ghost can include part of the outer
@@ -379,7 +377,6 @@ regrid (bool const do_init)
         outer_boundaries = ibset::poison();
         
         outer_boundaries = extr - comm;
-        outer_boundaries.normalize();
         
         // The outer boundary must be contained in the outer boundary
         // of the domain
@@ -422,7 +419,6 @@ regrid (bool const do_init)
         boundaries = ibset::poison();
         
         boundaries = comm - owned;
-        boundaries.normalize();
         
         // The boundary must be contained in the active part of the
         // domain.  This prevents that a region is too close to the
@@ -458,8 +454,7 @@ regrid (bool const do_init)
                  "The owned regions must be contained in the active part of the domain");
       
       // All not-owned regions
-      ibset notowned = domain_enlarged - allowned;
-      notowned.normalize();
+      ibset const notowned = domain_enlarged - allowned;
       
       // All not-active points
       ibset notactive;
@@ -487,12 +482,11 @@ regrid (bool const do_init)
         
         // Buffer zones:
         box.buffers = box.owned & allbuffers;
-        box.buffers.normalize();
         
         // Active region:
-        box.active = box.owned - box.buffers;
-        box.active.normalize();
-        
+        box.active = box.owned  & allactive;
+        ASSERT_c (box.active == box.owned - box.buffers,
+                  "The active region must equal the owned region minus the buffer zones");
       } // for c
       
       
@@ -604,7 +598,6 @@ regrid (bool const do_init)
           }
           
           needrecv -= ovlp;
-          needrecv.normalize();
           
           // All points must have been received
           ASSERT_c (needrecv.empty(),
@@ -660,7 +653,6 @@ regrid (bool const do_init)
           }
           
           oneedrecv -= ovlp;
-          oneedrecv.normalize();
           
           // All points must have been received
           ASSERT_c (oneedrecv.empty(),
@@ -733,7 +725,6 @@ regrid (bool const do_init)
           } // for cc
           
           // All points must have been received
-          needrecv.normalize();
           ASSERT_c (needrecv.empty(),
                     "Refinement prolongation: All points must have been received");
           
@@ -777,7 +768,6 @@ regrid (bool const do_init)
 #else
             ibset ovlp = needrecv & obox.interior;
 #endif
-            ovlp.normalize();
             
             if (cc == c) {
               ASSERT_cc (ovlp.empty(),
@@ -804,7 +794,6 @@ regrid (bool const do_init)
             
           } // for cc
           
-          sync.normalize();
           
         }
         
@@ -843,9 +832,6 @@ regrid (bool const do_init)
           // Prolongation must fill what cannot be synchronised, and
           // also all buffer zones
           needrecv += box.buffers;
-          
-          needrecv.normalize();
-          ibset const needrecv_orig = needrecv;
           
           ibset & bndref = box.bndref;
           
@@ -897,11 +883,8 @@ regrid (bool const do_init)
             
           } // for cc
           
-          bndref.normalize();
-          
           // All points must now have been received, either through
           // synchronisation or through boundary prolongation
-          needrecv.normalize();
           ASSERT_c (needrecv.empty(),
                     "Synchronisation and boundary prolongation: All points must have been received");
           
@@ -980,7 +963,6 @@ regrid (bool const do_init)
             } // for cc
             
             // All points must have been received
-            needrecv.normalize();
             ASSERT_rl (needrecv.empty(),
                        "Refinement restriction: All points must have been received");
             
@@ -1033,8 +1015,7 @@ regrid (bool const do_init)
             for (int cc = 0; cc < oldcomponents; ++ cc) {
               dboxes const & obox = oldboxes.AT(ml).AT(rl).AT(cc);
               
-              ibset ovlp = needrecv & obox.owned;
-              ovlp.normalize();
+              ibset const ovlp = needrecv & obox.owned;
               
               for (ibset::const_iterator
                      ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -1055,9 +1036,7 @@ regrid (bool const do_init)
               
             } // for cc
             
-            needrecv.normalize();
-            
-          } // if not oldboxes.empty
+          } // if not old_light_boxes.empty
           
           timer_regrid_sync.stop();
           
@@ -1122,8 +1101,6 @@ regrid (bool const do_init)
               needrecv -= ovlp;
               
             } // for cc
-            
-            needrecv.normalize();
             
           } // if rl > 0
           

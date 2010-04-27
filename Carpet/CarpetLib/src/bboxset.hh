@@ -69,9 +69,11 @@ public:
   // Invariant
   bool invariant () const;
   
+private:
   // Normalisation
   void normalize ();
   
+public:
   // Accessors
   bool empty () const { return bs.empty(); }
   // T size () const;
