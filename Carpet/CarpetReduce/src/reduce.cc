@@ -1157,7 +1157,7 @@ namespace CarpetReduce {
     assert (partype == PARAMETER_INTEGER);
     int const prolongation_order_time = * (CCTK_INT const *) parptr;
     
-    CCTK_REAL const current_time = cgh->cctk_time / cgh->cctk_delta_time;
+    CCTK_REAL const current_time = cgh->cctk_time;
     
     
     
@@ -1177,7 +1177,7 @@ namespace CarpetReduce {
           
           
           // Number of necessary time levels
-          CCTK_REAL const level_time = cgh->cctk_time / cgh->cctk_delta_time;
+          CCTK_REAL const level_time = cgh->cctk_time;
           bool need_time_interp
             = (not reduce_arrays
                and (fabs(current_time - level_time)
