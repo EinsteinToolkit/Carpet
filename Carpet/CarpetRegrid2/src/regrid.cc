@@ -126,22 +126,17 @@ namespace CarpetRegrid2 {
              rvect const & origin, rvect const & scale,
              gh const & hh, int const rl)
   {
-    DECLARE_CCTK_PARAMETERS;
-    
-    ivect const istride = hh.baseextents.at(0).at(rl).stride();
-    ivect const cistride =
-      snap_to_coarse and rl > 0
-      ? hh.baseextents.at(0).at(rl-1).stride()
-      : istride;
+    ivect const istride  = hh.baseextents.at(0).at(rl).stride();
+    ivect const bistride = hh.baseextents.at(0).at(0).stride();
     
     if (hh.refcent == cell_centered) {
       assert (all (istride % 2 == 0));
     }
-
+    
     ivect const ipos =
       hh.refcent == vertex_centered
-      ? ivect (floor ((rpos - origin) * scale / rvect(cistride) + rvect(0.5)                                       )) * cistride
-      : ivect (floor ((rpos - origin) * scale / rvect(cistride) + rvect(0.5) - rvect(istride / 2) / rvect(cistride))) * cistride + istride / 2;
+      ? ivect (floor (((rpos - origin) * scale                    ) / rvect(istride) + rvect(0.5))) * istride
+      : ivect (floor (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride)             )) * istride + istride/2 + bistride/2;
     
     return ipos;
   }
@@ -154,13 +149,8 @@ namespace CarpetRegrid2 {
               rvect const & origin, rvect const & scale,
               gh const & hh, int const rl)
   {
-    DECLARE_CCTK_PARAMETERS;
-    
-    ivect const istride = hh.baseextents.at(0).at(rl).stride();
-    ivect const cistride =
-      snap_to_coarse and rl > 0
-      ? hh.baseextents.at(0).at(rl-1).stride()
-      : istride;
+    ivect const istride  = hh.baseextents.at(0).at(rl).stride();
+    ivect const bistride = hh.baseextents.at(0).at(0).stride();
     
     if (hh.refcent == cell_centered) {
       assert (all (istride % 2 == 0));
@@ -168,8 +158,8 @@ namespace CarpetRegrid2 {
     
     ivect const ipos =
       hh.refcent == vertex_centered
-      ? ivect (ceil ((rpos - origin) * scale / rvect(cistride) - rvect(0.5)                                       )) * cistride
-      : ivect (ceil ((rpos - origin) * scale / rvect(cistride) - rvect(0.5) + rvect(istride / 2) / rvect(cistride))) * cistride - istride / 2;
+      ? ivect (ceil (((rpos - origin) * scale                    ) / rvect(istride) - rvect(0.5))) * istride
+      : ivect (ceil (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride)             )) * istride - istride/2 + bistride/2;
     
     return ipos;
   }
@@ -193,6 +183,31 @@ namespace CarpetRegrid2 {
     return rbbox (ipos2rpos (ib.lower() , origin, scale, hh, rl),
                   ipos2rpos (ib.upper() , origin, scale, hh, rl),
                   ipos2rpos (ib.stride(), zero  , scale, hh, rl));
+  }
+  
+  // Snap (enlarge) a bbox to the next coarser level, if desired
+  ibbox
+  snap_ibbox (ibbox const & ib,
+              gh const & hh, int const rl)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    assert (not ib.empty());
+    assert (rl > 0);
+    
+    if (not snap_to_coarse) return ib;
+    
+    ibbox const & base  = hh.baseextents.at(0).at(rl);
+    ibbox const & cbase = hh.baseextents.at(0).at(rl-1);
+    assert (all (cbase.stride() % base.stride() == 0));
+    ivect const reffact = cbase.stride() / base.stride();
+    
+    ivect const lo  = ib.lower();
+    ivect const up  = ib.upper();
+    ivect const str = ib.stride();
+    assert (all (str == base.stride()));
+    
+    return ib.expand(reffact-1).contracted_for(cbase).expanded_for(base);
   }
   
   
@@ -309,7 +324,7 @@ namespace CarpetRegrid2 {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    if (verbose) CCTK_INFO ("Regridding");
+    if (verbose or veryverbose) CCTK_INFO ("Regridding");
     
     assert (is_singlemap_mode());
     gh const & hh = * vhh.at (Carpet::map);
@@ -381,7 +396,7 @@ namespace CarpetRegrid2 {
         if (is_active and in_sync) break;
         ++ min_rl;
       }
-      if (verbose) {
+      if (verbose or veryverbose) {
         CCTK_VInfo (CCTK_THORNSTRING, "Regridding levels %d and up", min_rl);
       }
     }
@@ -415,12 +430,17 @@ namespace CarpetRegrid2 {
     
     // Set up coarse levels
     for (int rl = 0; rl < min_rl; ++ rl) {
+      if (veryverbose) {
+        cout << "Refinement level " << rl << ": will not be changed" << endl;
+      }
       for (size_t c = 0; c < regss.at(rl).size(); ++ c) {
         regions.at(rl) += regss.at(rl).at(c).extent;
       }
-      regions.at(rl).normalize();
+      if (veryverbose) {
+        cout << "Refinement level " << rl << ": regions are " << regions.at(rl) << endl;
+      }
     }
-    
+
     // Refine only patch 0
     if (Carpet::map == 0) {
       // Loop over all centres
@@ -430,6 +450,10 @@ namespace CarpetRegrid2 {
           
           // Loop over all levels for this centre
           for (int rl = min_rl; rl < centre.num_levels; ++ rl) {
+            
+            if (veryverbose) {
+              cout << "Refinement level " << rl << ": importing refined region settings..." << endl;
+            }
             
             // Calculate a bbox for this region
             rvect const rmin = centre.position - centre.radius.at(rl);
@@ -444,14 +468,18 @@ namespace CarpetRegrid2 {
               rpos2ipos1 (rmax, origin, scale, hh, rl)
               + boundary_shiftout * istride;
             
-            ibbox const region (imin, imax, istride);
+            ibbox const region =
+              snap_ibbox (ibbox (imin, imax, istride), hh, rl);
             
             // Add this region to the list of regions
             if (static_cast <int> (regions.size()) < rl+1) {
               regions.resize (rl+1);
             }
             regions.at(rl) |= region;
-            regions.at(rl).normalize();
+            
+            if (veryverbose) {
+              cout << "Refinement level " << rl << ": preliminary regions are " << regions.at(rl) << endl;
+            }
             
           } // for rl
           
@@ -477,8 +505,20 @@ namespace CarpetRegrid2 {
       if (ensure_proper_nesting) {
         if (rl < int(regions.size()) - 1) {
           
+          if (veryverbose) {
+            cout << "Refinement level " << rl << ": ensuring proper nesting..." << endl;
+          }
+          
           assert (not regions.at(rl).empty());
           ibbox const coarse0 = * regions.at(rl).begin();
+          
+          // This is the location of the outermost grid points.  For
+          // cell centring, these are 1/2 grid spacing inside of the
+          // boundary.
+          ivect const level_physical_ilower =
+            rpos2ipos (physical_lower, origin, scale, hh, rl);
+          ivect const level_physical_iupper =
+            rpos2ipos1 (physical_upper, origin, scale, hh, rl);
           
           i2vect const fdistance = dd.ghost_widths.at(rl);
           i2vect const cdistance =
@@ -490,8 +530,8 @@ namespace CarpetRegrid2 {
           {
             ibbox const & fbb = * ibb;
             
-            bvect const lower_is_outer = fbb.lower() <= physical_ilower;
-            bvect const upper_is_outer = fbb.upper() >= physical_iupper;
+            bvect const lower_is_outer = fbb.lower() <= level_physical_ilower;
+            bvect const upper_is_outer = fbb.upper() >= level_physical_iupper;
             b2vect const ob (lower_is_outer, upper_is_outer);
             
             ibbox const ebb = fbb.expand (i2vect (not ob) * fdistance);
@@ -499,10 +539,12 @@ namespace CarpetRegrid2 {
             ibbox const ecbb = cbb.expand (i2vect (not ob) * cdistance);
             
             // Enlarge this level
-            regions.at(rl) |= ecbb;
+            regions.at(rl) |= snap_ibbox (ecbb, hh, rl);
           }
           
-          regions.at(rl).normalize();
+          if (veryverbose) {
+            cout << "Refinement level " << rl << ": enlarged regions to " << regions.at(rl) << endl;
+          }
           
         }
       } // if ensure proper nesting
@@ -513,6 +555,10 @@ namespace CarpetRegrid2 {
       // Add buffer zones
       //
       {
+        if (veryverbose) {
+          cout << "Refinement level " << rl << ": adding buffer zones..." << endl;
+        }
+
         ibboxset buffered;
         for (ibboxset::const_iterator ibb = regions.at(rl).begin();
              ibb != regions.at(rl).end();
@@ -520,19 +566,15 @@ namespace CarpetRegrid2 {
         {
           ibbox const & bb = * ibb;
           
-          // bvect const lower_is_outer = bb.lower() <= physical_ilower;
-          // bvect const upper_is_outer = bb.upper() >= physical_iupper;
-          // 
-          // b2vect const ob (lower_is_outer, upper_is_outer);
-          // 
-          // ibbox const bbb = bb.expand (i2vect (not ob) * dd.buffer_width);
-          
           ibbox const bbb = bb.expand (dd.buffer_widths.at(rl));
 
           buffered |= bbb;
         }
         regions.at(rl) = buffered;
-        regions.at(rl).normalize();
+        
+        if (veryverbose) {
+          cout << "Refinement level " << rl << ": enlarged regions to " << regions.at(rl) << endl;
+        }
       }
       
       
@@ -545,6 +587,10 @@ namespace CarpetRegrid2 {
       //
       // TODO: Check after clipping
       {
+        if (veryverbose) {
+          cout << "Refinement level " << rl << ": checking whether regions should be combined..." << endl;
+        }
+
         ibbox single;
         for (ibboxset::const_iterator ibb = regions.at(rl).begin();
              ibb != regions.at(rl).end();
@@ -563,15 +609,30 @@ namespace CarpetRegrid2 {
         if (regions_size >= min_fraction * single_size) {
           // Combine the boxes
           regions.at(rl) = ibboxset (single);
+          if (veryverbose) {
+            cout << "Refinement level " << rl << ": combining regions to " << regions.at(rl) << endl;
+          }
+        } else {
+          if (veryverbose) {
+            cout << "Refinement level " << rl << ": not combining" << endl;
+          }
         }
       }
       
       
       
       // Find the location of the outer boundary
+      if (veryverbose) {
+        cout << "Refinement level " << rl << ": determining outer boundary..." << endl;
+      }
+      
       rvect const level_physical_lower = physical_lower;
       rvect const level_physical_upper = physical_upper;
       rvect const level_spacing = spacing / rvect (hh.reffacts.at(rl));
+      if (veryverbose) {
+        cout << "Refinement level " << rl << ": physical coordinate boundary is at " << r2vect(level_physical_lower, level_physical_upper) << endl;
+        cout << "Refinement level " << rl << ": spacing is " << level_spacing << endl;
+      }
 #if 0
       rvect level_interior_lower, level_interior_upper;
       rvect level_exterior_lower, level_exterior_upper;
@@ -590,9 +651,28 @@ namespace CarpetRegrid2 {
       calculate_exterior_boundary (level_physical_lower, level_physical_upper,
                                    level_exterior_lower, level_exterior_upper,
                                    level_spacing);
+      if (veryverbose) {
+        cout << "Refinement level " << rl << ": exterior coordinate boundary is at " << r2vect(level_exterior_lower, level_exterior_upper) << endl;
+      }
       
       ibbox const & baseextent = hh.baseextents.at(0).at(rl);
       ivect const istride = baseextent.stride();
+      if (veryverbose) {
+        cout << "Refinement level " << rl << ": stride is " << istride << endl;
+      }
+      
+      // This is the location of the outermost grid points.  For cell
+      // centring, these are 1/2 grid spacing inside of the boundary.
+      ivect const level_physical_ilower =
+        rpos2ipos (physical_lower, origin, scale, hh, rl);
+      ivect const level_physical_iupper =
+        rpos2ipos1 (physical_upper, origin, scale, hh, rl);
+      if (veryverbose) {
+        cout << "Refinement level " << rl << ": physical boundary is at " << i2vect(level_physical_ilower, level_physical_iupper) << endl;
+        cout << "Refinement level " << rl << ": reconstructed physical coordinate boundary is at "
+             << r2vect(ipos2rpos(level_physical_ilower - (hh.refcent == cell_centered ? istride/2 : 0), origin, scale, hh, rl),
+                       ipos2rpos(level_physical_iupper + (hh.refcent == cell_centered ? istride/2 : 0), origin, scale, hh, rl)) << endl;
+      }
       
       ivect const level_exterior_ilower =
         rpos2ipos (level_exterior_lower, origin, scale, hh, rl);
@@ -600,6 +680,12 @@ namespace CarpetRegrid2 {
         rpos2ipos1 (level_exterior_upper, origin, scale, hh, rl);
       assert (all (level_exterior_ilower >= baseextent.lower()));
       assert (all (level_exterior_iupper <= baseextent.upper()));
+      if (veryverbose) {
+        cout << "Refinement level " << rl << ": exterior boundary is at " << i2vect(level_exterior_ilower, level_exterior_iupper) << endl;
+        cout << "Refinement level " << rl << ": reconstructed exterior coordinate boundary is at "
+             << r2vect(ipos2rpos(level_exterior_ilower, origin, scale, hh, rl),
+                       ipos2rpos(level_exterior_iupper, origin, scale, hh, rl)) << endl;
+      }
       
       // Find the minimum necessary distance away from the outer
       // boundary due to buffer and ghost zones.  This is e.g. the
@@ -619,18 +705,28 @@ namespace CarpetRegrid2 {
       // Make the boxes rotating-90 symmetric
       //
       if (symmetry_rotating90) {
+        if (veryverbose) {
+          cout << "Refinement level " << rl << ": making regions rotating-90 symmetric" << endl;
+        }
+        
         ibboxset added;
         for (ibboxset::const_iterator ibb = regions.at(rl).begin();
              ibb != regions.at(rl).end();
              ++ ibb)
         {
           ibbox const & bb = * ibb;
+          if (veryverbose) {
+            cout << "   considering box " << bb << "..." << endl;
+          }
           
           bvect const lower_is_outside_lower =
-            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= physical_ilower;
+            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= level_physical_ilower;
           
           // Treat both x and y directions
           for (int dir=0; dir<=1; ++dir) {
+            if (veryverbose) {
+              cout << "   symmetrising in " << "xy"[dir] << " direction..." << endl;
+            }
             if (lower_is_outside_lower[dir]) {
               ivect const ilo = bb.lower();
               ivect const iup = bb.upper();
@@ -640,9 +736,11 @@ namespace CarpetRegrid2 {
               rvect const axis (physical_lower[0],
                                 physical_lower[1],
                                 physical_lower[2]); // z component is unused
-              ivect const iaxis0 = rpos2ipos  (axis, origin, scale, hh, rl);
+              ivect const iaxis0 =
+                rpos2ipos (axis, origin, scale, hh, rl);
               assert (all (iaxis0 % istr == 0));
-              ivect const iaxis1 = rpos2ipos1 (axis, origin, scale, hh, rl);
+              ivect const iaxis1 =
+                rpos2ipos1 (axis, origin, scale, hh, rl);
               assert (all (iaxis1 % istr == 0));
               ivect const offset = iaxis1 - iaxis0;
               assert (all (offset % istr == 0));
@@ -674,13 +772,18 @@ namespace CarpetRegrid2 {
               //assert (new_bb.is_contained_in (baseextent));
               
               added |= new_bb;
+              if (veryverbose) {
+                cout << "      adding box " << new_bb << endl;
+              }
             }
           }
         }
           
         regions.at(rl) |= added;
-        regions.at(rl).normalize();
         
+        if (veryverbose) {
+          cout << "Refinement level " << rl << ": symmetrised regions are " << regions.at(rl) << endl;
+        }
       }
       
       
@@ -689,6 +792,9 @@ namespace CarpetRegrid2 {
       // Make the boxes rotating-180 symmetric
       //
       if (symmetry_rotating180) {
+        if (veryverbose) {
+          cout << "Refinement level " << rl << ": making regions rotating-180 symmetric" << endl;
+        }
         
         ibboxset added;
         for (ibboxset::const_iterator ibb = regions.at(rl).begin();
@@ -696,12 +802,18 @@ namespace CarpetRegrid2 {
              ++ ibb)
         {
           ibbox const & bb = * ibb;
+          if (veryverbose) {
+            cout << "   considering box " << bb << "..." << endl;
+          }
           
           bvect const lower_is_outside_lower =
-            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= physical_ilower;
+            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= level_physical_ilower;
           
           // Treat x direction
           int const dir = 0;
+          if (veryverbose) {
+            cout << "   symmetrising in " << "x"[dir] << " direction..." << endl;
+          }
           if (lower_is_outside_lower[dir]) {
             ivect const ilo = bb.lower();
             ivect const iup = bb.upper();
@@ -713,9 +825,11 @@ namespace CarpetRegrid2 {
             rvect const axis (physical_lower[0],
                               (physical_lower[1] + physical_upper[1]) / 2,
                               physical_lower[2]); // z component is unused
-            ivect const iaxis0 = rpos2ipos  (axis, origin, scale, hh, rl);
+            ivect const iaxis0 =
+              rpos2ipos (axis, origin, scale, hh, rl);
             assert (all ((iaxis0 - baseextent.lower()) % istr == 0));
-            ivect const iaxis1 = rpos2ipos1 (axis, origin, scale, hh, rl);
+            ivect const iaxis1 =
+              rpos2ipos1 (axis, origin, scale, hh, rl);
             assert (all ((iaxis1 - baseextent.lower()) % istr == 0));
             ivect const offset = iaxis1 - iaxis0;
             assert (all (offset % istr == 0));
@@ -744,12 +858,17 @@ namespace CarpetRegrid2 {
             //assert (new_bb.is_contained_in (baseextent));
             
             added |= new_bb;
+            if (veryverbose) {
+              cout << "      adding box " << new_bb << endl;
+            }
           }
         }
         
         regions.at(rl) |= added;
-        regions.at(rl).normalize();
         
+        if (veryverbose) {
+          cout << "Refinement level " << rl << ": symmetrised regions are " << regions.at(rl) << endl;
+        }
       } // if symmetry_rotating180
       
       
@@ -758,32 +877,39 @@ namespace CarpetRegrid2 {
       // Clip at the outer boundary
       //
       {
+        if (veryverbose) {
+          cout << "Refinement level " << rl << ": clipping at outer boundary..." << endl;
+        }
+        
         ibboxset clipped;
         for (ibboxset::const_iterator ibb = regions.at(rl).begin();
              ibb != regions.at(rl).end();
              ++ ibb)
         {
           ibbox const & bb = * ibb;
+          if (veryverbose) {
+            cout << "   considering box " << bb << "..." << endl;
+          }
           
           // Clip boxes that extend outside the boundary.  Enlarge
           // boxes that are inside but too close to the outer
           // boundary.
           bvect const lower_is_outside_lower =
-            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= physical_ilower;
+            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= level_physical_ilower;
           // Remove bboxes that are completely outside.
           bvect const upper_is_outside_lower =
-            bb.upper() < physical_ilower;
+            bb.upper() < level_physical_ilower;
           // Enlarge bboxes that extend not far enough inwards.
           bvect const upper_is_almost_outside_lower =
-            bb.upper() < physical_ilower + min_bnd_dist_incl[0] * bb.stride();
+            bb.upper() < level_physical_ilower + min_bnd_dist_incl[0] * bb.stride();
           
           // Ditto for the upper boundary.
           bvect const upper_is_outside_upper =
-            bb.upper() + min_bnd_dist_away[1] * bb.stride() >= physical_iupper;
+            bb.upper() + min_bnd_dist_away[1] * bb.stride() >= level_physical_iupper;
           bvect const lower_is_outside_upper =
-            bb.lower() > physical_iupper;
+            bb.lower() > level_physical_iupper;
           bvect const lower_is_almost_outside_upper =
-            bb.lower() > physical_iupper - min_bnd_dist_incl[1] * bb.stride();
+            bb.lower() > level_physical_iupper - min_bnd_dist_incl[1] * bb.stride();
           
           assert (not any (lower_is_almost_outside_upper and
                            lower_is_outside_lower));
@@ -792,6 +918,9 @@ namespace CarpetRegrid2 {
           
           if (any (upper_is_outside_lower or lower_is_outside_upper)) {
             // The box is completely outside.  Ignore it.
+            if (veryverbose) {
+              cout << "      box is completely outside; dropping it" << endl;
+            }
             continue;
           }
           
@@ -806,8 +935,8 @@ namespace CarpetRegrid2 {
                 << "  lower_is_outside_lower=" << lower_is_outside_lower
                 << "  upper_is_outside_upper=" << upper_is_outside_upper
                 << "  boundary_staggering_mismatch=" << boundary_staggering_mismatch
-                << "  physical_ilower=" << physical_ilower
-                << "  physical_iupper=" << physical_iupper
+                << "  level_physical_ilower=" << level_physical_ilower
+                << "  level_physical_iupper=" << level_physical_iupper
                 << "  baseextent=" << baseextent;
             CCTK_WARN (CCTK_WARN_ABORT, msg.str().c_str());
           }
@@ -816,13 +945,13 @@ namespace CarpetRegrid2 {
             (either (lower_is_outside_lower,
                      level_exterior_ilower,
                      either (lower_is_almost_outside_upper,
-                             (physical_iupper -
+                             (level_physical_iupper -
                               min_bnd_dist_incl[1] * bb.stride()),
                              bb.lower())),
              either (upper_is_outside_upper,
                      level_exterior_iupper,
                      either (upper_is_almost_outside_lower,
-                             (physical_ilower +
+                             (level_physical_ilower +
                               min_bnd_dist_incl[0] * bb.stride()),
                              bb.upper())),
              bb.stride());
@@ -837,19 +966,24 @@ namespace CarpetRegrid2 {
                 << "  upper_is_almost_outside_lower=" << upper_is_almost_outside_lower
                 << "  level_exterior_ilower=" << level_exterior_ilower
                 << "  level_exterior_iupper=" << level_exterior_iupper
-                << "  physical_ilower=" << physical_ilower
-                << "  physical_iupper=" << physical_iupper
+                << "  level_physical_ilower=" << level_physical_ilower
+                << "  level_physical_iupper=" << level_physical_iupper
                 << "  baseextent=" << baseextent;
             CCTK_WARN (CCTK_WARN_ABORT, msg.str().c_str());
           }
           assert (clipped_bb.is_contained_in (baseextent));
           
           clipped |= clipped_bb;
+          if (veryverbose) {
+            cout << "      Clipped box is " << clipped_bb << endl;
+          }
           
         } // for ibb
         
         regions.at(rl) = clipped;
-        regions.at(rl).normalize();
+        if (veryverbose) {
+          cout << "Refinement level " << rl << ": clipped regions are " << regions.at(rl) << endl;
+        }
       }
       
       
@@ -874,8 +1008,8 @@ namespace CarpetRegrid2 {
           ibbox const & bb = * ibb;
           assert (bb.is_contained_in (hh.baseextents.at(0).at(rl)));
           
-          bvect const lower_is_outer = bb.lower() <= physical_ilower;
-          bvect const upper_is_outer = bb.upper() >= physical_iupper;
+          bvect const lower_is_outer = bb.lower() <= level_physical_ilower;
+          bvect const upper_is_outer = bb.upper() >= level_physical_iupper;
           
           b2vect const ob (lower_is_outer, upper_is_outer);
           
@@ -899,6 +1033,13 @@ namespace CarpetRegrid2 {
       assert (not regions.at(rl-1).empty());
       ibbox const coarse0 = * regions.at(rl-1).begin();
       
+      // This is the location of the outermost grid points.  For cell
+      // centring, these are 1/2 grid spacing inside of the boundary.
+      ivect const level_physical_ilower =
+        rpos2ipos (physical_lower, origin, scale, hh, rl);
+      ivect const level_physical_iupper =
+        rpos2ipos1 (physical_upper, origin, scale, hh, rl);
+      
       i2vect const fdistance = dd.ghost_widths.at(rl);
       i2vect const cdistance =
         i2vect (min_distance + dd.prolongation_stencil_size(rl));
@@ -911,8 +1052,8 @@ namespace CarpetRegrid2 {
       {
         ibbox const & fbb = * ibb;
         
-        bvect const lower_is_outer = fbb.lower() <= physical_ilower;
-        bvect const upper_is_outer = fbb.upper() >= physical_iupper;
+        bvect const lower_is_outer = fbb.lower() <= level_physical_ilower;
+        bvect const upper_is_outer = fbb.upper() >= level_physical_iupper;
         b2vect const ob (lower_is_outer, upper_is_outer);
         
         ibbox const cbb = fbb.expanded_for (coarse0);
@@ -969,7 +1110,7 @@ namespace CarpetRegrid2 {
       }
     }
     
-    if (verbose) {
+    if (verbose or veryverbose) {
       if (do_recompose) {
         for (int n = 0; n < num_centres; ++ n) {
           if (active[n]) {
@@ -1051,7 +1192,7 @@ namespace CarpetRegrid2 {
         if (do_recompose) break;
         
       } // for n
-      if (verbose) {
+      if (verbose or veryverbose) {
         if (not do_recompose) {
           CCTK_INFO
             ("Refined regions have not changed sufficiently; skipping regridding");
@@ -1141,7 +1282,7 @@ namespace CarpetRegrid2 {
       }
     }
     
-    if (verbose) {
+    if (verbose or veryverbose) {
       if (do_recompose) {
         for (int n = 0; n < num_centres; ++ n) {
           if (active[n]) {
@@ -1223,7 +1364,7 @@ namespace CarpetRegrid2 {
         if (do_recompose) break;
         
       } // for n
-      if (verbose) {
+      if (verbose or veryverbose) {
         if (not do_recompose) {
           CCTK_INFO
             ("Refined regions have not changed sufficiently; skipping regridding");
