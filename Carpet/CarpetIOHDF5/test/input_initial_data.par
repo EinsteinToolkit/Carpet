@@ -41,7 +41,7 @@ Time::dtfac = 0.25
 
 MoL::ODE_Method = "ICN"
 
-IO::out_dir       = $parfilename
+IO::out_dir       = $parfile
 IO::out_fileinfo  = "none"
 IO::parfile_write = "no"
 IO::out_every     = 1
