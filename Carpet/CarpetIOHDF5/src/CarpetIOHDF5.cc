@@ -363,6 +363,12 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
                "'proc'. Ignoring setting for IO::out_unchunked...");
   }
 
+  if (output_index && CCTK_EQUALS (out_mode, "onefile"))
+    CCTK_VWarn (CCTK_WARN_COMPLAIN, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "CarpetIOHDF5::output_index with IO::out_mode = '%s' is not implemented in %s. "
+                "Index will not be output",
+                out_mode, CCTK_THORNSTRING);
+
   // Now set hdf5 complex datatypes
   HDF5_ERROR (myGH->HDF5_COMPLEX =
               H5Tcreate (H5T_COMPOUND, sizeof (CCTK_COMPLEX)));
@@ -680,7 +686,12 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     snprintf (buffer, sizeof (buffer), ".file_%d", ioproc);
     filename.append (buffer);
   }
+
+  string base_filename(filename);
   filename.append (out_extension);
+
+  string index_filename(base_filename + ".idx" + out_extension);
+
   const char* const c_filename = filename.c_str();
 
   // check if the file has been created already
@@ -737,6 +748,7 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
 
   // Open the output file if this is a designated I/O processor
   hid_t file = -1;
+  hid_t index_file = -1;
   CCTK_REAL io_files = 0;
   CCTK_REAL io_bytes = 0;
   BeginTimingIO (cctkGH);
@@ -751,11 +763,23 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     if (is_new_file) {
       HDF5_ERROR (file = H5Fcreate (c_filename, H5F_ACC_TRUNC, H5P_DEFAULT,
                                     H5P_DEFAULT));
+      if (output_index) {
+        HDF5_ERROR (index_file = H5Fcreate (index_filename.c_str(),
+                                            H5F_ACC_TRUNC, H5P_DEFAULT,
+                                            H5P_DEFAULT));
+      }
       // write metadata information
       error_count +=
         WriteMetadata (cctkGH, nioprocs, firstvar, numvars, false, file);
+
+      if (output_index) {
+        error_count +=
+          WriteMetadata (cctkGH, nioprocs, firstvar, numvars, false, index_file);
+      }
     } else {
       HDF5_ERROR (file = H5Fopen (c_filename, H5F_ACC_RDWR, H5P_DEFAULT));
+      if (output_index)
+        HDF5_ERROR (index_file = H5Fopen (index_filename.c_str(), H5F_ACC_RDWR, H5P_DEFAULT));
     }
     io_files += 1;
   }
@@ -781,7 +805,7 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     } else if (CCTK_EQUALS (out_mode, "onefile")) {
       error_count += WriteVarChunkedSequential (cctkGH, file, io_bytes, r, false);
     } else {
-      error_count += WriteVarChunkedParallel (cctkGH, file, io_bytes, r, false);
+      error_count += WriteVarChunkedParallel (cctkGH, file, io_bytes, r, false, index_file);
     }
     if (r != myGH->requests[var]) IOUtil_FreeIORequest (&r);
 
@@ -797,6 +821,8 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
   // Close the file
   if (file >= 0) {
     HDF5_ERROR (H5Fclose (file));
+    if (output_index)
+      HDF5_ERROR (H5Fclose (index_file));
   }
   {
     CCTK_REAL local[2], global[2];

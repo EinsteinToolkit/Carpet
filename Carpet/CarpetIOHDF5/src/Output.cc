@@ -24,7 +24,7 @@ using namespace Carpet;
 static int AddAttributes (const cGH *const cctkGH, const char *fullname,
                           int vdim, int refinementlevel,
                           const ioRequest* const request,
-                          const ibbox& bbox, hid_t dataset);
+                          const ibbox& bbox, hid_t dataset, bool is_index = false);
 
 
 int WriteVarUnchunked (const cGH* const cctkGH,
@@ -451,7 +451,8 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
                              hid_t outfile,
                              CCTK_REAL & io_bytes,
                              const ioRequest* const request,
-                             bool called_from_checkpoint)
+                             bool called_from_checkpoint,
+                             hid_t indexfile)
 {
   DECLARE_CCTK_PARAMETERS;
 
@@ -547,20 +548,24 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       if (request->check_exist) {
         H5E_BEGIN_TRY {
           H5Gunlink (outfile, datasetname.str().c_str());
+          if (indexfile != -1)
+            H5Gunlink (indexfile, datasetname.str().c_str());
         } H5E_END_TRY;
       }
 
       // Get the shape of the HDF5 dataset (in Fortran index order)
       hsize_t shape[dim];
+      hsize_t index_shape[dim];
       hssize_t origin[dim];
       for (int d = 0; d < group.dim; ++d) {
         assert (group.dim-1-d>=0 and group.dim-1-d<dim);
         origin[group.dim-1-d] = (bbox.lower() / bbox.stride())[d];
         shape[group.dim-1-d]  = (bbox.shape() / bbox.stride())[d];
+        index_shape[group.dim-1-d]  = 1;
       }
 
       // Write the component as an individual dataset
-      hid_t plist, dataspace, dataset;
+      hid_t plist, dataspace, dataset, index_dataspace, index_dataset;
       HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
       // enable compression if requested
       const int compression_lvl = request->compression_level >= 0 ?
@@ -578,6 +583,14 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
       HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
                                        filedatatype, dataspace, plist));
+
+      if (indexfile != -1) {
+        HDF5_ERROR (index_dataspace = H5Screate_simple (group.dim,
+                                                        index_shape, NULL));
+        HDF5_ERROR (index_dataset = H5Dcreate (indexfile, datasetname.str().c_str(),
+                                               filedatatype, index_dataspace, H5P_DEFAULT));
+      }
+
       io_bytes +=
         H5Sget_simple_extent_npoints (dataspace) * H5Tget_size (filedatatype);
       HDF5_ERROR (H5Pclose (plist));
@@ -587,6 +600,13 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       error_count += AddAttributes (cctkGH, fullname, group.dim,refinementlevel,
                                     request, bbox, dataset);
       HDF5_ERROR (H5Dclose (dataset));
+
+      if (indexfile != -1) {
+        HDF5_ERROR (H5Sclose (index_dataspace));
+        error_count += AddAttributes (cctkGH, fullname, group.dim,refinementlevel,
+                                      request, bbox, index_dataset, true);
+        HDF5_ERROR (H5Dclose (index_dataset));
+      }
 
       if (data != mydata) free (data);
 
@@ -604,7 +624,7 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
 static int AddAttributes (const cGH *const cctkGH, const char *fullname,
                           int vdim, int refinementlevel,
                           const ioRequest* request,
-                          const ibbox& bbox, hid_t dataset)
+                          const ibbox& bbox, hid_t dataset, bool is_index)
 {
   assert (vdim>=0 and vdim<=dim);
   int error_count = 0;
@@ -748,6 +768,19 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
                                 dataspace, H5P_DEFAULT));
   HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &iorigin[0]));
   HDF5_ERROR (H5Aclose (attr));
+
+  hsize_t shape[vdim];
+  for (int d = 0; d < vdim; ++d) {
+    assert (vdim-1-d>=0 and vdim-1-d<vdim);
+    shape[vdim-1-d]  = (bbox.shape() / bbox.stride())[d];
+  }
+
+  if (is_index) {
+    HDF5_ERROR (attr = H5Acreate (dataset, "h5shape", H5T_NATIVE_HSIZE,
+                                  dataspace, H5P_DEFAULT));
+    HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_HSIZE, &shape[0]));
+    HDF5_ERROR (H5Aclose (attr));
+  }
 
   HDF5_ERROR (H5Sclose (dataspace));
 

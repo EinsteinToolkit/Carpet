@@ -124,7 +124,8 @@ namespace CarpetIOHDF5
                                hid_t file,
                                CCTK_REAL & io_bytes,
                                const ioRequest* const request,
-                               bool called_from_checkpoint);
+                               bool called_from_checkpoint,
+                               hid_t index = -1);
 
   int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
                      int const firstvar, int const numvars,
