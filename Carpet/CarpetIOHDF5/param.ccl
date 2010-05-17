@@ -424,3 +424,7 @@ INT compression_level "Compression level to use for writing HDF5 data" STEERABLE
 BOOLEAN use_checksums "Use checksums for the HDF5 data" STEERABLE = ALWAYS
 {
 } "no"
+
+BOOLEAN output_index "Output an index file for each output file" STEERABLE = ALWAYS
+{
+} "no"
