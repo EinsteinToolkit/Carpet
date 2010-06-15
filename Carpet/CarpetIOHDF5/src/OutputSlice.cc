@@ -686,14 +686,14 @@ namespace CarpetIOHDF5 {
       const char* const filename = filenamestr.c_str();
 
       // Open the file
-      bool file_exists = not is_new_file;
-      if (is_new_file and not IO_TruncateOutputFiles(cctkGH)) {
+      bool file_exists = false;
+      if (not truncate_file) {
         H5E_BEGIN_TRY {
           file_exists = H5Fis_hdf5(filename) > 0;
         } H5E_END_TRY;
       }
 
-      if (is_new_file or not file_exists) {
+      if (truncate_file or not file_exists) {
         HDF5_ERROR(file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT,
                                     H5P_DEFAULT));
         // write metadata information
