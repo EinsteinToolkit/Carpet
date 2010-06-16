@@ -1,0 +1,9 @@
+TEST staggered
+{
+  NPROCS 1
+}
+
+TEST nonstaggered
+{
+  NPROCS 1
+}
