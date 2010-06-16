@@ -1244,6 +1244,7 @@ namespace CarpetIOHDF5 {
               delta[d] = (coord_upper[dirs[d]] - coord_lower[dirs[d]]) /
                          (gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]]) * gfext.stride()[dirs[d]];
               origin[d] += (org1[dirs[d]] - gfext.lower()[dirs[d]]) * delta[d];
+              iorigin[d] /= gfext.stride()[dirs[d]];
             }
           }
 
