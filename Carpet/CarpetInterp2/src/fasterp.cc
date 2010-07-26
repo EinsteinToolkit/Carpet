@@ -1033,6 +1033,10 @@ namespace CarpetInterp2 {
     if (verbose) CCTK_VInfo (CCTK_THORNSTRING,
                              "Interpolating %d variables", int(nvars));
     assert (values.size() == nvars);
+
+    if (nvars == 0)
+      return;
+
     for (size_t v=0; v<values.size(); ++v) {
       int const vi = varinds.AT(v);
       assert (vi >= 0 and vi <= CCTK_NumVars());
