@@ -1625,7 +1625,7 @@ namespace Carpet {
     
     // Deactivate some processors if there are too many
     int nprocs;
-    if (min_points_per_proc < 0) {
+    if (min_points_per_proc == 0) {
       nprocs = real_nprocs;
     } else {
       CCTK_REAL mycost = 0;

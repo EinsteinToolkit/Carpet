@@ -442,9 +442,8 @@ CCTK_REAL aspect_ratio_z "Desired aspect ratio for each processor's domain" STEE
 
 CCTK_INT min_points_per_proc "Minimum number of grid points per processor" STEERABLE=always
 {
-  -1  :: "infinity"
-  1:* :: "that many"
-} -1
+  0:* :: "that many"
+} 0
 
 
 
