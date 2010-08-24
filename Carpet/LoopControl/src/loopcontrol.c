@@ -372,6 +372,7 @@ lc_stattime_find_create (lc_statset_t * restrict const ls,
   
   if (! lt) {
     lt = malloc (sizeof * lt);
+    assert(lt);
     lc_stattime_init (lt, ls, state);
   }
   
@@ -411,7 +412,9 @@ lc_statset_init (lc_statset_t * restrict const ls,
   if (saved_maxthreads < 0) {
     saved_maxthreads = omp_get_max_threads();
     saved_topologies  = malloc (saved_maxthreads * sizeof * saved_topologies );
+    assert(saved_topologies);
     saved_ntopologies = malloc (saved_maxthreads * sizeof * saved_ntopologies);
+    assert(saved_ntopologies);
     for (int n=0; n<saved_maxthreads; ++n) {
       saved_topologies [n] = NULL;
       saved_ntopologies[n] = -1;
@@ -433,6 +436,7 @@ lc_statset_init (lc_statset_t * restrict const ls,
     
     saved_topologies[num_threads-1] =
       malloc (maxntopologies * sizeof * saved_topologies[num_threads-1]);
+    assert(saved_topologies[num_threads-1]);
     find_thread_topologies
       (saved_topologies[num_threads-1],
        maxntopologies, & saved_ntopologies[num_threads-1],
@@ -477,10 +481,12 @@ lc_statset_init (lc_statset_t * restrict const ls,
       printf ("Dimension %d: %d points\n", d, ls->npoints[d]);
     }
     ls->tilings[d] = malloc (maxntilings * sizeof * ls->tilings[d]);
+    assert(ls->tilings[d]);
     find_tiling_specifications
       (ls->tilings[d], maxntilings, & ls->ntilings[d], ls->npoints[d]);
     ls->topology_ntilings[d] =
       malloc (ls->ntopologies * sizeof * ls->topology_ntilings[d]);
+    assert(ls->topology_ntilings[d]);
     for (int n = 0; n < ls->ntopologies; ++n) {
       int tiling;
       for (tiling = 1; tiling < ls->ntilings[d]; ++tiling) {
@@ -576,6 +582,7 @@ lc_statset_find_create (lc_statmap_t * restrict const lm,
   
   if (! ls) {
     ls = malloc (sizeof * ls);
+    assert(ls);
     lc_statset_init (ls, lm, num_threads, npoints);
   }
   
@@ -982,7 +989,7 @@ lc_control_finish (lc_control_t * restrict const lc)
 }
 
 
-
+/* appears to be unused
 static
 double
 avg (double const c, double const s)
@@ -998,6 +1005,7 @@ stddev (double const c, double const s, double const s2)
   if (c == 0.0) return 0.0;
   return sqrt (s2 / c - pow (s / c, 2));
 }
+*/
 
 
 
@@ -1060,6 +1068,11 @@ CCTK_FCALL
 void
 CCTK_FNAME (lc_statmap_init) (int * restrict const initialised,
                               lc_statmap_t * restrict const lm,
+                              ONE_FORTSTRING_ARG);
+CCTK_FCALL
+void
+CCTK_FNAME (lc_statmap_init) (int * restrict const initialised,
+                              lc_statmap_t * restrict const lm,
                               ONE_FORTSTRING_ARG)
 {
   ONE_FORTSTRING_CREATE (name);
@@ -1067,6 +1080,19 @@ CCTK_FNAME (lc_statmap_init) (int * restrict const initialised,
   free (name);
 }
 
+CCTK_FCALL
+void
+CCTK_FNAME (lc_control_init) (lc_control_t * restrict const lc,
+                              lc_statmap_t * restrict const lm,
+                              int const * restrict const imin,
+                              int const * restrict const jmin,
+                              int const * restrict const kmin,
+                              int const * restrict const imax,
+                              int const * restrict const jmax,
+                              int const * restrict const kmax,
+                              int const * restrict const ilsh,
+                              int const * restrict const jlsh,
+                              int const * restrict const klsh);
 CCTK_FCALL
 void
 CCTK_FNAME (lc_control_init) (lc_control_t * restrict const lc,
@@ -1087,6 +1113,9 @@ CCTK_FNAME (lc_control_init) (lc_control_t * restrict const lc,
                    * ilsh, * jlsh, * klsh);
 }
 
+CCTK_FCALL
+void
+CCTK_FNAME (lc_control_finish) (lc_control_t * restrict const lc);
 CCTK_FCALL
 void
 CCTK_FNAME (lc_control_finish) (lc_control_t * restrict const lc)
