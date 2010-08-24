@@ -1,0 +1,66 @@
+# Parameter definitions for thorn CarpetIOF5
+
+SHARES: IO
+
+USES STRING out_dir AS IO_out_dir
+
+USES INT    out_timesteps_per_file
+
+
+
+PRIVATE:
+
+STRING out_dir "Output directory (overrides IO::out_dir)" STEERABLE=always
+{
+  "^$" :: "Empty: use IO::out_dir"
+  ".+" :: "Not empty: directory name"
+} ""
+
+KEYWORD file_content "Create one file for every x" STEERABLE=always
+{
+  "group"      :: ""
+  "thorn"      :: ""
+  "everything" :: ""
+} "everything"
+
+INT iteration_digits "Minimum number of digits for iteration number" STEERABLE=always
+{
+  0:* :: ""
+} 10
+
+STRING out_filename "File name (without extension) for file_content='everything'" STEERABLE=always
+{
+  "" :: ""
+} "output"
+
+INT processor_digits "Minimum number of digits for processor number" STEERABLE=always
+{
+  0:* :: ""
+} 6
+
+STRING out_extension "File name extension" STEERABLE=always
+{
+  "" :: "File extension (including a leading dot, if desired)"
+} ".f5"
+
+BOOLEAN create_subdirs "Create subdirectories for the output files to reduce the number of files per directory" STEERABLE=always
+{
+} "no"
+
+BOOLEAN one_dir_per_file "Create one subdirectory per output file to reduce locking overhead" STEERABLE=always
+{
+} "no"
+
+
+
+BOOLEAN output_symmetry_points "Output symmetry and inter-patch boundary points" STEERABLE=always
+{
+} "no"
+
+BOOLEAN output_ghost_points "Output ghost points" STEERABLE=always
+{
+} "no"
+
+BOOLEAN output_boundary_points "Output outer boundary points" STEERABLE=always
+{
+} "yes"

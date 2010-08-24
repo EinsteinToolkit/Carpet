@@ -1,0 +1,3 @@
+# Configuration definition for thorn CarpetIOF5
+
+REQUIRES Carpet CarpetLib F5 HDF5 LoopControl
