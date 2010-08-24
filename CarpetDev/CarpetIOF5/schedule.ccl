@@ -1,0 +1,27 @@
+# Schedule definitions for thorn CarpetIOF5
+
+SCHEDULE F5_Output AT initial
+{
+  LANG: C
+  OPTIONS: global-late
+} "Create an output file"
+
+
+
+SCHEDULE F5_Poison AT initial AFTER F5_Output BEFORE F5_Input
+{
+  LANG: C
+  OPTIONS: global-late
+} "Poison all variables"
+
+SCHEDULE F5_Input AT initial AFTER F5_Output
+{
+  LANG: C
+  OPTIONS: global-late
+} "Read from file"
+
+SCHEDULE F5_Check AT initial AFTER F5_Input
+{
+  LANG: C
+  OPTIONS: global-late
+} "Check all variables for poison"
