@@ -4,7 +4,7 @@ Maintainer(s): Erik Schnetter <schnetter@cct.lsu.edu>
 Licence      : GPLv2+
 --------------------------------------------------------------------------
 
-1. Purpose
 
+1. Purpose
 This thorn provides a parallel AMR (adaptive mesh refinement) driver
 with MPI.
