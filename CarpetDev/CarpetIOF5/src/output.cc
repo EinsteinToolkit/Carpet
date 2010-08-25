@@ -286,6 +286,8 @@ namespace CarpetIOF5 {
         if (not output_ghost_points) {
           imin[d] += lghosts[d] / 2;
           imax[d] -= ughosts[d] / 2;
+          lghosts[d] = 0;
+          ughosts[d] = 0;
         }
         ioff[d] = lbnd[d] + imin[d];
         ilen[d] = imax[d] - imin[d];
