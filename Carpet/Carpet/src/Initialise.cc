@@ -1053,10 +1053,21 @@ namespace Carpet {
     
     Waypoint ("Initialising three timelevels:");
     
+#if 0
     initialise_3tl_flip_timelevels (cctkGH);
     initialise_3tl_evolve (cctkGH);
     // TODO: May want to restrict here if possible (i.e. if the time
     // refinement factor is one)
+    initialise_3tl_recycle (cctkGH);
+    initialise_3tl_flip_timelevels (cctkGH);
+#endif
+    
+    initialise_3tl_flip_timelevels (cctkGH);
+    initialise_3tl_evolve (cctkGH);
+    initialise_3tl_evolve (cctkGH);
+    // TODO: May want to restrict where possible (i.e. if the time
+    // refinement factor is one)
+    initialise_3tl_recycle (cctkGH);
     initialise_3tl_recycle (cctkGH);
     initialise_3tl_flip_timelevels (cctkGH);
     
