@@ -174,6 +174,22 @@ bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
   return bbox(lb,ub,str);
 }
 
+// Expand the bbox a little by multiples of a fraction of the stride
+template<typename T, int D>
+bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi,
+                             const vect<T,D>& denom) const
+{
+  // Allow expansion only into directions where the extent is not negative
+  // ASSERT_BBOX (all(lower()<=upper() or (lo==T(0) and hi==T(0))));
+  ASSERT_BBOX (all(shape()>=vect<T,D>(0) or (lo==T(0) and hi==T(0))));
+  ASSERT_BBOX (all(denom>vect<T,D>(0)));
+  const vect<T,D> str = stride();
+  ASSERT_BBOX (all (str%denom==vect<T,D>(0)));
+  const vect<T,D> lb = lower() - lo * str / denom;
+  const vect<T,D> ub = upper() + hi * str / denom;
+  return bbox(lb,ub,str);
+}
+
 // Find the smallest b-compatible box around *this
 template<typename T, int D>
 bbox<T,D> bbox<T,D>::expanded_for (const bbox& b) const {

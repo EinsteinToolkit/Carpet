@@ -153,6 +153,21 @@ public:
   bbox expand (const vect<vect<T,D>,2>& lohi) const
   { return expand (lohi[0], lohi[1]); }
   
+  /** Shift the bbox by multiples of the stride.  */
+  bbox shift (const vect<T,D>& v) const
+  { return expand (-v, v); }
+  
+  /** Expand (enlarge) the bbox by multiples of a fraction of the
+      stride.  */
+  bbox expand (const vect<T,D>& lo, const vect<T,D>& hi,
+               const vect<T,D>& denom) const;
+  bbox expand (const vect<vect<T,D>,2>& lohi, const vect<T,D>& denom) const
+  { return expand (lohi[0], lohi[1], denom); }
+  
+  /** Shift the bbox by multiples of a fraction of the stride.  */
+  bbox shift (const vect<T,D>& v, const vect<T,D>& denom) const
+  { return expand (-v, v, denom); }
+  
   /** Find the smallest b-compatible box around this bbox.
       ("compatible" means having the same stride.)  */
   bbox expanded_for (const bbox& b) const;
