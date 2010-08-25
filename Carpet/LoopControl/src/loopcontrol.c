@@ -122,6 +122,7 @@ find_thread_topologies (lc_topology_t * restrict const topologies,
 }
 
 
+#if 0
 
 /* Find "good" tiling specifications */
 /* This calculates a subset of all possible thread specifications.
