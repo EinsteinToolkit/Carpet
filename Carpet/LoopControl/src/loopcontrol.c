@@ -71,11 +71,11 @@ lc_statmap_t * lc_statmap_list = NULL;
 /* Find all possible thread topologies */
 /* This finds all possible thread topologies which can be expressed as
    NIxNJxNK x NIIxNJJxNKK.  More complex topologies, e.g. based on a
-   recursive subdiviston, are not considered (and cannot be expressed
-   with the data structures used in LoopControl).  I expect that more
-   complex topologies are not necessary, since the number of treads is
-   usually quite small and contains many small factors in its prime
-   decomposition.  */
+   recursive subdivision, are not considered (and cannot be expressed
+   with the data structures currently used in LoopControl).  I expect
+   that more complex topologies are not necessary, since the number of
+   threads is usually quite small and contains many small factors in
+   its prime decomposition.  */
 static
 void
 find_thread_topologies (lc_topology_t * restrict const topologies,
@@ -130,11 +130,10 @@ find_thread_topologies (lc_topology_t * restrict const topologies,
    "equally", so that one does not have to spend much effort
    investigating tiling specifications with very similar properties.
    For example, if there are 200 grid points, then half of the
-   possible tiling specifications consists of splitting the domain
-   into two subdomains with [100+N, 100-N] points.  This is avoided by
+   possible tiling specifications consist of splitting the domain into
+   two subdomains with [100+N, 100-N] points.  This is avoided by
    covering all possible tiling specifications in exponentially
    growing step sizes.  */
-#if 0
 static
 int tiling_compare (const void * const a, const void * const b)
 {
@@ -663,10 +662,6 @@ lc_control_init (lc_control_t * restrict const lc,
   lc_statset_t * restrict ls;
 #pragma omp single copyprivate (ls)
   {
-    /* Get number of threads */
-    /* int const num_threads = omp_get_num_threads(); */
-    /* int const num_threads = omp_get_max_threads(); */
-    
     /* Calculate number of points */
     int npoints[3];
     npoints[0] = lc_max (imax - imin, 0);
