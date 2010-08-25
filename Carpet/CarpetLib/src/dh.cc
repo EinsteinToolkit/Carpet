@@ -1065,7 +1065,7 @@ regrid (bool const do_init)
 #warning "TODO: Ensure that the restriction boundaries and the restricted region are contained in the restricted region"
         
         // Subtract the boundaries from the refined region
-        ibset all_refined = allactive;
+        all_refined = allactive;
         for (int d=0; d<dim; ++d) {
           all_refined -= all_boundaries[d];
         }
@@ -1375,7 +1375,6 @@ regrid (bool const do_init)
             }   // for dir
             
           } // for lc
-#endif
           
 #if 0
           for (int lc = 0; lc < h.local_components(rl); ++ lc) {
