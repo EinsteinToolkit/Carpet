@@ -206,9 +206,9 @@ namespace CarpetLib {
     
     
     
-    size_t const srcdi = 1;
-    size_t const srcdj = srcdi * srciext;
-    size_t const srcdk = srcdj * srcjext;
+    size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
+    size_t const srcdj = SRCIND3(0,1,0) - SRCIND3(0,0,0);
+    size_t const srcdk = SRCIND3(0,0,1) - SRCIND3(0,0,0);
     
     
     
@@ -334,7 +334,7 @@ namespace CarpetLib {
     // kernel
   l8101:
     dst[DSTIND3(id,jd,kd)] =
-      interp2<T> (& src[SRCIND3(is,js,ks)], srcdi, srcdj);
+      interp2<T> (& src[SRCIND3(is,js,ks)], srcdi, srcdk);
     i = i+1;
     id = id+1;
     is = is+1;
