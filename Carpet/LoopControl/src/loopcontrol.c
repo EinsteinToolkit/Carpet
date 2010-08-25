@@ -632,7 +632,8 @@ lc_control_init (lc_control_t * restrict const lc,
                  lc_statmap_t * restrict const lm,
                  int const imin, int const jmin, int const kmin,
                  int const imax, int const jmax, int const kmax,
-                 int const ilsh, int const jlsh, int const klsh)
+                 int const ilsh, int const jlsh, int const klsh,
+                 int const di)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -646,6 +647,7 @@ lc_control_init (lc_control_t * restrict const lc,
   assert (imin >= 0 && imax <= ilsh && ilsh >= 0);
   assert (jmin >= 0 && jmax <= jlsh && jlsh >= 0);
   assert (kmin >= 0 && kmax <= klsh && klsh >= 0);
+  assert (di > 0);
   
   /* Copy arguments */
   lc->imin = imin;
@@ -657,6 +659,7 @@ lc_control_init (lc_control_t * restrict const lc,
   lc->ilsh = ilsh;
   lc->jlsh = jlsh;
   lc->klsh = klsh;
+  lc->di   = di;                /* vector size */
   
   
   
@@ -665,6 +668,7 @@ lc_control_init (lc_control_t * restrict const lc,
 #pragma omp single copyprivate (ls)
   {
     /* Calculate number of points */
+    /* TODO: Take vector size into account */
     int npoints[3];
     npoints[0] = lc_max (imax - imin, 0);
     npoints[1] = lc_max (jmax - jmin, 0);
@@ -1107,7 +1111,8 @@ CCTK_FNAME (lc_control_init) (lc_control_t * restrict const lc,
   lc_control_init (lc, lm,
                    * imin - 1, * jmin - 1, * kmin - 1,
                    * imax, * jmax, * kmax,
-                   * ilsh, * jlsh, * klsh);
+                   * ilsh, * jlsh, * klsh,
+                   1);
 }
 
 CCTK_FCALL

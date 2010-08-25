@@ -242,6 +242,7 @@ typedef struct lc_control_t {
   int imin, jmin, kmin;
   int imax, jmax, kmax;
   int ilsh, jlsh, klsh;
+  int di;
   
   /* Control settings for thread parallelism (useful for debugging) */
   int iiimin, jjjmin, kkkmin;
@@ -303,7 +304,8 @@ lc_control_init (lc_control_t * restrict lc,
                  lc_statmap_t * restrict lm,
                  int imin, int jmin, int kmin,
                  int imax, int jmax, int kmax,
-                 int ilsh, int jlsh, int klsh);
+                 int ilsh, int jlsh, int klsh,
+                 int di);
 
 void
 lc_control_finish (lc_control_t * restrict lc);
@@ -311,15 +313,24 @@ lc_control_finish (lc_control_t * restrict lc);
 
 
 #define LC_LOOP3(name, i,j,k, imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh) \
+  LC_LOOP3VEC(name, i,j,k, imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh, 1)
+#define LC_ENDLOOP3(name)                       \
+  LC_ENDLOOP3VEC(name)
+
+#define LC_LOOP3VEC(name, i,j,k, imin_,jmin_,kmin_, imax_,jmax_,kmax_, ilsh_,jlsh_,klsh_, di_) \
   do {                                                                  \
     static int lc_initialised = 0;                                      \
     static lc_statmap_t lc_lm;                                          \
     if (! lc_initialised) {                                             \
       lc_statmap_init (& lc_initialised, & lc_lm, #name);               \
     }                                                                   \
+    int const lc_di = (di_);                                            \
     lc_control_t lc_lc;                                                 \
     lc_control_init (& lc_lc, & lc_lm,                                  \
-                     imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh);   \
+                     (imin_), (jmin_), (kmin_),                         \
+                     (imax_), (jmax_), (kmax_),                         \
+                     (ilsh_), (jlsh_), (klsh_),                         \
+                     lc_di);                                            \
                                                                         \
     /* Coarse loop */                                                   \
     for (int lc_kk = lc_lc.kkmin;                                       \
@@ -327,33 +338,33 @@ lc_control_finish (lc_control_t * restrict lc);
          lc_kk += lc_lc.kkstep)                                         \
     {                                                                   \
       int const lc_kmin = lc_kk + lc_lc.kkkkmin;                        \
-      int const lc_kmax =                                               \
-        lc_min (lc_kk + lc_lc.kkkkmax, lc_lc.kkmax);                    \
+      int const lc_kmax = lc_min (lc_kk + lc_lc.kkkkmax, lc_lc.kkmax);  \
                                                                         \
       for (int lc_jj = lc_lc.jjmin;                                     \
            lc_jj < lc_lc.jjmax;                                         \
            lc_jj += lc_lc.jjstep)                                       \
       {                                                                 \
         int const lc_jmin = lc_jj + lc_lc.jjjjmin;                      \
-        int const lc_jmax =                                             \
-          lc_min (lc_jj + lc_lc.jjjjmax, lc_lc.jjmax);                  \
+        int const lc_jmax = lc_min (lc_jj + lc_lc.jjjjmax, lc_lc.jjmax); \
                                                                         \
         for (int lc_ii = lc_lc.iimin;                                   \
              lc_ii < lc_lc.iimax;                                       \
              lc_ii += lc_lc.iistep)                                     \
         {                                                               \
           int const lc_imin = lc_ii + lc_lc.iiiimin;                    \
-          int const lc_imax =                                           \
-            lc_min (lc_ii + lc_lc.iiiimax, lc_lc.iimax);                \
+          int const lc_imax = lc_min (lc_ii + lc_lc.iiiimax, lc_lc.iimax); \
                                                                         \
           /* Fine loop */                                               \
           for (int k = lc_kmin; k < lc_kmax; ++k) {                     \
             for (int j = lc_jmin; j < lc_jmax; ++j) {                   \
               LC_PRELOOP_STATEMENTS                                     \
               {                                                         \
-                for (int i = lc_imin; i < lc_imax; ++i) {
+                int const lc_ipos =                                     \
+                  lc_imin + lc_lc.ilsh * (j + lc_lc.jlsh * k);          \
+                int const lc_ioffset = (lc_ipos & - lc_di) - lc_ipos;   \
+                for (int i = lc_imin + lc_ioffset; i < lc_imax; i += lc_di) {
 
-#define LC_ENDLOOP3(name)                       \
+#define LC_ENDLOOP3VEC(name)                    \
                 }                               \
               }                                 \
               LC_POSTLOOP_STATEMENTS            \
