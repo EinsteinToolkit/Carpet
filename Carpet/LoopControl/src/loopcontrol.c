@@ -371,7 +371,7 @@ lc_stattime_find_create (lc_statset_t * restrict const ls,
   
   if (! lt) {
     lt = malloc (sizeof * lt);
-    assert(lt);
+    assert (lt);
     lc_stattime_init (lt, ls, state);
   }
   
@@ -411,9 +411,9 @@ lc_statset_init (lc_statset_t * restrict const ls,
   if (saved_maxthreads < 0) {
     saved_maxthreads = omp_get_max_threads();
     saved_topologies  = malloc (saved_maxthreads * sizeof * saved_topologies );
-    assert(saved_topologies);
     saved_ntopologies = malloc (saved_maxthreads * sizeof * saved_ntopologies);
-    assert(saved_ntopologies);
+    assert (saved_topologies );
+    assert (saved_ntopologies);
     for (int n=0; n<saved_maxthreads; ++n) {
       saved_topologies [n] = NULL;
       saved_ntopologies[n] = -1;
@@ -435,7 +435,7 @@ lc_statset_init (lc_statset_t * restrict const ls,
     
     saved_topologies[num_threads-1] =
       malloc (maxntopologies * sizeof * saved_topologies[num_threads-1]);
-    assert(saved_topologies[num_threads-1]);
+    assert (saved_topologies[num_threads-1]);
     find_thread_topologies
       (saved_topologies[num_threads-1],
        maxntopologies, & saved_ntopologies[num_threads-1],
@@ -444,6 +444,7 @@ lc_statset_init (lc_statset_t * restrict const ls,
       realloc (saved_topologies[num_threads-1],
                (saved_ntopologies[num_threads-1] *
                 sizeof * saved_topologies[num_threads-1]));
+    assert (saved_topologies[num_threads-1]);
     
     if (debug) {
       printf ("Found %d possible thread topologies\n",
@@ -480,12 +481,12 @@ lc_statset_init (lc_statset_t * restrict const ls,
       printf ("Dimension %d: %d points\n", d, ls->npoints[d]);
     }
     ls->tilings[d] = malloc (maxntilings * sizeof * ls->tilings[d]);
-    assert(ls->tilings[d]);
+    assert (ls->tilings[d]);
     find_tiling_specifications
       (ls->tilings[d], maxntilings, & ls->ntilings[d], ls->npoints[d]);
     ls->topology_ntilings[d] =
       malloc (ls->ntopologies * sizeof * ls->topology_ntilings[d]);
-    assert(ls->topology_ntilings[d]);
+    assert (ls->topology_ntilings[d]);
     for (int n = 0; n < ls->ntopologies; ++n) {
       int tiling;
       for (tiling = 1; tiling < ls->ntilings[d]; ++tiling) {
@@ -581,7 +582,7 @@ lc_statset_find_create (lc_statmap_t * restrict const lm,
   
   if (! ls) {
     ls = malloc (sizeof * ls);
-    assert(ls);
+    assert (ls);
     lc_statset_init (ls, lm, num_threads, npoints);
   }
   
