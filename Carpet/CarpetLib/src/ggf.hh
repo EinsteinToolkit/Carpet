@@ -143,6 +143,10 @@ public:
   // Prolongate a refinement level
   void ref_prolongate_all (comm_state& state,
                            int tl, int rl, int ml, CCTK_REAL time);
+
+  // Reflux a refinement level
+  void ref_reflux_all (comm_state& state,
+                       int tl, int rl, int ml, int dir, int face);
   
   
   

@@ -487,6 +487,26 @@ ref_prolongate_all (comm_state & state,
 
 
 
+// Reflux a refinement level
+void
+ggf::
+ref_reflux_all (comm_state & state,
+                int const tl, int const rl, int const ml,
+                int const dir, int const face)
+{
+  // Ignore the transport operator
+  static Timer timer ("ref_reflux_all");
+  timer.start ();
+  
+  transfer_from_all (state,
+                     tl,rl+1,ml,
+                     dh::fast_dboxes::fast_ref_refl_sendrecv[dir][face],
+                     tl,rl,ml);
+  timer.stop (0);
+}
+
+
+
 // Transfer regions of all components
 void
 ggf::
@@ -549,6 +569,10 @@ transfer_from_all (comm_state & state,
     pseudoregion_t const & precv = (* ipsendrecv).recv;
     ibbox const & send = psend.extent;
     ibbox const & recv = precv.extent;
+    assert (send.is_aligned_with(h.baseextent(ml2,rl2)));
+    assert (recv.is_aligned_with(h.baseextent(ml1,rl1)));
+    // assert (all (send.stride() == h.baseextent(ml2,rl2).stride()));
+    // assert (all (recv.stride() == h.baseextent(ml1,rl1).stride()));
     int const c2 = psend.component;
     int const c1 = precv.component;
     int const lc2 = h.get_local_component(rl2,c2);
