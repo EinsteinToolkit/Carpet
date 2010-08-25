@@ -1047,7 +1047,7 @@ namespace Carpet {
     
     // Output
     CCTK_VInfo (CCTK_THORNSTRING,
-                "Grid structure statistics:");
+                "Global grid structure statistics:");
     CCTK_VInfo (CCTK_THORNSTRING,
                 "GF: rhs: %.0fk active, %.0fk owned (+%.0f%%), %.0fk total (+%.0f%%), %.3g steps/time",
                 double (num_active_cpu_points / 1e+3),
