@@ -101,6 +101,9 @@ public:
   /** Get stride.  */
   vect<T,D> stride () const { return _stride; }
   
+  /** Get offset.  */
+  vect<T,D> offset () const { return (_lower % _stride + _stride) % _stride; }
+  
   /** Get the shape (or extent).  */
   vect<T,D> shape () const { return _upper - _lower + _stride; }
   
