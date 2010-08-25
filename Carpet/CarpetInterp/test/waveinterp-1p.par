@@ -14,7 +14,9 @@ IO::parfile_write = "no"
 
 
 
-ActiveThorns = "LocalInterp AEILocalInterp LocalReduce"
+ActiveThorns = "InitBase LocalInterp AEILocalInterp LocalReduce"
+
+#InitBase::initial_data_setup_method = "init_single_level"
 
 
 
@@ -31,6 +33,7 @@ Carpet::prolongation_order_time  = 2
 Carpet::convergence_level = 0
 
 Carpet::init_3_timelevels = yes
+#Carpet::init_each_timelevel = yes
 
 
 
@@ -85,6 +88,10 @@ MoL::ODE_Method = RK3
 
 ActiveThorns = "WaveMoL"
 
+WaveMoL::num_timelevels = 3
+
+WaveMoL::bound = "flat"
+
 
 
 ActiveThorns = "IDWaveMoL"
@@ -135,6 +142,8 @@ IOScalar::outScalar_vars       = "
 
 
 ActiveThorns = "CarpetIOASCII"
+
+IOASCII::output_all_timelevels = yes
 
 IOASCII::out0D_every = 1
 IOASCII::out0D_vars  = "
