@@ -32,13 +32,6 @@ namespace CarpetRegrid2 {
   
   
   
-  typedef bboxset <int, dim> ibboxset;
-  typedef vect <vect <CCTK_INT, 2>, dim> jjvect;
-  typedef vect <CCTK_REAL, dim> rvect;
-  typedef bbox <CCTK_REAL, dim> rbbox;
-  
-  
-  
   struct centre_description {
     int            num_levels;
     int            active;
@@ -426,7 +419,7 @@ namespace CarpetRegrid2 {
       rpos2ipos1 (physical_upper, origin, scale, hh, 0);
     
     // The set of refined regions
-    vector <ibboxset> regions (min_rl);
+    vector <ibset> regions (min_rl);
     
     // Set up coarse levels
     for (int rl = 0; rl < min_rl; ++ rl) {
@@ -524,7 +517,7 @@ namespace CarpetRegrid2 {
           i2vect const cdistance =
             i2vect (min_distance + dd.prolongation_stencil_size(rl));
           
-          for (ibboxset::const_iterator ibb = regions.at(rl+1).begin();
+          for (ibset::const_iterator ibb = regions.at(rl+1).begin();
                ibb != regions.at(rl+1).end();
                ++ ibb)
           {
@@ -559,8 +552,8 @@ namespace CarpetRegrid2 {
           cout << "Refinement level " << rl << ": adding buffer zones..." << endl;
         }
 
-        ibboxset buffered;
-        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+        ibset buffered;
+        for (ibset::const_iterator ibb = regions.at(rl).begin();
              ibb != regions.at(rl).end();
              ++ ibb)
         {
@@ -592,7 +585,7 @@ namespace CarpetRegrid2 {
         }
 
         ibbox single;
-        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+        for (ibset::const_iterator ibb = regions.at(rl).begin();
              ibb != regions.at(rl).end();
              ++ ibb)
         {
@@ -608,7 +601,7 @@ namespace CarpetRegrid2 {
         // Would a single bbox be efficient enough?
         if (regions_size >= min_fraction * single_size) {
           // Combine the boxes
-          regions.at(rl) = ibboxset (single);
+          regions.at(rl) = ibset (single);
           if (veryverbose) {
             cout << "Refinement level " << rl << ": combining regions to " << regions.at(rl) << endl;
           }
@@ -709,8 +702,8 @@ namespace CarpetRegrid2 {
           cout << "Refinement level " << rl << ": making regions rotating-90 symmetric" << endl;
         }
         
-        ibboxset added;
-        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+        ibset added;
+        for (ibset::const_iterator ibb = regions.at(rl).begin();
              ibb != regions.at(rl).end();
              ++ ibb)
         {
@@ -796,8 +789,8 @@ namespace CarpetRegrid2 {
           cout << "Refinement level " << rl << ": making regions rotating-180 symmetric" << endl;
         }
         
-        ibboxset added;
-        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+        ibset added;
+        for (ibset::const_iterator ibb = regions.at(rl).begin();
              ibb != regions.at(rl).end();
              ++ ibb)
         {
@@ -881,8 +874,8 @@ namespace CarpetRegrid2 {
           cout << "Refinement level " << rl << ": clipping at outer boundary..." << endl;
         }
         
-        ibboxset clipped;
-        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+        ibset clipped;
+        for (ibset::const_iterator ibb = regions.at(rl).begin();
              ibb != regions.at(rl).end();
              ++ ibb)
         {
@@ -1001,7 +994,7 @@ namespace CarpetRegrid2 {
       {
         gh::cregs regs;
         regs.reserve (regions.at(rl).setsize());
-        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+        for (ibset::const_iterator ibb = regions.at(rl).begin();
              ibb != regions.at(rl).end();
              ++ ibb)
         {
@@ -1046,7 +1039,7 @@ namespace CarpetRegrid2 {
       
       bool is_properly_nested = true;
       
-      for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+      for (ibset::const_iterator ibb = regions.at(rl).begin();
            ibb != regions.at(rl).end();
            ++ ibb)
       {
