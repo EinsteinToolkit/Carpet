@@ -329,3 +329,5 @@ CCTK_REAL timing_levels TYPE=array DIM=1 SIZE=max_refinement_levels DISTRIB=cons
 {
   time_level time_level_count
 } "Per-level timing information"
+
+CCTK_INT carpet_unusedpoints_mask TYPE=GF tags='Prolongation="none"' "mask which is set !=0 for points which do not influence future evolution, assuming appropriate regridding"

@@ -81,6 +81,7 @@ public:
     
     // Mask
     ibset restricted_region;                // filled by restriction
+    ibset unused_region;                    // not used (overwritten later) region
     vect<ibset,dim> restriction_boundaries; // partly filled by restriction
     vect<ibset,dim> prolongation_boundaries; // partly used by prolongation
     

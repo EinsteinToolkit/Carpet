@@ -31,3 +31,18 @@ if (refine_timestep)
     OPTIONS: singlemap
   } "Correct time step size for spacing on finer grids"
 }
+
+if (use_unusedpoints_mask)
+{
+  storage: carpet_unusedpoints_mask
+
+  schedule CarpetUnusedMask AT BASEGRID
+  {
+    LANG: C
+  } "Set mask of unused points"
+
+  schedule CarpetUnusedMask AT POSTREGRID
+  {
+    LANG: C
+  } "Set mask of unused points"
+}

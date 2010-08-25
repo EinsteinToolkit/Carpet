@@ -997,6 +997,9 @@ regrid (bool const do_init)
       static Carpet::Timer timer_mask ("CarpetLib::dh::regrid::mask");
       timer_mask.start();
       
+      // Declare this here to save it for 'unused-mask'
+      ibset all_refined;
+
       if (rl > 0) {
         int const orl = rl - 1;
         full_cboxes const& full_olevel = full_boxes.AT(ml).AT(orl);
@@ -1093,6 +1096,8 @@ regrid (bool const do_init)
           full_dboxes const& box = full_level.AT(c);
           local_dboxes & local_box = local_level.AT(lc);
           
+          // Subtract the boundaries from the refined region
+          all_refined = allactive;
           // Set prolongation information for current level
           for (int d=0; d<dim; ++d) {
             local_box.prolongation_boundaries[d] =
@@ -1105,6 +1110,48 @@ regrid (bool const do_init)
       
       timer_mask.stop();
       
+      // Mask for unused points on coarser level (which do not influence the future
+      // evolution provided regridding is done at the right times):
+      static Carpet::Timer timer_overwrittenmask ("CarpetLib::dh::regrid::unusedpoints_mask");
+      timer_mask.start();
+      
+      if (rl > 0) {
+        int const orl = rl - 1;
+        full_cboxes const& full_olevel = full_boxes.AT(ml).AT(orl);
+        // Local boxes are not communicated or post-processed, and
+        // thus can be modified even for coarser levels
+        local_cboxes& local_olevel = local_boxes.AT(ml).AT(orl);
+
+        // This works only when the refinement factor is 2
+        ivect const reffact = h.reffacts.AT(rl) / h.reffacts.AT(orl);
+        if (all (reffact == 2)) {
+          // use the already computed 'all_refined' to get region from where
+          // no information will be used later (overwritten)
+          // First: get the region which will get restricted
+          ibset restricted_region = all_refined.contracted_for(h.baseextent(ml,orl));
+          // This is too big - during MoL-substeps information within this
+          // region will be used to update points outside -> need to
+          // shrink it by some points
+          // The way we shrink it is to invert it, expand that, and invert
+          // again. To invert we define an enclosing box and subtract it from that.
+          i2vect to_shrink = buffer_widths[orl] + ghost_widths[orl];
+          ibbox enclosing = restricted_region.container().expand(ivect(1)+to_shrink);
+          ibset unused_region = enclosing - (enclosing - restricted_region).expand(to_shrink);
+          // Now we have the interesting region in 'unused_region' and need to store
+          // the union of this and the local regions
+          for (int lc = 0; lc < h.local_components(orl); ++ lc) {
+            int const c = h.get_component(orl, lc);
+            full_dboxes const& obox = full_olevel.AT(c);
+            // Local boxes are not communicated or post-processed, and
+            // thus can be modified even for coarser levels
+            local_dboxes & local_obox = local_olevel.AT(lc);
+            // Set unused information for next coarser level
+            local_obox.unused_region = unused_region & obox.owned;
+          } // for lc
+        } // if reffact != 2
+      } // if not coarsest level
+
+      timer_mask.stop();
       
       
       // Refluxing:
@@ -1328,6 +1375,7 @@ regrid (bool const do_init)
             }   // for dir
             
           } // for lc
+#endif
           
 #if 0
           for (int lc = 0; lc < h.local_components(rl); ++ lc) {
