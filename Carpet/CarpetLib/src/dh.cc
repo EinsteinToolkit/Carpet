@@ -997,7 +997,8 @@ regrid (bool const do_init)
       static Carpet::Timer timer_mask ("CarpetLib::dh::regrid::mask");
       timer_mask.start();
       
-      // Declare this here to save it for 'unused-mask'
+      // Declare this here to save it for later use. Contains all the boxes
+      // which are active minus the boundary
       ibset all_refined;
 
       if (rl > 0) {
@@ -1096,8 +1097,6 @@ regrid (bool const do_init)
           full_dboxes const& box = full_level.AT(c);
           local_dboxes & local_box = local_level.AT(lc);
           
-          // Subtract the boundaries from the refined region
-          all_refined = allactive;
           // Set prolongation information for current level
           for (int d=0; d<dim; ++d) {
             local_box.prolongation_boundaries[d] =
