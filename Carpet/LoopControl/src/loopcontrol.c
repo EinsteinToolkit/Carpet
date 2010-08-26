@@ -406,7 +406,7 @@ lc_statset_init (lc_statset_t * restrict const ls,
   /*** Threads ****************************************************************/
   
   static int saved_maxthreads = -1;
-  static lc_topology_t * restrict * saved_topologies = NULL;
+  static lc_topology_t * * saved_topologies = NULL;
   static int * restrict saved_ntopologies = NULL;
 
   // Allocate memory the first time this function is called
