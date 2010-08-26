@@ -1172,22 +1172,23 @@ namespace CarpetRegrid2 {
           rvect const rad (rx, ry, rz);
           rvect const oldrad
             (old_radius_x[ind], old_radius_y[ind], old_radius_z[ind]);
-          CCTK_REAL const dr = sqrt (sum (ipow (rad - oldrad, 2)));
-          CCTK_REAL mindr;
+          CCTK_REAL const drfac = 
+	    (sqrt (sum (ipow (rad - oldrad, 2))))/(sqrt (sum (ipow (oldrad, 2))));
+          CCTK_REAL mindrfac;
           switch (n) {
-          case 0: mindr = radius_change_threshold_1; break;
-          case 1: mindr = radius_change_threshold_2; break;
-          case 2: mindr = radius_change_threshold_3; break;
-          case 3: mindr = radius_change_threshold_4; break;
-          case 4: mindr = radius_change_threshold_5; break;
-          case 5: mindr = radius_change_threshold_6; break;
-          case 6: mindr = radius_change_threshold_7; break;
-          case 7: mindr = radius_change_threshold_8; break;
-          case 8: mindr = radius_change_threshold_9; break;
-          case 9: mindr = radius_change_threshold_10; break;
+          case 0: mindrfac = radius_rel_change_threshold_1; break;
+          case 1: mindrfac = radius_rel_change_threshold_2; break;
+          case 2: mindrfac = radius_rel_change_threshold_3; break;
+          case 3: mindrfac = radius_rel_change_threshold_4; break;
+          case 4: mindrfac = radius_rel_change_threshold_5; break;
+          case 5: mindrfac = radius_rel_change_threshold_6; break;
+          case 6: mindrfac = radius_rel_change_threshold_7; break;
+          case 7: mindrfac = radius_rel_change_threshold_8; break;
+          case 8: mindrfac = radius_rel_change_threshold_9; break;
+          case 9: mindrfac = radius_rel_change_threshold_10; break;
           default: assert (0);
           }
-          do_recompose = dr > mindr;
+          do_recompose = drfac > mindrfac;
           if (do_recompose) break;
         } // for rl
         if (do_recompose) break;
@@ -1352,22 +1353,24 @@ namespace CarpetRegrid2 {
           rvect const rad (rx, ry, rz);
           rvect const oldrad
             (old_radius_x[ind], old_radius_y[ind], old_radius_z[ind]);
-          CCTK_REAL const dr = sqrt (sum (ipow (rad - oldrad, 2)));
-          CCTK_REAL mindr;
+          CCTK_REAL const drfac = 
+	    (sqrt (sum (ipow (rad - oldrad, 2))))/(sqrt (sum (ipow (oldrad, 2))));
+          CCTK_REAL mindrfac;
           switch (n) {
-          case 0: mindr = radius_change_threshold_1; break;
-          case 1: mindr = radius_change_threshold_2; break;
-          case 2: mindr = radius_change_threshold_3; break;
-          case 3: mindr = radius_change_threshold_4; break;
-          case 4: mindr = radius_change_threshold_5; break;
-          case 5: mindr = radius_change_threshold_6; break;
-          case 6: mindr = radius_change_threshold_7; break;
-          case 7: mindr = radius_change_threshold_8; break;
-          case 8: mindr = radius_change_threshold_9; break;
-          case 9: mindr = radius_change_threshold_10; break;
+          case 0: mindrfac = radius_rel_change_threshold_1; break;
+          case 1: mindrfac = radius_rel_change_threshold_2; break;
+          case 2: mindrfac = radius_rel_change_threshold_3; break;
+          case 3: mindrfac = radius_rel_change_threshold_4; break;
+          case 4: mindrfac = radius_rel_change_threshold_5; break;
+          case 5: mindrfac = radius_rel_change_threshold_6; break;
+          case 6: mindrfac = radius_rel_change_threshold_7; break;
+          case 7: mindrfac = radius_rel_change_threshold_8; break;
+          case 8: mindrfac = radius_rel_change_threshold_9; break;
+          case 9: mindrfac = radius_rel_change_threshold_10; break;
           default: assert (0);
           }
-          do_recompose = dr > mindr;
+          do_recompose = drfac > mindrfac;
+	  cout << drfac << " " << mindrfac << endl;
           if (do_recompose) break;
         } // for rl
         if (do_recompose) break;

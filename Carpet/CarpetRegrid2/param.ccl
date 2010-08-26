@@ -132,9 +132,9 @@ CCTK_REAL movement_threshold_1 "Minimum movement to trigger a regridding" STEERA
   0:* :: ""
 } 0.0
 
-CCTK_REAL radius_change_threshold_1 "Minimum change in radius to trigger a regridding" STEERABLE=always
+CCTK_REAL radius_rel_change_threshold_1 "Minimum RELATIVE change in radius to trigger a regridding" STEERABLE=always
 {
-  0:* :: ""
+  0.0:* :: ""
 } 0.0
 
 
@@ -200,9 +200,9 @@ CCTK_REAL movement_threshold_2 "Minimum movement to trigger a regridding" STEERA
   0:* :: ""
 } 0.0
 
-CCTK_REAL radius_change_threshold_2 "Minimum change in radius to trigger a regridding" STEERABLE=always
+CCTK_REAL radius_rel_change_threshold_2 "Minimum change in radius to trigger a regridding" STEERABLE=always
 {
-  0:* :: ""
+  0.0:* :: ""
 } 0.0
 
 
@@ -268,9 +268,9 @@ CCTK_REAL movement_threshold_3 "Minimum movement to trigger a regridding" STEERA
   0:* :: ""
 } 0.0
 
-CCTK_REAL radius_change_threshold_3 "Minimum change in radius to trigger a regridding" STEERABLE=always
+CCTK_REAL radius_rel_change_threshold_3 "Minimum change in radius to trigger a regridding" STEERABLE=always
 {
-  0:* :: ""
+  0.0:* :: ""
 } 0.0
 
 
@@ -336,9 +336,9 @@ CCTK_REAL movement_threshold_4 "Minimum movement to trigger a regridding" STEERA
   0:* :: ""
 } 0.0
 
-CCTK_REAL radius_change_threshold_4 "Minimum change in radius to trigger a regridding" STEERABLE=always
+CCTK_REAL radius_rel_change_threshold_4 "Minimum change in radius to trigger a regridding" STEERABLE=always
 {
-  0:* :: ""
+  0.0:* :: ""
 } 0.0
 
 
@@ -404,9 +404,9 @@ CCTK_REAL movement_threshold_5 "Minimum movement to trigger a regridding" STEERA
   0:* :: ""
 } 0.0
 
-CCTK_REAL radius_change_threshold_5 "Minimum change in radius to trigger a regridding" STEERABLE=always
+CCTK_REAL radius_rel_change_threshold_5 "Minimum change in radius to trigger a regridding" STEERABLE=always
 {
-  0:* :: ""
+  0.0:* :: ""
 } 0.0
 
 
@@ -472,9 +472,9 @@ CCTK_REAL movement_threshold_6 "Minimum movement to trigger a regridding" STEERA
   0:* :: ""
 } 0.0
 
-CCTK_REAL radius_change_threshold_6 "Minimum change in radius to trigger a regridding" STEERABLE=always
+CCTK_REAL radius_rel_change_threshold_6 "Minimum change in radius to trigger a regridding" STEERABLE=always
 {
-  0:* :: ""
+  0.0:* :: ""
 } 0.0
 
 
@@ -540,9 +540,9 @@ CCTK_REAL movement_threshold_7 "Minimum movement to trigger a regridding" STEERA
   0:* :: ""
 } 0.0
 
-CCTK_REAL radius_change_threshold_7 "Minimum change in radius to trigger a regridding" STEERABLE=always
+CCTK_REAL radius_rel_change_threshold_7 "Minimum change in radius to trigger a regridding" STEERABLE=always
 {
-  0:* :: ""
+  0.0:* :: ""
 } 0.0
 
 
@@ -608,9 +608,9 @@ CCTK_REAL movement_threshold_8 "Minimum movement to trigger a regridding" STEERA
   0:* :: ""
 } 0.0
 
-CCTK_REAL radius_change_threshold_8 "Minimum change in radius to trigger a regridding" STEERABLE=always
+CCTK_REAL radius_rel_change_threshold_8 "Minimum change in radius to trigger a regridding" STEERABLE=always
 {
-  0:* :: ""
+  0.0:* :: ""
 } 0.0
 
 
@@ -676,9 +676,9 @@ CCTK_REAL movement_threshold_9 "Minimum movement to trigger a regridding" STEERA
   0:* :: ""
 } 0.0
 
-CCTK_REAL radius_change_threshold_9 "Minimum change in radius to trigger a regridding" STEERABLE=always
+CCTK_REAL radius_rel_change_threshold_9 "Minimum change in radius to trigger a regridding" STEERABLE=always
 {
-  0:* :: ""
+  0.0:* :: ""
 } 0.0
 
 
@@ -744,7 +744,7 @@ CCTK_REAL movement_threshold_10 "Minimum movement to trigger a regridding" STEER
   0:* :: ""
 } 0.0
 
-CCTK_REAL radius_change_threshold_10 "Minimum change in radius to trigger a regridding" STEERABLE=always
+CCTK_REAL radius_rel_change_threshold_10 "Minimum change in radius to trigger a regridding" STEERABLE=always
 {
-  0:* :: ""
+  0.0:* :: ""
 } 0.0
