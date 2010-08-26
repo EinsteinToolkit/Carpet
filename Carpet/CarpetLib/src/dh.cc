@@ -1126,7 +1126,7 @@ regrid (bool const do_init)
         if (all (reffact == 2)) {
           // use the already computed 'all_refined' to get region from where
           // no information will be used later (overwritten)
-          // First: get the region which will get restricted
+          // First: get the region which will get restricted, on the coarse level
           ibset restricted_region = all_refined.contracted_for(h.baseextent(ml,orl));
           // This is too big - during MoL-substeps information within this
           // region will be used to update points outside -> need to
