@@ -1,0 +1,81 @@
+HOW TO WRITE A COMMIT MESSAGE
+
+When one looks at a set of changes, then it can be really useful to
+see at a glance what a particular commit was about, and good commit
+messages are thus important.
+
+It can be frustrating to have to type a few lines of text after
+finding and correcting a particular obnoxious error, which then seems
+to serve only as delay before others can benefit from this correction.
+However, good commit messages are important.
+
+A commit message consists of a subject (the first line) and a body
+(the other lines, separated by an empty line). Many tools show only
+the subject when displaying many commits, so the subject has to give a
+high-level overview. The body can give more detail, but probably
+shouldn't contain more than a few lines.
+
+
+
+The subject should not be longer than 80 characters, so that lines
+don't wrap when many subjects are displayed.
+
+The subject will usually be read with the following questions in mind:
+- Do I need this patch?
+- Will this patch interfere with my current work?
+- Is it just a small change that I can safely apply?
+People will likely not be interested in details about what exactly was
+changed, as these questions can also be answered by looking at details
+of the patch.
+
+Therefore the subject should:
+- State roughly where the change occured (which thorn). In Carpet,
+  please prefix the subject with "ThornName:".
+- State what kind of change it was (new functionality, important error
+  correction, small bug fix). It should also say if it modifies many
+  lines of code ("reindent", "change variable name") since this can
+  lead to conflicts.
+- State whether the commit modifies/corrects/influences the major
+  functionality ("physics") of the thorn, and if it does so by
+  default;
+- Be as high level as possible: if you correct an indexing error that
+  influences regridding, then say "Don't regrid too often" rather than
+  "Correct indexing error".
+
+Keep in mind that people will read the subject without knowing any
+context about the patch. Providing this context is more important than
+describing the change itself. If 80 characters are not enough, then
+you are probably providing too much detail.
+
+
+
+The body of the commit message should give more detail, if necessary.
+The body will probably only be read (maybe with grep?) when tracking
+down a particular problem. The body of the message does not need to
+state things that the version control system already knows, such as
+e.g. which files are changed, nor anything else that can be seen in
+the diff.
+
+If the commit corrects and error, then describing the error in the
+commit message is a good idea. If an important class or function is
+modified, introduced, or deleted, then listing the class or function
+name may be helpful. (You don't need to document the class or function
+there; you should document it in the code instead.)
+
+Remember that the body of the commit message will not be read by
+people who look at the new code. Some people accidentally document new
+algorithms or new code in the commit message -- this is a bad idea,
+since documentation should go near the code where people will see it.
+It may be a nice idea to try and tell other people about the change in
+the commit message, but keep in mind that most users of a piece of
+code won't read the commit message anyway, so that these instructions
+need to go as comments into the code or official documentation.
+
+
+
+Overall, a commit message should describe the change, not the new
+state. It helps to write the message as a command, as in "Correct typo
+in comment", instead of a description ("This patch corrects a typo in
+a comment"), which is longer but doesn't convey any more information.
+Also, please use your full name and email address when creating a
+commit, so that people can ask you when they have questions.
