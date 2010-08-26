@@ -1121,7 +1121,10 @@ namespace CarpetRegrid2 {
       }
     }
     
-    if (do_recompose and * last_iteration != -1) {
+    if (not force and do_recompose and * last_iteration != -1) {
+      
+      int lsh[2];
+      getvectorindex2 (cctkGH, "CarpetRegrid2::radii", lsh);
       
       // Regrid only if the regions have changed sufficiently
       do_recompose = false;
@@ -1157,31 +1160,36 @@ namespace CarpetRegrid2 {
         case 9: mindist = movement_threshold_10; break;
         default: assert (0);
         }
-        do_recompose = dist2 >= pow (mindist, 2);
+        do_recompose = dist2 > pow (mindist, 2);
         if (do_recompose) break;
         
         // Regrid if the radii have changed sufficiently
-        CCTK_REAL const rx = radius_x[n] < 0 ? radius[n] : radius_x[n];
-        CCTK_REAL const ry = radius_y[n] < 0 ? radius[n] : radius_y[n];
-        CCTK_REAL const rz = radius_z[n] < 0 ? radius[n] : radius_z[n];
-        rvect const rad (rx, ry, rz);
-        rvect const oldrad (old_radius_x[n], old_radius_y[n], old_radius_z[n]);
-        CCTK_REAL const dr = sqrt (sum (ipow (rad - oldrad, 2)));
-        CCTK_REAL mindr;
-        switch (n) {
-        case 0: mindr = radius_change_threshold_1; break;
-        case 1: mindr = radius_change_threshold_2; break;
-        case 2: mindr = radius_change_threshold_3; break;
-        case 3: mindr = radius_change_threshold_4; break;
-        case 4: mindr = radius_change_threshold_5; break;
-        case 5: mindr = radius_change_threshold_6; break;
-        case 6: mindr = radius_change_threshold_7; break;
-        case 7: mindr = radius_change_threshold_8; break;
-        case 8: mindr = radius_change_threshold_9; break;
-        case 9: mindr = radius_change_threshold_10; break;
-        default: assert (0);
-        }
-        do_recompose = dr >= mindr;
+        for (int rl = 1; rl < num_levels[n]; ++ rl) {
+          int const ind = index2 (lsh, rl, n);
+          CCTK_REAL const rx = radius_x[ind] < 0 ? radius[ind] : radius_x[ind];
+          CCTK_REAL const ry = radius_y[ind] < 0 ? radius[ind] : radius_y[ind];
+          CCTK_REAL const rz = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
+          rvect const rad (rx, ry, rz);
+          rvect const oldrad
+            (old_radius_x[ind], old_radius_y[ind], old_radius_z[ind]);
+          CCTK_REAL const dr = sqrt (sum (ipow (rad - oldrad, 2)));
+          CCTK_REAL mindr;
+          switch (n) {
+          case 0: mindr = radius_change_threshold_1; break;
+          case 1: mindr = radius_change_threshold_2; break;
+          case 2: mindr = radius_change_threshold_3; break;
+          case 3: mindr = radius_change_threshold_4; break;
+          case 4: mindr = radius_change_threshold_5; break;
+          case 5: mindr = radius_change_threshold_6; break;
+          case 6: mindr = radius_change_threshold_7; break;
+          case 7: mindr = radius_change_threshold_8; break;
+          case 8: mindr = radius_change_threshold_9; break;
+          case 9: mindr = radius_change_threshold_10; break;
+          default: assert (0);
+          }
+          do_recompose = dr > mindr;
+          if (do_recompose) break;
+        } // for rl
         if (do_recompose) break;
         
       } // for n
@@ -1293,7 +1301,10 @@ namespace CarpetRegrid2 {
       }
     }
     
-    if (do_recompose and * last_iteration != -1) {
+    if (not force and do_recompose and * last_iteration != -1) {
+      
+      int lsh[2];
+      getvectorindex2 (cctkGH, "CarpetRegrid2::radii", lsh);
       
       // Regrid only if the regions have changed sufficiently
       do_recompose = false;
@@ -1329,31 +1340,36 @@ namespace CarpetRegrid2 {
         case 9: mindist = movement_threshold_10; break;
         default: assert (0);
         }
-        do_recompose = dist2 >= pow (mindist, 2);
+        do_recompose = dist2 > pow (mindist, 2);
         if (do_recompose) break;
         
         // Regrid if the radii have changed sufficiently
-        CCTK_REAL const rx = radius_x[n] < 0 ? radius[n] : radius_x[n];
-        CCTK_REAL const ry = radius_y[n] < 0 ? radius[n] : radius_y[n];
-        CCTK_REAL const rz = radius_z[n] < 0 ? radius[n] : radius_z[n];
-        rvect const rad (rx, ry, rz);
-        rvect const oldrad (old_radius_x[n], old_radius_y[n], old_radius_z[n]);
-        CCTK_REAL const dr = sqrt (sum (ipow (rad - oldrad, 2)));
-        CCTK_REAL mindr;
-        switch (n) {
-        case 0: mindr = radius_change_threshold_1; break;
-        case 1: mindr = radius_change_threshold_2; break;
-        case 2: mindr = radius_change_threshold_3; break;
-        case 3: mindr = radius_change_threshold_4; break;
-        case 4: mindr = radius_change_threshold_5; break;
-        case 5: mindr = radius_change_threshold_6; break;
-        case 6: mindr = radius_change_threshold_7; break;
-        case 7: mindr = radius_change_threshold_8; break;
-        case 8: mindr = radius_change_threshold_9; break;
-        case 9: mindr = radius_change_threshold_10; break;
-        default: assert (0);
-        }
-        do_recompose = dr >= mindr;
+        for (int rl = 1; rl < num_levels[n]; ++ rl) {
+          int const ind = index2 (lsh, rl, n);
+          CCTK_REAL const rx = radius_x[ind] < 0 ? radius[ind] : radius_x[ind];
+          CCTK_REAL const ry = radius_y[ind] < 0 ? radius[ind] : radius_y[ind];
+          CCTK_REAL const rz = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
+          rvect const rad (rx, ry, rz);
+          rvect const oldrad
+            (old_radius_x[ind], old_radius_y[ind], old_radius_z[ind]);
+          CCTK_REAL const dr = sqrt (sum (ipow (rad - oldrad, 2)));
+          CCTK_REAL mindr;
+          switch (n) {
+          case 0: mindr = radius_change_threshold_1; break;
+          case 1: mindr = radius_change_threshold_2; break;
+          case 2: mindr = radius_change_threshold_3; break;
+          case 3: mindr = radius_change_threshold_4; break;
+          case 4: mindr = radius_change_threshold_5; break;
+          case 5: mindr = radius_change_threshold_6; break;
+          case 6: mindr = radius_change_threshold_7; break;
+          case 7: mindr = radius_change_threshold_8; break;
+          case 8: mindr = radius_change_threshold_9; break;
+          case 9: mindr = radius_change_threshold_10; break;
+          default: assert (0);
+          }
+          do_recompose = dr > mindr;
+          if (do_recompose) break;
+        } // for rl
         if (do_recompose) break;
         
       } // for n
