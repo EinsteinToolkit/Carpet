@@ -1441,9 +1441,15 @@ namespace CarpetRegrid2 {
         old_position_y[n] = position_y[n];
         old_position_z[n] = position_z[n];
         
-        old_radius_x[n] = radius_x[n] < 0 ? radius[n] : radius_x[n];
-        old_radius_y[n] = radius_y[n] < 0 ? radius[n] : radius_y[n];
-        old_radius_z[n] = radius_z[n] < 0 ? radius[n] : radius_z[n];
+	int lsh[2];
+	getvectorindex2 (cctkGH, "CarpetRegrid2::radii", lsh);
+
+	for (int rl = 1; rl < num_levels[n]; ++ rl) {
+	  int const ind = index2 (lsh, rl, n);
+	  old_radius_x[ind] = radius_x[ind] < 0 ? radius[ind] : radius_x[ind];
+	  old_radius_y[ind] = radius_y[ind] < 0 ? radius[ind] : radius_y[ind];
+	  old_radius_z[ind] = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
+	}
       }
       
     } // if do_recompose
