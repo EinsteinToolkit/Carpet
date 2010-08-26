@@ -1370,7 +1370,6 @@ namespace CarpetRegrid2 {
           default: assert (0);
           }
           do_recompose = drfac > mindrfac;
-	  cout << drfac << " " << mindrfac << endl;
           if (do_recompose) break;
         } // for rl
         if (do_recompose) break;
