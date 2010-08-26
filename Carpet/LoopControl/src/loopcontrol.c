@@ -422,7 +422,9 @@ lc_statset_init (lc_statset_t * restrict const ls,
   }
   
   if (num_threads > saved_maxthreads) {
-    CCTK_WARN (CCTK_WARN_ABORT, "Thread count inconsistency");
+    CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Thread count inconsistency (now called with %d threads, was called with %d before)",
+                num_threads, saved_maxthreads);
   }
   
   if (! saved_topologies[num_threads-1]) {
