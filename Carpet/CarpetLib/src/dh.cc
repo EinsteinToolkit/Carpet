@@ -1020,10 +1020,6 @@ regrid (bool const do_init)
         
         // Project to current level
         ivect const rf(reffact);
-        // TODO: Why expand by rf-1?  This expansion shouldn't matter,
-        // since the coarse grid is larger than the fine grid anyway,
-        // except at the outer boundary
-        // ibset const parent (allointr.expand(rf-1,rf-1).contracted_for(base));
         ibset const parent (allointr.expanded_for(base));
         
         // Subtract the active region
@@ -1110,6 +1106,8 @@ regrid (bool const do_init)
       
       timer_mask.stop();
       
+      
+      
       // Mask for unused points on coarser level (which do not influence the future
       // evolution provided regridding is done at the right times):
       static Carpet::Timer timer_overwrittenmask ("CarpetLib::dh::regrid::unusedpoints_mask");
@@ -1154,6 +1152,7 @@ regrid (bool const do_init)
       timer_mask.stop();
       
       
+      
       // Refluxing:
       static Carpet::Timer timer_reflux ("CarpetLib::dh::regrid::reflux");
       timer_reflux.start();
@@ -1184,33 +1183,13 @@ regrid (bool const do_init)
             // Unit vector
             ivect const idir = ivect::dir(dir);
             
-            // Fine grids with boundary
-            ibset fine_level_plus;
-            for (ibset::const_iterator fine_level_i = fine_level.begin();
-                 fine_level_i != fine_level.end();
-                 ++ fine_level_i)
-            {
-              // Expand region to the left (but not to the right),
-              // since the fluxes are staggered by one half to the
-              // right
-              fine_level_plus |= fine_level_i->expand (idir, izero);
-            }
+            // Left and right faces
+            ibset const fine_level_minus = fine_level.shift (-idir, 2);
+            ibset const fine_level_plus  = fine_level.shift (+idir, 2);
             
-            // Fine grids without boundary
-            ibset fine_level_minus;
-            for (ibset::const_iterator fine_level_i = fine_level.begin();
-                 fine_level_i != fine_level.end();
-                 ++ fine_level_i)
-            {
-              // Shrink region at the left boundary (but not at the
-              // right boundary), since the fluxes are staggered by
-              // one half to the right
-              fine_level_minus |= fine_level_i->expand (izero, -idir);
-            }
-            
-            // Fine boundary only
-            all_fine_boundary[dir][0] = fine_level_plus - fine_level      ;
-            all_fine_boundary[dir][1] = fine_level      - fine_level_minus;
+            // Fine boundaries
+            all_fine_boundary[dir][0] = fine_level_minus - fine_level_plus ;
+            all_fine_boundary[dir][1] = fine_level_plus  - fine_level_minus;
           } // for dir
           
           
@@ -1224,40 +1203,14 @@ regrid (bool const do_init)
           for (int dir=0; dir<3; ++dir) {
             // Unit vector
             ivect const idir = ivect::dir(dir);
+            ibbox const coarse_faces = coarse_ext.shift(idir,2);
             for (int face=0; face<2; ++face) {
               cout << "REFREF rl=" << rl << " dir=" << dir << " face=" << face << "\n"
-                   << "   all_fine_boundary=" << all_fine_boundary[dir][face] << "\n";
-              for (ibset::const_iterator
-                     all_fine_boundary_i = all_fine_boundary[dir][face].begin();
-                   all_fine_boundary_i != all_fine_boundary[dir][face].end();
-                   ++ all_fine_boundary_i)
-              {
-                ibbox const& fb = *all_fine_boundary_i;
-                
-                ivect const cstr = coarse_ext.stride();
-                
-                ivect const flo  = fb.lower();
-                ivect const fup  = fb.upper();
-                ivect const fstr = fb.stride();
-                
-#warning "TODO: use bbox::shift"
-                assert (all (fstr % 2 == 0));
-                assert (all (cstr % 2 == 0));
-                
-                // ibbox const ftmp (flo + idir*(fstr/2-cstr/2),
-                //                   fup + idir*(fstr/2-cstr/2),
-                //                   fstr);
-                // assert (ftmp == fb.shift (idir*(1-cstr/fstr), 2));
-                assert (all (reffact == cstr/fstr));
-                ibbox const ftmp = fb.shift (idir*(1-reffact), 2);
-                ibbox const ctmp = ftmp.contracted_for (coarse_ext);
-                
-                ivect const clo = ctmp.lower();
-                ivect const cup = ctmp.upper();
-                ibbox const cb (clo, cup, cstr);
-                
-                all_coarse_boundary[dir][face] += cb;
-              }
+                   << "   all_fine_boundary=" << all_fine_boundary[dir][face] << "\n"
+                   << "   coarse_ext=" << coarse_ext << "\n"
+                   << "   coarse_faces=" << coarse_faces << "\n";
+              all_coarse_boundary[dir][face] =
+                all_fine_boundary[dir][face].contracted_for (coarse_faces);
               cout << "   all_coarse_boundary=" << all_coarse_boundary[dir][face] << "\n";
             } // for face
           }   // for dir
@@ -1342,15 +1295,9 @@ regrid (bool const do_init)
                     ASSERT_c (send <= box.exterior,
                               "Refinement restriction: Send region must be contained in exterior");
                     
-                    // Modify the extents since the flux grid
-                    // functions are staggered
-                    assert (all (send.stride() % 2 == 0));
-                    ibbox const msend = send.shift (idir, 2);
-                    assert (all (recv.stride() % 2 == 0));
-                    ibbox const mrecv = recv.shift (idir, 2);
-                    
-                    sendrecv_pseudoregion_t const preg (msend, c, mrecv, oc);
-                    cout << "REF ref_refl ml=" << ml << " rl=" << rl << " lc=" << lc << " c=" << c << " oc=" << oc << " dir=" << dir << " face=" << face << " preg=" << preg << "\n";
+                    sendrecv_pseudoregion_t const preg (send, c, recv, oc);
+                    cout << "REF ref_refl ml=" << ml << " rl=" << rl << " lc=" << lc << " c=" << c << " oc=" << oc << " dir=" << dir << " face=" << face << "\n"
+                         << "   preg=" << preg << "\n";
                     (fast_olevel.*fast_ref_refl_sendrecv).push_back (preg);
                     if (not on_this_proc (orl, oc)) {
                       fast_dboxes & fast_level_otherproc =
