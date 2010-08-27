@@ -137,7 +137,8 @@ transfer_from (comm_state & state,
     assert (all(dstbox.lower() >= extent().lower()));
     assert (all(dstbox.upper() <= extent().upper()));
     assert (all(dstbox.stride() == extent().stride()));
-    assert (all((dstbox.lower() - extent().lower()) % dstbox.stride() == 0));
+    // This is not satisfied for refluxing
+    // assert (all((dstbox.lower() - extent().lower()) % dstbox.stride() == 0));
   }
   
   if (is_src) {
