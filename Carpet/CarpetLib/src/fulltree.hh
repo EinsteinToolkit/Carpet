@@ -26,6 +26,7 @@ using namespace std;
 // increased by the stride to arrive at such intervals.)
 
 
+
 // Generic arithmetic search
 template <typename T>
 static
