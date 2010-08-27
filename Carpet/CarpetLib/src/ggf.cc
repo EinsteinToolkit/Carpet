@@ -443,13 +443,13 @@ ggf::
 ref_restrict_all (comm_state & state,
                   int const tl, int const rl, int const ml)
 {
+  if (transport_operator == op_none or transport_operator == op_sync) return;
+  static Timer timer ("ref_restrict_all");
+  timer.start ();
   // Require same times
   static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
   assert (abs(t.get_time(ml,rl,tl) - t.get_time(ml,rl+1,tl)) <=
           1.0e-8 * (1.0 + abs(t.get_time(ml,rl,tl))));
-  if (transport_operator == op_none or transport_operator == op_sync) return;
-  static Timer timer ("ref_restrict_all");
-  timer.start ();
   transfer_from_all (state,
                      tl,rl  ,ml,
                      & dh::fast_dboxes::fast_ref_rest_sendrecv,
@@ -497,11 +497,14 @@ ref_reflux_all (comm_state & state,
   // Ignore the transport operator
   static Timer timer ("ref_reflux_all");
   timer.start ();
-  
+  // Require same times
+  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
+  assert (abs(t.get_time(ml,rl,tl) - t.get_time(ml,rl+1,tl)) <=
+          1.0e-8 * (1.0 + abs(t.get_time(ml,rl,tl))));
   transfer_from_all (state,
-                     tl,rl+1,ml,
+                     tl,rl,ml,
                      dh::fast_dboxes::fast_ref_refl_sendrecv[dir][face],
-                     tl,rl,ml);
+                     tl,rl+1,ml);
   timer.stop (0);
 }
 
@@ -569,10 +572,8 @@ transfer_from_all (comm_state & state,
     pseudoregion_t const & precv = (* ipsendrecv).recv;
     ibbox const & send = psend.extent;
     ibbox const & recv = precv.extent;
-    assert (send.is_aligned_with(h.baseextent(ml2,rl2)));
-    assert (recv.is_aligned_with(h.baseextent(ml1,rl1)));
-    // assert (all (send.stride() == h.baseextent(ml2,rl2).stride()));
-    // assert (all (recv.stride() == h.baseextent(ml1,rl1).stride()));
+    assert (all (send.stride() == h.baseextent(ml2,rl2).stride()));
+    assert (all (recv.stride() == h.baseextent(ml1,rl1).stride()));
     int const c2 = psend.component;
     int const c1 = precv.component;
     int const lc2 = h.get_local_component(rl2,c2);
