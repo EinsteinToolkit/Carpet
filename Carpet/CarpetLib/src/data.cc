@@ -976,12 +976,10 @@ transfer_restrict (data const * const src,
                         box);
       break;
     case cell_centered: {
-      ivect const is_centered =
-        ((src->extent().lower() - this->extent().lower()) %
-         src->extent().stride()) !=
-        ivect(0,0,0);
-#warning "TODO"
-      cout << "REF restrict CC " << is_centered << "\n";
+      assert (all (box.stride() == this->extent().stride()));
+      ivect const izero (0);
+      ivect const ioff = box.lower() - this->extent().lower();
+      ivect const is_centered = ioff % this->extent().stride() == izero;
       if (all(is_centered == ivect(1,1,1))) {
         call_operator<T> (& restrict_3d_cc_rf2,
                           static_cast <T const *> (src->storage()),
