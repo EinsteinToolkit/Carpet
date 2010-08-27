@@ -405,7 +405,7 @@ rpos2ipos1 (rvect const & rpos,
 // Find the refinement level and component to which a grid point
 // belongs.  This uses a tree search over the superregions in the grid
 // struction, which should scale reasonably (O(n log n)) better with
-// the number of componets components.
+// the number of components.
 void
 gh::
 locate_position (rvect const & rpos,

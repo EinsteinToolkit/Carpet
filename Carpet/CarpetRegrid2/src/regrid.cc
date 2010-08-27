@@ -33,10 +33,10 @@ namespace CarpetRegrid2 {
   
   
   struct centre_description {
-    int            num_levels;
-    int            active;
-    rvect          position;
-    vector <rvect> radius;
+    int            _num_levels;
+    int            _active;
+    rvect          _position;
+    vector <rvect> _radius;
     
     centre_description (cGH const * cctkGH, int n);
   };
@@ -56,21 +56,21 @@ namespace CarpetRegrid2 {
     int lsh[2];
     getvectorindex2 (cctkGH, "CarpetRegrid2::radii", lsh);
     
-    this->num_levels = num_levels[n];
-    this->active = active[n];
-    this->position = rvect (position_x[n], position_y[n], position_z[n]);
-    if (any (not isfinite(this->position))) {
+    this->_num_levels = num_levels[n];
+    this->_active = active[n];
+    this->_position = rvect (position_x[n], position_y[n], position_z[n]);
+    if (any (not isfinite(this->_position))) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The position of region %d is [%g,%g,%g], which is not finite",
                   n + 1,
-                  double(this->position[0]),
-                  double(this->position[1]),
-                  double(this->position[2]));
+                  double(this->_position[0]),
+                  double(this->_position[1]),
+                  double(this->_position[2]));
       found_error = true;
     }
-    this->radius.resize (this->num_levels);
-    this->radius.at(0) = rvect(-1.0, -1.0, -1.0); // unused
-    for (int rl = 1; rl < this->num_levels; ++ rl) {
+    this->_radius.resize (this->_num_levels);
+    this->_radius.at(0) = rvect(-1.0, -1.0, -1.0); // unused
+    for (int rl = 1; rl < this->_num_levels; ++ rl) {
       int const ind = index2 (lsh, rl, n);
       CCTK_REAL const rx = radius_x[ind] < 0.0 ? radius[ind] : radius_x[ind];
       CCTK_REAL const ry = radius_y[ind] < 0.0 ? radius[ind] : radius_y[ind];
@@ -80,27 +80,27 @@ namespace CarpetRegrid2 {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "The radius of refinement level %d of region %d is [%g,%g,%g], which is not finite",
                     rl, n + 1,
-                    double(this->radius.at(rl)[0]),
-                    double(this->radius.at(rl)[1]),
-                    double(this->radius.at(rl)[2]));
+                    double(this->_radius.at(rl)[0]),
+                    double(this->_radius.at(rl)[1]),
+                    double(this->_radius.at(rl)[2]));
         found_error = true;
       }
       if (any (rad < 0.0)) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "The radius of refinement level %d of region %d is [%g,%g,%g], which is non-negative",
                     rl, n + 1,
-                    double(this->radius.at(rl)[0]),
-                    double(this->radius.at(rl)[1]),
-                    double(this->radius.at(rl)[2]));
+                    double(this->_radius.at(rl)[0]),
+                    double(this->_radius.at(rl)[1]),
+                    double(this->_radius.at(rl)[2]));
         found_error = true;
       }
-      this->radius.at(rl) = rad;
+      this->_radius.at(rl) = rad;
     }
     
-    if (this->num_levels > maxreflevels) {
+    if (this->_num_levels > maxreflevels) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Region %d has %d levels active, which is larger than the maximum number of refinement levels %d",
-                  n + 1, this->num_levels, maxreflevels);
+                  n + 1, this->_num_levels, maxreflevels);
       found_error = true;
     }
     
@@ -439,18 +439,18 @@ namespace CarpetRegrid2 {
       // Loop over all centres
       for (int n = 0; n < num_centres; ++ n) {
         centre_description centre (cctkGH, n);
-        if (centre.active) {
+        if (centre._active) {
           
           // Loop over all levels for this centre
-          for (int rl = min_rl; rl < centre.num_levels; ++ rl) {
+          for (int rl = min_rl; rl < centre._num_levels; ++ rl) {
             
             if (veryverbose) {
               cout << "Refinement level " << rl << ": importing refined region settings..." << endl;
             }
             
             // Calculate a bbox for this region
-            rvect const rmin = centre.position - centre.radius.at(rl);
-            rvect const rmax = centre.position + centre.radius.at(rl);
+            rvect const rmin = centre._position - centre._radius.at(rl);
+            rvect const rmax = centre._position + centre._radius.at(rl);
             
             // Convert to an integer bbox
             ivect const istride = hh.baseextents.at(0).at(rl).stride();
@@ -1172,22 +1172,23 @@ namespace CarpetRegrid2 {
           rvect const rad (rx, ry, rz);
           rvect const oldrad
             (old_radius_x[ind], old_radius_y[ind], old_radius_z[ind]);
-          CCTK_REAL const dr = sqrt (sum (ipow (rad - oldrad, 2)));
-          CCTK_REAL mindr;
+          CCTK_REAL const drfac = 
+	    (sqrt (sum (ipow (rad - oldrad, 2))))/(sqrt (sum (ipow (oldrad, 2))));
+          CCTK_REAL mindrfac;
           switch (n) {
-          case 0: mindr = radius_change_threshold_1; break;
-          case 1: mindr = radius_change_threshold_2; break;
-          case 2: mindr = radius_change_threshold_3; break;
-          case 3: mindr = radius_change_threshold_4; break;
-          case 4: mindr = radius_change_threshold_5; break;
-          case 5: mindr = radius_change_threshold_6; break;
-          case 6: mindr = radius_change_threshold_7; break;
-          case 7: mindr = radius_change_threshold_8; break;
-          case 8: mindr = radius_change_threshold_9; break;
-          case 9: mindr = radius_change_threshold_10; break;
+          case 0: mindrfac = radius_rel_change_threshold_1; break;
+          case 1: mindrfac = radius_rel_change_threshold_2; break;
+          case 2: mindrfac = radius_rel_change_threshold_3; break;
+          case 3: mindrfac = radius_rel_change_threshold_4; break;
+          case 4: mindrfac = radius_rel_change_threshold_5; break;
+          case 5: mindrfac = radius_rel_change_threshold_6; break;
+          case 6: mindrfac = radius_rel_change_threshold_7; break;
+          case 7: mindrfac = radius_rel_change_threshold_8; break;
+          case 8: mindrfac = radius_rel_change_threshold_9; break;
+          case 9: mindrfac = radius_rel_change_threshold_10; break;
           default: assert (0);
           }
-          do_recompose = dr > mindr;
+          do_recompose = drfac > mindrfac;
           if (do_recompose) break;
         } // for rl
         if (do_recompose) break;
@@ -1352,22 +1353,23 @@ namespace CarpetRegrid2 {
           rvect const rad (rx, ry, rz);
           rvect const oldrad
             (old_radius_x[ind], old_radius_y[ind], old_radius_z[ind]);
-          CCTK_REAL const dr = sqrt (sum (ipow (rad - oldrad, 2)));
-          CCTK_REAL mindr;
+          CCTK_REAL const drfac = 
+	    (sqrt (sum (ipow (rad - oldrad, 2))))/(sqrt (sum (ipow (oldrad, 2))));
+          CCTK_REAL mindrfac;
           switch (n) {
-          case 0: mindr = radius_change_threshold_1; break;
-          case 1: mindr = radius_change_threshold_2; break;
-          case 2: mindr = radius_change_threshold_3; break;
-          case 3: mindr = radius_change_threshold_4; break;
-          case 4: mindr = radius_change_threshold_5; break;
-          case 5: mindr = radius_change_threshold_6; break;
-          case 6: mindr = radius_change_threshold_7; break;
-          case 7: mindr = radius_change_threshold_8; break;
-          case 8: mindr = radius_change_threshold_9; break;
-          case 9: mindr = radius_change_threshold_10; break;
+          case 0: mindrfac = radius_rel_change_threshold_1; break;
+          case 1: mindrfac = radius_rel_change_threshold_2; break;
+          case 2: mindrfac = radius_rel_change_threshold_3; break;
+          case 3: mindrfac = radius_rel_change_threshold_4; break;
+          case 4: mindrfac = radius_rel_change_threshold_5; break;
+          case 5: mindrfac = radius_rel_change_threshold_6; break;
+          case 6: mindrfac = radius_rel_change_threshold_7; break;
+          case 7: mindrfac = radius_rel_change_threshold_8; break;
+          case 8: mindrfac = radius_rel_change_threshold_9; break;
+          case 9: mindrfac = radius_rel_change_threshold_10; break;
           default: assert (0);
           }
-          do_recompose = dr > mindr;
+          do_recompose = drfac > mindrfac;
           if (do_recompose) break;
         } // for rl
         if (do_recompose) break;

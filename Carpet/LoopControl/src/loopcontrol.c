@@ -406,9 +406,10 @@ lc_statset_init (lc_statset_t * restrict const ls,
   /*** Threads ****************************************************************/
   
   static int saved_maxthreads = -1;
-  static lc_topology_t * restrict * saved_topologies = NULL;
+  static lc_topology_t * * saved_topologies = NULL;
   static int * restrict saved_ntopologies = NULL;
-  
+
+  // Allocate memory the first time this function is called
   if (saved_maxthreads < 0) {
     saved_maxthreads = omp_get_max_threads();
     saved_topologies  = malloc (saved_maxthreads * sizeof * saved_topologies );
@@ -420,9 +421,18 @@ lc_statset_init (lc_statset_t * restrict const ls,
       saved_ntopologies[n] = -1;
     }
   }
-  
+  // Reallocate memory in case we need more
   if (num_threads > saved_maxthreads) {
-    CCTK_WARN (CCTK_WARN_ABORT, "Thread count inconsistency");
+    int old_saved_maxthreads = saved_maxthreads;
+    saved_maxthreads = num_threads;
+    saved_topologies  = realloc (saved_topologies,  saved_maxthreads * sizeof * saved_topologies );
+    saved_ntopologies = realloc (saved_ntopologies, saved_maxthreads * sizeof * saved_ntopologies);
+    assert (saved_topologies );
+    assert (saved_ntopologies);
+    for (int n=old_saved_maxthreads; n<saved_maxthreads; ++n) {
+      saved_topologies [n] = NULL;
+      saved_ntopologies[n] = -1;
+    }
   }
   
   if (! saved_topologies[num_threads-1]) {
