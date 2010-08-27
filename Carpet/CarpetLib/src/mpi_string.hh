@@ -17,6 +17,10 @@ namespace CarpetLib
   // String communication
   
   vector <string>
+  gather_string (MPI_Comm comm, int root,
+                 string const & data);
+  
+  vector <string>
   allgather_string (MPI_Comm comm,
                     string const & data);
   
