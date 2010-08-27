@@ -208,8 +208,7 @@ namespace Carpet {
         const int grouptype = CCTK_GroupTypeI (g);
         const int ml = grouptype == CCTK_GF ? mglevel : 0;
         const int rl = grouptype == CCTK_GF ? reflevel : 0;
-        const int active_tl =
-          groupdata.AT(g).activetimelevels.AT(mglevel).AT(reflevel);
+        const int active_tl = groupdata.AT(g).activetimelevels.AT(ml).AT(rl);
         assert (active_tl>=0);
         const int tl = active_tl > 1 ? timelevel : 0;
         for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
