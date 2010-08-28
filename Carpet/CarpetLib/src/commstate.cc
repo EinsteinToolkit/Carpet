@@ -223,9 +223,7 @@ void comm_state::step ()
                 size_t const nbytes =
                   procbuf.sendbufsize * datatypesize *
                   (message_size_multiplier - 1);
-#warning "TODO"
-                // memset (procbuf.sendbuf, poison_value, nbytes);
-                memset (procbuf.sendbuf, 0, nbytes);
+                memset (procbuf.sendbuf, poison_value, nbytes);
               }
               
               int const tag = type;

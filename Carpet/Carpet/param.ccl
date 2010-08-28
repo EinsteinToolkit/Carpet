@@ -508,3 +508,9 @@ BOOLEAN init_3_timelevels "Set up 3 timelevels of initial data" STEERABLE=always
 BOOLEAN adaptive_stepsize "Allow adaptive timestep sizes"
 {
 } "no"
+
+BOOLEAN use_unusedpoints_mask "Turn on of off (default) storage and usage of 'unusedpoints_mask'"
+{
+  0:* :: "Anything else than 0 turns unusedpoints_mask on"
+} 0
+

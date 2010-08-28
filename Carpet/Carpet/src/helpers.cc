@@ -110,7 +110,10 @@ namespace Carpet {
     if (tl < activetimelevels) {
       int const var = varindex - CCTK_FirstVarIndexI (groupindex);
       ggf * const ff = arrdata.AT(groupindex).AT(m).data.AT(var);
-      gdata * const data = (*ff) (tl, rl, c, mglevel);
+      int const lc = arrdata.AT(groupindex).AT(m).hh->get_local_component(rl, c);
+      assert (lc >= 0 and
+              lc < arrdata.AT(groupindex).AT(m).hh->local_components(rl));
+      gdata * const data = (*ff) (tl, rl, lc, mglevel);
       return data->storage();
     } else {
       return NULL;

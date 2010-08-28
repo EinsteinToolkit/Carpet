@@ -97,7 +97,8 @@ mem<T>::
   assert (not has_clients());
   if (owns_storage_) {
     delete [] storage_;
-    total_allocated_bytes -= vectorlength_ * nelems_ * sizeof (T);
+    const double nbytes = vectorlength_ * nelems_ * sizeof (T);
+    total_allocated_bytes -= nbytes;
   }
   -- total_allocated_objects;
 }

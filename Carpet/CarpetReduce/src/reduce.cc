@@ -36,39 +36,39 @@ namespace CarpetReduce {
   // Helper functions and types
   
   // Whether a value is nan
-  template<typename T> inline int
+  template<typename T> static inline int
   myisnan (const T x)
   {
     return isnan(x);
   }
   
   // The minimum of two values
-  template<typename T> inline T
+  template<typename T> static inline T
   mymin (const T x, const T y)
   {
     return min(x, y);
   }
   
   // The maximum of two values
-  template<typename T> inline T
+  template<typename T> static inline T
   mymax (const T x, const T y)
   {
     return max(x, y);
   }
   
-  template<typename T> inline T
+  template<typename T> static inline T
   mysqr (const T x)
   {
     return x*x;
   }
   
-  template<typename T> inline T
+  template<typename T> static inline T
   mysqrabs (const T x)
   {
     return x*x;
   }
   
-  template<typename T> inline T
+  template<typename T> static inline T
   mysqrt (const T x)
   {
     return sqrt(x);
@@ -91,7 +91,7 @@ namespace CarpetReduce {
       // For two's complement integers, it is min < - max, and for
       // floating point numbers, it is min = - max.  The expression
       // below does the right thing in both cases.
-      return mymin (numeric_limits<T>::min(), -numeric_limits<T>::max());
+      return CarpetReduce::mymin (numeric_limits<T>::min(), -numeric_limits<T>::max());
     }
     
     // The largest possible value
@@ -120,7 +120,7 @@ namespace CarpetReduce {
   // The C++ compiler should supply these, but some old ones do not,
   // e.g. our beloved workhorse Intel 7.1.  Self is the man.
 #ifdef HAVE_CCTK_BYTE
-//   template<> inline int myisnan (CCTK_BYTE const x)
+//   template<> static inline int myisnan (CCTK_BYTE const x)
 //   {
 //     return 0;
 //   }
@@ -145,7 +145,7 @@ namespace CarpetReduce {
 #endif
   
 #ifdef HAVE_CCTK_INT1
-//   template<> inline int myisnan (CCTK_INT1 const x)
+//   template<> static inline int myisnan (CCTK_INT1 const x)
 //   {
 //     return 0;
 //   }
@@ -170,7 +170,7 @@ namespace CarpetReduce {
 #endif
   
 #ifdef HAVE_CCTK_INT2
-//   template<> inline int myisnan (CCTK_INT2 const x)
+//   template<> static inline int myisnan (CCTK_INT2 const x)
 //   {
 //     return 0;
 //   }
@@ -258,15 +258,15 @@ namespace CarpetReduce {
   template<> inline complex<CCTK_REAL4>
   mymin (const complex<CCTK_REAL4> x, const complex<CCTK_REAL4> y)
   {
-    return complex<CCTK_REAL4> (mymin(x.real(), y.real()),
-                                mymin(x.imag(), y.imag()));
+    return complex<CCTK_REAL4> (CarpetReduce::mymin(x.real(), y.real()),
+                                CarpetReduce::mymin(x.imag(), y.imag()));
   }
   
   template<> inline complex<CCTK_REAL4>
   mymax (const complex<CCTK_REAL4> x, const complex<CCTK_REAL4> y)
   {
-    return complex<CCTK_REAL4> (mymax(x.real(), y.real()),
-                                mymax(x.imag(), y.imag()));
+    return complex<CCTK_REAL4> (CarpetReduce::mymax(x.real(), y.real()),
+                                CarpetReduce::mymax(x.imag(), y.imag()));
   }
   
   template<> inline complex<CCTK_REAL4>
@@ -307,15 +307,15 @@ namespace CarpetReduce {
   template<> inline complex<CCTK_REAL8>
   mymin (const complex<CCTK_REAL8> x, const complex<CCTK_REAL8> y)
   {
-    return complex<CCTK_REAL8> (mymin(x.real(), y.real()),
-                                mymin(x.imag(), y.imag()));
+    return complex<CCTK_REAL8> (CarpetReduce::mymin(x.real(), y.real()),
+                                CarpetReduce::mymin(x.imag(), y.imag()));
   }
   
   template<> inline complex<CCTK_REAL8>
   mymax (const complex<CCTK_REAL8> x, const complex<CCTK_REAL8> y)
   {
-    return complex<CCTK_REAL8> (mymax(x.real(), y.real()),
-                                mymax(x.imag(), y.imag()));
+    return complex<CCTK_REAL8> (CarpetReduce::mymax(x.real(), y.real()),
+                                CarpetReduce::mymax(x.imag(), y.imag()));
   }
   
   template<> inline complex<CCTK_REAL8>
@@ -356,15 +356,15 @@ namespace CarpetReduce {
   template<> inline complex<CCTK_REAL16>
   mymin (const complex<CCTK_REAL16> x, const complex<CCTK_REAL16> y)
   {
-    return complex<CCTK_REAL16> (mymin(x.real(), y.real()),
-                                 mymin(x.imag(), y.imag()));
+    return complex<CCTK_REAL16> (CarpetReduce::mymin(x.real(), y.real()),
+                                 CarpetReduce::mymin(x.imag(), y.imag()));
   }
   
   template<> inline complex<CCTK_REAL16>
   mymax (const complex<CCTK_REAL16> x, const complex<CCTK_REAL16> y)
   {
-    return complex<CCTK_REAL16> (mymax(x.real(), y.real()),
-                                 mymax(x.imag(), y.imag()));
+    return complex<CCTK_REAL16> (CarpetReduce::mymax(x.real(), y.real()),
+                                 CarpetReduce::mymax(x.imag(), y.imag()));
   }
   
   template<> inline complex<CCTK_REAL16>
@@ -435,8 +435,8 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum, T& cnt) { accum = my_numeric_limits<T>::max(); cnt = T(0); }
-      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum = mymin(accum, val); cnt += T(weight); }
-      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum = mymin(accum,accum2); cnt += cnt2; }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum = CarpetReduce::mymin(accum, val); cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum = CarpetReduce::mymin(accum,accum2); cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_MIN; }
@@ -449,8 +449,8 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum, T& cnt) { accum = my_numeric_limits<T>::min(); cnt = T(0); }
-      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum = mymax(accum, val); cnt += T(weight); }
-      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum = mymax(accum,accum2); cnt += cnt2; }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum = CarpetReduce::mymax(accum, val); cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum = CarpetReduce::mymax(accum,accum2); cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_MAX; }
@@ -505,7 +505,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
-      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*mysqr(val); cnt += T(weight); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*CarpetReduce::mysqr(val); cnt += T(weight); }
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -519,7 +519,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
-      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*mysqrabs(val); cnt += T(weight); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*CarpetReduce::mysqrabs(val); cnt += T(weight); }
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -561,9 +561,9 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
-      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*mysqrabs(val); cnt += T(weight); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*CarpetReduce::mysqrabs(val); cnt += T(weight); }
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
-      static inline void finalise (T& accum, const T& cnt) { accum = mysqrt(accum / cnt); }
+      static inline void finalise (T& accum, const T& cnt) { accum = CarpetReduce::mysqrt(accum / cnt); }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
   };
@@ -575,8 +575,8 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
-      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum = mymax(accum, T(abs(val))); cnt += T(weight); }
-      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum = mymax(accum,accum2); cnt += cnt2; }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum = CarpetReduce::mymax(accum, T(abs(val))); cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum = CarpetReduce::mymax(accum,accum2); cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_MAX; }

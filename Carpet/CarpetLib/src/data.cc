@@ -975,16 +975,52 @@ transfer_restrict (data const * const src,
                         this->extent(),
                         box);
       break;
-    case cell_centered:
-      call_operator<T> (& restrict_3d_cc_rf2,
-                        static_cast <T const *> (src->storage()),
-                        src->shape(),
-                        static_cast <T *> (this->storage()),
-                        this->shape(),
-                        src->extent(),
-                        this->extent(),
-                        box);
+    case cell_centered: {
+      assert (all (box.stride() == this->extent().stride()));
+      ivect const izero (0);
+      ivect const ioff = box.lower() - this->extent().lower();
+      ivect const is_centered = ioff % this->extent().stride() == izero;
+      if (all(is_centered == ivect(1,1,1))) {
+        call_operator<T> (& restrict_3d_cc_rf2,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+      } else if (all(is_centered == ivect(0,1,1))) {
+        call_operator<T> (& restrict_3d_vc_rf2<T,0,1,1>,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+      } else if (all(is_centered == ivect(1,0,1))) {
+        call_operator<T> (& restrict_3d_vc_rf2<T,1,0,1>,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+      } else if (all(is_centered == ivect(1,1,0))) {
+        call_operator<T> (& restrict_3d_vc_rf2<T,1,1,0>,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+      } else {
+        assert (0);
+      }
       break;
+    }
     default:
       assert (0);
     }

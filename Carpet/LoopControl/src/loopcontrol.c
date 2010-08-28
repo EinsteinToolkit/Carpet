@@ -71,11 +71,11 @@ lc_statmap_t * lc_statmap_list = NULL;
 /* Find all possible thread topologies */
 /* This finds all possible thread topologies which can be expressed as
    NIxNJxNK x NIIxNJJxNKK.  More complex topologies, e.g. based on a
-   recursive subdiviston, are not considered (and cannot be expressed
-   with the data structures used in LoopControl).  I expect that more
-   complex topologies are not necessary, since the number of treads is
-   usually quite small and contains many small factors in its prime
-   decomposition.  */
+   recursive subdivision, are not considered (and cannot be expressed
+   with the data structures currently used in LoopControl).  I expect
+   that more complex topologies are not necessary, since the number of
+   threads is usually quite small and contains many small factors in
+   its prime decomposition.  */
 static
 void
 find_thread_topologies (lc_topology_t * restrict const topologies,
@@ -122,6 +122,7 @@ find_thread_topologies (lc_topology_t * restrict const topologies,
 }
 
 
+#if 0
 
 /* Find "good" tiling specifications */
 /* This calculates a subset of all possible thread specifications.
@@ -130,11 +131,10 @@ find_thread_topologies (lc_topology_t * restrict const topologies,
    "equally", so that one does not have to spend much effort
    investigating tiling specifications with very similar properties.
    For example, if there are 200 grid points, then half of the
-   possible tiling specifications consists of splitting the domain
-   into two subdomains with [100+N, 100-N] points.  This is avoided by
+   possible tiling specifications consist of splitting the domain into
+   two subdomains with [100+N, 100-N] points.  This is avoided by
    covering all possible tiling specifications in exponentially
    growing step sizes.  */
-#if 0
 static
 int tiling_compare (const void * const a, const void * const b)
 {
@@ -372,7 +372,7 @@ lc_stattime_find_create (lc_statset_t * restrict const ls,
   
   if (! lt) {
     lt = malloc (sizeof * lt);
-    assert(lt);
+    assert (lt);
     lc_stattime_init (lt, ls, state);
   }
   
@@ -406,23 +406,33 @@ lc_statset_init (lc_statset_t * restrict const ls,
   /*** Threads ****************************************************************/
   
   static int saved_maxthreads = -1;
-  static lc_topology_t * restrict * saved_topologies = NULL;
+  static lc_topology_t * * saved_topologies = NULL;
   static int * restrict saved_ntopologies = NULL;
-  
+
+  // Allocate memory the first time this function is called
   if (saved_maxthreads < 0) {
     saved_maxthreads = omp_get_max_threads();
     saved_topologies  = malloc (saved_maxthreads * sizeof * saved_topologies );
-    assert(saved_topologies);
     saved_ntopologies = malloc (saved_maxthreads * sizeof * saved_ntopologies);
-    assert(saved_ntopologies);
+    assert (saved_topologies );
+    assert (saved_ntopologies);
     for (int n=0; n<saved_maxthreads; ++n) {
       saved_topologies [n] = NULL;
       saved_ntopologies[n] = -1;
     }
   }
-  
+  // Reallocate memory in case we need more
   if (num_threads > saved_maxthreads) {
-    CCTK_WARN (CCTK_WARN_ABORT, "Thread count inconsistency");
+    int old_saved_maxthreads = saved_maxthreads;
+    saved_maxthreads = num_threads;
+    saved_topologies  = realloc (saved_topologies,  saved_maxthreads * sizeof * saved_topologies );
+    saved_ntopologies = realloc (saved_ntopologies, saved_maxthreads * sizeof * saved_ntopologies);
+    assert (saved_topologies );
+    assert (saved_ntopologies);
+    for (int n=old_saved_maxthreads; n<saved_maxthreads; ++n) {
+      saved_topologies [n] = NULL;
+      saved_ntopologies[n] = -1;
+    }
   }
   
   if (! saved_topologies[num_threads-1]) {
@@ -436,7 +446,7 @@ lc_statset_init (lc_statset_t * restrict const ls,
     
     saved_topologies[num_threads-1] =
       malloc (maxntopologies * sizeof * saved_topologies[num_threads-1]);
-    assert(saved_topologies[num_threads-1]);
+    assert (saved_topologies[num_threads-1]);
     find_thread_topologies
       (saved_topologies[num_threads-1],
        maxntopologies, & saved_ntopologies[num_threads-1],
@@ -445,6 +455,7 @@ lc_statset_init (lc_statset_t * restrict const ls,
       realloc (saved_topologies[num_threads-1],
                (saved_ntopologies[num_threads-1] *
                 sizeof * saved_topologies[num_threads-1]));
+    assert (saved_topologies[num_threads-1]);
     
     if (debug) {
       printf ("Found %d possible thread topologies\n",
@@ -481,12 +492,12 @@ lc_statset_init (lc_statset_t * restrict const ls,
       printf ("Dimension %d: %d points\n", d, ls->npoints[d]);
     }
     ls->tilings[d] = malloc (maxntilings * sizeof * ls->tilings[d]);
-    assert(ls->tilings[d]);
+    assert (ls->tilings[d]);
     find_tiling_specifications
       (ls->tilings[d], maxntilings, & ls->ntilings[d], ls->npoints[d]);
     ls->topology_ntilings[d] =
       malloc (ls->ntopologies * sizeof * ls->topology_ntilings[d]);
-    assert(ls->topology_ntilings[d]);
+    assert (ls->topology_ntilings[d]);
     for (int n = 0; n < ls->ntopologies; ++n) {
       int tiling;
       for (tiling = 1; tiling < ls->ntilings[d]; ++tiling) {
@@ -582,7 +593,7 @@ lc_statset_find_create (lc_statmap_t * restrict const lm,
   
   if (! ls) {
     ls = malloc (sizeof * ls);
-    assert(ls);
+    assert (ls);
     lc_statset_init (ls, lm, num_threads, npoints);
   }
   
@@ -631,7 +642,8 @@ lc_control_init (lc_control_t * restrict const lc,
                  lc_statmap_t * restrict const lm,
                  int const imin, int const jmin, int const kmin,
                  int const imax, int const jmax, int const kmax,
-                 int const ilsh, int const jlsh, int const klsh)
+                 int const ilsh, int const jlsh, int const klsh,
+                 int const di)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -645,6 +657,7 @@ lc_control_init (lc_control_t * restrict const lc,
   assert (imin >= 0 && imax <= ilsh && ilsh >= 0);
   assert (jmin >= 0 && jmax <= jlsh && jlsh >= 0);
   assert (kmin >= 0 && kmax <= klsh && klsh >= 0);
+  assert (di > 0);
   
   /* Copy arguments */
   lc->imin = imin;
@@ -656,6 +669,7 @@ lc_control_init (lc_control_t * restrict const lc,
   lc->ilsh = ilsh;
   lc->jlsh = jlsh;
   lc->klsh = klsh;
+  lc->di   = di;                /* vector size */
   
   
   
@@ -663,11 +677,8 @@ lc_control_init (lc_control_t * restrict const lc,
   lc_statset_t * restrict ls;
 #pragma omp single copyprivate (ls)
   {
-    /* Get number of threads */
-    /* int const num_threads = omp_get_num_threads(); */
-    /* int const num_threads = omp_get_max_threads(); */
-    
     /* Calculate number of points */
+    /* TODO: Take vector size into account */
     int npoints[3];
     npoints[0] = lc_max (imax - imin, 0);
     npoints[1] = lc_max (jmax - jmin, 0);
@@ -1110,7 +1121,8 @@ CCTK_FNAME (lc_control_init) (lc_control_t * restrict const lc,
   lc_control_init (lc, lm,
                    * imin - 1, * jmin - 1, * kmin - 1,
                    * imax, * jmax, * kmax,
-                   * ilsh, * jlsh, * klsh);
+                   * ilsh, * jlsh, * klsh,
+                   1);
 }
 
 CCTK_FCALL

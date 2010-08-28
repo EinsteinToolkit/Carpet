@@ -23,7 +23,7 @@ namespace CarpetLib {
     item_ifc split (CCTK_REAL ratio_new_over_old);
   };
   
-  // Declaration of template functions implementing an equivalen
+  // Declaration of template functions implementing an equivalent
   // interface
   template <typename item_t>
   CCTK_REAL

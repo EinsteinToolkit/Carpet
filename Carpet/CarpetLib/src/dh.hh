@@ -81,6 +81,7 @@ public:
     
     // Mask
     ibset restricted_region;                // filled by restriction
+    ibset unused_region;                    // not used (overwritten later) region
     vect<ibset,dim> restriction_boundaries; // partly filled by restriction
     vect<ibset,dim> prolongation_boundaries; // partly used by prolongation
     
@@ -138,6 +139,22 @@ public:
     srpvect fast_ref_rest_sendrecv;
     srpvect fast_sync_sendrecv;
     srpvect fast_ref_bnd_prol_sendrecv;
+    
+    // refluxing
+    srpvect fast_ref_refl_sendrecv_0_0;
+    srpvect fast_ref_refl_sendrecv_0_1;
+    srpvect fast_ref_refl_sendrecv_1_0;
+    srpvect fast_ref_refl_sendrecv_1_1;
+    srpvect fast_ref_refl_sendrecv_2_0;
+    srpvect fast_ref_refl_sendrecv_2_1;
+    // Note: Unfortunately we can't use an array of srpvects since
+    // this doesn't work with C++ member pointers.  We instead define
+    // them explicitly above (bah!), and maintain a static array with
+    // member pointers for easier access.
+    static
+    vect<vect<srpvect fast_dboxes::*,2>,dim> fast_ref_refl_sendrecv;
+    static
+    void init_fast_ref_refl_sendrecv ();
     
     // Regridding schedule:
     

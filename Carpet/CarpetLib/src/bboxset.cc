@@ -464,12 +464,35 @@ bboxset<T,D> bboxset<T,D>::pseudo_inverse (const int n) const {
 }
 
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
+bboxset<T,D> bboxset<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi)
+  const
+{
   // We don't know (yet?) how to shrink a set
   assert (all (lo>=0 and hi>=0));
   bboxset res;
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
     res |= (*bi).expand(lo,hi);
+  }
+  return res;
+}
+
+template<typename T, int D>
+bboxset<T,D> bboxset<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi,
+                                   const vect<T,D>& denom) const
+{
+  assert (all(denom > vect<T,D>(0)));
+  bboxset res;
+  if (all (lo == -hi)) {
+    // Special case for shifting, since this is faster
+    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      res += (*bi).expand(lo,hi,denom);
+    }
+  } else {
+    // We don't know (yet?) how to shrink a set
+    assert (all ((lo>=0 and hi>=0) or (lo == hi)));
+    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      res |= (*bi).expand(lo,hi,denom);
+    }
   }
   return res;
 }

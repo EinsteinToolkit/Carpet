@@ -190,7 +190,7 @@ namespace Carpet {
                                CCTK_REAL messages, CCTK_REAL bytes);
   void UpdateTimingStats (cGH const * cctkGH);
   void PrintTimingStats (cGH const * cctkGH);
-  
+
 } // namespace Carpet
 
 #endif // !defined(FUNCTIONS_HH)

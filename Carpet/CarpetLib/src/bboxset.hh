@@ -142,10 +142,25 @@ public:
   /** Find the pseudo-inverse.  */
   bboxset pseudo_inverse (const int n) const;
   
-  /** Expand (enlarge) the bbox by multiples of the stride.  */
+  /** Expand (enlarge) the bboxset by multiples of the stride.  */
   bboxset expand (const vect<T,D>& lo, const vect<T,D>& hi) const;
   bboxset expand (const vect<vect<T,D>,2>& lohi) const
   { return expand (lohi[0], lohi[1]); }
+  
+  /** Shift the bboxset by multiples of the stride.  */
+  bboxset shift (const vect<T,D>& v) const
+  { return expand (-v, v); }
+  
+  /** Expand (enlarge) the bboxset by multiples of a fraction of the
+      stride.  */
+  bboxset expand (const vect<T,D>& lo, const vect<T,D>& hi,
+                  const vect<T,D>& denom) const;
+  bboxset expand (const vect<vect<T,D>,2>& lohi, const vect<T,D>& denom) const
+  { return expand (lohi[0], lohi[1], denom); }
+  
+  /** Shift the bboxset by multiples of a fraction of the stride.  */
+  bboxset shift (const vect<T,D>& v, const vect<T,D>& denom) const
+  { return expand (-v, v, denom); }
   
   /** Find the smallest b-compatible box around this bbox.
       ("compatible" means having the same stride.)  */

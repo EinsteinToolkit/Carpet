@@ -22,6 +22,7 @@ SRCS =	CallFunction.cc				\
 	Storage.cc				\
 	Timers.cc				\
 	Timing.cc				\
+  UnusedMask.cc   \
 	helpers.cc				\
 	modes.cc				\
 	variables.cc

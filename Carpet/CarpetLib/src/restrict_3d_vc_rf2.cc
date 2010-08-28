@@ -132,8 +132,8 @@ namespace CarpetLib {
                       ivect3 const & restrict srcext,
                       T * restrict const dst,
                       ivect3 const & restrict dstext,
-                      ibbox3 const & restrict srcbbox,
-                      ibbox3 const & restrict dstbbox,
+                      ibbox3 const & restrict srcbbox0,
+                      ibbox3 const & restrict dstbbox0,
                       ibbox3 const & restrict regbbox)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -144,6 +144,13 @@ namespace CarpetLib {
     ivect const icent (centi, centj, centk);
     assert (all (icent == 0 or icent == 1));
     bvect const cent (icent);
+    
+    
+    
+    // Correct bboxes, since the fluxes are stored as if they were
+    // cell-centered
+    ibbox const srcbbox = srcbbox0.shift(icent-1,2);
+    ibbox const dstbbox = dstbbox0.shift(icent-1,2);
     
     
     
@@ -178,7 +185,7 @@ namespace CarpetLib {
     
     
     ivect3 const regext = regbbox.shape() / regbbox.stride();
-    assert (all (either (cent, srcbbox.stride() % 2 == 0, true)));
+    assert (all (srcbbox.stride() % either (cent, 2, 1) == 0));
     if (not (all ((regbbox.lower() - srcbbox.lower() -
                    either (cent, srcbbox.stride() / 2, 0)) %
                   srcbbox.stride() == 0)))

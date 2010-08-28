@@ -14,7 +14,7 @@ IO::parfile_write = "no"
 
 
 
-ActiveThorns = "LocalInterp AEILocalInterp LocalReduce"
+ActiveThorns = "InitBase LocalInterp AEILocalInterp LocalReduce"
 
 
 
@@ -84,6 +84,8 @@ MoL::ODE_Method = RK3
 
 
 ActiveThorns = "WaveMoL"
+
+WaveMoL::num_timelevels = 3
 
 
 
