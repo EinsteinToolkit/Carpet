@@ -1,0 +1,70 @@
+# Parameter definitions for thorn CarpetIONirvana
+
+
+
+shares: IO
+
+USES STRING  out_dir       AS io_out_dir
+USES KEYWORD out_criterion AS io_out_criterion
+USES INT     out_every     AS io_out_every
+USES REAL    out_dt        AS io_out_dt
+USES BOOLEAN strict_io_parameter_check
+USES KEYWORD verbose
+USES BOOLEAN out_single_precision
+USES BOOLEAN abort_on_io_errors 
+
+
+
+shares: Cactus
+
+USES REAL cctk_initial_time
+
+
+
+private:
+
+STRING out_dir "Name of CarpetIONirvana output directory, overrides 'IO::out_dir'" STEERABLE = ALWAYS
+{
+  "^$" :: "Empty: use IO::out_dir"
+  ".+" :: "Not empty: directory name"
+} ""
+
+STRING out_vars "Variables to output in CarpetIONirvana file format" STEERABLE = ALWAYS
+{
+  "" :: "List of group or variable names"
+} ""
+
+
+STRING out_extension "File extension to use for CarpetIONirvana output" STEERABLE = ALWAYS
+{
+  "" :: "File extension (including a leading dot, if desired)"
+} ".h5"
+
+KEYWORD out_criterion "Criterion to select CarpetIONirvana output intervals, overrides out_every" STEERABLE = ALWAYS
+{
+  "default"   :: "Use 'IO::out_criterion'"
+  "never"     :: "Never output"
+  "iteration" :: "Output every so many iterations"
+  "divisor"   :: "Output if (iteration % out_every) == 0."
+  "time"      :: "Output every that much coordinate time"
+} "default"
+
+INT out_every "How often to do CarpetIONirvana output, overrides out_every" STEERABLE = ALWAYS
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use 'IO::out_every'"
+} -2
+
+REAL out_dt "How often to do CarpetIONirvana output, overrides 'IO::out_dt'" STEERABLE = ALWAYS
+{
+  (0:* :: "In intervals of that much coordinate time"
+   0   :: "As often as possible"
+  -1   :: "Disable output"
+  -2   :: "Default to 'IO::out_dt'"
+} -2
+
+
+
+
+

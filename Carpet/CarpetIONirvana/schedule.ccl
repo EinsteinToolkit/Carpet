@@ -1,0 +1,16 @@
+# Schedule definitions for thorn CarpetIONirvana
+
+storage: next_output_iteration next_output_time this_iteration
+storage: last_output_iteration_slice last_output_time_slice this_iteration_slice
+
+schedule CarpetIONirvana_Startup at STARTUP after IOUtil_Startup
+{
+  LANG: C
+} "Startup routine"
+
+schedule CarpetIONirvana_Init at BASEGRID
+{
+  LANG: C
+  OPTIONS: global
+} "Initialisation routine"
+

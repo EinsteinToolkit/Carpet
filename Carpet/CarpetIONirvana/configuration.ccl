@@ -1,0 +1,5 @@
+# Configuration definitions for thorn CarpetIONirvana
+
+REQUIRES Carpet CarpetLib IOUtil #Nirvana
+
+REQUIRES THORNS: Carpet CarpetLib IOUtil

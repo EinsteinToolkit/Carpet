@@ -1,0 +1,9 @@
+# Main make.code.defn file for thorn CarpetIONirvana
+
+# Source files in this directory
+SRCS = CarpetIONirvana.cc Output.cc
+
+# Extend CXXFLAGS if HDF5 library was built with LFS support
+ifneq ($(strip $(HDF5_LFS_FLAGS)),)
+  CXXFLAGS += $(HDF5_LFS_FLAGS)
+endif
