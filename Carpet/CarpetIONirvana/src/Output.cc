@@ -119,13 +119,13 @@ int WriteVar (const cGH* const cctkGH,
                                   group.dim, refinementlevel,
                                   request, bbox, md);
       
-      cout << fullname << " " << cctkGH->cctk_iteration << endl;
+      //cout << fullname << " " << cctkGH->cctk_iteration << endl;
       CarpetN5 File(filename, dist::size(), false);
       
       File.WriteMesh(md);
       File.WriteMesh(md, filenum);
       File.WriteField<double>(md, buffer);
-      //File.WriteField<double>(md, buffer, filenum);
+      File.WriteField<double>(md, buffer, filenum);
       
       
       if (data != mydata) free (data);
