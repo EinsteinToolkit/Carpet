@@ -120,7 +120,9 @@ int WriteVar (const cGH* const cctkGH,
                                   request, bbox, md);
       
       //cout << fullname << " " << cctkGH->cctk_iteration << endl;
-      CarpetN5 File(filename, dist::size(), false);
+      string past_checkpoint = "";
+      const bool write_only = true;  // this prevents the file-format to scan existing files
+      CarpetN5 File(filename, write_only, dist::size(), false, past_checkpoint);
       
       File.WriteMesh(md);
       File.WriteMesh(md, filenum);
