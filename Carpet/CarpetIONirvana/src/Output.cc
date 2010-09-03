@@ -162,7 +162,12 @@ static int GetMetaData (const cGH *const cctkGH, const char *name,
     iorigin[d] = (bbox.lower() / bbox.stride())[d];
     shape[d]  = (bbox.shape() / bbox.stride())[d];
   }
-
+  
+  int size = 3;
+  vector<int> cctk_nghostzones(size);
+  CCTK_GroupnghostzonesVI (cctkGH, size, &cctk_nghostzones[0],
+                             request->vindex);
+  
   attribute<int> acycle("cycle", cctkGH->cctk_iteration);
   attribute<int> areflevel("reflevel", refinementlevel);
   attribute<int> atimelevel("timelevel", request->timelevel);
@@ -170,6 +175,7 @@ static int GetMetaData (const cGH *const cctkGH, const char *name,
   attribute<int> afilenum("filenum", filenum);
   attribute<double> atime("time", cctkGH->cctk_time);
   attribute<vector<int> > alsh("lsh", shape);
+  attribute<vector<int> > aghosts("ghosts", cctk_nghostzones);
   attribute<vector<int> > aiorigin("iorigin", iorigin);
   attribute<int> acomp("comp", Carpet::component);
   attribute<string> avarname("varname", name);
@@ -185,7 +191,7 @@ static int GetMetaData (const cGH *const cctkGH, const char *name,
     int const map_is_cartesian = MultiPatch_MapIsCartesian (Carpet::map);
     if (!map_is_cartesian)
     {
-      ameshname = attribute<string>("meshname", "Multiblock");
+      ameshname = attribute<string>("meshname", "Curvilinear");
       acoordinates = attribute<string>("coordinates", "grid::coordinates"); // the group-name of the coordinates
     }
     else
@@ -340,6 +346,7 @@ static int GetMetaData (const cGH *const cctkGH, const char *name,
   md << aorigin;       // the origin in coordinate space
   md << adelta;        // the delta spacing
   md << acoordinates;  // the name of the coordinate group
+  md << aghosts;       // number of ghostzones
 
   md << avarname;      // the name of the variable
   md << avargroupname; // the name of the variable's group
