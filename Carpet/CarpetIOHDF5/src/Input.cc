@@ -205,6 +205,21 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
       }
     }
   }
+  // We are in level mode here (we probably shouldn't be, but that's
+  // how Cactus I/O was designed), so we need to fix up certain
+  // things. See Carpet's function leave_level_mode to see what
+  // happens when we leave level mode.
+  {
+    // TODO: Switch to global mode instead of fixing up things
+    // manually
+    assert (reflevel != -1);
+    int const tl = 0;
+    // ignore fileset.global_time
+    global_time = tt->get_time (mglevel, reflevel, tl);
+    cctkGH->cctk_time = global_time;
+    delta_time = fileset.delta_time;
+    cctkGH->cctk_delta_time = delta_time;
+  }
   
   PostRegrid (cctkGH);
   
@@ -357,14 +372,14 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   // set global Cactus/Carpet variables
   if (in_recovery) {
 
-    global_time = fileset->global_time;
-    delta_time = fileset->delta_time;
+    // global_time = fileset->global_time;
+    // delta_time = fileset->delta_time;
     CCTK_SetMainLoopIndex (fileset->main_loop_index);
 
     cctkGH->cctk_iteration = fileset->cctk_iteration;
     // int const idx = mglevel*fileset->num_reflevels + reflevel;
     // cctkGH->cctk_time = fileset->mgleveltimes.at(idx);
-    cctkGH->cctk_time = global_time;
+    // cctkGH->cctk_time = global_time;
 
     if (use_grid_structure_from_checkpoint) {
       // recover the grid structure only once
