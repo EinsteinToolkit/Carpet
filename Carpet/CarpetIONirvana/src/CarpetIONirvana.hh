@@ -1,8 +1,8 @@
-#ifndef CARPETIOHDF5_HH
-#define CARPETIOHDF5_HH
+#ifndef CARPETIONIRVANA_HH
+#define CARPETIONIRVANA_HH
 
-#include "/home/reisswig/SVN/Nirvana/CarpetN5.hh"
-#include "/home/reisswig/SVN/Nirvana/metadata.hh"
+#include "CarpetN5.hh"
+#include "metadata.hh"
 
 #include <vector>
 
