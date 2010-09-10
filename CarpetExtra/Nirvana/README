@@ -1,0 +1,14 @@
+Cactus Code Thorn Nirvana
+Author(s)    : Christian Reisswig, Erik Schnetter
+Maintainer(s): Cactus team
+Licence      : LGPL
+--------------------------------------------------------------------------
+
+1. Purpose
+
+Distribute the Nirvana library.
+
+The Nirvana file format provides an API for reading and writing
+simulation data, and is a particular way of storing any kind of
+simulation data including its meta data using HDF5. High-level
+routines are offered to store and retrieve data from Nirvana.

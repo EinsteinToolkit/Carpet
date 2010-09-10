@@ -1,0 +1,9 @@
+# Configuration definitions for thorn Nirvana
+
+PROVIDES Nirvana
+{
+  SCRIPT Nirvana.sh
+  LANG bash
+}
+
+REQUIRES HDF5

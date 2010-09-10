@@ -1,0 +1,2 @@
+svn checkout --username developer http://www.nullinfinity.net:/repositories/Nirvana
+tar czf Nirvana.tar.gz --exclude .svn Nirvana
