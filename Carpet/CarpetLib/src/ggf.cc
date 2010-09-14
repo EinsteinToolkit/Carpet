@@ -580,6 +580,9 @@ transfer_from_all (comm_state & state,
     int const lc1 = h.get_local_component(rl1,c1);
     int const p2 = h.processor(rl2,c2);
     int const p1 = h.processor(rl1,c1);
+    // Ensure the communication schedule is consistent
+    assert (p1==dist::rank() or p2==dist::rank());
+    assert (lc1>=0 or lc2>=0);
     
     // Source and destination data
     gdata * const dst =
