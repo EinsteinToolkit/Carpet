@@ -40,11 +40,14 @@ namespace CarpetLib {
     if (any (srcbbox.stride() != regbbox.stride() or
              dstbbox.stride() != regbbox.stride()))
     {
-      cout << "copy_3d.cc:" << endl
-           << "srcbbox=" << srcbbox << endl
-           << "dstbbox=" << dstbbox << endl
-           << "regbbox=" << regbbox << endl;
-      CCTK_WARN (0, "Internal error: strides disagree");
+#pragma omp critical
+      {
+        cout << "copy_3d.cc:" << endl
+             << "srcbbox=" << srcbbox << endl
+             << "dstbbox=" << dstbbox << endl
+             << "regbbox=" << regbbox << endl;
+        CCTK_WARN (0, "Internal error: strides disagree");
+      }
     }
     
     if (any (srcbbox.stride() != dstbbox.stride())) {
@@ -54,18 +57,27 @@ namespace CarpetLib {
     // This could be handled, but is likely to point to an error
     // elsewhere
     if (regbbox.empty()) {
+#pragma omp critical
       CCTK_WARN (0, "Internal error: region extent is empty");
     }
     
     if (not regbbox.is_contained_in(srcbbox) or
         not regbbox.is_contained_in(dstbbox))
     {
-      CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
+#pragma omp critical
+      {
+        cout << "copy_3d.cc:" << endl
+             << "srcbbox=" << srcbbox << endl
+             << "dstbbox=" << dstbbox << endl
+             << "regbbox=" << regbbox << endl;
+        CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
+      }
     }
     
     if (any (srcext != srcbbox.shape() / srcbbox.stride() or
              dstext != dstbbox.shape() / dstbbox.stride()))
     {
+#pragma omp critical
       CCTK_WARN (0, "Internal error: array sizes don't agree with bounding boxes");
     }
     
