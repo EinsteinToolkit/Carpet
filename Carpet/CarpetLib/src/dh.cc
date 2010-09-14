@@ -936,59 +936,317 @@ regrid (bool const do_init)
       
       if (rl > 0) {
         int const orl = rl - 1;
-        fast_dboxes & fast_olevel = fast_boxes.AT(ml).AT(orl);
+        full_cboxes const& full_olevel = full_boxes.AT(ml).AT(orl);
+        fast_dboxes& fast_olevel = fast_boxes.AT(ml).AT(orl);
+        ibbox const& odomext = h.baseextent(ml,orl);
         
-        if (h.components(orl) > 0) {
-          for (int lc = 0; lc < h.local_components(rl); ++ lc) {
-            int const c = h.get_component (rl, lc);
+        // Refinement restriction may fill all coarse interior points,
+        // and must use all fine active points
+        
+        ibset allrestricted;
+        switch (h.refcent) {
+        case vertex_centered:
+          allrestricted = allactive.contracted_for(odomext);
+          break;
+        case cell_centered: {
+          ibset const& source = allactive;
+          ibbox const& target = odomext;
+          ibbox const all = allactive.container().expand(10,10);
+          ibbox const all_target = all.contracted_for(target);
+          ibset const tmp0 = source;
+          ibset const tmp1 = tmp0.expanded_for(target);
+          ibset const tmp2 = all_target - tmp1;
+          ibset const tmp3 = tmp2.expand(1,1);
+          ibset const tmp4 = all_target - tmp3;
+          allrestricted = tmp4;
+          cout << "source=" << source << "\n"
+               << "target=" << target << "\n"
+               << "all=" << all << "\n"
+               << "all_target=" << all_target << "\n"
+               << "tmp1=" << tmp1 << "\n"
+               << "tmp2=" << tmp2 << "\n"
+               << "tmp3=" << tmp3 << "\n"
+               << "allrestricted=" << allrestricted << "\n";
+          break;
+        }
+        default:
+          assert(0);
+        }
+        
+        for (int olc = 0; olc < h.local_components(orl); ++ olc) {
+          int const oc = h.get_component(orl, olc);
+          full_dboxes const& obox = full_olevel.AT(oc);
+          
+          ibset needrecv = allrestricted & obox.owned;
+          // Cannot restrict into buffer zones
+          assert ((allrestricted & obox.buffers).empty());
+          
+          for (int c = 0; c < h.components(rl); ++ c) {
+            full_dboxes const& box = full_level.AT(c);
             
-            full_dboxes const & box = full_level.AT(c);
-            full_dboxes const & obox0 = full_boxes.AT(ml).AT(orl).AT(0);
+            ibbox const contracted_exterior =
+              box.exterior.contracted_for(odomext);
+            ibset const ovlp = needrecv & contracted_exterior;
             
-            // Refinement restriction may fill all coarse active
-            // points, and must use all fine active points
-            
-            ibset needrecv (box.active.contracted_for (obox0.interior));
-            
-            for (int cc = 0; cc < h.components(orl); ++ cc) {
-              full_dboxes & obox = full_boxes.AT(ml).AT(orl).AT(cc);
+            for (ibset::const_iterator
+                   ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
+            {
+              ibbox const& recv = *ri;
+              ibbox const send = recv.expanded_for(box.exterior);
+              ASSERT_c (send <= box.exterior,
+                        "Refinement restriction: Send region must be contained in exterior");
               
-              ibset const contracted_active
-                (box.active.contracted_for (obox.interior));
-              ibset const ovlp = obox.active & contracted_active;
-              
-              for (ibset::const_iterator
-                     ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
-              {
-                ibbox const & recv = * ri;
-                ibbox const send = recv.expanded_for (box.interior);
-                ASSERT_c (send <= box.active,
-                          "Refinement restriction: Send region must be contained in active part");
-                fast_olevel.fast_ref_rest_sendrecv.push_back
-                  (sendrecv_pseudoregion_t (send, c, recv, cc));
-                if (not on_this_proc (orl, cc)) {
-                  fast_dboxes & fast_level_otherproc =
-                    fast_level_otherprocs.AT(this_proc(orl, cc));
-                  fast_level_otherproc.fast_ref_rest_sendrecv.push_back
-                    (sendrecv_pseudoregion_t (send, c, recv, cc));
-                }
+              sendrecv_pseudoregion_t const preg (send, c, recv, oc);
+              fast_olevel.fast_ref_rest_sendrecv.push_back(preg);
+              if (not on_this_proc(rl, c)) {
+                fast_dboxes& fast_level_otherproc =
+                  fast_level_otherprocs.AT(this_proc(rl, c));
+                fast_level_otherproc.fast_ref_rest_sendrecv.push_back(preg);
               }
-              
-              needrecv -= ovlp;
-              
-            } // for cc
+            }
             
+            needrecv -= ovlp;
+            
+          } // for c
+          
             // All points must have been received
-            ASSERT_rl (needrecv.empty(),
-                       "Refinement restriction: All points must have been received");
-            
-          } // for lc
-        }   // if orl not empty
+          ASSERT_rl (needrecv.empty(),
+                     "Refinement restriction: All points must have been received");
+          
+        } // for olc
         
       } // if rl > 0
       
       timer_comm_refrest.stop();
+      
+      
+      
+      // Refinement refluxing:
+      
+      static Carpet::Timer timer_comm_reflux
+        ("CarpetLib::dh::regrid::comm::reflux");
+      timer_comm_reflux.start();
+      
+      // If there is no coarser level, do nothing
+      if (rl > 0) {
+        int const orl = rl - 1;
+        local_cboxes & local_olevel = local_boxes.AT(ml).AT(orl);
+        full_cboxes const& full_olevel = full_boxes.AT(ml).AT(orl);
+        fast_dboxes & fast_olevel = fast_boxes.AT(ml).AT(orl);
         
+        // This works only with cell centred grids
+        if (h.refcent == cell_centered) {
+          
+          
+          
+          // Fine grids
+          ibset const& fine_level = allactive;
+          
+          ivect const izero = ivect (0);
+          ivect const ione  = ivect (1);
+          
+          assert (all (h.reffacts.AT(rl) % h.reffacts.AT(orl) == 0));
+          ivect const reffact = h.reffacts.AT(rl) / h.reffacts.AT(orl);
+          
+          vect<vect<ibset,2>,dim> all_fine_boundary;
+          
+          for (int dir=0; dir<dim; ++dir) {
+            // Unit vector
+            ivect const idir = ivect::dir(dir);
+            
+            // Left and right faces
+            ibset const fine_level_minus = fine_level.shift (-idir, 2);
+            ibset const fine_level_plus  = fine_level.shift (+idir, 2);
+            
+            // Fine boundaries
+            all_fine_boundary[dir][0] = fine_level_minus - fine_level_plus ;
+            all_fine_boundary[dir][1] = fine_level_plus  - fine_level_minus;
+          } // for dir
+          
+          // Coarse grids
+          ibbox const& coarse_domain_exterior = h.baseextent(ml, orl);
+          ibbox const& coarse_ext = coarse_domain_exterior;
+          ibbox const& fine_domain_exterior = h.baseextent(ml, rl);
+          ibbox const& fine_ext = fine_domain_exterior;
+          
+          // Coarse equivalent of fine boundary
+          vect<vect<ibset,2>,dim> all_coarse_boundary;
+          for (int dir=0; dir<3; ++dir) {
+            // Unit vector
+            ivect const idir = ivect::dir(dir);
+            ibbox const coarse_faces = coarse_ext.shift(-idir,2);
+            ibbox const fine_faces = fine_ext.shift(-idir,2);
+            for (int face=0; face<2; ++face) {
+              cout << "REFREF rl=" << rl << " dir=" << dir << " face=" << face << "\n"
+                   << "   all_fine_boundary=" << all_fine_boundary[dir][face] << "\n"
+                   << "   coarse_ext=" << coarse_ext << "\n"
+                   << "   coarse_faces=" << coarse_faces << "\n";
+              all_coarse_boundary[dir][face] =
+                all_fine_boundary[dir][face].contracted_for (coarse_faces);
+              cout << "   all_coarse_boundary=" << all_coarse_boundary[dir][face] << "\n";
+              ASSERT_rl (all_coarse_boundary[dir][face].expanded_for(fine_faces) == all_fine_boundary[dir][face],
+                         "Refluxing: Coarse grid boundaries must be consistent with fine grid boundaries");
+            } // for face
+          }   // for dir
+          
+          
+          
+          // Split onto components
+          for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+            int const c = h.get_component(rl, lc);
+            full_dboxes & box = full_level.AT(c);
+            local_dboxes & local_box = local_level.AT(lc);
+            
+            for (int dir = 0; dir < dim; ++ dir) {
+              // Unit vector
+              ivect const idir = ivect::dir(dir);
+              for (int face = 0; face < 2; ++ face) {
+                
+                // This is not really used (only for debugging)
+                local_box.fine_boundary[dir][face] =
+                  box.exterior.shift(-idir,2) & all_fine_boundary[dir][face];
+                cout << "REFREF rl=" << rl << " lc=" << lc << " dir=" << dir << " face=" << face << "\n"
+                     << "   local.fine_boundary=" << local_box.fine_boundary[dir][face] << "\n";
+                
+              } // for face
+            }   // for dir
+            
+          } // for lc
+          
+#ifdef CARPET_DEBUG
+          for (int dir = 0; dir < dim; ++ dir) {
+            ivect const idir = ivect::dir(dir); // Unit vector
+            for (int face = 0; face < 2; ++ face) {
+              ibset all_fine_boundary_combined;
+              for (int c = 0; c < h.components(rl); ++ c) {
+                full_dboxes const & box = full_level.AT(c);
+                all_fine_boundary_combined +=
+                  box.exterior.shift(-idir,2) & all_fine_boundary[dir][face];
+              } // for c
+              ASSERT_rl (all_fine_boundary_combined == all_fine_boundary[dir][face],
+                         "Refluxing: Union of all fine grid boundaries must be the total fine grid boundary ");
+            }
+          }
+#endif
+          
+          for (int lc = 0; lc < h.local_components(orl); ++ lc) {
+            int const c = h.get_component(orl, lc);
+            full_dboxes const & obox = full_olevel.AT(c);
+            local_dboxes & local_obox = local_olevel.AT(lc);
+            
+            for (int dir = 0; dir < dim; ++ dir) {
+              // Unit vector
+              ivect const idir = ivect::dir(dir);
+              for (int face = 0; face < 2; ++ face) {
+                
+                // This is used for post-processing the fluxes
+                // (calculating the difference between coarse and fine
+                // fluxes, adjusting the state)
+                local_obox.coarse_boundary[dir][face] =
+                  obox.owned.shift(-idir,2) & all_coarse_boundary[dir][face];
+                // Cannot reflux into buffer zones
+                cout << "REFREF orl=" << orl << " lc=" << lc << " dir=" << dir << " face=" << face << "\n"
+                     << "   local.coarse_boundary=" << local_obox.coarse_boundary[dir][face] << "\n";
+                assert ((obox.buffers.shift(-idir,2) & all_coarse_boundary[dir][face]).empty());
+                
+              } // for face
+            }   // for dir
+            
+          } // for lc
+          
+#ifdef CARPET_DEBUG
+          for (int dir = 0; dir < dim; ++ dir) {
+            ivect const idir = ivect::dir(dir); // Unit vector
+            for (int face = 0; face < 2; ++ face) {
+              ibset all_coarse_boundary_combined;
+              for (int c = 0; c < h.components(orl); ++ c) {
+                full_dboxes const & obox = full_olevel.AT(c);
+                all_coarse_boundary_combined +=
+                  obox.owned.shift(face ? +idir : -idir,2) & all_coarse_boundary[dir][face];
+              } // for c
+              ASSERT_rl (all_coarse_boundary_combined == all_coarse_boundary[dir][face],
+                         "Refluxing: Union of all coarse grid boundaries must be the total coarse grid boundary ");
+            }
+          }
+#endif
+          
+          
+          
+          // Set up communication schedule
+          for (int olc = 0; olc < h.local_components(orl); ++ olc) {
+            int const oc = h.get_component(orl, olc);
+            local_dboxes & local_obox = local_olevel.AT(olc);
+            cout << "REF ref_refl ml=" << ml << " rl=" << rl << " olc=" << olc << " oc=" << oc << "\n";
+            
+            for (int dir = 0; dir < dim; ++ dir) {
+              // Unit vector
+              ivect const idir = ivect::dir(dir);
+              ibbox const coarse_faces = coarse_ext.shift(-idir,2);
+              ibbox const fine_faces = h.baseextent(ml, rl).shift(-idir,2);
+              for (int face = 0; face < 2; ++ face) {
+                
+                srpvect fast_dboxes::* const fast_ref_refl_sendrecv =
+                  fast_dboxes::fast_ref_refl_sendrecv[dir][face];
+                
+                // Refluxing must fill all coarse refluxing boundary
+                // points, and may use all fine points
+                
+                ibset needrecv (local_obox.coarse_boundary[dir][face]);
+                
+                for (int c = 0; c < h.components(rl); ++ c) {
+                  full_dboxes const & box = full_level.AT(c);
+                  cout << "REF ref_refl ml=" << ml << " rl=" << rl << " olc=" << olc << " oc=" << oc << " c=" << c << " dir=" << dir << " face=" << face << "\n";
+                  
+                  ibbox const contracted_exterior =
+                    box.exterior.shift(-idir, 2).contracted_for(coarse_faces);
+                  cout << "   exterior=" << box.exterior.shift(-idir, 2) << "\n"
+                       << "   contracted=" << contracted_exterior << "\n";
+                  ibset const ovlp = needrecv & contracted_exterior;
+                  cout << "   ovlp=" << ovlp << "\n";
+                  
+                  for (ibset::const_iterator
+                         ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
+                  {
+                    ibbox const & recv = * ri;
+                    ibbox const send =
+                      recv.expanded_for (box.exterior.shift(-idir, 2));
+                    ASSERT_c (send <= box.exterior.shift(-idir, 2),
+                              "Refinement restriction: Send region must be contained in exterior");
+                    
+                    sendrecv_pseudoregion_t const preg (send, c, recv, oc);
+                    cout << "REF ref_refl ml=" << ml << " rl=" << rl << " olc=" << olc << " c=" << c << " oc=" << oc << " dir=" << dir << " face=" << face << "\n"
+                         << "   preg=" << preg << "\n";
+                    (fast_olevel.*fast_ref_refl_sendrecv).push_back (preg);
+                    if (not on_this_proc (rl, c)) {
+                      fast_dboxes & fast_level_otherproc =
+                        fast_level_otherprocs.AT(this_proc(rl, c));
+                      (fast_level_otherproc.*fast_ref_refl_sendrecv).
+                        push_back (preg);
+                    }
+                  }
+                  
+                  needrecv -= ovlp;
+                  
+                } // for c
+                
+                // All points must have been received
+                if (not needrecv.empty()) {
+                  cout << "needrecv=" << needrecv << endl;
+                }
+                ASSERT_rl (needrecv.empty(),
+                           "Refinement refluxing: All points must have been received");
+                
+              } // for face
+            }   // for dir
+            
+          } // for olc
+          
+        } // if cell centered
+        
+      } // if rl > 0
+      
+      timer_comm_reflux.stop();
+      
       timer_comm.stop();
       
       
@@ -1110,7 +1368,7 @@ regrid (bool const do_init)
       // Mask for unused points on coarser level (which do not influence the future
       // evolution provided regridding is done at the right times):
       static Carpet::Timer timer_overwrittenmask ("CarpetLib::dh::regrid::unusedpoints_mask");
-      timer_mask.start();
+      timer_overwrittenmask.start();
       
       if (rl > 0) {
         int const orl = rl - 1;
@@ -1148,278 +1406,7 @@ regrid (bool const do_init)
         } // if reffact != 2
       } // if not coarsest level
 
-      timer_mask.stop();
-      
-      
-      
-      // Refluxing:
-      static Carpet::Timer timer_reflux ("CarpetLib::dh::regrid::reflux");
-      timer_reflux.start();
-      
-      // If there is no coarser level, do nothing
-      if (rl > 0) {
-        int const orl = rl - 1;
-        light_cboxes & light_olevel = light_boxes.AT(ml).AT(orl);
-        local_cboxes & local_olevel = local_boxes.AT(ml).AT(orl);
-        full_cboxes const& full_olevel = full_boxes.AT(ml).AT(orl);
-        fast_dboxes & fast_olevel = fast_boxes.AT(ml).AT(orl);
-        
-        // This works only with cell centred grids
-        if (h.refcent == cell_centered) {
-          
-          // Fine grids
-          ibset const& fine_level = allactive;
-          
-          ivect const izero = ivect (0);
-          ivect const ione  = ivect (1);
-          
-          assert (all (h.reffacts.AT(rl) % h.reffacts.AT(orl) == 0));
-          ivect const reffact = h.reffacts.AT(rl) / h.reffacts.AT(orl);
-          
-          vect<vect<ibset,2>,dim> all_fine_boundary;
-          
-          for (int dir=0; dir<dim; ++dir) {
-            // Unit vector
-            ivect const idir = ivect::dir(dir);
-            
-            // Left and right faces
-            ibset const fine_level_minus = fine_level.shift (-idir, 2);
-            ibset const fine_level_plus  = fine_level.shift (+idir, 2);
-            
-            // Fine boundaries
-            all_fine_boundary[dir][0] = fine_level_minus - fine_level_plus ;
-            all_fine_boundary[dir][1] = fine_level_plus  - fine_level_minus;
-          } // for dir
-          
-          
-          
-          // Coarse grids
-          ibbox const& coarse_domain_exterior = h.baseextent(ml, orl);
-          ibbox const& coarse_ext = coarse_domain_exterior;
-          
-          // Coarse equivalent of fine boundary
-          vect<vect<ibset,2>,dim> all_coarse_boundary;
-          for (int dir=0; dir<3; ++dir) {
-            // Unit vector
-            ivect const idir = ivect::dir(dir);
-            ibbox const coarse_faces = coarse_ext.shift(idir,2);
-            for (int face=0; face<2; ++face) {
-              cout << "REFREF rl=" << rl << " dir=" << dir << " face=" << face << "\n"
-                   << "   all_fine_boundary=" << all_fine_boundary[dir][face] << "\n"
-                   << "   coarse_ext=" << coarse_ext << "\n"
-                   << "   coarse_faces=" << coarse_faces << "\n";
-              all_coarse_boundary[dir][face] =
-                all_fine_boundary[dir][face].contracted_for (coarse_faces);
-              cout << "   all_coarse_boundary=" << all_coarse_boundary[dir][face] << "\n";
-            } // for face
-          }   // for dir
-          
-          
-          
-          for (int lc = 0; lc < h.local_components(rl); ++ lc) {
-            int const c = h.get_component(rl, lc);
-            full_dboxes & box = full_level.AT(c);
-            local_dboxes & local_box = local_level.AT(lc);
-            
-            for (int dir = 0; dir < dim; ++ dir) {
-              for (int face = 0; face < 2; ++ face) {
-                
-                // This is not really used (only for debugging)
-                local_box.fine_boundary[dir][face] =
-                  box.exterior & all_fine_boundary[dir][face];
-                cout << "REFREF rl=" << rl << " lc=" << lc << " dir=" << dir << " face=" << face << "\n"
-                     << "   local.fine_boundary=" << local_box.fine_boundary[dir][face] << "\n";
-                
-              } // for face
-            }   // for dir
-            
-          } // for lc
-          
-          for (int lc = 0; lc < h.local_components(orl); ++ lc) {
-            int const c = h.get_component(orl, lc);
-            full_dboxes const & obox = full_olevel.AT(c);
-            local_dboxes & local_obox = local_olevel.AT(lc);
-            
-            for (int dir = 0; dir < dim; ++ dir) {
-              for (int face = 0; face < 2; ++ face) {
-                
-                // This is used for post-processing the fluxes
-                // (calculating the difference between coarse and fine
-                // fluxes, adjusting the state)
-                local_obox.coarse_boundary[dir][face] =
-                  obox.exterior & all_coarse_boundary[dir][face];
-                cout << "REFREF orl=" << orl << " lc=" << lc << " dir=" << dir << " face=" << face << "\n"
-                     << "   local.coarse_boundary=" << local_obox.coarse_boundary[dir][face] << "\n";
-                
-              } // for face
-            }   // for dir
-            
-          } // for lc
-          
-          for (int lc = 0; lc < h.local_components(orl); ++ lc) {
-            int const oc = h.get_component(orl, lc);
-            light_dboxes & light_obox = light_olevel.AT(oc);
-            local_dboxes & local_obox = local_olevel.AT(lc);
-            cout << "REF ref_refl ml=" << ml << " rl=" << rl << " lc=" << lc << " oc=" << oc << "\n";
-            
-            for (int dir = 0; dir < dim; ++ dir) {
-              for (int face = 0; face < 2; ++ face) {
-                // Unit vector
-                ivect const idir = ivect::dir(dir);
-                
-                srpvect fast_dboxes::* const fast_ref_refl_sendrecv =
-                  fast_dboxes::fast_ref_refl_sendrecv[dir][face];
-                
-                // Refluxing must fill all coarse refluxing boundary
-                // points, and may use all fine points
-                
-                ibset needrecv (local_obox.coarse_boundary[dir][face]);
-                
-                for (int c = 0; c < h.components(rl); ++ c) {
-                  full_dboxes const & box = full_level.AT(c);
-                  cout << "REF ref_refl ml=" << ml << " rl=" << rl << " lc=" << lc << " oc=" << oc << " c=" << c << " dir=" << dir << " face=" << face << "\n";
-                  
-                  ibbox const contracted_exterior =
-                    box.exterior.contracted_for (light_obox.exterior);
-                  cout << "   exterior=" << box.exterior << "\n"
-                       << "   contracted=" << contracted_exterior << "\n";
-                  ibset const ovlp = needrecv & contracted_exterior;
-                  cout << "   ovlp=" << ovlp << "\n";
-                  
-                  for (ibset::const_iterator
-                         ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
-                  {
-                    ibbox const & recv = * ri;
-                    ibbox const send = recv.expanded_for (box.exterior);
-                    ASSERT_c (send <= box.exterior,
-                              "Refinement restriction: Send region must be contained in exterior");
-                    
-                    sendrecv_pseudoregion_t const preg (send, c, recv, oc);
-                    cout << "REF ref_refl ml=" << ml << " rl=" << rl << " lc=" << lc << " c=" << c << " oc=" << oc << " dir=" << dir << " face=" << face << "\n"
-                         << "   preg=" << preg << "\n";
-                    (fast_olevel.*fast_ref_refl_sendrecv).push_back (preg);
-                    if (not on_this_proc (orl, oc)) {
-                      fast_dboxes & fast_level_otherproc =
-                        fast_level_otherprocs.AT(this_proc(orl, oc));
-                      (fast_level_otherproc.*fast_ref_refl_sendrecv).
-                        push_back (preg);
-                    }
-                  }
-                  
-                  needrecv -= ovlp;
-                  
-                } // for c
-                
-                // All points must have been received
-                if (not needrecv.empty()) {
-                  cout << "needrecv=" << needrecv << endl;
-                }
-                ASSERT_rl (needrecv.empty(),
-                           "Refinement refluxing: All points must have been received");
-                
-              } // for face
-            }   // for dir
-            
-          } // for lc
-          
-#if 0
-          for (int lc = 0; lc < h.local_components(rl); ++ lc) {
-            int const c = h.get_component(rl, lc);
-            full_dboxes const & box = full_level.AT(c);
-            local_dboxes const & local_box = local_level.AT(lc);
-            full_dboxes const & obox0 = full_boxes.AT(ml).AT(orl).AT(0);
-            cout << "REF ref_refl ml=" << ml << " rl=" << rl << " lc=" << lc << " c=" << c << "\n";
-            
-            for (int dir = 0; dir < dim; ++ dir) {
-              for (int face = 0; face < 2; ++ face) {
-                // Unit vector
-                ivect const idir = ivect::dir(dir);
-                
-                srpvect fast_dboxes::* const fast_ref_refl_sendrecv =
-                  fast_dboxes::fast_ref_refl_sendrecv[dir][face];
-                
-                // Refluxing may fill all coarse active points, and
-                // must use all fine refluxing boundary points
-                
-                // ibset needrecv (box.active.contracted_for (obox0.interior));
-                // ibset needrecv
-                //   (local_box.coarse_boundary[dir][face].
-                //    contracted_for (obox0.interior));
-#error "should this be local_obox instead of local_box?"
-                ibset needrecv
-                  (local_box.coarse_boundary[dir][face].
-                   shift (idir*(1-reffact), 2).
-                   contracted_for (obox0.interior));
-                cout << "REF ref_refl ml=" << ml << " rl=" << rl << " lc=" << lc << " c=" << c << " dir=" << dir << " face=" << face << "\n"
-                     << "   coarse_boundary=" << local_box.coarse_boundary[dir][face] << "\n"
-                     << "   shifted=" << local_box.coarse_boundary[dir][face].shift (idir*(1-reffact), 2) << "\n"
-                     << "   needrecv=" << needrecv << "\n";
-                
-                for (int oc = 0; oc < h.components(orl); ++ oc) {
-                  full_dboxes & obox = full_boxes.AT(ml).AT(orl).AT(oc);
-                  cout << "REF ref_refl ml=" << ml << " rl=" << rl << " lc=" << lc << " c=" << c << " oc=" << oc << " dir=" << dir << " face=" << face << "\n";
-                  
-                  ibset const contracted_boundary
-                    (local_box.fine_boundary[dir][face].
-                     contracted_for (obox.interior));
-                  cout << "   fine_boundary=" << local_box.fine_boundary[dir][face] << "\n";
-                  cout << "   contracted_boundary=" << contracted_boundary << "\n";
-                  ibset const ovlp = obox.active & contracted_boundary;
-                  cout << "   ovlp=" << ovlp << "\n";
-                  
-                  for (ibset::const_iterator
-                         ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
-                  {
-                    ibbox const & recv = * ri;
-#warning "TODO: need to use correct coarse/fine transition"
-                    ibbox const send = recv.expanded_for (box.interior);
-                    ASSERT_c (send <= box.active,
-                              "Refinement restriction: Send region must be contained in active part");
-                    
-                    // Modify the extents since the flux grid
-                    // functions are staggered
-                    assert (all (send.stride() % 2 == 0));
-                    ibbox const msend (send.lower() + idir * send.stride()/2,
-                                       send.upper() + idir * send.stride()/2,
-                                       send.stride());
-                    assert (all (recv.stride() % 2 == 0));
-                    ibbox const mrecv (recv.lower() + idir * recv.stride()/2,
-                                       recv.upper() + idir * recv.stride()/2,
-                                       recv.stride());
-                    
-                    sendrecv_pseudoregion_t const preg (msend, c, mrecv, oc);
-                    (fast_olevel.*fast_ref_refl_sendrecv).push_back (preg);
-                    cout << "REF ref_refl ml=" << ml << " rl=" << rl << " lc=" << lc << " c=" << c << " oc=" << oc << " dir=" << dir << " face=" << face << " preg=" << preg << "\n";
-                    if (not on_this_proc (orl, oc)) {
-                      fast_dboxes & fast_level_otherproc =
-                        fast_level_otherprocs.AT(this_proc(orl, oc));
-                      (fast_level_otherproc.*fast_ref_refl_sendrecv).
-                        push_back (preg);
-                    }
-                  }
-                  
-                  needrecv -= ovlp;
-                  
-                } // for oc
-            
-                // All points must have been received
-                if (not needrecv.empty()) {
-                  cout << "needrecv=" << needrecv << endl;
-                }
-                ASSERT_rl (needrecv.empty(),
-                           "Refinement refluxing: All points must have been received");
-                
-              } // for face
-            }   // for dir
-            
-          } // for lc
-#endif
-          
-        } // if cell centered
-        
-      } // if rl > 0
-      
-      timer_reflux.stop();
+      timer_overwrittenmask.stop();
       
       
       

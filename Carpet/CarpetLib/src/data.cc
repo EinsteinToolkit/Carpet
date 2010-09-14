@@ -56,7 +56,7 @@ call_operator (void
 #ifndef _OPENMP
   (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, regbbox);
 #else
-#  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
+#  ifdef CARPET_DEBUG
   ibset allregbboxes;
 #  endif
 #pragma omp parallel
@@ -86,13 +86,13 @@ call_operator (void
        regbbox.stride());
     if (not myregbbox.empty()) {
       (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, myregbbox);
-#  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
+#  ifdef CARPET_DEBUG
 #pragma omp critical
       allregbboxes += myregbbox;
 #  endif
     }
   }
-#  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
+#  ifdef CARPET_DEBUG
   if (not (allregbboxes == ibset (regbbox))) {
     cout << "allregbboxes=" << allregbboxes << endl
          << "regbbox=" << regbbox << endl;
@@ -408,14 +408,35 @@ copy_from_innerloop (gdata const * const gsrc,
   assert (proc() == src->proc());
   assert (dist::rank() == proc());
   
+  ibbox srcbox, dstbox;
+  switch (cent) {
+  case vertex_centered:
+    srcbox = src->extent();
+    dstbox = this->extent();
+    break;
+  case cell_centered: {
+    ivect const ioff = box.lower() - this->extent().lower();
+    ivect const is_centered = ioff % this->extent().stride() == 0;
+    
+    // Shift bboxes to be face centred if necessary, since all grid
+    // functions are stored as if they were cell-centered
+    // srcbox = src->extent().shift(is_centered-1,2);
+    srcbox = src->extent();
+    dstbox = this->extent().shift(is_centered-1,2);
+    break;
+  }
+  default:
+    assert (0);
+  }
+  
 #if CARPET_DIM == 3
   call_operator<T> (& copy_3d,
                     static_cast <T const *> (src->storage()),
                     src->shape(),
                     static_cast <T *> (this->storage()),
                     this->shape(),
-                    src->extent(),
-                    this->extent(),
+                    srcbox,
+                    dstbox,
                     box);
 #elif CARPET_DIM == 4
   call_operator<T> (& copy_4d,
@@ -423,8 +444,8 @@ copy_from_innerloop (gdata const * const gsrc,
                     src->shape(),
                     static_cast <T *> (this->storage()),
                     this->shape(),
-                    src->extent(),
-                    this->extent(),
+                    srcbox,
+                    dstbox,
                     box);
 #else
 #  error "Value for CARPET_DIM not supported"
@@ -977,17 +998,22 @@ transfer_restrict (data const * const src,
       break;
     case cell_centered: {
       assert (all (box.stride() == this->extent().stride()));
-      ivect const izero (0);
       ivect const ioff = box.lower() - this->extent().lower();
-      ivect const is_centered = ioff % this->extent().stride() == izero;
+      ivect const is_centered = ioff % this->extent().stride() == 0;
+      
+      // Shift bboxes to be face centred if necessary, since all grid
+      // functions are stored as if they were cell-centered
+      ibbox const srcbox = src->extent().shift(is_centered-1,2);
+      ibbox const dstbox = this->extent().shift(is_centered-1,2);
+      
       if (all(is_centered == ivect(1,1,1))) {
         call_operator<T> (& restrict_3d_cc_rf2,
                           static_cast <T const *> (src->storage()),
                           src->shape(),
                           static_cast <T *> (this->storage()),
                           this->shape(),
-                          src->extent(),
-                          this->extent(),
+                          srcbox,
+                          dstbox,
                           box);
       } else if (all(is_centered == ivect(0,1,1))) {
         call_operator<T> (& restrict_3d_vc_rf2<T,0,1,1>,
@@ -995,8 +1021,8 @@ transfer_restrict (data const * const src,
                           src->shape(),
                           static_cast <T *> (this->storage()),
                           this->shape(),
-                          src->extent(),
-                          this->extent(),
+                          srcbox,
+                          dstbox,
                           box);
       } else if (all(is_centered == ivect(1,0,1))) {
         call_operator<T> (& restrict_3d_vc_rf2<T,1,0,1>,
@@ -1004,8 +1030,8 @@ transfer_restrict (data const * const src,
                           src->shape(),
                           static_cast <T *> (this->storage()),
                           this->shape(),
-                          src->extent(),
-                          this->extent(),
+                          srcbox,
+                          dstbox,
                           box);
       } else if (all(is_centered == ivect(1,1,0))) {
         call_operator<T> (& restrict_3d_vc_rf2<T,1,1,0>,
@@ -1013,8 +1039,8 @@ transfer_restrict (data const * const src,
                           src->shape(),
                           static_cast <T *> (this->storage()),
                           this->shape(),
-                          src->extent(),
-                          this->extent(),
+                          srcbox,
+                          dstbox,
                           box);
       } else {
         assert (0);

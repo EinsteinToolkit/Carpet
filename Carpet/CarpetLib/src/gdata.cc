@@ -191,12 +191,21 @@ transfer_from (comm_state & state,
       if (is_src) {
         // copy the data into the send buffer
         if (interp_on_src) {
+          ivect ioffset (0);
+          if (src->cent == cell_centered) {
+            assert (all (srcbox.stride() == src->extent().stride()));
+            ivect const ioff = srcbox.lower() - src->extent().lower();
+            ivect const is_centered = ioff % src->extent().stride() == 0;
+            ioffset = 1 - is_centered;
+          }
+          ibbox const bufbox = dstbox.shift(ioffset, 2);
+          assert (bufbox.size() == dstbox.size());
           size_t const sendbufsize = src->c_datatype_size() * dstbox.size();
           void * const sendbuf =
             state.send_buffer (src->c_datatype(), dstproc, dstbox.size());
           gdata * const buf =
             src->make_typed (src->varindex, src->cent, src->transport_operator);
-          buf->allocate (dstbox, srcproc, sendbuf, sendbufsize);
+          buf->allocate (bufbox, srcproc, sendbuf, sendbufsize);
           buf->transfer_from_innerloop
             (srcs, times, dstbox, time, order_space, order_time);
           delete buf;
@@ -241,6 +250,13 @@ transfer_from (comm_state & state,
           copy_from_innerloop (buf, dstbox);
           delete buf;
         } else {
+          if (cent == cell_centered) {
+            assert (all (dstbox.stride() == this->extent().stride()));
+            ivect const ioff = dstbox.lower() - this->extent().lower();
+            ivect const is_centered = ioff % this->extent().stride() == 0;
+            ivect const ioffset = not is_centered;
+            assert (all (ioffset == 0));
+          }
           gdata const * const null = NULL;
           vector <gdata const *> bufs (ntimelevels, null);
           vector <CCTK_REAL> timebuf (ntimelevels);
