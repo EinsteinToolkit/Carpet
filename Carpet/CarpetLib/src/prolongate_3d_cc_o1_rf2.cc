@@ -78,6 +78,12 @@ namespace CarpetLib {
     if (not regbbox.expand(offsetlo, offsethi).is_contained_in(srcbbox) or
         not regbbox                           .is_contained_in(dstbbox))
     {
+      cout << "ERROR:\n"
+           << "srcbbox=" << srcbbox << "\n"
+           << "dstbbox=" << dstbbox << "\n"
+           << "regbbox=" << regbbox << "\n"
+           << "offsetlo=" << offsetlo << "\n"
+           << "offsethi=" << offsethi << "\n";
       CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
     }
     
