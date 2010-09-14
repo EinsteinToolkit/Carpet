@@ -409,20 +409,35 @@ namespace Carpet {
   void
   CallRestrict (cGH * const cctkGH)
   {
-    for (int rl=reflevels-1; rl>=0; --rl) {
+    char const * const where = "Initialise::CallRestrict";
+    static Timer timer (where);
+    timer.start();
+    
+    for (int rl=reflevels-2; rl>=0; --rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
           BeginTimingLevel (cctkGH);
-          
+                    
+          do_early_global_mode = reflevel==reflevels-2;
+          do_late_global_mode = reflevel==0;
+          do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+          do_late_meta_mode = do_late_global_mode and mglevel==0;
+          do_global_mode = do_late_global_mode; // on last iteration, finest grid
+          do_meta_mode = do_late_meta_mode; // on last iteration, finest grid
+
           Waypoint ("Initialisation/Restrict at iteration %d time %g",
                     cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
           
           Restrict (cctkGH);
           
+          ScheduleTraverse (where, "CCTK_POSTRESTRICTINITIAL", cctkGH);
+          
           EndTimingLevel (cctkGH);
         } LEAVE_LEVEL_MODE;
       } END_MGLEVEL_LOOP;
     } // for rl
+    
+    timer.stop();
   }
   
   
@@ -451,9 +466,11 @@ namespace Carpet {
                     (do_global_mode ? " (global)" : ""),
                     (do_meta_mode ? " (meta)" : ""));
           
+#if 0
           if (reflevel < reflevels-1) {
             ScheduleTraverse (where, "CCTK_POSTRESTRICTINITIAL", cctkGH);
           }
+#endif
           
           ScheduleTraverse (where, "CCTK_POSTPOSTINITIAL", cctkGH);
           ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
