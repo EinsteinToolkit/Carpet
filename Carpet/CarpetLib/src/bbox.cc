@@ -80,6 +80,8 @@ typename bbox<T,D>::size_type bbox<T,D>::size () const {
 // Containment
 template<typename T, int D>
 bool bbox<T,D>::contains (const vect<T,D>& x) const {
+  if (empty()) return false;
+  // no alignment check
   return all(x>=lower() and x<=upper());
 }
 
