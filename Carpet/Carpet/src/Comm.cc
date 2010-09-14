@@ -80,8 +80,9 @@ namespace Carpet {
       const int g = groups.AT(group);
       const int grouptype = CCTK_GroupTypeI (g);
       char* const groupname = CCTK_GroupName (g);
-      Checkpoint ("SyncGroup \"%s\" time=%g",
-                  groupname, (double) cctkGH->cctk_time);
+      Checkpoint ("SyncGroup \"%s\" iteration=%d time=%g",
+                  groupname,
+                  cctkGH->cctk_iteration, (double) cctkGH->cctk_time);
 
       if (grouptype == CCTK_GF) {
         if (reflevel == -1) {
