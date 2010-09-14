@@ -146,6 +146,7 @@ public:
   bbox operator& (const bbox& b) const
   {
     ASSERT_BBOX (all(stride()==b.stride()));
+    ASSERT_BBOX (is_aligned_with(b));
     vect<T,D> lo = max(lower(),b.lower());
     vect<T,D> up = min(upper(),b.upper());
     return bbox(lo,up,stride());
