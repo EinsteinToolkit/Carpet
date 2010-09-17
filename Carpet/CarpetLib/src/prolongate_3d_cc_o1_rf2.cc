@@ -70,13 +70,17 @@ namespace CarpetLib {
     
     
     
+#if 0
     ivect3 const offsetlo = 1;
     ivect3 const offsethi = 1;
+#endif
+    ivect3 const offsetlo = 0;
+    ivect3 const offsethi = 0;
     
     
     
-    if (not regbbox.expand(offsetlo, offsethi).is_contained_in(srcbbox) or
-        not regbbox                           .is_contained_in(dstbbox))
+    if (not regbbox.expanded_for(srcbbox).expand(offsetlo, offsethi).is_contained_in(srcbbox) or
+        not regbbox                                                 .is_contained_in(dstbbox))
     {
       cout << "ERROR:\n"
            << "srcbbox=" << srcbbox << "\n"
