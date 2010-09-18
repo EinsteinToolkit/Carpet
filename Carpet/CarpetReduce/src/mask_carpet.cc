@@ -12,6 +12,25 @@
 #include <loopcontrol.h>
 
 #include "mask_carpet.hh"
+  
+  
+  
+#define SWITCH_TO_LEVEL(cctkGH, rl)                     \
+  do {                                                  \
+    bool switch_to_level_ = true;                       \
+    assert (is_singlemap_mode());                       \
+    int const rl_ = (rl);                               \
+    int const m_ = Carpet::map;                         \
+    BEGIN_GLOBAL_MODE (cctkGH) {                        \
+      ENTER_LEVEL_MODE (cctkGH, rl_) {                  \
+        ENTER_SINGLEMAP_MODE (cctkGH, m_, CCTK_GF) {
+#define END_SWITCH_TO_LEVEL                     \
+        } LEAVE_SINGLEMAP_MODE;                 \
+      } LEAVE_LEVEL_MODE;                       \
+    } END_GLOBAL_MODE;                          \
+    assert (switch_to_level_);                  \
+    switch_to_level_ = false;                   \
+  } while (false)
 
 
 
@@ -53,89 +72,77 @@ namespace CarpetMask {
       
       
       // Set prolongation boundaries of this level
-      {
-        BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+      BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+        DECLARE_CCTK_ARGUMENTS;
+        
+        ibbox const & ext =
+          dd.light_boxes.AT(mglevel).AT(reflevel).AT(component).exterior;
+        ibset const & active = 
+          dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).active;
+        
+        vect<ibset,dim> const & boundaries =
+          dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).prolongation_boundaries;
+        
+        ibset const notactive = ext - active;
+        
+        for (int d=0; d<dim; ++d) {
+          assert ((notactive & boundaries[d]).empty());
+        }
+        
+        LOOP_OVER_BSET (cctkGH, notactive, box, imin, imax) {
           
-          DECLARE_CCTK_ARGUMENTS;
-          
-          ibbox const & ext =
-            dd.light_boxes.AT(mglevel).AT(reflevel).AT(component).exterior;
-          ibset const & active = 
-            dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).active;
-          
-          vect<ibset,dim> const & boundaries =
-            dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).prolongation_boundaries;
-          
-          ibset const notactive = ext - active;
-          
-          for (int d=0; d<dim; ++d) {
-            assert ((notactive & boundaries[d]).empty());
+          if (verbose) {
+            ostringstream buf;
+            buf << "Setting buffer region on level " << reflevel << " to weight 0: " << imin << ":" << imax-ione;
+            CCTK_INFO (buf.str().c_str());
           }
           
-          LOOP_OVER_BSET (cctkGH, notactive, box, imin, imax) {
+          // Set weight on the boundary to 0
+          assert (dim == 3);
+#pragma omp parallel
+          LC_LOOP3(CarpetMaskSetup_buffers,
+                   i,j,k,
+                   imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+          {
+            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+            weight[ind] = 0.0;
+          } LC_ENDLOOP3(CarpetMaskSetup_buffers);
+          
+        } END_LOOP_OVER_BSET;
+        
+        for (int d=0; d<dim; ++d) {
+          LOOP_OVER_BSET (cctkGH, boundaries[d], box, imin, imax) {
             
             if (verbose) {
               ostringstream buf;
-              buf << "Setting buffer region on level " << reflevel << " to weight 0: " << imin << ":" << imax-ione;
+              buf << "Setting prolongation boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
               CCTK_INFO (buf.str().c_str());
             }
             
-            // Set weight on the boundary to 0
+            // Set weight on the boundary to 1/2
             assert (dim == 3);
 #pragma omp parallel
-            LC_LOOP3(CarpetMaskSetup_buffers,
+            LC_LOOP3(CarpetMaskSetup_prolongation,
                      i,j,k,
                      imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
                      cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
             {
               int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-              weight[ind] = 0.0;
-            } LC_ENDLOOP3(CarpetMaskSetup_buffers);
+              weight[ind] *= 0.5;
+            } LC_ENDLOOP3(CarpetMaskSetup_prolongation);
+            
             
           } END_LOOP_OVER_BSET;
-          
-          for (int d=0; d<dim; ++d) {
-            LOOP_OVER_BSET (cctkGH, boundaries[d], box, imin, imax) {
-              
-              if (verbose) {
-                ostringstream buf;
-                buf << "Setting prolongation boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
-                CCTK_INFO (buf.str().c_str());
-              }
-              
-              // Set weight on the boundary to 1/2
-              assert (dim == 3);
-#pragma omp parallel
-              LC_LOOP3(CarpetMaskSetup_prolongation,
-                       i,j,k,
-                       imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-              {
-                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                weight[ind] *= 0.5;
-              } LC_ENDLOOP3(CarpetMaskSetup_prolongation);
-              
-              
-            } END_LOOP_OVER_BSET;
-          } // for d
-          
-        } END_LOCAL_COMPONENT_LOOP;
-      }
+        } // for d
+        
+      } END_LOCAL_COMPONENT_LOOP;
       
       
       
       // Set restriction region on next coarser level
-      {
-        int const oldreflevel = reflevel;
-        int const oldgrouptype = mc_grouptype;
-        int const oldmap = Carpet::map;
-        leave_singlemap_mode (cctkGH);
-        leave_level_mode (cctkGH);
-        enter_level_mode (cctkGH, oldreflevel-1);
-        enter_singlemap_mode (cctkGH, oldmap, oldgrouptype);
-        
+      SWITCH_TO_LEVEL (cctkGH, reflevel-1) {
         BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
-          
           DECLARE_CCTK_ARGUMENTS;
           
           ibset const & refined =
@@ -215,17 +222,15 @@ namespace CarpetMask {
           {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             if (mask[ind] > 0) {
+#if 0
               weight[ind] *= 1.0 - 1.0 / mask[ind];
+#endif
+              weight[ind] -= 1.0 / mask[ind];
             }
           } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_apply);
           
         } END_LOCAL_COMPONENT_LOOP;
-        
-        leave_singlemap_mode (cctkGH);
-        leave_level_mode (cctkGH);
-        enter_level_mode (cctkGH, oldreflevel);
-        enter_singlemap_mode (cctkGH, oldmap, oldgrouptype);
-      }
+      } END_SWITCH_TO_LEVEL;
       
     } // if reflevel>0
   }
