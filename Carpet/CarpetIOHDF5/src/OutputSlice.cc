@@ -61,8 +61,9 @@ namespace CarpetIOHDF5 {
 
 
   // IO processor
-  const int ioproc = 0;
-  const int nioprocs = 1;
+  template<int outdim> int IOHDF5<outdim>::ioproc;
+  template<int outdim> int IOHDF5<outdim>::nioprocs;
+  template<int outdim> int IOHDF5<outdim>::ioproc_every;
 
 
 
@@ -206,6 +207,20 @@ namespace CarpetIOHDF5 {
       // save the last setting of 'IOHDF5::out%d_vars' parameter
       free (my_out_slice_vars);
       my_out_slice_vars = strdup (out_slice_vars);
+    }
+
+    // copy ioprocs and ioproc ot 
+    if (outdim  == 3) { // only 3D output splits files
+      const ioGH *IO = (ioGH *) CCTK_GHExtension (cctkGH, "IO");
+      assert(IO);
+      nioprocs = IO->nioprocs;
+      ioproc = IO->ioproc;
+      ioproc_every = IO->ioproc_every;
+      //cout << "nioprocs: " << nioprocs << " ioproc: " << ioproc << endl;
+    } else {
+      nioprocs = 1;
+      ioproc = 0;
+      ioproc_every = dist::size();
     }
   }
 
@@ -555,7 +570,11 @@ namespace CarpetIOHDF5 {
       for (int c = c_min; c < c_max; ++ c) {
         int const lc = hh->get_local_component(rl,c);
         int const proc = hh->processor(rl,c);
-        if (dist::rank() == proc or dist::rank() == ioproc) {
+        // we have to take part in this output if we either own data to be
+        // output or are the ioproc in the same group of processors as the
+        // dataholder
+        if (dist::rank() == proc or 
+            dist::rank() == IOProcForProc(proc)) {
           
           const ibbox& data_ext = dd->light_boxes.at(ml).at(rl).at(c).exterior;
           const ibbox ext = GetOutputBBox (cctkGH, group, rl, m, c, data_ext);
@@ -601,6 +620,7 @@ namespace CarpetIOHDF5 {
 
             vector<gdata*> tmpdatas(datas.size());
 
+            // tranfer data through the interconnect to ioproc if necessary
             if (proc != ioproc) {
 
               for (size_t n = 0; n < datas.size(); ++ n) {
@@ -628,12 +648,12 @@ namespace CarpetIOHDF5 {
 
             }
 
-            if (dist::rank() == ioproc) {
               error_count +=
                 WriteHDF5 (cctkGH, file, tmpdatas, ext, vindex,
                            offset1, dirs,
                            rl, ml, m, c, tl,
                            coord_time, coord_lower, coord_upper);
+            if (dist::rank() == IOProcForProc(proc)) {
             }
 
             if (proc != ioproc) {
@@ -755,6 +775,9 @@ namespace CarpetIOHDF5 {
       for (int d=0; d<outdim; ++d) {
         const char* const coords = "xyzd";
         filenamebuf << coords[dirs[d]];
+      }
+      if (nioprocs > 1) {
+        filenamebuf << ".file_" << dist::rank();
       }
       filenamebuf << ".h5";
       // we need a persistent temporary here
@@ -1458,6 +1481,15 @@ namespace CarpetIOHDF5 {
     HDF5_ERROR(H5Pclose(plist));
 
     return error_count;
+  }
+
+  // which processor serves as IO processor for this group
+  // TODO: see if IOUtil offers and official way to get this information
+  template<int outdim> int IOHDF5<outdim>::IOProcForProc (int proc)
+  {
+    // according to IOUtil::SetupGH a proc with rank % nioprocs == 0 is an
+    // ioproc
+    return (proc / ioproc_every) * ioproc_every;
   }
 
 

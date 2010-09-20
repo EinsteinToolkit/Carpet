@@ -160,6 +160,10 @@ namespace CarpetIOHDF5
     // I/O request description list (for all variables)
     static vector<ioRequest*> slice_requests;
 
+    // number of I/O processors to use, which processor does I/O for me
+    static int nioprocs;
+    static int ioproc;
+    static int ioproc_every;
 
 
     // Scheduled functions
@@ -224,6 +228,7 @@ namespace CarpetIOHDF5
 
     static ivect GetOutputOffset (const cGH* cctkGH, int m,
                                   const vect<int,outdim>& dirs);
+    static int IOProcForProc (int proc);
 
   };                            // struct IOHDF5
 
