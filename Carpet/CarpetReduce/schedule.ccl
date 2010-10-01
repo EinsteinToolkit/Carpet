@@ -7,7 +7,7 @@ schedule CarpetReduceStartup at STARTUP
 
 
 
-# This might move to MaskBase
+# Should this move to a new thorn MaskBase?
 STORAGE: weight
 
 
@@ -28,53 +28,56 @@ SCHEDULE GROUP MaskBase_SetupMask AT post_recover_variables
 {
 } "Set up the weight function"
 
-SCHEDULE MaskBase_InitMask IN MaskBase_SetupMask
+
+
+SCHEDULE GROUP MaskBase_SetupMaskAll IN MaskBase_SetupMask
+{
+  STORAGE: iweight
+  STORAGE: one
+} "Set up the weight function"
+
+
+
+SCHEDULE MaskBase_AllocateMask IN MaskBase_SetupMaskAll
+{
+  LANG: C
+  OPTIONS: global
+} "Allocate the weight function"
+
+SCHEDULE MaskBase_InitMask IN MaskBase_SetupMaskAll AFTER MaskBase_AllocateMask
 {
   LANG: C
   OPTIONS: global loop-local
 } "Initialise the weight function"
 
-SCHEDULE GROUP SetupMask IN MaskBase_SetupMask AFTER MaskBase_InitMask
+SCHEDULE GROUP SetupMask IN MaskBase_SetupMaskAll AFTER MaskBase_InitMask
 {
 } "Set up the weight function (schedule other routines in here)"
 
-# This might move to CoordBase
+SCHEDULE MaskBase_SetMask IN MaskBase_SetupMaskAll AFTER SetupMask
+{
+  LANG: C
+  OPTIONS: global loop-local
+} "Set the weight function"
+
+SCHEDULE MaskBase_TestMask IN MaskBase_SetupMaskAll AFTER MaskBase_SetMask
+{
+  LANG: C
+  OPTIONS: global
+} "Test the weight function"
+
+
+
+# Should this move to CoordBase?
 SCHEDULE CoordBase_SetupMask IN SetupMask
 {
   LANG: C
   OPTIONS: global loop-local
 } "Set up the outer boundaries of the weight function"
 
-# This might move to CarpetMask
+# Should this move to CarpetMask?
 SCHEDULE CarpetMaskSetup IN SetupMask
 {
   LANG: C
   OPTIONS: global loop-singlemap
 } "Set up the weight function for the restriction regions"
-
-
-
-#SCHEDULE GROUP MaskBase_SetupMask_LevelMode AT basegrid AFTER (SpatialCoordinates SphericalSurface_Setup)
-#{
-#} "Set up the weight function"
-#
-#SCHEDULE MaskBase_InitMask IN MaskBase_SetupMask_LevelMode
-#{
-#  LANG: C
-#} "Initialise the weight function"
-#
-#SCHEDULE GROUP SetupMask_LevelMode IN MaskBase_SetupMask_LevelMode AFTER MaskBase_InitMask
-#{
-#} "Set up the weight function (schedule other routines in here)"
-#
-## This might move to CoordBase
-#SCHEDULE CoordBase_SetupMask IN SetupMask_LevelMode
-#{
-#  LANG: C
-#} "Set up the outer boundaries of the weight function"
-#
-## This might move to CarpetMask
-#SCHEDULE CarpetMaskSetup IN SetupMask_LevelMode
-#{
-#  LANG: C
-#} "Set up the weight function for the restriction regions"

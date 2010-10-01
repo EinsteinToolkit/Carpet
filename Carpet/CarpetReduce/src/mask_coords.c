@@ -6,6 +6,8 @@
 
 #include <loopcontrol.h>
 
+#include "bits.h"
+
 
 
 void
@@ -27,6 +29,10 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
   int bmin[3], bmax[3];         /* boundary extent */
   
   int ierr;
+  
+  
+  
+  int const reflevel = GetRefinementLevel(cctkGH);
   
   
   
@@ -113,7 +119,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
           /* Loop over the boundary */
           if (verbose) {
             CCTK_VInfo (CCTK_THORNSTRING,
-                        "Setting boundary points in direction %d face %d to weight 0", d, f);
+                        "Setting boundary points in direction %d face %d to weight 0 on level %d", d, f, reflevel);
           }
 #pragma omp parallel
           LC_LOOP3(CoordBase_SetupMask_boundary,
@@ -123,7 +129,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
           {
             
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-            weight[ind] = 0.0;
+            iweight[ind] = 0;
             
           } LC_ENDLOOP3(CoordBase_SetupMask);
           
@@ -159,7 +165,13 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
               /* Loop over the points next to boundary */
               if (verbose) {
                 CCTK_VInfo (CCTK_THORNSTRING,
-                            "Setting non-staggered boundary points in direction %d face %d to weight 1/2", d, f);
+                            "Setting non-staggered boundary points in direction %d face %d to weight 1/2 on level %d", d, f, reflevel);
+              }
+              int bmask = 0;
+              for (unsigned b=0; b<BMSK(cctk_dim); ++b) {
+                if (BGET(b,d)==f) {
+                  bmask = BSET(bmask, b);
+                }
               }
 #pragma omp parallel
               LC_LOOP3(CoordBase_SetupMask_boundary2,
@@ -167,10 +179,8 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
                        bmin[0],bmin[1],bmin[2], bmax[0],bmax[1],bmax[2],
                        cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
               {
-                
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                weight[ind] *= 0.5;
-                
+                iweight[ind] &= ~bmask;
               } LC_ENDLOOP3(CoordBase_SetupMask_boundary2);
               
             } /* if the domain is not empty */

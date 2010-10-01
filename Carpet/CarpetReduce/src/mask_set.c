@@ -9,19 +9,18 @@
 
 
 void
-MaskBase_InitMask (CCTK_ARGUMENTS)
+MaskBase_SetMask (CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  /* Initialise the weight to 1 everywhere */
   if (verbose) {
     int const reflevel = GetRefinementLevel(cctkGH);
     CCTK_VInfo (CCTK_THORNSTRING,
-                "Initialising weight to 1 on level %d", reflevel);
+                "Finalise the weight on level %d", reflevel);
   }
   
-  int const allbits = BMSK(BMSK(cctk_dim)) - 1;
+  CCTK_REAL const factor = 1.0 / BMSK(cctk_dim);
 #pragma omp parallel
   LC_LOOP3(MaskBase_InitMask_interior,
            i,j,k,
@@ -29,6 +28,7 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
            cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
   {
     int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-    iweight[ind] = allbits;
+    weight[ind] = factor * BCNT(iweight[ind]);
+    one[ind] = 1.0;
   } LC_ENDLOOP3(MaskBase_InitMask_interior);
 }

@@ -11,6 +11,7 @@
 
 #include <loopcontrol.h>
 
+#include "bits.h"
 #include "mask_carpet.hh"
   
   
@@ -62,7 +63,6 @@ namespace CarpetMask {
       
       ivect const ione  = ivect(1);
       
-      gh const & hh = *vhh.AT(Carpet::map);
       dh const & dd = *vdd.AT(Carpet::map);
       
       ivect const reffact =
@@ -80,13 +80,15 @@ namespace CarpetMask {
         ibset const & active = 
           dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).active;
         
-        vect<ibset,dim> const & boundaries =
+        vect<vect<ibset,2>,dim> const & boundaries =
           dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).prolongation_boundaries;
         
         ibset const notactive = ext - active;
         
         for (int d=0; d<dim; ++d) {
-          assert ((notactive & boundaries[d]).empty());
+          for (int f=0; f<2; ++f) {
+            assert ((notactive & boundaries[d][f]).empty());
+          }
         }
         
         LOOP_OVER_BSET (cctkGH, notactive, box, imin, imax) {
@@ -106,34 +108,41 @@ namespace CarpetMask {
                    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
           {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-            weight[ind] = 0.0;
+            iweight[ind] = 0;
           } LC_ENDLOOP3(CarpetMaskSetup_buffers);
           
         } END_LOOP_OVER_BSET;
         
         for (int d=0; d<dim; ++d) {
-          LOOP_OVER_BSET (cctkGH, boundaries[d], box, imin, imax) {
-            
-            if (verbose) {
-              ostringstream buf;
-              buf << "Setting prolongation boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
-              CCTK_INFO (buf.str().c_str());
-            }
-            
-            // Set weight on the boundary to 1/2
-            assert (dim == 3);
+          for (int f=0; f<2; ++f) {
+            LOOP_OVER_BSET (cctkGH, boundaries[d][f], box, imin, imax) {
+              
+              if (verbose) {
+                ostringstream buf;
+                buf << "Setting prolongation boundary on level " << reflevel << " direction " << d << " face " << f << " to weight 1/2: " << imin << ":" << imax-ione;
+                CCTK_INFO (buf.str().c_str());
+              }
+              
+              // Set weight on the boundary to 1/2
+              int bmask = 0;
+              for (unsigned b=0; b<BMSK(dim); ++b) {
+                if (BGET(b,d)==f) {
+                  bmask = BSET(bmask, b);
+                }
+              }
+              assert (dim == 3);
 #pragma omp parallel
-            LC_LOOP3(CarpetMaskSetup_prolongation,
-                     i,j,k,
-                     imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-            {
-              int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-              weight[ind] *= 0.5;
-            } LC_ENDLOOP3(CarpetMaskSetup_prolongation);
-            
-            
-          } END_LOOP_OVER_BSET;
+              LC_LOOP3(CarpetMaskSetup_prolongation,
+                       i,j,k,
+                       imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+              {
+                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                iweight[ind] &= ~bmask;
+              } LC_ENDLOOP3(CarpetMaskSetup_prolongation);
+              
+            } END_LOOP_OVER_BSET;
+          } // for f
         } // for d
         
       } END_LOCAL_COMPONENT_LOOP;
@@ -147,7 +156,7 @@ namespace CarpetMask {
           
           ibset const & refined =
             dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).restricted_region;
-          vect<ibset,dim> const & boundaries =
+          vect<vect<ibset,2>,dim> const & boundaries =
             dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).restriction_boundaries;
           
           LOOP_OVER_BSET (cctkGH, refined, box, imin, imax) {
@@ -167,13 +176,13 @@ namespace CarpetMask {
                      cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
             {
               int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-              weight[ind] = 0;
+              iweight[ind] = 0;
             } LC_ENDLOOP3(CarpetMaskSetup_restriction);
             
           } END_LOOP_OVER_BSET;
           
-          assert (dim == 3);
-          vector<int> mask (cctk_lsh[0] * cctk_lsh[1] * cctk_lsh[2]);
+          vector<int> imask (prod(ivect::ref(cctk_lsh)));
+          vector<int> mask (prod(ivect::ref(cctk_lsh)));
           
           assert (dim == 3);
 #pragma omp parallel
@@ -183,34 +192,44 @@ namespace CarpetMask {
                    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
           {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+            imask[ind] = 0;
             mask[ind] = 0;
           } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_init);
           
           for (int d=0; d<dim; ++d) {
-            LOOP_OVER_BSET (cctkGH, boundaries[d], box, imin, imax) {
-              
-              if (verbose) {
-                ostringstream buf;
-                buf << "Setting restriction boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
-                CCTK_INFO (buf.str().c_str());
-              }
-              
-              // Set weight on the boundary to 1/2
-              assert (dim == 3);
-#pragma omp parallel
-              LC_LOOP3(CarpetMaskSetup_restriction_boundary_partial,
-                       i,j,k,
-                       imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-              {
-                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                if (mask[ind] == 0) {
-                  mask[ind] = 1;
+            for (int f=0; f<2; ++f) {
+              LOOP_OVER_BSET (cctkGH, boundaries[d][f], box, imin, imax) {
+                
+                if (verbose) {
+                  ostringstream buf;
+                  buf << "Setting restriction boundary on level " << reflevel << " direction " << d << " face " << f << " to weight 1/2: " << imin << ":" << imax-ione;
+                  CCTK_INFO (buf.str().c_str());
                 }
-                mask[ind] *= 2;
-              } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_partial);
-              
-            } END_LOOP_OVER_BSET;
+                
+                // Set weight on the boundary to 1/2
+                int bmask = 0;
+                for (unsigned b=0; b<BMSK(dim); ++b) {
+                  if (BGET(b,d)==f) {
+                    bmask = BSET(bmask, b);
+                  }
+                }
+                assert (dim == 3);
+#pragma omp parallel
+                LC_LOOP3(CarpetMaskSetup_restriction_boundary_partial,
+                         i,j,k,
+                         imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                         cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+                {
+                  int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                  imask[ind] |= bmask;
+                  if (mask[ind] == 0) {
+                    mask[ind] = 1;
+                  }
+                  mask[ind] *= 2;
+                } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_partial);
+                
+              } END_LOOP_OVER_BSET;
+            } // for f
           } // for d
           
           assert (dim == 3);
@@ -222,10 +241,7 @@ namespace CarpetMask {
           {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             if (mask[ind] > 0) {
-#if 0
-              weight[ind] *= 1.0 - 1.0 / mask[ind];
-#endif
-              weight[ind] -= 1.0 / mask[ind];
+              iweight[ind] &= imask[ind];
             }
           } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_apply);
           
