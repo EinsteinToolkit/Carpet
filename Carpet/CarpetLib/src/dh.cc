@@ -1285,34 +1285,39 @@ regrid (bool const do_init)
         ibset const notrefined = parent - allactive;
         
         // Enlarge this set
-        vect<ibset,dim> enlarged;
+        vect<vect<ibset,2>,dim> enlarged;
         for (int d=0; d<dim; ++d) {
-          switch (h.refcent) {
-          case vertex_centered: {
-            ivect const dir = ivect::dir(d);
-            enlarged[d] = ibset (notrefined.expand(dir, dir));
-            break;
-          }
-          case cell_centered: {
-            enlarged[d] = notrefined;
+          for (int f=0; f<2; ++f) {
+            switch (h.refcent) {
+            case vertex_centered: {
+              ivect const dir = ivect::dir(d);
+              enlarged[d][f] =
+                ibset (notrefined.expand(f==1?dir:0, f==0?dir:0));
+              break;
+            }
+            case cell_centered: {
+              enlarged[d][f] = notrefined;
 #warning "TODO: restriction boundaries are wrong (they are empty, but should not be) with cell centring when fine cell cut coarse cells"
-            bool const old_there_was_an_error = there_was_an_error;
-            ASSERT_rl (notrefined.contracted_for(obase).expanded_for(base) ==
-                       notrefined,
-                       "Refinement mask: Fine grid boundaries must be aligned with coarse grid cells");
-            // Do not abort because of this problem
-            there_was_an_error = old_there_was_an_error;
-            break;
-          }
-          default:
-            assert (0);
+              bool const old_there_was_an_error = there_was_an_error;
+              ASSERT_rl (notrefined.contracted_for(obase).expanded_for(base) ==
+                         notrefined,
+                         "Refinement mask: Fine grid boundaries must be aligned with coarse grid cells");
+              // Do not abort because of this problem
+              there_was_an_error = old_there_was_an_error;
+              break;
+            }
+            default:
+              assert (0);
+            }
           }
         }
         
         // Intersect with the active region
-        vect<ibset,dim> all_boundaries;
+        vect<vect<ibset,2>,dim> all_boundaries;
         for (int d=0; d<dim; ++d) {
-          all_boundaries[d] = allactive & enlarged[d];
+          for (int f=0; f<2; ++f) {
+            all_boundaries[d][f] = allactive & enlarged[d][f];
+          }
         }
         
 #warning "TODO: Ensure that the prolongation boundaries all_boundaries are contained in the boundary prolongated region"
@@ -1322,7 +1327,9 @@ regrid (bool const do_init)
         // Subtract the boundaries from the refined region
         all_refined = allactive;
         for (int d=0; d<dim; ++d) {
-          all_refined -= all_boundaries[d];
+          for (int f=0; f<2; ++f) {
+            all_refined -= all_boundaries[d][f];
+          }
         }
         
         for (int lc = 0; lc < h.local_components(orl); ++ lc) {
@@ -1340,8 +1347,10 @@ regrid (bool const do_init)
           
           // Set prolongation information for current level
           for (int d=0; d<dim; ++d) {
-            local_obox.restriction_boundaries[d] =
-              all_boundaries[d].contracted_for(obox.exterior) & obox.owned;
+            for (int f=0; f<2; ++f) {
+              local_obox.restriction_boundaries[d][f] =
+                all_boundaries[d][f].contracted_for(obox.exterior) & obox.owned;
+            }
           }
           
         } // for lc
@@ -1353,8 +1362,10 @@ regrid (bool const do_init)
           
           // Set prolongation information for current level
           for (int d=0; d<dim; ++d) {
-            local_box.prolongation_boundaries[d] =
-              all_boundaries[d] & box.owned;
+            for (int f=0; f<2; ++f) {
+              local_box.prolongation_boundaries[d][f] =
+                all_boundaries[d][f] & box.owned;
+            }
           }
           
         } // for lc
