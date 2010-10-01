@@ -429,27 +429,38 @@ copy_from_innerloop (gdata const * const gsrc,
     assert (0);
   }
   
+  if (transport_operator != op_accumulate) {
 #if CARPET_DIM == 3
-  call_operator<T> (& copy_3d,
-                    static_cast <T const *> (src->storage()),
-                    src->shape(),
-                    static_cast <T *> (this->storage()),
-                    this->shape(),
-                    srcbox,
-                    dstbox,
-                    box);
+    call_operator<T> (& copy_3d,
+                      static_cast <T const *> (src->storage()),
+                      src->shape(),
+                      static_cast <T *> (this->storage()),
+                      this->shape(),
+                      srcbox,
+                      dstbox,
+                      box);
 #elif CARPET_DIM == 4
-  call_operator<T> (& copy_4d,
-                    static_cast <T const *> (src->storage()),
-                    src->shape(),
-                    static_cast <T *> (this->storage()),
-                    this->shape(),
-                    srcbox,
-                    dstbox,
-                    box);
+    call_operator<T> (& copy_4d,
+                      static_cast <T const *> (src->storage()),
+                      src->shape(),
+                      static_cast <T *> (this->storage()),
+                      this->shape(),
+                      srcbox,
+                      dstbox,
+                      box);
 #else
 #  error "Value for CARPET_DIM not supported"
 #endif
+  } else {
+    call_operator<T> (& accumulate_3d,
+                      static_cast <T const *> (src->storage()),
+                      src->shape(),
+                      static_cast <T *> (this->storage()),
+                      this->shape(),
+                      srcbox,
+                      dstbox,
+                      box);
+  }
 }
 
 

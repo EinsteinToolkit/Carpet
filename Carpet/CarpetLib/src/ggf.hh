@@ -124,6 +124,9 @@ public:
   // Synchronise the boundaries of a component
   void sync_all (comm_state& state, int tl, int rl, int ml);
 
+  // Accumulate from boundaries of a component
+  void accumulate_all (comm_state& state, int tl, int rl, int ml);
+
   // Prolongate the boundaries of a component
   void ref_bnd_prolongate_all (comm_state& state,
                                int tl, int rl, int ml, CCTK_REAL time);
@@ -168,14 +171,16 @@ protected:
                      srpvect const dh::fast_dboxes::* sendrecvs,
                      vector<int> const & tl2s, int rl2, int ml2,
                      CCTK_REAL const & time,
-                     mdata * srcstorage = 0);
+                     mdata * srcstorage = 0,
+                     bool flip_send_recv = false);
   
   void
   transfer_from_all (comm_state & state,
                      int tl1, int rl1, int ml1,
                      srpvect const dh::fast_dboxes::* sendrecvs,
                      int tl2, int rl2, int ml2,
-                     mdata * srcstorage = 0)
+                     mdata * srcstorage = 0,
+                     bool flip_send_recv = false)
   {
     vector <int> tl2s(1);
     tl2s.AT(0) = tl2;
@@ -185,7 +190,8 @@ protected:
                        sendrecvs,
                        tl2s, rl2, ml2,
                        time,
-                       srcstorage);
+                       srcstorage,
+                       flip_send_recv);
   }
 
 

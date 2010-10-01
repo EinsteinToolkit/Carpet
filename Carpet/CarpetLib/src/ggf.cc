@@ -346,6 +346,26 @@ sync_all (comm_state & state,
 
 
 
+// Accumulate the boundaries of all components
+void
+ggf::
+accumulate_all (comm_state & state,
+                int const tl, int const rl, int const ml)
+{
+  assert (transport_operator == op_accumulate);
+  // Accumulate
+  static Timer timer ("accumulate_all");
+  timer.start ();
+  transfer_from_all (state,
+                     tl,rl,ml,
+                     & dh::fast_dboxes::fast_sync_sendrecv,
+                     tl,rl,ml,
+                     NULL, true);
+  timer.stop (0);
+}
+
+
+
 // Prolongate the boundaries of all components
 void
 ggf::
@@ -361,7 +381,7 @@ ref_bnd_prolongate_all (comm_state & state,
   vector<int> tl2s;
   static Timer timer ("ref_bnd_prolongate_all");
   timer.start ();
-  if (transport_operator != op_copy) {
+  if (transport_operator != op_copy and transport_operator != op_accumulate) {
     // Interpolation in time
     if (not (timelevels(ml,rl) >= prolongation_order_time+1)) {
       char * const fullname = CCTK_FullName (varindex);
@@ -518,7 +538,8 @@ transfer_from_all (comm_state & state,
                    srpvect const dh::fast_dboxes::* sendrecvs,
                    vector<int> const & tl2s, int const rl2, int const ml2,
                    CCTK_REAL const & time,
-                   mdata * const srcstorage_)
+                   mdata * const srcstorage_,
+                   bool const flip_send_recv)
 {
   assert (rl1>=0 and rl1<h.reflevels());
   assert (ml1>=0 and ml1<h.mglevels());
@@ -558,9 +579,11 @@ transfer_from_all (comm_state & state,
   // Interpolation orders
   assert (transport_operator != op_none);
   int const pos =
-    transport_operator == op_copy ? 0 : d.prolongation_orders_space.AT(rl2);
+    transport_operator == op_copy or transport_operator == op_accumulate
+    ? 0 : d.prolongation_orders_space.AT(rl2);
   int const pot =
-    transport_operator == op_copy ? 0 : prolongation_order_time;
+    transport_operator == op_copy or transport_operator == op_accumulate
+    ? 0 : prolongation_order_time;
   
   vector<const gdata*> gsrcs(tl2s.size());
   
@@ -568,8 +591,12 @@ transfer_from_all (comm_state & state,
   for (srpvect::const_iterator ipsendrecv = psendrecvs.begin();
        ipsendrecv!=psendrecvs.end(); ++ ipsendrecv)
   {
-    pseudoregion_t const & psend = (* ipsendrecv).send;
-    pseudoregion_t const & precv = (* ipsendrecv).recv;
+    typedef sendrecv_pseudoregion_t srp;
+    typedef pseudoregion_t sendrecv_pseudoregion_t::* srp_pr;
+    srp_pr const send_field = flip_send_recv ? &srp::recv : &srp::send;
+    srp_pr const recv_field = flip_send_recv ? &srp::send : &srp::recv;
+    pseudoregion_t const & psend = (* ipsendrecv).*send_field;
+    pseudoregion_t const & precv = (* ipsendrecv).*recv_field;
     ibbox const & send = psend.extent;
     ibbox const & recv = precv.extent;
     assert (all (send.stride() == h.baseextent(ml2,rl2).stride()));
