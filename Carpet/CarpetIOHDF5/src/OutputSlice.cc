@@ -40,16 +40,17 @@ namespace CarpetIOHDF5 {
 
 
   // routines which are independent of the output dimension
-  static ibbox GetOutputBBox (const cGH* cctkGH,
+  static ibset GetOutputBBoxes (const cGH* cctkGH,
                               int group,
                               int rl, int m, int c,
-                              const ibbox& ext);
+                              const ibbox& ext, const ibset& allactive);
 
   static void GetCoordinates (const cGH* cctkGH, int m,
                               const cGroup& groupdata,
-                              const ibbox& ext,
+                              const ibset& exts,
                               CCTK_REAL& coord_time,
-                              rvect& coord_lower, rvect& coord_upper);
+                              vector<rvect>& coord_lower, 
+                              vector<rvect>& coord_upper);
 
   static int GetGridOffset (const cGH* cctkGH, int m, int dir,
                             const char* itempl, const char* iglobal,
@@ -57,6 +58,7 @@ namespace CarpetIOHDF5 {
                             CCTK_REAL cfallback);
   static int CoordToOffset (const cGH* cctkGH, int m, int dir,
                             CCTK_REAL coord, int ifallback);
+
 
 
 
@@ -557,6 +559,10 @@ namespace CarpetIOHDF5 {
 
       const gh* const hh = arrdata.at(group).at(m).hh;
       const dh* const dd = arrdata.at(group).at(m).dd;
+      
+      // re-compute the active (non-buffere) region
+      ibset allactive;
+      GetAllActive (dd, hh, m, reflevel, allactive);
 
       // Traverse all components on this multigrid level, refinement
       // level, and map
@@ -567,35 +573,42 @@ namespace CarpetIOHDF5 {
         groupdata.disttype != CCTK_DISTRIB_CONSTANT ?
         CCTK_nProcs(cctkGH) :
         1;
-      for (int c = c_min; c < c_max; ++ c) {
+      for (int c = c_min, c_base = c_min; c < c_max; ++ c) {
         int const lc = hh->get_local_component(rl,c);
         int const proc = hh->processor(rl,c);
+        const ibbox& data_ext = dd->light_boxes.at(ml).at(rl).at(c).exterior;
+        const ibset exts = GetOutputBBoxes (cctkGH, group, rl, m, c, 
+                                            data_ext, allactive);
         // we have to take part in this output if we either own data to be
         // output or are the ioproc in the same group of processors as the
         // dataholder
         if (dist::rank() == proc or 
             dist::rank() == IOProcForProc(proc)) {
           
-          const ibbox& data_ext = dd->light_boxes.at(ml).at(rl).at(c).exterior;
-          const ibbox ext = GetOutputBBox (cctkGH, group, rl, m, c, data_ext);
-          
           CCTK_REAL coord_time;
-          rvect coord_lower, coord_upper;
-          GetCoordinates (cctkGH, m, groupdata, ext,
+          vector<rvect> coord_lower, coord_upper;
+          GetCoordinates (cctkGH, m, groupdata, exts,
                           coord_time, coord_lower, coord_upper);
 
           // Apply offset
-          ivect offset1;
-          if (groupdata.grouptype == CCTK_GF) {
-            const ibbox& baseext = hh->baseextents.at(ml).at(rl);
-            offset1 = baseext.lower() + offset * ext.stride();
-          } else {
-            offset1 = offset * ext.stride();
-          }
-          for (int d=0; d<outdim; ++d) {
-            if (dirs[d] < 3) {
-              offset1[dirs[d]] = ext.lower()[dirs[d]];
+          vector<ivect> offsets1;
+          offsets1.reserve(exts.setsize());
+          for (ibset::const_iterator ext = exts.begin(); 
+               ext != exts.end(); 
+               ++ ext) {
+            ivect offset1;
+            if (groupdata.grouptype == CCTK_GF) {
+              const ibbox& baseext = hh->baseextents.at(ml).at(rl);
+              offset1 = baseext.lower() + offset * ext->stride();
+            } else {
+              offset1 = offset * ext->stride();
             }
+            for (int d=0; d<outdim; ++d) {
+              if (dirs[d] < 3) {
+                offset1[dirs[d]] = ext->lower()[dirs[d]];
+              }
+            }
+            offsets1.push_back(offset1);
           }
 
           const int tl_min = 0;
@@ -648,12 +661,18 @@ namespace CarpetIOHDF5 {
 
             }
 
-              error_count +=
-                WriteHDF5 (cctkGH, file, tmpdatas, ext, vindex,
-                           offset1, dirs,
-                           rl, ml, m, c, tl,
-                           coord_time, coord_lower, coord_upper);
             if (dist::rank() == IOProcForProc(proc)) {
+              int c_offset = 0;
+              for (ibset::const_iterator ext = exts.begin(); 
+                   ext != exts.end(); 
+                   ++ ext, ++ c_offset) {
+                error_count +=
+                  WriteHDF5 (cctkGH, file, tmpdatas, *ext, vindex,
+                             offsets1[c_offset], dirs,
+                             rl, ml, m, c, c_base + c_offset, tl,
+                             coord_time, coord_lower[c_offset], 
+                             coord_upper[c_offset]);
+              }
             }
 
             if (proc != ioproc) {
@@ -665,6 +684,8 @@ namespace CarpetIOHDF5 {
           } // for tl
 
         }
+
+        c_base += exts.setsize();
       } // for c
 
       error_count += CloseFile (cctkGH, file);
@@ -982,11 +1003,11 @@ namespace CarpetIOHDF5 {
 
 
 
-  // Omit symmetry and ghost zones if requested
-  ibbox GetOutputBBox (const cGH* const cctkGH,
+  // Omit symmetry, ghost and buffer zones if requested
+  ibset GetOutputBBoxes (const cGH* const cctkGH,
                        const int group,
                        const int rl, const int m, const int c,
-                       const ibbox& ext)
+                       const ibbox& ext, const ibset& allactive)
   {
     DECLARE_CCTK_PARAMETERS;
 
@@ -1044,7 +1065,13 @@ namespace CarpetIOHDF5 {
       }
     }
 
-    return ibbox(lo,hi,str);
+    ibset exts(ibbox(lo,hi,str));
+    // do grid arrays have buffer zones?
+    if (not output_buffer_points) {
+      exts &= allactive;
+    }
+
+    return exts;
   }
 
 
@@ -1052,9 +1079,9 @@ namespace CarpetIOHDF5 {
   // Determine coordinates
   void GetCoordinates (const cGH* const cctkGH, const int m,
                        const cGroup& groupdata,
-                       const ibbox& ext,
+                       const ibset& exts,
                        CCTK_REAL& coord_time,
-                       rvect& coord_lower, rvect& coord_upper)
+                       vector<rvect>& coord_lower, vector<rvect>& coord_upper)
   {
     coord_time = cctkGH->cctk_time;
 
@@ -1077,8 +1104,15 @@ namespace CarpetIOHDF5 {
       }
     }
 
-    coord_lower = global_lower + coord_delta * rvect(ext.lower());
-    coord_upper = global_lower + coord_delta * rvect(ext.upper());
+    coord_lower.reserve(exts.setsize());
+    coord_upper.reserve(exts.setsize());
+
+    for (ibset::const_iterator ext = exts.begin(); 
+         ext != exts.end(); 
+         ++ ext) {
+      coord_lower.push_back(global_lower + coord_delta * rvect(ext->lower()));
+      coord_upper.push_back(global_lower + coord_delta * rvect(ext->upper()));
+    }
   }
 
 
@@ -1192,6 +1226,7 @@ namespace CarpetIOHDF5 {
                                  const int ml,
                                  const int m,
                                  const int c,
+                                 const int output_component,
                                  const int tl,
                                  const CCTK_REAL coord_time,
                                  const vect<CCTK_REAL,dim>& coord_lower,
@@ -1263,7 +1298,7 @@ namespace CarpetIOHDF5 {
     }
     if (groupdata.grouptype == CCTK_GF or
         groupdata.disttype  != CCTK_DISTRIB_CONSTANT) {
-      datasetname_suffix << " c=" << c;
+      datasetname_suffix << " c=" << output_component;
     }
 
     // enable compression and checksums if requested

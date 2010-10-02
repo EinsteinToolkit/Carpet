@@ -147,6 +147,13 @@ namespace CarpetIOHDF5
 
   // Everything is a class template, so that it can easily be
   // instantiated for all output dimensions
+  
+  // computes the active region the way dh::regrid does
+  void GetAllActive (const dh *dd, 
+                     const gh *hh, 
+                     int ml, 
+                     int rl, 
+                     ibset &allactive);
 
   template<int outdim>
   struct IOHDF5 {
@@ -218,6 +225,7 @@ namespace CarpetIOHDF5
                            const int ml,
                            const int m,
                            const int c,
+                           const int output_component,
                            const int tl,
                            const CCTK_REAL coord_time,
                            const vect<CCTK_REAL,dim>& coord_lower,

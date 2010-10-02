@@ -372,6 +372,10 @@ BOOLEAN output_boundary_points "Output outer boundary points (assuming that ther
 {
 } "yes"
 
+BOOLEAN output_buffer_points "Output refinement buffer points" STEERABLE = ALWAYS
+{
+} "yes"
+
 BOOLEAN out3D_ghosts "Output ghost zones (DEPRECATED)" STEERABLE = ALWAYS
 {
 } "yes"
