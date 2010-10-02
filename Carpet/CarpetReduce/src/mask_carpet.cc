@@ -234,7 +234,9 @@ namespace CarpetMask {
                    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
           {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-            iweight[ind] &= imask[ind];
+            if (imask[ind] != 0) {
+              iweight[ind] &= imask[ind];
+            }
           } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_apply);
           
         } END_LOCAL_COMPONENT_LOOP;
