@@ -182,7 +182,6 @@ namespace CarpetMask {
           } END_LOOP_OVER_BSET;
           
           vector<int> imask (prod(ivect::ref(cctk_lsh)));
-          vector<int> mask (prod(ivect::ref(cctk_lsh)));
           
           assert (dim == 3);
 #pragma omp parallel
@@ -193,7 +192,6 @@ namespace CarpetMask {
           {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             imask[ind] = 0;
-            mask[ind] = 0;
           } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_init);
           
           for (int d=0; d<dim; ++d) {
@@ -222,10 +220,6 @@ namespace CarpetMask {
                 {
                   int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                   imask[ind] |= bmask;
-                  if (mask[ind] == 0) {
-                    mask[ind] = 1;
-                  }
-                  mask[ind] *= 2;
                 } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_partial);
                 
               } END_LOOP_OVER_BSET;
@@ -240,9 +234,7 @@ namespace CarpetMask {
                    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
           {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-            if (mask[ind] > 0) {
-              iweight[ind] &= imask[ind];
-            }
+            iweight[ind] &= imask[ind];
           } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_apply);
           
         } END_LOCAL_COMPONENT_LOOP;
