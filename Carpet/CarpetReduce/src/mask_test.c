@@ -88,8 +88,6 @@ MaskBase_TestMask (CCTK_ARGUMENTS)
   
   
   
-  int const iret1 = CCTK_DisableGroupStorage (cctkGH, "CarpetReduce::iweight");
-  int const iret2 = CCTK_DisableGroupStorage (cctkGH, "CarpetReduce::one");
-  assert (iret1==1);
-  assert (iret2==1);
+  CCTK_DisableGroupStorage (cctkGH, "CarpetReduce::iweight");
+  CCTK_DisableGroupStorage (cctkGH, "CarpetReduce::one");
 }

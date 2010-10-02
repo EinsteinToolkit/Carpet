@@ -2,8 +2,6 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 
-#include <assert.h>
-
 
 
 void
@@ -17,8 +15,6 @@ MaskBase_AllocateMask (CCTK_ARGUMENTS)
     CCTK_INFO ("Allocating weight function helpers");
   }
   
-  int const ierr1 = CCTK_EnableGroupStorage (cctkGH, "CarpetReduce::iweight");
-  int const ierr2 = CCTK_EnableGroupStorage (cctkGH, "CarpetReduce::one");
-  assert (!ierr1);
-  assert (!ierr2);
+  CCTK_EnableGroupStorage (cctkGH, "CarpetReduce::iweight");
+  CCTK_EnableGroupStorage (cctkGH, "CarpetReduce::one");
 }
