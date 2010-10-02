@@ -27,6 +27,7 @@ MaskBase_TestMask (CCTK_ARGUMENTS)
   int const weight_var = CCTK_VarIndex ("CarpetReduce::weight");
   int const one_var    = CCTK_VarIndex ("CarpetReduce::one");
   assert (weight_var >= 0);
+  assert (one_var    >= 0);
   
   CCTK_REAL sum_weight;
   
@@ -41,7 +42,7 @@ MaskBase_TestMask (CCTK_ARGUMENTS)
   
   
   
-  if (CCTK_MyProc(cctkGH) == proc) {
+  if (proc == -1 || CCTK_MyProc(cctkGH) == proc) {
     
     CCTK_REAL physical_min[cctk_dim];
     CCTK_REAL physical_max[cctk_dim];
