@@ -29,7 +29,8 @@ namespace Carpet {
 
 #define GetParameter(parameter) \
   outdim == 0 ? out0D_##parameter : \
-  outdim == 1 ? out1D_##parameter : out2D_##parameter
+  outdim == 1 ? out1D_##parameter : \
+  outdim == 2 ? out2D_##parameter : out_##parameter
 
 namespace CarpetIOHDF5 {
 
@@ -416,7 +417,7 @@ namespace CarpetIOHDF5 {
         assert (do_global_mode);
       }
 
-      if (outdim >= groupdata.dim) {
+      if (outdim > groupdata.dim) {
         CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Cannot produce %dD slice HDF5 output file '%s' for variable '%s' "
                     "because it has only %d dimensions",
@@ -748,6 +749,8 @@ namespace CarpetIOHDF5 {
       if (maps > 1 and grouptype == CCTK_GF) {
         filenamebuf << "." << m;
       }
+      // historically 3d output files do not carry a label so the files created
+      // here do not conflict with the old-style output files
       filenamebuf << ".";
       for (int d=0; d<outdim; ++d) {
         const char* const coords = "xyzd";
@@ -838,9 +841,9 @@ namespace CarpetIOHDF5 {
       if (dirs[0]==1 and dirs[1]==2) return out2D_yz;
       assert (0);
 
-//    case 3:
-//      // Output is always requested (if switched on)
-//      return true;
+    case 3:
+      // Output is always requested (if switched on)
+      return true;
 
     default:
       assert (0);
@@ -943,9 +946,9 @@ namespace CarpetIOHDF5 {
       }
       break;
 
-//    case 3:
-//      // 3D output: the offset does not matter
-//      break;
+    case 3:
+      // 3D output: the offset does not matter
+      break;
 
     default:
       assert (0);
@@ -1463,6 +1466,6 @@ namespace CarpetIOHDF5 {
   template class IOHDF5<0>;
   template class IOHDF5<1>;
   template class IOHDF5<2>;
-//  template class IOHDF5<3>;
+  template class IOHDF5<3>;
 
 } // namespace CarpetIOHDF5

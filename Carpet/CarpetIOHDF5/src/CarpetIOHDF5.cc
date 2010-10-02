@@ -101,6 +101,7 @@ int CarpetIOHDF5_Startup (void)
   IOHDF5<0>::Startup();
   IOHDF5<1>::Startup();
   IOHDF5<2>::Startup();
+  IOHDF5<3>::Startup();
 
   return (0);
 }
