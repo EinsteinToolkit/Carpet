@@ -1319,10 +1319,19 @@ namespace CarpetIOHDF5 {
 
     if (not diagonal_output) { // not outputting the diagonal
 
+      // there are currently three "extent" variables in use:
+      // data_ext - the extent of the component in memory 
+      // gfext    - the bounding box of data to be written
+      // ext      - gfext in the output dimension(s)
+      // data_ext and gfext are used to construct the hyperslab location and
+      // size, ext is just a shorthand.
+      // TODO: maybe transfer only ext instead of data_ext in copy_from
       const vect<int,outdim> lo = gfext.lower()[dirs];
       const vect<int,outdim> up = gfext.upper()[dirs];
       const vect<int,outdim> str = gfext.stride()[dirs];
       const bbox<int,outdim> ext(lo,up,str);
+      const dh* const dd = arrdata.at(gi).at(m).dd;
+      const ibbox& data_ext = dd->light_boxes.at(ml).at(rl).at(c).exterior;
 
       // Check whether the output origin is contained in the extent of
       // the data that should be output
@@ -1335,19 +1344,21 @@ namespace CarpetIOHDF5 {
       vector<hsize_t> mem_shape(dim);
       vector<hsize_t> slice_shape(rank, 1);
       for (int d = 0; d < dim; d++) {
-        mem_shape[dim-1-d] = gfext.shape()[d] / gfext.stride()[d];
+        mem_shape[dim-1-d] = data_ext.shape()[d] / data_ext.stride()[d];
         if (d < outdim) {
           slice_shape[outdim-1-d] = ext.shape()[d] / ext.stride()[d];
         }
       }
 
-      ivect slice_lower(org - gfext.lower());
+      ivect slice_lower(org - data_ext.lower());
       for (int d = 0; d < outdim; d++) {
-        slice_lower[dirs[d]] = 0;
+        slice_lower[dirs[d]] = ext.lower()[d] - 
+                               data_ext.lower()[dirs[d]];
       }
       ivect slice_upper(slice_lower);
       for (int d = 0; d < outdim; d++) {
-        slice_upper[dirs[d]] = ext.upper()[d] - ext.lower()[d];
+        slice_upper[dirs[d]] = ext.upper()[d] - 
+                               data_ext.lower()[dirs[d]];
       }
       slice_lower /= gfext.stride();
       slice_upper /= gfext.stride();
