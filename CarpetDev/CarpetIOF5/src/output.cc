@@ -110,6 +110,8 @@ namespace CarpetIOF5 {
       DECLARE_CCTK_ARGUMENTS;
       indent_t indent;
       
+      herr_t herr;
+      
       assert (is_singlemap_mode() and reflevel==0);
       
       cout << indent << "map=" << Carpet::map << "\n";
@@ -166,14 +168,11 @@ namespace CarpetIOF5 {
       
       if (not is_multipatch) {
         // Define level geometry
-        F5_vec3_double_t const vlower = v2d(lower);
-        F5_vec3_double_t const vupper = v2d(upper);
-        F5_vec3_double_t const vdelta = v2d(delta);
         F5Fwrite_linear (path, FIBER_HDF5_POSITIONS_STRING,
                          dim, &v2h(gsh)[0],
                          F5T_COORD3_DOUBLE,
-                         &vlower, &vdelta);
-        F5Fset_range (path, &vlower, &vupper);
+                         &v2d(lower), &v2d(delta));
+        F5Fset_range (path, &v2d(lower), &v2d(upper));
       }
       
       BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
@@ -399,7 +398,7 @@ namespace CarpetIOF5 {
       case tt_vector: {
         // Vector field
         CCTK_REAL const* rdata[cctk_dim];
-        vector<vector<CCTK_REAL> > idata(cctk_dim);
+        vector<CCTK_REAL> idata[cctk_dim];
         void const* data[cctk_dim];
         for (int d=0; d<cctk_dim; ++d) {
           rdata[d] =

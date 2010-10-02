@@ -506,8 +506,6 @@ bboxset<T,D> bboxset<T,D>::expanded_for (const box& b) const {
   return res;
 }
 
-#warning "TODO: this is incorrect"
-#if 1
 template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::contracted_for (const box& b) const {
   bboxset res;
@@ -516,7 +514,6 @@ bboxset<T,D> bboxset<T,D>::contracted_for (const box& b) const {
   }
   return res;
 }
-#endif
 
 
 
