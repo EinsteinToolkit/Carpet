@@ -1,5 +1,7 @@
 #include <cassert>
 #include <cstdlib>
+#include <iomanip>
+#include <limits>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
@@ -18,12 +20,16 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
+    // Increase the default output precision, so that all relevant
+    // digits are displayed. (The C++ output streams are mostly used
+    // for debug messages.)
+    int const precision = numeric_limits<CCTK_REAL>::digits10;
+    cout << setprecision(precision);
+    cerr << setprecision(precision);
+    
     comm_universe = MPI_COMM_WORLD;
-    // cerr << "QQQ: CarpetMultiModelStartup[1]" << endl;
     SplitUniverse (comm_universe, model, comm_world, true);
-    // cerr << "QQQ: CarpetMultiModelStartup[2]" << endl;
     dist::pseudoinit (comm_world);
-    // cerr << "QQQ: CarpetMultiModelStartup[3]" << endl;
     
     return 0;
   }

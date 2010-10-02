@@ -165,6 +165,8 @@ namespace Carpet {
   static void
   ensure_CartGrid3D_type ();
   static void
+  ensure_CartGrid3D_domain ();  // UNUSED
+  static void
   ensure_CartGrid3D_avoid_origin ();
   static void
   ensure_ReflectionSymmetry_avoid_origin (centering refcentering);
@@ -2244,6 +2246,28 @@ namespace Carpet {
         = * static_cast<char const * const *> (ptr);
       if (not CCTK_EQUALS (coordtype, "coordbase")) {
         CCTK_WARN (0, "When Carpet::domain_from_coordbase = yes, and when thorn CartGrid3D is active, then you also have to set CartGrid3D::type = \"coordbase\"");
+      }
+    }
+  }
+  
+  
+  
+  // UNUSED:
+  // Ensure that CartGrid3D doesn't apply symmetries
+  void
+  ensure_CartGrid3D_domain ()
+  {
+    if (CCTK_IsThornActive ("CartGrid3D")) {
+      int type;
+      void const * ptr;
+      
+      ptr = CCTK_ParameterGet ("domain", "CartGrid3D", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_KEYWORD);
+      char const * const domain
+        = * static_cast<char const * const *> (ptr);
+      if (not CCTK_EQUALS (domain, "full")) {
+        CCTK_WARN (0, "When Carpet::domain_from_coordbase = no, and when Carpet::max_refinement_levels > 1, then thorn CartGrid3D cannot provide symmetry boundaries");
       }
     }
   }
