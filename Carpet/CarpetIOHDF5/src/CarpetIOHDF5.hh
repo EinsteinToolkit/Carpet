@@ -134,9 +134,14 @@ namespace CarpetIOHDF5
   int AddSliceAttributes(const cGH* const cctkGH,
                          const char* const fullname,
                          const int refinementlevel,
+                         const int multigridlevel,
+                         const int map,
+                         const int timelevel,
                          const vector<double>& origin,
                          const vector<double>& delta,
                          const vector<int>& iorigin,
+                         const vector<int>& bbox,
+                         const vector<int>& nghostzones,
                          hid_t& dataset);
 
   // returns an HDF5 datatype corresponding to the given CCTK datatype

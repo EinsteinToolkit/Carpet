@@ -539,7 +539,8 @@ namespace CarpetIOHDF5 {
     const int num_tl = CCTK_NumTimeLevelsFromVarI (vindex);
     assert (num_tl >= 1);
 
-    const int numvars = CCTK_NumVarsInGroupI(group);
+    const int numvars = one_file_per_group ?
+                        CCTK_NumVarsInGroupI(group) : 1;
 
 
 
@@ -1237,12 +1238,10 @@ namespace CarpetIOHDF5 {
     assert (outdim<=dim);
 
     cGroup groupdata;
-    {
-      int const gi = CCTK_GroupIndexFromVarI (vi);
-      assert (gi >= 0);
-      int const ierr = CCTK_GroupData (gi, & groupdata);
-      assert (not ierr);
-    }
+    int const gi = CCTK_GroupIndexFromVarI (vi);
+    assert (gi >= 0);
+    int const ierr = CCTK_GroupData (gi, & groupdata);
+    assert (not ierr);
 
     // boolean that says if we are doing 1D-diagonal output
     // This is not beautiful, but works for the moment
@@ -1296,8 +1295,9 @@ namespace CarpetIOHDF5 {
       if (maps > 1) datasetname_suffix << " m="  << m;
       datasetname_suffix << " rl=" << rl;
     }
-    if (groupdata.grouptype == CCTK_GF or
-        groupdata.disttype  != CCTK_DISTRIB_CONSTANT) {
+    if (arrdata.at(gi).at(m).dd->
+        light_boxes.at(ml).at(rl).size () > 1 and
+        groupdata.disttype != CCTK_DISTRIB_CONSTANT) {
       datasetname_suffix << " c=" << output_component;
     }
 
@@ -1371,6 +1371,7 @@ namespace CarpetIOHDF5 {
 
       vector<int> iorigin(rank, 0);
       vector<double> delta(rank, 0), origin(rank, 0);
+      vector<int> bbox(2*rank, 0), nghostzones(rank, 0);
       for (int d = 0; d < outdim; d++) {
         assert(gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]] >= 0);
         iorigin[d] = ext.lower()[d];
@@ -1381,6 +1382,18 @@ namespace CarpetIOHDF5 {
             (gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]]) * gfext.stride()[dirs[d]];
           origin[d] += (org1[dirs[d]] - gfext.lower()[dirs[d]]) * delta[d];
           iorigin[d] /= gfext.stride()[dirs[d]];
+        }
+      }
+      // store cctk_bbox and cctk_nghostzones (for grid arrays only)
+      if (groupdata.grouptype != CCTK_SCALAR) {
+        const b2vect obnds       = vhh.at(m)->outer_boundaries(rl,c);
+        const i2vect ghost_width = arrdata.at(gi).at(m).dd->ghost_widths.AT(rl);
+        for (int d = 0; d < outdim; d++) {
+          nghostzones[d] = ghost_width[0][dirs[d]];
+          assert (all (ghost_width[0] == ghost_width[1]));
+
+          bbox[2*d] = obnds[0][dirs[d]];
+          bbox[2*d+1] = obnds[1][dirs[d]];
         }
       }
 
@@ -1407,8 +1420,8 @@ namespace CarpetIOHDF5 {
         HDF5_ERROR(H5Dwrite (dataset, mem_type, mem_space, H5S_ALL,
                              H5P_DEFAULT, gfdatas[n]->storage()));
         error_count +=
-          AddSliceAttributes (cctkGH, fullname, rl, origin, delta, iorigin,
-                              dataset);
+          AddSliceAttributes (cctkGH, fullname, rl, ml, m, tl, origin, delta, 
+                              iorigin, bbox, nghostzones, dataset);
         HDF5_ERROR(H5Dclose (dataset));
         free (fullname);
 

@@ -293,9 +293,14 @@ hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
 int AddSliceAttributes(const cGH* const cctkGH,
                        const char* const fullname,
                        const int refinementlevel,
+                       const int multigridlevel,
+                       const int map,
+                       const int timelevel,
                        const vector<double>& origin,
                        const vector<double>& delta,
                        const vector<int>& iorigin,
+                       const vector<int>& bbox,
+                       const vector<int>& nghostzones,
                        hid_t& dataset)
 {
   int error_count = 0;
@@ -304,9 +309,23 @@ int AddSliceAttributes(const cGH* const cctkGH,
   error_count += WriteAttribute(dataset, "timestep", cctkGH->cctk_iteration);
   error_count += WriteAttribute(dataset, "name", fullname);
   error_count += WriteAttribute(dataset, "level", refinementlevel);
+  error_count += WriteAttribute(dataset, "carpet_mglevel", multigridlevel);
+  error_count += WriteAttribute(dataset, "group_timelevel", timelevel);
   error_count += WriteAttribute(dataset, "origin", &origin[0], origin.size());
   error_count += WriteAttribute(dataset, "delta", &delta[0], delta.size());
   error_count += WriteAttribute(dataset, "iorigin", &iorigin[0], iorigin.size());
+  // bbox and nghostzones are only used for grid functions and grid arrays
+  if (bbox.size() > 0) {
+    error_count += WriteAttribute(dataset, "cctk_bbox", &bbox[0], bbox.size());
+  }
+  if (nghostzones.size() > 0) {
+    error_count += WriteAttribute(dataset, "cctk_nghostzones", &nghostzones[0], nghostzones.size());
+  }
+  // Specify whether the coordinate system is Cartesian or not
+  if (CCTK_IsFunctionAliased ("MultiPatch_MapIsCartesian")) {
+    int const map_is_cartesian = MultiPatch_MapIsCartesian (map);
+    error_count += WriteAttribute(dataset, "MapIsCartesian", map_is_cartesian);
+  }
 
   return error_count;
 }
@@ -1321,7 +1340,7 @@ static int WriteAttribute (hid_t const group,
   int error_count = 0;
   
   HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
-  HDF5_ERROR (H5Tset_size (datatype, strlen (svalue) + 1));
+  HDF5_ERROR (H5Tset_size (datatype, strlen (svalue)));
   HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
   HDF5_ERROR (attribute = H5Acreate (group, name, datatype,
                                      dataspace, H5P_DEFAULT));
