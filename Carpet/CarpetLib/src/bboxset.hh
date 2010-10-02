@@ -38,7 +38,7 @@ ostream& operator<< (ostream& os, const bboxset<T,D>& s);
 
 
 
-// Bounding box set class
+// Bounding box class
 template<typename T, int D>
 class bboxset {
   
@@ -166,11 +166,8 @@ public:
       ("compatible" means having the same stride.)  */
   bboxset expanded_for (const box& b) const;
   
-#warning "TODO: this is incorrect"
-#if 1
   /** Find the largest b-compatible box inside this bbox.  */
   bboxset contracted_for (const box& b) const;
-#endif
   
   // Equality
   bool operator== (const bboxset& s) const;
