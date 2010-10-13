@@ -318,36 +318,39 @@ namespace Carpet {
                 time_and_mode,
                 attribute->where,
                 attribute->thorn, attribute->routine);
-    CallBeforeRoutines (cctkGH, function, attribute, data);
-    
-    typedef std::map <string, Timer *> timers_t;
-    static timers_t * timersp = NULL;
-    if (not timersp) timersp = new timers_t;
-    timers_t & timers = * timersp;
-    
-    // Obtain timer, creating a new one if it does not yet exist
-    ostringstream timernamebuf;
-    timernamebuf << "CallFunction/"
-                 << attribute->where << "::" << attribute->routine;
-    string const timername = timernamebuf.str();
-    timers_t::iterator ti = timers.find (timername);
-    if (ti == timers.end()) {
-      pair <string, Timer *> const
-        newtimer (timername, new Timer (timername.c_str()));
-      ti = timers.insert(newtimer).first;
-      // It is possible to find and insert with the same function
-      // call, but this makes the code significantly more complicated
+    int const skip = CallBeforeRoutines (cctkGH, function, attribute, data);
+    if (not skip) {
+      
+      typedef std::map <string, Timer *> timers_t;
+      static timers_t * timersp = NULL;
+      if (not timersp) timersp = new timers_t;
+      timers_t & timers = * timersp;
+      
+      // Obtain timer, creating a new one if it does not yet exist
+      ostringstream timernamebuf;
+      timernamebuf << "CallFunction/"
+                   << attribute->where << "::" << attribute->routine;
+      string const timername = timernamebuf.str();
+      timers_t::iterator ti = timers.find (timername);
+      if (ti == timers.end()) {
+        pair <string, Timer *> const
+          newtimer (timername, new Timer (timername.c_str()));
+        ti = timers.insert(newtimer).first;
+        // It is possible to find and insert with the same function
+        // call, but this makes the code significantly more
+        // complicated
+      }
+      Timer & timer = * ti->second;
+      
+      user_timer.start();
+      timer.start();
+      int const res = CCTK_CallFunction (function, attribute, data);
+      assert (res==0);
+      timer.stop();
+      user_timer.stop();
+      
     }
-    Timer & timer = * ti->second;
-    
-    user_timer.start();
-    timer.start();
-    int const res = CCTK_CallFunction (function, attribute, data);
-    timer.stop();
-    user_timer.stop();
-    
     CallAfterRoutines (cctkGH, function, attribute, data);
-    assert (res==0);
   }
   
   

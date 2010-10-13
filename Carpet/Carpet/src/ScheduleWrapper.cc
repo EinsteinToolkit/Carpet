@@ -48,29 +48,31 @@ namespace Carpet {
   
   
   
-  void
+  int
   CallBeforeRoutines (cGH const * const cctkGH,
                       void * const function,
                       cFunctionData * const attribute,
                       void * const data)
   {
+    int skip = 0;
     for (flist::const_iterator
            fli = func_befores.begin(); fli != func_befores.end(); ++ fli)
     {
-      (* fli) (cctkGH, function, attribute, data);
+      skip |= (* fli) (cctkGH, function, attribute, data);
     }
   }
   
-  void
+  int
   CallAfterRoutines (cGH const * const cctkGH,
                      void * const function,
                      cFunctionData * const attribute,
                      void * const data)
   {
+    int res = 0;
     for (flist::const_iterator
            fli = func_afters.begin(); fli != func_afters.end(); ++ fli)
     {
-      (* fli) (cctkGH, function, attribute, data);
+      res |= (* fli) (cctkGH, function, attribute, data);
     }
   }
   
