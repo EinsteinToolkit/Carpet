@@ -60,6 +60,7 @@ namespace Carpet {
     {
       skip |= (* fli) (cctkGH, function, attribute, data);
     }
+    return skip;
   }
   
   int
@@ -74,6 +75,7 @@ namespace Carpet {
     {
       res |= (* fli) (cctkGH, function, attribute, data);
     }
+    return res;
   }
   
 } // namespace Carpet

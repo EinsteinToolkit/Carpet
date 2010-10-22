@@ -65,11 +65,11 @@ namespace Carpet {
   void CheckChecksums (const cGH* cgh, checktimes where);
   
   // Schedule
-  void CallBeforeRoutines (cGH const * cctkGH,
+  int CallBeforeRoutines (cGH const * cctkGH,
                            void * const function,
                            cFunctionData * const attribute,
                            void * const data);
-  void CallAfterRoutines (cGH const * cctkGH,
+  int CallAfterRoutines (cGH const * cctkGH,
                           void * const function,
                           cFunctionData * const attribute,
                           void * const data);
