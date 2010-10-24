@@ -66,13 +66,13 @@ namespace Carpet {
   
   // Schedule
   int CallBeforeRoutines (cGH const * cctkGH,
-                           void * const function,
-                           cFunctionData * const attribute,
-                           void * const data);
-  int CallAfterRoutines (cGH const * cctkGH,
                           void * const function,
                           cFunctionData * const attribute,
                           void * const data);
+  int CallAfterRoutines (cGH const * cctkGH,
+                         void * const function,
+                         cFunctionData * const attribute,
+                         void * const data);
   
   // Requirements
   namespace Requirements {
