@@ -1,0 +1,17 @@
+# Interface definition for thorn CarpetProlongateTest
+
+IMPLEMENTS: CarpetProlongateTest
+
+INHERITS: grid
+
+
+
+CCTK_REAL scalar TYPE=gf TIMELEVELS=3
+{
+  u
+} "Grid function"
+
+CCTK_REAL difference TYPE=gf TIMELEVELS=3
+{
+  du
+} "Error in grid function"

@@ -1,0 +1,13 @@
+Cactus Code Thorn CarpetProlongateTest
+Author(s)    : Erik Schnetter <schnetter@cct.lsu.edu>
+Maintainer(s): Erik Schnetter <schnetter@cct.lsu.edu>
+Licence      : GPL
+--------------------------------------------------------------------------
+
+1. Purpose
+
+Test prolongation in Carpet.
+
+The basic idea is to set up a grid function containing a polynomial of
+a certain order of the coordinates.  Prolongatin (interpolation) with
+sufficiently high order must preserve these polynomials exactly.

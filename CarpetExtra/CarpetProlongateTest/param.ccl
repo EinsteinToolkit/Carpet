@@ -1,0 +1,16 @@
+# Parameter definitions for thorn CarpetProlongateTest
+
+CCTK_INT power_x "Polynomial power of x coordinate"
+{
+  *:* :: ""
+} 0
+
+CCTK_INT power_y "Polynomial power of y coordinate"
+{
+  *:* :: ""
+} 0
+
+CCTK_INT power_z "Polynomial power of z coordinate"
+{
+  *:* :: ""
+} 0
