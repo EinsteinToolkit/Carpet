@@ -7,10 +7,10 @@ if (printstats) {
   } "Output loop control statistics"
 }
 
-if (run_demo)
-{
-  SCHEDULE lc_demo AT startup
-  {
-    LANG:C
-  } "Run embedded wavetoy as a LoopControl demo application"
-}
+#if (run_demo)
+#{
+#  SCHEDULE lc_demo AT startup
+#  {
+#    LANG:C
+#  } "Run embedded wavetoy as a LoopControl demo application"
+#}
