@@ -125,7 +125,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             weight[ind] = 0.0;
             
-          } LC_ENDLOOP3(CoordBase_SetupMask);
+          } LC_ENDLOOP3(CoordBase_SetupMask_boundary);
           
           /* When the boundary is not staggered, then give the points
              on the boundary the weight 1/2 */
