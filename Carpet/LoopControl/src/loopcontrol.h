@@ -46,14 +46,6 @@ extern "C" {
 
 
 
-#if 0
-/* Vector size */
-#define LC_VECTORSIZE 2         /* Correct for double precision on
-                                   Intel */
-#endif
-
-
-
 /* A topology */
 typedef struct lc_topology_t {
   int nthreads[3];
@@ -229,6 +221,7 @@ typedef struct lc_control_t {
   int imin, jmin, kmin;
   int imax, jmax, kmax;
   int ilsh, jlsh, klsh;
+  int di;
   
   /* Control settings for thread parallelism (useful for debugging) */
   int iiimin, jjjmin, kkkmin;
@@ -276,7 +269,8 @@ lc_control_init (lc_control_t * restrict lc,
                  lc_statmap_t * restrict lm,
                  int imin, int jmin, int kmin,
                  int imax, int jmax, int kmax,
-                 int ilsh, int jlsh, int klsh);
+                 int ilsh, int jlsh, int klsh,
+                 int di);
 
 void
 lc_control_finish (lc_control_t * restrict lc);
@@ -284,15 +278,25 @@ lc_control_finish (lc_control_t * restrict lc);
 
 
 #define LC_LOOP3(name, i,j,k, imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh) \
+  LC_LOOP3VEC(name, i,j,k, imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh, 1)
+#define LC_ENDLOOP3(name)                       \
+  LC_ENDLOOP3VEC(name)
+
+#define LC_LOOP3VEC(name, i,j,k, imin_,jmin_,kmin_, imax_,jmax_,kmax_, ilsh_,jlsh_,klsh_, di_) \
   do {                                                                  \
+    typedef int lc_loop3vec_##name;                                     \
     static int lc_initialised = 0;                                      \
     static lc_statmap_t lc_lm;                                          \
     if (! lc_initialised) {                                             \
       lc_statmap_init (& lc_initialised, & lc_lm, #name);               \
     }                                                                   \
+    int const lc_di = (di_);                                            \
     lc_control_t lc_lc;                                                 \
     lc_control_init (& lc_lc, & lc_lm,                                  \
-                     imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh);   \
+                     (imin_), (jmin_), (kmin_),                         \
+                     (imax_), (jmax_), (kmax_),                         \
+                     (ilsh_), (jlsh_), (klsh_),                         \
+                     lc_di);                                            \
                                                                         \
     /* Coarse loop */                                                   \
     for (int lc_kk = lc_lc.kkmin;                                       \
@@ -319,18 +323,22 @@ lc_control_finish (lc_control_t * restrict lc);
               int const lc_imin = lc_ii;                                \
               LC_PRELOOP_STATEMENTS                                     \
               {                                                         \
-                for (int i = lc_imin; i < lc_imax; ++i) {
+                int const lc_ipos =                                     \
+                  lc_imin + lc_lc.ilsh * (j + lc_lc.jlsh * k);          \
+                int const lc_ioffset = (lc_ipos & - lc_di) - lc_ipos;   \
+                for (int i = lc_imin + lc_ioffset; i < lc_imax; i += lc_di) {
 
-#define LC_ENDLOOP3(name)                       \
-  }                                             \
-                }                               \
-              LC_POSTLOOP_STATEMENTS            \
-              }                                 \
-            }                                   \
-          }                                     \
-        }                                       \
-      }                                         \
-    lc_control_finish (& lc_lc);                \
+#define LC_ENDLOOP3VEC(name)                                    \
+                }                                               \
+              }                                                 \
+              LC_POSTLOOP_STATEMENTS                            \
+              }                                                 \
+            }                                                   \
+          }                                                     \
+        }                                                       \
+      }                                                         \
+    lc_control_finish (& lc_lc);                                \
+    typedef lc_loop3vec_##name lc_ensure_proper_nesting;        \
     } while (0)
 
 /* Pre- and post loop statements are inserted around the innermost

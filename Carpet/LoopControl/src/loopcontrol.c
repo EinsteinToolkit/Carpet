@@ -547,7 +547,8 @@ lc_control_init (lc_control_t * restrict const lc,
                  lc_statmap_t * restrict const lm,
                  int const imin, int const jmin, int const kmin,
                  int const imax, int const jmax, int const kmax,
-                 int const ilsh, int const jlsh, int const klsh)
+                 int const ilsh, int const jlsh, int const klsh,
+                 int const di)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -561,6 +562,7 @@ lc_control_init (lc_control_t * restrict const lc,
   assert (imin >= 0 && imax <= ilsh && ilsh >= 0);
   assert (jmin >= 0 && jmax <= jlsh && jlsh >= 0);
   assert (kmin >= 0 && kmax <= klsh && klsh >= 0);
+  assert (di > 0);
   
   /* Copy arguments */
   lc->imin = imin;
@@ -572,6 +574,7 @@ lc_control_init (lc_control_t * restrict const lc,
   lc->ilsh = ilsh;
   lc->jlsh = jlsh;
   lc->klsh = klsh;
+  lc->di   = di;                /* vector size */
   
   
   
@@ -964,12 +967,14 @@ CCTK_FNAME (lc_control_init) (lc_control_t * restrict const lc,
                               int const * restrict const kmax,
                               int const * restrict const ilsh,
                               int const * restrict const jlsh,
-                              int const * restrict const klsh)
+                              int const * restrict const klsh,
+                              int const * restrict const di)
 {
   lc_control_init (lc, lm,
                    * imin - 1, * jmin - 1, * kmin - 1,
                    * imax, * jmax, * kmax,
-                   * ilsh, * jlsh, * klsh);
+                   * ilsh, * jlsh, * klsh,
+                   * di);
 }
 
 CCTK_FCALL
