@@ -1,46 +1,49 @@
-This is BibTeX, Version 0.99c (Web2C 7.5.6)
+This is BibTeX, Version 0.99d (TeX Live 2010/MacPorts 2010_0)
+Capacity: max_strings=500000, hash_size=500000, hash_prime=425003
 The top-level auxiliary file: citations-thesis.aux
 The style file: apsrev-titles-manyauthors.bst
+Reallocated singl_function (elt_size=4) to 100 items from 50.
 Database file #1: citations-thesis.bib
 Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
-You've used 15 entries,
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+You've used 17 entries,
             3482 wiz_defined-function locations,
-            1232 strings with 12837 characters,
-and the built_in function-call counts, 6462 in all, are:
-= -- 418
-> -- 105
-< -- 30
-+ -- 62
-- -- 30
-* -- 777
-:= -- 877
-add.period$ -- 15
-call.type$ -- 15
-change.case$ -- 75
-chr.to.int$ -- 15
-cite$ -- 15
-duplicate$ -- 645
-empty$ -- 587
-format.name$ -- 75
-if$ -- 1170
+            1240 strings with 13263 characters,
+and the built_in function-call counts, 7322 in all, are:
+= -- 474
+> -- 119
+< -- 34
++ -- 72
+- -- 34
+* -- 881
+:= -- 993
+add.period$ -- 17
+call.type$ -- 17
+change.case$ -- 85
+chr.to.int$ -- 17
+cite$ -- 17
+duplicate$ -- 731
+empty$ -- 665
+format.name$ -- 85
+if$ -- 1326
 int.to.chr$ -- 1
-int.to.str$ -- 16
-missing$ -- 90
-newline$ -- 60
-num.names$ -- 45
-pop$ -- 167
+int.to.str$ -- 18
+missing$ -- 102
+newline$ -- 66
+num.names$ -- 51
+pop$ -- 189
 preamble$ -- 1
-purify$ -- 60
+purify$ -- 68
 quote$ -- 0
-skip$ -- 211
+skip$ -- 239
 stack$ -- 0
-substring$ -- 167
-swap$ -- 406
-text.length$ -- 15
+substring$ -- 191
+swap$ -- 460
+text.length$ -- 17
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 90
+type$ -- 102
 warning$ -- 0
-while$ -- 30
+while$ -- 34
 width$ -- 0
-write$ -- 192
+write$ -- 216

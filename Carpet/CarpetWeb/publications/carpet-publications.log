@@ -1,10 +1,13 @@
-This is pdfTeX, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2009.9.23)  17 MAR 2010 12:20
+This is pdfTeX, Version 3.1415926-1.40.11 (TeX Live 2010/MacPorts 2010_0) (format=pdflatex 2010.11.10)  17 NOV 2010 14:04
 entering extended mode
-**\nonstopmode \input{"/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publi
-cations/carpet-publications.tex"}
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**\nonstopmode \input{"/Users/eschnett/EinsteinToolkit-hg/repos/carpet/Carpet/C
+arpetWeb/publications/carpet-publications.tex"}
 
-(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/carpet-publica
-tions.tex (/opt/local/share/texmf-local/tex/latex/revtex4/revtex4.cls
+(/Users/eschnett/EinsteinToolkit-hg/repos/carpet/Carpet/CarpetWeb/publications/
+carpet-publications.tex
+(/opt/local/share/texmf-local/tex/latex/revtex4/revtex4.cls
 Document Class: revtex4 2001/08/03 v4.0 (http://publish.aps.org/revtex4/ for do
 cumentation)
  Copyright (c) 2001 The American Physical Society.
@@ -30,9 +33,9 @@ ltxgrid: portions licensed from W. E. Baxter (web@superscript.com)
 \pagegrid@col=\count82
 Class revtex4 Info: Incorporating package {textcase}  [1998/11/12 v0.06 Text on
 ly upper/lower case changing (DPC)]. on input line 3682.
-(/opt/local/share/texmf-dist/tex/latex/ltxmisc/url.sty
+(/opt/local/share/texmf-texlive-dist/tex/latex/url/url.sty
 \Urlmuskip=\muskip10
-Package: url 2005/06/27  ver 3.2  Verb mode for urls, etc.
+Package: url 2006/04/12  ver 3.3  Verb mode for urls, etc.
 )
 \c@affil=\count83
 \absbox=\box31
@@ -47,11 +50,11 @@ Package: url 2005/06/27  ver 3.2  Verb mode for urls, etc.
 \c@figure=\count90
 \c@table=\count91
 
-(/opt/local/share/texmf-dist/tex/latex/natbib/natbib.sty
-Package: natbib 2007/02/05 8.0 (PWD)
+(/opt/local/share/texmf-texlive-dist/tex/latex/natbib/natbib.sty
+Package: natbib 2009/11/07 8.31a (PWD, AO)
 \bibhang=\skip43
 \bibsep=\skip44
-LaTeX Info: Redefining \cite on input line 602.
+LaTeX Info: Redefining \cite on input line 694.
 \c@NAT@ctr=\count92
 )
 \widetext@top=\box32
@@ -73,37 +76,34 @@ n)
 File: 11pt.rtx 2001/08/03 v4.0 (http://publish.aps.org/revtex4/ for documentati
 on)
 )
-(/opt/local/share/texmf-dist/tex/generic/babel/babel.sty
-Package: babel 2005/11/23 v3.8h The Babel package
+(/opt/local/share/texmf-texlive-dist/tex/generic/babel/babel.sty
+Package: babel 2008/07/06 v3.8l The Babel package
 
-(/opt/local/share/texmf-dist/tex/generic/babel/english.ldf
+(/opt/local/share/texmf-texlive-dist/tex/generic/babel/english.ldf
 Language: english 2005/03/30 v3.3o English support from the babel system
 
-(/opt/local/share/texmf-dist/tex/generic/babel/babel.def
-File: babel.def 2005/11/23 v3.8h Babel common definitions
+(/opt/local/share/texmf-texlive-dist/tex/generic/babel/babel.def
+File: babel.def 2008/07/06 v3.8l Babel common definitions
 \babel@savecnt=\count93
 \U@D=\dimen102
 )
-\l@british = a dialect from \language\l@english 
-\l@UKenglish = a dialect from \language\l@english 
 \l@canadian = a dialect from \language\l@american 
 \l@australian = a dialect from \language\l@british 
 \l@newzealand = a dialect from \language\l@british 
 ))
-(/opt/local/share/texmf-dist/tex/latex/base/inputenc.sty
-Package: inputenc 2006/05/05 v1.1b Input encoding file
+(/opt/local/share/texmf-texlive-dist/tex/latex/base/inputenc.sty
+Package: inputenc 2008/03/30 v1.1d Input encoding file
 \inpenc@prehook=\toks16
 \inpenc@posthook=\toks17
 
-(/opt/local/share/texmf-dist/tex/latex/base/latin9.def
-File: latin9.def 2006/05/05 v1.1b Input encoding file
+(/opt/local/share/texmf-texlive-dist/tex/latex/base/latin9.def
+File: latin9.def 2008/03/30 v1.1d Input encoding file
 ))
-(/opt/local/share/texmf-dist/tex/latex/psnfss/mathpazo.sty
+(/opt/local/share/texmf-texlive-dist/tex/latex/psnfss/mathpazo.sty
 Package: mathpazo 2005/04/12 PSNFSS-v9.2a Palatino w/ Pazo Math (D.Puga, WaS) 
 \symupright=\mathgroup4
 )
-(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/carpet-publica
-tions.aux)
+No file carpet-publications.aux.
 \openout1 = `carpet-publications.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 24.
@@ -119,7 +119,7 @@ LaTeX Font Info:    ... okay on input line 24.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 24.
 LaTeX Font Info:    ... okay on input line 24.
 LaTeX Font Info:    Try loading font information for OT1+ppl on input line 24.
- (/opt/local/share/texmf-dist/tex/latex/psnfss/ot1ppl.fd
+(/opt/local/share/texmf-texlive-dist/tex/latex/psnfss/ot1ppl.fd
 File: ot1ppl.fd 2001/06/04 font definitions for OT1/ppl.
 )
 Class revtex4 Info: Patching LaTeX tabular. on input line 24.
@@ -131,77 +131,90 @@ LaTeX Font Info:    Font shape `OT1/ppl/bx/n' in size <17.28> not available
 LaTeX Font Info:    Font shape `OT1/ppl/bx/n' in size <12> not available
 (Font)              Font shape `OT1/ppl/b/n' tried instead on input line 32.
 
-(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-back
-ground.bibitems
+(/Users/eschnett/EinsteinToolkit-hg/repos/carpet/Carpet/CarpetWeb/publications/
+citations-background.bibitems
 LaTeX Font Info:    Try loading font information for OML+zplm on input line 27.
 
- (/opt/local/share/texmf-dist/tex/latex/psnfss/omlzplm.fd
+
+(/opt/local/share/texmf-texlive-dist/tex/latex/psnfss/omlzplm.fd
 File: omlzplm.fd 2002/09/08 Fontinst v1.914 font definitions for OML/zplm.
 )
 LaTeX Font Info:    Try loading font information for OMS+zplm on input line 27.
 
 
-(/opt/local/share/texmf-dist/tex/latex/psnfss/omszplm.fd
+(/opt/local/share/texmf-texlive-dist/tex/latex/psnfss/omszplm.fd
 File: omszplm.fd 2002/09/08 Fontinst v1.914 font definitions for OMS/zplm.
 )
 LaTeX Font Info:    Try loading font information for OMX+zplm on input line 27.
 
 
-(/opt/local/share/texmf-dist/tex/latex/psnfss/omxzplm.fd
+(/opt/local/share/texmf-texlive-dist/tex/latex/psnfss/omxzplm.fd
 File: omxzplm.fd 2002/09/08 Fontinst v1.914 font definitions for OMX/zplm.
 )
 LaTeX Font Info:    Try loading font information for OT1+zplm on input line 27.
 
 
-(/opt/local/share/texmf-dist/tex/latex/psnfss/ot1zplm.fd
+(/opt/local/share/texmf-texlive-dist/tex/latex/psnfss/ot1zplm.fd
 File: ot1zplm.fd 2002/09/08 Fontinst v1.914 font definitions for OT1/zplm.
 )
 LaTeX Font Info:    Font shape `OT1/ppl/bx/n' in size <10.95> not available
 (Font)              Font shape `OT1/ppl/b/n' tried instead on input line 37.
 )
-(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-webp
-age.bibitems)
-(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-refe
-reed.bibitems [1{/opt/local/share/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-[2] [3]
-Underfull \hbox (badness 1577) in paragraph at lines 584--593
-\OT1/ppl/m/it/10.95 from near-extremal-Bowen-York-spin black-hole bi-na-ries\OT
-1/ppl/m/n/10.95 , Phys. Rev. D \OT1/ppl/b/n/10.95 78\OT1/ppl/m/n/10.95 , 024039
- (2008),
- []
+(/Users/eschnett/EinsteinToolkit-hg/repos/carpet/Carpet/CarpetWeb/publications/
+citations-webpage.bibitems)
+(/Users/eschnett/EinsteinToolkit-hg/repos/carpet/Carpet/CarpetWeb/publications/
+citations-refereed.bibitems)
 
-[4] [5] [6] [7])
-(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-book
-.bibitems)
-(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-thes
-is.bibitems [8]
-LaTeX Font Info:    Try loading font information for OMS+ppl on input line 76.
- (/opt/local/share/texmf-dist/tex/latex/psnfss/omsppl.fd
+! LaTeX Error: Something's wrong--perhaps a missing \item.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.47 \end{enumerate}
+                    
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+(/Users/eschnett/EinsteinToolkit-hg/repos/carpet/Carpet/CarpetWeb/publications/
+citations-book.bibitems)
+(/Users/eschnett/EinsteinToolkit-hg/repos/carpet/Carpet/CarpetWeb/publications/
+citations-thesis.bibitems [1{/opt/local/var/db/texmf/fonts/map/pdftex/updmap/pd
+ftex.map}]
+LaTeX Font Info:    Try loading font information for OMS+ppl on input line 91.
+ (/opt/local/share/texmf-texlive-dist/tex/latex/psnfss/omsppl.fd
 File: omsppl.fd 
 )
 LaTeX Font Info:    Font shape `OMS/ppl/m/it' in size <10.95> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 76.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 91.
 )
-(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-repo
-rt.bibitems [9] [10] [11]) [12]
-(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/carpet-publica
-tions.aux) ) 
+(/Users/eschnett/EinsteinToolkit-hg/repos/carpet/Carpet/CarpetWeb/publications/
+citations-report.bibitems [2] [3] [4]) [5]
+(/Users/eschnett/EinsteinToolkit-hg/repos/carpet/Carpet/CarpetWeb/publications/
+carpet-publications.aux)
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right .
+
+
+ ) 
 Here is how much of TeX's memory you used:
- 2268 strings out of 94073
- 29665 string characters out of 1164797
- 94107 words of memory out of 1500000
- 5547 multiletter control sequences out of 10000+50000
- 17230 words of font info for 47 fonts, out of 1200000 for 2000
- 645 hyphenation exceptions out of 8191
- 26i,4n,21p,296b,335s stack positions out of 5000i,500n,6000p,200000b,5000s
-{/opt/local/share/texmf-dist/fonts/enc/dvips/base/8r.enc}</opt/loca
-l/share/texmf-dist/fonts/type1/bluesky/cm/cmsy10.pfb></opt/local/share/texmf-di
-st/fonts/type1/urw/palatino/uplb8a.pfb></opt/local/share/texmf-dist/fonts/type1
-/urw/palatino/uplr8a.pfb></opt/local/share/texmf-dist/fonts/type1/urw/palatino/
-uplri8a.pfb>
-Output written on carpet-publications.pdf (12 pages, 105060 bytes).
+ 2351 strings out of 494800
+ 31174 string characters out of 3172506
+ 97940 words of memory out of 3000000
+ 5567 multiletter control sequences out of 15000+200000
+ 17230 words of font info for 47 fonts, out of 3000000 for 9000
+ 120 hyphenation exceptions out of 8191
+ 26i,4n,21p,310b,345s stack positions out of 5000i,500n,10000p,200000b,50000s
+{/opt/local/share/texmf-texlive-dist/fonts/enc/dvips/base/8r.enc}</opt/local/
+share/texmf-texlive-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></opt/local/
+share/texmf-texlive-dist/fonts/type1/urw/palatino/uplb8a.pfb></opt/local/share/
+texmf-texlive-dist/fonts/type1/urw/palatino/uplr8a.pfb></opt/local/share/texmf-
+texlive-dist/fonts/type1/urw/palatino/uplri8a.pfb>
+Output written on carpet-publications.pdf (5 pages, 81172 bytes).
 PDF statistics:
- 58 PDF objects out of 1000 (max. 8388607)
- 0 named destinations out of 1000 (max. 131072)
+ 37 PDF objects out of 1000 (max. 8388607)
+ 25 compressed objects within 1 object stream
+ 0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 

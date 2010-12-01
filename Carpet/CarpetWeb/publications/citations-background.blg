@@ -1,8 +1,11 @@
-This is BibTeX, Version 0.99c (Web2C 7.5.6)
+This is BibTeX, Version 0.99d (TeX Live 2010/MacPorts 2010_0)
+Capacity: max_strings=500000, hash_size=500000, hash_prime=425003
 The top-level auxiliary file: citations-background.aux
 The style file: apsrev-titles-manyauthors.bst
+Reallocated singl_function (elt_size=4) to 100 items from 50.
 Database file #1: citations-background.bib
 Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
 You've used 3 entries,
             3482 wiz_defined-function locations,
             1182 strings with 10913 characters,

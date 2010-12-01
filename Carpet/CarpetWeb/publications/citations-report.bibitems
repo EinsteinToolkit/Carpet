@@ -48,6 +48,17 @@
   numerical relativity}} (\bibinfo{year}{2010}), \bibinfo{note}{arXiv:1001.5161
   [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/1001.5161}.
 
+\blurb[{\citenamefont{Korobkin et~al.}(2010)\citenamefont{Korobkin,
+  Abdikamalov, Schnetter, Stergioulas, and Zink}}]{carpet-korobkin2010b}
+\bibinfo{author}{\bibfnamefont{O.}~\bibnamefont{Korobkin}},
+  \bibinfo{author}{\bibfnamefont{E.~B.} \bibnamefont{Abdikamalov}},
+  \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Schnetter}},
+  \bibinfo{author}{\bibfnamefont{N.}~\bibnamefont{Stergioulas}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Zink}},
+  \emph{\bibinfo{title}{Stability of general-relativistic accretion disks}}
+  (\bibinfo{year}{2010}), \bibinfo{note}{arXiv:1011.3010v},
+  \urlprefix\url{http://arxiv.org/abs/1011.3010}.
+
 \blurb[{\citenamefont{Sperhake et~al.}(2010)\citenamefont{Sperhake, Cardoso,
   Pretorius, Berti, Hinderer, and Yunes}}]{carpet-sperhake2010a}
 \bibinfo{author}{\bibfnamefont{U.}~\bibnamefont{Sperhake}},
@@ -111,6 +122,17 @@
   relativity meets perturbation theory}} (\bibinfo{year}{2010}),
   \bibinfo{note}{arXiv:1001.2316 [gr-qc]},
   \urlprefix\url{http://arxiv.org/abs/1001.2316}.
+
+\blurb[{\citenamefont{Kelly et~al.}(2009)\citenamefont{Kelly, Tichy,
+  Zlochower, Campanelli, and Whiting}}]{carpet-kelly2009a}
+\bibinfo{author}{\bibfnamefont{B.~J.} \bibnamefont{Kelly}},
+  \bibinfo{author}{\bibfnamefont{W.}~\bibnamefont{Tichy}},
+  \bibinfo{author}{\bibfnamefont{Y.}~\bibnamefont{Zlochower}},
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Campanelli}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Whiting}},
+  \emph{\bibinfo{title}{Post-newtonian initial data with waves: Progress in
+  evolution}} (\bibinfo{year}{2009}), \bibinfo{note}{arXiv:0912.5311 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0912.5311}.
 
 \blurb[{\citenamefont{Duez}(2009)}]{carpet-duez2009a}
 \bibinfo{author}{\bibfnamefont{M.~D.} \bibnamefont{Duez}},

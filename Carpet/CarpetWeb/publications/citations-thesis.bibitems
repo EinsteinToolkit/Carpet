@@ -27,12 +27,27 @@
   (\bibinfo{year}{2010}),
   \urlprefix\url{http://dl.dropbox.com/u/2021645/thesis.pdf}.
 
+\blurb[{\citenamefont{Korobkin}(2010)}]{carpet-korobkin2010a}
+\bibinfo{author}{\bibfnamefont{O.}~\bibnamefont{Korobkin}},
+  \emph{\bibinfo{title}{Non-axisymmetric instabilities in self-gravitating tori
+  around black holes, and solving {Einstein} constraints with superconvergent
+  finite element methods}}, Ph.D. thesis, \bibinfo{school}{Louisiana State
+  University} (\bibinfo{year}{2010}),
+  \urlprefix\url{http://etd.lsu.edu/docs/available/etd-11122010-153530/}.
+
 \blurb[{\citenamefont{Pazos}(2009)}]{carpet-pazos2009a}
 \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Pazos}},
   \emph{\bibinfo{title}{Numerical studies on new techniques for gravitational
   wave extraction and binary black hole simulations}}, Ph.D. thesis,
   \bibinfo{school}{University of Maryland} (\bibinfo{year}{2009}),
   \urlprefix\url{http://hdl.handle.net/1903/9974}.
+
+\blurb[{\citenamefont{Bode}(2009)}]{carpet-bode2009b}
+\bibinfo{author}{\bibfnamefont{T.}~\bibnamefont{Bode}},
+  \emph{\bibinfo{title}{The robustness of binary black hole mergers and
+  waveforms}}, Ph.D. thesis, \bibinfo{school}{Pennsylvania State University}
+  (\bibinfo{year}{2009}),
+  \urlprefix\url{http://etda.libraries.psu.edu/theses/approved/WorldWideIndex/ETD-4094/index.html}.
 
 \blurb[{\citenamefont{Bentivegna}(2008)}]{carpet-bentivegna2008b}
 \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Bentivegna}},
@@ -54,7 +69,7 @@
   black hole simulations using a new multi-block approach to numerical
   relativity}}, Ph.D. thesis, \bibinfo{school}{Louisiana State University}
   (\bibinfo{year}{2007}),
-  \urlprefix\url{http://www.cct.lsu.edu/~dorband/thesis.pdf}.
+  \urlprefix\url{http://etd.lsu.edu/docs/available/etd-03202007-163153/}.
 
 \blurb[{\citenamefont{Kastaun}(2007)}]{carpet-kastaun2007a}
 \bibinfo{author}{\bibfnamefont{W.}~\bibnamefont{Kastaun}},
@@ -77,7 +92,7 @@
   (\bibinfo{year}{2007}),
   \urlprefix\url{http://stellarcollapse.org/papers/thesis_final.pdf}.
 
-\blurb[{\citenamefont{Zengino{\u{g}}lu}(2007)}]{carpet-2007a}
+\blurb[{\citenamefont{Zengino{\u{g}}lu}(2007)}]{carpet-zenginoglu2007a}
 \bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Zengino{\u{g}}lu}},
   \emph{\bibinfo{title}{A conformal approach to numerical calculations of
   asymptotically flat spacetimes}}, Ph.D. thesis,
