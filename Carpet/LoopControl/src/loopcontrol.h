@@ -6,50 +6,18 @@
 
 #include <cctk.h>
 
-#ifdef CCODE
 
-#include <cctk_Arguments.h>
+
+#ifdef CCODE
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
-
 #ifdef __cplusplus
 #  ifdef CCTK_CXX_RESTRICT
 #    define restrict CCTK_CXX_RESTRICT
 #  endif
-#endif
-
-
-
-#if 0
-/* The most simple implementation */
-
-#define LC_LOOP3(name, i,j,k, imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh) \
-  do {                                                                  \
-    int const lc_imin = (imin);                                         \
-    int const lc_jmin = (jmin);                                         \
-    int const lc_kmin = (kmin);                                         \
-    int const lc_imax = (imax);                                         \
-    int const lc_jmax = (jmax);                                         \
-    int const lc_kmax = (kmax);                                         \
-    for (int k = lc_kmin; k < lc_kmax; ++k)                             \
-      for (int j = lc_jmin; j < lc_jmax; ++j)                           \
-        for (int i = lc_imin; i < lc_imax; ++i)
-
-#define LC_ENDLOOP3(name)                       \
-  } while (0)
-
-#endif
-
-
-
-#if 0
-/* Vector size */
-#define LC_VECTORSIZE 2         /* Correct for double precision on
-                                   Intel */
 #endif
 
 
@@ -319,6 +287,7 @@ lc_control_finish (lc_control_t * restrict lc);
 
 #define LC_LOOP3VEC(name, i,j,k, imin_,jmin_,kmin_, imax_,jmax_,kmax_, ilsh_,jlsh_,klsh_, di_) \
   do {                                                                  \
+    typedef int lc_loop3vec_##name;                                     \
     static int lc_initialised = 0;                                      \
     static lc_statmap_t lc_lm;                                          \
     if (! lc_initialised) {                                             \
@@ -364,16 +333,17 @@ lc_control_finish (lc_control_t * restrict lc);
                 int const lc_ioffset = (lc_ipos & - lc_di) - lc_ipos;   \
                 for (int i = lc_imin + lc_ioffset; i < lc_imax; i += lc_di) {
 
-#define LC_ENDLOOP3VEC(name)                    \
-                }                               \
-              }                                 \
-              LC_POSTLOOP_STATEMENTS            \
-            }                                   \
-          }                                     \
-        }                                       \
-      }                                         \
-    }                                           \
-    lc_control_finish (& lc_lc);                \
+#define LC_ENDLOOP3VEC(name)                                    \
+                }                                               \
+              }                                                 \
+              LC_POSTLOOP_STATEMENTS                            \
+            }                                                   \
+          }                                                     \
+        }                                                       \
+      }                                                         \
+    }                                                           \
+    lc_control_finish (& lc_lc);                                \
+    typedef lc_loop3vec_##name lc_ensure_proper_nesting;        \
   } while (0)
 
 /* Pre- and post loop statements are inserted around the innermost
@@ -383,8 +353,13 @@ lc_control_finish (lc_control_t * restrict lc);
 
 
 
-void
-lc_printstats (CCTK_ARGUMENTS);
+/* Replace CCTK_LOOP macros */
+#undef CCTK_LOOP3
+#undef CCTK_ENDLOOP3
+#define CCTK_LOOP3    LC_LOOP3
+#define CCTK_ENDLOOP3 LC_ENDLOOP3
+
+
 
 #ifdef __cplusplus
 }

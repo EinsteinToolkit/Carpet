@@ -255,10 +255,10 @@ int lc_demo (void)
   double sum = 0.0;
 #pragma omp parallel reduction(+: sum)
   {
-    LC_LOOP3 (analysis, i,j,k, 1,1,1, NI-1,NJ-1,NK-1, NI,NJ,NK) {
+    CCTK_LOOP3 (analysis, i,j,k, 1,1,1, NI-1,NJ-1,NK-1, NI,NJ,NK) {
       int const ind = ind3d(i,j,k);
       sum += phi0[ind];
-    } LC_ENDLOOP3 (analysis);
+    } CCTK_ENDLOOP3 (analysis);
   }
   double const avg = sum / ((NI-2)*(NJ-2)*(NK-2));
   double const time_analysis_end = omp_get_wtime();

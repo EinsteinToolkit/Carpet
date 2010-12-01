@@ -1,3 +1,7 @@
+#include <cctk.h>
+#include <cctk_Arguments.h>
+#include <cctk_Parameters.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <float.h>
@@ -11,9 +15,6 @@
 #ifdef _OPENMP
 #  include <omp.h>
 #endif
-
-#include <cctk.h>
-#include <cctk_Parameters.h>
 
 /* #ifdef HAVE_TGMATH_H */
 /* #  include <tgmath.h> */
@@ -854,12 +855,6 @@ lc_control_init (lc_control_t * restrict const lc,
   lc->jjjstep = (lc->jjjmax - lc->jjjmin + lt->jnthreads-1) / lt->jnthreads;
   lc->kkkstep = (lc->kkkmax - lc->kkkmin + lt->knthreads-1) / lt->knthreads;
   
-#if 0
-  /* Correct threading for vectorisation (cache line size) */
-  lc->iiistep =
-    (lc->iiistep + LC_VECTORSIZE - 1) / LC_VECTORSIZE * LC_VECTORSIZE;
-#endif
-  
   /* Find location of current thread */
   lc->thread_num  = omp_get_thread_num();
   int c = lc->thread_num;
@@ -885,11 +880,6 @@ lc_control_init (lc_control_t * restrict const lc,
   lc->iistep = lt->inpoints;
   lc->jjstep = lt->jnpoints;
   lc->kkstep = lt->knpoints;
-  
-#if 0
-  /* Correct tiling for vectorisation (cache line size) */
-  lc->iistep = (lc->iistep + LC_VECTORSIZE - 1) / LC_VECTORSIZE * LC_VECTORSIZE;
-#endif
   
   
   
