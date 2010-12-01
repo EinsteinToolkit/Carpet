@@ -64,7 +64,7 @@ void CoM(CCTK_ARGUMENTS)
   reduction_handle = CCTK_ReductionHandle("sum");
 
 
-  varindex = CCTK_VarIndex("Whisky::dens");
+  varindex = CCTK_VarIndex("GRHydro::dens");
   assert(varindex>=0);
   ierr = CCTK_Reduce(cctkGH, -1, reduction_handle,
 		     1, CCTK_VARIABLE_REAL, (void *)&denstotal, 1, varindex);

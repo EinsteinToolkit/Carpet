@@ -2,7 +2,7 @@
 # $Header:$
 
 implements: ReductionTest
-inherits: Whisky grid
+inherits: GRHydro grid
 
 CCTK_REAL center_of_mass_helpers TYPE=GF TIMELEVELS=3 tags='prolongation="none"'
 {
