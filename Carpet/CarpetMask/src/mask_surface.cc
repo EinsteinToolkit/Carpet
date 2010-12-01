@@ -116,11 +116,7 @@ namespace CarpetMask {
           }
           
 #pragma omp parallel
-          LC_LOOP3(CarpetSurfaceSetup,
-                   i,j,k,
-                   0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-          {
+          CCTK_LOOP3_ALL(CarpetSurfaceSetup, cctkGH, i,j,k) {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             
             CCTK_REAL const dx = x[ind] - x0;
@@ -178,7 +174,7 @@ namespace CarpetMask {
                 weight[ind] = 0.0;
               }
             }
-          } LC_ENDLOOP3(CarpetSurfaceSetup);
+          } CCTK_ENDLOOP3_ALL(CarpetSurfaceSetup);
           
         } else {
           

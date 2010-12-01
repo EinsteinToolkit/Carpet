@@ -49,11 +49,7 @@ namespace CarpetMask {
         bool const exterior = exclude_exterior[n];
         
 #pragma omp parallel
-        LC_LOOP3(CarpetExcludedSetup,
-                 i,j,k,
-                 0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-        {
+        CCTK_LOOP3_ALL(CarpetExcludedSetup, cctkGH, i,j,k) {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
           
           CCTK_REAL const dx2 = pow (x[ind] - x0, 2);
@@ -67,7 +63,7 @@ namespace CarpetMask {
             weight[ind] = 0.0;
           }
           
-        } LC_ENDLOOP3(CarpetExcludedSetup);
+        } CCTK_ENDLOOP3_ALL(CarpetExcludedSetup);
         
       } // if r>=0
     }   // for n
