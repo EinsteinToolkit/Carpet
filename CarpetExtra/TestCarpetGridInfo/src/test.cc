@@ -31,7 +31,7 @@ assert(Carpet::is_level_mode());
 	for (int map_number = 0 ; map_number < N_maps ; ++map_number)
 	{
 	// switch Carpet to this map
-	Carpet::enter_singlemap_mode(GH, map_number);
+	Carpet::enter_singlemap_mode(GH, map_number, CCTK_GF);
 
 	do_singlemap_stuff(GH, map_number, (test_local_mode != 0));
 
