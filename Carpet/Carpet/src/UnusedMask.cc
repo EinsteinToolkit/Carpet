@@ -24,21 +24,25 @@ namespace Carpet {
     // Zero out
     LOOP_OVER_BSET (cctkGH, ext, box, imin, imax) {
 #pragma omp parallel
-      LC_LOOP3(unused_mask_zero, i, j, k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-               cctk_lsh[0],cctk_lsh[1],cctk_lsh[2]) {
+      CCTK_LOOP3(unused_mask_zero, i, j, k,
+                 imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+      {
         CCTK_INT i3D = CCTK_GFINDEX3D(cctkGH, i, j, k);
         carpet_unusedpoints_mask[i3D] = 0;
-      } LC_ENDLOOP3(unused_mask_zero);
+      } CCTK_ENDLOOP3(unused_mask_zero);
     } END_LOOP_OVER_BSET;
 
     // Set it where unused
     LOOP_OVER_BSET (cctkGH, unused_region, box, imin, imax) {
 #pragma omp parallel
-      LC_LOOP3(unused_mask_set, i, j, k, imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-               cctk_lsh[0],cctk_lsh[1],cctk_lsh[2]) {
+      CCTK_LOOP3(unused_mask_set, i, j, k,
+                 imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+      {
         CCTK_INT i3D = CCTK_GFINDEX3D(cctkGH, i, j, k);
         carpet_unusedpoints_mask[i3D] = 1;
-      } LC_ENDLOOP3(unused_mask_set);
+      } CCTK_ENDLOOP3(unused_mask_set);
     } END_LOOP_OVER_BSET;
 
   } // CarpetUnusedMask
