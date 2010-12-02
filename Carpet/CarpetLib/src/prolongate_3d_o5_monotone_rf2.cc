@@ -15,13 +15,13 @@
 // Note that this code does not work for complex GFs (due to the use
 // of the max and min intrinsics).
 
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
-
-#include <cctk.h>
-#include <cctk_Parameters.h>
 
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"

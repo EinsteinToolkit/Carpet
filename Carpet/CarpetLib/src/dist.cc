@@ -1,13 +1,17 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <cassert>
 #include <typeinfo>
 
-#include <mpi.h>
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 #ifdef _OPENMP
 #  include <omp.h>
 #endif
-
-#include "cctk.h"
-#include "cctk_Parameters.h"
 
 #include "defs.hh"
 #include "limits.hh"
@@ -54,17 +58,12 @@ namespace dist {
 #endif
     
     // Output startup time
-    // cerr << "QQQ: pseudoinit[1]" << endl;
     CarpetLib::output_startup_time ();
-    // cerr << "QQQ: pseudoinit[2]" << endl;
     
     // Check and/or modify system limits
     CarpetLib::set_system_limits ();
-    // cerr << "QQQ: pseudoinit[3]" << endl;
     
-    // cerr << "QQQ: pseudoinit[4]" << endl;
     collect_total_num_threads ();
-    // cerr << "QQQ: pseudoinit[5]" << endl;
   }
   
   void finalize () {

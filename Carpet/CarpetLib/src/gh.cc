@@ -1,10 +1,10 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
-
-#include "cctk.h"
-#include "cctk_Parameters.h"
 
 #include "CarpetTimers.hh"
 

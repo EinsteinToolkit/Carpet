@@ -1,8 +1,8 @@
+#include <cctk.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-
-#include <cctk.h>
 
 // IRIX wants this before <time.h>
 #if HAVE_SYS_TYPES_H

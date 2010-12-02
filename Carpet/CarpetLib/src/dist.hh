@@ -1,17 +1,21 @@
 #ifndef DIST_HH
 #define DIST_HH
 
+#include <cctk.h>
+
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 
-#include <mpi.h>
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 #ifdef _OPENMP
 #  include <omp.h>
 #endif
-
-#include "cctk.h"
 
 #include "defs.hh"
 

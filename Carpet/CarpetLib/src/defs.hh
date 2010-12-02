@@ -1,6 +1,8 @@
 #ifndef DEFS_HH
 #define DEFS_HH
 
+#include <cctk.h>
+
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
@@ -15,8 +17,6 @@
 #include <set>
 #include <stack>
 #include <vector>
-
-#include "cctk.h"
 
 #include "typeprops.hh"
 

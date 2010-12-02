@@ -1,12 +1,12 @@
 #ifndef VECT_HH
 #define VECT_HH
 
+#include <cctk.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <iostream>
-
-#include "cctk.h"
 
 #include "defs.hh"
 #include "vect_helpers.hh"

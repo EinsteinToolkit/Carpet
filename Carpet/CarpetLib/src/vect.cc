@@ -1,7 +1,7 @@
+#include <cctk.h>
+
 #include <cassert>
 #include <iostream>
-
-#include "cctk.h"
 
 #include "defs.hh"
 #include "bboxset.hh"

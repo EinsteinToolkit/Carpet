@@ -1,11 +1,11 @@
+#include <cctk.h>
+
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <string>
-
-#include "cctk.h"
 
 #include "CarpetTimers.hh"
 

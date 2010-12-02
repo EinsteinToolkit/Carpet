@@ -1,12 +1,12 @@
 #ifndef TH_HH
 #define TH_HH
 
+#include <cctk.h>
+
 #include <cassert>
 #include <cmath>
 #include <iostream>
 #include <vector>
-
-#include <cctk.h>
 
 #include "defs.hh"
 #include "gh.hh"

@@ -1,14 +1,14 @@
 #ifndef GDATA_HH
 #define GDATA_HH
 
+#include <cctk.h>
+
 #include <cassert>
 #include <cstdlib>
 #include <queue>
 #include <iostream>
 #include <string>
 #include <vector>
-
-#include "cctk.h"
 
 #include "bbox.hh"
 #include "commstate.hh"

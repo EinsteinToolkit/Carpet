@@ -1,3 +1,6 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <cassert>
 #include <cctype>
 #include <iostream>
@@ -6,9 +9,6 @@
 #include <set>
 #include <stack>
 #include <vector>
-
-#include "cctk.h"
-#include "cctk_Parameters.h"
 
 #include "bbox.hh"
 #include "defs.hh"

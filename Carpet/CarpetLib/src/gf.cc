@@ -1,6 +1,6 @@
-#include <cassert>
+#include <cctk.h>
 
-#include "cctk.h"
+#include <cassert>
 
 #include "defs.hh"
 

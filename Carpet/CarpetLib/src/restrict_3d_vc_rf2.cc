@@ -1,9 +1,9 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-
-#include <cctk.h>
-#include <cctk_Parameters.h>
 
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"

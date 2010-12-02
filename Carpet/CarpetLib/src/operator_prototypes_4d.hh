@@ -1,9 +1,9 @@
 #ifndef OPERATOR_PROTOTYPES_4D
 #define OPERATOR_PROTOTYPES_4D
 
-#include <cstdlib>
-
 #include <cctk.h>
+
+#include <cstdlib>
 
 #include "defs.hh"
 #include "bbox.hh"

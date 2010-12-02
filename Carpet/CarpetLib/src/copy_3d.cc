@@ -1,11 +1,12 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
-
-#include <cctk.h>
-#include <cctk_Parameters.h>
 
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
@@ -116,11 +117,17 @@ namespace CarpetLib {
     // Loop over region
     for (int k=0; k<regkext; ++k) {
       for (int j=0; j<regjext; ++j) {
+#if 1
         for (int i=0; i<regiext; ++i) {
           
           dst [DSTIND3(i, j, k)] = src [SRCIND3(i, j, k)];
           
         }
+#else
+        memcpy (& dst [DSTIND3(0, j, k)],
+                & src [SRCIND3(0, j, k)],
+                regiext * sizeof(T));
+#endif
       }
     }
     

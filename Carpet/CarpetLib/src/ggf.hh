@@ -1,12 +1,12 @@
 #ifndef GGF_HH
 #define GGF_HH
 
+#include <cctk.h>
+
 #include <cassert>
 #include <iostream>
 #include <string>
 #include <vector>
-
-#include "cctk.h"
 
 #include "defs.hh"
 #include "dh.hh"
