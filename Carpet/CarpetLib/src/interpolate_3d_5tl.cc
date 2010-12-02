@@ -1,10 +1,10 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
-
-#include <cctk.h>
-#include <cctk_Parameters.h>
 
 #include <loopcontrol.h>
 
@@ -139,8 +139,8 @@ namespace CarpetLib {
     
     // Loop over region
 #pragma omp parallel
-    LC_LOOP3 (interpolate_3d_5tl,
-              i,j,k, 0,0,0, regiext,regjext,regkext, srciext,srcjext,srckext)
+    CCTK_LOOP3(interpolate_3d_5tl,
+               i,j,k, 0,0,0, regiext,regjext,regkext, srciext,srcjext,srckext)
     {
       
       dst [DSTIND3(i, j, k)] =
@@ -150,7 +150,7 @@ namespace CarpetLib {
         + s4fac * src4 [SRCIND3(i, j, k)]
         + s5fac * src5 [SRCIND3(i, j, k)];
       
-    } LC_ENDLOOP3(interpolate_3d_5tl);
+    } CCTK_ENDLOOP3(interpolate_3d_5tl);
     
   }
   

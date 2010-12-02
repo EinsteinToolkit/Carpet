@@ -6,4 +6,8 @@ PROVIDES CarpetLib
   LANG
 }
 
-REQUIRES LoopControl
+OPTIONAL LoopControl
+{
+}
+
+REQUIRES Vectors
