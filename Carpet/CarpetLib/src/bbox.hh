@@ -80,6 +80,8 @@ public:
 #ifdef CARPET_DEBUG
     assert_bbox_limits();
 #endif
+    assert (all (stride() > T(0)));
+    assert (all ((upper() - lower()) % stride() == T(0)));
   }
   
   // Poison
