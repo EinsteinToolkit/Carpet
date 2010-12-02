@@ -1,3 +1,7 @@
+#include <cctk.h>
+#include <cctk_Arguments.h>
+#include <cctk_Parameters.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -12,11 +16,11 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include <mpi.h>
-
-#include "cctk.h"
-#include "cctk_Arguments.h"
-#include "cctk_Parameters.h"
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 #include "defs.hh"
 #include "dist.hh"
@@ -89,7 +93,7 @@ namespace CarpetLib {
   
   // A global timer set
   static
-  TimerSet timerSet;
+  TimerSet* timerSet = NULL;
   
   
   
@@ -150,7 +154,8 @@ namespace CarpetLib {
     assert (timername_);
     if (not have_cputick) calculate_cputick ();
     resetstats ();
-    timerSet.add (this);
+    if (not timerSet) timerSet = new TimerSet;
+    timerSet->add (this);
   }
   
   
@@ -158,7 +163,8 @@ namespace CarpetLib {
   // Destroy a timer
   Timer::~Timer ()
   {
-    timerSet.remove (this);
+    assert (timerSet);
+    timerSet->remove (this);
   }
   
   
@@ -339,9 +345,10 @@ namespace CarpetLib {
         file << "Running with " << dist::size() << " processes and " << dist::total_num_threads() << " threads" << eol;
       } // if do_print_info
       
+      if (not timerSet) timerSet = new TimerSet;
       file << "********************************************************************************" << eol
            << "CarpetLib timing information at iteration " << cctkGH->cctk_iteration << " time " << cctkGH->cctk_time << ":" << eol
-           << timerSet;
+           << *timerSet;
       
       file.close ();
       
