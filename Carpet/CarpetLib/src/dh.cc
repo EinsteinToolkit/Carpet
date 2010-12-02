@@ -1,9 +1,9 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <cassert>
 #include <cstddef>
 #include <sstream>
-
-#include <cctk.h>
-#include <cctk_Parameters.h>
 
 #include "CarpetTimers.hh"
 
@@ -19,7 +19,6 @@
 #include "dh.hh"
 
 using namespace std;
-
 using namespace CarpetLib;
 
 
@@ -230,6 +229,7 @@ regrid (bool const do_init)
   light_mboxes old_light_boxes;
   swap (light_boxes, old_light_boxes);
   
+  level_mboxes level_boxes;
   full_mboxes full_boxes;
   
   fast_boxes.clear();
@@ -238,11 +238,13 @@ regrid (bool const do_init)
   
   light_boxes.resize (h.mglevels());
   local_boxes.resize (h.mglevels());
+  level_boxes.resize (h.mglevels());
   full_boxes.resize (h.mglevels());
   fast_boxes.resize (h.mglevels());
   for (int ml = 0; ml < h.mglevels(); ++ ml) {
     light_boxes.AT(ml).resize (h.reflevels());
     local_boxes.AT(ml).resize (h.reflevels());
+    level_boxes.AT(ml).resize (h.reflevels());
     full_boxes.AT(ml).resize (h.reflevels());
     fast_boxes.AT(ml).resize (h.reflevels());
     for (int rl = 0; rl < h.reflevels(); ++ rl) {
@@ -252,6 +254,7 @@ regrid (bool const do_init)
       
       light_cboxes & light_level = light_boxes.AT(ml).AT(rl);
       local_cboxes & local_level = local_boxes.AT(ml).AT(rl);
+      level_dboxes & level_level = level_boxes.AT(ml).AT(rl);
       full_cboxes & full_level = full_boxes.AT(ml).AT(rl);
       fast_dboxes & fast_level = fast_boxes.AT(ml).AT(rl);
       
@@ -504,7 +507,8 @@ regrid (bool const do_init)
       ibset const allbuffers = allowned & notactive;
       
       // All active points
-      ibset const allactive = allowned - notactive;
+      ibset& allactive = level_level.active;
+      allactive = allowned - notactive;
       
       // All stepped buffer zones
       vector<ibset> allbuffers_stepped (num_substeps);
@@ -539,7 +543,7 @@ regrid (bool const do_init)
         box.buffers = box.owned & allbuffers;
         
         // Active region:
-        box.active = box.owned  & allactive;
+        box.active = box.owned & allactive;
         ASSERT_c (box.active == box.owned - box.buffers,
                   "The active region must equal the owned region minus the buffer zones");
       } // for c
@@ -1255,10 +1259,40 @@ regrid (bool const do_init)
       static Carpet::Timer timer_mask ("CarpetLib::dh::regrid::mask");
       timer_mask.start();
       
+      if (rl > 0) {
+        int const orl = rl - 1;
+        full_cboxes const& full_olevel = full_boxes.AT(ml).AT(orl);
+        // Local boxes are not communicated or post-processed, and
+        // thus can be modified even for coarser levels
+        local_cboxes& local_olevel = local_boxes.AT(ml).AT(orl);
+        
+        for (int lc = 0; lc < h.local_components(orl); ++ lc) {
+          int const c = h.get_component(orl, lc);
+          full_dboxes const& full_obox = full_olevel.AT(c);
+          // Local boxes are not communicated or post-processed, and
+          // thus can be modified even for coarser levels
+          local_dboxes& local_obox = local_olevel.AT(lc);
+          
+          // Set mask information for next coarser level
+          ibbox const oext_fine =
+            full_obox.exterior.expanded_for(domain_exterior);
+          local_obox.fine_active = allactive & oext_fine;
+        } // for lc
+      }   // if not coarsest level
+      
+      timer_mask.stop();
+      
+      
+      
+      // Mask for unused points on coarser level (which do not influence the future
+      // evolution provided regridding is done at the right times):
+      static Carpet::Timer timer_overwrittenmask ("CarpetLib::dh::regrid::unusedpoints_mask");
+      timer_overwrittenmask.start();
+      
       // Declare this here to save it for later use. Contains all the boxes
       // which are active minus the boundary
       ibset all_refined;
-
+      
       if (rl > 0) {
         int const orl = rl - 1;
         full_cboxes const& full_olevel = full_boxes.AT(ml).AT(orl);
@@ -1334,9 +1368,7 @@ regrid (bool const do_init)
         
         for (int lc = 0; lc < h.local_components(orl); ++ lc) {
           int const c = h.get_component(orl, lc);
-          //full_dboxes & box = full_level.AT(c);
           full_dboxes const& obox = full_olevel.AT(c);
-          //local_dboxes & local_box = local_level.AT(lc);
           // Local boxes are not communicated or post-processed, and
           // thus can be modified even for coarser levels
           local_dboxes & local_obox = local_olevel.AT(lc);
@@ -1344,42 +1376,9 @@ regrid (bool const do_init)
           // Set restriction information for next coarser level
           local_obox.restricted_region =
             all_refined.contracted_for(obox.exterior) & obox.owned;
-          
-          // Set prolongation information for current level
-          for (int d=0; d<dim; ++d) {
-            for (int f=0; f<2; ++f) {
-              local_obox.restriction_boundaries[d][f] =
-                all_boundaries[d][f].contracted_for(obox.exterior) & obox.owned;
-            }
-          }
-          
-        } // for lc
-        
-        for (int lc = 0; lc < h.local_components(rl); ++ lc) {
-          int const c = h.get_component(rl, lc);
-          full_dboxes const& box = full_level.AT(c);
-          local_dboxes & local_box = local_level.AT(lc);
-          
-          // Set prolongation information for current level
-          for (int d=0; d<dim; ++d) {
-            for (int f=0; f<2; ++f) {
-              local_box.prolongation_boundaries[d][f] =
-                all_boundaries[d][f] & box.owned;
-            }
-          }
-          
         } // for lc
         
       } // if not coarsest level
-      
-      timer_mask.stop();
-      
-      
-      
-      // Mask for unused points on coarser level (which do not influence the future
-      // evolution provided regridding is done at the right times):
-      static Carpet::Timer timer_overwrittenmask ("CarpetLib::dh::regrid::unusedpoints_mask");
-      timer_overwrittenmask.start();
       
       if (rl > 0) {
         int const orl = rl - 1;
@@ -1566,11 +1565,6 @@ regrid (bool const do_init)
         light_level.AT(c).exterior = full_level.AT(c).exterior;
         light_level.AT(c).owned    = full_level.AT(c).owned;
         light_level.AT(c).interior = full_level.AT(c).interior;
-#if 0
-        dh::dboxes::ibset2ibboxs (full_level.AT(c).active,
-                                  light_level.AT(c).active,
-                                  light_level.AT(c).numactive);
-#endif
         
         light_level.AT(c).exterior_size = full_level.AT(c).exterior.size();
         light_level.AT(c).owned_size    = full_level.AT(c).owned.size();
@@ -2009,10 +2003,6 @@ mpi_datatype (dh::light_dboxes const &)
       ENTRY(int, exterior),
       ENTRY(int, owned),
       ENTRY(int, interior),
-#if 0
-      ENTRY(int, numactive),
-      ENTRY(int, active),
-#endif
       ENTRY(dh::light_dboxes::size_type, exterior_size),
       ENTRY(dh::light_dboxes::size_type, owned_size),
       ENTRY(dh::light_dboxes::size_type, active_size),
@@ -2111,32 +2101,6 @@ allmemory ()
   return mem;
 }
 
-#if 0
-int const dh::light::dboxes::maxactive;
-
-void
-dh::light_dboxes::
-ibset2ibboxs (ibset const& s, ibbox* const bs, int& nbs)
-{
-  assert (s.setsize() <= maxactive);
-  nbs = 0;
-  for (ibset::const_iterator si = s.begin(); si != s.end(); ++si) {
-    bs[nbs++] = *si;
-  }
-}
-
-void
-dh::light_dboxes::
-ibboxs2ibset (ibbox const* const bs, int const& nbs, ibset& s)
-{
-  s = ibset();
-  assert (nbs>=0 and nbs<=maxactive);
-  for (int n=0; n<nbs; ++n) {
-    s += bs[n];
-  }
-}
-#endif
-
 size_t
 dh::light_dboxes::
 memory ()
@@ -2146,10 +2110,6 @@ memory ()
     memoryof (exterior) +
     memoryof (owned) +
     memoryof (interior) +
-#if 0
-    memoryof (numactive) +
-    memoryof (active) +
-#endif
     memoryof (exterior_size) +
     memoryof (owned_size) +
     memoryof (active_size);
@@ -2165,8 +2125,8 @@ memory ()
     memoryof (buffers_stepped) +
     memoryof (active) +
     memoryof (restricted_region) +
-    memoryof (restriction_boundaries) +
-    memoryof (prolongation_boundaries) +
+    memoryof (fine_active) +
+    memoryof (unused_region) +
     memoryof (coarse_boundary) +
     memoryof (fine_boundary);
 }
@@ -2270,11 +2230,11 @@ input (istream & is)
     consume (is, "restricted_region:");
     is >> restricted_region;
     skipws (is);
-    consume (is, "restriction_boundaries:");
-    is >> restriction_boundaries;
+    consume (is, "fine_active:");
+    is >> fine_active;
     skipws (is);
-    consume (is, "prolongation_boundaries:");
-    is >> prolongation_boundaries;
+    consume (is, "unused_region:");
+    is >> unused_region;
     skipws (is);
     consume (is, "coarse_boundary:");
     is >> coarse_boundary;
@@ -2439,8 +2399,8 @@ output (ostream & os)
      << "   buffers_stepped: " << buffers_stepped << eol
      << "   active: " << active << eol
      << "   restricted_region: " << restricted_region << eol
-     << "   restriction_boundaries: " << restriction_boundaries << eol
-     << "   prolongation_boundaries: " << prolongation_boundaries << eol
+     << "   fine_active: " << fine_active << eol
+     << "   unused_region: " << unused_region << eol
      << "   coarse_boundary: " << coarse_boundary << eol
      << "   fine_boundary: " << fine_boundary << eol
      << "}" << eol;

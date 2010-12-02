@@ -48,23 +48,9 @@ public:
     ibbox exterior;             // whole region (including boundaries)
     ibbox owned;                // evolved in time
     ibbox interior;             // interior (without ghost zones)
-    
-#if 0
-    // TODO: Create a new datatype bboxarr for this?  Or get rid of
-    // it?
-    int numactive;
-    static int const maxactive = 4;
-    ibbox active[maxactive];    // owned minus buffers
-#endif
-    
     // Region statistics:
     typedef ibbox::size_type size_type;
     size_type exterior_size, owned_size, active_size;
-    
-#if 0
-    static void ibset2ibboxs (ibset const& s, ibbox* bs, int& nbs);
-    static void ibboxs2ibset (ibbox const* bs, int const& nbs, ibset& s);
-#endif
     
     size_t memory () const CCTK_ATTRIBUTE_PURE;
     istream & input (istream & is);
@@ -75,15 +61,14 @@ public:
     
     // Information about the processor-local region:
     
-    ibset buffers;              // buffer zones
+    ibset buffers;                 // buffer zones
     vector<ibset> buffers_stepped; // buffer zones [substep]
-    ibset active;               // owned minus buffers
+    ibset active;                  // owned minus buffers
     
     // Mask
     ibset restricted_region;                // filled by restriction
-    ibset unused_region;                    // not used (overwritten later) region
-    vect<vect<ibset,2>,dim> restriction_boundaries; // partly filled by restriction
-    vect<vect<ibset,2>,dim> prolongation_boundaries; // partly used by prolongation
+    ibset fine_active;
+    ibset unused_region;                    // not used (overwritten later)
     
     // Refluxing
     vect<vect<ibset,2>,dim> coarse_boundary;
@@ -92,6 +77,21 @@ public:
     size_t memory () const CCTK_ATTRIBUTE_PURE;
     istream & input (istream & is);
     ostream & output (ostream & os) const;
+  };
+  
+  struct level_dboxes {
+    
+    // Level description:
+    
+    // ibset exterior;
+    // ibset outer_boundaries;
+    // ibset communicated;
+    // ibset boundaries;
+    // ibset owned;
+    // ibset buffers;
+    ibset active;
+    // ibset bndref;
+    
   };
   
   struct full_dboxes {
@@ -181,6 +181,9 @@ public:
   typedef vector<local_dboxes> local_cboxes; // ... for each component
   typedef vector<local_cboxes> local_rboxes; // ... for each refinement level
   typedef vector<local_rboxes> local_mboxes; // ... for each multigrid level
+  
+  typedef vector<level_dboxes> level_rboxes; // ... for each refinement level
+  typedef vector<level_rboxes> level_mboxes; // ... for each multigrid level
   
   typedef vector<full_dboxes> full_cboxes; // ... for each component
   typedef vector<full_cboxes> full_rboxes; // ... for each refinement level
