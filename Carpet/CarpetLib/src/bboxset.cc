@@ -220,7 +220,7 @@ void bboxset<T,D>::normalize ()
   
   // Can't use operators on *this since these would call normalize again
   // assert (*this == oldbs);
-  assert (newsize <= oldsize);
+  assert (newsize == oldsize);
 }
 
 
@@ -254,6 +254,23 @@ bool bboxset<T,D>::intersects (const box& b) const {
 
 
 // Add (bboxes that don't overlap)
+template<typename T, int D>
+bboxset<T,D>& bboxset<T,D>::operator+= (const box& b) {
+  if (b.empty()) return *this;
+  // This is very slow when there are many bboxes
+#if 0 && defined(CARPET_DEBUG)
+  // check for overlap
+  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    assert (not (*bi).intersects(b));
+  }
+#endif
+  //S bs.insert(b);
+  bs.push_back(b);
+  assert (invariant());
+  normalize();
+  return *this;
+}
+
 template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::operator+= (const bboxset& s) {
   for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
@@ -467,11 +484,18 @@ template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi)
   const
 {
-  // We don't know (yet?) how to shrink a set
-  assert (all (lo>=0 and hi>=0));
   bboxset res;
-  for (const_iterator bi=begin(); bi!=end(); ++bi) {
-    res |= (*bi).expand(lo,hi);
+  if (all (lo == -hi)) {
+    // Special case for shifting, since this is faster
+    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      res += (*bi).expand(lo,hi);
+    }
+  } else {
+    // We don't know (yet?) how to shrink a set
+    assert (all (lo>=0 and hi>=0));
+    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      res |= (*bi).expand(lo,hi);
+    }
   }
   return res;
 }
@@ -506,6 +530,8 @@ bboxset<T,D> bboxset<T,D>::expanded_for (const box& b) const {
   return res;
 }
 
+#warning "TODO: this is incorrect"
+#if 1
 template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::contracted_for (const box& b) const {
   bboxset res;
@@ -514,6 +540,7 @@ bboxset<T,D> bboxset<T,D>::contracted_for (const box& b) const {
   }
   return res;
 }
+#endif
 
 
 

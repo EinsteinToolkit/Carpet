@@ -38,7 +38,7 @@ ostream& operator<< (ostream& os, const bboxset<T,D>& s);
 
 
 
-// Bounding box class
+// Bounding box set class
 template<typename T, int D>
 class bboxset {
   
@@ -89,22 +89,7 @@ public:
   bool intersects (const box& b) const;
   
   // Add (bboxes that don't overlap)
-  bboxset& operator+= (const box& b)
-  {
-    if (b.empty()) return *this;
-    // This is very slow when there are many bboxes
-#if 0 && ! defined(CARPET_OPTIMISE)
-    // check for overlap
-    for (const_iterator bi=begin(); bi!=end(); ++bi) {
-      assert (not (*bi).intersects(b));
-    }
-#endif
-    //S bs.insert(b);
-    bs.push_back(b);
-    assert (invariant());
-    return *this;
-  }
-  
+  bboxset& operator+= (const box& b);
   bboxset& operator+= (const bboxset& s);
   bboxset& add_transfer (bboxset& s);
   bboxset operator+ (const box& b) const;
@@ -166,8 +151,11 @@ public:
       ("compatible" means having the same stride.)  */
   bboxset expanded_for (const box& b) const;
   
+#warning "TODO: this is incorrect"
+#if 1
   /** Find the largest b-compatible box inside this bbox.  */
   bboxset contracted_for (const box& b) const;
+#endif
   
   // Equality
   bool operator== (const bboxset& s) const;
