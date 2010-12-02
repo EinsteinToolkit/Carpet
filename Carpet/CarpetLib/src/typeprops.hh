@@ -10,9 +10,7 @@ struct typeprops {
   typedef T complex;
   typedef T real;
   // Create a complex number from a real number
-  static inline complex fromreal (real const x) { return x; }
-  // Return the specific Cactus variable type for a Cactus variable
-  // type
+  static inline complex const& fromreal (real const& x) { return x; }
 };
 
 #ifdef HAVE_CCTK_COMPLEX8
@@ -44,6 +42,7 @@ struct typeprops <CCTK_COMPLEX32> {
 
 
 
+// Return the specific Cactus variable type for a Cactus variable type
 static inline int specific_cactus_type (int const vartype)
 {
   switch (vartype) {
