@@ -1,3 +1,7 @@
+#include <cctk.h>
+#include <util_ErrorCodes.h>
+#include <util_Table.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cfloat>
@@ -10,11 +14,11 @@
 #include <limits>
 #include <vector>
 
-#include <mpi.h>
-
-#include <cctk.h>
-#include <util_ErrorCodes.h>
-#include <util_Table.h>
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 #include <defs.hh>
 #include <dist.hh>
@@ -1008,7 +1012,7 @@ namespace CarpetReduce {
     if (intype != outtype) {
       char const * const intypename = CCTK_VarTypeName (intype);
       char const * const outtypename = CCTK_VarTypeName (outtype);
-      CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWarn (CCTK_WARN_COMPLAIN, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The input type must be the same as the output type.  Requested were intype=%s, outtype=%s.",
                   intypename, outtypename);
       return -1;
@@ -1125,7 +1129,8 @@ namespace CarpetReduce {
     
     // meta mode
     if (is_meta_mode()) {
-      CCTK_WARN (0, "Grid variable reductions are not possible in meta mode");
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "Grid variable reductions are not possible in meta mode");
     }
     
     bool const reduce_arrays = CCTK_GroupTypeFromVarI(vi) != CCTK_GF;
@@ -1134,7 +1139,8 @@ namespace CarpetReduce {
     
     for (int n=0; n<num_invars; ++n) {
       if ((CCTK_GroupTypeFromVarI(invars[n]) != CCTK_GF) != reduce_arrays) {
-        CCTK_WARN (0, "Cannot (yet) reduce grid functions and grid arrays/scalars at the same time");
+        CCTK_WARN (CCTK_WARN_ABORT,
+                   "Cannot (yet) reduce grid functions and grid arrays/scalars at the same time");
       }
     }
     
@@ -1223,7 +1229,7 @@ namespace CarpetReduce {
                   }
                   if (not have_warned.AT(vi)) {
                     char * const fullname = CCTK_FullName(vi);
-                    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                                 "Grid function \"%s\" has only %d time levels on refinement level %d; this is not enough for time interpolation",
                                 fullname, max_tl, reflevel);
                     free (fullname);
@@ -1234,11 +1240,12 @@ namespace CarpetReduce {
                   need_time_interp = false;
                 } else {
                   char * const fullname = CCTK_FullName(vi);
-                  CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                               "Grid function \"%s\" has only %d active time levels out of %d maximum time levels on refinement level %d; this is not enough for time interpolation",
                               fullname, active_tl, max_tl, reflevel);
                   if (not do_allow_past_timelevels) {
-                    CCTK_WARN (1, "(Note: access to past time levels is disabled at this point, probably because of the schedule bin from which this code is called.)");
+                    CCTK_WARN (CCTK_WARN_ALERT,
+                               "(Note: access to past time levels is disabled at this point, probably because of the schedule bin from which this code is called.)");
                   }
                   free (fullname);
                   return 1;       // error
@@ -1255,7 +1262,7 @@ namespace CarpetReduce {
             int const active_tl = CCTK_ActiveTimeLevelsVI(cgh, vi);
             if (active_tl < num_tl) {
               char * const fullname = CCTK_FullName(vi);
-              CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+              CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                           "Grid function \"%s\" has no active time levels on refinement level %d",
                           fullname, reflevel);
               free (fullname);

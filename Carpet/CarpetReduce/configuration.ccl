@@ -1,5 +1,8 @@
 # Configuration definitions for thorn CarpetReduce
 
-REQUIRES Carpet CarpetLib LoopControl
+REQUIRES Carpet CarpetLib
+OPTIONAL LoopControl
+{
+}
 
-REQUIRES THORNS: Carpet CarpetLib LoopControl
+REQUIRES THORNS: Carpet CarpetLib

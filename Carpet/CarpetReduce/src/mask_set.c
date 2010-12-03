@@ -20,15 +20,12 @@ MaskBase_SetMask (CCTK_ARGUMENTS)
                 "Finalise the weight on level %d", reflevel);
   }
   
-  CCTK_REAL const factor = 1.0 / BMSK(cctk_dim);
+  unsigned const bits = BMSK(cctk_dim);
+  CCTK_REAL const factor = 1.0 / bits;
 #pragma omp parallel
-  LC_LOOP3(MaskBase_InitMask_interior,
-           i,j,k,
-           0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-           cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-  {
+  CCTK_LOOP3_ALL(MaskBase_SetMask, cctkGH, i,j,k) {
     int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
     weight[ind] = factor * BCNT(iweight[ind]);
     one[ind] = 1.0;
-  } LC_ENDLOOP3(MaskBase_InitMask_interior);
+  } CCTK_ENDLOOP3_ALL(MaskBase_SetMask);
 }
