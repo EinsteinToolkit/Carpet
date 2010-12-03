@@ -5,7 +5,7 @@
 #define BMSK(n)   (1U << (n))
 
 /* whether bit n in value v is set */
-#define BGET(v,n) (!!((v) & BMSK(n)))
+#define BGET(v,n) (!! ((v) & BMSK(n)))
 
 /* set, clear, or invert bit n in value v */
 #define BSET(v,n) ((v) |  BMSK(n))
@@ -13,13 +13,13 @@
 #define BINV(v,n) ((v) ^  BMSK(n))
 
 /* set bit n in value v to b */
-#define BCPY(v,b,n) ((b) ? BSET(v,n) : BCLR(v,n))
+#define BCPY(v,n,b) ((b) ? BSET(v,n) : BCLR(v,n))
 
 /* count the number of set bits */
-#define BCNT(x) (((BX_(x)+(BX_(x)>>4)) & 0x0F0F0F0F) % 0xFF)
-#define BX_(x)  ((x)                                            \
-                 - (((x)>>1)&0x77777777)                        \
-                 - (((x)>>2)&0x33333333)                        \
-                 - (((x)>>3)&0x11111111))
+#define BCNT(x) (((BX_(x)+(BX_(x)>>4)) & 0x0F0F0F0FU) % 0xFFU)
+#define BX_(x)  ((x)                            \
+                 - (((x)>>1)&0x77777777U)       \
+                 - (((x)>>2)&0x33333333U)       \
+                 - (((x)>>3)&0x11111111U))
 
 #endif  /* #ifndef BITS_H */
