@@ -10,8 +10,6 @@
 #include <string>
 #include <vector>
 
-#include <mpi.h>
-
 #include <cctk.h>
 #include <cctk_Parameters.h>
 #include <util_ErrorCodes.h>
@@ -164,6 +162,8 @@ namespace Carpet {
   
   static void
   ensure_CartGrid3D_type ();
+  static void
+  ensure_CartGrid3D_domain ();  // UNUSED
   static void
   ensure_CartGrid3D_avoid_origin ();
   static void
@@ -838,9 +838,9 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     // Calculate base extent
-    ivect const lb(0);
-    ivect const ub(sizes-1);
     ivect const str(1);
+    ivect const lb(0);
+    ivect const ub((sizes-1) * str);
     ibbox const baseext(lb, ub, str);
     vector <vector <ibbox> > baseexts (1);
     baseexts.AT(0).resize (1);
@@ -2244,6 +2244,28 @@ namespace Carpet {
         = * static_cast<char const * const *> (ptr);
       if (not CCTK_EQUALS (coordtype, "coordbase")) {
         CCTK_WARN (0, "When Carpet::domain_from_coordbase = yes, and when thorn CartGrid3D is active, then you also have to set CartGrid3D::type = \"coordbase\"");
+      }
+    }
+  }
+  
+  
+  
+  // UNUSED:
+  // Ensure that CartGrid3D doesn't apply symmetries
+  void
+  ensure_CartGrid3D_domain ()
+  {
+    if (CCTK_IsThornActive ("CartGrid3D")) {
+      int type;
+      void const * ptr;
+      
+      ptr = CCTK_ParameterGet ("domain", "CartGrid3D", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_KEYWORD);
+      char const * const domain
+        = * static_cast<char const * const *> (ptr);
+      if (not CCTK_EQUALS (domain, "full")) {
+        CCTK_WARN (0, "When Carpet::domain_from_coordbase = no, and when Carpet::max_refinement_levels > 1, then thorn CartGrid3D cannot provide symmetry boundaries");
       }
     }
   }

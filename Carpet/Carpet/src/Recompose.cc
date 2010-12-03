@@ -1,3 +1,6 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -16,10 +19,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <mpi.h>
-
-#include <cctk.h>
-#include <cctk_Parameters.h>
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 #include <loopcontrol.h>
 
@@ -1954,14 +1958,10 @@ namespace Carpet {
             BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
               DECLARE_CCTK_ARGUMENTS;
 #pragma omp parallel
-              LC_LOOP3 (CarpetClassifyPoints,
-                        i,j,k,
-                        0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-                        cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-              {
+              CCTK_LOOP3_ALL(CarpetClassifyPoints, cctkGH, i,j,k) {
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                 point_class[ind] = 1;
-              } LC_ENDLOOP3(CarpetClassifyPoints);
+              } CCTK_ENDLOOP3_ALL(CarpetClassifyPoints);
             } END_LOCAL_COMPONENT_LOOP;
           } END_LOCAL_MAP_LOOP;
         } LEAVE_LEVEL_MODE;

@@ -1,3 +1,5 @@
+#include <cctk.h>
+
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -5,9 +7,11 @@
 #include <string>
 #include <vector>
 
-#include <mpi.h>
-
-#include <cctk.h>
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 #include <functions.hh>
 #include <mpi_string.hh>

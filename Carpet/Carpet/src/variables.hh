@@ -12,11 +12,15 @@
 #ifndef VARIABLES_HH
 #define VARIABLES_HH
 
+#include <cctk.h>
+
 #include <vector>
 
-#include <mpi.h>
-
-#include <cctk.h>
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 #include <bbox.hh>
 #include <data.hh>

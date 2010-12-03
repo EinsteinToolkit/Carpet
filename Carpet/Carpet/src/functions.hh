@@ -1,14 +1,18 @@
 #ifndef FUNCTIONS_HH
 #define FUNCTIONS_HH
 
+#include <cctk.h>
+#include <cctk_Schedule.h>
+
 #include <map>
 #include <string>
 #include <vector>
 
-#include <mpi.h>
-
-#include <cctk.h>
-#include <cctk_Schedule.h>
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 #include <bbox.hh>
 #include <dh.hh>

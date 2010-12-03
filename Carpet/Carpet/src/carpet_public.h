@@ -1,10 +1,13 @@
 #ifndef CARPET_PUBLIC_H
 #define CARPET_PUBLIC_H
 
-#include <mpi.h>
-
 #include <cctk.h>
 
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 
 /* Tell thorns that the Carpet routines exist */

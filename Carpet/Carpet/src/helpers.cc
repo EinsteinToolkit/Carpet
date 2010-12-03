@@ -1,14 +1,18 @@
+#include <cctk.h>
+#include <cctk_FortranString.h>
+#include <cctk_Parameters.h>
+
 #include <cassert>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include <mpi.h>
-
-#include <cctk.h>
-#include <cctk_FortranString.h>
-#include <cctk_Parameters.h>
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 #include <defs.hh>
 #include <dist.hh>
