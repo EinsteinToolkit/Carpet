@@ -1,10 +1,10 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
-
-#include <cctk.h>
-#include <cctk_Parameters.h>
 
 #include "operator_prototypes_4d.hh"
 #include "typeprops.hh"

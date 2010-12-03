@@ -1,3 +1,6 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <algorithm>
 #include <cassert>
 #include <climits>
@@ -9,13 +12,9 @@
 #include <string>
 #include <vector>
 
-#include <mpi.h>
 #ifdef _OPENMP
 #  include <omp.h>
 #endif
-
-#include "cctk.h"
-#include "cctk_Parameters.h"
 
 #include "bbox.hh"
 #include "bboxset.hh"
@@ -29,7 +28,6 @@
 #include "operator_prototypes_4d.hh"
 
 using namespace std;
-
 using namespace CarpetLib;
 
 
@@ -579,92 +577,6 @@ transfer_p_vc_cc (data const * const src,
                   int const order_space)
 {
   transfer_prolongate (src, box, order_space);
-  
-#if 0
-  if (cent == vertex_centered) {
-    // Vertex centred
-    
-    transfer_prolongate (src, box, order_space);
-    
-  } else if (cent == cell_centered) {
-    // Cell centred
-    
-    // Destination region
-    assert (all (box.stride() % 2 == 0));
-    ibbox const newdstbox (box.lower() - box.stride() / 2,
-                           box.upper() + box.stride() / 2,
-                           box.stride());
-    
-    // Source region
-    ibbox const & srcbox = src->extent();
-    
-    assert (all (srcbox.stride() % 2 == 0));
-    ibbox const tmpsrcbox (srcbox.lower() - srcbox.stride() / 2,
-                           srcbox.upper() + srcbox.stride() / 2,
-                           srcbox.stride());
-    
-    assert (all (srcbox.stride() % box.stride() == 0));
-    ivect const reffact = srcbox.stride() / box.stride();
-    
-    ivect const regext = newdstbox.shape() / newdstbox.stride();
-    assert (all ((newdstbox.lower() - srcbox.lower()) % box.stride() == 0));
-    ivect const srcoff = (newdstbox.lower() - srcbox.lower()) / box.stride();
-    
-    bvect const needoffsetlo =
-      srcoff % reffact != 0 or regext > 1;
-    bvect const needoffsethi =
-      (srcoff + regext - 1) % reffact != 0 or regext > 1;
-    
-    assert (order_space % 2 == 1);
-    int const stencil_size = (order_space + 1) / 2;
-    
-    ivect const offsetlo = either (needoffsetlo, stencil_size, 0);
-    ivect const offsethi = either (needoffsethi, stencil_size, 0);
-    
-    ibbox const newsrcbox =
-      newdstbox .contracted_for (tmpsrcbox) .expand (offsetlo, offsethi);
-    
-    // Allocate temporary storage
-    // TODO: This may not be necessary if the source is already a
-    // temporary
-    data * const newsrc =
-      new data (src->varindex, vertex_centered, src->transport_operator);
-    newsrc->allocate (newsrcbox, src->proc());
-    
-    data * const newdst =
-      new data (this->varindex, vertex_centered, this->transport_operator);
-    newdst->allocate (newdstbox, this->proc());
-    
-    // Convert source to primitive representation
-    call_operator<T> (& prolongate_3d_cc_rf2_std2prim,
-                      static_cast <T const *> (src->storage()),
-                      src->shape(),
-                      static_cast <T *> (newsrc->storage()),
-                      newsrc->shape(),
-                      src->extent(),
-                      newsrc->extent(),
-                      newsrc->extent());
-    
-    // Interpolate
-    newdst->transfer_prolongate (newsrc, newdstbox, order_space);
-    
-    // Convert destination to standard representation
-    call_operator<T> (& prolongate_3d_cc_rf2_prim2std,
-                      static_cast <T const *> (newdst->storage()),
-                      newdst->shape(),
-                      static_cast <T *> (this->storage()),
-                      this->shape(),
-                      newdst->extent(),
-                      this->extent(),
-                      box);
-    
-    delete newsrc;
-    delete newdst;
-    
-  } else {
-    assert (0);
-  }
-#endif
 }
 
 template <>
@@ -699,112 +611,73 @@ transfer_prolongate (data const * const src,
     timer.start ();
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
-    case vertex_centered:
-      switch (order_space) {
-      case 1:
-        call_operator<T> (& prolongate_3d_o1_rf2,
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          src->extent(),
-                          this->extent(),
-                          box);
-        break;
-      case 3:
-        call_operator<T> (& prolongate_3d_o3_rf2, 
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          src->extent(),
-                          this->extent(),
-                          box);
-        break;
-      case 5:
-        call_operator<T> (& prolongate_3d_o5_rf2,
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          src->extent(),
-                          this->extent(),
-                          box);
-        break;
-      case 7:
-        call_operator<T> (& prolongate_3d_o7_rf2,
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          src->extent(),
-                          this->extent(),
-                          box);
-        break;
-      case 9:
-        call_operator<T> (& prolongate_3d_o9_rf2,
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          src->extent(),
-                          this->extent(),
-                          box);
-        break;
-      case 11:
-        call_operator<T> (& prolongate_3d_o11_rf2,
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          src->extent(),
-                          this->extent(),
-                          box);
-        break;
-      default:
+    case vertex_centered: {
+      static
+        void (* the_operators[]) (T const * restrict const src,
+                                  ivect3 const & restrict srcext,
+                                  T * restrict const dst,
+                                  ivect3 const & restrict dstext,
+                                  ibbox3 const & restrict srcbbox,
+                                  ibbox3 const & restrict dstbbox,
+                                  ibbox3 const & restrict regbbox) =
+        {
+          NULL,
+          & prolongate_3d_rf2<T,1>,
+          NULL,
+          & prolongate_3d_rf2<T,3>,
+          NULL,
+          & prolongate_3d_rf2<T,5>,
+          NULL,
+          & prolongate_3d_rf2<T,7>,
+          NULL,
+          & prolongate_3d_rf2<T,9>,
+          NULL,
+          & prolongate_3d_rf2<T,11>,
+        };
+      if (order_space < 0 or order_space > 11 or
+          not the_operators[order_space])
+      {
         CCTK_WARN (CCTK_WARN_ABORT,
                    "There is no vertex-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space not in {1, 3, 5, 7, 9, 11}");
-        break;
       }
+      call_operator<T> (the_operators[order_space],
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
       break;
-    case cell_centered:
-      switch (order_space) {
-      case 0:
-        call_operator<T> (& prolongate_3d_cc_o0_rf2,
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          src->extent(),
-                          this->extent(),
-                          box);
-        break;
-      case 1:
-        call_operator<T> (& prolongate_3d_cc_o1_rf2,
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          src->extent(),
-                          this->extent(),
-                          box);
-        break;
-      case 2:
-        call_operator<T> (& prolongate_3d_cc_o2_rf2,
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          src->extent(),
-                          this->extent(),
-                          box);
-        break;
-      default:
+    }
+    case cell_centered: {
+      static
+        void (* the_operators[]) (T const * restrict const src,
+                                  ivect3 const & restrict srcext,
+                                  T * restrict const dst,
+                                  ivect3 const & restrict dstext,
+                                  ibbox3 const & restrict srcbbox,
+                                  ibbox3 const & restrict dstbbox,
+                                  ibbox3 const & restrict regbbox) =
+        {
+          & prolongate_3d_cc_rf2<T,0>,
+          & prolongate_3d_cc_rf2<T,1>,
+          & prolongate_3d_cc_rf2<T,2>
+        };
+      if (order_space < 0 or order_space > 2) {
         CCTK_WARN (CCTK_WARN_ABORT,
                    "There is no cell-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space not in {0, 1, 2}");
-        break;
       }
+      call_operator<T> (the_operators[order_space],
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
       break;
+    }
     default:
       assert (0);
     }

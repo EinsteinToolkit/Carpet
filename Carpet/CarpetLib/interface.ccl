@@ -32,8 +32,11 @@ includes header: th.hh in th.hh
 
 includes header: operators.hh in operators.hh
 
+uses include header: nompi.h
+
 uses include header: CarpetTimers.hh
 uses include header: loopcontrol.h
+uses include header: vectors.h
 
 
 
