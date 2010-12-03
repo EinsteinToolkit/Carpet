@@ -1,3 +1,6 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -6,10 +9,11 @@
 #include <iostream>
 #include <sstream>
 
-#include <cctk.h>
-#include <cctk_Parameters.h>
-
-#include <mpi.h>
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 #include <carpet.hh>
 #include <vect.hh>
