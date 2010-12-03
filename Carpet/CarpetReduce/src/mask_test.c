@@ -2,6 +2,8 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 
+#include <carpet.h>
+
 #include <assert.h>
 #include <math.h>
 
@@ -44,44 +46,78 @@ MaskBase_TestMask (CCTK_ARGUMENTS)
   
   if (proc == -1 || CCTK_MyProc(cctkGH) == proc) {
     
-    CCTK_REAL physical_min[cctk_dim];
-    CCTK_REAL physical_max[cctk_dim];
-    CCTK_REAL interior_min[cctk_dim];
-    CCTK_REAL interior_max[cctk_dim];
-    CCTK_REAL exterior_min[cctk_dim];
-    CCTK_REAL exterior_max[cctk_dim];
-    CCTK_REAL spacing     [cctk_dim];
-    int const ierr = GetDomainSpecification (cctk_dim,
-                                             physical_min,
-                                             physical_max,
-                                             interior_min,
-                                             interior_max,
-                                             exterior_min,
-                                             exterior_max,
-                                             spacing);
-    assert (!ierr);
-    
-    CCTK_REAL domain_volume = 1.0;
-    for (int d=0; d<cctk_dim; ++d) {
-      domain_volume *= (physical_max[d] - physical_min[d]) / spacing[d];
+    if (verbose) {
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Reduction weight sum: %.17g", (double)sum_weight);
     }
     
     
+    
+    CCTK_REAL domain_volume = 0.0;
+    
+    int maps = 1;
+    if (CCTK_IsFunctionAliased ("MultiPatch_GetMaps")) {
+      maps = MultiPatch_GetMaps (cctkGH);
+    }
+    
+    for (int m=0; m<maps; ++m) {
+      
+      CCTK_REAL physical_min[cctk_dim];
+      CCTK_REAL physical_max[cctk_dim];
+      CCTK_REAL interior_min[cctk_dim];
+      CCTK_REAL interior_max[cctk_dim];
+      CCTK_REAL exterior_min[cctk_dim];
+      CCTK_REAL exterior_max[cctk_dim];
+      CCTK_REAL spacing     [cctk_dim];
+      
+      if (CCTK_IsFunctionAliased ("MultiPatch_GetDomainSpecification")) {
+        int const ierr = MultiPatch_GetDomainSpecification
+          (m, cctk_dim,
+           physical_min, physical_max,
+           interior_min, interior_max,
+           exterior_min, exterior_max,
+           spacing);
+        assert (!ierr);
+      } else {
+        int const ierr = GetDomainSpecification
+          (cctk_dim,
+           physical_min, physical_max,
+           interior_min, interior_max,
+           exterior_min, exterior_max,
+           spacing);
+        assert (!ierr);
+      }
+      
+      CCTK_REAL map_volume = 1.0;
+      for (int d=0; d<cctk_dim; ++d) {
+        map_volume *= (physical_max[d] - physical_min[d]) / spacing[d];
+      }
+    
+      if (verbose) {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Volume of map #%d: %.17g", m, (double)map_volume);
+      }
+      
+      domain_volume += map_volume;
+      
+    } /* for m */
+    
+    if (verbose) {
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Simulation domain volume: %.17g", (double)domain_volume);
+    }
     
     int const there_is_a_problem =
       fabs(sum_weight - domain_volume) > 1.0e-12 * (sum_weight + domain_volume);
     
-    
-    
-    if (verbose || there_is_a_problem) {
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "Simulation domain volume: %.15g", (double)domain_volume);
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "Reduction weight sum:     %.15g", (double)sum_weight);
-    }
-    
     if (there_is_a_problem) {
-      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+      if (!verbose) {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Simulation domain volume: %.15g", (double)domain_volume);
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Reduction weight sum:     %.15g", (double)sum_weight);
+      }
+      CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Simulation domain volume and reduction weight sum differ");
     }
     
