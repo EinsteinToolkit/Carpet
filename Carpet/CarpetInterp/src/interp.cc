@@ -1,3 +1,8 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+#include <util_ErrorCodes.h>
+#include <util_Table.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -7,13 +12,11 @@
 #include <map>
 #include <vector>
 
-#include <mpi.h>
-
-#include "cctk.h"
-#include "cctk_Parameters.h"
-
-#include "util_ErrorCodes.h"
-#include "util_Table.h"
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 #include "bbox.hh"
 #include "data.hh"
