@@ -1,16 +1,19 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+#include <util_ErrorCodes.h>
+#include <util_Table.h>
+
 #include <cassert>
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 
-#include <mpi.h>
-
-#include "cctk.h"
-#include "cctk_Parameters.h"
-
-#include "util_ErrorCodes.h"
-#include "util_Table.h"
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 #include "bbox.hh"
 #include "commstate.hh"

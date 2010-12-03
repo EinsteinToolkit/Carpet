@@ -1,12 +1,16 @@
+#include <cctk.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cstring>
 #include <string>
 #include <vector>
 
-#include <mpi.h>
-
-#include "cctk.h"
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 #include "dh.hh"
 #include "mpi_string.hh"

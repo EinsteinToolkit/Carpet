@@ -1,13 +1,18 @@
 #ifndef COMMSTATE_HH
 #define COMMSTATE_HH
 
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <cstdlib>
 #include <iostream>
 #include <vector>
 
-#include <mpi.h>
-
-#include "cctk_Parameters.h"
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 #include "dist.hh"
 #include "timestat.hh"

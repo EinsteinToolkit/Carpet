@@ -1,9 +1,13 @@
+#include <cctk.h>
+
 #include <string>
 #include <vector>
 
-#include <cctk.h>
-
-#include <mpi.h>
+#ifdef CCTK_MPI
+#  include <mpi.h>
+#else
+#  include "nompi.h"
+#endif
 
 
 
