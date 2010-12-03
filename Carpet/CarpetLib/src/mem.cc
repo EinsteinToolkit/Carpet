@@ -1,3 +1,6 @@
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -7,9 +10,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-
-#include "cctk.h"
-#include "cctk_Parameters.h"
 
 #include "defs.hh"
 #include "mem.hh"
