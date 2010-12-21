@@ -94,8 +94,8 @@ namespace Carpet {
     if (grouptype == CCTK_GF) {
       assert (m >= 0 and m < maps);
       assert (rl >= 0 and rl < reflevels);
-      assert (c >= 0 and c < arrdata.AT(groupindex).AT(m).hh->components(reflevel));
-      assert (arrdata.AT(groupindex).AT(m).hh->is_local(reflevel, c));
+      assert (c >= 0 and c < arrdata.AT(groupindex).AT(m).hh->components(rl));
+      assert (arrdata.AT(groupindex).AT(m).hh->is_local(rl, c));
     } else {
       assert (m == 0);
       assert (rl == 0);
@@ -107,7 +107,7 @@ namespace Carpet {
     int const activetimelevels =
       groupdata.AT(groupindex).activetimelevels.AT(mglevel).AT(rl);
     if (tl < activetimelevels) {
-      int const var = varindex - CCTK_FirstVarIndexI (varindex);
+      int const var = varindex - CCTK_FirstVarIndexI (groupindex);
       ggf * const ff = arrdata.at(groupindex).at(m).data.at(var);
       gdata * const data = (*ff) (tl, rl, c, mglevel);
       return data->storage();
