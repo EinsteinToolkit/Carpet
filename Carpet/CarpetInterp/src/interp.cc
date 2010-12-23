@@ -713,7 +713,12 @@ namespace CarpetInterp {
         case  N: { T dummy; datatype = dist::mpi_datatype(dummy); break; }
 #include "typecase.hh"
 #undef TYPECASE
-      default: { CCTK_WARN (0, "invalid datatype"); abort(); }
+      default: { CCTK_WARN (CCTK_WARN_ABORT, "invalid datatype"); abort(); }
+      }
+      if (datatype == MPI_DATATYPE_NULL) {
+        CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "MPI datatype for Cactus datatype %d is not defined",
+                    vtype);
       }
       MPI_Datatype vdatatype;
       MPI_Type_vector(1, N_output_arrays, 0, datatype, &vdatatype);
