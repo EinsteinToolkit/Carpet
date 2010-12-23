@@ -662,11 +662,14 @@ transfer_prolongate (data const * const src,
         {
           & prolongate_3d_cc_rf2<T,0>,
           & prolongate_3d_cc_rf2<T,1>,
-          & prolongate_3d_cc_rf2<T,2>
+          & prolongate_3d_cc_rf2<T,2>,
+          & prolongate_3d_cc_rf2<T,3>,
+          & prolongate_3d_cc_rf2<T,4>,
+          & prolongate_3d_cc_rf2<T,5>
         };
-      if (order_space < 0 or order_space > 2) {
+      if (order_space < 0 or order_space > 5) {
         CCTK_WARN (CCTK_WARN_ABORT,
-                   "There is no cell-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space not in {0, 1, 2}");
+                   "There is no cell-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space not in {0, 1, 2, 3, 4, 5}");
       }
       call_operator<T> (the_operators[order_space],
                         static_cast <T const *> (src->storage()),

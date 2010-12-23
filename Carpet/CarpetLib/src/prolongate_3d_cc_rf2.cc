@@ -112,6 +112,33 @@ namespace CarpetLib {
     + 5 / RT(32.0),                             \
     +30 / RT(32.0),                             \
     - 3 / RT(32.0)                              \
+  };                                            \
+                                                \
+  template<>                                    \
+  const RT coeffs1d<RT,3>::coeffs[] = {         \
+    -  5 / RT(128.0),                           \
+    + 35 / RT(128.0),                           \
+    +105 / RT(128.0),                           \
+    -  7 / RT(128.0)                            \
+  };                                            \
+                                                \
+  template<>                                    \
+  const RT coeffs1d<RT,4>::coeffs[] = {         \
+    -  45 / RT(2048.0),                         \
+    + 420 / RT(2048.0),                         \
+    +1890 / RT(2048.0),                         \
+    - 252 / RT(2048.0)                          \
+    +  35 / RT(2048.0)                          \
+  };                                            \
+                                                \
+  template<>                                    \
+  const RT coeffs1d<RT,5>::coeffs[] = {         \
+    +  63 / RT(8192.0),                         \
+    - 495 / RT(8192.0),                         \
+    +2310 / RT(8192.0),                         \
+    +6930 / RT(8192.0),                         \
+    - 639 / RT(8192.0),                         \
+    +  77 / RT(8192.0)                          \
   };
 
 #define CARPET_NO_COMPLEX
@@ -511,6 +538,36 @@ namespace CarpetLib {
   template                                                      \
   void                                                          \
   prolongate_3d_cc_rf2<T,2> (T const * restrict const src,      \
+                             ivect3 const & restrict srcext,    \
+                             T * restrict const dst,            \
+                             ivect3 const & restrict dstext,    \
+                             ibbox3 const & restrict srcbbox,   \
+                             ibbox3 const & restrict dstbbox,   \
+                             ibbox3 const & restrict regbbox);  \
+                                                                \
+  template                                                      \
+  void                                                          \
+  prolongate_3d_cc_rf2<T,3> (T const * restrict const src,      \
+                             ivect3 const & restrict srcext,    \
+                             T * restrict const dst,            \
+                             ivect3 const & restrict dstext,    \
+                             ibbox3 const & restrict srcbbox,   \
+                             ibbox3 const & restrict dstbbox,   \
+                             ibbox3 const & restrict regbbox);  \
+                                                                \
+  template                                                      \
+  void                                                          \
+  prolongate_3d_cc_rf2<T,4> (T const * restrict const src,      \
+                             ivect3 const & restrict srcext,    \
+                             T * restrict const dst,            \
+                             ivect3 const & restrict dstext,    \
+                             ibbox3 const & restrict srcbbox,   \
+                             ibbox3 const & restrict dstbbox,   \
+                             ibbox3 const & restrict regbbox);  \
+                                                                \
+  template                                                      \
+  void                                                          \
+  prolongate_3d_cc_rf2<T,5> (T const * restrict const src,      \
                              ivect3 const & restrict srcext,    \
                              T * restrict const dst,            \
                              ivect3 const & restrict dstext,    \
