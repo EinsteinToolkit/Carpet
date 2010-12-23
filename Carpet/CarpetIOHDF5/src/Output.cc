@@ -548,7 +548,12 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
           case  N: { T dummy; datatype = dist::mpi_datatype(dummy); } break;
 #include "typecase.hh"
 #undef TYPECASE
-          default: assert (0 and "invalid datatype");
+        default: { CCTK_WARN (CCTK_WARN_ABORT, "invalid datatype"); abort(); }
+        }
+        if (datatype == MPI_DATATYPE_NULL) {
+          CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "MPI datatype for Cactus datatype %d is not defined",
+                      group.vartype);
         }
 
         const size_t size = bbox.size() * CCTK_VarTypeSize (group.vartype);
