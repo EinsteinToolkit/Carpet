@@ -43,18 +43,27 @@ namespace dist {
     
 #ifdef HAVE_CCTK_REAL4
     CCTK_REAL4 dummy4;
+    assert (mpi_datatype(dummy4) != MPI_DATATYPE_NULL);
     MPI_Type_contiguous (2, mpi_datatype(dummy4), &mpi_complex8);
     MPI_Type_commit (&mpi_complex8);
 #endif
 #ifdef HAVE_CCTK_REAL8
     CCTK_REAL8 dummy8;
+    assert (mpi_datatype(dummy8) != MPI_DATATYPE_NULL);
     MPI_Type_contiguous (2, mpi_datatype(dummy8), &mpi_complex16);
     MPI_Type_commit (&mpi_complex16);
 #endif
 #ifdef HAVE_CCTK_REAL16
     CCTK_REAL16 dummy16;
-    MPI_Type_contiguous (2, mpi_datatype(dummy16), &mpi_complex32);
-    MPI_Type_commit (&mpi_complex32);
+    if (mpi_datatype(dummy16) != MPI_DATATYPE_NULL) {
+      MPI_Type_contiguous (2, mpi_datatype(dummy16), &mpi_complex32);
+      MPI_Type_commit (&mpi_complex32);
+    } else {
+      // CCTK_REAL16 is not supported by MPI
+      CCTK_WARN (CCTK_WARN_ALERT,
+                 "CCTK_REAL16 support is enabled in Cactus, but is not supported by MPI. All MPI operations with this datatype will fail.");
+      mpi_complex32 = MPI_DATATYPE_NULL;
+    }
 #endif
     
     // Output startup time
@@ -94,6 +103,16 @@ namespace dist {
                                     char const * const name, size_t const size)
   {
     DECLARE_CCTK_PARAMETERS;
+    for (size_t n=0; n<count; ++n) {
+      if (descr[n].type == MPI_DATATYPE_NULL) {
+        CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "While creating new MPI type for C type %s: "
+                    "MPI datatype for field #%d (blocklength %d, displacement %d) is not defined",
+                    name,
+                    (int)n,
+                    (int)descr[n].blocklength, (int)descr[n].displacement);
+      }
+    }
     int blocklengths[count];
     MPI_Aint displacements[count];
     MPI_Datatype types[count];
