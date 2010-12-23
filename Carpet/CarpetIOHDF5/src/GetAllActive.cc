@@ -352,14 +352,6 @@ namespace CarpetIOHDF5 {
       ASSERT_c (intr <= hh->baseextent(ml,rl),
                 "The interior must be contained in the domain");
       
-      // All interiors must be disjunct
-#ifdef CARPET_DEBUG
-      for (int cc = 0; cc < c; ++ cc) {
-        ASSERT_cc (not intr.intersects (full_level.AT(cc).interior),
-                   "All interiors must be disjunct");
-      }
-#endif
-      
       
       
       // Outer boundary faces:
@@ -393,14 +385,6 @@ namespace CarpetIOHDF5 {
       ASSERT_c (owned <= domain_active,
                 "The owned region must be contained in the active part of the domain");
       
-      // All owned regions must be disjunct
-#ifdef CARPET_DEBUG
-      for (int cc = 0; cc < c; ++ cc) {
-        ASSERT_cc (not owned.intersects (full_level.AT(cc).owned),
-                   "All owned regions must be disjunct");
-      }
-#endif
-
        allowned |= owned;
        ASSERT_rl (allowned <= domain_active,
                 "The owned regions must be contained in the active part of the domain");
