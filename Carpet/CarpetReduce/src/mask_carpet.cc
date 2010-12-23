@@ -16,6 +16,7 @@
 
 
 
+#if 0
 #define LOOP_OVER_NEIGHBOURS(dir)               \
 {                                               \
   ivect dir_(-1);                               \
@@ -33,6 +34,7 @@
     }                                           \
   } while (not all (dir_ == -1));               \
 }
+#endif
 
 
 
@@ -112,7 +114,15 @@ namespace CarpetMask {
       ibset test_boxes;
       ibset test_cfboxes;
       
-      LOOP_OVER_NEIGHBOURS (shift) {
+      for (int neighbour=0; neighbour<ipow(3,dim); ++neighbour) {
+        ivect shift;
+        int itmp=neighbour;
+        for (int d=0; d<dim; ++d) {
+          shift[d] = itmp % 3 - 1; // [-1 ... +1]
+          itmp /= 3;
+        }
+        assert (itmp==0);
+        
         // In this loop, shift [1,1,1] denotes a convex corner of the
         // region which should be masked out, i.e. a region where only
         // a small bit (1/8) of the region should be masked out.
@@ -122,34 +132,51 @@ namespace CarpetMask {
         
         ibset boxes  = not_active;
         ibset fboxes = fine_active;
-        for (int d=0; d<dim; ++d) {
-          ivect const dir = ivect::dir(d);
-          fboxes = fboxes.shift(-dir) & fboxes & fboxes.shift(+dir);
+        switch (hh.refcent) {
+        case vertex_centered: {
+          for (int d=0; d<dim; ++d) {
+            ivect const dir = ivect::dir(d);
+            fboxes = fboxes.shift(-dir) & fboxes & fboxes.shift(+dir);
+          }
+          for (int d=0; d<dim; ++d) {
+            // Calculate the boundary in direction d
+            ivect const dir = ivect::dir(d);
+            switch (shift[d]) {
+            case -1: {
+              // left boundary
+              boxes  = boxes.shift (-dir) - boxes;
+              fboxes = fboxes.shift(-dir) - fboxes;
+              break;
+            }
+            case 0: {
+              // interior
+              // do nothing
+              break;
+            }
+            case +1: {
+              // right boundary
+              boxes  = boxes.shift (+dir) - boxes;
+              fboxes = fboxes.shift(+dir) - fboxes;
+              break;
+            }
+            default:
+              assert (0);
+            }
+          }
+          break;
         }
-        for (int d=0; d<dim; ++d) {
-          // Calculate the boundary in direction d
-          ivect const dir = ivect::dir(d);
-          switch (shift[d]) {
-          case -1: {
-            // left boundary
-            boxes  = boxes.shift (-dir) - boxes;
-            fboxes = fboxes.shift(-dir) - fboxes;
-            break;
-          }
-          case 0: {
-            // interior
+        case cell_centered: {
+          // Assume that all cell boundaries are aligned
+          if (all(shift == 0)) {
             // do nothing
-            break;
+          } else {
+            boxes  = ibset();
+            fboxes = ibset();
           }
-          case +1: {
-            // right boundary
-            boxes  = boxes.shift (+dir) - boxes;
-            fboxes = fboxes.shift(+dir) - fboxes;
-            break;
-          }
-          default:
-            assert (0);
-          }
+          break;
+        }
+        default:
+          assert (0);
         }
         boxes &= ext;
         ibset const cfboxes = fboxes.contracted_for(base) & ext;
@@ -213,16 +240,29 @@ namespace CarpetMask {
           } CCTK_ENDLOOP3(CarpetMaskSetup_restriction);
         } END_LOOP_OVER_BSET;
         
-      } END_LOOP_OVER_NEIGHBOURS;
+      } // for neighbours
       
       {
-        ibset const boxes = not_active.expand(ivect(1), ivect(1)) & ext;
+        ibset boxes  = not_active;
         ibset fboxes = fine_active;
-        for (int d=0; d<dim; ++d) {
-          ivect const dir = ivect::dir(d);
-          fboxes = fboxes.shift(-dir) & fboxes & fboxes.shift(+dir);
+        switch (hh.refcent) {
+        case vertex_centered: {
+          boxes = boxes.expand(ivect(1), ivect(1));
+          for (int d=0; d<dim; ++d) {
+            ivect const dir = ivect::dir(d);
+            fboxes = fboxes.shift(-dir) & fboxes & fboxes.shift(+dir);
+          }
+          fboxes = fboxes.expand(ivect(1), ivect(1));
+          break;
         }
-        fboxes = fboxes.expand(ivect(1), ivect(1));
+        case cell_centered: {
+          // do nothing
+          break;
+        }
+        default:
+          assert (0);
+        }
+        boxes &= ext;
         ibset const cfboxes = fboxes.contracted_for(base) & ext;
         if (not (test_boxes   == boxes  ) or
             not (test_cfboxes == cfboxes))

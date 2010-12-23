@@ -87,6 +87,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
   /* Loop over all dimensions and faces */
   for (int d=0; d<cctk_dim; ++d) {
     for (int f=0; f<2; ++f) {
+      
       /* If this processor has the outer boundary */
       if (cctk_bbox[2*d+f]) {
         
@@ -184,7 +185,44 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
           
         } /* if the boundary is not staggered */
         
-      } /* if is outer boundary */
+      } else { /* if this is a ghost boundary */
+        
+        /* Calculate the extent of the local part of the domain */
+        for (int dd=0; dd<cctk_dim; ++dd) {
+          imin[dd] = 0;
+          imax[dd] = cctk_lsh[dd];
+        }
+        
+        /* Calculate the extent of the boundary */
+        for (int dd=0; dd<cctk_dim; ++dd) {
+          bmin[dd] = imin[dd];
+          bmax[dd] = imax[dd];
+        }
+        if (f==0) {
+          /* lower face */
+          bmax[d] = imin[d] + bnd_points[2*d+f];
+        } else {
+          /* upper face */
+          bmin[d] = imax[d] - bnd_points[2*d+f];
+        }
+        
+        /* Loop over the boundary */
+        if (verbose) {
+          CCTK_VInfo (CCTK_THORNSTRING,
+                      "Setting ghost points in direction %d face %d to weight 0 on level %d", d, f, reflevel);
+        }
+#pragma omp parallel
+        CCTK_LOOP3(CoordBase_SetupMask_ghost,
+                   i,j,k,
+                   bmin[0],bmin[1],bmin[2], bmax[0],bmax[1],bmax[2],
+                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+        {
+          int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+          iweight[ind] = 0;
+        } CCTK_ENDLOOP3(CoordBase_SetupMask_ghost);
+        
+      } /* if this is a ghost boundary */
+      
     } /* loop over faces */
   } /* loop over directions */
   
