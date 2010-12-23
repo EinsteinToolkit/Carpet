@@ -31,16 +31,17 @@ namespace CarpetLib {
   struct coeffs1d {
     static const RT coeffs[];
     
-    static int const ncoeffs = ORDER+1;
-    static int const imin    = - ncoeffs/2 + 1;
-    static int const imax    = imin + ncoeffs;
+    static ptrdiff_t const ncoeffs = ORDER+1;
+    static ptrdiff_t const imin    = - ncoeffs/2 + 1;
+    static ptrdiff_t const imax    = imin + ncoeffs;
     
     static inline
     RT
     get (int const di, int const i)
     {
-      int const j = di == 0 ? i + imin : imax-1 - (i-imin);
+      ptrdiff_t const j = di == 0 ? i - imin : imax-1 - (i-imin);
 #ifdef CARPET_DEBUG
+      assert (di == 0 or di == 1);
       assert (ncoeffs == sizeof coeffs / sizeof *coeffs);
       assert (j>=0 and j<ncoeffs);
 #endif
@@ -58,19 +59,35 @@ namespace CarpetLib {
       
       assert (ncoeffs == sizeof coeffs / sizeof *coeffs);
       
-      // Test all orders
+      // Test all orders and offsets
+      bool error = false;
       for (int n=0; n<=ORDER; ++n) {
         for (int di=0; di<2; ++di) {
           RT res = RT(0.0);
           for (int i=imin; i<imax; ++i) {
-            RT const x = RT(CCTK_REAL(i));
+            CCTK_REAL const dx = ORDER % 2;
+            RT const x = RT(CCTK_REAL(i) - (di==0 ? 0.75 : 1.25 - dx));
             RT const y = ipow (x, n);
             res += get(di,i) * y;
           }
           RT const x0 = RT(0.0);
           RT const y0 = ipow (x0, n);
-          assert (good::abs (res - y0) < 1.0e-12);
-        }
+          if (not (good::abs (res - y0) < 1.0e-12)) {
+            RT rt;
+            ostringstream buf;
+            buf << "Error in prolongate_3d_cc_rf2::coeffs_3d_cc_rf2\n"
+                << "   RT=" << typestring(rt) << "\n"
+                << "   ORDER=" << ORDER << "\n"
+                << "   n=" << n << "\n"
+                << "   di=" << di << "\n"
+                << "   y0=" << y0 << ", res=" << res;
+            CCTK_WARN (CCTK_WARN_ALERT, buf.str().c_str());
+            error = true;
+          }
+        } // for di
+      }   // for n
+      if (error) {
+        CCTK_WARN (CCTK_WARN_ABORT, "Aborting.");
       }
     }
   };
@@ -80,20 +97,20 @@ namespace CarpetLib {
 #define TYPECASE(N,RT)                          \
                                                 \
   template<>                                    \
-  const RT coeffs1d<RT,0>::coeffs[] = {       \
+  const RT coeffs1d<RT,0>::coeffs[] = {         \
     +1 / RT(1.0)                                \
   };                                            \
                                                 \
   template<>                                    \
-  const RT coeffs1d<RT,1>::coeffs[] = {       \
+  const RT coeffs1d<RT,1>::coeffs[] = {         \
     +1 / RT(4.0),                               \
     +3 / RT(4.0)                                \
   };                                            \
                                                 \
   template<>                                    \
-  const RT coeffs1d<RT,2>::coeffs[] = {       \
+  const RT coeffs1d<RT,2>::coeffs[] = {         \
     + 5 / RT(32.0),                             \
-    -30 / RT(32.0),                             \
+    +30 / RT(32.0),                             \
     - 3 / RT(32.0)                              \
   };
 
@@ -127,7 +144,7 @@ namespace CarpetLib {
     typedef typename typeprops<T>::real RT;
     typedef coeffs1d<RT,ORDER> coeffs;
     T res = typeprops<T>::fromreal (0);
-    for (int i=coeffs::imin; i<coeffs::imax; ++i) {
+    for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
       res += coeffs::get(di,i) * interp0<T,ORDER> (p + i*d1);
     }
     return res;
@@ -144,7 +161,7 @@ namespace CarpetLib {
     typedef typename typeprops<T>::real RT;
     typedef coeffs1d<RT,ORDER> coeffs;
     T res = typeprops<T>::fromreal (0);
-    for (int i=coeffs::imin; i<coeffs::imax; ++i) {
+    for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
       res += coeffs::get(dj,i) * interp1<T,ORDER,di> (p + i*d2, d1);
     }
     return res;
@@ -162,7 +179,7 @@ namespace CarpetLib {
     typedef typename typeprops<T>::real RT;
     typedef coeffs1d<RT,ORDER> coeffs;
     T res = typeprops<T>::fromreal (0);
-    for (int i=coeffs::imin; i<coeffs::imax; ++i) {
+    for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
       res += coeffs::get(dk,i) * interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
     }
     return res;
@@ -271,7 +288,9 @@ namespace CarpetLib {
     
     
     
-    size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
+    // size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
+    assert (SRCIND3(1,0,0) - SRCIND3(0,0,0) == 1);
+    size_t const srcdi = 1;
     size_t const srcdj = SRCIND3(0,1,0) - SRCIND3(0,0,0);
     size_t const srcdk = SRCIND3(0,0,1) - SRCIND3(0,0,0);
     
@@ -319,7 +338,7 @@ namespace CarpetLib {
     // kernel
   l8001:
     dst[DSTIND3(id,jd,kd)] =
-      interp3<T,ORDER,0,0,1> (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
+      interp3<T,ORDER,1,0,0> (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
     i = i+1;
     id = id+1;
     is = is+1;
@@ -347,14 +366,13 @@ namespace CarpetLib {
       interp3<T,ORDER,0,1,0> (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
     i = i+1;
     id = id+1;
-    is = is+1;
-    if (i < regiext) goto l8010;
+    if (i < regiext) goto l8011;
     goto l901;
     
     // kernel
   l8011:
     dst[DSTIND3(id,jd,kd)] =
-      interp3<T,ORDER,0,1,1> (& src[SRCIND3(is,js,ks)], srcdi,srcdj,srcdk);
+      interp3<T,ORDER,1,1,0> (& src[SRCIND3(is,js,ks)], srcdi,srcdj,srcdk);
     i = i+1;
     id = id+1;
     is = is+1;
@@ -395,7 +413,7 @@ namespace CarpetLib {
     // kernel
   l8100:
     dst[DSTIND3(id,jd,kd)] =
-      interp3<T,ORDER,1,0,0> (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
+      interp3<T,ORDER,0,0,1> (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
     i = i+1;
     id = id+1;
     if (i < regiext) goto l8101;
@@ -429,7 +447,7 @@ namespace CarpetLib {
     // kernel
   l8110:
     dst[DSTIND3(id,jd,kd)] =
-      interp3<T,ORDER,1,1,0> (& src[SRCIND3(is,js,ks)], srcdi,srcdj,srcdk);
+      interp3<T,ORDER,0,1,1> (& src[SRCIND3(is,js,ks)], srcdi,srcdj,srcdk);
     i = i+1;
     id = id+1;
     if (i < regiext) goto l8111;
