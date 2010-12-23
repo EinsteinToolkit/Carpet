@@ -28,20 +28,33 @@ namespace Carpet {
     tt->advance_time (mglevel, reflevel);
     cctkGH->cctk_time = tt->get_time (mglevel, reflevel, timelevel);
     
+    int errors = 0;
+    
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cctkGH, group)) {
         
         int const activetimelevels = CCTK_ActiveTimeLevelsGI (cctkGH, group);
-        if (activetimelevels > 1) {
-          if (activetimelevels < prolongation_order_time+1) {
-            char * const groupname = CCTK_GroupName (group);
-            CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                        "Group \"%s\" has %d only active time levels.  Groups with more than one active time level need at least %d active time levels for prolongation_order_time=%d",
-                        groupname,
-                        activetimelevels, int(prolongation_order_time+1),
-                        int(prolongation_order_time));
-            free (groupname);
+        
+        switch (groupdata.AT(group).transport_operator) {
+        case op_Lagrange:
+        case op_ENO:
+        case op_WENO:
+        case op_Lagrange_monotone:
+          if (activetimelevels > 1) {
+            if (activetimelevels < prolongation_order_time+1) {
+              char * const groupname = CCTK_GroupName (group);
+              CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                          "Group \"%s\" has %d only active time levels.  Groups with more than one active time level need at least %d active time levels for prolongation_order_time=%d",
+                          groupname,
+                          activetimelevels, int(prolongation_order_time+1),
+                          int(prolongation_order_time));
+              free (groupname);
+              ++ errors;
+            }
           }
+          break;
+        default:
+          ;                     // do nothing
         }
         
         switch (CCTK_GroupTypeI(group)) {
@@ -82,6 +95,11 @@ namespace Carpet {
         } // switch grouptype
       } // if storage
     } // for group
+    
+    if (errors > 0) {
+      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Errors in %d groups detected; aborting", errors);
+    }
   }
   
   
@@ -99,19 +117,6 @@ namespace Carpet {
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cctkGH, group)) {
-        
-        int const activetimelevels = CCTK_ActiveTimeLevelsGI (cctkGH, group);
-        if (activetimelevels > 1) {
-          if (activetimelevels < prolongation_order_time+1) {
-            char * const groupname = CCTK_GroupName (group);
-            CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                        "Group \"%s\" has %d only active time levels.  Groups with more than one active time level need at least %d active time levels for prolongation_order_time=%d",
-                        groupname,
-                        activetimelevels, int(prolongation_order_time+1),
-                        int(prolongation_order_time));
-            free (groupname);
-          }
-        }
         
         switch (CCTK_GroupTypeI(group)) {
           
@@ -169,19 +174,6 @@ namespace Carpet {
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cctkGH, group)) {
-        
-        int const activetimelevels = CCTK_ActiveTimeLevelsGI (cctkGH, group);
-        if (activetimelevels > 1) {
-          if (activetimelevels < prolongation_order_time+1) {
-            char * const groupname = CCTK_GroupName (group);
-            CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                        "Group \"%s\" has %d only active time levels.  Groups with more than one active time level need at least %d active time levels for prolongation_order_time=%d",
-                        groupname,
-                        activetimelevels, int(prolongation_order_time+1),
-                        int(prolongation_order_time));
-            free (groupname);
-          }
-        }
         
         switch (CCTK_GroupTypeI(group)) {
           
