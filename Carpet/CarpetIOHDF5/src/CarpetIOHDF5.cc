@@ -1269,6 +1269,13 @@ int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
         }
       }
     }
+    vector <vector <CCTK_REAL> > grid_delta_times (mglevels);
+    for  (int ml = 0; ml < mglevels; ++ ml) {
+      grid_delta_times.at(ml).resize(vhh.at(0)->reflevels());
+      for (int rl = 0; rl < vhh.at(0)->reflevels(); ++ rl) {
+        grid_delta_times.at(ml).at(rl) = tt->get_delta(ml, rl);
+      }
+    }
     ostringstream gs_buf;
     gs_buf << setprecision(17);
     // We could write this information only into one of the checkpoint
@@ -1279,6 +1286,7 @@ int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
     // only into one of the checkpoint files
     gs_buf << "grid_structure:" << grid_structure << ",";
     gs_buf << "grid_times:" << grid_times << ",";
+    gs_buf << "grid_delta_times:" << grid_delta_times << ",";
     // gs_buf << "grid_leveltimes:" << leveltimes << ",";
     gs_buf << "grid_ghosts:" << grid_ghosts << ",";
     gs_buf << "grid_buffers:" << grid_buffers << ",";

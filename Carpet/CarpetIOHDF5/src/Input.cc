@@ -64,6 +64,7 @@ typedef struct {
   vector<vector<vector<region_t> > > grid_superstructure; // [map][reflevel][component]
   vector<vector<vector<region_t> > > grid_structure; // [map][reflevel][component]
   vector<vector<vector<CCTK_REAL> > > grid_times;    // [mglevel][reflevel][timelevel]
+  vector<vector<CCTK_REAL> > grid_delta_times;       // [mglevel][reflevel]
   // vector<vector<CCTK_REAL> > leveltimes;             // [mglevel][reflevel]
   vector <vector <i2vect> > grid_ghosts; // [map]
   vector <vector <i2vect> > grid_buffers; // [map]
@@ -203,6 +204,7 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
       for (int tl = 0; tl < tt->timelevels; ++ tl) {
         tt->set_time (ml, rl, tl, fileset.grid_times.at(ml).at(rl).at(tl));
       }
+      tt->set_delta (ml, rl, fileset.grid_delta_times.at(ml).at(rl));
     }
   }
   // We are in level mode here (we probably shouldn't be, but that's
@@ -214,11 +216,10 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
     // manually
     assert (reflevel != -1);
     int const tl = 0;
-    // ignore fileset.global_time
-    global_time = tt->get_time (mglevel, reflevel, tl);
-    cctkGH->cctk_time = global_time;
     delta_time = fileset.delta_time;
     cctkGH->cctk_delta_time = delta_time;
+    global_time = fileset.global_time;
+    cctkGH->cctk_time = tt->get_time (mglevel, reflevel, tl);
   }
   
   PostRegrid (cctkGH);
@@ -945,6 +946,13 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
     consume (gs_buf, "grid_times:");
     skipws (gs_buf);
     gs_buf >> fileset.grid_times;
+    skipws (gs_buf);
+    consume (gs_buf, ",");
+    
+    skipws (gs_buf);
+    consume (gs_buf, "grid_delta_times:");
+    skipws (gs_buf);
+    gs_buf >> fileset.grid_delta_times;
     skipws (gs_buf);
     consume (gs_buf, ",");
     
