@@ -401,17 +401,29 @@ namespace Carpet {
 
   static void prepend_id (char* const msg, size_t const msglen)
   {
+    bool needspace = false;
     if (mglevel!=-1) {
-      snprintf (msg+strlen(msg), msglen-strlen(msg), "[%d]", mglevel);
-      if (reflevel!=-1) {
-        snprintf (msg+strlen(msg), msglen-strlen(msg), "[%d]", reflevel);
-        if (map!=-1) {
-          snprintf (msg+strlen(msg), msglen-strlen(msg), "[%d]", map);
-          if (component!=-1) {
-            snprintf (msg+strlen(msg), msglen-strlen(msg), "[%d]", component);
-          }
-        }
-      }
+      snprintf (msg+strlen(msg), msglen-strlen(msg), "[ml=%d]", mglevel);
+      needspace = true;
+    }
+    if (reflevel!=-1) {
+      snprintf (msg+strlen(msg), msglen-strlen(msg), "[rl=%d]", reflevel);
+      needspace = true;
+    }
+    if (map!=-1) {
+      snprintf (msg+strlen(msg), msglen-strlen(msg), "[m=%d]", map);
+      needspace = true;
+    }
+    if (component!=-1) {
+      snprintf (msg+strlen(msg), msglen-strlen(msg), "[c=%d,lc=%d]",
+                component, local_component);
+      needspace = true;
+    }
+    if (timelevel!=-1) {
+      snprintf (msg+strlen(msg), msglen-strlen(msg), "[tl=%d]", timelevel);
+      needspace = true;
+    }
+    if (needspace) {
       snprintf (msg+strlen(msg), msglen-strlen(msg), " ");
     }
   }
