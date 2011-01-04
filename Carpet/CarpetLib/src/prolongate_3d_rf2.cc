@@ -31,7 +31,8 @@ namespace CarpetLib {
   
   template<typename RT, int ORDER>
   struct coeffs1d {
-    static const RT coeffs[];   // __attribute__((aligned(16))
+    static const RT coeffs[]
+    CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * CCTK_REAL_PRECISION);
     
     static ptrdiff_t const ncoeffs = ORDER+1;
     static ptrdiff_t const imin    = - ncoeffs/2 + 1;
