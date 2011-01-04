@@ -269,6 +269,39 @@ namespace Carpet {
   
   
   
+#if 0
+// TODO: Introduce such maybe-loops for the other loops as well
+
+#define BEGIN_MAYBE_TIMELEVEL_LOOP(cctkGH)                              \
+  do {                                                                  \
+    bool timelevel_maybe_loop_ = true;                                  \
+    assert (do_allow_past_timelevels);                                  \
+    int const min_tl = timelevel == -1 ? 0 : timelevel;                 \
+    int const max_tl = timelevel == -1 ? timelevels : timelevel+1;      \
+    int const old_timelevel = timelevel;                                \
+    bool const old_do_allow_past_timelevels = do_allow_past_timelevels; \
+    do_allow_past_timelevels = timelevel != -1;                         \
+    for (timelevel = min_tl; timelevel < max_tl; ++ timelevel) {        \
+      if (mglevel != -1 and reflevel != -1) {                           \
+        cctkGH->cctk_time = tt->get_time (mglevel, reflevel, timelevel); \
+      }                                                                 \
+      {
+#define END_MAYBE_TIMELEVEL_LOOP                                \
+      }                                                         \
+    }                                                           \
+    assert (timelevel_maybe_loop_);                             \
+    timelevel_maybe_loop_ = false;                              \
+    timelevel = old_timelevel;                                  \
+    if (mglevel != -1 and reflevel != -1) {                     \
+      int const tl = timelevel == -1 ? 0 : timelevel;           \
+      cctkGH->cctk_time = tt->get_time (mglevel, reflevel, tl); \
+    }                                                           \
+    do_allow_past_timelevels = old_do_allow_past_timelevels;    \
+  } while (false)
+#endif
+
+
+
   // Mode escapes
   
   class singlemap_escape {

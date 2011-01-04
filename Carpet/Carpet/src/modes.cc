@@ -223,8 +223,7 @@ namespace Carpet {
     
     Checkpoint ("Leaving global mode");
 
-    // Save and unset time delta
-    delta_time = cctkGH->cctk_delta_time / mglevelfact;
+    // Unset time delta
     cctkGH->cctk_delta_time = 0.0;
     if (maps == 1) {
       // Save and unset space delta

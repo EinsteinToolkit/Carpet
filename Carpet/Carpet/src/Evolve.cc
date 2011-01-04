@@ -298,7 +298,7 @@ namespace Carpet {
                 do_global_mode = do_late_global_mode;
                 do_meta_mode = do_late_meta_mode;
                 
-                BEGIN_TIMELEVEL_LOOP (cctkGH) {
+                BEGIN_TIMELEVEL_LOOP(cctkGH) {
                   
                   Waypoint ("Postregrid at iteration %d time %g timelevel %d%s%s",
                             cctkGH->cctk_iteration,

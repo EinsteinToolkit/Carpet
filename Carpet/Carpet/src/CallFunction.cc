@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <cstring>
 #include <map>
 #include <string>
 
@@ -342,12 +343,41 @@ namespace Carpet {
       }
       Timer & timer = * ti->second;
       
+      // Save the time step size
+      CCTK_REAL const saved_cctk_delta_time = cctkGH->cctk_delta_time;
+      
       user_timer.start();
       timer.start();
       int const res = CCTK_CallFunction (function, attribute, data);
       assert (res==0);
       timer.stop();
       user_timer.stop();
+      
+      // Manage the time step size. If the time step size changes
+      // during initialisation, assume it is thorn Time, and update
+      // the time hierarchy. If it changes during evolution, assume it
+      // is MoL, and do nothing.
+      if (cctkGH->cctk_iteration == 0 and
+          cctkGH->cctk_delta_time != saved_cctk_delta_time)
+      {
+        // The user changed cctk_delta_time during initialisation --
+        // update our internals and the time hierarchy
+        delta_time = cctkGH->cctk_delta_time * timereflevelfact / mglevelfact;
+        for (int ml=0; ml<mglevels; ++ml) {
+          for (int rl=0; rl<reflevels; ++rl) {
+            // Update the time delta
+            CCTK_REAL const dt =
+              delta_time / timereffacts.AT(rl) * ipow(mgfact, ml);
+            tt->set_delta(ml,rl,dt);
+            CCTK_REAL const t0 = tt->get_time(ml,rl,0);
+            // Update the times of the past timelevels
+            for (int tl=1; tl<timelevels; ++tl) {
+              CCTK_REAL const t = t0 - tl * dt;
+              tt->set_time(ml,rl,tl,t);
+            }
+          }
+        }
+      }
       
     }
     CallAfterRoutines (cctkGH, function, attribute, data);

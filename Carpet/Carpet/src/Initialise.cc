@@ -273,7 +273,7 @@ namespace Carpet {
           do_global_mode = do_early_global_mode; // on first iteration, coarsest grid
           do_meta_mode = do_early_meta_mode; // on first iteration, coarsest grid
           
-          BEGIN_TIMELEVEL_LOOP (cctkGH) {
+          BEGIN_TIMELEVEL_LOOP(cctkGH) {
             
             Waypoint ("Recovering II at iteration %d time %g timelevel %d%s%s",
                       cctkGH->cctk_iteration,
@@ -285,10 +285,10 @@ namespace Carpet {
             // Post recover variables
             ScheduleTraverse (where, "CCTK_POST_RECOVER_VARIABLES", cctkGH);
             
-            // Checking
-            PoisonCheck (cctkGH, currenttime);
-            
           } END_TIMELEVEL_LOOP;
+          
+          // Checking
+          PoisonCheck (cctkGH, currenttime);
           
           CheckChecksums (cctkGH, allbutcurrenttime);
           
@@ -360,7 +360,7 @@ namespace Carpet {
           
           if (init_each_timelevel) {
             
-            BEGIN_TIMELEVEL_LOOP (cctkGH) {
+            BEGIN_TIMELEVEL_LOOP(cctkGH) {
               
               // Set up the initial data
               ScheduleTraverse (where, "CCTK_INITIAL", cctkGH);
@@ -841,8 +841,8 @@ namespace Carpet {
                 do_global_mode = do_late_global_mode;
                 do_meta_mode = do_late_meta_mode;
                 
-                BEGIN_TIMELEVEL_LOOP (cctkGH) {
-                
+                BEGIN_TIMELEVEL_LOOP(cctkGH) {
+                  
                   Waypoint ("Postregrid at iteration %d time %g timelevel %d%s%s",
                             cctkGH->cctk_iteration,
                             (double)cctkGH->cctk_time,
@@ -852,7 +852,7 @@ namespace Carpet {
                   
                   // Postregrid
                   ScheduleTraverse (where, "CCTK_POSTREGRID", cctkGH);
-                  
+                
                 } END_TIMELEVEL_LOOP;
                 
                 EndTimingLevel (cctkGH);
@@ -1009,7 +1009,7 @@ namespace Carpet {
                 
                 if (init_each_timelevel) {
                   
-                  BEGIN_TIMELEVEL_LOOP (cctkGH) {
+                  BEGIN_TIMELEVEL_LOOP(cctkGH) {
                     
                     // Postregrid
                     ScheduleTraverse (where, "CCTK_POSTREGRIDINITIAL", cctkGH);
