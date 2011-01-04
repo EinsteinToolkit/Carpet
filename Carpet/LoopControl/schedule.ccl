@@ -1,8 +1,15 @@
 # Schedule definitions for thorn LoopControl
 
 if (printstats) {
-  SCHEDULE lc_printstats AT terminate
+  SCHEDULE lc_printstats_analysis AT analysis
   {
     LANG: C
+    OPTIONS: meta
+  } "Output loop control statistics"
+  
+  SCHEDULE lc_printstats_terminate AT terminate
+  {
+    LANG: C
+    OPTIONS: meta
   } "Output loop control statistics"
 }

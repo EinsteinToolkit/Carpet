@@ -71,12 +71,12 @@ lc_statmap_t * lc_statmap_list = NULL;
 
 /* Find all possible thread topologies */
 /* This finds all possible thread topologies which can be expressed as
-   NIxNJxNK x NIIxNJJxNKK.  More complex topologies, e.g. based on a
+   NIxNJxNK x NIIxNJJxNKK. More complex topologies, e.g. based on a
    recursive subdivision, are not considered (and cannot be expressed
-   with the data structures currently used in LoopControl).  I expect
+   with the data structures currently used in LoopControl). I expect
    that more complex topologies are not necessary, since the number of
    threads is usually quite small and contains many small factors in
-   its prime decomposition.  */
+   its prime decomposition. */
 static
 void
 find_thread_topologies (lc_topology_t * restrict const topologies,
@@ -123,19 +123,19 @@ find_thread_topologies (lc_topology_t * restrict const topologies,
 }
 
 
-#if 0
+#if 1
 
 /* Find "good" tiling specifications */
-/* This calculates a subset of all possible thread specifications.
-   One aim is to reduce the search space by disregarding some
-   specifications.  The other aim is to distribute the specifications
+/* This calculates a subset of all possible thread specifications. One
+   aim is to reduce the search space by disregarding some
+   specifications. The other aim is to distribute the specifications
    "equally", so that one does not have to spend much effort
    investigating tiling specifications with very similar properties.
    For example, if there are 200 grid points, then half of the
    possible tiling specifications consist of splitting the domain into
-   two subdomains with [100+N, 100-N] points.  This is avoided by
+   two subdomains with [100+N, 100-N] points. This is avoided by
    covering all possible tiling specifications in exponentially
-   growing step sizes.  */
+   growing step sizes. */
 static
 int tiling_compare (const void * const a, const void * const b)
 {
@@ -152,15 +152,15 @@ find_tiling_specifications (lc_tiling_t * restrict const tilings,
                             int const npoints)
 {
   /* In order to reduce the number of possible tilings, require that
-     the step sizes differ by more than 10%.  */
+     the step sizes differ by more than 10%. */
   double const distance_factor = 1.1;
   /* Determine the "good" step sizes in two passes: first small step
      sizes from 1 up to snpoints, then large step sizes from npoints
-     down to snpoints+1.  */
+     down to snpoints+1. */
   int const snpoints = floor (sqrt (npoints));
   /* For N grid points and a minimum spacing factor F, there are at
-     most log(N) / log(F) possible tilings.  There will be fewer,
-     since the actual spacings will be rounded up to integers.  */
+     most log(N) / log(F) possible tilings. There will be fewer, since
+     the actual spacings will be rounded up to integers. */
   
   * ntilings = 0;
   
@@ -188,8 +188,11 @@ find_tiling_specifications (lc_tiling_t * restrict const tilings,
   
   /* Sort */
   qsort (tilings, * ntilings, sizeof * tilings, tiling_compare);
+  
+  assert (* ntilings >= 1);
 }
-#endif
+
+#else
 
 static
 void
@@ -199,11 +202,11 @@ find_tiling_specifications (lc_tiling_t * restrict const tilings,
                             int const npoints)
 {
   /* In order to reduce the number of possible tilings, require that
-     the step sizes differ by more than 10%.  */
+     the step sizes differ by more than 10%. */
   double const distance_factor = 1.1;
   /* For N grid points and a minimum spacing factor F, there are at
-     most log(N) / log(F) possible tilings.  There will be fewer,
-     since the actual spacings will be rounded up to integers.  */
+     most log(N) / log(F) possible tilings. There will be fewer, since
+     the actual spacings will be rounded up to integers. */
   
   * ntilings = 0;
   
@@ -223,6 +226,8 @@ find_tiling_specifications (lc_tiling_t * restrict const tilings,
   tilings[* ntilings].npoints = lc_max (npoints, 1);
   ++ * ntilings;
 }
+
+#endif
 
 
 
@@ -326,10 +331,12 @@ lc_stattime_init (lc_stattime_t * restrict const lt,
   
   /* Initialise statistics */
   lt->time_count      = 0.0;
+  lt->time_count_init = 0.0;
   lt->time_setup_sum  = 0.0;
   lt->time_setup_sum2 = 0.0;
   lt->time_calc_sum   = 0.0;
   lt->time_calc_sum2  = 0.0;
+  lt->time_calc_init  = 0.0;
   
   lt->last_updated = 0.0;       /* never updated */
   
@@ -510,6 +517,13 @@ lc_statset_init (lc_statset_t * restrict const ls,
           break;
         }
       }
+      for (int t=tiling; t < ls->ntilings[d]; ++t) {
+        assert (ls->tilings[d][t].npoints *
+                ls->topologies[n].nthreads[0][d] *
+                ls->topologies[n].nthreads[1][d] >
+                ls->npoints[d]);
+      }
+      assert (tiling != 0);     /* this can't be? */
       if (tiling == 0) {
         /* Always allow at least one tiling */
         tiling = 1;
@@ -541,10 +555,12 @@ lc_statset_init (lc_statset_t * restrict const ls,
   
   /* Initialise statistics */
   ls->time_count      = 0.0;
+  ls->time_count_init = 0.0;
   ls->time_setup_sum  = 0.0;
   ls->time_setup_sum2 = 0.0;
   ls->time_calc_sum   = 0.0;
   ls->time_calc_sum2  = 0.0;
+  ls->time_calc_init  = 0.0;
   
   /* Append to loop statistics list */
   ls->next = lm->statset_list;
@@ -921,10 +937,12 @@ lc_control_finish (lc_control_t * restrict const lc)
   lc_statset_t * restrict const ls = lc->statset;
   
   int ignore_iteration;
+  int first_iteration;
 #pragma omp single copyprivate (ignore_iteration)
   {
     DECLARE_CCTK_PARAMETERS;
     ignore_iteration = ignore_initial_overhead && lt->time_count == 0.0;
+    first_iteration = lt->time_count_init == 0.0;
   }
   
   /* Add a barrier to catch load imbalances */
@@ -938,8 +956,7 @@ lc_control_finish (lc_control_t * restrict const lc)
   double const time_setup_end   = time_calc_begin;
   double const time_setup_begin = lc->time_setup_begin;
   
-  double const time_setup_sum  =
-    ignore_iteration ? 0.0 : time_setup_end - time_setup_begin;
+  double const time_setup_sum  = time_setup_end - time_setup_begin;
   double const time_setup_sum2 = pow (time_setup_sum, 2);
   
   double const time_calc_sum  = time_calc_end - time_calc_begin;
@@ -949,20 +966,24 @@ lc_control_finish (lc_control_t * restrict const lc)
 #pragma omp critical
   {
     lt->time_count += 1.0;
+    if (first_iteration) lt->time_count_init += 1.0;
     
-    lt->time_setup_sum  += time_setup_sum;
-    lt->time_setup_sum2 += time_setup_sum2;
+    if (! ignore_iteration) lt->time_setup_sum  += time_setup_sum;
+    if (! ignore_iteration) lt->time_setup_sum2 += time_setup_sum2;
     
     lt->time_calc_sum  += time_calc_sum;
     lt->time_calc_sum2 += time_calc_sum2;
+    if (first_iteration) lt->time_calc_init += time_calc_sum;
     
     ls->time_count += 1.0;
+    if (first_iteration) ls->time_count_init += 1.0;
     
-    ls->time_setup_sum  += time_setup_sum;
-    ls->time_setup_sum2 += time_setup_sum2;
+    if (! ignore_iteration) ls->time_setup_sum  += time_setup_sum;
+    if (! ignore_iteration) ls->time_setup_sum2 += time_setup_sum2;
     
     ls->time_calc_sum  += time_calc_sum;
     ls->time_calc_sum2 += time_calc_sum2;
+    if (first_iteration) ls->time_calc_init += time_calc_sum;
   }
   
 #pragma omp master
@@ -1010,57 +1031,178 @@ stddev (double const c, double const s, double const s2)
 
 
 
+/* Output statistics */
 void
-lc_printstats (CCTK_ARGUMENTS)
+lc_printstats (void);
+void
+lc_printstats (void)
 {
   DECLARE_CCTK_PARAMETERS;
   
+  printf ("LoopControl timing statistics:\n");
+  
+  double total_calc_time = 0.0;
+  for (lc_statmap_t * lm = lc_statmap_list; lm; lm = lm->next) {
+    for (lc_statset_t * ls = lm->statset_list; ls; ls = ls->next) {
+      for (lc_stattime_t * lt = ls->stattime_list; lt; lt = lt->next) {
+        total_calc_time += lt->time_calc_sum;
+      }
+    }
+  }
+  
+  double total_saved = 0.0;
   int nmaps = 0;
   for (lc_statmap_t * lm = lc_statmap_list; lm; lm = lm->next) {
-    printf ("statmap #%d \"%s\":\n",
-            nmaps,
-            lm->name);
+    
+    double calc_time = 0.0;
+    for (lc_statset_t * ls = lm->statset_list; ls; ls = ls->next) {
+      for (lc_stattime_t * lt = ls->stattime_list; lt; lt = lt->next) {
+        calc_time += lt->time_calc_sum;
+      }
+    }
+    if (calc_time < printstats_threshold / 100.0 * total_calc_time) continue;
+    
+    if (printstats_verbosity >= 1) {
+      printf ("Loop #%d \"%s\":\n",
+              nmaps,
+              lm->name);
+    }
+    double lm_sum_count      = 0.0;
+    double lm_sum_setup      = 0.0;
+    double lm_sum_calc       = 0.0;
+    double lm_sum_count_init = 0.0;
+    double lm_sum_init       = 0.0;
+    double lm_sum_improv     = 0.0;
     int nsets = 0;
     for (lc_statset_t * ls = lm->statset_list; ls; ls = ls->next) {
-      printf ("   statset #%d nthreads=%d npoints=[%d,%d,%d]\n",
-              nsets,
-              ls->num_threads, ls->npoints[0], ls->npoints[1], ls->npoints[2]);
-      double sum_count = 0.0;
-      double sum_setup = 0.0;
-      double sum_calc  = 0.0;
-      double min_calc = DBL_MAX;
-      int imin_calc = -1;
+      if (printstats_verbosity >= 2) {
+        printf ("   Parameter set #%d nthreads=%d npoints=[%d,%d,%d]\n",
+                nsets,
+                ls->num_threads, ls->npoints[0], ls->npoints[1], ls->npoints[2]);
+      }
+      double sum_count      = 0.0;
+      double sum_setup      = 0.0;
+      double sum_calc       = 0.0;
+      double sum_count_init = 0.0;
+      double sum_init       = 0.0;
+      double min_calc       = DBL_MAX;
+      int    imin_calc      = -1;
+      double max_calc       = 0.0;
+      int    imax_calc      = -1;
       int ntimes = 0;
       for (lc_stattime_t * lt = ls->stattime_list; lt; lt = lt->next) {
-        printf ("      stattime #%d topology=%d [%d,%d,%d]x[%d,%d,%d] tiling=[%d,%d,%d]\n",
-                ntimes,
-                lt->state.topology,
-                lt->inthreads, lt->jnthreads, lt->knthreads,
-                lt->inithreads, lt->jnithreads, lt->knithreads,
-                lt->inpoints, lt->jnpoints, lt->knpoints);
+        if (printstats_verbosity >= 3) {
+          printf ("      Configuration #%d topology=%d [%d,%d,%d]x[%d,%d,%d] tiling=[%d,%d,%d]\n",
+                  ntimes,
+                  lt->state.topology,
+                  lt->inthreads, lt->jnthreads, lt->knthreads,
+                  lt->inithreads, lt->jnithreads, lt->knithreads,
+                  lt->inpoints, lt->jnpoints, lt->knpoints);
+        }
         double const count = lt->time_count;
         double const setup = lt->time_setup_sum / count;
         double const calc  = lt->time_calc_sum / count;
-        printf ("         count: %g   setup: %g   calc: %g\n",
-                count, setup, calc);
-        sum_count += lt->time_count;
-        sum_setup += lt->time_setup_sum;
-        sum_calc  += lt->time_calc_sum;
+        double const init  = lt->time_calc_init / lt->time_count_init;
+        if (printstats_verbosity >= 3) {
+          printf ("         count: %g   setup: %g   first: %g   calc: %g\n",
+                  count, setup, init, calc);
+        }
+        sum_count      += lt->time_count;
+        sum_setup      += lt->time_setup_sum;
+        sum_calc       += lt->time_calc_sum;
+        sum_count_init += lt->time_count_init;
+        sum_init       += lt->time_calc_init;
         if (calc < min_calc) {
-          min_calc = calc;
+          min_calc  = calc;
           imin_calc = ntimes;
+        }
+        if (calc > max_calc) {
+          max_calc  = calc;
+          imax_calc = ntimes;
         }
         ++ ntimes;
       }
-      double const avg_calc = sum_calc / sum_count;
-      printf ("      total count: %g   total setup: %g   total calc: %g\n",
-              sum_count, sum_setup, sum_calc);
-      printf ("      avg calc: %g   min calc: %g (#%d)\n",
-              avg_calc, min_calc, imin_calc);
+      double const init_calc = sum_init / sum_count_init;
+      double const avg_calc  = sum_calc / sum_count;
+      double const saved     = (init_calc - avg_calc) * sum_count;
+      double const improv    = (init_calc - min_calc) / init_calc;
+      if (printstats_verbosity >= 2) {
+        printf ("      total count: %g   total setup: %g   total calc: %g\n",
+                sum_count, sum_setup, sum_calc);
+        printf ("      avg calc: %g   min calc: %g (#%d)   max calc: %g (#%d)\n",
+                avg_calc, min_calc, imin_calc, max_calc, imax_calc);
+        if (printstats_verbosity < 3) {
+          int ntimes = 0;
+          for (lc_stattime_t * lt = ls->stattime_list; lt; lt = lt->next) {
+            if (ntimes == imin_calc || ntimes == imax_calc) {
+              printf ("         #%d: topology=%d [%d,%d,%d]x[%d,%d,%d] tiling=[%d,%d,%d]\n",
+                      ntimes,
+                      lt->state.topology,
+                      lt->inthreads, lt->jnthreads, lt->knthreads,
+                      lt->inithreads, lt->jnithreads, lt->knithreads,
+                      lt->inpoints, lt->jnpoints, lt->knpoints);
+            }
+            ++ ntimes;
+          }
+        }
+        printf ("      first calc: %g   improvement: %.0f%%   saved: %g\n",
+                init_calc, 100.0*improv, saved);
+      }
+      lm_sum_count      += sum_count;
+      lm_sum_setup      += sum_setup;
+      lm_sum_calc       += sum_calc;
+      lm_sum_count_init += sum_count_init;
+      lm_sum_init       += sum_init;
+      lm_sum_improv     += improv * sum_count;
       ++ nsets;
     }
+    double const init_calc  = lm_sum_init / lm_sum_count_init;
+    double const avg_calc   = lm_sum_calc / lm_sum_count;
+    double const saved      = (init_calc - avg_calc) * lm_sum_count;
+    double const avg_improv = lm_sum_improv / lm_sum_count;
+    if (printstats_verbosity >= 1) {
+      printf ("   total count: %g   total setup: %g   total calc: %g\n",
+              lm_sum_count, lm_sum_setup, lm_sum_calc);
+      printf ("   avg calc: %g   avg first calc: %g\n",
+              avg_calc, init_calc);
+      printf ("   avg improvement: %.0f%%   saved: %g seconds\n",
+              100.0*avg_improv, saved);
+    }
+    total_saved += saved;
     ++ nmaps;
   }
+  
+  printf ("Total calculation time: %g seconds; total saved time: %g seconds\n",
+          total_calc_time, total_saved);
+}
+
+
+
+void
+lc_printstats_analysis (CCTK_ARGUMENTS);
+void
+lc_printstats_analysis (CCTK_ARGUMENTS)
+{
+  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_PARAMETERS;
+  
+  static int last_output = 0;
+  
+  int const current_time = CCTK_RunTime();
+  if (current_time >= last_output + 60.0 * printstats_every_minutes) {
+    last_output = current_time;
+    lc_printstats ();
+  }
+}
+
+void
+lc_printstats_terminate (CCTK_ARGUMENTS);
+void
+lc_printstats_terminate (CCTK_ARGUMENTS)
+{
+  DECLARE_CCTK_ARGUMENTS;
+  
+  lc_printstats ();
 }
 
 

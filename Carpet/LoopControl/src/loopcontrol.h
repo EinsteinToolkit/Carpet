@@ -2,7 +2,7 @@
 #define LC_LOOPCONTROL_H
 
 /* This file uses the namespace LC_* for macros and lc_* for C
-   identifiers.  */
+   identifiers. */
 
 #include <cctk.h>
 
@@ -64,11 +64,16 @@ typedef struct lc_stattime_t {
   /* Data */
   
   /* Statistics */
-  double time_count;            /* number of calls and threads */
-  double time_setup_sum, time_setup_sum2; /* time spent setting up loops */
-  double time_calc_sum, time_calc_sum2;   /* time spent iterating */
+  /* number of calls and threads */
+  double time_count, time_count_init;
+  /* time spent setting up loops */
+  double time_setup_sum, time_setup_sum2;
+  /* time spent iterating */
+  double time_calc_sum, time_calc_sum2; 
+  double time_calc_init;        /* time for first calculation */
   
-  double last_updated;          /* wall time tag */
+  /* wall time tag */
+  double last_updated;
 } lc_stattime_t;
 
 
@@ -103,9 +108,13 @@ typedef struct lc_statset_t {
   lc_stattime_t * stattime_list;
   
   /* Statistics */
-  double time_count;            /* number of calls and threads */
-  double time_setup_sum, time_setup_sum2; /* time spent setting up loops */
-  double time_calc_sum, time_calc_sum2;   /* time spent iterating */
+  /* number of calls and threads */
+  double time_count, time_count_init;
+  /* time spent setting up loops */
+  double time_setup_sum, time_setup_sum2;
+  /* time spent iterating */
+  double time_calc_sum, time_calc_sum2; 
+  double time_calc_init;        /* time for first calculation */
 } lc_statset_t;
 
 
@@ -347,7 +356,7 @@ lc_control_finish (lc_control_t * restrict lc);
   } while (0)
 
 /* Pre- and post loop statements are inserted around the innermost
-   loop, which is executed serially.  By default these are empty.  */
+   loop, which is executed serially. By default these are empty. */
 #define LC_PRELOOP_STATEMENTS
 #define LC_POSTLOOP_STATEMENTS
 

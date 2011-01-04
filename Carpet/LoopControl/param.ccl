@@ -3,9 +3,27 @@
 #################
 # General options
 
-BOOLEAN printstats "Output timing statistics at shutdown" STEERABLE=recover
+BOOLEAN printstats "Output timing statistics" STEERABLE=recover
 {
-} "no"
+} "yes"
+
+CCTK_REAL printstats_every_minutes "Output timing statistics every so many minutes" STEERABLE=always
+{
+  0.0:* :: ""
+} 60.0
+
+CCTK_REAL printstats_threshold "Output timing statistics for loops costing at least this many percent" STEERABLE=always
+{
+  0.0:100.0 :: ""
+} 2.0
+
+CCTK_INT printstats_verbosity "Level of detail for statistics" STEERABLE=always
+{
+  0 :: "Output only a global summary"
+  1 :: "Output summary for every loop"
+  2 :: "Output summary for every loop parameter set"
+  3 :: "Output everything"
+} 1
 
 BOOLEAN verbose "Verbosity" STEERABLE=always
 {
@@ -68,7 +86,7 @@ CCTK_INT lc_knpoints "Number of grid points in the k-direction" STEERABLE=recove
 
 BOOLEAN legacy_init "Initialise with legacy configuration (usually slower)" STEERABLE=recover
 {
-} "no"
+} "yes"
 
 
 
@@ -130,7 +148,7 @@ CCTK_REAL siman_T_min "stopping criterion" STEERABLE=recover
 
 BOOLEAN use_random_restart_hill_climbing "http://en.wikipedia.org/wiki/Hill_climbing http://en.wikipedia.org/wiki/Tabu_search" STEERABLE=always
 {
-} "no"
+} "yes"
 
 CCTK_REAL maximum_setup_overhead "Maximum allowable administrative overhead" STEERABLE=always
 {

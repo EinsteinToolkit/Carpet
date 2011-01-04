@@ -84,9 +84,9 @@ lc_hill_init (lc_statset_t * restrict const ls,
     return;
   }
   
-  /* If the overhead has become too large, do nothing.  */
+  /* If the overhead has become too large, do nothing. */
   if (ls->time_setup_sum > maximum_setup_overhead * ls->time_calc_sum) {
-    /* Stay at the old state.  */
+    /* Stay at the old state. */
     * new_state = lh->state;
     return;
   }
@@ -120,10 +120,18 @@ lc_hill_init (lc_statset_t * restrict const ls,
       CCTK_INFO ("Hill climbing: Updating best time");
     }
     lh->best_time = lh->time;
+    /* Is there now a better state? */
+    for (lc_stattime_t * lt = ls->stattime_list; lt; lt = lt->next) {
+      double const time = lt->time_calc_sum / lt->time_count;
+      if (time < lh->best_time) {
+        lh->best = lt->state;
+        lh->best_time = time;
+      }
+    }
   }
   
   /* Compare the time for the current state with the time for the
-     previous state.  If the previous state was better, backtrack.  */
+     previous state. If the previous state was better, backtrack. */
   if (lh->have_previous && lh->previous_time < lh->time) {
     if (verbose) {
       CCTK_INFO ("Hill climbing: Backtracking");
@@ -157,7 +165,7 @@ lc_hill_init (lc_statset_t * restrict const ls,
   
  search:;
   
-  /* Look which neighbours exist.  */
+  /* Look which neighbours exist. */
   typedef enum { nb_boundary, nb_missing, nb_exists } neighbour_t;
   neighbour_t  neighbours[3][2];
   lc_state_t   nb_state[3][2];
@@ -194,7 +202,7 @@ lc_hill_init (lc_statset_t * restrict const ls,
   }
   
   /* If not all neighbours exist, then choose a random neighbour and
-     move there.  */
+     move there. */
   if (num_nonexist_states > 0) {
     if (verbose) {
       CCTK_INFO ("Hill climbing: Examining a new state");
@@ -205,32 +213,40 @@ lc_hill_init (lc_statset_t * restrict const ls,
     return;
   }
   
-  /* All neighbours exist.  Look whether we are in a local
-     minimum.  */
+  if (! nb_minimum_time) {
+    /* There are no neighbours. Stay where we are. */
+    if (verbose) {
+      CCTK_INFO ("Hill climbing: No neighbours, staying put");
+    }
+    * new_state = lh->state;
+    return;
+  }
+  
+  /* All neighbours exist. Look whether we are in a local minimum. */
   assert (nb_minimum_time);
   if (minimum_time >= lh->time) {
-    /* We are in a local minimum.  */
+    /* We are in a local minimum. */
     if (verbose) {
       CCTK_INFO ("Hill climbing: Local minimum reached");
     }
     
-    /* Every so often take a small jump.  */
+    /* Every so often take a small jump. */
     if (drand() < probability_small_jump) {
-      /* Be curious, go somewhere nearby.  */
+      /* Be curious, go somewhere nearby. */
       if (verbose) {
         CCTK_INFO ("Hill climbing: Making a small jump");
       }
       for (int ntries = 0; ntries < max_jump_attempts; ++ ntries) {
         lc_state_t try_state = lh->state;
         if (drand() < 0.25) {
-          /* Change the topology, but not the tiling.  */
+          /* Change the topology, but not the tiling. */
           try_state.topology = irand (ls->ntopologies);
           for (int d=0; d<3; ++d) {
             if (try_state.tiling[d] >=
                 ls->topology_ntilings[d][try_state.topology])
             {
               /* The tiling doesn't fit for this new topology; don't
-                 choose this topology.  */
+                 choose this topology. */
               goto next_try;
             }
           }
@@ -252,12 +268,12 @@ lc_hill_init (lc_statset_t * restrict const ls,
         }
       next_try:;
       }
-      /* Don't jump after all.  */
+      /* Don't jump after all. */
     }
     
-    /* Every so often take a random jump.  */
+    /* Every so often take a random jump. */
     if (drand() < probability_random_jump) {
-      /* Be adventurous, go somewhere unknown.  */
+      /* Be adventurous, go somewhere unknown. */
       if (verbose) {
         CCTK_INFO ("Hill climbing: Jumping randomly");
       }
@@ -269,7 +285,7 @@ lc_hill_init (lc_statset_t * restrict const ls,
             irand (ls->topology_ntilings[d][try_state.topology]);
         }
         if (! lc_stattime_find (ls, & try_state)) {
-          /* The new state is hitherto unknown, use it.  */
+          /* The new state is hitherto unknown, use it. */
           lh->state = try_state;
           lh->excursion_start = lh->iteration;
           lh->have_previous = 0; /* disable backtracking */
@@ -277,13 +293,13 @@ lc_hill_init (lc_statset_t * restrict const ls,
           return;
         }
       }
-      /* Don't jump after all.  */
+      /* Don't jump after all. */
     }
     
     /* If the current state is not the best state, give up and go
-       back.  */
+       back. */
     if (! lc_state_equal (& lh->state, & lh->best)) {
-      /* Revert to the best known state.  */
+      /* Revert to the best known state. */
       if (verbose) {
         CCTK_INFO ("Hill climbing: Reverting to best known state");
       }
@@ -294,7 +310,7 @@ lc_hill_init (lc_statset_t * restrict const ls,
       return;
     }
     
-    /* Be content, do nothing.  */
+    /* Be content, do nothing. */
     if (verbose) {
       CCTK_INFO ("Hill climbing: Resting");
     }
@@ -302,8 +318,8 @@ lc_hill_init (lc_statset_t * restrict const ls,
     return;
   }
   
-  /* One of the neighbours is better.  Move to this neighbour, and
-     continue the search there.  */
+  /* One of the neighbours is better. Move to this neighbour, and
+     continue the search there. */
   if (verbose) {
     CCTK_INFO ("Hill climbing: Found a better neighbour, going there");
   }
