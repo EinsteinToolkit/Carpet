@@ -189,6 +189,12 @@ find_tiling_specifications (lc_tiling_t * restrict const tilings,
   /* Sort */
   qsort (tilings, * ntilings, sizeof * tilings, tiling_compare);
   
+  /* step size should be at least 1, even if there are only 0
+     points */
+  assert (* ntilings < maxntilings);
+  tilings[* ntilings].npoints = lc_max (npoints, 1);
+  ++ * ntilings;
+  
   assert (* ntilings >= 1);
 }
 
