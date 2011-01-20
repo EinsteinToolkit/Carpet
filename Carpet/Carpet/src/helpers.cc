@@ -36,6 +36,13 @@ namespace Carpet {
     return &carpetGH;
   }
 
+  // Get current regridding epoch
+  extern "C"
+  CCTK_INT Carpet_GetRegriddingEpoch (CCTK_POINTER_TO_CONST const cctkGH)
+  {
+    return regridding_epoch;
+  }
+
   // Get current refinement level
   extern "C"
   CCTK_INT Carpet_GetRefinementLevel (CCTK_POINTER_TO_CONST const cctkGH)

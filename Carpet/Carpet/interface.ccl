@@ -209,6 +209,13 @@ PROVIDES FUNCTION GetCoordRange WITH Carpet_GetCoordRange LANGUAGE C
 
 # Get current refinement level and number of refinement levels
 CCTK_INT FUNCTION                         \
+    GetRegriddingEpoch                    \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+PROVIDES FUNCTION GetRegriddingEpoch \
+    WITH Carpet_GetRegriddingEpoch   \
+    LANGUAGE C
+
+CCTK_INT FUNCTION                         \
     GetRefinementLevel                    \
         (CCTK_POINTER_TO_CONST IN cctkGH)
 PROVIDES FUNCTION GetRefinementLevel \

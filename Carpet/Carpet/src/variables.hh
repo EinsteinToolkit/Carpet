@@ -155,7 +155,7 @@ namespace Carpet {
   extern vector<gh*> vhh;       // [map]
   extern vector<dh*> vdd;       // [map]
   extern th* tt;
-  extern int regridding_epoch;
+  extern int regridding_epoch;  // increases with each regridding
   
   // Data for the groups
   struct groupdesc {
