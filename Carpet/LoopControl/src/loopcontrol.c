@@ -639,6 +639,11 @@ lc_statmap_init (int * restrict const initialised,
 #pragma omp single
   {
     
+    /* Ensure this thorn is active */
+    if (! CCTK_IsThornActive (CCTK_THORNSTRING)) {
+      CCTK_WARN (CCTK_WARN_ABORT, "Thorn LoopControl is used, but has not been activated. (Note: If a thorn has an optional depencency on LoopControl, and if LoopControl is then in your thorn list, then you are using it and need to activate it.)");
+    }
+    
     /* Set name */
     lm->name = strdup (name);
     
