@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "gdata.hh"
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
@@ -62,8 +63,8 @@ namespace CarpetLib {
       CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
     }
     
-    if (any (srcext != srcbbox.shape() / srcbbox.stride() or
-             dstext != dstbbox.shape() / dstbbox.stride()))
+    if (any (srcext != gdata::allocated_memory_shape(srcbbox.shape() / srcbbox.stride()) or
+             dstext != gdata::allocated_memory_shape(dstbbox.shape() / dstbbox.stride())))
     {
       CCTK_WARN (0, "Internal error: array sizes don't agree with bounding boxes");
     }

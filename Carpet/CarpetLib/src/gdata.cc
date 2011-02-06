@@ -3,6 +3,8 @@
 #include <util_ErrorCodes.h>
 #include <util_Table.h>
 
+#include <vectors.h>
+
 #include <cassert>
 #include <cstdlib>
 #include <iomanip>
@@ -69,22 +71,67 @@ gdata::~gdata ()
 
 // Storage management
 
-ivect
+template<int D>
+vect<int,D>
 gdata::
-allocated_memory_shape (ibbox const& extent)
+allocated_memory_shape (bbox<int,D> const& extent)
+{
+  vect<int,D> const shape =
+    max (vect<int,D>(0), extent.shape() / extent.stride());
+  return allocated_memory_shape (shape);
+}
+
+template<int D>
+vect<int,D>
+gdata::
+allocated_memory_shape (vect<int,D> shape)
 {
   DECLARE_CCTK_PARAMETERS;
-  ivect shape = max (ivect(0), extent.shape() / extent.stride());
-  // Enlarge shape to avoid multiples of cache line colours
-  if (avoid_arraysize_bytes > 0) {
-    for (int d=0; d<dim; ++d) {
-      if (shape[d] > 0 and
-          shape[d] * sizeof(CCTK_REAL) % avoid_arraysize_bytes == 0)
-      {
-        ++shape[d];
+  bool did_change;
+  for (int count=0; count<10; ++count) {
+    did_change = false;
+    int magic_size = -1;
+    // Enlarge shape to avoid multiples of cache line colours
+    if (avoid_arraysize_bytes > 0) {
+      magic_size = avoid_arraysize_bytes;
+      if (avoid_arraysize_bytes == sizeof(CCTK_REAL)) {
+        CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "The run-time parameter avoid_arraysize_bytes=%d requires that the size of a grid variable in the x direction is not a multiple of %d bytes, but the size of CCTK_REAL is %d. This is inconsistent -- aborting",
+                    int(avoid_arraysize_bytes),
+                    int(avoid_arraysize_bytes),
+                    int(sizeof(CCTK_REAL)));
+      }
+      for (int d=0; d<D; ++d) {
+        if (shape[d] > 0 and
+            shape[d] * sizeof(CCTK_REAL) % avoid_arraysize_bytes == 0)
+        {
+          ++shape[d];
+          did_change = true;
+        }
       }
     }
+#if defined(VECTORISE_ALIGNED_ARRAYS)
+    // Enlarge shape in the x direction to ensure it is a multiple of
+    // the vector size
+#warning "TODO: Support other datatypes as well, don't target only CCTK_REAL"
+    if (sizeof(CCTK_REAL) * CCTK_REAL_VEC_SIZE == magic_size) {
+      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The build-time option KRANC_ALIGNED_ARRAYS requires that the size of a grid variable in the x direction is a multiple of %d bytes, while the run-time parameter avoid_arraysize_bytes=%d requests the opposite. This is inconsistent -- aborting",
+                  int(avoid_arraysize_bytes),
+                  int(avoid_arraysize_bytes));
+    }
+    if (shape[0] % CCTK_REAL_VEC_SIZE != 0) {
+      shape[0] =
+        (shape[0] + CCTK_REAL_VEC_SIZE - 1) /
+        CCTK_REAL_VEC_SIZE *
+        CCTK_REAL_VEC_SIZE;
+      did_change = true;
+    }
+#endif
+    if (not did_change) goto done;
   }
+  CCTK_WARN (CCTK_WARN_ABORT, "endless loop");
+ done:;
   return shape;
 }
 
@@ -168,8 +215,8 @@ transfer_from (comm_state & state,
   find_source_timelevel
     (times, time, order_time, my_transport_operator, timelevel0, ntimelevels);
   if (is_src) assert (int (srcs.size()) >= ntimelevels);
-  int const dstpoints = dstbox.size();
-  int const srcpoints = srcbox.size() * ntimelevels;
+  int const dstpoints = prod(allocated_memory_shape(dstbox));
+  int const srcpoints = prod(allocated_memory_shape(srcbox)) * ntimelevels;
   bool const interp_on_src = dstpoints <= srcpoints;
   int const npoints = interp_on_src ? dstpoints : srcpoints;
   
@@ -202,29 +249,36 @@ transfer_from (comm_state & state,
             ioffset = 1 - is_centered;
           }
           ibbox const bufbox = dstbox.shift(ioffset, 2);
-          assert (bufbox.size() == dstbox.size());
-          size_t const sendbufsize = src->c_datatype_size() * dstbox.size();
+          assert (prod(allocated_memory_shape(bufbox)) ==
+                  prod(allocated_memory_shape(dstbox)));
+          size_t const sendbufsize =
+            src->c_datatype_size() * prod(allocated_memory_shape(dstbox));
           void * const sendbuf =
-            state.send_buffer (src->c_datatype(), dstproc, dstbox.size());
+            state.send_buffer (src->c_datatype(), dstproc,
+                               prod(allocated_memory_shape(dstbox)));
           gdata * const buf =
             src->make_typed (src->varindex, src->cent, src->transport_operator);
           buf->allocate (bufbox, srcproc, sendbuf, sendbufsize);
           buf->transfer_from_innerloop
             (srcs, times, dstbox, time, order_space, order_time);
           delete buf;
-          state.commit_send_space (src->c_datatype(), dstproc, dstbox.size());
+          state.commit_send_space
+            (src->c_datatype(), dstproc, prod(allocated_memory_shape(dstbox)));
         } else {
           for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
-            size_t const sendbufsize = src->c_datatype_size() * srcbox.size();
+            size_t const sendbufsize =
+              src->c_datatype_size() * prod(allocated_memory_shape(srcbox));
             void * const sendbuf =
-              state.send_buffer (src->c_datatype(), dstproc, srcbox.size());
+              state.send_buffer (src->c_datatype(), dstproc,
+                                 prod(allocated_memory_shape(srcbox)));
             gdata * const buf =
               src->make_typed (src->varindex, src->cent,
                                src->transport_operator);
             buf->allocate (srcbox, srcproc, sendbuf, sendbufsize);
             buf->copy_from_innerloop (srcs.AT(tl), srcbox);
             delete buf;
-            state.commit_send_space (src->c_datatype(), dstproc, srcbox.size());
+            state.commit_send_space (src->c_datatype(), dstproc,
+                                     prod(allocated_memory_shape(srcbox)));
           }
         }
       }
@@ -244,12 +298,15 @@ transfer_from (comm_state & state,
       if (is_dst) {
         // copy from the recv buffer
         if (interp_on_src) {
-          size_t const recvbufsize = c_datatype_size() * dstbox.size();
+          size_t const recvbufsize =
+            c_datatype_size() * prod(allocated_memory_shape(dstbox));
           void * const recvbuf =
-            state.recv_buffer (c_datatype(), srcproc, dstbox.size());
+            state.recv_buffer (c_datatype(), srcproc,
+                               prod(allocated_memory_shape(dstbox)));
           gdata * const buf = make_typed (varindex, cent, transport_operator);
           buf->allocate (dstbox, dstproc, recvbuf, recvbufsize);
-          state.commit_recv_space (c_datatype(), srcproc, dstbox.size());
+          state.commit_recv_space (c_datatype(), srcproc,
+                                   prod(allocated_memory_shape(dstbox)));
           copy_from_innerloop (buf, dstbox);
           delete buf;
         } else {
@@ -264,12 +321,15 @@ transfer_from (comm_state & state,
           vector <gdata const *> bufs (ntimelevels, null);
           vector <CCTK_REAL> timebuf (ntimelevels);
           for (int tl = 0; tl < ntimelevels; ++ tl) {
-            size_t const recvbufsize = c_datatype_size() * srcbox.size();
+            size_t const recvbufsize =
+              c_datatype_size() * prod(allocated_memory_shape(srcbox));
             void * const recvbuf =
-              state.recv_buffer (c_datatype(), srcproc, srcbox.size());
+              state.recv_buffer (c_datatype(), srcproc,
+                                 prod(allocated_memory_shape(srcbox)));
             gdata * const buf = make_typed (varindex, cent, transport_operator);
             buf->allocate (srcbox, dstproc, recvbuf, recvbufsize);
-            state.commit_recv_space (c_datatype(), srcproc, srcbox.size());
+            state.commit_recv_space
+              (c_datatype(), srcproc, prod(allocated_memory_shape(srcbox)));
             bufs.AT(tl) = buf;
             timebuf.AT(tl) = times.AT(timelevel0 + tl);
           }
@@ -377,3 +437,11 @@ allmemory ()
   }
   return mem;
 }
+
+
+
+template vect<int,3> gdata::allocated_memory_shape (bbox<int,3> const& extent);
+template vect<int,3> gdata::allocated_memory_shape (vect<int,3> shape);
+
+template vect<int,4> gdata::allocated_memory_shape (bbox<int,4> const& extent);
+template vect<int,4> gdata::allocated_memory_shape (vect<int,4> shape);

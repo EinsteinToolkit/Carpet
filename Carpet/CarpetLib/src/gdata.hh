@@ -75,10 +75,14 @@ public:
   
   // Storage management
   virtual void allocate (const ibbox& extent, const int proc,
-			 void* const memptr = NULL, size_t const memsize = 0) = 0;
+			 void* const memptr = NULL, size_t const memsize = 0) =
+    0;
   virtual void free () = 0;
   virtual size_t allocsize (const ibbox& extent, const int proc) const = 0;
-  static ivect allocated_memory_shape (ibbox const& extent);
+  template<int D>
+  static vect<int,D> allocated_memory_shape (bbox<int,D> const& extent);
+  template<int D>
+  static vect<int,D> allocated_memory_shape (vect<int,D> shape);
   
   // Accessors
   bool has_storage () const {

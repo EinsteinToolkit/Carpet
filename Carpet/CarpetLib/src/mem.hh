@@ -33,7 +33,7 @@ public:
 
 
 template<typename T>
-class mem: gmem
+class mem: public gmem
 {
   T * storage_;
   size_t nelems_;
