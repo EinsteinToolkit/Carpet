@@ -269,6 +269,18 @@ lc_max (int const i, int const j)
   return i > j ? i : j;
 }
 
+/* Align by shifting to the right if necessary */
+static inline
+int
+lc_align (int const i, int const di)
+  CCTK_ATTRIBUTE_CONST;
+static inline
+int
+lc_align (int const i, int const di)
+{
+  return (i + di - 1) / di * di;
+}
+
 
 
 void

@@ -898,10 +898,10 @@ lc_control_init (lc_control_t * restrict const lc,
   /*** Tilings ****************************************************************/
   
   /* Tiling loop settings */
-  lc->iimin = lc->iii;
+  lc->iimin = ci == 0 ? lc->iii : lc_align (lc->iii, lc->di);
   lc->jjmin = lc->jjj;
   lc->kkmin = lc->kkk;
-  lc->iimax = lc_min (lc->iii + lc->iiistep, lc->iiimax);
+  lc->iimax = lc_min (lc_align (lc->iii + lc->iiistep, lc->di), lc->iiimax);
   lc->jjmax = lc_min (lc->jjj + lc->jjjstep, lc->jjjmax);
   lc->kkmax = lc_min (lc->kkk + lc->kkkstep, lc->kkkmax);
   lc->iistep = lt->inpoints;
@@ -921,7 +921,8 @@ lc_control_init (lc_control_t * restrict const lc,
   lc->iiii = cii;
   lc->jjjj = cjj;
   lc->kkkk = ckk;
-  lc->iiiistep = (lc->iistep + lt->inithreads - 1) / lt->inithreads;
+  lc->iiiistep =
+    lc_align ((lc->iistep + lt->inithreads - 1) / lt->inithreads, lc->di);
   lc->jjjjstep = (lc->jjstep + lt->jnithreads - 1) / lt->jnithreads;
   lc->kkkkstep = (lc->kkstep + lt->knithreads - 1) / lt->knithreads;
   lc->iiiimin = lc->iiii * lc->iiiistep;
