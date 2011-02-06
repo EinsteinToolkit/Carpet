@@ -836,7 +836,10 @@ namespace CarpetIOASCII {
         if (want_date) {
           char run_host [1000];
           Util_GetHostName (run_host, sizeof run_host);
-          const char* const run_user = getenv ("USER");
+          const char* run_user = getenv ("USER");
+          if (not run_user) {
+            run_user = "";
+          }
           char run_date [1000];
           Util_CurrentDate (sizeof run_date, run_date);
           char run_time [1000];
@@ -845,6 +848,7 @@ namespace CarpetIOASCII {
                << " by " << run_user
                << " on " << run_date
                << " at " << run_time << eol;
+          assert (file.good());
         }
         
         if (want_parfilename) {
@@ -892,6 +896,7 @@ namespace CarpetIOASCII {
       } // if is_new_file
       
       file << setprecision(out_precision);
+      assert (file.good());
       
     } // if on the I/O processor
   }
