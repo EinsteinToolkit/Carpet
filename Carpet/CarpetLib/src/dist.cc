@@ -31,6 +31,7 @@ namespace dist {
   MPI_Datatype mpi_complex16 = MPI_DATATYPE_NULL;
   MPI_Datatype mpi_complex32 = MPI_DATATYPE_NULL;
   
+  int num_threads_ = -1;
   int total_num_threads_ = -1;
   
   void init (int& argc, char**& argv) {
@@ -265,7 +266,11 @@ namespace dist {
     if (num_threads > 0) {
       // Set number of threads which should be used
       // TODO: do this at startup, not in this routine
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Setting number of OpenMP threads per process to %d",
+                  num_threads);
       omp_set_num_threads (num_threads);
+      collect_total_num_threads ();
     }
 #else
     if (num_threads > 0 and num_threads != 1) {
@@ -278,12 +283,28 @@ namespace dist {
   // Global number of threads
   void collect_total_num_threads ()
   {
-    int const mynthreads = num_threads();
-    // cerr << "QQQ: collect_total_num_threads[1]" << endl;
+#ifdef _OPENMP
+#  pragma omp parallel
+    {
+#  pragma omp single
+      {
+        num_threads_ = omp_get_num_threads();
+      }
+    }
+    int const max_threads = omp_get_max_threads();
+    if (max_threads != num_threads_) {
+      CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Unexpected OpenMP setup: omp_get_max_threads=%d, omp_get_num_threads=%d",
+                  max_threads, num_threads_);
+    }
+#else
+    num_threads_ = 1;
+#endif
+    assert (num_threads_ >= 1);
+    
     MPI_Allreduce
-      (const_cast <int *> (& mynthreads), & total_num_threads_, 1, MPI_INT,
+      (const_cast <int *> (& num_threads_), & total_num_threads_, 1, MPI_INT,
        MPI_SUM, comm());
-    // cerr << "QQQ: collect_total_num_threads[2]" << endl;
     assert (total_num_threads_ >= size());
   }
   

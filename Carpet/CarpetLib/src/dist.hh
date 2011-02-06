@@ -31,6 +31,7 @@ namespace dist {
   extern MPI_Datatype mpi_complex16;
   extern MPI_Datatype mpi_complex32;
   
+  extern int num_threads_;
   extern int total_num_threads_;
   
   void init (int& argc, char**& argv);
@@ -177,15 +178,6 @@ namespace dist {
   inline int num_threads () CCTK_ATTRIBUTE_CONST;
   inline int num_threads ()
   {
-    static int num_threads_ = -1;
-    if (num_threads_ == -1) {
-#ifdef _OPENMP
-      num_threads_ = omp_get_max_threads();
-#else
-      num_threads_ = 1;
-#endif
-      assert (num_threads_ >= 1);
-    }
     return num_threads_;
   }
   
