@@ -450,7 +450,7 @@ namespace Carpet {
              << upper / stride
              << "   ("
              << (upper - lower) / stride + 1
-             << ") "
+             << " + PADDING) "
              << prod ((upper - lower) / stride + 1)
              << eol;
       }
