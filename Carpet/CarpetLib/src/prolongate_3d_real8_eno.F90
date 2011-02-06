@@ -1,6 +1,3 @@
-#ifndef OMIT_F90
-!!$     -*-Fortran-*-
-
 #include "cctk.h"
 
 
@@ -288,4 +285,3 @@ subroutine prolongate_3d_real8_eno (src, srciext, srcjext, &
   end do
 
 end subroutine prolongate_3d_real8_eno
-#endif	/* !OMIT_F90 */
