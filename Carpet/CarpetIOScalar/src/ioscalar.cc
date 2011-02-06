@@ -335,7 +335,10 @@ namespace CarpetIOScalar {
             if (want_date) {
               char run_host [1000];
               Util_GetHostName (run_host, sizeof run_host);
-              char const * const run_user = getenv ("USER");
+              char const * run_user = getenv ("USER");
+              if (not run_user) {
+                run_user = "";
+              }
               char run_date [1000];
               Util_CurrentDate (sizeof run_date, run_date);
               char run_time [1000];
