@@ -9,5 +9,10 @@ Licence      : GPL
 Test prolongation in Carpet.
 
 The basic idea is to set up a grid function containing a polynomial of
-a certain order of the coordinates.  Prolongatin (interpolation) with
-sufficiently high order must preserve these polynomials exactly.
+a certain order of the coordinates. Prolongation (interpolation) with
+sufficiently high order must preserve these polynomials exactly (up to
+floating-point round-off).
+
+We test restriction as well, but the restriction operators are not
+high-order accurate. Since restriction is first order accurate, and we
+disable the restriction tests for the higher orders.

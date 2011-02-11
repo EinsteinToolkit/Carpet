@@ -1,14 +1,32 @@
 # Schedule definitions for thorn CarpetProlongateTest
 
-STORAGE: scalar[3] difference[3]
+STORAGE: scalar[3] scaled[3] difference[3] errornorm
 
 SCHEDULE CarpetProlongateTest_Init AT initial
 {
   LANG: Fortran
-  SYNC: scalar
+  SYNC: scalar scaled
 } "Set up initial data"
 
 SCHEDULE CarpetProlongateTest_Diff IN MoL_PostStep
 {
   LANG: Fortran
 } "Test data"
+
+SCHEDULE CarpetProlongateTest_NormInit IN MoL_PostStep AFTER CarpetProlongateTest_Diff
+{
+  LANG: Fortran
+  OPTIONS: global-late
+} "Calculate error norm"
+
+SCHEDULE CarpetProlongateTest_NormCalc IN MoL_PostStep AFTER CarpetProlongateTest_NormInit
+{
+  LANG: Fortran
+  OPTIONS: global-late loop-local
+} "Calculate error norm"
+
+SCHEDULE CarpetProlongateTest_NormReduce IN MoL_PostStep AFTER CarpetProlongateTest_NormCalc
+{
+  LANG: Fortran
+  OPTIONS: global-late
+} "Calculate error norm"

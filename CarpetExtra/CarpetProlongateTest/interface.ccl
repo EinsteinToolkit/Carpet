@@ -11,7 +11,14 @@ CCTK_REAL scalar TYPE=gf TIMELEVELS=3
   u
 } "Grid function"
 
+CCTK_REAL scaled TYPE=gf TIMELEVELS=3
+{
+  uscaled
+} "Scaled grid function"
+
 CCTK_REAL difference TYPE=gf TIMELEVELS=3
 {
-  du
+  u0 du
 } "Error in grid function"
+
+CCTK_REAL errornorm TYPE=scalar "Norm of error in grid function"
