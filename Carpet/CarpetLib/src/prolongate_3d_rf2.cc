@@ -43,9 +43,13 @@ namespace CarpetLib {
     RT const&
     get (ptrdiff_t const i)
     {
+      static_assert (ncoeffs == sizeof coeffs / sizeof *coeffs,
+                     "coefficient array has wrong size");
+#ifdef CARPET_DEBUG
+      assert (i>=imin and i<imax);
+#endif
       ptrdiff_t const j = i - imin;
 #ifdef CARPET_DEBUG
-      assert (ncoeffs == sizeof coeffs / sizeof *coeffs);
       assert (j>=0 and j<ncoeffs);
 #endif
       return coeffs[j];
@@ -60,7 +64,8 @@ namespace CarpetLib {
       if (tested) return;
       tested = true;
       
-      assert (ncoeffs == sizeof coeffs / sizeof *coeffs);
+      static_assert (ncoeffs == sizeof coeffs / sizeof *coeffs,
+                     "coefficient array has wrong size");
       
       // Do not test integer operators (they should be disabled
       // anyway)
@@ -68,7 +73,7 @@ namespace CarpetLib {
       
       // Test all orders
       bool error = false;
-      for (ptrdiff_t n=0; n<=ORDER; ++n) {
+      for (int n=0; n<=ORDER; ++n) {
         RT res = RT(0.0);
         for (ptrdiff_t i=imin; i<imax; ++i) {
           RT const x = RT(CCTK_REAL(i) - 0.5);
@@ -363,6 +368,85 @@ namespace CarpetLib {
   
   
   
+  // Check interpolation index ranges
+  template <typename T, int ORDER>
+  static inline
+  void
+  check_indices0 ()
+  {
+  }
+  
+  template <typename T, int ORDER, int di>
+  static inline
+  void
+  check_indices1 (ptrdiff_t const is,
+                  ptrdiff_t const srciext)
+  {
+    static_assert (di==0 or di==1, "di must be 0 or 1");
+#ifdef CARPET_DEBUG
+    typedef typename typeprops<T>::real RT;
+    typedef coeffs1d<RT,ORDER> coeffs;
+    if (di == 0) {
+      assert (is >= 0);
+      assert (is < srciext);
+    } else {
+      assert (is + coeffs::imin >= 0);
+      assert (is + coeffs::imax <= srciext);
+    }
+    check_indices0<T,ORDER> ();
+#endif
+  }
+  
+  template <typename T, int ORDER, int di, int dj>
+  static inline
+  void
+  check_indices2 (ptrdiff_t const is,
+                  ptrdiff_t const js,
+                  ptrdiff_t const srciext,
+                  ptrdiff_t const srcjext)
+  {
+    static_assert (dj==0 or dj==1, "dj must be 0 or 1");
+#ifdef CARPET_DEBUG
+    typedef typename typeprops<T>::real RT;
+    typedef coeffs1d<RT,ORDER> coeffs;
+    if (dj == 0) {
+      assert (js >= 0);
+      assert (js < srcjext);
+    } else {
+      assert (js + coeffs::imin >= 0);
+      assert (js + coeffs::imax <= srcjext);
+    }
+    check_indices1<T,ORDER,di> (is, srciext);
+#endif
+  }
+  
+  template <typename T, int ORDER, int di, int dj, int dk>
+  static inline
+  void
+  check_indices3 (ptrdiff_t const is,
+                  ptrdiff_t const js,
+                  ptrdiff_t const ks,
+                  ptrdiff_t const srciext,
+                  ptrdiff_t const srcjext,
+                  ptrdiff_t const srckext)
+  {
+    static_assert (dk==0 or dk==1, "dk must be 0 or 1");
+#ifdef CARPET_DEBUG
+    typedef typename typeprops<T>::real RT;
+    typedef coeffs1d<RT,ORDER> coeffs;
+    if (dk == 0) {
+      assert (ks >= 0);
+      assert (ks < srckext);
+    } else {
+      assert (ks + coeffs::imin >= 0);
+      assert (ks + coeffs::imax <= srckext);
+    }
+    check_indices2<T,ORDER,di,dj> (is,js, srciext,srcjext);
+#endif
+  }
+  
+  
+  
   template <typename T, int ORDER>
   void
   prolongate_3d_rf2 (T const * restrict const src,
@@ -391,6 +475,16 @@ namespace CarpetLib {
       CCTK_WARN (0, "Internal error: source strides are not twice the destination strides");
     }
     
+    if (any (srcbbox.lower() % srcbbox.stride() != 0)) {
+      CCTK_WARN (0, "Internal error: source bbox is not aligned with vertices");
+    }
+    if (any (dstbbox.lower() % dstbbox.stride() != 0)) {
+      CCTK_WARN (0, "Internal error: destination bbox is not aligned with vertices");
+    }
+    if (any (regbbox.lower() % regbbox.stride() != 0)) {
+      CCTK_WARN (0, "Internal error: prolongation region bbox is not aligned with vertices");
+    }
+    
     // This could be handled, but is likely to point to an error
     // elsewhere
     if (regbbox.empty()) {
@@ -407,16 +501,25 @@ namespace CarpetLib {
     
     
     
-    bvect3 const needoffsetlo = srcoff % reffact2 != 0 or regext > 1;
-    bvect3 const needoffsethi = (srcoff + regext - 1) % reffact2 != 0 or regext > 1;
-    ivect3 const offsetlo = either (needoffsetlo, ORDER/2+1, 0);
-    ivect3 const offsethi = either (needoffsethi, ORDER/2+1, 0);
+    bvect3 const needoffsetlo = srcoff % reffact2 != 0;
+    bvect3 const needoffsethi = (srcoff + regext - 1) % reffact2 != 0;
+    ivect3 const offsetlo =
+      either (needoffsetlo, ORDER/2+1, either (regext > 1, ORDER/2, 0));
+    ivect3 const offsethi =
+      either (needoffsethi, ORDER/2+1, either (regext > 1, ORDER/2, 0));
     
     
     
     if (not regbbox.expand(offsetlo, offsethi).is_contained_in(srcbbox) or
         not regbbox                           .is_contained_in(dstbbox))
     {
+      cerr << "ORDER=" << ORDER << "\n"
+           << "offsetlo=" << offsetlo << "\n"
+           << "offsethi=" << offsethi << "\n"
+           << "regbbox=" << regbbox << "\n"
+           << "dstbbox=" << dstbbox << "\n"
+           << "regbbox.expand=" << regbbox.expand(offsetlo, offsethi) << "\n"
+           << "srcbbox=" << srcbbox << "\n";
       CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
     }
     
@@ -461,8 +564,8 @@ namespace CarpetLib {
     
     
     // size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
-    assert (SRCIND3(1,0,0) - SRCIND3(0,0,0) == 1);
     size_t const srcdi = 1;
+    assert (srcdi == SRCIND3(1,0,0) - SRCIND3(0,0,0));
     size_t const srcdj = SRCIND3(0,1,0) - SRCIND3(0,0,0);
     size_t const srcdk = SRCIND3(0,0,1) - SRCIND3(0,0,0);
     
@@ -500,6 +603,7 @@ namespace CarpetLib {
     
     // kernel
   l8000:
+    check_indices3<T,ORDER,0,0,0> (is,js,ks, srciext, srcjext, srckext);
     dst[DSTIND3(id,jd,kd)] =
       interp3<T,ORDER,0,0,0> (& src[SRCIND3(is,js,ks)], srcdi,srcdj,srcdk);
     i = i+1;
@@ -509,6 +613,7 @@ namespace CarpetLib {
     
     // kernel
   l8001:
+    check_indices3<T,ORDER,1,0,0> (is,js,ks, srciext, srcjext, srckext);
     dst[DSTIND3(id,jd,kd)] =
       interp3<T,ORDER,1,0,0> (& src[SRCIND3(is,js,ks)], srcdi,srcdj,srcdk);
     i = i+1;
@@ -534,6 +639,7 @@ namespace CarpetLib {
     
     // kernel
   l8010:
+    check_indices3<T,ORDER,0,1,0> (is,js,ks, srciext, srcjext, srckext);
     dst[DSTIND3(id,jd,kd)] =
       interp3<T,ORDER,0,1,0> (& src[SRCIND3(is,js,ks)], srcdi,srcdj,srcdk);
     i = i+1;
@@ -543,6 +649,7 @@ namespace CarpetLib {
     
     // kernel
   l8011:
+    check_indices3<T,ORDER,1,1,0> (is,js,ks, srciext, srcjext, srckext);
     dst[DSTIND3(id,jd,kd)] =
       interp3<T,ORDER,1,1,0> (& src[SRCIND3(is,js,ks)], srcdi,srcdj,srcdk);
     i = i+1;
@@ -584,6 +691,7 @@ namespace CarpetLib {
     
     // kernel
   l8100:
+    check_indices3<T,ORDER,0,0,1> (is,js,ks, srciext, srcjext, srckext);
     dst[DSTIND3(id,jd,kd)] =
       interp3<T,ORDER,0,0,1> (& src[SRCIND3(is,js,ks)], srcdi,srcdj,srcdk);
     i = i+1;
@@ -593,6 +701,7 @@ namespace CarpetLib {
     
     // kernel
   l8101:
+    check_indices3<T,ORDER,1,0,1> (is,js,ks, srciext, srcjext, srckext);
     dst[DSTIND3(id,jd,kd)] =
       interp3<T,ORDER,1,0,1> (& src[SRCIND3(is,js,ks)], srcdi,srcdj,srcdk);
     i = i+1;
@@ -618,6 +727,7 @@ namespace CarpetLib {
     
     // kernel
   l8110:
+    check_indices3<T,ORDER,0,1,1> (is,js,ks, srciext, srcjext, srckext);
     dst[DSTIND3(id,jd,kd)] =
       interp3<T,ORDER,0,1,1> (& src[SRCIND3(is,js,ks)], srcdi,srcdj,srcdk);
     i = i+1;
@@ -627,6 +737,7 @@ namespace CarpetLib {
     
     // kernel
   l8111:
+    check_indices3<T,ORDER,1,1,1> (is,js,ks, srciext, srcjext, srckext);
     dst[DSTIND3(id,jd,kd)] =
       interp3<T,ORDER,1,1,1> (& src[SRCIND3(is,js,ks)], srcdi,srcdj,srcdk);
     i = i+1;
