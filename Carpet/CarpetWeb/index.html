@@ -33,14 +33,14 @@
 <a href="humour.html">Other Carpets</a></p>
 
 <p><b>Mailing Lists</b><br />
-<a href="http://lists.carpetcode.org/listinfo/developers/">Subscribe</a><br />
-<a href="http://lists.carpetcode.org/archives/developers/">List&nbsp;Archive</a><br />
-<a href="http://lists.carpetcode.org/listinfo/carpet-cvs/">CVS&nbsp;messages</a><br />
-<a href="http://lists.carpetcode.org/listinfo/carpet-darcs/">darcs/git&nbsp;messages</a></p>
+<a href="http://cactuscode.org/community/mailinglists/">List&nbsp;Management</a><br />
+<a href="http://cactuscode.org/mailman/listinfo/developers">Subscribe</a><br />
+<a href="http://cactuscode.org/pipermail/developers/">List&nbsp;Archive</a><br />
+</p>
 
 <p><b>Development</b><br />
 <a href="get-carpet.html">Download</a><br />
-<a href="http://bugs.carpetcode.org/">Bug&nbsp;Reports</a><br />
+<a href="http://trac.einsteintoolkit.org/">Bug&nbsp;Reports</a><br />
 <a href="contributors.html">Contributors</a></p>
 <!-- These are outdated
 <a href="feature-requests.html">Missing&nbsp;features</a><br />
@@ -121,127 +121,35 @@ Barcelona<br />
 
     <h2>News</h2>
 
-    <table><tr><td valign="top">
-    <p><b>March 30, 2009:</b> We have ported Carpet to
-      the <a href="http://www-03.ibm.com/systems/deepcomputing/bluegene/">BlueGene/P</a>
-      architecture, using
-      the <a href="http://www.alcf.anl.gov/resources/storage.php">Surveyor</a>
-      system at the <a href="http://www.alcf.anl.gov/">ALCF</a>.  The
-      graph to the right shows preliminary performance and scaling
-      results, comparing different compilers and options
-      (<a href="http://gcc.gnu.org/">gcc</a>, <a href="http://www.ibm.com/software/awdtools/xlcpp/">IBM's
-      XL compilers</a> without OpenMP, and IBM's XL compilers
-      with <a href="http://www.openmp.org/">OpenMP</a>, which required
-      reducing the optimisation level).  For these benchmarks, the
-      problem size was reduced to about one eighth of the standard
-      size, using 13<sup>3</sup> grid points per core.  The results
-      show that Carpet scales fine up to the size of the total machine
-      (4k cores), but further work on compiler options is
-      required.</p>
-    </td><td valign="top">
-    <p><a href="scaling-surveyor/results-surveyor.pdf"><img
-          src="scaling-surveyor/results-surveyor.png"
-          width="180" alt="AMR benchmark results" /></a></p>
-    </td></tr></table>
+    <p><b>February 15, 2011:</b>
+    The <a href="get-carpet.html">download instructions</a> for Carpet
+    now also point to <a href="http://code.google.com/">Google
+    Code</a>, where the current development version is availble for
+    download.</p>
 
-    <table><tr><td valign="top">
-    <p><b>March 20, 2009:</b> Carpet can now perform <i>performance
-      experiments</i> by artificially increasing the size or the
-      number of MPI messages exchanged between processes.  This can
-      help determine whether either the communication bandwidth or the
-      communication latency are a bottleneck of a particular
-      simulation.  The figure to the right shows results for the
-      standard <a href="http://www.cct.lsu.edu/~eschnett/McLachlan/">McLachlan</a>
-      AMR benchmark run on
-      the <a href="http://en.wikipedia.org/wiki/Cray_XT4">Cray XT4</a>
-       <a href="http://www.nics.tennessee.edu/computing-resources/kraken">Kraken</a>, using 25<sup>3</sup> grid points per core.  These
-      results indicate that the additional latency from increasing the
-      number of messages has no significant effect, and hence the
-      benchmark is bandwidth limited for this problem size.</p>
-    </td><td valign="top">
-    <p><a href="scaling-whatif/results-whatif.pdf"><img
-          src="scaling-whatif/results-whatif.png"
-          width="180" alt="AMR benchmark results" /></a></p>
-    </td></tr></table>
-    
-    <table><tr><td valign="top">
-    <p><b>March 16, 2009:</b> Erik Schnetter and Steve Brandt
-      published a white
-      paper <a href="http://www.cct.lsu.edu/CCT-TR/CCT-TR-2009-4"><i>Relativistic
-      Astrophysics on the SiCortex Architecture</i></a>.  This paper
-      expands on a
-      <a href="http://www.sicortex.com/news_events/campaigns/lsu_webinar">webinar</a>
-      by Erik and Steve that was hosted
-      by <a href="http://www.sicortex.com/">SiCortex</a>.</p>
-    <p>The graph at the right shows Carpet's parallel scalability
-      using
-      the <a href="http://www.cct.lsu.edu/~eschnett/McLachlan/">McLachlan</a>
-      code with nine levels of AMR for a set of current HPC systems.
-      The results have been rescaled to the architectures' theoretical
-      single-core peak performance.  This makes it possible to compare
-      Carpet's scalability on different architectures.  (It is not
-      possible to compare the systems' absolute performance in this
-      figure.)</p>
-    </td><td valign="top">
-    <p><a href="sicortex/results-scaled.pdf"><img
-          src="sicortex/results-scaled.png"
-          width="180" alt="AMR benchmark results" /></a></p>
-    </td></tr></table>
-    
-    <table><tr><td valign="top">
-    <p><b>November 9, 2008:</b> In the context of
-      the <a href="http://www.cct.lsu.edu/xirel/">XiRel project</a>,
-      we re-designed Carpet's communication layer to avoid many
-      operations that had a cost of O(<var>N</var>), growing linearly
-      with the number of MPI processes.  Such costs are generally not
-      acceptable when running on several thousand cores, and have to
-      be reduced e.g. to O(log <var>N</var>).  Carpet now stores the
-      communication schedule (mostly) in a distributed manner,
-      increasing performance and reducing its memory requirement.
-      These improvements are currently being tested; preliminary
-      scaling results are shown in the figure to the right.</p>
-    </td><td valign="top">
-    <p><a href="scaling-improved/results-best.pdf"><img
-          src="scaling-improved/results-best.png"
-          width="180" alt="AMR benchmark results" /></a></p>
-    </td></tr></table>
+    <p><b>November 23, 2010:</b> We are pleased to announce the second
+    release (code name
+    "<a href="http://en.wikipedia.org/wiki/Subrahmanyan_Chandrasekhar">Chandrasekhar</a>")
+    of the Einstein Toolkit, an open, community developed software
+    infrastructure for relativistic astrophysics. This release is
+    mainly a maintenance release incorporating fixes accumulated since
+    the previous release in June 2010, as well as additional test
+    suites.</p>
 
-    <p><b>June 25, 2008:</b> We are happy to announce
-      the <a href="http://www.cct.lsu.edu/~eschnett/SimFactory"><i>Simulation
-      Factory</i></a>, a tool to help access remote HPC systems,
-      manage source trees, and submit and control simulations.  The
-      Simulation Factory contains a set of abstractions of the tasks
-      which are necessary to set up and successfully finish numerical
-      simulations using the Cactus framework.  These abstractions hide
-      tedious low-level management tasks, they capture "best
-      practices" of experienced users, and they create a log trail
-      ensuring repeatable and well-documented scientific results.
-      Using these abstractions, many types of potentially disastrous
-      user errors are avoided, and different supercomputers can be
-      used in a uniform manner.</p>
+    <p><b>August 30, 2011:</b> Notes from our
+    <a href="http://ccrg.rit.edu/~carpet/wiki/Main_Page">Carpet
+    Developer Workshop</a> at RIT are now available.</p>
 
-    <table><tr><td valign="top">
-      <p><b>March 29, 2008:</b> We have benchmarked McLachlan, a new
-      BSSN-type vacuum Einstein code, using Carpet for unigrid and AMR
-      calculations.  We compare several current large machines:
-        <a href="http://www.nersc.gov/nusers/systems/franklin/">Franklin</a>
-      (NERSC), <a href="http://www.loni.org/systems/system.php?system=QueenBee">Queen
-      Bee</a> (LONI),
-      and <a href="http://www.tacc.utexas.edu/services/userguides/ranger/">Ranger</a>
-      (TACC).
-      <!-- These machines have different architectures and
-      interconnects.--></p>
-    </td><td valign="top">
-        <p><a
-              href="scaling-amr/results-carpet-1lev.pdf"><img
-              src="scaling-amr/results-carpet-1lev.png" width="180"
-              alt="Unigrid benchmark results" /></a></p>
-    </td><td valign="top">
-        <p><a
-              href="scaling-amr/results-carpet-9lev.pdf"><img
-              src="scaling-amr/results-carpet-9lev.png" width="180"
-              alt="AMR benchmark results" /></a></p>
-    </td></tr></table>
+    <p><b>June 17, 2010:</b> We are pleased to announce the first
+    release (code name
+    "<a href="http://en.wikipedia.org/wiki/Bohr-Einstein_debates">Bohr</a>")
+    of the Einstein Toolkit, an open, community developed software
+    infrastructure for relativistic astrophysics. The Einstein Toolkit
+    is a collection of over 130 software components and tools for
+    simulating and analyzing general relativistic astrophysical
+    systems that builds on numerous software efforts in the numerical
+    relativity community including CactusEinstein, the Whisky
+    hydrodynamics code, and the Carpet AMR infrastructure.</p>
 
     <p><a href="olds.html"><b>Old News...</b></a></p>
 
@@ -291,6 +199,7 @@ Barcelona<br />
 
     <h2>Interacting with the developers</h2>
 
+<!-- outdated
     <p>Most discussions about Carpet, i.e. user questions, feature
     requests, and bug reports, are held on the Carpet developers'
     mailing list <a
@@ -300,7 +209,17 @@ Barcelona<br />
     You will also find the mailing list archive there.  We thank <a
     href="http://www.tat.physik.uni-tuebingen.de/~kobras/">Daniel
     Kobras</a> for managing the mailing list server.</p>
+-->
+    <p>Most discussions about Carpet, i.e. user questions, feature
+    requests, and bug reports, are held on the Cactus developers'
+    mailing
+    list <a href="mailto:developers@cactuscode.org">developers@cactuscode.org</a>.
+    You can subscribe and unsubscribe from
+    our <a href="http://cactuscode.org/community/mailinglists/">list
+    management web page</a>. You will also find the mailing list
+    archive there.</p>
 
+<!-- outdated
     <p>We have started to use <a
     href="http://www.bugzilla.org/">Bugzilla</a> to keep track of
     requested features or reported bugs in Carpet.  You can submit or
@@ -309,6 +228,12 @@ Barcelona<br />
     have created an account there.  The old <a
     href="feature-requests.html">list of missing features</a> have not
     yet been moved over to Bugzilla.</p>
+-->
+
+    <p>We use <a href="http://trac.edgewall.org/">TRAC</a> to keep
+    track of requested features or reported bugs in Carpet. You can
+    submit or comment on issues from
+    our <a href="http://trac.einsteintoolkit.org/">TRAC site</a>.</p>
 
     <hr />
 
@@ -493,7 +418,7 @@ Barcelona<br />
 <p>
 <!-- Created: Tue Aug 12 12:12:08 CEST 2003 -->
 <!-- hhmts start -->
-Last modified: Mon Mar 30 2009
+Last modified: Tue Feb 15 2011
 <!-- hhmts end -->
 </p>
 
