@@ -89,6 +89,12 @@ CCTK_STRING out2D_dir "Name of 2D HDF5 slice output directory, overrides IO::out
   ".+" :: "Not empty: directory name"
 } ""
 
+CCTK_STRING out3D_dir "Name of 3D HDF5 slice output directory, overrides IO::out_dir" STEERABLE = ALWAYS
+{
+  "^$" :: "Empty: use IO::out_dir"
+  ".+" :: "Not empty: directory name"
+} ""
+
 STRING out_vars "Variables to output in CarpetIOHDF5 file format" STEERABLE = ALWAYS
 {
   "" :: "List of group or variable names"
@@ -105,6 +111,11 @@ CCTK_STRING out1D_vars "Variables to output in 1D HDF5 file format" STEERABLE = 
 } ""
 
 CCTK_STRING out2D_vars "Variables to output in 2D HDF5 file format" STEERABLE = ALWAYS
+{
+  "" :: "List of group or variable names"
+} ""
+
+CCTK_STRING out3D_vars "Variables to output in 3D HDF5 file format" STEERABLE = ALWAYS
 {
   "" :: "List of group or variable names"
 } ""
@@ -150,6 +161,15 @@ KEYWORD out2D_criterion "Criterion to select 2D HDF5 slice output intervals, ove
   "time"      :: "Output every that much coordinate time"
 } "default"
 
+KEYWORD out3D_criterion "Criterion to select 3D HDF5 slice output intervals, overrides out_every" STEERABLE = ALWAYS
+{
+  "default"   :: "Use IO::out_criterion"
+  "never"     :: "Never output"
+  "iteration" :: "Output every so many iterations"
+  "divisor"   :: "Output if (iteration % out_every) == 0."
+  "time"      :: "Output every that much coordinate time"
+} "default"
+
 INT out_every "How often to do CarpetIOHDF5 output, overrides out_every" STEERABLE = ALWAYS
 {
   1:*  :: "Output every so many time steps"
@@ -172,6 +192,13 @@ CCTK_INT out1D_every "How often to do 1D HDF5 slice output, overrides out_every"
 } -2
 
 CCTK_INT out2D_every "How often to do 2D HDF5 slice output, overrides out_every" STEERABLE = ALWAYS
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use IO::out_every"
+} -2
+
+CCTK_INT out3D_every "How often to do 3D HDF5 slice output, overrides out_every" STEERABLE = ALWAYS
 {
   1:*  :: "Output every so many time steps"
   -1:0 :: "No output"
@@ -203,6 +230,14 @@ REAL out1D_dt "How often to do 1D HDF5 slice output, overrides IO::out_dt" STEER
 } -2
 
 REAL out2D_dt "How often to do 2D HDF5 slice output, overrides IO::out_dt" STEERABLE = ALWAYS
+{
+  (0:* :: "In intervals of that much coordinate time"
+   0   :: "As often as possible"
+  -1   :: "Disable output"
+  -2   :: "Default to IO::out_dt"
+} -2
+
+REAL out3D_dt "How often to do 3D HDF5 slice output, overrides IO::out_dt" STEERABLE = ALWAYS
 {
   (0:* :: "In intervals of that much coordinate time"
    0   :: "As often as possible"
