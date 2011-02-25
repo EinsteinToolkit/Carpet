@@ -19,6 +19,25 @@ uses include header: loopcontrol.h
 
 
 
+CCTK_INT FUNCTION                           \
+    GetBoundarySpecification     \
+        (CCTK_INT IN size,                  \
+         CCTK_INT OUT ARRAY nboundaryzones, \
+         CCTK_INT OUT ARRAY is_internal,    \
+         CCTK_INT OUT ARRAY is_staggered,   \
+         CCTK_INT OUT ARRAY shiftout)
+USES FUNCTION GetBoundarySpecification
+
+CCTK_INT FUNCTION                           \
+    MultiPatch_GetBoundarySpecification     \
+        (CCTK_INT IN map,                   \
+         CCTK_INT IN size,                  \
+         CCTK_INT OUT ARRAY nboundaryzones, \
+         CCTK_INT OUT ARRAY is_internal,    \
+         CCTK_INT OUT ARRAY is_staggered,   \
+         CCTK_INT OUT ARRAY shiftout)
+USES FUNCTION MultiPatch_GetBoundarySpecification 
+
 CCTK_INT FUNCTION                                                \
     SymmetryTableHandleForGrid (CCTK_POINTER_TO_CONST IN cctkGH)
 REQUIRES FUNCTION SymmetryTableHandleForGrid
