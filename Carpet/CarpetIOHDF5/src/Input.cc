@@ -35,6 +35,8 @@ typedef struct {
   int component;
   int rank;
   ivect iorigin;
+  ivect ioffset;
+  ivect ioffsetdenom;
   vector<hsize_t> shape;
 } patch_t;
 
@@ -1058,9 +1060,6 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
   HDF5_ERROR (attr = H5Aopen_name (dataset, "group_timelevel"));
   HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &patch.timelevel));
   HDF5_ERROR (H5Aclose (attr));
-  // in old days (before February 2005)
-  // timelevels were stored as negative numbers
-  patch.timelevel = abs (patch.timelevel);
   HDF5_ERROR (attr = H5Aopen_name (dataset, "iorigin"));
   HDF5_ERROR (dataspace = H5Aget_space (attr));
   assert (H5Sget_simple_extent_npoints (dataspace) == patch.rank);
@@ -1068,6 +1067,25 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
   patch.iorigin = 0;
   HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &patch.iorigin[0]));
   HDF5_ERROR (H5Aclose (attr));
+  patch.ioffset = 0;
+  attr = H5Aopen_name (dataset, "ioffset");
+  // ioffset and ioffsetdenom may not be present; if so, use a default
+  if (attr >= 0) {
+    HDF5_ERROR (dataspace = H5Aget_space (attr));
+    assert (H5Sget_simple_extent_npoints (dataspace) == patch.rank);
+    HDF5_ERROR (H5Sclose (dataspace));
+    HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &patch.ioffset[0]));
+    HDF5_ERROR (H5Aclose (attr));
+  }
+  patch.ioffsetdenom = 1;
+  attr = H5Aopen_name (dataset, "ioffsetdenom");
+  if (attr >= 0) {
+    HDF5_ERROR (dataspace = H5Aget_space (attr));
+    assert (H5Sget_simple_extent_npoints (dataspace) == patch.rank);
+    HDF5_ERROR (H5Sclose (dataspace));
+    HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &patch.ioffsetdenom[0]));
+    HDF5_ERROR (H5Aclose (attr));
+  }
   HDF5_ERROR (H5Dclose (dataset));
 
   // try to obtain the map and component number from the patch's name
@@ -1141,9 +1159,15 @@ static int ReadVar (const cGH* const cctkGH,
   }
   const hid_t datatype = CCTKtoHDF5_Datatype (cctkGH, group.vartype, 0);
 
-  const ivect stride = group.grouptype == CCTK_GF ?
-                       maxspacereflevelfact/spacereflevelfact : 1;
-  ivect lower = patch->iorigin * stride;
+  centering const refcent = vhh.at(0)->refcent;
+  int const reffactdenom =
+    group.grouptype == CCTK_GF ?
+    (refcent == vertex_centered ? 1 : 2) : 1;
+  const ivect stride =
+    group.grouptype == CCTK_GF ?
+    reffactdenom * maxspacereflevelfact / spacereflevelfact : 1;
+  assert (all (stride % patch->ioffsetdenom == 0));
+  ivect lower = patch->iorigin * stride + patch->ioffset * stride / patch->ioffsetdenom;
   ivect upper = lower + (shape - 1) * stride;
 
   // Traverse all local components on all maps

@@ -140,6 +140,8 @@ namespace CarpetIOHDF5
                          const vector<double>& origin,
                          const vector<double>& delta,
                          const vector<int>& iorigin,
+                         const vector<int>& ioffset,
+                         const vector<int>& ioffsetdenom,
                          const vector<int>& bbox,
                          const vector<int>& nghostzones,
                          hid_t& dataset);

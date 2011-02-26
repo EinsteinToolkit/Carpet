@@ -299,6 +299,8 @@ int AddSliceAttributes(const cGH* const cctkGH,
                        const vector<double>& origin,
                        const vector<double>& delta,
                        const vector<int>& iorigin,
+                       const vector<int>& ioffset,
+                       const vector<int>& ioffsetdenom,
                        const vector<int>& bbox,
                        const vector<int>& nghostzones,
                        hid_t& dataset)
@@ -314,6 +316,8 @@ int AddSliceAttributes(const cGH* const cctkGH,
   error_count += WriteAttribute(dataset, "origin", &origin[0], origin.size());
   error_count += WriteAttribute(dataset, "delta", &delta[0], delta.size());
   error_count += WriteAttribute(dataset, "iorigin", &iorigin[0], iorigin.size());
+  error_count += WriteAttribute(dataset, "ioffset", &ioffset[0], ioffset.size());
+  error_count += WriteAttribute(dataset, "ioffsetdenom", &ioffsetdenom[0], ioffsetdenom.size());
   // bbox and nghostzones are only used for grid functions and grid arrays
   if (bbox.size() > 0) {
     error_count += WriteAttribute(dataset, "cctk_bbox", &bbox[0], bbox.size());

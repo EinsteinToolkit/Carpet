@@ -1381,6 +1381,8 @@ namespace CarpetIOHDF5 {
                                       slice_start, NULL, slice_count, NULL));
 
       vector<int> iorigin(rank, 0);
+      vector<int> ioffset(rank, 0);
+      vector<int> ioffsetdenom(rank, 1);
       vector<double> delta(rank, 0), origin(rank, 0);
       vector<int> bbox(2*rank, 0), nghostzones(rank, 0);
       for (int d = 0; d < outdim; d++) {
@@ -1392,7 +1394,10 @@ namespace CarpetIOHDF5 {
           delta[d] = (coord_upper[dirs[d]] - coord_lower[dirs[d]]) /
             (gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]]) * gfext.stride()[dirs[d]];
           origin[d] += (org1[dirs[d]] - gfext.lower()[dirs[d]]) * delta[d];
-          iorigin[d] /= gfext.stride()[dirs[d]];
+          ioffsetdenom[d] = gfext.stride()[dirs[d]];
+          ioffset[d] = (iorigin[d] % gfext.stride()[dirs[d]] + gfext.stride()[dirs[d]]) % gfext.stride()[dirs[d]];
+          assert ((iorigin[d] - ioffset[d]) % gfext.stride()[dirs[d]] == 0);
+          iorigin[d] = (iorigin[d] - ioffset[d]) / gfext.stride()[dirs[d]];
         }
       }
       // store cctk_bbox and cctk_nghostzones (for grid arrays only)
@@ -1432,7 +1437,7 @@ namespace CarpetIOHDF5 {
                              H5P_DEFAULT, gfdatas[n]->storage()));
         error_count +=
           AddSliceAttributes (cctkGH, fullname, rl, ml, m, tl, origin, delta, 
-                              iorigin, bbox, nghostzones, dataset);
+                              iorigin, ioffset, ioffsetdenom, bbox, nghostzones, dataset);
         HDF5_ERROR(H5Dclose (dataset));
         free (fullname);
 
