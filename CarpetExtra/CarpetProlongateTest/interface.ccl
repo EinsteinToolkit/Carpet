@@ -21,4 +21,16 @@ CCTK_REAL difference TYPE=gf TIMELEVELS=3
   u0 du
 } "Error in grid function"
 
+
+
+CCTK_REAL interp_difference TYPE=array DIM=3 SIZE=interp_nx,interp_ny,interp_nz DISTRIB=default
+{
+  interp_x interp_y interp_z
+  interp_u
+  interp_u0 interp_du
+} "Error in interpolated grid array"
+
+
+
 CCTK_REAL errornorm TYPE=scalar "Norm of error in grid function"
+CCTK_REAL interp_errornorm TYPE=scalar "Norm of error in interpolated grid array"

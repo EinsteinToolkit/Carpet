@@ -14,3 +14,59 @@ CCTK_INT power_z "Polynomial power of z coordinate"
 {
   *:* :: ""
 } 0
+
+CCTK_INT power_t "Polynomial power of t coordinate"
+{
+  *:* :: ""
+} 0
+
+
+
+STRING interpolator "The interpolator to use" STEERABLE=always
+{
+  "" :: "must be a registered interpolator"
+} "Lagrange polynomial interpolation"
+
+STRING interpolator_options "Options for the interpolator" STEERABLE=always
+{
+  "" :: "must be a valid options specification"
+} "order=2"
+
+CCTK_INT interp_nx "number of points for interpolated region"
+{
+  0:* :: ""
+} 4
+CCTK_INT interp_ny "number of points for interpolated region"
+{
+  0:* :: ""
+} 4
+CCTK_INT interp_nz "number of points for interpolated region"
+{
+  0:* :: ""
+} 4
+
+CCTK_REAL interp_xmin "xmin for interpolated region"
+{
+  *:* :: ""
+} -0.5
+CCTK_REAL interp_ymin "ymin for interpolated region"
+{
+  *:* :: ""
+} -0.5
+CCTK_REAL interp_zmin "zmin for interpolated region"
+{
+  *:* :: ""
+} -0.5
+
+CCTK_REAL interp_xmax "xmax for interpolated region"
+{
+  *:* :: ""
+} -0.5
+CCTK_REAL interp_ymax "ymax for interpolated region"
+{
+  *:* :: ""
+} -0.5
+CCTK_REAL interp_zmax "zmax for interpolated region"
+{
+  *:* :: ""
+} -0.5
