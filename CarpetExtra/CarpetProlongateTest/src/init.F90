@@ -76,8 +76,8 @@ subroutine CarpetProlongateTest_Init (CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS
   DECLARE_CCTK_PARAMETERS
   
-  print '("CarpetProlongateTest_Init it=",i0," t=",g0.6, " rl=",i0)', &
-       cctk_iteration, cctk_time, nint(log(dble(cctk_levfac(1)))/log(2.0d0))
+!!$  print '("CarpetProlongateTest_Init it=",i0," t=",g0.6, " rl=",i0)', &
+!!$       cctk_iteration, cctk_time, nint(log(dble(cctk_levfac(1)))/log(2.0d0))
   
   ! Add +1 to coordinates so that the domain is not symmetric about
   ! the origin (which may accidendally cancel out some errors)
@@ -109,8 +109,8 @@ subroutine CarpetProlongateTest_InterpInit (CCTK_ARGUMENTS)
   integer   :: i,j,k
   integer   :: ierr
   
-  print '("CarpetProlongateTest_InterpInit it=",i0," t=",g0.6, " rl=",i0)', &
-       cctk_iteration, cctk_time, nint(log(dble(cctk_levfac(1)))/log(2.0d0))
+!!$  print '("CarpetProlongateTest_InterpInit it=",i0," t=",g0.6, " rl=",i0)', &
+!!$       cctk_iteration, cctk_time, nint(log(dble(cctk_levfac(1)))/log(2.0d0))
   
   call CCTK_GrouplbndGN (ierr, cctkGH, 3, lbnd, "CarpetProlongateTest::interp_difference")
   if (ierr/=0) call CCTK_WARN (0, "internal error")
@@ -163,8 +163,8 @@ subroutine CarpetProlongateTest_Interp (CCTK_ARGUMENTS)
   
   integer :: ierr
   
-  print '("CarpetProlongateTest_Interp it=",i0," t=",g0.6, " rl=",i0)', &
-       cctk_iteration, cctk_time, nint(log(dble(cctk_levfac(1)))/log(2.0d0))
+!!$  print '("CarpetProlongateTest_Interp it=",i0," t=",g0.6, " rl=",i0)', &
+!!$       cctk_iteration, cctk_time, nint(log(dble(cctk_levfac(1)))/log(2.0d0))
   
   call CCTK_GrouplshGN (ierr, cctkGH, 3, lsh, "CarpetProlongateTest::interp_difference")
   if (ierr/=0) call CCTK_WARN (0, "internal error")
@@ -223,8 +223,8 @@ subroutine CarpetProlongateTest_InterpDiff (CCTK_ARGUMENTS)
   implicit none
   DECLARE_CCTK_ARGUMENTS
   
-  print '("CarpetProlongateTest_InterpDiff it=",i0," t=",g0.6, " rl=",i0)', &
-       cctk_iteration, cctk_time, nint(log(dble(cctk_levfac(1)))/log(2.0d0))
+!!$  print '("CarpetProlongateTest_InterpDiff it=",i0," t=",g0.6, " rl=",i0)', &
+!!$       cctk_iteration, cctk_time, nint(log(dble(cctk_levfac(1)))/log(2.0d0))
   
   interp_u0 = &
        density_time_scale(cctk_time) * &
