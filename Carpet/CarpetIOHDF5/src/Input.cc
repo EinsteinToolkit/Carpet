@@ -336,7 +336,6 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
 
-
   assert (called_from == CP_RECOVER_PARAMETERS or
           called_from == CP_RECOVER_DATA or
           called_from == FILEREADER_DATA);
@@ -825,11 +824,13 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
                 "checkpoint" : "input", file.filename);
   }
 
+
   // read all the metadata information
   ReadMetadata (fileset, file.file);
 
   // first try to open a chunked file written on this processor
   // browse through all datasets contained in this file
+
   HDF5_ERROR (H5Giterate (file.file, "/", NULL, BrowseDatasets, &file));
   assert (file.patches.size() > 0);
 
@@ -851,6 +852,8 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
 
     num_reflevels = fileset.num_reflevels;
   }
+
+
 
   // allocate and initialise the list of input files for this set
   fileset.files.resize (fileset.nioprocs);
@@ -1031,7 +1034,6 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
   if (object_info.type != H5G_DATASET) {
     return (0);
   }
-
   HDF5_ERROR (dataset = H5Dopen (group, objectname));
   HDF5_ERROR (dataspace = H5Dget_space (dataset));
   patch.rank = H5Sget_simple_extent_ndims (dataspace);
@@ -1068,7 +1070,9 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
   HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &patch.iorigin[0]));
   HDF5_ERROR (H5Aclose (attr));
   patch.ioffset = 0;
-  attr = H5Aopen_name (dataset, "ioffset");
+  H5E_BEGIN_TRY {
+    attr = H5Aopen_name (dataset, "ioffset");
+  } H5E_END_TRY;
   // ioffset and ioffsetdenom may not be present; if so, use a default
   if (attr >= 0) {
     HDF5_ERROR (dataspace = H5Aget_space (attr));
@@ -1078,7 +1082,9 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
     HDF5_ERROR (H5Aclose (attr));
   }
   patch.ioffsetdenom = 1;
-  attr = H5Aopen_name (dataset, "ioffsetdenom");
+  H5E_BEGIN_TRY {
+    attr = H5Aopen_name (dataset, "ioffsetdenom");
+  } H5E_END_TRY;
   if (attr >= 0) {
     HDF5_ERROR (dataspace = H5Aget_space (attr));
     assert (H5Sget_simple_extent_npoints (dataspace) == patch.rank);
