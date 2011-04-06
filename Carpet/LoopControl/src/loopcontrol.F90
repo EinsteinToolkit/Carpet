@@ -29,7 +29,13 @@ module loopcontrol
        implicit none
        type (lc_control_t) :: lc_lc
      end subroutine lc_control_finish
-     
+
+     subroutine lc_get_fortran_type_sizes (sum_of_type_sizes)
+       use loopcontrol_types
+       implicit none
+       integer, intent(out) :: sum_of_type_sizes
+     end subroutine lc_get_fortran_type_sizes
+
   end interface
   
 end module loopcontrol

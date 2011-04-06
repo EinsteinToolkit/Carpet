@@ -1217,6 +1217,32 @@ lc_printstats_terminate (CCTK_ARGUMENTS)
   lc_printstats ();
 }
 
+int
+lc_check_type_sizes (void);
+int
+lc_check_type_sizes (void)
+{
+  /* check that the sizes of LoopControls control structures are the same in
+   * loopcontrol.h and loopcontrol_fortran.h */
+  CCTK_FCALL 
+  void
+  CCTK_FNAME (lc_get_fortran_type_sizes) (int * sum_of_sizes);
+
+  int Fortran_size, C_size;
+
+  CCTK_FNAME (lc_get_fortran_type_sizes) ( & Fortran_size);
+  C_size = (int) ( sizeof(lc_statmap_t) + sizeof(lc_control_t) );
+
+  if (C_size != Fortran_size) {
+    CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Fortran and C control structures (lc_statmap_t and lc_control_t) "
+                "differ in size. If you are not using Fortran or believe "
+                "your Fortran compiler to be strange, then this check can be "
+                "disabled by setting LoopControl::check_type_sizes=no.");
+  }
+
+  return 0;
+}
 
 
 CCTK_FCALL
