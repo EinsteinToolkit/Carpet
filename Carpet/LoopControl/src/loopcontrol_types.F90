@@ -28,6 +28,7 @@ module loopcontrol_types
      integer imin, jmin, kmin
      integer imax, jmax, kmax
      integer ilsh, jlsh, klsh
+     integer di
      
      ! Control settings for thread parallelism (useful for debugging)
      integer iiimin, jjjmin, kkkmin

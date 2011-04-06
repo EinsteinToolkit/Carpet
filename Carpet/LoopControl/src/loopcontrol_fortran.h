@@ -7,7 +7,7 @@
 
 #define LC_DECLARE3(name, i,j,k)                        &&\
 type (lc_statmap_t), save :: name/**/_lm                &&\
-logical, save :: name/**/_initialised = .false.         &&\
+integer, save :: name/**/_initialised = 0               &&\
 type (lc_control_t) :: name/**/_lc                      &&\
 integer :: name/**/_ii, name/**/_jj, name/**/_kk        &&\
 integer :: name/**/_imax, name/**/_jmax, name/**/_kmax  &&\
@@ -22,16 +22,10 @@ name/**/_imax, name/**/_jmax, name/**/_kmax
 
 
 #define LC_LOOP3(name, i,j,k, imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh) &&\
-if (.not. name/**/_initialised) then                                    &&\
-!$omp single                                                            &&\
-   call lc_statmap_init (name/**/_lm, "name")                           &&\
-!$omp end single                                                        &&\
-!$omp single                                                            &&\
-   /* Set this flag only after initialising */                          &&\
-   name/**/_initialised = .true.                                        &&\
-!$omp end single                                                        &&\
+if (name/**/_initialised .eq. 0) then                                   &&\
+   call lc_statmap_init (name/**/_initialised, name/**/_lm, "name")     &&\
 end if                                                                  &&\
-call lc_control_init (name/**/_lc, name/**/_lm, imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh) &&\
+call lc_control_init (name/**/_lc, name/**/_lm, imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh,1) &&\
                                                                         &&\
 /* Coarse loop */                                                       &&\
 do name/**/_kk = name/**/_lc%kkmin + 1, name/**/_lc%kkmax, name/**/_lc%kkstep &&\

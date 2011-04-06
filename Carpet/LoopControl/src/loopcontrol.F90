@@ -4,15 +4,16 @@ module loopcontrol
   
   interface
      
-     subroutine lc_statmap_init (lc_lm, name)
+     subroutine lc_statmap_init (initialised, lc_lm, name)
        use loopcontrol_types
        implicit none
+       integer, intent(out) :: initialised
        type (lc_statmap_t) :: lc_lm
        character(*)        :: name
      end subroutine lc_statmap_init
      
      subroutine lc_control_init (lc_lc, lc_lm, &
-          imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh)
+          imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh,di)
        use loopcontrol_types
        implicit none
        type (lc_control_t) :: lc_lc
@@ -20,6 +21,7 @@ module loopcontrol
        integer, intent(in) :: imin, jmin, kmin
        integer, intent(in) :: imax, jmax, kmax
        integer, intent(in) :: ilsh, jlsh, klsh
+       integer, intent(in) :: di
      end subroutine lc_control_init
      
      subroutine lc_control_finish (lc_lc)
