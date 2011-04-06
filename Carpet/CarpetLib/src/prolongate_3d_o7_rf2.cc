@@ -334,7 +334,7 @@ namespace CarpetLib {
     // kernel
    l8101:
     dst[DSTIND3(id,jd,kd)] =
-      interp2<T> (& src[SRCIND3(is-3,js,ks-3)], srcdi, srcdj);
+      interp2<T> (& src[SRCIND3(is-3,js,ks-3)], srcdi, srcdk);
     i = i+1;
     id = id+1;
     is = is+1;
