@@ -709,8 +709,9 @@ namespace CarpetInterp2 {
       // Find source processor
       int const p = Carpet::vhh.AT(m)->processor(rl,c);
       proc.AT(n) = p;
+      int& nlocs_p = nlocs.AT(p);
 #pragma omp atomic
-      ++ nlocs.AT(p);
+      ++ nlocs_p;
       
       // Output
       if (veryverbose) {
