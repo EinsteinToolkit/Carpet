@@ -445,6 +445,10 @@ CCTK_INT min_points_per_proc "Minimum number of grid points per processor" STEER
   0:* :: "that many"
 } 0
 
+BOOLEAN split_components "Split components onto processes; without this, one needs many components and few processes" STEERABLE=always
+{
+} "yes"
+
 
 
 CCTK_INT num_threads "Number of threads per process" STEERABLE=recover

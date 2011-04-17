@@ -1691,7 +1691,8 @@ namespace Carpet {
     newregs.reserve (newnregs);
     for (int r=0, p=0; r<nregs; p+=mynprocs.AT(r), ++r) {
       if (recompose_verbose) cout << "SRMA superreg[" << r << "] " << superregs.AT(r) << endl;
-      bvect const dims = false;
+      // bvect const dims = false;
+      bvect const dims = not split_components;
       SplitRegionsMaps_Automatic_Recursively
         (dims, p, mynprocs.AT(r), superregs.AT(r), newregs);
     } // for r
