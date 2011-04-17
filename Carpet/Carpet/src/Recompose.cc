@@ -463,14 +463,16 @@ namespace Carpet {
         const rvect origin    = domainspecs.AT(m).exterior_min;
         const rvect delta     = (domainspecs.AT(m).exterior_max - domainspecs.AT(m).exterior_min) / rvect (domainspecs.AT(m).npoints - 1);
         const ibbox & ext     = superregss.AT(rl).AT(c).extent;
-        const ivect & lower   = ext.lower();
-        const ivect & upper   = ext.upper();
+        const ivect & ilower  = ext.lower();
+        const ivect & iupper  = ext.upper();
         const ivect & levfact = spacereffacts.AT(rl);
+        const ibbox & base    = hh.baseextent(0,0);
+        const ivect & bstride = base.stride();
         cout << "   [" << rl << "][" << m << "][" << c << "]"
              << "   exterior: "
-             << origin + delta * rvect(lower) / rvect(maxspacereflevelfact)
+             << origin + delta * rvect(ilower) / rvect(bstride)
              << " : "
-             << origin + delta * rvect(upper) / rvect(maxspacereflevelfact)
+             << origin + delta * rvect(iupper) / rvect(bstride)
              << " : "
              << delta / rvect(levfact) << eol;
       }
@@ -539,15 +541,17 @@ namespace Carpet {
             const rvect origin = domainspecs.AT(m).exterior_min;
             const rvect delta  = (domainspecs.AT(m).exterior_max - domainspecs.AT(m).exterior_min) / rvect (domainspecs.AT(m).npoints - 1);
             const ibbox ext = hh.extent(ml,rl,c);
-            const ivect & lower = ext.lower();
-            const ivect & upper = ext.upper();
+            const ivect & ilower = ext.lower();
+            const ivect & iupper = ext.upper();
             const int convfact = ipow(mgfact, ml);
             const ivect levfact = spacereffacts.AT(rl);
+            const ibbox & base    = hh.baseextent(ml,0);
+            const ivect & bstride = base.stride();
             cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
                  << "   exterior: "
-                 << origin + delta * rvect(lower) / rvect(maxspacereflevelfact)
+                 << origin + delta * rvect(ilower) / rvect(bstride)
                  << " : "
-                 << origin + delta * rvect(upper) / rvect(maxspacereflevelfact)
+                 << origin + delta * rvect(iupper) / rvect(bstride)
                  << " : "
                  << delta * rvect(convfact) / rvect(levfact) << eol;
           }
@@ -564,11 +568,13 @@ namespace Carpet {
             const ivect upper = dd.light_boxes.AT(ml).AT(rl).AT(c).exterior.upper();
             const int convfact = ipow(mgfact, ml);
             const ivect levfact = spacereffacts.AT(rl);
+            const ibbox & base    = hh.baseextent(ml,0);
+            const ivect & bstride = base.stride();
             cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
                  << "   exterior: "
-                 << origin + delta * rvect(lower) / rvect(maxspacereflevelfact)
+                 << origin + delta * rvect(lower) / rvect(bstride)
                  << " : "
-                 << origin + delta * rvect(upper) / rvect(maxspacereflevelfact)
+                 << origin + delta * rvect(upper) / rvect(bstride)
                  << " : "
                  << delta * rvect(convfact) / rvect(levfact) << eol;
           }

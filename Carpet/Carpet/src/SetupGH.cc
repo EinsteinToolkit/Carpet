@@ -655,21 +655,23 @@ namespace Carpet {
             ivect const lower = ext.lower();
             ivect const upper = ext.upper();
             int const convfact = ipow(mgfact, ml);
-            assert (all(lower % maxspacereflevelfact == 0));
-            assert (all(upper % maxspacereflevelfact == 0));
-            assert (all(((upper - lower) / maxspacereflevelfact) % convfact == 0));
+            ibbox const & base    = vhh.AT(m)->baseextent(ml,0);
+            ivect const & bstride = base.stride();
+            assert (all(lower % bstride == 0));
+            assert (all(upper % bstride == 0));
+            assert (all(((upper - lower) / bstride) % convfact == 0));
             cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
                  << "   exterior: "
                  << "proc "
                  << vhh.AT(m)->processor(rl,c)
                  << "   "
-                 << lower / maxspacereflevelfact
+                 << lower / bstride
                  << " : "
-                 << upper / maxspacereflevelfact
+                 << upper / bstride
                  << "   ("
-                 << (upper - lower) / maxspacereflevelfact / convfact + 1
+                 << (upper - lower) / bstride / convfact + 1
                  << ") "
-                 << prod ((upper - lower) / maxspacereflevelfact / convfact + 1)
+                 << prod ((upper - lower) / bstride / convfact + 1)
                  << endl;
           }
         }
