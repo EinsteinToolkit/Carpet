@@ -961,12 +961,12 @@ namespace CarpetInterp {
       // Try finer levels first
       for (rl = maxrl-1; rl >= minrl; --rl) {
 
-        ivect const fact =
-          maxspacereflevelfact / spacereffacts.AT(rl) * ipow(mgfact, ml);
-        ivect const ipos =
-          ivect(floor((pos - lower) / (delta * rvect(fact)) + rhalf)) * fact;
-
         ivect const & istride = hh->baseextent(ml,rl).stride();
+        rvect const level_delta =
+          delta / rvect(spacereffacts.AT(rl)) * rvect(ipow(mgfact, ml));
+        ivect const ipos =
+          ivect(floor((pos - lower) / level_delta + rhalf)) * istride;
+
         if (hh->refcent == cell_centered) {
           assert (all (istride % 2 == 0));
         }
@@ -1028,10 +1028,10 @@ namespace CarpetInterp {
           assert (all (istride % 2 == 0));
         }
 
-        ivect const fact =
-          maxspacereflevelfact / spacereffacts.AT(rl) * ipow(mgfact, ml);
+        rvect const level_delta =
+          delta / rvect(spacereffacts.AT(rl)) * rvect(ipow(mgfact, ml));
         ivect const ipos =
-          ivect(floor((pos - lower) / (delta * rvect(fact)) + rhalf)) * fact;
+          ivect(floor((pos - lower) / level_delta + rhalf)) * istride;
 
         gh::cregs const & regs = hh->superregions.AT(rl);
 
@@ -1107,7 +1107,7 @@ namespace CarpetInterp {
     // grid indices
     vector<rvect> lower (maps);
     vector<rvect> upper (maps);
-    vector<rvect> delta (maps); // spacing on finest possible grid
+    vector<rvect> delta (maps); // spacing on coarse grid
 
     int const grouptype = CCTK_GroupTypeI (coord_group);
     switch (grouptype) {
@@ -1118,7 +1118,6 @@ namespace CarpetInterp {
         GetCoordRange (cctkGH, m, mglevel, dim,
                        & gsh[0],
                        & lower.AT(m)[0], & upper.AT(m)[0], & delta.AT(m)[0]);
-        delta.AT(m) /= maxspacereflevelfact;
       }
       break;
     }
@@ -1602,7 +1601,6 @@ namespace CarpetInterp {
       jvect gsh;
       GetCoordRange (cctkGH, m, mglevel, dim,
                      & gsh[0], & lower[0], & upper[0], & delta[0]);
-      delta /= maxspacereflevelfact;
       break;
     }
       
@@ -1647,11 +1645,11 @@ namespace CarpetInterp {
     const ibbox& baseext = vhh.AT(m)->baseextents.AT(mglevel).AT(rl);
     int const c = vhh.AT(m)->get_component(rl,lc);
     const ibbox& ext = vdd.AT(m)->light_boxes.AT(mglevel).AT(rl).AT(c).exterior;
-    ivect const lsh = gdata::allocated_memory_shape (ext);
+    ivect const lsh = ext.shape() / ext.stride();
     for (int d = 0; d < N_dims; ++d) {
       // if (grouptype == CCTK_GF) {
       //   assert (maxspacereflevelfact[d] % cctkGH->cctk_levfac[d] == 0);
-      //   delta[d] *= maxspacereflevelfact[d] / cctkGH->cctk_levfac[d];
+      //   delta[d] /= cctkGH->cctk_levfac[d];
       //   lower[d] += (delta[d] *
       //                (cctkGH->cctk_lbnd[d] +
       //                 1.0 * cctkGH->cctk_levoff[d] /
@@ -1661,7 +1659,7 @@ namespace CarpetInterp {
       // }
       if (grouptype == CCTK_GF) {
         assert (maxspacereflevelfact[d] % spacereffacts.AT(rl)[d] == 0);
-        delta[d] *= maxspacereflevelfact[d] / spacereffacts.AT(rl)[d];
+        delta[d] /= spacereffacts.AT(rl)[d];
         ivect const lbnd = (ext.lower() - baseext.lower()) / ext.stride();
         ivect const levoff = baseext.lower() - coarseext.lower();
         ivect const levoffdenom = baseext.stride();
