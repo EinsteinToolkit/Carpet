@@ -1165,13 +1165,8 @@ static int ReadVar (const cGH* const cctkGH,
   }
   const hid_t datatype = CCTKtoHDF5_Datatype (cctkGH, group.vartype, 0);
 
-  centering const refcent = vhh.at(0)->refcent;
-  int const reffactdenom =
-    group.grouptype == CCTK_GF ?
-    (refcent == vertex_centered ? 1 : 2) : 1;
   const ivect stride =
-    group.grouptype == CCTK_GF ?
-    reffactdenom * maxspacereflevelfact / spacereflevelfact : 1;
+    arrdata.AT(gindex).AT(patch->map).hh->baseextent(mglevel,0).stride();
   assert (all (stride % patch->ioffsetdenom == 0));
   ivect lower = patch->iorigin * stride + patch->ioffset * stride / patch->ioffsetdenom;
   ivect upper = lower + (shape - 1) * stride;
