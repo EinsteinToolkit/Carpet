@@ -126,10 +126,17 @@ namespace CarpetRegrid2 {
       assert (all (istride % 2 == 0));
     }
     
+#if 1
     ivect const ipos =
       hh.refcent == vertex_centered
       ? ivect (floor (((rpos - origin) * scale                    ) / rvect(istride) + rvect(0.5))) * istride
       : ivect (floor (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride)             )) * istride + istride/2 + bistride/2;
+#else
+    ivect const ipos =
+      hh.refcent == vertex_centered
+      ? ivect (floor (((rpos - origin) * scale                    ) / rvect(istride) + rvect(0.5))) * istride
+      : ivect (floor (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride) + rvect(0.5))) * istride + istride/2 + bistride/2;
+#endif
     
     return ipos;
   }
@@ -149,10 +156,17 @@ namespace CarpetRegrid2 {
       assert (all (istride % 2 == 0));
     }
     
+#if 1
     ivect const ipos =
       hh.refcent == vertex_centered
       ? ivect (ceil (((rpos - origin) * scale                    ) / rvect(istride) - rvect(0.5))) * istride
       : ivect (ceil (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride)             )) * istride - istride/2 + bistride/2;
+#else
+    ivect const ipos =
+      hh.refcent == vertex_centered
+      ? ivect (ceil (((rpos - origin) * scale                    ) / rvect(istride) - rvect(0.5))) * istride
+      : ivect (ceil (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride) - rvect(0.5))) * istride - istride/2 + bistride/2;
+#endif
     
     return ipos;
   }
@@ -200,6 +214,12 @@ namespace CarpetRegrid2 {
     ivect const str = ib.stride();
     assert (all (str == base.stride()));
     
+    if (veryverbose) {
+      cout << "Snapping: coarse is " << cbase << ", current is " << base << "\n";
+    }
+    
+#warning "TODO: shift/unshift boxes, because we are looking at grid points, not cell boundaries"
+
     return ib.expand(reffact-1).contracted_for(cbase).expanded_for(base);
   }
   
@@ -452,6 +472,10 @@ namespace CarpetRegrid2 {
             rvect const rmin = centre._position - centre._radius.at(rl);
             rvect const rmax = centre._position + centre._radius.at(rl);
             
+            if (veryverbose) {
+              cout << "Centre " << n+1 << " refinement level " << rl << ": coordinate region is (" << rmin << ":" << rmax << ")\n";
+            }
+            
             // Convert to an integer bbox
             ivect const istride = hh.baseextents.at(0).at(rl).stride();
             ivect const imin =
@@ -461,8 +485,16 @@ namespace CarpetRegrid2 {
               rpos2ipos1 (rmax, origin, scale, hh, rl)
               + boundary_shiftout * istride;
             
+            if (veryverbose) {
+              cout << "Centre " << n+1 << " refinement level " << rl << ": integer region is (" << imin << ":" << imax << ")\n";
+            }
+            
             ibbox const region =
               snap_ibbox (ibbox (imin, imax, istride), hh, rl);
+            
+            if (veryverbose) {
+              cout << "Centre " << n+1 << " refinement level " << rl << ": snapped integer region is " << region << "\n";
+            }
             
             // Add this region to the list of regions
             if (static_cast <int> (regions.size()) < rl+1) {
