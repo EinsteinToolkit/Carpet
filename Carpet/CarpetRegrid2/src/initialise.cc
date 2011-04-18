@@ -35,25 +35,25 @@ namespace CarpetRegrid2 {
     int lsh[2];
     getvectorindex2 (cctkGH, "CarpetRegrid2::radii", lsh);
     
-#define INIT_CENTRE(N)                                  \
-    do {                                                \
-      if (num_centres >= N) {                           \
-        num_levels[N-1] = num_levels_##N;               \
-        active    [N-1] = active_##N;                   \
-        position_x[N-1] = position_x_##N;               \
-        position_y[N-1] = position_y_##N;               \
-        position_z[N-1] = position_z_##N;               \
-        for (int rl = 0; rl < 30; ++ rl) {              \
-          int const ind = index2 (lsh, rl, N-1);        \
-          radius[ind] = radius_##N[rl];                 \
-          radius_x[ind] = radius_x_##N[rl];             \
-          radius_y[ind] = radius_y_##N[rl];             \
-          radius_z[ind] = radius_z_##N[rl];             \
-        }                                               \
-        old_position_x[N-1] = position_x[N-1];          \
-        old_position_y[N-1] = position_y[N-1];          \
-        old_position_z[N-1] = position_z[N-1];          \
-      }                                                 \
+#define INIT_CENTRE(N)                                          \
+    do {                                                        \
+      if (num_centres >= N) {                                   \
+        num_levels[N-1] = num_levels_##N;                       \
+        active    [N-1] = active_##N;                           \
+        position_x[N-1] = position_x_##N;                       \
+        position_y[N-1] = position_y_##N;                       \
+        position_z[N-1] = position_z_##N;                       \
+        for (int rl = 0; rl < 30; ++ rl) {                      \
+          int const ind = index2 (lsh, rl, N-1);                \
+          radius[ind] = radius_##N[rl];                         \
+          radius_x[ind] = radius_x_##N[rl];                     \
+          radius_y[ind] = radius_y_##N[rl];                     \
+          radius_z[ind] = radius_z_##N[rl];                     \
+        }                                                       \
+        old_position_x[N-1] = position_x[N-1];                  \
+        old_position_y[N-1] = position_y[N-1];                  \
+        old_position_z[N-1] = position_z[N-1];                  \
+      }                                                         \
     } while (0)
     
     INIT_CENTRE( 1);

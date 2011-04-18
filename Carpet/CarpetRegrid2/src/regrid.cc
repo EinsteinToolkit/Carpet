@@ -1140,11 +1140,12 @@ namespace CarpetRegrid2 {
         for (int n = 0; n < num_centres; ++ n) {
           if (active[n]) {
             CCTK_VInfo (CCTK_THORNSTRING,
-                        "Centre %d is at position [%g,%g,%g]",
+                        "Centre %d is at position [%g,%g,%g] with %d levels",
                         n + 1,
                         static_cast <double> (position_x[n]),
                         static_cast <double> (position_y[n]),
-                        static_cast <double> (position_z[n]));
+                        static_cast <double> (position_z[n]),
+                        static_cast <int> (num_levels[n]));
           } else {
             CCTK_VInfo (CCTK_THORNSTRING,
                         "Centre %d is not active", n + 1);
@@ -1321,11 +1322,12 @@ namespace CarpetRegrid2 {
         for (int n = 0; n < num_centres; ++ n) {
           if (active[n]) {
             CCTK_VInfo (CCTK_THORNSTRING,
-                        "Centre %d is at position [%g,%g,%g]",
+                        "Centre %d is at position [%g,%g,%g] with %d levels",
                         n + 1,
                         static_cast <double> (position_x[n]),
                         static_cast <double> (position_y[n]),
-                        static_cast <double> (position_z[n]));
+                        static_cast <double> (position_z[n]),
+                        static_cast <int> (num_levels[n]));
           } else {
             CCTK_VInfo (CCTK_THORNSTRING,
                         "Centre %d is not active", n + 1);
@@ -1342,6 +1344,17 @@ namespace CarpetRegrid2 {
       // Regrid only if the regions have changed sufficiently
       do_recompose = false;
       for (int n = 0; n < num_centres; ++ n) {
+        
+        // When debugging, sneakily add a new level, but skip the
+        // initial regrid, and the regrid before the first time step
+        if (add_levels_automatically and cctk_iteration > 1) {
+          num_levels[n] = min (num_levels[n] + 1, maxreflevels);
+          CCTK_VInfo (CCTK_THORNSTRING,
+                      "Increasing number of levels of centre %d to %d (it=%d)",
+                      n + 1, 
+                      static_cast <int> (num_levels[n]),
+                      cctk_iteration);
+        }
         
         // Regrid if a region became active or inactive
         do_recompose = active[n] != old_active[n];

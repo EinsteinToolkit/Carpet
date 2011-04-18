@@ -73,6 +73,14 @@ CCTK_INT num_centres "Number of refinement centres"
 
 ################################################################################
 
+BOOLEAN add_levels_automatically "Automatically add a new refinement level at each regrid" STEERABLE=always
+{
+} "no"
+
+
+
+################################################################################
+
 CCTK_INT num_levels_1 "Number of refinement levels for this centre"
 {
   1:30 :: ""
