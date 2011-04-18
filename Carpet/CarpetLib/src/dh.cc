@@ -735,8 +735,16 @@ regrid (bool const do_init)
           for (int cc = 0; cc < h.components(orl); ++ cc) {
             full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
             
+#if 0
+            // This does not work for cell centering; if the domain is
+            // 1 cell wide, the contraction disappears it
             ibset const expanded_oactive
               (obox.active.contracted_for (box.interior).expand (reffact));
+#else
+            ibset const expanded_oactive
+              (obox.active.expanded_for (box.interior).expand
+               (h.refcent == vertex_centered ? reffact : reffact-1));
+#endif
             ibset const ovlp = needrecv & expanded_oactive;
             
             for (ibset::const_iterator
@@ -762,6 +770,10 @@ regrid (bool const do_init)
           } // for cc
           
           // All points must have been received
+          if (not (needrecv.empty())) {
+            cerr << "box.active=" << box.active << "\n"
+                 << "needrecv=" << needrecv << "\n";
+          }
           ASSERT_c (needrecv.empty(),
                     "Refinement prolongation: All points must have been received");
           
@@ -880,8 +892,16 @@ regrid (bool const do_init)
           for (int cc = 0; cc < h.components(orl); ++ cc) {
             full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
             
+#if 0
+            // This does not work for cell centering; if the domain is
+            // 1 cell wide, the contraction disappears it
             ibset const expanded_oactive
               (obox.active.contracted_for (box.interior).expand (reffact));
+#else
+            ibset const expanded_oactive
+              (obox.active.expanded_for (box.interior).expand
+               (h.refcent == vertex_centered ? reffact : reffact-1));
+#endif
             ibset const ovlp = needrecv & expanded_oactive;
             
             for (ibset::const_iterator
