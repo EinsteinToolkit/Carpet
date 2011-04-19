@@ -1430,11 +1430,15 @@ namespace CarpetIOASCII {
               os << "\t" << coord_time << "\t";
               for (int d=0; d<dim; ++d) {
                 if (d > 0) os << " ";
-                CCTK_REAL const dx = ((coord_upper[d] - coord_lower[d])
-                                      / (gfext.upper()[d] - gfext.lower()[d]));
-                os << (nicelooking
-                       (coord_lower[d] + (pos[d] - gfext.lower()[d]) * dx,
-                        dx * 1.0e-8));
+                if (gfext.upper()[d] - gfext.lower()[d] == 0) {
+                  os << coord_lower[d];
+                } else {
+                  CCTK_REAL const dx = ((coord_upper[d] - coord_lower[d])
+                                        / (gfext.upper()[d] - gfext.lower()[d]));
+                  os << (nicelooking
+                         (coord_lower[d] + (pos[d] - gfext.lower()[d]) * dx,
+                          dx * 1.0e-8));
+                }
               }
               os << "\t";
               for (size_t n=0; n<gfdatas.size(); ++n) {
