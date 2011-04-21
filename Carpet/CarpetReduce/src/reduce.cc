@@ -613,6 +613,10 @@ namespace CarpetReduce {
       imin[d] =          (bbox[2*d  ] ? 0 : nghostzones[d]);
       imax[d] = lsh[d] - (bbox[2*d+1] ? 0 : nghostzones[d]);
     }
+
+#if ! (defined(__PGI) && (__PGIC__>9))
+    // Regular case
+
 #pragma omp parallel
     {
       T myoutval_local;
@@ -659,6 +663,72 @@ namespace CarpetReduce {
         OP::combine (myoutval, mycnt, myoutval_local, mycnt_local);
       }
     } // end omp parallel
+
+#else
+    // Special case for PGI 10 and later
+
+    int const num_threads = dist::num_threads();
+    T myoutval_locals[num_threads];
+    T mycnt_locals   [num_threads];
+    // This is probably not worthwhile:
+    // #pragma omp parallel
+    for (int n=0; n<num_threads; ++n) {
+      T& myoutval_local = myoutval_locals[n];
+      T& mycnt_local    = mycnt_locals   [n];
+      OP::initialise (myoutval_local, mycnt_local);
+    }
+#if CARPET_DIM == 3
+#pragma omp parallel for
+    for (int k=imin[2]; k<imax[2]; ++k) {
+      int const n = omp_get_thread_num();
+      T& myoutval_local = myoutval_locals[n];
+      T& mycnt_local    = mycnt_locals   [n];
+      for (int j=imin[1]; j<imax[1]; ++j) {
+        for (int i=imin[0]; i<imax[0]; ++i) {
+          const int index = i + lsh[0] * (j + lsh[1] * k);
+          CCTK_REAL const w = weight ? weight[index] * levfac : levfac;
+          T myinval = T(0);
+          for (size_t tl=0; tl<inarrays.size(); ++tl) {
+            myinval +=
+              static_cast<const T*>(inarrays.AT(tl))[index] * tfacs.AT(tl);
+          }
+          OP::reduce (myoutval_local, mycnt_local, myinval, w);
+        }
+      }
+    }
+#elif CARPET_DIM == 4
+#pragma omp parallel for
+    for (int l=imin[3]; l<imax[3]; ++l) {
+      int const n = omp_get_thread_num();
+      T& myoutval_local = myoutval_locals[n];
+      T& mycnt_local    = mycnt_locals   [n];
+      for (int k=imin[2]; k<imax[2]; ++k) {
+        for (int j=imin[1]; j<imax[1]; ++j) {
+          for (int i=imin[0]; i<imax[0]; ++i) {
+            const int index = i + lsh[0] * (j + lsh[1] * (k + lsh[2] * l));
+            CCTK_REAL const w = weight ? weight[index] * levfac : levfac;
+            T myinval = T(0);
+            for (size_t tl=0; tl<inarrays.size(); ++tl) {
+              myinval +=
+                static_cast<const T*>(inarrays.AT(tl))[index] * tfacs.AT(tl);
+            }
+            OP::reduce (myoutval_local, mycnt_local, myinval, w);
+          }
+        }
+      }
+    }
+#else
+#  error "Value of CARPET_DIM is not supported"
+#endif
+    // This loop is not parallel
+    for (int n=0; n<num_threads; ++n) {
+      T const& myoutval_local = myoutval_locals[n];
+      T const& mycnt_local    = mycnt_locals   [n];
+      OP::combine (myoutval, mycnt, myoutval_local, mycnt_local);
+    }
+
+#endif
+
   }
   
   template<class T,class OP>
