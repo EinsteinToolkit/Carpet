@@ -1167,7 +1167,7 @@ static int ReadVar (const cGH* const cctkGH,
 
   const ivect stride =
     group.grouptype == CCTK_GF ?
-    arrdata.AT(gindex).AT(patch->map).hh->baseextent(mglevel,0).stride() : 1;
+    arrdata.AT(gindex).AT(patch->map).hh->baseextent(mglevel,reflevel).stride() : 1;
   assert (all (stride % patch->ioffsetdenom == 0));
   ivect lower = patch->iorigin * stride + patch->ioffset * stride / patch->ioffsetdenom;
   ivect upper = lower + (shape - 1) * stride;
