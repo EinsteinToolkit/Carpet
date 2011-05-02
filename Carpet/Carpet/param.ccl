@@ -393,6 +393,7 @@ KEYWORD processor_topology "How to determine the processor topology" STEERABLE=r
   "along-z"   :: "Split the region along the z direction only"
   "along-dir" :: "Split the region along one direction only"
   "automatic" :: "Choose the topology automatically"
+  "recursive" :: "Choose the topology automatically, using a different algorithm that may lead to better load balancing"
 } "automatic"
 
 CCTK_INT processor_topology_3d_x "Number of processors in x-direction" STEERABLE=recover
