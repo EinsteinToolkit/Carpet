@@ -691,72 +691,116 @@ transfer_prolongate (data const * const src,
   case op_ENO: {
     static Timer timer ("prolongate_ENO");
     timer.start ();
-    switch (order_space) {
-    case 1:
-      CCTK_WARN (CCTK_WARN_ABORT,
-                 "There is no stencil for op=\"ENO\" with order_space=1");
+    // enum centering { vertex_centered, cell_centered };
+    switch (cent) {
+      case vertex_centered: {
+	 switch (order_space) {
+	    case 1:
+	    CCTK_WARN (CCTK_WARN_ABORT,
+			"There is no stencil for op=\"ENO\" with order_space=1");
+	    break;
+	    case 3:
+	    call_operator<T> (& prolongate_3d_eno,
+			      static_cast <T const *> (src->storage()),
+			      src->shape(),
+			      static_cast <T *> (this->storage()),
+			      this->shape(),
+			      src->extent(),
+			      this->extent(),
+			      box);
+	    break;
+	    case 5:
+	    // There is only one parameter for the prolongation order, but
+	    // Whisky may want 5th order for spacetime and 3rd order for
+	    // hydro, so we cheat here.
+	    call_operator<T> (& prolongate_3d_eno,
+			      static_cast <T const *> (src->storage()),
+			      src->shape(),
+			      static_cast <T *> (this->storage()),
+			      this->shape(),
+			      src->extent(),
+			      this->extent(),
+			      box);
+	    break;
+	    default:
+	    CCTK_WARN (CCTK_WARN_ABORT,
+			"There is no stencil for op=\"ENO\" with order_space!=3");
+	    break;
+	 }
+      }
       break;
-    case 3:
-      call_operator<T> (& prolongate_3d_eno,
-                        static_cast <T const *> (src->storage()),
-                        src->shape(),
-                        static_cast <T *> (this->storage()),
-                        this->shape(),
-                        src->extent(),
-                        this->extent(),
-                        box);
-      break;
-    case 5:
-      // There is only one parameter for the prolongation order, but
-      // Whisky may want 5th order for spacetime and 3rd order for
-      // hydro, so we cheat here.
-      call_operator<T> (& prolongate_3d_eno,
-                        static_cast <T const *> (src->storage()),
-                        src->shape(),
-                        static_cast <T *> (this->storage()),
-                        this->shape(),
-                        src->extent(),
-                        this->extent(),
-                        box);
-      break;
-    default:
-      CCTK_WARN (CCTK_WARN_ABORT,
-                 "There is no stencil for op=\"ENO\" with order_space!=3");
+      case cell_centered: {
+	 static
+	 void (* the_operators[]) (T const * restrict const src,
+				    ivect3 const & restrict srcext,
+				    T * restrict const dst,
+				    ivect3 const & restrict dstext,
+				    ibbox3 const & restrict srcbbox,
+				    ibbox3 const & restrict dstbbox,
+				    ibbox3 const & restrict regbbox) =
+	 {
+	    & prolongate_3d_cc_eno_rf2<T,2>,
+	    & prolongate_3d_cc_eno_rf2<T,3>
+	 };
+	 if (order_space < 2 or order_space > 3) {
+	 CCTK_WARN (CCTK_WARN_ABORT,
+		     "There is no cell-centred stencil for op=\"ENO\" with order_space not in {2,3}");
+	 }
+	 call_operator<T> (the_operators[order_space-2],
+			   static_cast <T const *> (src->storage()),
+			   src->shape(),
+			   static_cast <T *> (this->storage()),
+			   this->shape(),
+			   src->extent(),
+			   this->extent(),
+			   box);
+      }
       break;
     }
     timer.stop (0);
-    break;
   }
-    
+  break;
   case op_WENO: {
     static Timer timer ("prolongate_WENO");
     timer.start ();
-    switch (order_space) {
-    case 1:
-      CCTK_WARN (CCTK_WARN_ABORT,
-                 "There is no stencil for op=\"WENO\" with order_space=1");
+    // enum centering { vertex_centered, cell_centered };
+    switch (cent) {
+      case vertex_centered: {
+	 switch (order_space) {
+	 case 1:
+	    CCTK_WARN (CCTK_WARN_ABORT,
+		     "There is no stencil for op=\"WENO\" with order_space=1");
+	    break;
+	 case 3:
+	    CCTK_WARN (CCTK_WARN_ABORT,
+		     "There is no stencil for op=\"WENO\" with order_space=3");
+	    break;
+	 case 5:
+	    call_operator<T> (& prolongate_3d_eno,
+			      static_cast <T const *> (src->storage()),
+			      src->shape(),
+			      static_cast <T *> (this->storage()),
+			      this->shape(),
+			      src->extent(),
+			      this->extent(),
+			      box);
+	    break;
+	 default:
+	    CCTK_WARN (CCTK_WARN_ABORT,
+		     "There is no stencil for op=\"WENO\" with order_space!=5");
+	    break;
+	 }
+	 
+      }
       break;
-    case 3:
-      CCTK_WARN (CCTK_WARN_ABORT,
-                 "There is no stencil for op=\"WENO\" with order_space=3");
-      break;
-    case 5:
-      call_operator<T> (& prolongate_3d_eno,
-                        static_cast <T const *> (src->storage()),
-                        src->shape(),
-                        static_cast <T *> (this->storage()),
-                        this->shape(),
-                        src->extent(),
-                        this->extent(),
-                        box);
-      break;
-    default:
-      CCTK_WARN (CCTK_WARN_ABORT,
-                 "There is no stencil for op=\"WENO\" with order_space!=5");
+      case cell_centered: {
+	 CCTK_WARN (CCTK_WARN_ABORT,
+                 "There are currently no cell-centred stencils for op=\"WENO\"");
+       break;
+      }
       break;
     }
     timer.stop (0);
-    break;
   }
     
   case op_Lagrange_monotone: {
