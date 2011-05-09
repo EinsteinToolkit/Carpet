@@ -178,7 +178,6 @@ namespace CarpetLib {
   
 #define CARPET_NO_COMPLEX
 #include "typecase.hh"
-#undef CARPET_NO_COMPLEX
 #undef TYPECASE
   
   } // namespace coeffs_3d_cc_rf2

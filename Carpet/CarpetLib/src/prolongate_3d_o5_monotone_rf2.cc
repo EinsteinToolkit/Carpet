@@ -831,8 +831,8 @@ namespace CarpetLib {
                                  ibbox3 const & restrict dstbbox,       \
                                  ibbox3 const & restrict regbbox);
 #define CARPET_NO_COMPLEX
+#define CARPET_NO_INT
 #include "typecase.hh"
-#undef CARPET_NO_COMPLEX
 #undef TYPECASE
   
   template <>

@@ -172,7 +172,6 @@ namespace CarpetLib {
   
 #define CARPET_NO_COMPLEX
 #include "typecase.hh"
-#undef CARPET_NO_COMPLEX
 #undef TYPECASE
     
     
@@ -190,8 +189,8 @@ namespace CarpetLib {
       coeffs1d<RT,9>::test();                   \
       coeffs1d<RT,11>::test();
 #define CARPET_NO_COMPLEX
+#define CARPET_NO_INT
 #include "typecase.hh"
-#undef CARPET_NO_COMPLEX
 #undef TYPECASE
     }
     
