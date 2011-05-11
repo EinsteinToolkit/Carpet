@@ -19,6 +19,9 @@
 #else
 #  include "nompi.h"
 #endif
+#ifdef _OPENMP
+#  include <omp.h>
+#endif
 
 #include <defs.hh>
 #include <dist.hh>
