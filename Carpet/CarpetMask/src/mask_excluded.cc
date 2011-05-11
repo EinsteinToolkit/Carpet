@@ -26,13 +26,13 @@ namespace CarpetMask {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    CCTK_REAL * const weight =
-      static_cast <CCTK_REAL *>
-      (CCTK_VarDataPtr (cctkGH, 0, "CarpetReduce::weight"));
+    CCTK_INT * const iweight =
+      static_cast <CCTK_INT *>
+      (CCTK_VarDataPtr (cctkGH, 0, "CarpetReduce::iweight"));
     
-    if (not weight) {
+    if (not iweight) {
       CCTK_WARN (CCTK_WARN_ABORT,
-                 "CarpetReduce is not active, or CarpetReduce::mask does not have storage");
+                 "CarpetReduce is not active, or CarpetReduce::iweight does not have storage");
     }
     
     for (int n = 0; n < 10; ++ n) {
@@ -60,7 +60,7 @@ namespace CarpetMask {
               dx2 + dy2 + dz2 >= r2 :
               dx2 + dy2 + dz2 <= r2)
           {
-            weight[ind] = 0.0;
+            iweight[ind] = 0;
           }
           
         } CCTK_ENDLOOP3_ALL(CarpetExcludedSetup);

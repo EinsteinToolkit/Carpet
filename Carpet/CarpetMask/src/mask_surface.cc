@@ -67,13 +67,13 @@ namespace CarpetMask {
       last_output.resize (num_excluded, -1);
     }
     
-    CCTK_REAL * const weight =
-      static_cast <CCTK_REAL *>
-      (CCTK_VarDataPtr (cctkGH, 0, "CarpetReduce::weight"));
+    CCTK_INT * const iweight =
+      static_cast <CCTK_INT *>
+      (CCTK_VarDataPtr (cctkGH, 0, "CarpetReduce::iweight"));
     
-    if (not weight) {
+    if (not iweight) {
       CCTK_WARN (CCTK_WARN_ABORT,
-                 "CarpetReduce is not active, or CarpetReduce::mask does not have storage");
+                 "CarpetReduce is not active, or CarpetReduce::iweight does not have storage");
     }
     
     for (int n = 0; n < num_excluded; ++ n) {
@@ -127,7 +127,7 @@ namespace CarpetMask {
               sqrt (pow (dx, 2) + pow (dy, 2) + pow (dz, 2));
             if (rho < 1.0e-12) {
               // Always excise the surface origin
-              weight[ind] = 0.0;
+              iweight[ind] = 0;
             } else {
               CCTK_REAL theta =
                 acos (min (CCTK_REAL (+1.0),
@@ -171,7 +171,7 @@ namespace CarpetMask {
               CCTK_REAL const dr =
                 sf_radius[a + maxntheta * (b + maxnphi * sn)];
               if (rho <= dr * shrink_factor) {
-                weight[ind] = 0.0;
+                iweight[ind] = 0;
               }
             }
           } CCTK_ENDLOOP3_ALL(CarpetSurfaceSetup);
