@@ -682,6 +682,21 @@ lc_control_init (lc_control_t * restrict const lc,
   lc->time_setup_begin = omp_get_wtime();
   
   /* Check arguments */
+  if (! (imin >= 0 && imax <= ilsh && ilsh >= 0) ||
+      ! (jmin >= 0 && jmax <= jlsh && jlsh >= 0) ||
+      ! (kmin >= 0 && kmax <= klsh && klsh >= 0))
+  {
+    CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Illegal loop control arguments:\n"
+                "name=\"%s\"\n"
+                "imin=%d imax=%d ilsh=%d\n"
+                "jmin=%d jmax=%d jlsh=%d\n"
+                "kmin=%d kmax=%d klsh=%d\n",
+                lm->name,
+                imin, imax, ilsh,
+                jmin, jmax, jlsh,
+                kmin, kmax, klsh);
+  }
   assert (imin >= 0 && imax <= ilsh && ilsh >= 0);
   assert (jmin >= 0 && jmax <= jlsh && jlsh >= 0);
   assert (kmin >= 0 && kmax <= klsh && klsh >= 0);
