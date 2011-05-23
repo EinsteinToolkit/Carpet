@@ -27,6 +27,26 @@ list<dh*> dh::alldh;
 
 
 
+// Indexing over neighbours
+
+static int num_nbs ()
+{
+  return ipow(3,dim);
+}
+
+static ivect ind2nb (int ind)
+{
+  ivect nb;
+  for (int d=0; d<dim; ++d) {
+    nb[d] = ind % 3 - 1;
+    ind /= 3;
+  }
+  assert (ind == 0);
+  return nb;
+}
+
+
+
 vect<vect<dh::srpvect dh::fast_dboxes::*,2>,dim>
 dh::fast_dboxes::
 fast_ref_refl_sendrecv;
@@ -556,11 +576,13 @@ regrid (bool const do_init)
         // Stepped buffer zones:
         local_box.buffers = box.buffers;
         
+#if 0
         local_box.buffers_stepped.resize (num_substeps);
         for (int substep = 0; substep < num_substeps; ++ substep) {
           local_box.buffers_stepped.AT(substep) =
             box.owned & allbuffers_stepped.AT(substep);
         }
+#endif
         
         local_box.active = box.active;
       } // for lc
@@ -1263,37 +1285,173 @@ regrid (bool const do_init)
       
       
       
-      // Mask:
+      // Reduction mask:
+      
       static Carpet::Timer timer_mask ("CarpetLib::dh::regrid::mask");
       timer_mask.start();
       
+      for (int lc=0; lc<h.local_components(rl); ++lc) {
+        local_dboxes& local_box = local_level.AT(lc);
+        local_box.prolongation_boundary.clear();
+        local_box.restriction_boundary .clear();
+        local_box.prolongation_boundary.resize(num_nbs());
+        local_box.restriction_boundary .resize(num_nbs());
+      }
+      
       if (rl > 0) {
         int const orl = rl - 1;
+        
+        // Set the weight in the interior of the notactive and the
+        // allactive regions to zero, and set the weight on the
+        // boundary of the notactive and allactive regions to 1/2.
+        //
+        // For the prolongation region, the "boundary" is the first
+        // layer outside of the region, and the "region" consists of
+        // the inactive points. This corresponds to the outermost
+        // layer of active grid points.
+        //
+        // For the restricted region, the "boundary" is the outermost
+        // layer of grid points if this layer is aligned with the next
+        // coarser (i.e. the current) grid; otherwise, the boundary is
+        // empty. The "region" consists of the active points.
+        
+        // Note: We calculate the prolongation information for the
+        // current level, and the restriction information for the next
+        // coarser level. We do it this way because both calculations
+        // start from the current level's set of active grid points.
+        
         full_cboxes const& full_olevel = full_boxes.AT(ml).AT(orl);
         // Local boxes are not communicated or post-processed, and
         // thus can be modified even for coarser levels
         local_cboxes& local_olevel = local_boxes.AT(ml).AT(orl);
         
-        for (int lc = 0; lc < h.local_components(orl); ++ lc) {
-          int const c = h.get_component(orl, lc);
-          full_dboxes const& full_obox = full_olevel.AT(c);
-          // Local boxes are not communicated or post-processed, and
-          // thus can be modified even for coarser levels
-          local_dboxes& local_obox = local_olevel.AT(lc);
+        if (verbose) {
+          ostringstream buf;
+          buf << "Setting prolongation region " << notactive << " on level " << rl;
+          CCTK_INFO (buf.str().c_str());
+        }
+        if (verbose) {
+          ostringstream buf;
+          buf << "Setting restriction region " << allactive << " on level " << orl;
+          CCTK_INFO (buf.str().c_str());
+        }
+        
+        // ibset test_boxes;
+        // ibset test_cfboxes;
+        
+        for (int neighbour=0; neighbour<num_nbs(); ++neighbour) {
+          ivect const shift = ind2nb(neighbour);
           
-          // Set mask information for next coarser level
-          ibbox const oext_fine =
-            full_obox.exterior.expanded_for(domain_exterior);
-          local_obox.fine_active = allactive & oext_fine;
-        } // for lc
-      }   // if not coarsest level
+          // In this loop, shift [1,1,1] denotes a convex corner of
+          // the region which should be masked out, i.e. a region
+          // where only a small part (1/8) of the region should be
+          // masked out. Concave edges are treated implicitly
+          // (sequentially), i.e. larger chunks are cut out multiple
+          // times: a concave xy edge counts as both an x face and a y
+          // face.
+          
+          // Prolongation boundary of this level: start with inactive
+          // (prolongated from the next coarser level) points
+          ibset boxes  = notactive;
+          // Restriction boundary of the next coarser level: start
+          // with this level's active (restricted to the next coarser)
+          // points
+          ibset fboxes = allactive;
+          
+          switch (h.refcent) {
+          case vertex_centered:
+            for (int d=0; d<dim; ++d) {
+              ivect const dir = ivect::dir(d);
+              fboxes = fboxes.shift(-dir) & fboxes & fboxes.shift(+dir);
+            }
+            for (int d=0; d<dim; ++d) {
+              // Calculate the boundary in direction d
+              ivect const dir = ivect::dir(d);
+              switch (shift[d]) {
+              case -1: {
+                // left boundary
+                boxes  = boxes .shift(-dir) - boxes;
+                fboxes = fboxes.shift(-dir) - fboxes;
+                break;
+              }
+              case 0: {
+                // interior
+                // do nothing
+                break;
+              }
+              case +1: {
+                // right boundary
+                boxes  = boxes .shift(+dir) - boxes;
+                fboxes = fboxes.shift(+dir) - fboxes;
+                break;
+              }
+              default:
+                assert (0);
+              }
+            }
+            break;
+          case cell_centered:
+            // For cell-centred grids we assume that all cell
+            // boundaries are aligned. This may not actually be the
+            // case.
+            // TODO: assert this.
+            if (all(shift == 0)) {
+              // do nothing
+            } else {
+              boxes  = ibset();
+              fboxes = ibset();
+            }
+            break;
+          default:
+            assert (0);
+          } // switch centering
+          
+          ibbox const& odomext = h.baseextent(ml, orl);
+          ibset const cfboxes = fboxes.contracted_for(odomext);
+          // test_boxes   |= boxes;
+          // test_cfboxes |= cfboxes;
+          
+          if (verbose) {
+            ostringstream buf;
+            buf << "Setting boundary " << shift << ": prolongation region " << boxes;
+            CCTK_INFO (buf.str().c_str());
+          }
+          if (verbose) {
+            ostringstream buf;
+            buf << "Setting boundary " << shift << ": restriction region " << fboxes;
+            CCTK_INFO (buf.str().c_str());
+          }
+          
+          // For the current level, the light boxes do not (yet) exist
+          // here, so we use the full boxes
+          for (int lc=0; lc<h.local_components(rl); ++lc) {
+            int const c = h.get_component(rl, lc);
+            full_dboxes const& full_box = full_level.AT(c);
+            local_dboxes& local_box = local_level.AT(lc);
+            local_box.prolongation_boundary.AT(neighbour) =
+              boxes & full_box.exterior;
+          }
+          // For the next coarser level, the full boxes do not exist
+          // (any more), so we use the light boxes
+          for (int olc=0; olc<h.local_components(orl); ++olc) {
+            int const oc = h.get_component(orl, olc);
+            full_dboxes const& full_obox = full_olevel.AT(oc);
+            local_dboxes& local_obox = local_olevel.AT(olc);
+            local_obox.restriction_boundary.AT(neighbour) =
+              cfboxes & full_obox.exterior;
+          }
+          
+        } // for neighbour
+        
+      } // if not coarsest level
       
       timer_mask.stop();
       
       
       
-      // Mask for unused points on coarser level (which do not influence the future
-      // evolution provided regridding is done at the right times):
+      // Mask for unused points on coarser level (which do not
+      // influence the future evolution provided regridding is done at
+      // the right times):
       static Carpet::Timer timer_overwrittenmask ("CarpetLib::dh::regrid::unusedpoints_mask");
       timer_overwrittenmask.start();
       
@@ -2130,10 +2288,16 @@ memory ()
 {
   return
     memoryof (buffers) +
-    memoryof (buffers_stepped) +
     memoryof (active) +
-    memoryof (restricted_region) +
+#if 0
+    memoryof (buffers_stepped) +
+#endif
+#if 0
     memoryof (fine_active) +
+#endif
+    memoryof (prolongation_boundary) +
+    memoryof (restriction_boundary) +
+    memoryof (restricted_region) +
     memoryof (unused_region) +
     memoryof (coarse_boundary) +
     memoryof (fine_boundary);
@@ -2229,17 +2393,27 @@ input (istream & is)
     consume (is, "buffers:");
     is >> buffers;
     skipws (is);
-    consume (is, "buffers_stepped:");
-    is >> buffers_stepped;
-    skipws (is);
     consume (is, "active:");
     is >> active;
+#if 0
     skipws (is);
-    consume (is, "restricted_region:");
-    is >> restricted_region;
+    consume (is, "buffers_stepped:");
+    is >> buffers_stepped;
+#endif
+#if 0
     skipws (is);
     consume (is, "fine_active:");
     is >> fine_active;
+#endif
+    skipws (is);
+    consume (is, "prolongation_boundary:");
+    is >> prolongation_boundary;
+    skipws (is);
+    consume (is, "restriction_boundary:");
+    is >> restriction_boundary;
+    skipws (is);
+    consume (is, "restricted_region:");
+    is >> restricted_region;
     skipws (is);
     consume (is, "unused_region:");
     is >> unused_region;
@@ -2404,10 +2578,16 @@ output (ostream & os)
   // Regions:
   os << "dh::local_dboxes:{" << eol
      << "   buffers: " << buffers << eol
-     << "   buffers_stepped: " << buffers_stepped << eol
      << "   active: " << active << eol
-     << "   restricted_region: " << restricted_region << eol
+#if 0
+     << "   buffers_stepped: " << buffers_stepped << eol
+#endif
+#if 0
      << "   fine_active: " << fine_active << eol
+#endif
+     << "   prolongation_boundary: " << prolongation_boundary << eol
+     << "   restriction_boundary: " << restriction_boundary << eol
+     << "   restricted_region: " << restricted_region << eol
      << "   unused_region: " << unused_region << eol
      << "   coarse_boundary: " << coarse_boundary << eol
      << "   fine_boundary: " << fine_boundary << eol

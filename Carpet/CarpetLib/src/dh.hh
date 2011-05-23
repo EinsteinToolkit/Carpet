@@ -62,13 +62,21 @@ public:
     // Information about the processor-local region:
     
     ibset buffers;                 // buffer zones
-    vector<ibset> buffers_stepped; // buffer zones [substep]
     ibset active;                  // owned minus buffers
+#if 0
+    vector<ibset> buffers_stepped; // buffer zones [substep]
+#endif
     
     // Mask
-    ibset restricted_region;                // filled by restriction
+#if 0
     ibset fine_active;
-    ibset unused_region;                    // not used (overwritten later)
+#endif
+    vector<ibset> prolongation_boundary;
+    vector<ibset> restriction_boundary;
+    
+    ibset restricted_region;    // filled by restriction
+    // Does not influence anything but the restricted_region
+    ibset unused_region;
     
     // Refluxing
     vect<vect<ibset,2>,dim> coarse_boundary;
