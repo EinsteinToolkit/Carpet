@@ -889,7 +889,9 @@ namespace CarpetReduce {
     
     for (int d=0; d<dim; ++d) {
       assert (mylsh[d]>=0);
-      assert (mynghostzones[d]>=0 and 2*mynghostzones[d]<=mylsh[d]);
+      assert (mynghostzones[d]>=0);
+      int const nb = !mybbox[2*d] + !mybbox[2*d+1];
+      assert (nb*mynghostzones[d]<=mylsh[d]);
     }
     
     const int vartypesize = CCTK_VarTypeSize(outtype);
@@ -1409,7 +1411,9 @@ namespace CarpetReduce {
                   assert (not ierr);
                   for (int d=0; d<grpdim; ++d) {
                     assert (lsh[d]>=0);
-                    assert (nghostzones[d]>=0 and 2*nghostzones[d]<=lsh[d]);
+                    assert (nghostzones[d]>=0);
+                    int const nb = !bbox[2*d] + !bbox[2*d+1];
+                    assert (nb*nghostzones[d]<=lsh[d]);
                   }
                   
                   vect<int,dim> mylsh, mynghostzones;
