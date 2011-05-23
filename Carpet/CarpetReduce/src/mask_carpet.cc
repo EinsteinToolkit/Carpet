@@ -16,28 +16,6 @@
 
 
 
-#if 0
-#define LOOP_OVER_NEIGHBOURS(dir)               \
-{                                               \
-  ivect dir_(-1);                               \
-  do {                                          \
-    ivect const& dir = dir_;                    \
-    {
-#define END_LOOP_OVER_NEIGHBOURS                \
-    }                                           \
-    for (int d_=0; d_<dim; ++d_) {              \
-      if (dir_[d_] < +1) {                      \
-        ++dir_[d_];                             \
-        break;                                  \
-      }                                         \
-      dir_[d_] = -1;                            \
-    }                                           \
-  } while (not all (dir_ == -1));               \
-}
-#endif
-
-
-
 namespace CarpetMask {
   
   using namespace std;
@@ -82,111 +60,35 @@ namespace CarpetMask {
     BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
       DECLARE_CCTK_ARGUMENTS;
       
-      ibbox const& ext =
-        dd.light_boxes.AT(mglevel).AT(reflevel).AT(component).exterior;
-      ibbox const& owned =
-        dd.light_boxes.AT(mglevel).AT(reflevel).AT(component).owned;
-      ibbox const world = owned;
-      ibset const& active =
-        dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).active;
-      // There are no prolongation boundaries on the coarsest level;
-      // the outer boundary is treated elsewhere
-      ibset const not_active = reflevel==0 ? ibset() : world - active;
-      ibset const& fine_active =
-        dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component).fine_active;
-      if (verbose) {
-        ostringstream buf;
-        buf << "Setting prolongation region " << not_active << " on level " << reflevel;
-        CCTK_INFO (buf.str().c_str());
-        buf << "Setting restriction region " << fine_active << " on level " << reflevel;
-        CCTK_INFO (buf.str().c_str());
-      }
-      
       // Set the weight in the interior of the not_active and the
       // fine_active regions to zero, and set the weight on the
       // boundary of the not_active and fine_active regions to 1/2.
-      //
-      // For the prolongation region, the "boundary" is the first
-      // layer outside of the region. For the restricted region, the
-      // "boundary" is the outermost layer of grid points if this
-      // layer is aligned with the next coarser (i.e. the current)
-      // grid; otherwise, the boundary is empty.
-      ibset test_boxes;
-      ibset test_cfboxes;
+      
+      dh::local_dboxes const& local_box = 
+        dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component);
       
       for (int neighbour=0; neighbour<ipow(3,dim); ++neighbour) {
         ivect shift;
-        int itmp=neighbour;
-        for (int d=0; d<dim; ++d) {
-          shift[d] = itmp % 3 - 1; // [-1 ... +1]
-          itmp /= 3;
-        }
-        assert (itmp==0);
-        
-        // In this loop, shift [1,1,1] denotes a convex corner of the
-        // region which should be masked out, i.e. a region where only
-        // a small bit (1/8) of the region should be masked out.
-        // Concave edges are treated implicitly (sequentially), i.e.
-        // larger chunks are cut out multiple times: a concave xy edge
-        // counts as both an x face and a y face.
-        
-        ibset boxes  = not_active;
-        ibset fboxes = fine_active;
-        switch (hh.refcent) {
-        case vertex_centered: {
+        {
+          int itmp = neighbour;
           for (int d=0; d<dim; ++d) {
-            ivect const dir = ivect::dir(d);
-            fboxes = fboxes.shift(-dir) & fboxes & fboxes.shift(+dir);
+            shift[d] = itmp % 3 - 1; // [-1 ... +1]
+            itmp /= 3;
           }
-          for (int d=0; d<dim; ++d) {
-            // Calculate the boundary in direction d
-            ivect const dir = ivect::dir(d);
-            switch (shift[d]) {
-            case -1: {
-              // left boundary
-              boxes  = boxes.shift (-dir) - boxes;
-              fboxes = fboxes.shift(-dir) - fboxes;
-              break;
-            }
-            case 0: {
-              // interior
-              // do nothing
-              break;
-            }
-            case +1: {
-              // right boundary
-              boxes  = boxes.shift (+dir) - boxes;
-              fboxes = fboxes.shift(+dir) - fboxes;
-              break;
-            }
-            default:
-              assert (0);
-            }
-          }
-          break;
+          assert (itmp==0);
         }
-        case cell_centered: {
-          // Assume that all cell boundaries are aligned
-          if (all(shift == 0)) {
-            // do nothing
-          } else {
-            boxes  = ibset();
-            fboxes = ibset();
-          }
-          break;
-        }
-        default:
-          assert (0);
-        }
-        boxes &= ext;
-        ibset const cfboxes = fboxes.contracted_for(base) & ext;
-        test_boxes   |= boxes;
-        test_cfboxes |= cfboxes;
+        
+        ibset const& boxes   = local_box.prolongation_boundary.AT(neighbour);
+        ibset const& cfboxes = local_box.restriction_boundary .AT(neighbour);
         
         if (verbose) {
           ostringstream buf;
           buf << "Setting boundary " << shift << ": prolongation region " << boxes;
-          buf << "Setting boundary " << shift << ": restriction region " << fboxes;
+          CCTK_INFO (buf.str().c_str());
+        }
+        if (verbose) {
+          ostringstream buf;
+          buf << "Setting boundary " << shift << ": restriction region " << cfboxes;
           CCTK_INFO (buf.str().c_str());
         }
         
@@ -241,44 +143,6 @@ namespace CarpetMask {
         } END_LOOP_OVER_BSET;
         
       } // for neighbours
-      
-      {
-        ibset boxes  = not_active;
-        ibset fboxes = fine_active;
-        switch (hh.refcent) {
-        case vertex_centered: {
-          boxes = boxes.expand(ivect(1), ivect(1));
-          for (int d=0; d<dim; ++d) {
-            ivect const dir = ivect::dir(d);
-            fboxes = fboxes.shift(-dir) & fboxes & fboxes.shift(+dir);
-          }
-          fboxes = fboxes.expand(ivect(1), ivect(1));
-          break;
-        }
-        case cell_centered: {
-          // do nothing
-          break;
-        }
-        default:
-          assert (0);
-        }
-        boxes &= ext;
-        ibset const cfboxes = fboxes.contracted_for(base) & ext;
-        if (not (test_boxes   == boxes  ) or
-            not (test_cfboxes == cfboxes))
-        {
-          cout << "boxes=" << boxes << "\n"
-               << "test_boxes=" << test_boxes << "\n"
-               << "b-t=" << (boxes-test_boxes) << "\n"
-               << "t-b=" << (test_boxes-boxes) << "\n"
-               << "cfboxes=" << cfboxes << "\n"
-               << "test_cfboxes=" << test_cfboxes << "\n"
-               << "b-t=" << (cfboxes-test_cfboxes) << "\n"
-               << "t-b=" << (test_cfboxes-cfboxes) << "\n";
-        }
-        assert (test_boxes   == boxes  );
-        assert (test_cfboxes == cfboxes);
-      }
       
       
       
