@@ -295,7 +295,7 @@ namespace CarpetLib
     vector <T> alldata_buffer_out (total_length_out);
     
     // Exchange all data vectors
-    T const dummy;
+    T dummy;
     MPI_Datatype const type = mpi_datatype (dummy);
     int datatypesize;
     MPI_Type_size (type, &datatypesize);
