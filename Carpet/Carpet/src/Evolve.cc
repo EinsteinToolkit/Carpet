@@ -19,6 +19,7 @@
 #include <carpet.hh>
 #include <Timers.hh>
 #include <TimerSet.hh>
+#include "TimerNode.hh"
 
 
 
@@ -84,6 +85,15 @@ namespace Carpet {
             cctkGH->cctk_iteration % do_every == 0)
         {
           Carpet::TimerSet::writeData (cctkGH, timer_file);
+        }
+
+        if (output_timer_tree_every > 0 and
+            cctkGH->cctk_iteration % output_timer_tree_every == 0 and
+            cctkGH->cctk_iteration % do_every == 0)
+        {
+          TimerNode *rt = TimerNode::getRootTimer();
+          TimerNode *et = rt->getChildTimer("Evolve");
+          et->print(cout, et->getTime(), 0, 1.0);
         }
       }
       

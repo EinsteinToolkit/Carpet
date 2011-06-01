@@ -523,3 +523,14 @@ STRING timer_xml_clock "Which clock to use in the XML timer output file"
 {
   ".*" :: "must be a legal clock name"
 } "gettimeofday"
+
+
+BOOLEAN output_initialise_timer_tree "Output timing information in tree form to standard output for Initialise"
+{
+} "no"
+
+INT output_timer_tree_every "Output timing information in tree form to standard output for Evolve every so many iterations"
+{
+  0   :: "don't report"
+  1:* :: "report every so many iterations"
+} 0

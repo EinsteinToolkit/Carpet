@@ -14,6 +14,7 @@
 #include <carpet.hh>
 #include <Timers.hh>
 #include <TimerSet.hh>
+#include <TimerNode.hh>
 
 
 
@@ -133,7 +134,14 @@ namespace Carpet {
     if (output_timers_every > 0) {
       TimerSet::writeData (cctkGH, timer_file);
     }
-    
+
+    if (output_initialise_timer_tree)
+    {
+      TimerNode *rt = TimerNode::getRootTimer();
+      TimerNode *it = rt->getChildTimer("Initialise");
+      it->print(cout, it->getTime(), 0, 1.0);
+    }
+
     Waypoint ("Done with initialisation");
     
     return 0;
