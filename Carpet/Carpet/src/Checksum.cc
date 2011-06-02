@@ -10,7 +10,7 @@
 #include <gh.hh>
 
 #include <carpet.hh>
-
+#include "Timers.hh"
 
 
 namespace Carpet {
@@ -67,6 +67,9 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     if (! checksum_timelevels) return;
+
+    Timer timer("CalculateChecksums");
+    timer.start();
     
     Checkpoint ("CalculateChecksums");
     
@@ -142,6 +145,7 @@ namespace Carpet {
       } // if storage
     } // for group
     
+    timer.stop();
   }
   
   

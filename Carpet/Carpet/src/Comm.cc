@@ -135,7 +135,7 @@ namespace Carpet {
       // prolongate boundaries
       bool const local_do_prolongate = do_prolongate and not do_taper;
       if (local_do_prolongate) {
-        static Timer timer ("Evolve::Prolongate");
+        static Timer timer ("Prolongate");
         timer.start();
         ProlongateGroupBoundaries (cctkGH, goodgroups);
         timer.stop();
@@ -152,7 +152,7 @@ namespace Carpet {
       
       // synchronise ghostzones
       if (sync_during_time_integration or local_do_prolongate) {
-        static Timer timer ("Evolve::Sync");
+        static Timer timer ("Sync");
         timer.start();
         SyncGroups (cctkGH, goodgroups);
         timer.stop();

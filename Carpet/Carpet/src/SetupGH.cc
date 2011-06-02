@@ -26,6 +26,7 @@
 #include <vect.hh>
 
 #include <carpet.hh>
+#include "Timers.hh"
 
 
 
@@ -275,6 +276,10 @@ namespace Carpet {
     timelevel  = 0;
     
     // Say hello
+
+    Timer timer("CarpetStartup");
+    timer.start();
+
     Waypoint ("Setting up the grid hierarchy");
     
     // Check arguments:
@@ -317,7 +322,8 @@ namespace Carpet {
     }
     
     Waypoint ("Done with setting up the grid hierarchy");
-    
+    timer.stop();
+
     return & carpetGH;
   }
   
@@ -543,10 +549,14 @@ namespace Carpet {
                             baseexts);
     
     // Allocate grid hierarchy
+
+    Timer timer("AllocateGridHierarchy");
+    timer.start();
     vhh.resize(maps);
     vhh.AT(m) = new gh (spacereffacts, refcentering,
                         convergence_factor, mgcentering,
                         baseexts, nboundaryzones);
+    timer.stop();
   }
   
   

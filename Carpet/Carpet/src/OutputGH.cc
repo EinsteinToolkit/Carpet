@@ -44,8 +44,7 @@ namespace Carpet {
       
       if (not timers.AT(handle)) {
         ostringstream buf;
-        buf << "OutputGH"
-            << "::" << method->implementation
+        buf << method->implementation
             << "::" << method->name
             << " [" << handle << "]";
         timers.AT(handle) = new Timer (buf.str().c_str());

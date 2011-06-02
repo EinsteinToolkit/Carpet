@@ -41,8 +41,8 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     static Timer total_timer ("CallFunction");
-    static Timer user_timer  ("CallFunction::thorns");
-    static Timer sync_timer  ("CallFunction::syncs");
+    static Timer user_timer  ("thorns");
+    static Timer sync_timer  ("syncs");
     
     total_timer.start();
     
@@ -321,27 +321,7 @@ namespace Carpet {
                 attribute->thorn, attribute->routine);
     int const skip = CallBeforeRoutines (cctkGH, function, attribute, data);
     if (not skip) {
-      
-      typedef std::map <string, Timer *> timers_t;
-      static timers_t * timersp = NULL;
-      if (not timersp) timersp = new timers_t;
-      timers_t & timers = * timersp;
-      
-      // Obtain timer, creating a new one if it does not yet exist
-      ostringstream timernamebuf;
-      timernamebuf << "CallFunction/"
-                   << attribute->where << "::" << attribute->routine;
-      string const timername = timernamebuf.str();
-      timers_t::iterator ti = timers.find (timername);
-      if (ti == timers.end()) {
-        pair <string, Timer *> const
-          newtimer (timername, new Timer (timername.c_str()));
-        ti = timers.insert(newtimer).first;
-        // It is possible to find and insert with the same function
-        // call, but this makes the code significantly more
-        // complicated
-      }
-      Timer & timer = * ti->second;
+      Timer timer(attribute->routine);
       
       // Save the time step size
       CCTK_REAL const saved_cctk_delta_time = cctkGH->cctk_delta_time;

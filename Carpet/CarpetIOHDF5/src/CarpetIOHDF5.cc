@@ -522,7 +522,7 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
 
 static int OutputGH (const cGH* const cctkGH)
 {
-  static Carpet::Timer timer ("CarpetIOHDF5::OutputGH");
+  static Carpet::Timer timer ("OutputGH");
   timer.start();
   for (int vindex = CCTK_NumVars () - 1; vindex >= 0; vindex--) {
     if (TimeToOutput (cctkGH, vindex)) {

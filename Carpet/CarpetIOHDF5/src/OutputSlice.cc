@@ -231,20 +231,18 @@ namespace CarpetIOHDF5 {
   template<int outdim>
   int IOHDF5<outdim>::OutputGH (const cGH* const cctkGH)
   {
-    static Carpet::Timer * timer = NULL;
-    if (not timer) {
-      ostringstream timer_name;
-      timer_name << "CarpetIOHDF5<" << outdim << ">::OutputGH";
-      timer = new Carpet::Timer (timer_name.str().c_str());
-    }
+    ostringstream timer_name;
+    timer_name << "OutputGH<" << outdim << ">";
+    
+    Carpet::Timer timer(timer_name.str());
 
-    timer->start();
+    timer.start();
     for (int vi=0; vi<CCTK_NumVars(); ++vi) {
       if (TimeToOutput(cctkGH, vi)) {
         TriggerOutput(cctkGH, vi);
       }
     }
-    timer->stop();
+    timer.stop();
 
     return 0;
   }

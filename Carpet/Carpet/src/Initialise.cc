@@ -158,7 +158,7 @@ namespace Carpet {
   void
   CallSetup (cGH * const cctkGH)
   {
-    char const * const where = "Initialise::CallSetup";
+    char const * const where = "CallSetup";
     static Timer timer (where);
     timer.start();
     
@@ -199,7 +199,7 @@ namespace Carpet {
   void
   CallRecoverVariables (cGH * const cctkGH)
   {
-    char const * const where = "Initialise::CallRecoverVariables";
+    char const * const where = "CallRecoverVariables";
     static Timer timer (where);
     timer.start();
     
@@ -266,7 +266,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    char const * const where = "Initialise::CallPostRecoverVariables";
+    char const * const where = "CallPostRecoverVariables";
     static Timer timer (where);
     timer.start();
     
@@ -316,7 +316,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    char const * const where = "Initialise::CallInitial";
+    char const * const where = "CallInitial";
     static Timer timer (where);
     timer.start();
     
@@ -419,7 +419,7 @@ namespace Carpet {
   CallRestrict (cGH * const cctkGH)
   {
     char const * const where = "Initialise::CallRestrict";
-    static Timer timer (where);
+    static Timer timer ("CallRestrict");
     timer.start();
     
     for (int rl=reflevels-2; rl>=0; --rl) {
@@ -454,7 +454,7 @@ namespace Carpet {
   void
   CallPostInitial (cGH * const cctkGH)
   {
-    char const * const where = "Initialise::CallPostInitial";
+    char const * const where = "CallPostInitial";
     static Timer timer (where);
     timer.start();
     
@@ -500,7 +500,7 @@ namespace Carpet {
   void
   CallAnalysis (cGH * const cctkGH)
   {
-    char const * const where = "Initialise::CallAnalysis";
+    char const * const where = "CallAnalysis";
     static Timer timer (where);
     timer.start();
     
@@ -706,7 +706,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    char const * const where = "Initialise::CallRegridRecoverMeta";
+    char const * const where = "CallRegridRecoverMeta";
     static Timer timer (where);
     timer.start();
     
@@ -796,7 +796,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    char const * const where = "Initialise::CallRegridRecoverLevel";
+    char const * const where = "CallRegridRecoverLevel";
     static Timer timer (where);
     timer.start();
     
@@ -892,7 +892,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    char const * const where = "Initialise::CallRegridInitialMeta";
+    char const * const where = "CallRegridInitialMeta";
     static Timer timer (where);
     timer.start();
     
@@ -957,7 +957,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    char const * const where = "Initialise::CallRegridInitialLevel";
+    char const * const where = "CallRegridInitialLevel";
     static Timer timer (where);
     timer.start();
     
@@ -1079,6 +1079,10 @@ namespace Carpet {
     
     Waypoint ("Initialising three timelevels:");
     
+    char const * const where = "Initialise3TL";
+    static Timer timer (where);
+    timer.start();
+
 #if 0
     initialise_3tl_flip_timelevels (cctkGH);
     initialise_3tl_evolve (cctkGH);
@@ -1096,7 +1100,9 @@ namespace Carpet {
     initialise_3tl_recycle (cctkGH);
     initialise_3tl_recycle (cctkGH);
     initialise_3tl_flip_timelevels (cctkGH);
-    
+
+    timer.stop();
+
     Waypoint ("Finished initialising three timelevels");
   }
   
@@ -1119,7 +1125,7 @@ namespace Carpet {
   void
   initialise_3tl_evolve (cGH * const cctkGH)
   {
-    char const * const where = "Initialise3TL::Evolve";
+    char const * const where = "Evolve";
     static Timer timer (where);
     timer.start();
     
@@ -1159,7 +1165,7 @@ namespace Carpet {
   void
   initialise_3tl_recycle (cGH * const cctkGH)
   {
-    char const * const where = "Initialise3TL::Recycle";
+    char const * const where = "Recycle";
     static Timer timer (where);
     timer.start();
     
@@ -1207,16 +1213,8 @@ namespace Carpet {
   void ScheduleTraverse (char const * const where, char const * const name,
                          cGH * const cctkGH)
   {
-    ostringstream timernamebuf;
-    timernamebuf << where << "::" << name;
-    string const timername = timernamebuf.str();
-    static std::map <string, Timer *> timers;
-    Timer * & mapped = timers[timername];
-    if (not mapped) {
-      mapped = new Timer (timername.c_str());
-    }
-    Timer & timer = * mapped;
-    
+    Timer timer(name);
+
     timer.start();
     ostringstream infobuf;
     infobuf << "Scheduling " << name;
@@ -1228,14 +1226,7 @@ namespace Carpet {
   
   void OutputGH (char const * const where, cGH * const cctkGH)
   {
-    ostringstream buf;
-    buf << where << "::OutputGH";
-    string const timername = buf.str();
-    static Timer timer (timername.c_str());
-    
-    timer.start();
     CCTK_OutputGH (cctkGH);
-    timer.stop();
   }
   
   

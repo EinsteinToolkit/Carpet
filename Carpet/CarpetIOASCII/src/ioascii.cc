@@ -228,20 +228,17 @@ namespace CarpetIOASCII {
   template<int outdim>
   int IOASCII<outdim>::OutputGH (const cGH* const cctkGH)
   {
-    static Carpet::Timer * timer = NULL;
-    if (not timer) {
-      ostringstream timer_name;
-      timer_name << "CarpetIOASCII<" << outdim << ">::OutputGH";
-      timer = new Carpet::Timer (timer_name.str().c_str());
-    }
-    
-    timer->start();
+    ostringstream timer_name;
+    timer_name << "OutputGH<" << outdim << ">";
+    Carpet::Timer timer(timer_name.str());
+
+    timer.start();
     for (int vi=0; vi<CCTK_NumVars(); ++vi) {
       if (TimeToOutput(cctkGH, vi)) {
 	TriggerOutput(cctkGH, vi);
       }
     }
-    timer->stop();
+    timer.stop();
     
     return 0;
   }

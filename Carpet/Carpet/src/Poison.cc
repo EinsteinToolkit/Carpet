@@ -11,7 +11,7 @@
 #include <typeprops.hh>
 
 #include <carpet.hh>
-
+#include "Timers.hh"
 
 
 namespace Carpet {
@@ -33,6 +33,9 @@ namespace Carpet {
     
     if (not poison_new_timelevels) return;
     
+    Timer timer("Poison");
+    timer.start();
+
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cctkGH, group)) {
         int const grouptype = CCTK_GroupTypeI (group);
@@ -45,6 +48,7 @@ namespace Carpet {
         }
       } // if has storage
     } // for group
+    timer.stop();
   }
   
   
@@ -145,6 +149,8 @@ namespace Carpet {
     if (not check_for_poison) return;
     
     Checkpoint ("PoisonCheck");
+    Timer timer("PoisonCheck");
+    timer.start();
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       int const nvar = CCTK_NumVarsInGroupI(group);
@@ -256,6 +262,7 @@ namespace Carpet {
         
       } // if has storage
     } // for group
+    timer.stop();
   }
   
 } // namespace Carpet

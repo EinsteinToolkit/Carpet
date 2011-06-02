@@ -90,7 +90,7 @@ namespace Carpet {
   void
   CheckRegions (gh::mregs const & regsss)
   {
-    char const * const where = "Carpet::CheckRegions";
+    char const * const where = "CheckRegions";
     static Timer timer (where);
     timer.start();
     
@@ -148,7 +148,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    char const * const where = "Carpet::Regrid";
+    char const * const where = "Regrid";
     static Timer timer (where);
     timer.start();
     
@@ -265,7 +265,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    char const * const where = "Carpet::RegridMap";
+    char const * const where = "RegridMap";
     static Timer timer (where);
     timer.start();
     
@@ -325,7 +325,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    char const * const where = "Carpet::PostRegrid";
+    char const * const where = "PostRegrid";
     static Timer timer (where);
     timer.start();
     
@@ -380,7 +380,7 @@ namespace Carpet {
              int const rl,
              bool const do_init)
   {
-    char const * const where = "Carpet::Recompose";
+    char const * const where = "Recompose";
     static Timer timer (where);
     timer.start();
     
@@ -408,7 +408,7 @@ namespace Carpet {
   RegridFree (cGH const * const cctkGH,
               bool const do_init)
   {
-    char const * const where = "Carpet::RegridFree";
+    char const * const where = "RegridFree";
     static Timer timer (where);
     timer.start();
     

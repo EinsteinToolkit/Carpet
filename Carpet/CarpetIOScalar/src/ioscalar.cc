@@ -155,7 +155,7 @@ namespace CarpetIOScalar {
   int
   OutputGH (const cGH * const cctkGH)
   {
-    static Carpet::Timer timer ("CarpetIOScalar::OutputGH");
+    static Carpet::Timer timer ("OutputGH");
     timer.start();
     for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
       if (TimeToOutput(cctkGH, vindex)) {

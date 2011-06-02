@@ -155,7 +155,7 @@ namespace CarpetIOBasic {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    static Carpet::Timer timer ("CarpetIOBasic::OutputGH");
+    static Carpet::Timer timer ("OutputGH");
     timer.start();
     
     if (TimeToOutput (cctkGH)) {

@@ -8,7 +8,7 @@
 #include <gh.hh>
 
 #include <carpet.hh>
-
+#include "Timers.hh"
 
 
 namespace Carpet {
@@ -20,7 +20,10 @@ namespace Carpet {
   void CycleTimeLevels (cGH* const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
-    
+  
+    Timer timer("CycleTimeLevels");
+    timer.start();
+  
     Checkpoint ("CycleTimeLevels");
     assert (is_level_mode());
     
@@ -100,6 +103,7 @@ namespace Carpet {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Errors in %d groups detected; aborting", errors);
     }
+    timer.stop();
   }
   
   

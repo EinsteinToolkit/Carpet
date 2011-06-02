@@ -79,6 +79,8 @@ namespace Carpet {
       
       // Print timer values
       {
+        Timer timer("PrintTimers");
+        timer.start();
         int const do_every = maxtimereflevelfact / timereffacts.AT(reflevels-1);
         if (output_timers_every > 0 and
             cctkGH->cctk_iteration % output_timers_every == 0 and
@@ -95,10 +97,13 @@ namespace Carpet {
           TimerNode *et = rt->getChildTimer("Evolve");
           et->print(cout, et->getTime(), 0, 1.0);
         }
+        timer.stop();
       }
       
       // Ensure that all levels have consistent times
       {
+        Timer timer("CheckLevelTimes");
+        timer.start();
         CCTK_REAL const eps = 1.0e-12;
         assert (abs (cctkGH->cctk_time - global_time) <= eps * global_time);
         for (int ml=0; ml<mglevels; ++ml) {
@@ -113,6 +118,7 @@ namespace Carpet {
             }
           }
         }
+        timer.stop();
       }
       
     } // end main loop
@@ -130,7 +136,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer ("Evolve::do_terminate");
+    static Timer timer ("DoTerminate");
     timer.start();
     
     bool term;
@@ -214,7 +220,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer ("Evolve::AdvanceTime");
+    static Timer timer ("AdvanceTime");
     timer.start();
     
     Checkpoint ("AdvanceTime");
@@ -248,7 +254,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    char const * const where = "Evolve::CallRegrid";
+    char const * const where = "CallRegrid";
     static Timer timer (where);
     timer.start();
     
@@ -351,7 +357,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    char const * const where = "Evolve::CallEvol";
+    char const * const where = "CallEvol";
     static Timer timer (where);
     timer.start();
     
@@ -438,7 +444,7 @@ namespace Carpet {
   CallRestrict (cGH * const cctkGH)
   {
     char const * const where = "Evolve::CallRestrict";
-    static Timer timer (where);
+    static Timer timer ("CallRestrict");
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {
@@ -501,7 +507,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    char const * const where = "Evolve::CallAnalysis";
+    char const * const where = "CallAnalysis";
     static Timer timer (where);
     timer.start();
     
@@ -632,29 +638,7 @@ namespace Carpet {
   void ScheduleTraverse (char const * const where, char const * const name,
                          cGH * const cctkGH)
   {
-    // Obtain the set of timers, creating it explicitly if it does not
-    // yet exist
-    typedef std::map <string, Timer *> timers_t;
-    // static timers_t timers;
-    static timers_t * timersp = NULL;
-    if (not timersp) timersp = new timers_t;
-    timers_t & timers = * timersp;
-    
-    // Obtain timer, creating a new one if it does not yet exist
-    // This is no longer necessary with the new timer implementation
-    ostringstream timernamebuf;
-    timernamebuf << where << "::" << name;
-    string const timername = timernamebuf.str();
-    timers_t::iterator ti = timers.find (timername);
-    if (ti == timers.end()) {
-      pair <string, Timer *> const
-        newtimer (timername, new Timer (timername.c_str()));
-      ti = timers.insert(newtimer).first;
-      // It is possible to find and insert with the same function
-      // call, but this makes the code significantly more complicated
-    }
-    Timer & timer = * ti->second;
-    
+    Timer timer(name);
     timer.start();
     ostringstream infobuf;
     infobuf << "Scheduling " << name;
@@ -666,14 +650,7 @@ namespace Carpet {
   
   void OutputGH (char const * const where, cGH * const cctkGH)
   {
-    ostringstream buf;
-    buf << where << "::OutputGH";
-    string const timername = buf.str();
-    static Timer timer (timername.c_str());
-    
-    timer.start();
     CCTK_OutputGH (cctkGH);
-    timer.stop();
   }
   
 } // namespace Carpet
