@@ -519,3 +519,7 @@ BOOLEAN use_unusedpoints_mask "Turn on of off (default) storage and usage of 'un
   0:* :: "Anything else than 0 turns unusedpoints_mask on"
 } 0
 
+STRING timer_xml_clock "Which clock to use in the XML timer output file"
+{
+  ".*" :: "must be a legal clock name"
+} "gettimeofday"

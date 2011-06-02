@@ -8,6 +8,8 @@
 
 #include <carpet.hh>
 #include <Timers.hh>
+#include <TimerNode.hh>
+#include <TimerSet.hh>
 
 
 
@@ -77,6 +79,10 @@ namespace Carpet {
       
     } END_REVERSE_MGLEVEL_LOOP;
     
+
+    TimerNode *rt = TimerNode::getRootTimer();
+    rt->stop();
+
     // earlier checkpoint before finalising MPI
     Waypoint ("Done with shutdown");
     

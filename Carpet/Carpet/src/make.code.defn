@@ -21,6 +21,9 @@ SRCS =	CallFunction.cc				\
 	Shutdown.cc				\
 	Storage.cc				\
 	Timers.cc				\
+    TimerNode.cc            \
+    CactusTimer.cc          \
+	TimerSet.cc             \
 	Timing.cc				\
   UnusedMask.cc   \
 	helpers.cc				\

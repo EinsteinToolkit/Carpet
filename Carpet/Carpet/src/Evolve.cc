@@ -18,6 +18,7 @@
 
 #include <carpet.hh>
 #include <Timers.hh>
+#include <TimerSet.hh>
 
 
 
@@ -82,7 +83,7 @@ namespace Carpet {
             cctkGH->cctk_iteration % output_timers_every == 0 and
             cctkGH->cctk_iteration % do_every == 0)
         {
-          TimerSet::writeData (cctkGH, timer_file);
+          Carpet::TimerSet::writeData (cctkGH, timer_file);
         }
       }
       
@@ -630,6 +631,7 @@ namespace Carpet {
     timers_t & timers = * timersp;
     
     // Obtain timer, creating a new one if it does not yet exist
+    // This is no longer necessary with the new timer implementation
     ostringstream timernamebuf;
     timernamebuf << where << "::" << name;
     string const timername = timernamebuf.str();
