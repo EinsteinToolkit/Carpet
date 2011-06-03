@@ -165,6 +165,12 @@ namespace CarpetLib {
   
 #define TYPECASE(N,RT)                          \
                                                 \
+  template<>                                    \
+  const RT coeffs1dc<RT,1,0>::coeffs[] = {      \
+    +1 / RT(4.0),                               \
+    +3 / RT(4.0)                                \
+  };                                            \
+                                                \
                                                 \
   template<>                                    \
   const RT coeffs1dc<RT,2,0>::coeffs[] = {      \
@@ -282,6 +288,18 @@ namespace CarpetLib {
 	    rV += rcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
 	 }
 	 
+	 // check that divided differences do not change sign: if so go back to first order!
+	 if (lV*rV < 0)
+	 {
+	    // switch back to first order!
+	    res = 0;
+            typedef coeffs1d<RT,1,di,0> coeffs1;
+            for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+               res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
+            }
+	    break;
+	 }
+	 
 	 if (abs(lV) < abs(rV)) {
 	    // use left-shifted stencil since it is smoother
 	    for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
@@ -293,6 +311,8 @@ namespace CarpetLib {
 	       res += rcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
 	    }
 	 }
+	 
+	 
        }
        break;
        case 3: {
@@ -315,6 +335,18 @@ namespace CarpetLib {
 	 // compute undivided differences for right-shifted stencil
 	 for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
 	    V[2] += rcoeffs::diff(i) * f[i-rcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+	 }
+	 
+	 // check that divided differences do not change sign: if so go back to first order!
+	 if (V[0]*V[2] < 0)
+	 {
+	    // switch back to first order!
+	    res = 0;
+            typedef coeffs1d<RT,1,di,0> coeffs1;
+            for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+               res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
+            }
+	    break;
 	 }
 	 
 	 int min = 0;
@@ -345,6 +377,18 @@ namespace CarpetLib {
        break;
        default: assert(0);
     }
+    
+    // check that result is reasonable!
+    if ((res - f[-coeffs1d<RT,ORDER,di>::minimin-1+di]) * (f[-coeffs1d<RT,ORDER,di>::minimin+di] - res) < 0)
+    {
+       res = 0;
+       // switch back to first order
+       typedef coeffs1d<RT,1,di,0> coeffs1;
+       for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+          res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
+       }
+    }
+
     
     return res;
   }
@@ -401,6 +445,18 @@ namespace CarpetLib {
 	    rV += rcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
 	 }
 	 
+	 // check that divided differences do not change sign: if so go back to first order!
+	 if (lV*rV < 0)
+	 {
+	    // switch back to first order!
+	    res = 0;
+            typedef coeffs1d<RT,1,dj,0> coeffs1;
+            for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+               res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
+            }
+	    break;
+	 }
+	 
 	 if (abs(lV) < abs(rV)) {
 	    // use left-shifted stencil since it is smoother
 	    for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
@@ -436,6 +492,18 @@ namespace CarpetLib {
 	    V[2] += rcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
 	 }
 	 
+	 // check that divided differences do not change sign: if so go back to first order!
+	 if (V[0]*V[2] < 0)
+	 {
+	    // switch back to first order!
+	    res = 0;
+            typedef coeffs1d<RT,1,dj,0> coeffs1;
+            for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+               res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
+            }
+	    break;
+	 }
+	 
 	 int min = 0;
 	 for (int i=0; i < 3; ++i)
 	    if (abs(V[i]) < abs(V[min])) min = i;
@@ -463,6 +531,17 @@ namespace CarpetLib {
        }
        break;
        default: assert(0);
+    }
+    
+    // check that result is reasonable!
+    if ((res - f[-coeffs1d<RT,ORDER,dj>::minimin-1+dj]) * (f[-coeffs1d<RT,ORDER,dj>::minimin+dj] - res) < 0)
+    {
+       res = 0;
+       // switch back to first order
+       typedef coeffs1d<RT,1,dj,0> coeffs1;
+       for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+          res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
+       }
     }
     
     return res;
@@ -522,6 +601,18 @@ namespace CarpetLib {
 	    rV += rcoeffs::diff(i) * f[i-lcoeffs::minimin];  //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
 	 }
 	 
+	 // check that divided differences do not change sign: if so go back to first order!
+	 if (lV*rV < 0)
+	 {
+	    // switch back to first order!
+	    res = 0;
+            typedef coeffs1d<RT,1,dk,0> coeffs1;
+            for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+               res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
+            }
+	    break;
+	 }
+	 
 	 if (abs(lV) < abs(rV)) {
 	    // use left-shifted stencil since it is smoother
 	    for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
@@ -557,6 +648,18 @@ namespace CarpetLib {
 	    V[2] += rcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
 	 }
 	 
+	 // check that divided differences do not change sign: if so go back to first order!
+	 if (V[0]*V[2] < 0)
+	 {
+	    // switch back to first order!
+	    res = 0;
+            typedef coeffs1d<RT,1,dk,0> coeffs1;
+            for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+               res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
+            }
+	    break;
+	 }
+	 
 	 int min = 0;
 	 for (int i=0; i < 3; ++i)
 	    if (abs(V[i]) < abs(V[min])) min = i;
@@ -584,6 +687,17 @@ namespace CarpetLib {
        }
        break;
        default: assert(0);
+    }
+    
+    // check that result is reasonable!
+    if ((res - f[-coeffs1d<RT,ORDER,dj>::minimin-1+dk]) * (f[-coeffs1d<RT,ORDER,dk>::minimin+dk] - res) < 0)
+    {
+       res = 0;
+       // switch back to first order
+       typedef coeffs1d<RT,1,dk,0> coeffs1;
+       for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+          res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
+       }
     }
     
     return res;
