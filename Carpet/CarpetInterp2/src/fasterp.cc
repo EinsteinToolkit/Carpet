@@ -598,7 +598,10 @@ namespace CarpetInterp2 {
                        & gsh[0],
                        & lower.AT(m)[0], & upper.AT(m)[0], & delta.AT(m)[0]);
       assert (not ierr);
-      delta.AT(m) /= Carpet::maxspacereflevelfact;
+      //delta.AT(m) /= Carpet::maxspacereflevelfact;
+      gh const * const hh = Carpet::vhh.AT(m);
+      ibbox const & baseext = hh->baseextent(Carpet::mglevel, 0);
+      delta.AT(m) /= baseext.stride();
       idelta.AT(m) = 1.0 / delta.AT(m);
       if (veryverbose) {
         cout << "GetCoordRange[" << m << "]: lower=" << lower.AT(m) << " upper=" << upper.AT(m) << " delta=" << delta.AT(m) << endl;
