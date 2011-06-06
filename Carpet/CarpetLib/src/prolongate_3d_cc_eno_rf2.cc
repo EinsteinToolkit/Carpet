@@ -289,7 +289,7 @@ namespace CarpetLib {
 	 }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
-	 if (lV*rV < 0)
+	 if (lV*rV <= 0)
 	 {
 	    // switch back to first order!
 	    res = 0;
@@ -338,7 +338,7 @@ namespace CarpetLib {
 	 }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
-	 if (V[0]*V[2] < 0)
+	 if (V[0]*V[2] <= 0)
 	 {
 	    // switch back to first order!
 	    res = 0;
@@ -389,6 +389,10 @@ namespace CarpetLib {
        }
     }
 
+    /*typedef coeffs1d<RT,1,di> coeffs;
+    for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
+      res += coeffs::get(i) * interp0<T,1> (p + i*d1);
+    }*/
     
     return res;
   }
@@ -419,7 +423,6 @@ namespace CarpetLib {
   {
     static_assert (dj==0 or dj==1, "dj must be 0 or 1");
     typedef typename typeprops<T>::real RT;
-    typedef coeffs1d<RT,ORDER,dj> coeffs;
     T res = typeprops<T>::fromreal (0);
     // get function values needed for the stencil
     T f[coeffs1d<RT,ORDER,dj>::maxncoeffs];
@@ -446,7 +449,7 @@ namespace CarpetLib {
 	 }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
-	 if (lV*rV < 0)
+	 if (lV*rV <= 0)
 	 {
 	    // switch back to first order!
 	    res = 0;
@@ -493,7 +496,7 @@ namespace CarpetLib {
 	 }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
-	 if (V[0]*V[2] < 0)
+	 if (V[0]*V[2] <= 0)
 	 {
 	    // switch back to first order!
 	    res = 0;
@@ -543,6 +546,11 @@ namespace CarpetLib {
           res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
        }
     }
+
+    /*typedef coeffs1d<RT,1,dj> coeffs;
+    for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
+      res += coeffs::get(i) * interp1<T,1,di> (p + i*d2, d1);
+    }*/
     
     return res;
   }
@@ -575,7 +583,6 @@ namespace CarpetLib {
   {
     static_assert (dk==0 or dk==1, "dk must be 0 or 1");
     typedef typename typeprops<T>::real RT;
-    typedef coeffs1d<RT,ORDER,dk> coeffs;
     T res = typeprops<T>::fromreal (0);
     // get function values needed for the stencil
     T f[coeffs1d<RT,ORDER,dk>::maxncoeffs];
@@ -602,7 +609,7 @@ namespace CarpetLib {
 	 }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
-	 if (lV*rV < 0)
+	 if (lV*rV <= 0)
 	 {
 	    // switch back to first order!
 	    res = 0;
@@ -649,7 +656,7 @@ namespace CarpetLib {
 	 }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
-	 if (V[0]*V[2] < 0)
+	 if (V[0]*V[2] <= 0)
 	 {
 	    // switch back to first order!
 	    res = 0;
@@ -690,7 +697,7 @@ namespace CarpetLib {
     }
     
     // check that result is reasonable!
-    if ((res - f[-coeffs1d<RT,ORDER,dj>::minimin-1+dk]) * (f[-coeffs1d<RT,ORDER,dk>::minimin+dk] - res) < 0)
+    if ((res - f[-coeffs1d<RT,ORDER,dk>::minimin-1+dk]) * (f[-coeffs1d<RT,ORDER,dk>::minimin+dk] - res) < 0)
     {
        res = 0;
        // switch back to first order
@@ -699,6 +706,11 @@ namespace CarpetLib {
           res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
        }
     }
+    
+    /*typedef coeffs1d<RT,1,dk> coeffs;
+    for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
+      res += coeffs::get(i) * interp2<T,1,di,dj> (p + i*d3, d1, d2);
+    }*/
     
     return res;
   }
@@ -1158,6 +1170,7 @@ namespace CarpetLib {
 
   
 #define TYPECASE(N,T)                                               \
+                                                                    \
                                                                     \
                                                                     \
   template                                                          \
