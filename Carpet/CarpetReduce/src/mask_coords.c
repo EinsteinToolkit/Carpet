@@ -109,10 +109,12 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
         }
         if (f==0) {
           /* lower face */
-          bmax[d] = imin[d] + bnd_points[2*d+f];
+          //bmax[d] = imin[d] + bnd_points[2*d+f];
+          bmax[d] = imin[d] + cctk_nghostzones[d];
         } else {
           /* upper face */
-          bmin[d] = imax[d] - bnd_points[2*d+f];
+          //bmin[d] = imax[d] - bnd_points[2*d+f];
+          bmin[d] = imax[d] - cctk_nghostzones[d];
         }
         
         /* Loop over the boundary */
@@ -201,10 +203,12 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
         }
         if (f==0) {
           /* lower face */
-          bmax[d] = imin[d] + bnd_points[2*d+f];
+          //bmax[d] = imin[d] + bnd_points[2*d+f];
+          bmax[d] = imin[d] + cctk_nghostzones[d];
         } else {
           /* upper face */
-          bmin[d] = imax[d] - bnd_points[2*d+f];
+          //bmin[d] = imax[d] - bnd_points[2*d+f];
+          bmin[d] = imax[d] - cctk_nghostzones[d];
         }
         
         /* Loop over the boundary */
