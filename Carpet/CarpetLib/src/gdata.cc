@@ -110,13 +110,13 @@ allocated_memory_shape (vect<int,D> shape)
         }
       }
     }
-#if defined(VECTORISE_ALIGNED_ARRAYS)
+#if VECTORISE_ALIGNED_ARRAYS
     // Enlarge shape in the x direction to ensure it is a multiple of
     // the vector size
 #warning "TODO: Support other datatypes as well, don't target only CCTK_REAL"
     if (sizeof(CCTK_REAL) * CCTK_REAL_VEC_SIZE == magic_size) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The build-time option KRANC_ALIGNED_ARRAYS requires that the size of a grid variable in the x direction is a multiple of %d bytes, while the run-time parameter avoid_arraysize_bytes=%d requests the opposite. This is inconsistent -- aborting",
+                  "The build-time option VECTORISE_ALIGNED_ARRAYS requires that the size of a grid variable in the x direction is a multiple of %d bytes, while the run-time parameter avoid_arraysize_bytes=%d requests the opposite. This is inconsistent -- aborting",
                   int(avoid_arraysize_bytes),
                   int(avoid_arraysize_bytes));
     }
