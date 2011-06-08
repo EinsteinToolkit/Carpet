@@ -80,7 +80,7 @@ subroutine CarpetProlongateTest_Init (CCTK_ARGUMENTS)
 !!$       cctk_iteration, cctk_time, nint(log(dble(cctk_levfac(1)))/log(2.0d0))
   
   ! Add +1 to coordinates so that the domain is not symmetric about
-  ! the origin (which may accidendally cancel out some errors)
+  ! the origin (which may accidentally cancel out some errors)
   u = density_time_scale(cctk_time) * density_sum(x+1,y+1,z+1)
   
   uscaled = u * product(cctk_delta_space(:))
