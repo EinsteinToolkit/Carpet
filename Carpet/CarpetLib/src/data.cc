@@ -268,6 +268,102 @@ prolongate_3d_weno (CCTK_REAL8 const * restrict const src,
 
 
 
+template <typename T>
+void
+prolongate_3d_tvd (T const * restrict const /*src*/,
+                   ivect3 const & /*srcext*/,
+                   T * restrict const /*dst*/,
+                   ivect3 const & /*dstext*/,
+                   ibbox3 const & /*srcbbox*/,
+                   ibbox3 const & /*dstbbox*/,
+                   ibbox3 const & /*regbbox*/)
+{
+  CCTK_WARN (0, "Data type not supported");
+}
+
+#ifndef OMIT_F90
+extern "C"
+void
+CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_tvd)
+  (const CCTK_REAL8* src,
+   const int& srciext, const int& srcjext, const int& srckext,
+   CCTK_REAL8* dst,
+   const int& dstiext, const int& dstjext, const int& dstkext,
+   const int srcbbox[3][3],
+   const int dstbbox[3][3],
+   const int regbbox[3][3]);
+
+template <>
+void
+prolongate_3d_tvd (CCTK_REAL8 const * restrict const src,
+                   ivect3 const & srcext,
+                   CCTK_REAL8 * restrict const dst,
+                   ivect3 const & dstext,
+                   ibbox3 const & srcbbox,
+                   ibbox3 const & dstbbox,
+                   ibbox3 const & regbbox)
+{
+  CCTK_FNAME(prolongate_3d_real8_tvd)
+    (src,
+     srcext[0], srcext[1], srcext[2],
+     dst,
+     dstext[0], dstext[1], dstext[2],
+     reinterpret_cast <int const (*) [3]> (& srcbbox),
+     reinterpret_cast <int const (*) [3]> (& dstbbox),
+     reinterpret_cast <int const (*) [3]> (& regbbox));
+}
+#endif
+
+
+
+template <typename T>
+void
+prolongate_3d_cc_tvd (T const * restrict const /*src*/,
+                      ivect3 const & /*srcext*/,
+                      T * restrict const /*dst*/,
+                      ivect3 const & /*dstext*/,
+                      ibbox3 const & /*srcbbox*/,
+                      ibbox3 const & /*dstbbox*/,
+                      ibbox3 const & /*regbbox*/)
+{
+  CCTK_WARN (0, "Data type not supported");
+}
+
+#ifndef OMIT_F90
+extern "C"
+void
+CCTK_FCALL CCTK_FNAME(prolongate_3d_cc_real8_tvd)
+  (const CCTK_REAL8* src,
+   const int& srciext, const int& srcjext, const int& srckext,
+   CCTK_REAL8* dst,
+   const int& dstiext, const int& dstjext, const int& dstkext,
+   const int srcbbox[3][3],
+   const int dstbbox[3][3],
+   const int regbbox[3][3]);
+
+template <>
+void
+prolongate_3d_cc_tvd (CCTK_REAL8 const * restrict const src,
+                      ivect3 const & srcext,
+                      CCTK_REAL8 * restrict const dst,
+                      ivect3 const & dstext,
+                      ibbox3 const & srcbbox,
+                      ibbox3 const & dstbbox,
+                      ibbox3 const & regbbox)
+{
+  CCTK_FNAME(prolongate_3d_cc_real8_tvd)
+    (src,
+     srcext[0], srcext[1], srcext[2],
+     dst,
+     dstext[0], dstext[1], dstext[2],
+     reinterpret_cast <int const (*) [3]> (& srcbbox),
+     reinterpret_cast <int const (*) [3]> (& dstbbox),
+     reinterpret_cast <int const (*) [3]> (& regbbox));
+}
+#endif
+
+
+
 // Constructors
 template<typename T>
 data<T>::data (const int varindex_,
@@ -803,6 +899,54 @@ transfer_prolongate (data const * const src,
     timer.stop (0);
   }
     
+  case op_TVD: {
+    static Timer timer ("prolongate_TVD");
+    timer.start ();
+    // enum centering { vertex_centered, cell_centered };
+    switch (cent) {
+    case vertex_centered: {
+      switch (order_space) {
+      case 1:
+        call_operator<T> (& prolongate_3d_tvd,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+        break;
+      default:
+        CCTK_WARN (CCTK_WARN_ABORT,
+                   "There is no stencil for op=\"TVD\" with order_space!=1");
+        break;
+      }
+      break;
+    }
+    case cell_centered: {
+      switch (order_space) {
+      case 1:
+        call_operator<T> (& prolongate_3d_cc_tvd,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+        break;
+      default:
+        CCTK_WARN (CCTK_WARN_ABORT,
+                   "There is no stencil for op=\"TVD\" with order_space!=1");
+        break;
+      }
+      break;
+    }
+    }
+    timer.stop (0);
+    break;
+  }
+    
   case op_Lagrange_monotone: {
     static Timer timer ("prolongate_Lagrange_monotone");
     timer.start ();
@@ -913,6 +1057,7 @@ transfer_restrict (data const * const src,
   case op_Lagrange:
   case op_ENO:
   case op_WENO:
+  case op_TVD:
   case op_Lagrange_monotone:
   case op_restrict:
     // enum centering { vertex_centered, cell_centered };
@@ -1136,9 +1281,10 @@ time_interpolate (vector <data *> const & srcs,
     
   case op_ENO:
   case op_WENO:
+  case op_TVD:
   case op_Lagrange_monotone: {
-    // ENO, WENO, and Lagrange_monotone time interpolation is the same
-    // for order_time <= 2
+    // ENO, WENO, TVD, and Lagrange_monotone time interpolation is the
+    // same for order_time <= 2
     static Timer timer ("time_interpolate_ENO");
     timer.start ();
     switch (order_time) {

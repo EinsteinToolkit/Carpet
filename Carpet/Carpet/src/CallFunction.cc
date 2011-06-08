@@ -362,7 +362,16 @@ namespace Carpet {
       {
         // The user changed cctk_delta_time during initialisation --
         // update our internals and the time hierarchy
-        delta_time = cctkGH->cctk_delta_time * timereflevelfact / mglevelfact;
+        bool const is_global =
+          attribute->meta         or
+          attribute->meta_early   or
+          attribute->meta_late    or
+          attribute->global       or
+          attribute->global_early or
+          attribute->global_late;
+        delta_time =
+          cctkGH->cctk_delta_time / mglevelfact *
+          (is_global ? 1.0 : timereflevelfact);
         for (int ml=0; ml<mglevels; ++ml) {
           for (int rl=0; rl<reflevels; ++rl) {
             // Update the time delta

@@ -2108,6 +2108,8 @@ namespace Carpet {
       return op_ENO;
     } else if (CCTK_Equals(prolong_string, "WENO")) {
       return op_WENO;
+    } else if (CCTK_Equals(prolong_string, "TVD")) {
+      return op_TVD;
     } else if (CCTK_Equals(prolong_string, "Lagrange_monotone")) {
       return op_Lagrange_monotone;
     } else {

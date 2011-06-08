@@ -16,6 +16,7 @@ enum operator_type
   op_Lagrange,                  // Lagrange interpolation (standard)
   op_ENO,                       // use ENO stencils (for hydro)
   op_WENO,                      // use WENO stencils (for hydro)
+  op_TVD,                       // use TVD stencils (for hydro)
   op_Lagrange_monotone          // monotone Lagrange interpolation (for hydro)
 };
 
