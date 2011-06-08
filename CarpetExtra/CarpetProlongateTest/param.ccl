@@ -22,6 +22,15 @@ CCTK_INT power_t "Polynomial power of t coordinate"
 
 
 
+KEYWORD prolongation "The prolongation operator to use" STEERABLE=recover
+{
+  "Lagrange"          :: ""
+  "ENO"               :: ""
+  "WENO"              :: ""
+  "TVD"               :: ""
+  "Lagrange_monotone" :: ""
+} "Lagrange"
+
 STRING interpolator "The interpolator to use" STEERABLE=always
 {
   "" :: "must be a registered interpolator"

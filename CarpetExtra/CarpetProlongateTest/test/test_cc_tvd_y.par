@@ -25,8 +25,11 @@ driver::ghost_size           = 1
 Carpet::use_buffer_zones     = yes
 Carpet::refinement_centering = "cell"
 
-Carpet::prolongation_order_space = 0
+Carpet::prolongation_order_space = 1
 Carpet::prolongation_order_time  = 2
+
+# Restriction introduces an error that we do not want to test here
+Carpet::suppress_restriction     = yes
 
 Carpet::init_fill_timelevels = yes
 
@@ -56,12 +59,12 @@ CoordBase::boundary_staggered_x_upper = yes
 CoordBase::boundary_staggered_y_upper = yes
 CoordBase::boundary_staggered_z_upper = yes
 
-CoordBase::boundary_size_x_lower = 1
-CoordBase::boundary_size_y_lower = 1
-CoordBase::boundary_size_z_lower = 1
-CoordBase::boundary_size_x_upper = 1
-CoordBase::boundary_size_y_upper = 1
-CoordBase::boundary_size_z_upper = 1
+CoordBase::boundary_size_x_lower = 2
+CoordBase::boundary_size_y_lower = 2
+CoordBase::boundary_size_z_lower = 2
+CoordBase::boundary_size_x_upper = 2
+CoordBase::boundary_size_y_upper = 2
+CoordBase::boundary_size_z_upper = 2
 
 CartGrid3D::type = "coordbase"
 
@@ -91,8 +94,10 @@ ActiveThorns = "MoL"
 ActiveThorns = "CarpetProlongateTest"
 
 CarpetProlongateTest::power_x = 0
-CarpetProlongateTest::power_y = 0
+CarpetProlongateTest::power_y = 1
 CarpetProlongateTest::power_z = 0
+
+CarpetProlongateTest::prolongation = "TVD"
 
 
 
@@ -100,12 +105,12 @@ ActiveThorns = "CarpetIOASCII"
 
 IOASCII::one_file_per_group = yes
 
-IOASCII::out0D_every = 0
+IOASCII::out0D_every = 1
 IOASCII::out0D_vars  = "
         CarpetProlongateTest::errornorm
 "
 
-IOASCII::out1D_every = 0
+IOASCII::out1D_every = 1
 IOASCII::out1D_vars  = "
         CarpetProlongateTest::scalar
         CarpetProlongateTest::difference
@@ -123,7 +128,7 @@ ActiveThorns = "CarpetIOScalar"
 
 IOScalar::one_file_per_group = yes
 
-IOScalar::outScalar_every      = 1
+IOScalar::outScalar_every      = 0
 IOScalar::outScalar_reductions = "sum"
 IOScalar::outScalar_vars       = "
         CarpetProlongateTest::scaled

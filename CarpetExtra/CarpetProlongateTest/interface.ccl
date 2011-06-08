@@ -6,7 +6,7 @@ INHERITS: grid
 
 
 
-CCTK_REAL scalar TYPE=gf TIMELEVELS=3
+CCTK_REAL scalar TYPE=gf TIMELEVELS=3 TAGS='ProlongationParameter="CarpetProlongateTest::prolongation"'
 {
   u
 } "Grid function"
