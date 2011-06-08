@@ -753,8 +753,8 @@ namespace CarpetLib {
 #ifdef CARPET_DEBUG
     typedef typename typeprops<T>::real RT;
     typedef coeffs1d<RT,ORDER,di> coeffs;
-    assert (is + coeffs::imin >= 0);
-    assert (is + coeffs::imax <= srciext);
+    assert (is + coeffs::minimin >= 0);
+    assert (is + coeffs::maximax <= srciext);
     check_indices0<T,ORDER> ();
 #endif
   }
@@ -770,8 +770,8 @@ namespace CarpetLib {
 #ifdef CARPET_DEBUG
     typedef typename typeprops<T>::real RT;
     typedef coeffs1d<RT,ORDER,dj> coeffs;
-    assert (js + coeffs::imin >= 0);
-    assert (js + coeffs::imax <= srcjext);
+    assert (js + coeffs::minimin >= 0);
+    assert (js + coeffs::maximax <= srcjext);
     check_indices1<T,ORDER,di> (is, srciext);
 #endif
   }
@@ -789,8 +789,8 @@ namespace CarpetLib {
 #ifdef CARPET_DEBUG
     typedef typename typeprops<T>::real RT;
     typedef coeffs1d<RT,ORDER,dk> coeffs;
-    assert (ks + coeffs::imin >= 0);
-    assert (ks + coeffs::imax <= srckext);
+    assert (ks + coeffs::minimin >= 0);
+    assert (ks + coeffs::maximax <= srckext);
     check_indices2<T,ORDER,di,dj> (is,js, srciext,srcjext);
 #endif
   }
@@ -869,7 +869,6 @@ namespace CarpetLib {
     }
     
     
-    
     if (not regbbox.expand(offsetlo, offsethi).is_contained_in(srcbbox) or
         not regbbox                           .is_contained_in(dstbbox))
     {
@@ -920,8 +919,6 @@ namespace CarpetLib {
     size_t const i0 = srcioff / 2;
     size_t const j0 = srcjoff / 2;
     size_t const k0 = srckoff / 2;
-    
-    
     
     // size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
     size_t const srcdi = 1;
@@ -1170,7 +1167,6 @@ namespace CarpetLib {
 
   
 #define TYPECASE(N,T)                                               \
-                                                                    \
                                                                     \
                                                                     \
   template                                                          \
