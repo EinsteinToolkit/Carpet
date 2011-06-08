@@ -561,7 +561,7 @@ namespace CarpetIOHDF5 {
       const gh* const hh = arrdata.at(group).at(m).hh;
       const dh* const dd = arrdata.at(group).at(m).dd;
       
-      // re-compute the active (non-buffere) region
+      // re-compute the active (non-buffered) region
       ibset allactive;
       GetAllActive (dd, hh, m, rl, allactive);
 
