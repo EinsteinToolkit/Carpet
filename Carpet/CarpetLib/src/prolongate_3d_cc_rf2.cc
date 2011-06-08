@@ -436,7 +436,6 @@ namespace CarpetLib {
     size_t const k0 = srckoff / 2;
     
     
-    
     // size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
     size_t const srcdi = 1;
     assert (srcdi == SRCIND3(1,0,0) - SRCIND3(0,0,0));
