@@ -140,6 +140,15 @@ namespace Carpet {
         ProlongateGroupBoundaries (cctkGH, goodgroups);
         timer.stop();
       }
+
+      // This was found to be necessary on hopper, otherwise memory seemed to be
+      // overwritten while prolongating/syncronizing. It looks liks this might be
+      // an MPI implementation issue, but this is not clear. A barrier at this
+      // point seems to be a sufficient workaround, and is now used on hopper.
+      // For more information about this, ask Frank Loeffler <knarf@cct.lsu.edu>
+#ifdef CARPET_MPI_BARRIER_PROLONGATE_SYNC
+      MPI_Barrier(dist::comm());
+#endif
       
       // synchronise ghostzones
       if (sync_during_time_integration or local_do_prolongate) {
