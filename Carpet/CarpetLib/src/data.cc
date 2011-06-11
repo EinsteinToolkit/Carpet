@@ -836,12 +836,25 @@ transfer_prolongate (data const * const src,
 				    ibbox3 const & restrict regbbox) =
 	 {
 	    & prolongate_3d_cc_eno_rf2<T,2>,
-	    & prolongate_3d_cc_eno_rf2<T,3>
+	    & prolongate_3d_cc_eno_rf2<T,2>,  // note that we cheat here: order is still 2 even though 3 was requested!
+	    & prolongate_3d_cc_eno_rf2<T,3>,  // note that we cheat here: order is 3 even though 4 was requested!
+	    & prolongate_3d_cc_eno_rf2<T,3>   // note that we cheat here: order is 3 even though 5 was requested!
+	    // have cheated here for two reasons: first, the ENO prolongation operator stencil radius is larger than Lagrange (and dh.cc assumes that the stencil goes as order_space/2!),
+	    // and second, we want to allow spacetime interpolation to be of higher order while keeping the implemeneted ENO order!
 	 };
-	 if (order_space < 2 or order_space > 3) {
+	 if (order_space < 2 or order_space > 5) {
 	 CCTK_WARN (CCTK_WARN_ABORT,
-		     "There is no cell-centred stencil for op=\"ENO\" with order_space not in {2,3}");
+		     "There is no cell-centred stencil for op=\"ENO\" with order_space not in {2,3,4,5}");
 	 }
+	 /*if (order_space == 3) {
+	 CCTK_WARN (1,
+		     "Currently, in order to keep a consistent stencil radius in the buffer zone, we use 2nd order ENO. For third order ENO set order_space to 4 or 5!");
+	 }
+	 if (order_space > 3) {
+	 CCTK_WARN (1,
+		     "Currently, in order to keep a consistent stencil radius in the buffer zone, we use 3rd order ENO. There are no higher orders than 3rd order implemented!");
+	 }*/
+	 
 	 call_operator<T> (the_operators[order_space-2],
 			   static_cast <T const *> (src->storage()),
 			   src->shape(),
