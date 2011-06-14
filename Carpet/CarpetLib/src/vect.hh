@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "defs.hh"
+#include "dist.hh"
 #include "vect_helpers.hh"
 
 using namespace std;
@@ -309,6 +310,9 @@ public:
   // Input/Output helpers
   void input (istream& is);
   void output (ostream& os) const;
+  
+  // MPI
+  MPI_Datatype mpi_datatype () const;
 };
 
 
@@ -655,6 +659,19 @@ template<typename T,int D>
 inline ostream& operator<< (ostream& os, const vect<T,D>& a) {
   a.output(os);
   return os;
+}
+
+
+
+// MPI
+
+template<typename T,int D>
+inline MPI_Datatype mpi_datatype (vect<T,D> const & a) {
+  return a.mpi_datatype();
+}
+namespace dist {
+  template<> inline MPI_Datatype mpi_datatype<ivect> ()
+  { ivect dummy; return mpi_datatype(dummy); }
 }
 
 

@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <typeinfo>
 
 #include "defs.hh"
 #include "bboxset.hh"
@@ -41,6 +42,40 @@ void vect<T,D>::output (ostream& os) const {
   }
   os << "]";
 }
+
+
+
+// MPI
+template<typename T,int D>
+MPI_Datatype vect<T,D>::mpi_datatype () const
+{
+  static bool initialised = false;
+  static MPI_Datatype newtype;
+  if (not initialised) {
+    vect<T,D> const& s = *this;
+#define ENTRY(type, name)                                               \
+    {                                                                   \
+      sizeof s.name / sizeof(type), /* count elements */                \
+        (char*)&s.name - (char*)&s, /* offsetof doesn't work (why?) */  \
+        dist::mpi_datatype<type>(), /* find MPI datatype */             \
+        STRINGIFY(name),    /* field name */                            \
+        STRINGIFY(type),    /* type name */                             \
+        }
+    dist::mpi_struct_descr_t const descr[] = {
+      ENTRY(T, elt),
+      {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}
+    };
+#undef ENTRY
+    ostringstream buf;
+    buf << "vect<" << typeid(T).name() << "," << D << ">";
+    newtype =
+      dist::create_mpi_datatype (sizeof descr / sizeof descr[0], descr,
+                                 buf.str().c_str(), sizeof s);
+    initialised = true;
+  }
+  return newtype;
+}
+
 
 
 
