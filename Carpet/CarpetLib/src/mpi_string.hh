@@ -47,6 +47,11 @@ namespace CarpetLib
   
   template <typename T>
   vector <T>
+  allgatherv1 (MPI_Comm comm,
+               vector <T> const & data);
+  
+  template <typename T>
+  vector <T>
   alltoall (MPI_Comm comm,
             vector <T> const & data);
   

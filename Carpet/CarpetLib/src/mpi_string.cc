@@ -347,6 +347,76 @@ namespace CarpetLib
   
   template <typename T>
   vector <T>
+  allgatherv1 (MPI_Comm comm,
+               vector <T> const & data)
+  {
+    // cerr << "QQQ: allgatherv[0]" << endl;
+    // Get the total number of processors
+    int num_procs;
+    MPI_Comm_size (comm, & num_procs);
+    
+    // Exchange the sizes of the data vectors
+    int const size_in = data.size();
+    assert (size_in >= 0);
+    vector <int> sizes_out (num_procs);
+    // cerr << "QQQ: allgatherv[1] size_in=" << size_in << endl;
+    MPI_Allgather (const_cast <int *> (& size_in), 1, MPI_INT,
+                   & sizes_out.front(), 1, MPI_INT,
+                   comm);
+    // cerr << "QQQ: allgatherv[2]" << endl;
+    
+    // Allocate space for all data vectors
+    vector <int> offsets_out (num_procs + 1);
+    offsets_out.AT(0) = 0;
+    for (int n = 0; n < num_procs; ++ n)
+    {
+      assert (sizes_out.AT(n) >= 0);
+      offsets_out.AT(n + 1) = offsets_out.AT(n) + sizes_out.AT(n);
+      assert (offsets_out.AT(n + 1) >= 0);
+    }
+    int const total_length_out = offsets_out.AT(num_procs);
+    vector <T> alldata_buffer_out (total_length_out);
+    
+    // Exchange all data vectors
+    T dummy;
+    MPI_Datatype const type = mpi_datatype (dummy);
+    int datatypesize;
+    MPI_Type_size (type, &datatypesize);
+    // cerr << "QQQ: allgatherv[3] total_length_out=" << total_length_out << " datatypesize=" << datatypesize << endl;
+#if 0
+    MPI_Allgatherv (const_cast <T *> (& data.front()),
+                    size_in, type,
+                    & alldata_buffer_out.front(),
+                    & sizes_out.front(), & offsets_out.front(), type,
+                    comm);
+#else
+    int const typesize = sizeof(T);
+    for (int n = 0; n < num_procs; ++ n)
+    {
+      sizes_out.AT(n) *= typesize;
+      offsets_out.AT(n) *= typesize;
+    }
+    MPI_Allgatherv (const_cast <T *> (& data.front()),
+                    size_in * typesize, MPI_CHAR,
+                    & alldata_buffer_out.front(),
+                    & sizes_out.front(), & offsets_out.front(), MPI_CHAR,
+                    comm);
+    for (int n = 0; n < num_procs; ++ n)
+    {
+      sizes_out.AT(n) /= typesize;
+      offsets_out.AT(n) /= typesize;
+    }
+#endif
+    // cerr << "QQQ: allgatherv[4]" << endl;
+    
+    // cerr << "QQQ: allgatherv[5]" << endl;
+    return alldata_buffer_out;
+  }
+  
+  
+  
+  template <typename T>
+  vector <T>
   alltoall (MPI_Comm const comm,
             vector <T> const & data)
   {
@@ -548,11 +618,15 @@ namespace CarpetLib
   }
   
   
-  
   template
   vector <vector <dh::light_dboxes> >
   allgatherv (MPI_Comm comm,
               vector <dh::light_dboxes> const & data);
+  
+  template
+  vector <ivect>
+  allgatherv1 (MPI_Comm comm,
+               vector <ivect> const & data);
   
   template
   vector <sendrecv_pseudoregion_t>
