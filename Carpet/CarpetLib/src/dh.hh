@@ -273,14 +273,10 @@ public:
 
 
 MPI_Datatype mpi_datatype (dh::light_dboxes const &) CCTK_ATTRIBUTE_CONST;
-MPI_Datatype mpi_datatype (dh::fast_dboxes const &);
+MPI_Datatype mpi_datatype (dh::fast_dboxes const &) CCTK_ATTRIBUTE_CONST;
 namespace dist {
   template<> inline MPI_Datatype mpi_datatype<dh::light_dboxes> ()
-  CCTK_ATTRIBUTE_CONST;
-  template<> inline MPI_Datatype mpi_datatype<dh::light_dboxes> ()
   { dh::light_dboxes dummy; return mpi_datatype(dummy); }
-  template<> inline MPI_Datatype mpi_datatype<dh::fast_dboxes> ()
-  CCTK_ATTRIBUTE_CONST;
   template<> inline MPI_Datatype mpi_datatype<dh::fast_dboxes> ()
   { dh::fast_dboxes dummy; return mpi_datatype(dummy); }
 }
