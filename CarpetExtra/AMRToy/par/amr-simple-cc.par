@@ -1,0 +1,219 @@
+Cactus::cctk_run_title = "Minkowski/AMR"
+
+Cactus::cctk_full_warnings         = yes
+Cactus::highlight_warning_messages = no
+
+Cactus::terminate       = "time"
+Cactus::cctk_final_time = 0.0
+
+
+
+ActiveThorns = "IOUtil"
+
+IO::out_dir = $parfile
+
+
+
+#ActiveThorns = "TerminationTrigger"
+#
+#TerminationTrigger::max_walltime          = @WALLTIME_HOURS@   # hours
+#TerminationTrigger::on_remaining_walltime = 15                 # minutes
+#
+#TerminationTrigger::termination_from_file   = yes
+#TerminationTrigger::create_termination_file = yes
+#TerminationTrigger::termination_file        = "../TERMINATE"
+
+
+
+ActiveThorns = "AEILocalInterp"
+
+ActiveThorns = "Fortran"
+
+ActiveThorns = "LocalInterp"
+
+ActiveThorns = "LoopControl"
+
+ActiveThorns = "GSL"
+
+ActiveThorns = "GenericFD"
+
+ActiveThorns = "Slab"
+
+
+
+ActiveThorns = "InitBase"
+
+
+
+ActiveThorns = "Carpet CarpetLib CarpetInterp CarpetReduce CarpetSlab"
+
+Carpet::verbose           = no
+Carpet::veryverbose       = no
+Carpet::schedule_barriers = no
+Carpet::storage_verbose   = no
+Carpet::timers_verbose    = no
+CarpetLib::output_bboxes  = no
+
+Carpet::domain_from_coordbase = yes
+Carpet::max_refinement_levels = 10
+
+driver::ghost_size           = 3
+Carpet::refinement_centering = "cell"
+Carpet::use_buffer_zones     = yes
+
+Carpet::prolongation_order_space = 5
+Carpet::prolongation_order_time  = 2
+
+Carpet::convergence_level = 0
+
+Carpet::init_fill_timelevels = yes
+
+Carpet::poison_new_timelevels = yes
+CarpetLib::poison_new_memory  = yes
+
+Carpet::output_timers_every      = 512
+CarpetLib::print_timestats_every = 512
+CarpetLib::print_memstats_every  = 512
+
+
+
+ActiveThorns = "NaNChecker"
+
+NaNChecker::check_every     = 1 # 512
+NaNChecker::action_if_found = "terminate"
+NaNChecker::check_vars      = "
+"
+
+
+
+ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
+
+CoordBase::domainsize = "minmax"
+
+CoordBase::xmin = -120.00
+CoordBase::ymin = -120.00
+CoordBase::zmin = -120.00
+CoordBase::xmax = +120.00
+CoordBase::ymax = +120.00
+CoordBase::zmax = +120.00
+CoordBase::dx   =    2.00
+CoordBase::dy   =    2.00
+CoordBase::dz   =    2.00
+
+CoordBase::boundary_staggered_x_lower = yes
+CoordBase::boundary_staggered_y_lower = yes
+CoordBase::boundary_staggered_z_lower = yes
+CoordBase::boundary_staggered_x_upper = yes
+CoordBase::boundary_staggered_y_upper = yes
+CoordBase::boundary_staggered_z_upper = yes
+
+CoordBase::boundary_size_x_lower = 3
+CoordBase::boundary_size_y_lower = 3
+CoordBase::boundary_size_z_lower = 3
+CoordBase::boundary_size_x_upper = 3
+CoordBase::boundary_size_y_upper = 3
+CoordBase::boundary_size_z_upper = 3
+
+CartGrid3D::type = "coordbase"
+
+
+
+ActiveThorns = "SphericalSurface"
+
+
+
+ActiveThorns = "AMRToy CarpetRegrid2"
+
+CarpetRegrid2::regrid_every            = 128
+CarpetRegrid2::freeze_unaligned_levels = yes
+CarpetRegrid2::verbose                 = yes
+CarpetRegrid2::veryverbose             = no
+
+Carpet::regrid_during_initialisation = yes
+
+CarpetRegrid2::adaptive_refinement = yes
+CarpetRegrid2::adaptive_block_size = 8
+
+
+AMRToy::radius_type = "sphere"
+AMRToy::min_radius  = 29.999
+AMRToy::max_radius  = 59.999
+
+
+
+ActiveThorns = "MoL Time"
+
+MoL::ODE_Method             = "RK4"
+MoL::MoL_Intermediate_Steps = 4
+MoL::MoL_Num_Scratch_Levels = 1
+
+Time::dtfac = 0.40
+
+
+
+ActiveThorns = "CarpetIOBasic"
+
+IOBasic::outInfo_every      = 128
+IOBasic::outInfo_reductions = "norm2"
+IOBasic::outInfo_vars       = "
+        Carpet::physical_time_per_hour
+        Carpet::local_grid_points_per_second
+"
+
+
+
+ActiveThorns = "CarpetIOScalar"
+
+IOScalar::one_file_per_group = yes
+
+IOScalar::outScalar_every = 128
+IOScalar::outScalar_vars  = "
+        grid::coordinates
+        CarpetReduce::weight
+        CarpetRegrid2::level_mask
+"
+
+
+
+ActiveThorns = "CarpetIOASCII"
+
+IOASCII::one_file_per_group = yes
+
+IOASCII::output_symmetry_points = no
+IOASCII::output_ghost_points    = no
+
+IOASCII::out0D_every = 128
+IOASCII::out0D_vars  = "
+        Carpet::timing
+        grid::coordinates
+        CarpetReduce::weight
+        CarpetRegrid2::level_mask
+"
+
+IOASCII::out1D_every = 128
+IOASCII::out1D_vars  = "
+        grid::coordinates
+        CarpetReduce::weight
+        CarpetRegrid2::level_mask
+"
+
+IOASCII::out2D_every = 128
+IOASCII::out2D_vars  = "
+        grid::coordinates
+        CarpetReduce::weight
+        CarpetRegrid2::level_mask
+"
+
+
+
+ActiveThorns = "Formaline"
+
+
+
+ActiveThorns = "TimerReport"
+
+TimerReport::out_every                  = 512
+TimerReport::out_filename               = "TimerReport"
+TimerReport::output_all_timers_together = yes
+TimerReport::output_all_timers_readable = yes
+TimerReport::n_top_timers               = 20

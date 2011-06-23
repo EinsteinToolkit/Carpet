@@ -1,0 +1,18 @@
+# Parameter definitions for thorn AMRToy
+
+KEYWORD radius_type "Norm defining the shape of the refined region" STEERABLE=always
+{
+  "diamond" :: "L_1 norm"
+  "sphere"  :: "L_2 norm"
+  "box"     :: "L_inf norm"
+} "sphere"
+
+CCTK_REAL min_radius "Minimum refinement radius" STEERABLE=always
+{
+  (0:* :: ""
+} 1.0
+
+CCTK_REAL max_radius "Maximum refinement radius" STEERABLE=always
+{
+  0:* :: ""
+} 1.0

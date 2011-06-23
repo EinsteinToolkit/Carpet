@@ -1,0 +1,15 @@
+# Schedule definitions for thorn AMRToy
+
+STORAGE: CarpetRegrid2::level_mask
+
+SCHEDULE AMR_set_level_mask AT preregridinitial
+{
+  LANG: Fortran
+  OPTIONS: global loop-local
+} "Set AMR mask"
+
+SCHEDULE AMR_set_level_mask AT preregrid
+{
+  LANG: Fortran
+  OPTIONS: global loop-local
+} "Set AMR mask"

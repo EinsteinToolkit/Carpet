@@ -1,0 +1,5 @@
+# Interface definition for thorn AMRToy
+
+IMPLEMENTS: AMRToy
+
+INHERITS: grid CarpetRegrid2

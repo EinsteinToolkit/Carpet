@@ -1,0 +1,7 @@
+# Main make.code.defn file for thorn AMRToy
+
+# Source files in this directory
+SRCS = set_level_mask.F90
+
+# Subdirectories containing source files
+SUBDIRS = 
