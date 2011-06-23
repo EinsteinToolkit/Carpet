@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
+#include <typeinfo>
 #include <vector>
 
 #include <cctk.h>
@@ -21,7 +22,9 @@
 #include <carpet.hh>
 #include <CarpetTimers.hh>
 
+#include "boundary.hh"
 #include "indexing.hh"
+#include "property.hh"
 
 
 
@@ -107,209 +110,6 @@ namespace CarpetRegrid2 {
     if (found_error) {
       CCTK_WARN (CCTK_WARN_ABORT,
                  "Errors found in grid structure specification");
-    }
-  }
-  
-  
-  
-  // Convert a coordinate location to an index location.  For cell
-  // centring, shift upwards.
-  ivect
-  rpos2ipos (rvect const & rpos,
-             rvect const & origin, rvect const & scale,
-             gh const & hh, int const rl)
-  {
-    ivect const istride  = hh.baseextents.at(0).at(rl).stride();
-    ivect const bistride = hh.baseextents.at(0).at(0).stride();
-    
-    if (hh.refcent == cell_centered) {
-      assert (all (istride % 2 == 0));
-    }
-    
-#if 1
-    ivect const ipos =
-      hh.refcent == vertex_centered
-      ? ivect (floor (((rpos - origin) * scale                    ) / rvect(istride) + rvect(0.5))) * istride
-      : ivect (floor (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride)             )) * istride + istride/2 + bistride/2;
-#else
-    ivect const ipos =
-      hh.refcent == vertex_centered
-      ? ivect (floor (((rpos - origin) * scale                    ) / rvect(istride) + rvect(0.5))) * istride
-      : ivect (floor (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride) + rvect(0.5))) * istride + istride/2 + bistride/2;
-#endif
-    
-    return ipos;
-  }
-  
-  // Convert a coordinate location to an index location, rounding in
-  // the opposite manner as rpos2ipos.  For cell centring, shift
-  // downwards instead of upwards.
-  ivect
-  rpos2ipos1 (rvect const & rpos,
-              rvect const & origin, rvect const & scale,
-              gh const & hh, int const rl)
-  {
-    ivect const istride  = hh.baseextents.at(0).at(rl).stride();
-    ivect const bistride = hh.baseextents.at(0).at(0).stride();
-    
-    if (hh.refcent == cell_centered) {
-      assert (all (istride % 2 == 0));
-    }
-    
-#if 1
-    ivect const ipos =
-      hh.refcent == vertex_centered
-      ? ivect (ceil (((rpos - origin) * scale                    ) / rvect(istride) - rvect(0.5))) * istride
-      : ivect (ceil (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride)             )) * istride - istride/2 + bistride/2;
-#else
-    ivect const ipos =
-      hh.refcent == vertex_centered
-      ? ivect (ceil (((rpos - origin) * scale                    ) / rvect(istride) - rvect(0.5))) * istride
-      : ivect (ceil (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride) - rvect(0.5))) * istride - istride/2 + bistride/2;
-#endif
-    
-    return ipos;
-  }
-  
-  // Convert an index location to a coordinate location
-  rvect
-  ipos2rpos (ivect const & ipos,
-             rvect const & origin, rvect const & scale,
-             gh const & hh, int const rl)
-  {
-    return rvect(ipos) / scale + origin;
-  }
-  
-  // Convert an index bbox to a coordinate bbox
-  rbbox
-  ibbox2rbbox (ibbox const & ib,
-               rvect const & origin, rvect const & scale,
-               gh const & hh, int const rl)
-  {
-    rvect const zero (0);
-    return rbbox (ipos2rpos (ib.lower() , origin, scale, hh, rl),
-                  ipos2rpos (ib.upper() , origin, scale, hh, rl),
-                  ipos2rpos (ib.stride(), zero  , scale, hh, rl));
-  }
-  
-  // Snap (enlarge) a bbox to the next coarser level, if desired
-  ibbox
-  snap_ibbox (ibbox const & ib,
-              gh const & hh, int const rl)
-  {
-    DECLARE_CCTK_PARAMETERS;
-    
-    assert (not ib.empty());
-    assert (rl > 0);
-    
-    if (not snap_to_coarse) return ib;
-    
-    ibbox const & base  = hh.baseextents.at(0).at(rl);
-    ibbox const & cbase = hh.baseextents.at(0).at(rl-1);
-    assert (all (cbase.stride() % base.stride() == 0));
-    ivect const reffact = cbase.stride() / base.stride();
-    
-    ivect const lo  = ib.lower();
-    ivect const up  = ib.upper();
-    ivect const str = ib.stride();
-    assert (all (str == base.stride()));
-    
-    if (veryverbose) {
-      cout << "Snapping: coarse is " << cbase << ", current is " << base << "\n";
-    }
-    
-#warning "TODO: shift/unshift boxes, because we are looking at grid points, not cell boundaries"
-
-    return ib.expand(reffact-1).contracted_for(cbase).expanded_for(base);
-  }
-  
-  
-  
-  void
-  get_boundary_specification (jjvect & nboundaryzones,
-                              jjvect & is_internal,
-                              jjvect & is_staggered,
-                              jjvect & shiftout)
-  {
-    if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
-      assert (Carpet::map >= 0);
-      CCTK_INT const ierr = MultiPatch_GetBoundarySpecification
-        (Carpet::map, 2*dim,
-         & nboundaryzones[0][0],
-         & is_internal[0][0],
-         & is_staggered[0][0],
-         & shiftout[0][0]);
-      assert (not ierr);
-    } else if (CCTK_IsFunctionAliased ("GetBoundarySpecification")) {
-      CCTK_INT const ierr = GetBoundarySpecification
-        (2*dim,
-         & nboundaryzones[0][0],
-         & is_internal[0][0],
-         & is_staggered[0][0],
-         & shiftout[0][0]);
-      assert (not ierr);
-    } else {
-      assert (0);
-    }
-  }
-  
-  void
-  get_physical_boundary (rvect & physical_lower,
-                         rvect & physical_upper,
-                         rvect & spacing)
-  {
-    rvect interior_lower, interior_upper;
-    rvect exterior_lower, exterior_upper;
-    if (CCTK_IsFunctionAliased ("MultiPatch_GetDomainSpecification")) {
-      assert (Carpet::map >= 0);
-      CCTK_INT const ierr = MultiPatch_GetDomainSpecification
-        (Carpet::map, dim,
-         & physical_lower[0], & physical_upper[0],
-         & interior_lower[0], & interior_upper[0],
-         & exterior_lower[0], & exterior_upper[0],
-         & spacing[0]);
-      assert (not ierr);
-    } else if (CCTK_IsFunctionAliased ("GetDomainSpecification")) {
-      CCTK_INT const ierr = GetDomainSpecification
-        (dim,
-         & physical_lower[0], & physical_upper[0],
-         & interior_lower[0], & interior_upper[0],
-         & exterior_lower[0], & exterior_upper[0],
-         & spacing[0]);
-      assert (not ierr);
-    } else {
-      assert (0);
-    }
-  }
-  
-  void
-  calculate_exterior_boundary (rvect const & physical_lower,
-                               rvect const & physical_upper,
-                               rvect       & exterior_lower,
-                               rvect       & exterior_upper,
-                               rvect const & spacing)
-  {
-    rvect interior_lower, interior_upper;
-    if (CCTK_IsFunctionAliased ("MultiPatch_ConvertFromPhysicalBoundary")) {
-      assert (Carpet::map >= 0);
-      CCTK_INT const ierr = MultiPatch_ConvertFromPhysicalBoundary
-        (Carpet::map, dim,
-         & physical_lower[0], & physical_upper[0],
-         & interior_lower[0], & interior_upper[0],
-         & exterior_lower[0], & exterior_upper[0],
-         & spacing[0]);
-      assert (not ierr);
-    } else if (CCTK_IsFunctionAliased ("ConvertFromPhysicalBoundary")) {
-      CCTK_INT const ierr =
-        ConvertFromPhysicalBoundary
-        (dim,
-         & physical_lower[0], & physical_upper[0],
-         & interior_lower[0], & interior_upper[0],
-         & exterior_lower[0], & exterior_upper[0],
-         & spacing[0]);
-      assert (not ierr);
-    } else {
-      assert (0);
     }
   }
   
@@ -418,26 +218,6 @@ namespace CarpetRegrid2 {
     // Calculate the union of the bounding boxes for all levels
     //
     
-    // Find out whether the grid staggering corresponds to the
-    // boundary staggering.  If there is a mismatch, then there cannot
-    // be refinement near the corresponding boundary.
-    b2vect const boundary_staggering_mismatch =
-      xpose ((hh.refcent == vertex_centered) != (is_staggered == 0));
-#warning "TODO: This is too strict"
-    assert (all (all (not boundary_staggering_mismatch)));
-    
-    // This is the physical boundary
-    rvect const origin (exterior_lower);
-#warning "TODO: use hh.baseextents[0] [rl] instead of [0]"
-    rvect const scale (rvect (hh.baseextents.at(0).at(0).stride()) / spacing);
-    
-    // This is the location of the outermost grid points.  For cell
-    // centring, these are 1/2 grid spacing inside of the boundary.
-    ivect const physical_ilower =
-      rpos2ipos (physical_lower, origin, scale, hh, 0);
-    ivect const physical_iupper =
-      rpos2ipos1 (physical_upper, origin, scale, hh, 0);
-    
     // The set of refined regions
     vector <ibset> regions (min_rl);
     
@@ -456,6 +236,7 @@ namespace CarpetRegrid2 {
 
     // Refine only patch 0
     if (Carpet::map == 0) {
+      
       // Loop over all centres
       for (int n = 0; n < num_centres; ++ n) {
         centre_description centre (cctkGH, n);
@@ -468,6 +249,8 @@ namespace CarpetRegrid2 {
               cout << "Refinement level " << rl << ": importing refined region settings..." << endl;
             }
             
+            level_boundary const bnd (hh, dd, rl);
+            
             // Calculate a bbox for this region
             rvect const rmin = centre._position - centre._radius.at(rl);
             rvect const rmax = centre._position + centre._radius.at(rl);
@@ -477,24 +260,19 @@ namespace CarpetRegrid2 {
             }
             
             // Convert to an integer bbox
-            ivect const istride = hh.baseextents.at(0).at(rl).stride();
+            ivect const istride = hh.baseextent(0,rl).stride();
             ivect const imin =
-              rpos2ipos (rmin, origin, scale, hh, rl)
+              rpos2ipos (rmin, bnd.origin, bnd.scale, hh, rl)
               - boundary_shiftout * istride;
             ivect const imax =
-              rpos2ipos1 (rmax, origin, scale, hh, rl)
+              rpos2ipos1 (rmax, bnd.origin, bnd.scale, hh, rl)
               + boundary_shiftout * istride;
             
             if (veryverbose) {
               cout << "Centre " << n+1 << " refinement level " << rl << ": integer region is (" << imin << ":" << imax << ")\n";
             }
             
-            ibbox const region =
-              snap_ibbox (ibbox (imin, imax, istride), hh, rl);
-            
-            if (veryverbose) {
-              cout << "Centre " << n+1 << " refinement level " << rl << ": snapped integer region is " << region << "\n";
-            }
+            ibbox const region (imin, imax, istride);
             
             // Add this region to the list of regions
             if (static_cast <int> (regions.size()) < rl+1) {
@@ -510,588 +288,151 @@ namespace CarpetRegrid2 {
           
         } // if centre is active
       }   // for n
-    }     // if map==0
+      
+    } // if map==0
+    
+    
+    
+    // We need to check and/or enforce certain properties of the grid
+    // structure, such as e.g. proper nesting. Unfortunately,
+    // enforcing one of the properties may invalidate another. We
+    // therefore abstract the concept of a property into a class
+    // "property", and enforce them round-robin until the grid
+    // structure does not change any more. The order in which the
+    // properties are enforced is relevant (i.e. it influence the
+    // final grid structure).
+    
+    // Properties to be applied (without testing), only once, in the
+    // beginning
+    vector<property*> once_properties;
+    once_properties.push_back (new proper_nesting());
+    once_properties.push_back (new add_buffers());
+    once_properties.push_back (new combine_regions());
+    
+    // Properties to be enforce "until all is well"
+    vector<property*> properties;
+    properties.push_back (new snap_coarse());
+    properties.push_back (new rotsym90());
+    properties.push_back (new rotsym180());
+    properties.push_back (new boundary_clip());
+    
+    // Properties to be tested (and not enforced) in the end
+    vector<property*> final_properties;
+    final_properties.push_back (new in_domain());
     
     
     
     regss.resize (regions.size());
     
+    // Loop over all levels from finest to coarsest
     assert (regions.size() > 0);
     for (int rl = regions.size() - 1; rl >= min_rl; -- rl) {
       
       // Sanity check
       assert (not regions.at(rl).empty());
       
+      // Determine boundary locations of this level
+      level_boundary const bnd (hh, dd, rl);
       
+      if (veryverbose) {
+        cout << "Refinement level " << rl << ":\n"
+             << "   Original regions are " << regions.at(rl) << "\n";
+      }
       
-      //
-      // Ensure that this grid contains the next finer grid
-      //
-      if (ensure_proper_nesting) {
-        if (rl < int(regions.size()) - 1) {
-          
-          if (veryverbose) {
-            cout << "Refinement level " << rl << ": ensuring proper nesting..." << endl;
-          }
-          
-          assert (not regions.at(rl).empty());
-          ibbox const coarse0 = * regions.at(rl).begin();
-          
-          // This is the location of the outermost grid points.  For
-          // cell centring, these are 1/2 grid spacing inside of the
-          // boundary.
-          ivect const level_physical_ilower =
-            rpos2ipos (physical_lower, origin, scale, hh, rl);
-          ivect const level_physical_iupper =
-            rpos2ipos1 (physical_upper, origin, scale, hh, rl);
-          
-          i2vect const fdistance = dd.ghost_widths.at(rl);
-          i2vect const cdistance =
-            i2vect (min_distance + dd.prolongation_stencil_size(rl));
-          
-          for (ibset::const_iterator ibb = regions.at(rl+1).begin();
-               ibb != regions.at(rl+1).end();
-               ++ ibb)
-          {
-            ibbox const & fbb = * ibb;
-            
-            bvect const lower_is_outer = fbb.lower() <= level_physical_ilower;
-            bvect const upper_is_outer = fbb.upper() >= level_physical_iupper;
-            b2vect const ob (lower_is_outer, upper_is_outer);
-            
-            ibbox const ebb = fbb.expand (i2vect (not ob) * fdistance);
-            ibbox const cbb = ebb.expanded_for (coarse0);
-            ibbox const ecbb = cbb.expand (i2vect (not ob) * cdistance);
-            
-            // Enlarge this level
-            regions.at(rl) |= snap_ibbox (ecbb, hh, rl);
-          }
-          
-          if (veryverbose) {
-            cout << "Refinement level " << rl << ": enlarged regions to " << regions.at(rl) << endl;
-          }
-          
-        }
-      } // if ensure proper nesting
-      
-      
-      
-      //
-      // Add buffer zones
-      //
+      // Apply "once" properties unconditionally
+      for (vector<property*>::iterator
+             pi = once_properties.begin(); pi != once_properties.end(); ++ pi)
       {
-        if (veryverbose) {
-          cout << "Refinement level " << rl << ": adding buffer zones..." << endl;
-        }
-
-        ibset buffered;
-        for (ibset::const_iterator ibb = regions.at(rl).begin();
-             ibb != regions.at(rl).end();
-             ++ ibb)
+        (*pi)->enforce (hh, dd, bnd, regions, rl);
+      }
+      
+      // Enforce properties on this level
+      for (int count=0;; ++count) {
+        bool done_enforcing = true;
+        for (vector<property*>::iterator
+               pi = properties.begin(); pi != properties.end(); ++ pi)
         {
-          ibbox const & bb = * ibb;
-          
-          ibbox const bbb = bb.expand (dd.buffer_widths.at(rl));
-
-          buffered |= bbb;
+          bool const test_satisfied = (*pi)->test (hh, dd, bnd, regions, rl);
+          if (not test_satisfied) {
+            (*pi)->enforce (hh, dd, bnd, regions, rl);
+          }
+          done_enforcing = done_enforcing and test_satisfied;
         }
-        regions.at(rl) = buffered;
         
-        if (veryverbose) {
-          cout << "Refinement level " << rl << ": enlarged regions to " << regions.at(rl) << endl;
+        if (done_enforcing) break;
+        
+        if (count == 10) {
+          CCTK_WARN (CCTK_WARN_ABORT, "Could not enforce grid structure properties; giving up");
+        }
+        if (count != 0) {
+          // This may not be true. However, the previous version of
+          // the code assumed this, so we want to know whether this
+          // fails.
+          CCTK_WARN (CCTK_WARN_ALERT, "Could not enforce grid structure properties in this round, starting another round");
         }
       }
       
+      if (veryverbose) {
+        cout << "Refinement level " << rl << ":\n"
+             << "   Final regions are " << regions.at(rl) << "\n";
+      }
       
-      
-      //
-      // Check whether it would be worthwhile to combine all regions
-      // into a single region
-      //
-      // TODO: Check this also for pairs of regions
-      //
-      // TODO: Check after clipping
+      // Test final properties
+      bool all_is_well = true;
+      for (vector<property*>::const_iterator
+             pi = final_properties.begin(); pi != final_properties.end(); ++ pi)
       {
-        if (veryverbose) {
-          cout << "Refinement level " << rl << ": checking whether regions should be combined..." << endl;
+        bool const test_satisfied = (*pi)->test (hh, dd, bnd, regions, rl);
+        if (not test_satisfied) {
+          cout << "Necessary property " << typeid(*pi).name() << " does not hold\n";
         }
-
-        ibbox single;
-        for (ibset::const_iterator ibb = regions.at(rl).begin();
-             ibb != regions.at(rl).end();
-             ++ ibb)
-        {
-          ibbox const & bb = * ibb;
-          single = single.expanded_containing (bb);
-        }
-        
-        CCTK_REAL const regions_size
-          = static_cast <CCTK_REAL> (regions.at(rl).size());
-        CCTK_REAL const single_size
-          = static_cast <CCTK_REAL> (single.size());
-        
-        // Would a single bbox be efficient enough?
-        if (regions_size >= min_fraction * single_size) {
-          // Combine the boxes
-          regions.at(rl) = ibset (single);
-          if (veryverbose) {
-            cout << "Refinement level " << rl << ": combining regions to " << regions.at(rl) << endl;
-          }
-        } else {
-          if (veryverbose) {
-            cout << "Refinement level " << rl << ": not combining" << endl;
-          }
-        }
+        all_is_well = all_is_well and test_satisfied;
+      }
+      if (not all_is_well) {
+        CCTK_WARN (CCTK_WARN_ABORT,
+                   "Not all necessary grid structure properties are holding");
       }
       
-      
-      
-      // Find the location of the outer boundary
-      if (veryverbose) {
-        cout << "Refinement level " << rl << ": determining outer boundary..." << endl;
-      }
-      
-      rvect const level_physical_lower = physical_lower;
-      rvect const level_physical_upper = physical_upper;
-      rvect const level_spacing = spacing / rvect (hh.reffacts.at(rl));
-      if (veryverbose) {
-        cout << "Refinement level " << rl << ": physical coordinate boundary is at " << r2vect(level_physical_lower, level_physical_upper) << endl;
-        cout << "Refinement level " << rl << ": spacing is " << level_spacing << endl;
-      }
-#if 0
-      rvect level_interior_lower, level_interior_upper;
-      rvect level_exterior_lower, level_exterior_upper;
-      {
-        CCTK_INT const ierr =
-          ConvertFromPhysicalBoundary
-          (dim,
-           & level_physical_lower[0], & level_physical_upper[0],
-           & level_interior_lower[0], & level_interior_upper[0],
-           & level_exterior_lower[0], & level_exterior_upper[0],
-           & level_spacing[0]);
-        assert (not ierr);
-      }
-#endif
-      rvect level_exterior_lower, level_exterior_upper;
-      calculate_exterior_boundary (level_physical_lower, level_physical_upper,
-                                   level_exterior_lower, level_exterior_upper,
-                                   level_spacing);
-      if (veryverbose) {
-        cout << "Refinement level " << rl << ": exterior coordinate boundary is at " << r2vect(level_exterior_lower, level_exterior_upper) << endl;
-      }
-      
-      ibbox const & baseextent = hh.baseextents.at(0).at(rl);
-      ivect const istride = baseextent.stride();
-      if (veryverbose) {
-        cout << "Refinement level " << rl << ": stride is " << istride << endl;
-      }
-      
-      // This is the location of the outermost grid points.  For cell
-      // centring, these are 1/2 grid spacing inside of the boundary.
-      ivect const level_physical_ilower =
-        rpos2ipos (physical_lower, origin, scale, hh, rl);
-      ivect const level_physical_iupper =
-        rpos2ipos1 (physical_upper, origin, scale, hh, rl);
-      if (veryverbose) {
-        cout << "Refinement level " << rl << ": physical boundary is at " << i2vect(level_physical_ilower, level_physical_iupper) << endl;
-        cout << "Refinement level " << rl << ": reconstructed physical coordinate boundary is at "
-             << r2vect(ipos2rpos(level_physical_ilower - (hh.refcent == cell_centered ? istride/2 : 0), origin, scale, hh, rl),
-                       ipos2rpos(level_physical_iupper + (hh.refcent == cell_centered ? istride/2 : 0), origin, scale, hh, rl)) << endl;
-      }
-      
-      ivect const level_exterior_ilower =
-        rpos2ipos (level_exterior_lower, origin, scale, hh, rl);
-      ivect const level_exterior_iupper =
-        rpos2ipos1 (level_exterior_upper, origin, scale, hh, rl);
-      assert (all (level_exterior_ilower >= baseextent.lower()));
-      assert (all (level_exterior_iupper <= baseextent.upper()));
-      if (veryverbose) {
-        cout << "Refinement level " << rl << ": exterior boundary is at " << i2vect(level_exterior_ilower, level_exterior_iupper) << endl;
-        cout << "Refinement level " << rl << ": reconstructed exterior coordinate boundary is at "
-             << r2vect(ipos2rpos(level_exterior_ilower, origin, scale, hh, rl),
-                       ipos2rpos(level_exterior_iupper, origin, scale, hh, rl)) << endl;
-      }
-      
-      // Find the minimum necessary distance away from the outer
-      // boundary due to buffer and ghost zones.  This is e.g. the
-      // distance that the lower boundary of a bbox has to have from
-      // the lower boundary.  This is in terms of grid points.
-      i2vect const min_bnd_dist_away = dd.ghost_widths.at(rl);
-      // Find the minimum necessary distance from the outer boundary
-      // due to buffer and ghost zones.  This is e.g. the distance
-      // that the upper boundary of a bbox has to have from the lower
-      // boundary.  This is in terms of grid points.
-      i2vect const min_bnd_dist_incl = dd.ghost_widths.at(rl);
-      // TODO: The above is required only near symmetry boundaries.
-      
-      
-      
-      //
-      // Make the boxes rotating-90 symmetric
-      //
-      if (symmetry_rotating90) {
-        if (veryverbose) {
-          cout << "Refinement level " << rl << ": making regions rotating-90 symmetric" << endl;
-        }
-        
-        ibset added;
-        for (ibset::const_iterator ibb = regions.at(rl).begin();
-             ibb != regions.at(rl).end();
-             ++ ibb)
-        {
-          ibbox const & bb = * ibb;
-          if (veryverbose) {
-            cout << "   considering box " << bb << "..." << endl;
-          }
-          
-          bvect const lower_is_outside_lower =
-            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= level_physical_ilower;
-          
-          // Treat both x and y directions
-          for (int dir=0; dir<=1; ++dir) {
-            if (veryverbose) {
-              cout << "   symmetrising in " << "xy"[dir] << " direction..." << endl;
-            }
-            if (lower_is_outside_lower[dir]) {
-              ivect const ilo = bb.lower();
-              ivect const iup = bb.upper();
-              ivect const istr = bb.stride();
-              
-              // Origin
-              rvect const axis (physical_lower[0],
-                                physical_lower[1],
-                                physical_lower[2]); // z component is unused
-              ivect const iaxis0 =
-                rpos2ipos (axis, origin, scale, hh, rl);
-              assert (all (iaxis0 % istr == 0));
-              ivect const iaxis1 =
-                rpos2ipos1 (axis, origin, scale, hh, rl);
-              assert (all (iaxis1 % istr == 0));
-              ivect const offset = iaxis1 - iaxis0;
-              assert (all (offset % istr == 0));
-              assert (all (offset >= 0 and offset < 2*istr));
-              assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == 0));
-              ivect const iaxis = (iaxis0 + iaxis1 - offset) / 2;
-              // negated (reflected) domain boundaries
-              ivect const neg_ilo = (2*iaxis+offset) - ilo;
-              ivect const neg_iup = (2*iaxis+offset) - iup;
-              // offset to add when permuting directions
-              ivect const permute01 (-iaxis[0]+iaxis[1], -iaxis[1]+iaxis[0], 0);
-              
-              // Rotate 90 degrees about z axis
-              ivect new_ilo, new_iup;
-              if (dir==0) {
-                // rotate clockwise
-                new_ilo = ivect (ilo[1], neg_iup[0], ilo[2]) + permute01;
-                new_iup = ivect (iup[1], neg_ilo[0], iup[2]) + permute01;
-              }
-              if (dir==1) {
-                // rotate counterclockwise
-                new_ilo = ivect (neg_iup[1], ilo[0],  ilo[2]) + permute01;
-                new_iup = ivect (neg_ilo[1],  iup[0],  iup[2]) + permute01;
-              }
-              ivect const new_istr (istr);
-              
-              ibbox const new_bb (new_ilo, new_iup, new_istr);
-              // Will be clipped later
-              //assert (new_bb.is_contained_in (baseextent));
-              
-              added |= new_bb;
-              if (veryverbose) {
-                cout << "      adding box " << new_bb << endl;
-              }
-            }
-          }
-        }
-          
-        regions.at(rl) |= added;
-        
-        if (veryverbose) {
-          cout << "Refinement level " << rl << ": symmetrised regions are " << regions.at(rl) << endl;
-        }
-      }
-      
-      
-      
-      //
-      // Make the boxes rotating-180 symmetric
-      //
-      if (symmetry_rotating180) {
-        if (veryverbose) {
-          cout << "Refinement level " << rl << ": making regions rotating-180 symmetric" << endl;
-        }
-        
-        ibset added;
-        for (ibset::const_iterator ibb = regions.at(rl).begin();
-             ibb != regions.at(rl).end();
-             ++ ibb)
-        {
-          ibbox const & bb = * ibb;
-          if (veryverbose) {
-            cout << "   considering box " << bb << "..." << endl;
-          }
-          
-          bvect const lower_is_outside_lower =
-            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= level_physical_ilower;
-          
-          // Treat x direction
-          int const dir = 0;
-          if (veryverbose) {
-            cout << "   symmetrising in " << "x"[dir] << " direction..." << endl;
-          }
-          if (lower_is_outside_lower[dir]) {
-            ivect const ilo = bb.lower();
-            ivect const iup = bb.upper();
-            ivect const istr = bb.stride();
-            assert (istr[0] == istr[1]);
-            
-            // Origin
-            assert (hh.refcent == vertex_centered or all (istr % 2 == 0));
-            rvect const axis (physical_lower[0],
-                              (physical_lower[1] + physical_upper[1]) / 2,
-                              physical_lower[2]); // z component is unused
-            ivect const iaxis0 =
-              rpos2ipos (axis, origin, scale, hh, rl);
-            assert (all ((iaxis0 - baseextent.lower()) % istr == 0));
-            ivect const iaxis1 =
-              rpos2ipos1 (axis, origin, scale, hh, rl);
-            assert (all ((iaxis1 - baseextent.lower()) % istr == 0));
-            ivect const offset = iaxis1 - iaxis0;
-            assert (all (offset % istr == 0));
-            if (hh.refcent == vertex_centered) {
-              assert (all (offset >= 0 and offset < 2*istr));
-              assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == 0));
-            } else {
-              // The offset may be negative because both boundaries
-              // are shifted inwards by 1/2 grid spacing, and
-              // therefore iaxis0 < iaxis1 + istr
-              assert (all (offset >= -istr and offset < istr));
-              assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == istr));
-              assert (all (istr % 2 == 0));
-            }
-            ivect const iaxis = (iaxis0 + iaxis1 - offset) / 2;
-            ivect const neg_ilo = (2*iaxis+offset) - ilo;
-            ivect const neg_iup = (2*iaxis+offset) - iup;
-            
-            // Rotate 180 degrees about z axis
-            ivect const new_ilo (neg_iup[0], neg_iup[1], ilo[2]);
-            ivect const new_iup (neg_ilo[0], neg_ilo[1], iup[2]);
-            ivect const new_istr (istr);
-            
-            ibbox const new_bb (new_ilo, new_iup, new_istr);
-            // Will be clipped later
-            //assert (new_bb.is_contained_in (baseextent));
-            
-            added |= new_bb;
-            if (veryverbose) {
-              cout << "      adding box " << new_bb << endl;
-            }
-          }
-        }
-        
-        regions.at(rl) |= added;
-        
-        if (veryverbose) {
-          cout << "Refinement level " << rl << ": symmetrised regions are " << regions.at(rl) << endl;
-        }
-      } // if symmetry_rotating180
-      
-      
-      
-      //
-      // Clip at the outer boundary
-      //
-      {
-        if (veryverbose) {
-          cout << "Refinement level " << rl << ": clipping at outer boundary..." << endl;
-        }
-        
-        ibset clipped;
-        for (ibset::const_iterator ibb = regions.at(rl).begin();
-             ibb != regions.at(rl).end();
-             ++ ibb)
-        {
-          ibbox const & bb = * ibb;
-          if (veryverbose) {
-            cout << "   considering box " << bb << "..." << endl;
-          }
-          
-          // Clip boxes that extend outside the boundary.  Enlarge
-          // boxes that are inside but too close to the outer
-          // boundary.
-          bvect const lower_is_outside_lower =
-            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= level_physical_ilower;
-          // Remove bboxes that are completely outside.
-          bvect const upper_is_outside_lower =
-            bb.upper() < level_physical_ilower;
-          // Enlarge bboxes that extend not far enough inwards.
-          bvect const upper_is_almost_outside_lower =
-            bb.upper() < level_physical_ilower + min_bnd_dist_incl[0] * bb.stride();
-          
-          // Ditto for the upper boundary.
-          bvect const upper_is_outside_upper =
-            bb.upper() + min_bnd_dist_away[1] * bb.stride() >= level_physical_iupper;
-          bvect const lower_is_outside_upper =
-            bb.lower() > level_physical_iupper;
-          bvect const lower_is_almost_outside_upper =
-            bb.lower() > level_physical_iupper - min_bnd_dist_incl[1] * bb.stride();
-          
-          assert (not any (lower_is_almost_outside_upper and
-                           lower_is_outside_lower));
-          assert (not any (upper_is_almost_outside_lower and
-                           upper_is_outside_upper));
-          
-          if (any (upper_is_outside_lower or lower_is_outside_upper)) {
-            // The box is completely outside.  Ignore it.
-            if (veryverbose) {
-              cout << "      box is completely outside; dropping it" << endl;
-            }
-            continue;
-          }
-          
-          if (any ((lower_is_outside_lower and
-                    boundary_staggering_mismatch[0]) or
-                   (upper_is_outside_upper and
-                    boundary_staggering_mismatch[1])))
-          {
-            ostringstream msg;
-            msg << "Level " << rl << " of the refinement hierarchy has inconsistent bountary staggering."
-                << "  The refined region extends up to the boundary, but the staggering of the boundary is different from the staggering of the mesh refinement."
-                << "  lower_is_outside_lower=" << lower_is_outside_lower
-                << "  upper_is_outside_upper=" << upper_is_outside_upper
-                << "  boundary_staggering_mismatch=" << boundary_staggering_mismatch
-                << "  level_physical_ilower=" << level_physical_ilower
-                << "  level_physical_iupper=" << level_physical_iupper
-                << "  baseextent=" << baseextent;
-            CCTK_WARN (CCTK_WARN_ABORT, msg.str().c_str());
-          }
-          
-          ibbox const clipped_bb
-            (either (lower_is_outside_lower,
-                     level_exterior_ilower,
-                     either (lower_is_almost_outside_upper,
-                             (level_physical_iupper -
-                              min_bnd_dist_incl[1] * bb.stride()),
-                             bb.lower())),
-             either (upper_is_outside_upper,
-                     level_exterior_iupper,
-                     either (upper_is_almost_outside_lower,
-                             (level_physical_ilower +
-                              min_bnd_dist_incl[0] * bb.stride()),
-                             bb.upper())),
-             bb.stride());
-          if (not clipped_bb.is_contained_in (baseextent)) {
-            ostringstream msg;
-            msg << "Level " << rl << " of the refinement hierarchy is not contained in the simulation domain."
-                << "  (There may be too many ghost or buffer zones.)"
-                << "  One bbox is " << clipped_bb << "."
-                << "  lower_is_outside_lower=" << lower_is_outside_lower
-                << "  upper_is_outside_upper=" << upper_is_outside_upper
-                << "  lower_is_almost_outside_upper=" << lower_is_almost_outside_upper
-                << "  upper_is_almost_outside_lower=" << upper_is_almost_outside_lower
-                << "  level_exterior_ilower=" << level_exterior_ilower
-                << "  level_exterior_iupper=" << level_exterior_iupper
-                << "  level_physical_ilower=" << level_physical_ilower
-                << "  level_physical_iupper=" << level_physical_iupper
-                << "  baseextent=" << baseextent;
-            CCTK_WARN (CCTK_WARN_ABORT, msg.str().c_str());
-          }
-          assert (clipped_bb.is_contained_in (baseextent));
-          
-          clipped |= clipped_bb;
-          if (veryverbose) {
-            cout << "      Clipped box is " << clipped_bb << endl;
-          }
-          
-        } // for ibb
-        
-        regions.at(rl) = clipped;
-        if (veryverbose) {
-          cout << "Refinement level " << rl << ": clipped regions are " << regions.at(rl) << endl;
-        }
-      }
-      
-      
-      
-      //
-      // Ensure that this grid is contained in the domain
-      //
-      assert (regions.at(rl) <= hh.baseextents.at(0).at(rl));
-      
-      
-      
-      //
       // Create a vector of bboxes for this level
-      //
+      gh::cregs regs;
+      for (ibset::const_iterator
+             ibb = regions.AT(rl).begin(); ibb != regions.AT(rl).end(); ++ ibb)
       {
-        gh::cregs regs;
-        regs.reserve (regions.at(rl).setsize());
-        for (ibset::const_iterator ibb = regions.at(rl).begin();
-             ibb != regions.at(rl).end();
-             ++ ibb)
-        {
-          ibbox const & bb = * ibb;
-          assert (bb.is_contained_in (hh.baseextents.at(0).at(rl)));
-          
-          bvect const lower_is_outer = bb.lower() <= level_physical_ilower;
-          bvect const upper_is_outer = bb.upper() >= level_physical_iupper;
-          
-          b2vect const ob (lower_is_outer, upper_is_outer);
-          
-          region_t reg;
-          reg.extent = bb;
-          reg.map = Carpet::map;
-          reg.outer_boundaries = ob;
-          regs.push_back (reg);
-        }
+        ibbox const &bb = *ibb;
+        assert (bb.is_contained_in (hh.baseextent(0,rl)));
         
-        regss.at(rl) = regs;
+        bvect const lower_is_outer = bb.lower() <= bnd.level_physical_ilower;
+        bvect const upper_is_outer = bb.upper() >= bnd.level_physical_iupper;
+        
+        b2vect const ob (lower_is_outer, upper_is_outer);
+        
+        region_t reg;
+        reg.extent = bb;
+        reg.map = Carpet::map;
+        reg.outer_boundaries = ob;
+        regs.push_back (reg);
       }
+      
+      regss.AT(rl) = regs;
       
     } // for rl
     
-    //
-    // Check whether all grids are contained in the next coarser grid
-    //
-    for (int rl = regions.size() - 1; rl >= min_rl; -- rl) {
-      
-      assert (not regions.at(rl-1).empty());
-      ibbox const coarse0 = * regions.at(rl-1).begin();
-      
-      // This is the location of the outermost grid points.  For cell
-      // centring, these are 1/2 grid spacing inside of the boundary.
-      ivect const level_physical_ilower =
-        rpos2ipos (physical_lower, origin, scale, hh, rl);
-      ivect const level_physical_iupper =
-        rpos2ipos1 (physical_upper, origin, scale, hh, rl);
-      
-      i2vect const fdistance = dd.ghost_widths.at(rl);
-      i2vect const cdistance =
-        i2vect (min_distance + dd.prolongation_stencil_size(rl));
-      
-      bool is_properly_nested = true;
-      
-      for (ibset::const_iterator ibb = regions.at(rl).begin();
-           ibb != regions.at(rl).end();
-           ++ ibb)
-      {
-        ibbox const & fbb = * ibb;
-        
-        bvect const lower_is_outer = fbb.lower() <= level_physical_ilower;
-        bvect const upper_is_outer = fbb.upper() >= level_physical_iupper;
-        b2vect const ob (lower_is_outer, upper_is_outer);
-        
-        ibbox const cbb = fbb.expanded_for (coarse0);
-        
-        is_properly_nested = is_properly_nested and cbb <= regions.at(rl-1);
-      }
-      
-      if (not is_properly_nested) {
-        ostringstream msg;
-        msg << "Level " << rl << " of the refinement hierarchy is not properly nested.  It is not contained in level " << (rl-1) << ".";
-        CCTK_WARN (CCTK_WARN_ALERT, msg.str().c_str());
-      }
-    } // for rl
+    // Delete properties
+    for (vector<property*>::iterator
+           pi = once_properties.begin(); pi != once_properties.end(); ++pi)
+    {
+      delete *pi;
+    }
+    for (vector<property*>::iterator
+           pi = properties.begin(); pi != properties.end(); ++pi)
+    {
+      delete *pi;
+    }
+    for (vector<property*>::iterator
+           pi = final_properties.begin(); pi != final_properties.end(); ++pi)
+    {
+      delete *pi;
+    }
     
   }
   

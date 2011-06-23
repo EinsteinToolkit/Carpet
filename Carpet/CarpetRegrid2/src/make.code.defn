@@ -1,7 +1,12 @@
 # Main make.code.defn file for thorn CarpetRegrid2
 
 # Source files in this directory
-SRCS = indexing.cc initialise.cc paramcheck.cc regrid.cc
+SRCS =	boundary.cc				\
+	indexing.cc				\
+	initialise.cc				\
+	paramcheck.cc				\
+	property.cc				\
+	regrid.cc
 
 # Subdirectories containing source files
 SUBDIRS = 
