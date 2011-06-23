@@ -327,7 +327,7 @@ namespace CarpetRegrid2 {
     once_properties.push_back (new add_buffers());
     once_properties.push_back (new combine_regions());
     
-    // Properties to be enforce "until all is well"
+    // Properties to be enforced "until all is well"
     vector<property*> properties;
     properties.push_back (new snap_coarse());
     properties.push_back (new rotsym90());
