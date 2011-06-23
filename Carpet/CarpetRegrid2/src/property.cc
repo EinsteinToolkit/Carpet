@@ -332,7 +332,7 @@ namespace CarpetRegrid2 {
   symmetrised_regions (gh const& hh, dh const& dd, level_boundary const& bnd,
                        vector<ibset> const& regions, int const rl)
   {
-    ibset symmetrised;
+    ibset symmetrised = regions.at(rl);
     for (ibset::const_iterator
            ibb = regions.at(rl).begin(); ibb != regions.at(rl).end(); ++ ibb)
     {
@@ -440,7 +440,7 @@ namespace CarpetRegrid2 {
   {
     ibbox const& baseextent = hh.baseextent(0,rl);
     
-    ibset symmetrised;
+    ibset symmetrised = regions.at(rl);
     for (ibset::const_iterator
            ibb = regions.at(rl).begin(); ibb != regions.at(rl).end(); ++ ibb)
     {
