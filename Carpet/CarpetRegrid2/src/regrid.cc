@@ -22,6 +22,7 @@
 #include <carpet.hh>
 #include <CarpetTimers.hh>
 
+#include "amr.hh"
 #include "boundary.hh"
 #include "indexing.hh"
 #include "property.hh"
@@ -288,6 +289,23 @@ namespace CarpetRegrid2 {
           
         } // if centre is active
       }   // for n
+      
+      if (adaptive_refinement) {
+        // Loop over all levels
+        for (int rl = min_rl; rl < min(maxreflevels, reflevels+1); ++ rl) {
+          if (static_cast <int> (regions.size()) < rl+1) {
+            regions.resize (rl+1);
+          }
+          evaluate_level_mask (cctkGH, regions, rl);
+          if (regions.at(rl).empty()) {
+            // If there are no refined regions on this level, truncate
+            // the refinement hierarchy, and stop
+            assert (static_cast <int> (regions.size()) == rl+1);
+            regions.resize (rl);
+            break;
+          }
+        }
+      }
       
     } // if map==0
     
