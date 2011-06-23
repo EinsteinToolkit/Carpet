@@ -139,6 +139,8 @@ CCTK_REAL radiixyz[10] TYPE=array DIM=1 SIZE=30 DISTRIB=constant
   radius_x radius_y radius_z
 } "Radii of refined regions for each level"
 
+CCTK_REAL level_mask TYPE=gf TAGS='checkpoint="no" prolongation="none"' "Requested refinement level for this grid point"
+
 PRIVATE:
 
 CCTK_INT old_active[10] TYPE=scalar "Old whether this centre is active"

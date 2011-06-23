@@ -64,6 +64,33 @@ BOOLEAN symmetry_rotating180 "Ensure a 180 degree rotating symmetry about the z 
 
 
 
+BOOLEAN adaptive_refinement "Use level_mask for adaptive refinement" STEERABLE=always
+{
+} "no"
+
+CCTK_INT adaptive_block_size "Block size for adaptive refinement" STEERABLE=always
+{
+  1:* :: ""
+} 8
+
+CCTK_INT adaptive_block_size_x "Block size in x direction for adaptive refinement" STEERABLE=always
+{
+  -1 :: "use adaptive_block_size"
+  1:* :: ""
+} -1
+CCTK_INT adaptive_block_size_y "Block size in y direction for adaptive refinement" STEERABLE=always
+{
+  -1 :: "use adaptive_block_size"
+  1:* :: ""
+} -1
+CCTK_INT adaptive_block_size_z "Block size in z direction for adaptive refinement" STEERABLE=always
+{
+  -1 :: "use adaptive_block_size"
+  1:* :: ""
+} -1
+
+
+
 CCTK_INT num_centres "Number of refinement centres"
 {
   0:10 :: ""
