@@ -455,6 +455,11 @@ BOOLEAN open_one_input_file_at_a_time "Open only one HDF5 file at a time when re
   "yes" :: "Process input files one after another (reduces memory requirements)"
 } "no"
 
+STRING skip_recover_variables "Skip these variables while recovering" STEERABLE = RECOVER
+{
+  "" :: ""
+} ""
+
 INT compression_level "Compression level to use for writing HDF5 data" STEERABLE = ALWAYS
 {
   0:9 :: "Higher numbers compress better, a value of zero disables compression"

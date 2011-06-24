@@ -417,6 +417,37 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     }
   }
 
+  // Mark certain variable as not-to-be read. We do this by marking
+  // them as "read completely", so that they will be skipped later.
+  if (in_recovery and not CCTK_EQUALS(skip_recover_variables, "")) {
+    struct callback_t {
+      vector<vector<bool> >* read_completely;
+      static void function (int const idx,
+                            const char* const optstring,
+                            void* const callback_arg)
+      {
+        callback_t& callback = *(callback_t*)callback_arg;
+        char *const fullname = CCTK_FullName(idx);
+        CCTK_VInfo (CCTK_THORNSTRING, "   skipping %s", fullname);
+        free (fullname);
+        for (size_t tl=0; tl<callback.read_completely->at(idx).size(); ++tl) {
+          callback.read_completely->at(idx).at(tl) = true;
+        }
+      }
+    } callback;
+    callback.read_completely = &read_completely;
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Skipping the following variables while recovering:");
+    int const iret =
+      CCTK_TraverseString (skip_recover_variables,
+                           &callback_t::function, &callback,
+                           CCTK_GROUP_OR_VAR);
+    if (iret < 0) {
+      CCTK_WARN (CCTK_WARN_ALERT,
+                 "Error in parameter CarpetIOHDF5::skip_recover_variables");
+    }
+  }
+
   // query for groups which have the 'CHECKPOINT = "no"' option set
   // Such groups are not checked against being read completely.
   vector<bool> not_checkpointed(numvars);
