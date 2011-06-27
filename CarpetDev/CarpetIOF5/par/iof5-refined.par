@@ -22,7 +22,7 @@ Cactus::cctk_run_title             = "IOF5"
 Cactus::cctk_full_warnings         = yes
 Cactus::highlight_warning_messages = no
 
-Cactus::cctk_itlast = 0
+Cactus::cctk_itlast = 1024
 
 IO::out_dir = $parfile
 
@@ -46,3 +46,6 @@ CarpetRegrid2::radius_1[1]    =  0.5
 CarpetRegrid2::radius_1[2]    =  0.2
 
 InitBase::initial_data_setup_method = "init_all_levels"
+
+CarpetIOF5::out_every = 256
+CarpetIOF5::out_vars  = "grid::coordinates"

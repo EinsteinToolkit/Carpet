@@ -43,3 +43,6 @@ CarpetRegrid2::radius_1[1]    =  0.5
 CarpetRegrid2::radius_1[2]    =  0.2
 
 InitBase::initial_data_setup_method = "init_all_levels"
+
+CarpetIOF5::out_every = 1
+CarpetIOF5::out_vars  = "grid::coordinates"

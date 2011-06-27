@@ -2,9 +2,14 @@
 
 SHARES: IO
 
-USES STRING out_dir AS IO_out_dir
+USES STRING  out_dir   AS IO_out_dir
+USES INT     out_every AS IO_out_every
 
-USES INT    out_timesteps_per_file
+USES INT     out_timesteps_per_file
+
+USES BOOLEAN checkpoint_ID
+USES INT     checkpoint_every
+USES BOOLEAN checkpoint_on_terminate
 
 
 
@@ -15,6 +20,20 @@ STRING out_dir "Output directory (overrides IO::out_dir)" STEERABLE=always
   "^$" :: "Empty: use IO::out_dir"
   ".+" :: "Not empty: directory name"
 } ""
+
+STRING out_vars "Variables to output in F5 format" STEERABLE=always
+{
+  "" :: "List of group or variable names"
+} ""
+
+INT out_every "How often to do CarpetIOF5 output, overrides out_every" STEERABLE=always
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use 'IO::out_every'"
+} -2
+
+
 
 KEYWORD file_content "Create one file for every x" STEERABLE=always
 {
@@ -30,8 +49,9 @@ INT iteration_digits "Minimum number of digits for iteration number" STEERABLE=a
 
 STRING out_filename "File name (without extension) for file_content='everything'" STEERABLE=always
 {
-  "" :: ""
-} "output"
+  ""   :: "use the parameter file name"
+  ".+" :: "use this file name"
+} ""
 
 INT processor_digits "Minimum number of digits for processor number" STEERABLE=always
 {
@@ -53,6 +73,21 @@ BOOLEAN one_dir_per_file "Create one subdirectory per output file to reduce lock
 
 
 
+BOOLEAN separate_single_component_tensors "Use a separated representation even for single-component tensors" STEERABLE=always
+{
+} "no"
+
+
+
+BOOLEAN output_all_timelevels "Output all timelevels (instead of only the current)" STEERABLE=always
+{
+} "no"
+
+INT minimum_component_overlap "Minimum overlap between components, even when ghosts are not output" STEERABLE=always
+{
+  0:* :: ""
+} 1
+
 BOOLEAN output_symmetry_points "Output symmetry and inter-patch boundary points" STEERABLE=always
 {
 } "no"
@@ -62,5 +97,27 @@ BOOLEAN output_ghost_points "Output ghost points" STEERABLE=always
 } "no"
 
 BOOLEAN output_boundary_points "Output outer boundary points" STEERABLE=always
+{
+} "yes"
+
+
+
+BOOLEAN checkpoint "Checkpoint" STEERABLE=always
+{
+} "no"
+
+BOOLEAN checkpoint_next "Checkpoint at next iteration" STEERABLE=always
+{
+} "no"
+
+
+
+INT compression_level "Compression level" STEERABLE=always
+{
+  -1  :: "no compression"
+  0:9 :: "higher numbers compress better"
+} 1
+
+BOOLEAN use_checksums "Include a checksum for the data" STEERABLE=always
 {
 } "yes"

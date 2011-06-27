@@ -2,7 +2,9 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 
+#include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -95,7 +97,26 @@ namespace CarpetIOF5 {
       free (thornname);
     }
     else if (CCTK_EQUALS (file_content, "everything")) {
-      filename_buf << out_filename;
+      if (CCTK_EQUALS(out_filename, "")) {
+        // Obtain the parameter file name
+        char buf[10000];
+        int const ilen = CCTK_ParameterFilename (sizeof buf, buf);
+        assert (ilen < int(sizeof buf) - 1);
+        char* parfilename = buf;
+        // Remove directory prefix, if any
+        char* const slash = strrchr(parfilename, '/');
+        if (slash) {
+          parfilename = &slash[1];
+        }
+        // Remove suffix, if it is there
+        char* const suffix = strrchr(parfilename, '.');
+        if (suffix and strcmp(suffix, ".par")==0) {
+          suffix[0] = '\0';
+        }
+        filename_buf << parfilename;
+      } else {
+        filename_buf << out_filename;
+      }
     }
     else {
       assert (0);
@@ -200,7 +221,33 @@ namespace CarpetIOF5 {
     return p;
   }
   
-  // Generate a good tensor basis name (chart name)
+  // Generate a good topology name (refinement level name)
+  string
+  generate_topologyname (cGH const *const cctkGH,
+                         int const gi,
+                         ivect const& reffact)
+  {
+    ostringstream buf;
+    if (gi == -1) {
+      // grid function
+      buf << "VertexLevel_";
+      for (int d=0; d<dim; ++d) {
+        if (d>0) buf << "x";
+        buf << reffact[d];
+      }
+    } else {
+      // grid array
+      char *const groupname = CCTK_GroupName(gi);
+      for (char *p=groupname; *p; ++p) {
+        *p = tolower(*p);
+      }
+      buf << "Group_" << groupname;
+      free (groupname);
+    }
+    return buf.str();
+  }
+  
+  // Generate a good chart name (tensor basis name)
   string
   generate_chartname (cGH const *const cctkGH)
   {
@@ -216,38 +263,55 @@ namespace CarpetIOF5 {
 #endif
   }
   
-  // Generate a good fragment name (map name)
+  // Generate a good fragment name (map and component name)
+  // (We assume that fragment names need to be unique only within a
+  // topology, not across topologies.)
   string
-  generate_fragmentname (cGH const *const cctkGH, int const m)
+  generate_fragmentname (cGH const *const cctkGH, int const m, int const c)
   {
     ostringstream buf;
-    buf << "Map_" << m;
+    buf << "Map_" << m << "_Component_" << c;
     return buf.str();
   }
   
-  int
+  void
   interpret_fragmentname (cGH const *const cctkGH,
-                          char const *const fragmentname)
+                          char const *const fragmentname,
+                          int& m, int& c)
   {
-    int m = -1;
-    sscanf (fragmentname, "Map_%d", &m);
+    m = -1;
+    c = -1;
+    sscanf (fragmentname, "Map_%d_Component_%d", &m, &c);
     assert (m>=0 and m<Carpet::maps);
-    return m;
+    assert (c>=0);
   }
   
-  // Generate a good topology name (map and refinement level name)
+  // Generate a good field name (group or variable name)
   string
-  generate_topologyname (cGH const *const cctkGH,
-                         int const m, ivect const& reffact)
+  generate_fieldname (cGH const *const cctkGH,
+                      int const vi, tensortype_t const tt)
   {
-    ostringstream buf;
-    // buf << "Map_" << m << "_VertexLevel_";
-    buf << "VertexLevel_";
-    for (int d=0; d<dim; ++d) {
-      if (d>0) buf << "x";
-      buf << reffact[d];
+    int const gi = CCTK_GroupIndexFromVarI(vi);
+    int const numvars = CCTK_NumVarsInGroupI(gi);
+    string name;
+    // Use the variable name instead of the group name if we may
+    // output several variables per group
+    if (tt == tt_scalar and numvars >1) {
+      char *const fullname = CCTK_FullName(vi);
+      name = fullname;
+      free (fullname);
+    } else {
+      char *const groupname = CCTK_GroupName(gi);
+      name = groupname;
+      free (groupname);
     }
-    return buf.str();
+    transform (name.begin(), name.end(), name.begin(), ::tolower);
+    string const sep = "::";
+    size_t const pos = name.find(sep);
+    if (pos != string::npos) {
+      name.replace (pos, sep.size(), ".");
+    }
+    return name;
   }
   
   

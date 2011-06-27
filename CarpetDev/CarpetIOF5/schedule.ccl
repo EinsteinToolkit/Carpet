@@ -1,27 +1,68 @@
 # Schedule definitions for thorn CarpetIOF5
 
-SCHEDULE F5_Output AT initial
+STORAGE: this_iteration next_output_iteration
+
+
+
+# Initialisation
+
+SCHEDULE CarpetIOF5_Startup AT startup
 {
   LANG: C
-  OPTIONS: global-late
-} "Create an output file"
+} "Register I/O method"
 
-
-
-SCHEDULE F5_Poison AT initial AFTER F5_Output BEFORE F5_Input
+SCHEDULE CarpetIOF5_Init AT basegrid
 {
   LANG: C
-  OPTIONS: global-late
-} "Poison all variables"
+  OPTIONS: global
+} "Initialise I/O data structures"
 
-SCHEDULE F5_Input AT initial AFTER F5_Output
+
+
+# Checkpointing
+
+schedule CarpetIOF5_InitialDataCheckpoint at CPINITIAL
 {
   LANG: C
-  OPTIONS: global-late
-} "Read from file"
+  OPTIONS: global
+} "Initial data checkpoint routine"
 
-SCHEDULE F5_Check AT initial AFTER F5_Input
+schedule CarpetIOF5_EvolutionCheckpoint at CHECKPOINT
 {
   LANG: C
-  OPTIONS: global-late
-} "Check all variables for poison"
+  OPTIONS: global
+} "Evolution checkpoint routine"
+
+schedule CarpetIOF5_TerminationCheckpoint at TERMINATE
+{
+  LANG: C
+  OPTIONS: global
+} "Termination checkpoint routine"
+
+
+
+#SCHEDULE F5_Output AT initial
+#{
+#  LANG: C
+#  OPTIONS: global-late
+#} "Create an output file"
+#
+#
+#
+#SCHEDULE F5_Poison AT initial AFTER F5_Output BEFORE F5_Input
+#{
+#  LANG: C
+#  OPTIONS: global-late
+#} "Poison all variables"
+#
+#SCHEDULE F5_Input AT initial AFTER F5_Output
+#{
+#  LANG: C
+#  OPTIONS: global-late
+#} "Read from file"
+#
+#SCHEDULE F5_Check AT initial AFTER F5_Input
+#{
+#  LANG: C
+#  OPTIONS: global-late
+#} "Check all variables for poison"

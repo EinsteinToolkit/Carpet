@@ -44,3 +44,8 @@ REQUIRES FUNCTION IO_TruncateOutputFiles
 CCTK_INT FUNCTION MultiPatch_GetSystemSpecification \
     (CCTK_INT OUT maps)
 USES FUNCTION MultiPatch_GetSystemSpecification
+
+
+
+CCTK_INT this_iteration        TYPE=scalar
+CCTK_INT next_output_iteration TYPE=scalar

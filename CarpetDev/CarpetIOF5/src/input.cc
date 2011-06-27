@@ -70,8 +70,8 @@ namespace CarpetIOF5 {
       
 #if 0
       // TODO: Loop over all charts that exist for the grid, or at
-      // least remember how many maps there are.  (This is also
-      // written as part of the grid structure.)
+      // least remember how many maps there are. (This is also written
+      // as part of the grid structure.)
       // F5iterate_grid_atlas?
       for (int m=0; m<maps; ++m) {
         indent_t indent;
@@ -196,9 +196,9 @@ namespace CarpetIOF5 {
       }
       assert (rl<reflevels);
       
-      // Determine map from fragment name
-      // TODO: store map number as attribute?
-      int const m = interpret_fragmentname (cctkGH, fragmentname);
+      // Determine map and component from fragment name
+      int m, c;
+      interpret_fragmentname (cctkGH, fragmentname, m, c);
       
       {
         indent_t indent;
@@ -275,7 +275,7 @@ namespace CarpetIOF5 {
       assert (iret);
       assert (index_depth_ == index_depth);
       
-      // Read the fragment offset.  This is stored with the dataset
+      // Read the fragment offset. This is stored with the dataset
       // group.
       hsize_t hoff[FIBER_MAX_RANK];
       iret = F5LAget_dimensions(fragment_is_group ? field : fragment,
@@ -288,7 +288,7 @@ namespace CarpetIOF5 {
       assert (all(foff>=0));
       
 #if 0
-      // Read the fragment size.  This is stored with the field -- why
+      // Read the fragment size. This is stored with the field -- why
       // is this different from the offset?
       hsize_t hlen[FIBER_MAX_RANK];
       iret =
@@ -337,7 +337,7 @@ namespace CarpetIOF5 {
       assert (groupdata.dim == dim);
       
       // TODO: This is too expensive; only traverse Carpet's data
-      // structures instead.  (This should be implemented via a
+      // structures instead. (This should be implemented via a
       // gh::locate_positions, which will turn require support from
       // the internal tree data structure.)
       BEGIN_COMPONENT_LOOP(cctkGH, CCTK_GF) {
