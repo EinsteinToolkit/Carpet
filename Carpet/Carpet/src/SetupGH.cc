@@ -25,6 +25,10 @@
 #include <region.hh>
 #include <vect.hh>
 
+#ifdef HAVE_SCHED_H
+#  include <sched.h>
+#endif
+
 #include <carpet.hh>
 #include "Timers.hh"
 
@@ -214,6 +218,11 @@ namespace Carpet {
                   "This process contains %d threads", mynthreads);
       CCTK_VInfo (CCTK_THORNSTRING,
                   "There are %d threads in total", nthreads_total);
+#  ifdef CCTK_MPI
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "There are %g threads per process",
+                  1.0 * nthreads_total / nprocs);
+#  endif
 #else
       CCTK_VInfo (CCTK_THORNSTRING,
                   "OpenMP is disabled");
@@ -229,18 +238,28 @@ namespace Carpet {
 #endif
       
 #if 0
-      // Do not call Util_GetHostName.  Certain InfiniBand libraries
-      // do not allow calling fork or exec, and getting the host name
-      // seems also not allowed.  It leads to random crashes.
+      // Do not call Util_GetHostName. Certain InfiniBand libraries do
+      // not allow calling fork or exec, and getting the host name
+      // seems also not allowed. It leads to random crashes.
+      char hostnamebuf[1000];
+      Util_GetHostName (hostnamebuf, sizeof hostnamebuf);
+      string const hostname (hostnamebuf);
+#else
+      char hostnamebuf[MPI_MAX_PROCESSOR_NAME];
+      int hostnamelen;
+      MPI_Get_processor_name (hostnamebuf, &hostnamelen);
+      string const hostname (hostnamebuf);
+#endif
+      int const mypid = getpid ();
+      // Output
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "This process runs on host %s, pid=%d",
+                  hostname.c_str(), mypid);
       if (verbose or veryverbose) {
         // Collect host names
-        char hostnamebuf[1000];
-        Util_GetHostName (hostnamebuf, sizeof hostnamebuf);
-        string const hostname (hostnamebuf);
         vector <string> hostnames = allgather_string (dist::comm(), hostname);
-        // Collect process ids
-        int const mypid = getpid ();
         vector <int> pids (nprocs);
+        // Collect process ids
         MPI_Allgather (const_cast <int *> (& mypid), 1, MPI_INT,
                        & pids.front(), 1, MPI_INT,
                        dist::comm());
@@ -258,6 +277,28 @@ namespace Carpet {
                       n, hostnames.AT(n).c_str(), pids.AT(n), nthreads.AT(n));
         }
       }
+      
+#ifdef HAVE_SCHED_GETAFFINITY
+      cpu_set_t mask;
+      int const ierr = sched_getaffinity (0, sizeof mask, &mask);
+      assert (not ierr);
+      ostringstream buf;
+      bool isfirst = true;
+      int first_active = -1;
+      for (int n=0; n<CPU_SETSIZE; ++n) {
+        if (first_active == -1 and CPU_ISSET(n, &mask)) {
+          if (not isfirst) buf << ", ";
+          isfirst = false;
+          buf << n;
+          first_active = n;
+        } else if (first_active >= 0 and not CPU_ISSET(n, &mask)) {
+          if (n-1 > first_active) buf << "-" << n-1;
+          first_active = -1;
+        }
+      }
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "This process runs on cores %s",
+                  buf.str().c_str());
 #endif
     }
     
