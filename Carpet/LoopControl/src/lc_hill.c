@@ -49,6 +49,8 @@ time_for_stattime (lc_stattime_t const * restrict const lt)
   return lt->time_calc_sum / lt->time_count;
 }
 
+#if 0
+/* unused */
 static
 double
 time_for_state (lc_statset_t const * restrict const ls,
@@ -58,6 +60,7 @@ time_for_state (lc_statset_t const * restrict const ls,
   assert (lt);
   return time_for_stattime (lt);
 }
+#endif
 
 
 
@@ -167,7 +170,7 @@ lc_hill_init (lc_statset_t * restrict const ls,
   
   /* Look which neighbours exist. */
   typedef enum { nb_boundary, nb_missing, nb_exists } neighbour_t;
-  neighbour_t  neighbours[3][2];
+  /* neighbour_t  neighbours[3][2]; */
   lc_state_t   nb_state[3][2];
   double       nb_time[3][2];
   lc_state_t * nb_nonexist_state[6];
@@ -182,15 +185,15 @@ lc_hill_init (lc_statset_t * restrict const ls,
       if (nb_state[d][f].tiling[d] < 0 ||
           nb_state[d][f].tiling[d] >= ntilings)
       {
-        neighbours[d][f] = nb_boundary;
+        /* neighbours[d][f] = nb_boundary; */
       } else {
         lc_stattime_t const * restrict const nb_lt =
           lc_stattime_find (ls, & nb_state[d][f]);
         if (! nb_lt) {
-          neighbours[d][f] = nb_missing;
+          /* neighbours[d][f] = nb_missing; */
           nb_nonexist_state[num_nonexist_states++] = & nb_state[d][f];
         } else {
-          neighbours[d][f] = nb_exists;
+          /* neighbours[d][f] = nb_exists; */
           nb_time[d][f] = time_for_stattime (nb_lt);
           if (! nb_minimum_time || nb_time[d][f] < minimum_time) {
             nb_minimum_time = & nb_state[d][f];
