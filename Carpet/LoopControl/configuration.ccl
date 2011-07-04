@@ -5,3 +5,7 @@ REQUIRES GSL
 PROVIDES LoopControl
 {
 }
+
+OPTIONAL Vectors
+{
+}

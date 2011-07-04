@@ -3,3 +3,12 @@
 IMPLEMENTS: LoopControl
 
 INCLUDE HEADER: loopcontrol.h IN loopcontrol.h
+
+USES INCLUDE HEADER: vectors.h
+
+
+
+CCTK_REAL selftest TYPE=gf
+{
+  var1 var2
+} "Self-test variables"
