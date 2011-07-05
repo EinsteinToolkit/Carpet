@@ -33,9 +33,14 @@ BOOLEAN debug "Output debug information" STEERABLE=always
 {
 } "no"
 
-BOOLEAN check_type_sizes "check that Fortran and C types match at Startup"
+BOOLEAN check_type_sizes "Check that Fortran and C types match"
 {
 } "yes"
+
+BOOLEAN do_selftest "Perform some self-tests"
+{
+} "no"
+
 
 
 #################

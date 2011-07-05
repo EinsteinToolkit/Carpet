@@ -45,6 +45,7 @@ void lc_selftest (CCTK_ARGUMENTS)
                 vector_size)
     {
       int const ind3d = CCTK_GFINDEX3D(cctkGH, i,j,k);
+#pragma omp atomic
       ++ var1[ind3d];
     } LC_ENDLOOP3VEC(lc_selftest1);
   }
@@ -66,6 +67,7 @@ void lc_selftest (CCTK_ARGUMENTS)
                 vector_size)
     {
       int const ind3d = CCTK_GFINDEX3D(cctkGH, i,j,k);
+#pragma omp atomic
       ++ var2[ind3d];
     } LC_ENDLOOP3VEC(lc_selftest2a);
     
@@ -95,6 +97,7 @@ void lc_selftest (CCTK_ARGUMENTS)
                     vector_size)
         {
           int const ind3d = CCTK_GFINDEX3D(cctkGH, i,j,k);
+#pragma omp atomic
           ++ var2[ind3d];
         } LC_ENDLOOP3VEC(lc_selftest2b);
       }

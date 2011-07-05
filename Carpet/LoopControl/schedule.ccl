@@ -8,16 +8,21 @@ if (check_type_sizes) {
   } "Check that sizes of control structures are identical in C and Fortran"
 }
 
-SCHEDULE lc_selftest AT basegrid
-{
-  LANG: C
+if (do_selftest) {
   STORAGE: selftest
-} "Perform some self-checks"
-SCHEDULE lc_selftest AT postregrid
-{
-  LANG: C
-  STORAGE: selftest
-} "Perform some self-checks"
+  
+  SCHEDULE lc_selftest AT basegrid
+  {
+    LANG: C
+    OPTIONS: global loop-local
+  } "Perform some self-checks"
+  
+  SCHEDULE lc_selftest AT postregrid
+  {
+    LANG: C
+    OPTIONS: global loop-local
+  } "Perform some self-checks"
+}
 
 if (printstats) {
   SCHEDULE lc_printstats_analysis AT analysis
