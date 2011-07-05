@@ -52,6 +52,9 @@ module loopcontrol_types
      
      ! Timing statistics
      double precision time_setup_begin, time_calc_begin
+     
+     ! Self check
+     CCTK_POINTER selftest_count
   end type lc_control_t
   
 end module loopcontrol_types

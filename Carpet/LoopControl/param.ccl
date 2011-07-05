@@ -37,7 +37,7 @@ BOOLEAN check_type_sizes "Check that Fortran and C types match"
 {
 } "yes"
 
-BOOLEAN do_selftest "Perform some self-tests"
+BOOLEAN do_selftest "Perform (expensive) self-tests in every loop"
 {
 } "no"
 

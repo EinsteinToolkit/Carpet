@@ -898,12 +898,13 @@ lc_control_init (lc_control_t * restrict const lc,
   lc->kkkstep = (lc->kkkmax - lc->kkkmin + lt->knthreads-1) / lt->knthreads;
   
   /* Find location of current thread */
-  lc->thread_num  = omp_get_thread_num();
-  int c = lc->thread_num;
-  int const ci = c % lt->inthreads; c /= lt->inthreads;
-  int const cj = c % lt->jnthreads; c /= lt->jnthreads;
-  int const ck = c % lt->knthreads; c /= lt->knthreads;
-  /* see below where c is continued to be used */
+  lc->thread_num = omp_get_thread_num();
+  int c_outer =
+    lc->thread_num / (lt->inithreads * lt->jnithreads * lt->knithreads);
+  int const ci = c_outer % lt->inthreads; c_outer /= lt->inthreads;
+  int const cj = c_outer % lt->jnthreads; c_outer /= lt->jnthreads;
+  int const ck = c_outer % lt->knthreads; c_outer /= lt->knthreads;
+  assert (c_outer == 0);
   lc->iii = lc->iiimin + ci * lc->iiistep;
   lc->jjj = lc->jjjmin + cj * lc->jjjstep;
   lc->kkk = lc->kkkmin + ck * lc->kkkstep;
@@ -928,11 +929,12 @@ lc_control_init (lc_control_t * restrict const lc,
   /*** Inner threads **********************************************************/
   
   /* Inner loop thread parallelism */
-  /* (No thread parallelism yet) */
-  int const cii = c % lt->inithreads; c /= lt->inithreads;
-  int const cjj = c % lt->jnithreads; c /= lt->jnithreads;
-  int const ckk = c % lt->knithreads; c /= lt->knithreads;
-  assert (c == 0);
+  int c_inner =
+    lc->thread_num % (lt->inithreads * lt->jnithreads * lt->knithreads);
+  int const cii = c_inner % lt->inithreads; c_inner /= lt->inithreads;
+  int const cjj = c_inner % lt->jnithreads; c_inner /= lt->jnithreads;
+  int const ckk = c_inner % lt->knithreads; c_inner /= lt->knithreads;
+  assert (c_inner == 0);
   lc->iiii = cii;
   lc->jjjj = cjj;
   lc->kkkk = ckk;
@@ -951,6 +953,23 @@ lc_control_init (lc_control_t * restrict const lc,
   
   /****************************************************************************/
   
+  /* Self test */
+  if (do_selftest) {
+    char * restrict mem;
+#pragma omp single copyprivate (mem)
+    {
+      mem =
+        calloc (lc->ilsh * lc->jlsh * lc->klsh, sizeof * lc->selftest_count);
+    }
+    lc->selftest_count = mem;
+  } else {
+    lc->selftest_count = NULL;
+  }
+  
+  
+  
+  /****************************************************************************/
+  
   /* Timer */
   lc->time_calc_begin = omp_get_wtime();
 }
@@ -958,8 +977,26 @@ lc_control_init (lc_control_t * restrict const lc,
 
 
 void
+lc_control_selftest (lc_control_t * restrict const lc,
+                     int const imin, int const imax, int const j, int const k)
+{
+  assert (imin >= 0 && imax <= lc->ilsh);
+  assert (j >= 0 && j < lc->jlsh);
+  assert (k >= 0 && k < lc->klsh);
+  for (int i = imin; i < imax; ++i) {
+    int const ind3d = i + lc->ilsh * (j + lc->jlsh * k);
+#pragma omp atomic
+    ++ lc->selftest_count[ind3d];
+  }
+}
+
+
+
+void
 lc_control_finish (lc_control_t * restrict const lc)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   lc_stattime_t * restrict const lt = lc->stattime;
   lc_statset_t * restrict const ls = lc->statset;
   
@@ -967,7 +1004,6 @@ lc_control_finish (lc_control_t * restrict const lc)
   int first_iteration;
 #pragma omp single copyprivate (ignore_iteration)
   {
-    DECLARE_CCTK_PARAMETERS;
     ignore_iteration = ignore_initial_overhead && lt->time_count == 0.0;
     first_iteration = lt->time_count_init == 0.0;
   }
@@ -1021,7 +1057,6 @@ lc_control_finish (lc_control_t * restrict const lc)
 /* #pragma omp barrier */
   
   {
-    DECLARE_CCTK_PARAMETERS;
     if (use_simulated_annealing) {
 #pragma omp single
       {
@@ -1033,6 +1068,77 @@ lc_control_finish (lc_control_t * restrict const lc)
       {
         lc_hill_finish (ls, lt);
       }
+    }
+  }
+  
+  /* Perform self-check */
+  
+  if (do_selftest) {
+    /* Ensure all threads have finished the loop */
+#pragma omp barrier
+    ;
+    /* Assert that exactly the specified points have been set */
+    static int failure = 0;
+#pragma omp for reduction(+: failure)
+    for (int k=0; k<lc->klsh; ++k) {
+      for (int j=0; j<lc->jlsh; ++j) {
+        for (int i=0; i<lc->ilsh; ++i) {
+          int const ind3d = i + lc->ilsh * (j + lc->jlsh * k);
+          char const inside =
+            (i >= lc->imin && i < lc->imax) &&
+            (j >= lc->jmin && j < lc->jmax) &&
+            (k >= lc->kmin && k < lc->kmax);
+          if (lc->selftest_count[ind3d] != inside) {
+            ++ failure;
+#pragma omp critical
+            {
+              fprintf (stderr, "   i=[%d,%d,%d] count=%d expected=%d\n",
+                       i, j, k,
+                       (int) lc->selftest_count[ind3d], (int) inside);
+            }
+          }
+        }
+      }
+    }
+    if (failure) {
+      for (int n=0; n<omp_get_num_threads(); ++n) {
+        if (n == omp_get_thread_num()) {
+          fprintf (stderr, "Thread: %d\n", n);
+          fprintf (stderr, "   Arguments:\n");
+          fprintf (stderr, "      imin=[%d,%d,%d]\n", lc->imin, lc->jmin, lc->kmin);
+          fprintf (stderr, "      imax=[%d,%d,%d]\n", lc->imax, lc->jmax, lc->kmax);
+          fprintf (stderr, "      ilsh=[%d,%d,%d]\n", lc->ilsh, lc->jlsh, lc->klsh);
+          fprintf (stderr, "      di=%d\n", lc->di);
+          fprintf (stderr, "   Thread parallellism:\n");
+          fprintf (stderr, "      iiimin =[%d,%d,%d]\n", lc->iiimin, lc->jjjmin, lc->kkkmin);
+          fprintf (stderr, "      iiimax =[%d,%d,%d]\n", lc->iiimax, lc->jjjmax, lc->kkkmax);
+          fprintf (stderr, "      iiistep=[%d,%d,%d]\n", lc->iiistep, lc->jjjstep, lc->kkkstep);
+          fprintf (stderr, "   Current thread:\n");
+          fprintf (stderr, "      thread_num=%d\n", lc->thread_num);
+          fprintf (stderr, "      iii       =[%d,%d,%d]\n", lc->iii, lc->jjj, lc->kkk);
+          fprintf (stderr, "      iiii      =[%d,%d,%d]\n", lc->iiii, lc->jjjj, lc->kkkk);
+          fprintf (stderr, "   Tiling loop:\n");
+          fprintf (stderr, "      iimin =[%d,%d,%d]\n", lc->iimin, lc->jjmin, lc->kkmin);
+          fprintf (stderr, "      iimax =[%d,%d,%d]\n", lc->iimax, lc->jjmax, lc->kkmax);
+          fprintf (stderr, "      iistep=[%d,%d,%d]\n", lc->iistep, lc->jjstep, lc->kkstep);
+          fprintf (stderr, "   Inner thread parallelism:\n");
+          fprintf (stderr, "      iiiimin =[%d,%d,%d]\n", lc->iiiimin, lc->jjjjmin, lc->kkkkmin);
+          fprintf (stderr, "      iiiimax =[%d,%d,%d]\n", lc->iiiimax, lc->jjjjmax, lc->kkkkmax);
+          fprintf (stderr, "      iiiistep=[%d,%d,%d]\n", lc->iiiistep, lc->jjjjstep, lc->kkkkstep);
+        }
+#pragma omp barrier
+        ;
+      }
+#pragma omp critical
+      {
+        CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "LoopControl loop \"%s\" self-test failed",
+                    lc->statmap->name);
+      }
+    }
+#pragma omp single nowait
+    {
+      free (lc->selftest_count);
     }
   }
 }

@@ -1,7 +1,7 @@
 # Main make.code.defn file for thorn LoopControl
 
 # Source files in this directory
-SRCS = loopcontrol.c loopcontrol.F90 lc_get_type_sizes.F90 loopcontrol_types.F90 lc_auto.c lc_siman.c lc_hill.c lc_selftest.c
+SRCS = loopcontrol.c loopcontrol.F90 lc_get_type_sizes.F90 loopcontrol_types.F90 lc_auto.c lc_siman.c lc_hill.c
 
 # Subdirectories containing source files
 SUBDIRS = 
