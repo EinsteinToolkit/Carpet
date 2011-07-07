@@ -35,8 +35,17 @@ CoordBase::boundary_size_z_lower      = 2
 CoordBase::boundary_size_x_upper      = 2
 CoordBase::boundary_size_y_upper      = 2
 CoordBase::boundary_size_z_upper      = 2
+CoordBase::boundary_staggered_x_lower = "yes"
+CoordBase::boundary_staggered_y_lower = "yes"
+CoordBase::boundary_staggered_z_lower = "yes"
+CoordBase::boundary_staggered_x_upper = "yes"
+CoordBase::boundary_staggered_y_upper = "yes"
+CoordBase::boundary_staggered_z_upper = "yes"
+
+
 
 Carpet::domain_from_coordbase = yes
+Carpet::refinement_centering = cell
 Driver::ghost_size   = 2
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time  = 2
@@ -47,7 +56,7 @@ CarpetRegrid2::num_centres      = 1
 CarpetRegrid2::position_x_1 	= 0
 CarpetRegrid2::position_y_1 	= 0
 CarpetRegrid2::position_z_1 	= 0
-CarpetRegrid2::num_levels_1     = 1
+CarpetRegrid2::num_levels_1     = 2
 CarpetRegrid2::radius_1[1]      = 5.0
 
 # Output
