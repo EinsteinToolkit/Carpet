@@ -404,7 +404,17 @@ namespace CarpetRegrid2 {
     if (not symmetry_rotating90) return true;
     
     ibset const symmetrised = symmetrised_regions (hh, dd, bnd, regions, rl);
-    return regions.AT(rl) == symmetrised;
+    
+    // We cannot test for equality, since the difference may be
+    // outside of the domain (and hence irrelevant)
+    // return regions.AT(rl) == symmetrised;
+    
+    // Test whether any part of the difference (i.e. that part of the
+    // level that would be added by symmetrising) is inside the
+    // domain. If the difference is outside, we can safely ignore it.
+    ibbox const& baseextent = hh.baseextent(0,rl);
+    ibset const difference = symmetrised - regions.AT(rl);
+    return (difference & baseextent).empty();
   }
   
   void rotsym90::
@@ -510,7 +520,17 @@ namespace CarpetRegrid2 {
     if (not symmetry_rotating180) return true;
     
     ibset const symmetrised = symmetrised_regions (hh, dd, bnd, regions, rl);
-    return regions.AT(rl) == symmetrised;
+    
+    // We cannot test for equality, since the difference may be
+    // outside of the domain (and hence irrelevant)
+    // return regions.AT(rl) == symmetrised;
+    
+    // Test whether any part of the difference (i.e. that part of the
+    // level that would be added by symmetrising) is inside the
+    // domain. If the difference is outside, we can safely ignore it.
+    ibbox const& baseextent = hh.baseextent(0,rl);
+    ibset const difference = symmetrised - regions.AT(rl);
+    return (difference & baseextent).empty();
   }
   
   void rotsym180::
