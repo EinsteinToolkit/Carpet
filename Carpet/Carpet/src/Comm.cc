@@ -117,7 +117,7 @@ namespace Carpet {
       }
 
       if (not CCTK_QueryGroupStorageI (cctkGH, group)) {
-        CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+        CCTK_VWarn (4, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Cannot synchronise group \"%s\" because it has no storage",
                     groupname);
         retval = -1;
