@@ -449,41 +449,22 @@ namespace Carpet {
     
     for (int ml=mglevels-1; ml>=0; --ml) {
       
-      bool have_done_global_mode = false;
-      bool have_done_early_global_mode = false;
-      bool have_done_late_global_mode = false;
-      bool have_done_anything = false;
+      bool did_restrict = false;
       
       for (int rl=reflevels-2; rl>=0; --rl) {
-        int const do_every
-          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
+        int const do_every =
+          ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
         if (cctkGH->cctk_iteration % do_every == 0) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
               BeginTimingLevel (cctkGH);
-              
-              do_early_global_mode = reflevel==reflevels-2;
-              do_late_global_mode = not have_done_late_global_mode;
-              do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
-              do_late_meta_mode = do_late_global_mode and mglevel==0;
-              do_global_mode = do_late_global_mode;
-              do_meta_mode = do_global_mode and do_late_meta_mode;
-              assert (not (have_done_global_mode and do_global_mode));
-              assert (not (have_done_early_global_mode and
-                           do_early_global_mode));
-              assert (not (have_done_late_global_mode and
-                           do_late_global_mode));
-              have_done_global_mode |= do_global_mode;
-              have_done_early_global_mode |= do_early_global_mode;
-              have_done_late_global_mode |= do_late_global_mode;
-              have_done_anything = true;
               
               Waypoint ("Evolution/Restrict at iteration %d time %g",
                         cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
               
               Restrict (cctkGH);
               
-              ScheduleTraverse (where, "CCTK_POSTRESTRICT", cctkGH);
+              did_restrict = true;
               
               EndTimingLevel (cctkGH);
             } LEAVE_LEVEL_MODE;
@@ -491,9 +472,56 @@ namespace Carpet {
         } // if do_every
       }   // for rl
       
-      if (have_done_anything) assert (have_done_global_mode);
-      if (have_done_anything) assert (have_done_early_global_mode);
-      if (have_done_anything) assert (have_done_late_global_mode);
+      if (did_restrict) {
+        
+        bool have_done_global_mode = false;
+        bool have_done_early_global_mode = false;
+        bool have_done_late_global_mode = false;
+        bool have_done_anything = false;
+        
+        for (int rl=0; rl<reflevels; ++rl) {
+          int const do_every =
+            ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
+          if (cctkGH->cctk_iteration % do_every == 0) {
+            ENTER_GLOBAL_MODE (cctkGH, ml) {
+              ENTER_LEVEL_MODE (cctkGH, rl) {
+                BeginTimingLevel (cctkGH);
+                
+                // do_early_global_mode = reflevel==reflevels-2;
+                // do_late_global_mode = not have_done_late_global_mode;
+                do_early_global_mode = not have_done_early_global_mode;
+                do_late_global_mode = reflevel==reflevels-1;
+                do_early_meta_mode =
+                  do_early_global_mode and mglevel==mglevels-1;
+                do_late_meta_mode = do_late_global_mode and mglevel==0;
+                do_global_mode = do_late_global_mode;
+                do_meta_mode = do_global_mode and do_late_meta_mode;
+                assert (not (have_done_global_mode and do_global_mode));
+                assert (not (have_done_early_global_mode and
+                             do_early_global_mode));
+                assert (not (have_done_late_global_mode and
+                             do_late_global_mode));
+                have_done_global_mode |= do_global_mode;
+                have_done_early_global_mode |= do_early_global_mode;
+                have_done_late_global_mode |= do_late_global_mode;
+                have_done_anything = true;
+                
+                Waypoint ("Evolution/PostRestrict at iteration %d time %g",
+                          cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
+                
+                ScheduleTraverse (where, "CCTK_POSTRESTRICT", cctkGH);
+                
+                EndTimingLevel (cctkGH);
+              } LEAVE_LEVEL_MODE;
+            } LEAVE_GLOBAL_MODE;
+          } // if do_every
+        }   // for rl
+        
+        if (have_done_anything) assert (have_done_global_mode);
+        if (have_done_anything) assert (have_done_early_global_mode);
+        if (have_done_anything) assert (have_done_late_global_mode);
+        
+      } // if did_restrict
       
     } // for ml
     
