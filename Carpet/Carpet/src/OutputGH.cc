@@ -30,6 +30,7 @@ namespace Carpet {
     
     int const num_methods = CCTK_NumIOMethods();
     if (num_methods == 0) {
+      timer.stop();
       return -1;
     }
     
