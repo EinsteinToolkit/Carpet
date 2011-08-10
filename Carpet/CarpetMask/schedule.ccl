@@ -11,13 +11,13 @@ SCHEDULE GROUP MaskBase_SetupMask AT poststep AFTER SphericalSurface_HasBeenSet
 {
 } "Set up the weight function"
 
-SCHEDULE CarpetExcludedSetup IN SetupMask
+SCHEDULE CarpetExcludedSetup IN SetupIMask
 {
   LANG: C
   OPTIONS: global loop-local
 } "Set up the weight function for the excluded regions"
 
-SCHEDULE CarpetSurfaceSetup IN SetupMask
+SCHEDULE CarpetSurfaceSetup IN SetupIMask
 {
   LANG: C
   OPTIONS: global loop-local

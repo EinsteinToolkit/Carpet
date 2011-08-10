@@ -50,17 +50,21 @@ SCHEDULE MaskBase_InitMask IN MaskBase_SetupMaskAll AFTER MaskBase_AllocateMask
   OPTIONS: global loop-local
 } "Initialise the weight function"
 
-SCHEDULE GROUP SetupMask IN MaskBase_SetupMaskAll AFTER MaskBase_InitMask
+SCHEDULE GROUP SetupIMask IN MaskBase_SetupMaskAll AFTER MaskBase_InitMask
 {
-} "Set up the weight function (schedule other routines in here)"
+} "Set up the integer weight function (schedule other routines in here)"
 
-SCHEDULE MaskBase_SetMask IN MaskBase_SetupMaskAll AFTER SetupMask
+SCHEDULE MaskBase_SetMask IN MaskBase_SetupMaskAll AFTER SetupIMask
 {
   LANG: C
   OPTIONS: global loop-local
 } "Set the weight function"
 
-SCHEDULE MaskBase_TestMask IN MaskBase_SetupMaskAll AFTER MaskBase_SetMask
+SCHEDULE GROUP SetupMask IN MaskBase_SetupMaskAll AFTER MaskBase_SetMask
+{
+} "Set up the real weight function (schedule other routines in here)"
+
+SCHEDULE MaskBase_TestMask IN MaskBase_SetupMaskAll AFTER SetupMask
 {
   LANG: C
   OPTIONS: global
@@ -69,14 +73,14 @@ SCHEDULE MaskBase_TestMask IN MaskBase_SetupMaskAll AFTER MaskBase_SetMask
 
 
 # Should this move to CoordBase?
-SCHEDULE CoordBase_SetupMask IN SetupMask
+SCHEDULE CoordBase_SetupMask IN SetupIMask
 {
   LANG: C
   OPTIONS: global loop-local
 } "Set up the outer boundaries of the weight function"
 
 # Should this move to CarpetMask?
-SCHEDULE CarpetMaskSetup IN SetupMask
+SCHEDULE CarpetMaskSetup IN SetupIMask
 {
   LANG: C
   OPTIONS: global loop-singlemap
