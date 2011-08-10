@@ -92,7 +92,9 @@ namespace Carpet {
     if(d_running)
     {
       // A timer can only be stopped if it is the current timer
-      assert(this==d_current);
+      if(this != d_current)
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Tried to stop non-current timer '%s'", getName().c_str());
 
       timer->stop();
 

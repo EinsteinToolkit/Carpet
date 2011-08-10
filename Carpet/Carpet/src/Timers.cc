@@ -50,7 +50,12 @@ namespace Carpet {
   /// Stop the timer - it must be the most recently started timer
   void Timer::stop ()
   {
-    TimerNode::getCurrentTimer()->stop();
+    TimerNode *current = TimerNode::getCurrentTimer();
+    if(current->getName() != name())
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Trying to stop enclosing timer '%s' before enclosed time '%s'",
+                  name().c_str(), current->getName().c_str());
+    current->stop();
   }
 
   /// Return the name of the timer
