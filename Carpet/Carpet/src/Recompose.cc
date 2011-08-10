@@ -1503,6 +1503,10 @@ namespace Carpet {
     vector<int> mynpoints(nslices);
     int const npoints =
       (superreg.extent.shape() / superreg.extent.stride())[mydim];
+    int const npoints_bnd_lo =
+      superreg.outer_boundaries[0][mydim] ? granularity_boundary : 0;
+    int const npoints_bnd_hi =
+      superreg.outer_boundaries[1][mydim] ? granularity_boundary : 0;
     
     // Keep track of how many points and processors we have left to
     // distribute
@@ -1512,7 +1516,13 @@ namespace Carpet {
       assert (nprocs_left > 0);
       CCTK_REAL const npoints1 =
         CCTK_REAL(1) * npoints_left * mynprocs.AT(n) / nprocs_left;
-      mynpoints.AT(n) = int (floor (npoints1 + CCTK_REAL(0.5)));
+      mynpoints.AT(n) =
+        int (floor (npoints1 / granularity + CCTK_REAL(0.5))) * granularity;
+      if (n == 0)
+        mynpoints.AT(n) += npoints_bnd_lo;
+      if (npoints_left - mynpoints.AT(n) <= npoints_bnd_hi)
+        mynpoints.AT(n) += npoints_bnd_hi;
+      mynpoints.AT(n) = min(npoints_left, mynpoints.AT(n));
       assert (mynpoints.AT(n) >= 0 and mynpoints.AT(n) <= npoints_left);
       npoints_left -= mynpoints.AT(n);
       nprocs_left -= mynprocs.AT(n);

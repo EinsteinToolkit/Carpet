@@ -450,6 +450,16 @@ BOOLEAN split_components "Split components onto processes; without this, one nee
 {
 } "yes"
 
+CCTK_INT granularity "When splitting components, create sizes that are multiples of this granularity" STEERABLE=always
+{
+  1:* :: "TODO: query CoordBase or related thorns for this information"
+} 1
+
+CCTK_INT granularity_boundary "When splitting components, assume this many boundary points that don't count towards the granularity" STEERABLE=always
+{
+  0:* :: "TODO: use CoordBase's number of boundary points for this"
+} 0
+
 
 
 CCTK_INT num_threads "Number of threads per process" STEERABLE=recover
