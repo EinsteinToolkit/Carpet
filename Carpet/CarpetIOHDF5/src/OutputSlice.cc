@@ -561,7 +561,7 @@ namespace CarpetIOHDF5 {
       
       // re-compute the active (non-buffered) region
       ibset allactive;
-      GetAllActive (dd, hh, m, rl, allactive);
+      GetAllActive (dd, hh, ml, rl, allactive);
 
       // Traverse all components on this multigrid level, refinement
       // level, and map
