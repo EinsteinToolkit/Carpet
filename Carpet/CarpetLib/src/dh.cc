@@ -914,16 +914,10 @@ regrid (bool const do_init)
           for (int cc = 0; cc < h.components(orl); ++ cc) {
             full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
             
-#if 0
-            // This does not work for cell centering; if the domain is
-            // 1 cell wide, the contraction disappears it
-            ibset const expanded_oactive
-              (obox.active.contracted_for (box.interior).expand (reffact));
-#else
+            // See "refinement prolongation"
             ibset const expanded_oactive
               (obox.active.expanded_for (box.interior).expand
                (h.refcent == vertex_centered ? reffact : reffact-1));
-#endif
             ibset const ovlp = needrecv & expanded_oactive;
             
             for (ibset::const_iterator
@@ -1672,14 +1666,10 @@ regrid (bool const do_init)
             for (int cc = 0; cc < h.components(orl); ++ cc) {
               full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
               
-#if 0
-              // untested for cell centering
+              // See "refinement prolongation"
               ibset const expanded_oactive
-                (obox.active.contracted_for (box.interior).expand (reffact));
-#else
-              ibset const expanded_oactive
-                (obox.active.expanded_for (box.interior).expand (reffact));
-#endif
+                (obox.active.expanded_for (box.interior).expand
+                 (h.refcent == vertex_centered ? reffact : reffact-1));
               ibset const ovlp = needrecv & expanded_oactive;
               
               for (ibset::const_iterator
