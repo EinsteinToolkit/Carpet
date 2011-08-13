@@ -520,6 +520,7 @@ namespace CarpetRegrid2 {
       
       // Regrid only if the regions have changed sufficiently
       do_recompose = false;
+      if (adaptive_refinement) do_recompose = true;
       for (int n = 0; n < num_centres; ++ n) {
         
         // Regrid if a region became active or inactive
@@ -702,6 +703,7 @@ namespace CarpetRegrid2 {
       
       // Regrid only if the regions have changed sufficiently
       do_recompose = false;
+      if (adaptive_refinement) do_recompose = true;
       for (int n = 0; n < num_centres; ++ n) {
         
         // When debugging, sneakily add a new level, but skip the
