@@ -139,13 +139,16 @@ void CarpetIOHDF5_InitCheckpointingIntervals (CCTK_ARGUMENTS)
 
 void CarpetIOHDF5_InitialDataCheckpoint (CCTK_ARGUMENTS)
 {
+  DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
 
   if (checkpoint and checkpoint_ID) {
     if (not CCTK_Equals (verbose, "none")) {
       CCTK_INFO ("---------------------------------------------------------");
-      CCTK_INFO ("Dumping initial data checkpoint");
+      CCTK_VInfo (CCTK_THORNSTRING, "Dumping initial checkpoint at "
+                  "iteration %d, simulation time %g",
+                  cctk_iteration, double(cctk_time));
       CCTK_INFO ("---------------------------------------------------------");
     }
     Checkpoint (cctkGH, CP_INITIAL_DATA);
@@ -206,7 +209,8 @@ void CarpetIOHDF5_TerminationCheckpoint (CCTK_ARGUMENTS)
       if (not CCTK_Equals (verbose, "none")) {
         CCTK_INFO ("---------------------------------------------------------");
         CCTK_VInfo (CCTK_THORNSTRING, "Dumping termination checkpoint at "
-                    "iteration %d", cctk_iteration);
+                  "iteration %d, simulation time %g",
+                  cctk_iteration, double(cctk_time));
         CCTK_INFO ("---------------------------------------------------------");
       }
       Checkpoint (cctkGH, CP_EVOLUTION_DATA);
