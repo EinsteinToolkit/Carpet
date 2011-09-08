@@ -30,6 +30,7 @@
 #ifdef HAVE_SCHED_H
 #  include <sched.h>
 #endif
+#include <unistd.h>
 
 #include <carpet.hh>
 #include "Timers.hh"
@@ -252,7 +253,7 @@ namespace Carpet {
       MPI_Get_processor_name (hostnamebuf, &hostnamelen);
       string const hostname (hostnamebuf);
 #endif
-      int const mypid = getpid ();
+      int const mypid = static_cast<int> (getpid ());
       // Output
       CCTK_VInfo (CCTK_THORNSTRING,
                   "This process runs on host %s, pid=%d",
