@@ -1192,6 +1192,7 @@ namespace CarpetLib {
                                                                     \
 
 #define CARPET_NO_INT
+#define CARPET_NO_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
 
