@@ -1,3 +1,5 @@
+#define _GNU_SOURCE 1 // needed for sched_getaffinity, best at the top to avoid inconsistent includes
+
 #include <cassert>
 #include <climits>
 #include <cmath>
