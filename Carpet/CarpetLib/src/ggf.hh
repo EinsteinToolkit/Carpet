@@ -171,7 +171,7 @@ protected:
                      srpvect const dh::fast_dboxes::* sendrecvs,
                      vector<int> const & tl2s, int rl2, int ml2,
                      CCTK_REAL const & time,
-                     mdata * srcstorage = 0,
+                     bool use_old_storage = false,
                      bool flip_send_recv = false);
   
   void
@@ -179,7 +179,7 @@ protected:
                      int tl1, int rl1, int ml1,
                      srpvect const dh::fast_dboxes::* sendrecvs,
                      int tl2, int rl2, int ml2,
-                     mdata * srcstorage = 0,
+                     bool use_old_storage = false,
                      bool flip_send_recv = false)
   {
     vector <int> tl2s(1);
@@ -190,7 +190,7 @@ protected:
                        sendrecvs,
                        tl2s, rl2, ml2,
                        time,
-                       srcstorage,
+                       use_old_storage,
                        flip_send_recv);
   }
 

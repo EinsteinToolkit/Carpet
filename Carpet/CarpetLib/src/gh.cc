@@ -195,6 +195,10 @@ regrid (rregs const & superregs, mregs const & regs, bool const do_init)
   
   
   // Calculate global and local components
+  assert (old_global_components_.empty());
+  assert (old_local_components_.empty());
+  swap (old_global_components_, global_components_);
+  swap (old_local_components_, local_components_);
   global_components_.resize(reflevels());
   local_components_.resize(reflevels());
   for (int rl=0; rl<reflevels(); ++rl) {
@@ -249,6 +253,8 @@ gh::
 regrid_free (bool const do_init)
 {
   oldregions.clear();
+  old_global_components_.clear();
+  old_local_components_.clear();
   
   for (list<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
     (*t)->regrid_free();
@@ -329,6 +335,30 @@ get_local_component (int const rl, int const c)
   const
 {
   return local_components_.AT(rl).AT(c);
+}
+
+int
+gh::
+old_local_components (int const rl)
+  const
+{
+  return old_global_components_.AT(rl).size();
+}
+
+int
+gh::
+get_old_component (int const rl, int const lc)
+  const
+{
+  return old_global_components_.AT(rl).AT(lc);
+}
+
+int
+gh::
+get_old_local_component (int const rl, int const c)
+  const
+{
+  return old_local_components_.AT(rl).AT(c);
 }
   
   
@@ -561,6 +591,10 @@ memory ()
     memoryof (boundary_width) +
     memoryof (regions) +
     memoryof (oldregions) +
+    memoryof (global_components_) +
+    memoryof (local_components_) +
+    memoryof (old_global_components_) +
+    memoryof (old_local_components_) +
     memoryof (ths) +
     memoryof (dhs);
 }

@@ -1627,7 +1627,7 @@ regrid (bool const do_init)
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
                 if (not on_this_oldproc (rl, cc)) {
                   fast_dboxes & fast_level_otherproc =
-                    fast_level_otherprocs.AT(this_proc(rl, cc));
+                    fast_level_otherprocs.AT(this_oldproc(rl, cc));
                   fast_level_otherproc.fast_old2new_sync_sendrecv.push_back
                     (sendrecv_pseudoregion_t (send, cc, recv, c));
                 }
