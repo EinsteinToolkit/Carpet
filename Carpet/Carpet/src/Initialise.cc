@@ -459,29 +459,65 @@ namespace Carpet {
     static Timer timer ("CallRestrict");
     timer.start();
     
-    for (int rl=reflevels-2; rl>=0; --rl) {
-      BEGIN_MGLEVEL_LOOP(cctkGH) {
-        ENTER_LEVEL_MODE (cctkGH, rl) {
-          BeginTimingLevel (cctkGH);
-                    
-          do_early_global_mode = reflevel==reflevels-2;
-          do_late_global_mode = reflevel==0;
-          do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
-          do_late_meta_mode = do_late_global_mode and mglevel==0;
-          do_global_mode = do_late_global_mode; // on last iteration, finest grid
-          do_meta_mode = do_late_meta_mode; // on last iteration, finest grid
+    for (int ml=mglevels-1; ml>=0; --ml) {
 
-          Waypoint ("Initialisation/Restrict at iteration %d time %g",
-                    cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
+      for (int rl=reflevels-2; rl>=0; --rl) {
+        ENTER_GLOBAL_MODE (cctkGH, ml) {
+          ENTER_LEVEL_MODE (cctkGH, rl) {
+            BeginTimingLevel (cctkGH);
+                    
+            Waypoint ("Initialisation/Restrict at iteration %d time %g",
+                      cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
           
-          Restrict (cctkGH);
+            Restrict (cctkGH);
+
+            EndTimingLevel (cctkGH);
+          } LEAVE_LEVEL_MODE;
+        } LEAVE_GLOBAL_MODE;
+      } // for rl
+
+      bool have_done_global_mode = false;
+      bool have_done_early_global_mode = false;
+      bool have_done_late_global_mode = false;
+      bool have_done_anything = false;
+        
+      for (int rl=0; rl<reflevels; ++rl) {
+        ENTER_GLOBAL_MODE (cctkGH, ml) {
+          ENTER_LEVEL_MODE (cctkGH, rl) {
+            BeginTimingLevel (cctkGH);
+                    
+            do_early_global_mode = not have_done_early_global_mode;
+            do_late_global_mode = reflevel==reflevels-1;
+            do_early_meta_mode =
+              do_early_global_mode and mglevel==mglevels-1;
+            do_late_meta_mode = do_late_global_mode and mglevel==0;
+            do_global_mode = do_late_global_mode;
+            do_meta_mode = do_global_mode and do_late_meta_mode;
+            assert (not (have_done_global_mode and do_global_mode));
+            assert (not (have_done_early_global_mode and
+                         do_early_global_mode));
+            assert (not (have_done_late_global_mode and
+                         do_late_global_mode));
+            have_done_global_mode |= do_global_mode;
+            have_done_early_global_mode |= do_early_global_mode;
+            have_done_late_global_mode |= do_late_global_mode;
+            have_done_anything = true;
+
+            Waypoint ("Initialisation/PostRestrict at iteration %d time %g",
+                      cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
+                
+            ScheduleTraverse (where, "CCTK_POSTRESTRICTINITIAL", cctkGH);
           
-          ScheduleTraverse (where, "CCTK_POSTRESTRICTINITIAL", cctkGH);
-          
-          EndTimingLevel (cctkGH);
-        } LEAVE_LEVEL_MODE;
-      } END_MGLEVEL_LOOP;
-    } // for rl
+            EndTimingLevel (cctkGH);
+          } LEAVE_LEVEL_MODE;
+        } LEAVE_GLOBAL_MODE;
+      } // for rl
+
+      if (have_done_anything) assert (have_done_global_mode);
+      if (have_done_anything) assert (have_done_early_global_mode);
+      if (have_done_anything) assert (have_done_late_global_mode);
+        
+    } // for ml
     
     timer.stop();
   }
