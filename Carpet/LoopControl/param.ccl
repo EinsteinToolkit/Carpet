@@ -156,7 +156,7 @@ CCTK_REAL siman_T_min "stopping criterion" STEERABLE=recover
 
 BOOLEAN use_random_restart_hill_climbing "http://en.wikipedia.org/wiki/Hill_climbing http://en.wikipedia.org/wiki/Tabu_search" STEERABLE=always
 {
-} "yes"
+} "no"
 
 CCTK_REAL maximum_setup_overhead "Maximum allowable administrative overhead" STEERABLE=always
 {
