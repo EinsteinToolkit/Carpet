@@ -14,6 +14,7 @@ InitBase::initial_data_setup_method = "init_all_levels"
 IDScalarWave::initial_data = "gaussian"
 IDScalarWave::sigma        = 2.8
 IDScalarWave::radius       = 0.0
+WaveToyC::bound          = "static"
 
 Driver::global_nsize = 20
 Driver::ghost_size   = 2
