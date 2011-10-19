@@ -34,6 +34,7 @@ open(CARPETFILE,   "<$ARGV[1]") || die "Unable to find file \"$ARGV[1]\".";
 
 my $direction = $ARGV[0]+9; 
 my $flag = 0;
+my $newflag = 0;
 my $refinementlevel = 0;
 my %componentflag = ();
 $componentflag{$refinementlevel} = 0;
@@ -66,7 +67,7 @@ while (<CARPETFILE>)
 	    @outputdata=("\n");
 	    $flag = 0;
 	}
-	if ($line =~ /refinement level ([0-9])/) # Line gives ref. level
+	if ($line =~ /refinement level ([0-9]{1,2})/) # Line gives ref. level
 	{
 	    $refinementlevel = $1;
 	    $line =~ /component ([0-9+])/;
@@ -86,6 +87,7 @@ while (<CARPETFILE>)
 	if (0 == $componentflag{$refinementlevel})
 	{
 	    push(@outputdata, ("\"",$line)); # Add ygraph comment marker
+	    $newflag = 0;
 	}
 	else
 	{
@@ -96,11 +98,11 @@ while (<CARPETFILE>)
     else # The line contains real data
     {
 	@data = split(/[ \t]+/,$line);
-	if ($flag== 0) # This is the first line of data
+	if (($newflag==0)) # This is the first line of data
 	{
-	    $flag = 1;
+	    $newflag = 1;
 	    my $timeset = $data[8]; # Magic number gives the Cactus time
-	    @outputdata = ("\n\"Time = $timeset",@outputdata);
+	    @outputdata = ("\n\n\#Time = $timeset \n",@outputdata);
 	}
         chomp ($data[12]);
         push(@outputdata, "$data[$direction] $data[12]\n");
