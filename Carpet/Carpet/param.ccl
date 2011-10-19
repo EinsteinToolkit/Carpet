@@ -308,6 +308,11 @@ BOOLEAN check_for_poison "Explicitely check for the poison value after every tim
 {
 } "no"
 
+CCTK_INT poison_value "UNUSED; use CarpetLib::poison_value instead" STEERABLE=always
+{
+  * :: ""
+} 0
+
 CCTK_INT max_poison_locations "Maximum number of poison locations that are printed to the screen" STEERABLE=always
 {
   -1  :: "print all locations"
