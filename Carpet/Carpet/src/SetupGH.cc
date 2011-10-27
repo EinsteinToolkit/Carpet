@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -634,14 +635,21 @@ namespace Carpet {
                         >= 0)));
     }
     
+    CCTK_INFO ("Buffer zone counts (excluding ghosts):");
+    const streamsize oldprecision = cout.precision();
+    const ios_base::fmtflags oldflags = cout.flags();
+    cout.setf (ios::fixed);
     vector<i2vect> buffers (maxreflevels);
     for (int rl=0; rl<maxreflevels; ++rl) {
       buffers.AT(rl) =
         taper_factor * (buffer_factor * ghosts.AT(rl)
                         + int (additional_buffer_zones))
         - ghosts.AT(rl);
+      cout << "   [" << rl << "]: " << buffers.AT(rl) << "\n";
       assert (all (all (buffers.AT(rl) >= 0)));
     }
+    cout.precision (oldprecision);
+    cout.setf (oldflags);
     
     vector<int> const my_prolongation_orders_space =
       get_prolongation_orders_space ();
