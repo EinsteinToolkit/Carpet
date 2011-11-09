@@ -3,3 +3,5 @@
 IMPLEMENTS: CarpetMask
 
 INHERITS: grid SphericalSurface
+
+USES INCLUDE HEADER: CarpetReduce_bits.h

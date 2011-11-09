@@ -17,6 +17,8 @@ uses include header: typeprops.hh
 
 uses include header: loopcontrol.h
 
+includes header: bits.h IN CarpetReduce_bits.h
+
 
 
 CCTK_INT FUNCTION                           \
@@ -90,3 +92,5 @@ INT iweight TYPE=gf TAGS='prolongation="none" InterpNumTimelevels=1 checkpoint="
 REAL weight TYPE=gf TAGS='prolongation="none" InterpNumTimelevels=1 checkpoint="no"' "Weight function"
 
 REAL one TYPE=gf TAGS='prolongation="none" InterpNumTimelevels=1 checkpoint="no"' "Constant one"
+
+CCTK_REAL excised_cells TYPE=scalar TAGS='checkpoint="no"' "Excised (ignored) volume in the simulation domain, in terms of coarse grid cells"

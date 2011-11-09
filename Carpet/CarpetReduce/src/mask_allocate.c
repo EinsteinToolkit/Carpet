@@ -17,4 +17,7 @@ MaskBase_AllocateMask (CCTK_ARGUMENTS)
   
   CCTK_EnableGroupStorage (cctkGH, "CarpetReduce::iweight");
   CCTK_EnableGroupStorage (cctkGH, "CarpetReduce::one");
+  
+  /* Initialise excised cell count */
+  * excised_cells = 0.0;
 }
