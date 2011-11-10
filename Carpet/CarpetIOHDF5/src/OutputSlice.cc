@@ -1420,7 +1420,15 @@ namespace CarpetIOHDF5 {
         datasetname.append (datasetname_suffix.str());
   
         // remove an already existing dataset of the same name
-        if (slice_requests.at(vi + n)->check_exist) {
+        ioRequest* request = slice_requests.at(vi + n);
+        if (not request) {
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
+        request = IOUtil_DefaultIORequest (cctkGH, vi + n, 1, -1.0);
+#else
+        request = IOUtil_DefaultIORequest (cctkGH, vi + n, 1);
+#endif
+        }
+        if (request->check_exist) {
           H5E_BEGIN_TRY {
             H5Gunlink(file, datasetname.c_str());
           } H5E_END_TRY;
@@ -1516,7 +1524,15 @@ namespace CarpetIOHDF5 {
         datasetname.append (datasetname_suffix.str());
 
         // remove an already existing dataset of the same name
-        if (slice_requests[vi + n]->check_exist) {
+        ioRequest* request = slice_requests.at(vi + n);
+        if (not request) {
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
+        request = IOUtil_DefaultIORequest (cctkGH, vi + n, 1, -1.0);
+#else
+        request = IOUtil_DefaultIORequest (cctkGH, vi + n, 1);
+#endif
+        }
+        if (request->check_exist) {
           H5E_BEGIN_TRY {
             H5Gunlink(file, datasetname.c_str());
           } H5E_END_TRY;
