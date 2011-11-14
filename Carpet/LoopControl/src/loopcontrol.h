@@ -140,11 +140,6 @@ static inline
 int
 lc_state_valid (lc_statset_t const * restrict const ls,
                 lc_state_t const * restrict const state)
-  CCTK_ATTRIBUTE_PURE;
-static inline
-int
-lc_state_valid (lc_statset_t const * restrict const ls,
-                lc_state_t const * restrict const state)
 {
   if (state->topology >= 0 && state->topology < ls->ntopologies) {
     int const * restrict const ntilings =
@@ -156,11 +151,6 @@ lc_state_valid (lc_statset_t const * restrict const ls,
   return 0;
 }
 
-static inline
-int
-lc_state_equal (lc_state_t const * restrict const state1,
-                lc_state_t const * restrict const state2)
-  CCTK_ATTRIBUTE_PURE;
 static inline
 int
 lc_state_equal (lc_state_t const * restrict const state1,
@@ -259,18 +249,10 @@ typedef struct lc_control_t {
 static inline
 int
 lc_min (int const i, int const j)
-  CCTK_ATTRIBUTE_CONST;
-static inline
-int
-lc_min (int const i, int const j)
 {
   return i < j ? i : j;
 }
 
-static inline
-int
-lc_max (int const i, int const j)
-  CCTK_ATTRIBUTE_CONST;
 static inline
 int
 lc_max (int const i, int const j)
@@ -279,10 +261,6 @@ lc_max (int const i, int const j)
 }
 
 /* Align by shifting to the right if necessary */
-static inline
-int
-lc_align (int const i, int const di)
-  CCTK_ATTRIBUTE_CONST;
 static inline
 int
 lc_align (int const i, int const di)
