@@ -123,6 +123,7 @@ find_thread_topologies (lc_topology_t * restrict const topologies,
 }
 
 
+
 #if 1
 
 /* Find "good" tiling specifications */
@@ -191,9 +192,11 @@ find_tiling_specifications (lc_tiling_t * restrict const tilings,
   
   /* step size should be at least 1, even if there are only 0
      points */
-  assert (* ntilings < maxntilings);
-  tilings[* ntilings].npoints = lc_max (npoints, 1);
-  ++ * ntilings;
+  if (* ntilings == 0) {
+    assert (* ntilings < maxntilings);
+    tilings[* ntilings].npoints = lc_max (npoints, 1);
+    ++ * ntilings;
+  }
   
   assert (* ntilings >= 1);
 }
@@ -226,11 +229,13 @@ find_tiling_specifications (lc_tiling_t * restrict const tilings,
     }
   }
   
-  assert (* ntilings < maxntilings);
   /* step size should be at least 1, even if there are only 0
      points */
-  tilings[* ntilings].npoints = lc_max (npoints, 1);
-  ++ * ntilings;
+  if (* ntilings == 0 || tilings[* ntilings - 1].npoints != npoints) {
+    assert (* ntilings < maxntilings);
+    tilings[* ntilings].npoints = lc_max (npoints, 1);
+    ++ * ntilings;
+  }
 }
 
 #endif
@@ -437,7 +442,7 @@ lc_statset_init (lc_statset_t * restrict const ls,
   }
   // Reallocate memory in case we need more
   if (num_threads > saved_maxthreads) {
-    int old_saved_maxthreads = saved_maxthreads;
+    int const old_saved_maxthreads = saved_maxthreads;
     saved_maxthreads = num_threads;
     saved_topologies  = realloc (saved_topologies,  saved_maxthreads * sizeof * saved_topologies );
     saved_ntopologies = realloc (saved_ntopologies, saved_maxthreads * sizeof * saved_ntopologies);
@@ -528,11 +533,6 @@ lc_statset_init (lc_statset_t * restrict const ls,
                 ls->topologies[n].nthreads[0][d] *
                 ls->topologies[n].nthreads[1][d] >
                 ls->npoints[d]);
-      }
-      assert (tiling != 0);     /* this can't be? */
-      if (tiling == 0) {
-        /* Always allow at least one tiling */
-        tiling = 1;
       }
       ls->topology_ntilings[d][n] = tiling;
     }
@@ -1074,12 +1074,9 @@ lc_control_finish (lc_control_t * restrict const lc)
   /* Perform self-check */
   
   if (do_selftest) {
-    /* Ensure all threads have finished the loop */
-#pragma omp barrier
-    ;
     /* Assert that exactly the specified points have been set */
     static int failure = 0;
-#pragma omp for reduction(+: failure)
+#pragma omp for
     for (int k=0; k<lc->klsh; ++k) {
       for (int j=0; j<lc->jlsh; ++j) {
         for (int i=0; i<lc->ilsh; ++i) {
@@ -1089,9 +1086,9 @@ lc_control_finish (lc_control_t * restrict const lc)
             (j >= lc->jmin && j < lc->jmax) &&
             (k >= lc->kmin && k < lc->kmax);
           if (lc->selftest_count[ind3d] != inside) {
-            ++ failure;
 #pragma omp critical
             {
+              failure = 1;
               fprintf (stderr, "   i=[%d,%d,%d] count=%d expected=%d\n",
                        i, j, k,
                        (int) lc->selftest_count[ind3d], (int) inside);
@@ -1136,9 +1133,11 @@ lc_control_finish (lc_control_t * restrict const lc)
                     lc->statmap->name);
       }
     }
-#pragma omp single nowait
+    // xlC on VIP doesn't like this "nowait"
+#pragma omp single // nowait
     {
       free (lc->selftest_count);
+      lc->selftest_count = NULL;
     }
   }
 }
