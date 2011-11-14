@@ -367,6 +367,14 @@ namespace Carpet {
     // }
     
     ++ regridding_epoch;
+    // Mark all vanished levels as changed
+    for (int rl=reflevels; rl<int(level_regridding_epochs.size()); ++rl) {
+      ++ level_regridding_epochs.at(rl);
+    }
+    // Insert entries for new levels
+    if (int(level_regridding_epochs.size()) < reflevels) {
+      level_regridding_epochs.resize(reflevels, 0);
+    }
     
     OutputGridStatistics (cctkGH);
     
@@ -397,6 +405,10 @@ namespace Carpet {
     }
       
     ClassifyPoints (cctkGH, rl);
+    
+    if (did_recompose) {
+      ++ level_regridding_epochs.at(rl);
+    }
     
     timer.stop();
     return did_recompose;
