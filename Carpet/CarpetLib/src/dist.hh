@@ -30,6 +30,10 @@ namespace dist {
   extern MPI_Datatype mpi_complex8;
   extern MPI_Datatype mpi_complex16;
   extern MPI_Datatype mpi_complex32;
+  extern MPI_Op mpi_max;
+  extern MPI_Op mpi_min;
+  extern MPI_Op mpi_prod;
+  extern MPI_Op mpi_sum;
   
   extern int num_threads_;
   extern int total_num_threads_;

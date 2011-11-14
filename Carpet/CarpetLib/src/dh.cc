@@ -1678,6 +1678,12 @@ regrid (bool const do_init)
                 ibbox const & recv = * ri;
                 ibbox const send =
                   recv.expanded_for (obox.interior).expand (stencil_size);
+                if (not (send <= obox.exterior)) {
+                  cerr << "stencil_size=" << stencil_size << "\n"
+                       << "obox=" << obox
+                       << "recv=" << recv << "\n"
+                       << "send=" << send << "\n";
+                }
                 ASSERT_c (send <= obox.exterior,
                           "Regridding prolongation: Send region must be contained in exterior");
                 fast_level.fast_old2new_ref_prol_sendrecv.push_back
