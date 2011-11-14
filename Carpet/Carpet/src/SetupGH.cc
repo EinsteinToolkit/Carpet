@@ -703,6 +703,11 @@ namespace Carpet {
       vhh.AT(m)->recompose (rl, false);
       vhh.AT(m)->regrid_free (false);
       
+      // Output grid structure
+      OutputGrids (cctkGH, m, * vhh.AT(m), * vdd.AT(m));
+      OutputGridStructure (cctkGH, m, regssss.AT(m));
+      OutputGridCoordinates (cctkGH, m, regssss.AT(m));
+      
     } // for m
     
     regridding_epoch = 0;
