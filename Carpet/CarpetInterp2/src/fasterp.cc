@@ -489,7 +489,10 @@ namespace CarpetInterp2 {
                    fasterp_glocs_t const & locations,
                    int const order_)
     : order (order_),
-      regridding_epoch (Carpet::regridding_epoch)
+      reflevel (Carpet::reflevel),
+      regridding_epoch (reflevel == -1 ?
+                        Carpet::regridding_epoch :
+                        Carpet::level_regridding_epochs.at(reflevel))
   {
     // Some global properties
     int const npoints = locations.size();
@@ -565,8 +568,7 @@ namespace CarpetInterp2 {
                  "Interpolation order must be non-negative");
     }
     if (order > max_order) {
-      CCTK_VWarn (CCTK_WARN_ABORT,
-                  __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Interpolation order cannot be larger than max_order=%d; "
                   "order=%d was requested.  "
                   "(You can increase the compile time constant max_order "
@@ -1056,9 +1058,18 @@ namespace CarpetInterp2 {
     DECLARE_CCTK_PARAMETERS;
     
     // Check regridding epoch
-    if (regridding_epoch != Carpet::regridding_epoch) {
-      CCTK_WARN (CCTK_WARN_ALERT,
-                 "The Carpet grid structure was changed since this fasterp_setup was created");
+    if (regridding_epoch != (reflevel == -1 ?
+                             Carpet::regridding_epoch :
+                             Carpet::level_regridding_epochs.at(reflevel)))
+    {
+      if (reflevel == -1) {
+        CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "The Carpet grid structure was changed since this fasterp_setup was created");
+      } else {
+        CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "The Carpet grid structure on level %d was changed since this fasterp_setup was created",
+                    reflevel);
+      }
     }
     
     // Desired time level

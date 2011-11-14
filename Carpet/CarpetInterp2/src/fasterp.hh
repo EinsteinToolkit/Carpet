@@ -277,6 +277,7 @@ namespace CarpetInterp2 {
     send_descr_t send_descr;
     int order;
     
+    int reflevel;
     int regridding_epoch;
     
     void
