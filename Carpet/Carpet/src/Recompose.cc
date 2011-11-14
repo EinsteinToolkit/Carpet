@@ -1360,6 +1360,8 @@ namespace Carpet {
 //       SplitRegionsMaps_AlongDir (cctkGH, superregss, regss, split_direction);
     } else if (CCTK_EQUALS (processor_topology, "automatic")) {
       SplitRegionsMaps_Automatic (cctkGH, superregss, regss);
+    } else if (CCTK_EQUALS (processor_topology, "recursive")) {
+      SplitRegionsMaps_Recursively (cctkGH, superregss, regss);
     } else if (CCTK_EQUALS (processor_topology, "manual")) {
       assert (0);
 //       SplitRegionsMaps_AsSpecified (cctkGH, superregss, regss);

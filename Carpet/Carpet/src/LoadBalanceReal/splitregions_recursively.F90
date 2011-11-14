@@ -3,7 +3,8 @@
 subroutine splitregions_recursively ( &
      cxx_superregs, nsuperregs, &
      cxx_regs, &
-     nprocs)
+     nprocs, &
+     ghostsize_, alpha_, limit_size_, procid_)
   use carpet_boxtypes
   implicit none
   
@@ -11,6 +12,10 @@ subroutine splitregions_recursively ( &
   CCTK_POINTER, intent(in) :: cxx_superregs
   CCTK_POINTER, intent(in) :: cxx_regs
   integer,      intent(in) :: nprocs
+  integer,      intent(in) :: ghostsize_
+  CCTK_REAL,    intent(in) :: alpha_
+  integer,      intent(in) :: limit_size_
+  integer,      intent(in) :: procid_
   
   type(ptr), allocatable :: sregions(:)
   type(boundary)         :: outbound
@@ -66,6 +71,14 @@ subroutine splitregions_recursively ( &
      end subroutine carpet_create_tree_leaf
      
   end interface
+  
+  
+  
+  ! Set global parameters
+  ghostsize  = ghostsize_ 
+  alpha      = alpha_
+  limit_size = limit_size_ /= 0
+  procid     = procid_
   
   
   

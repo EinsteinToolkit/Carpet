@@ -21,15 +21,15 @@ SRCS =	CallFunction.cc				\
 	Shutdown.cc				\
 	Storage.cc				\
 	Timers.cc				\
-    TimerNode.cc            \
-    CactusTimer.cc          \
-	TimerSet.cc             \
+	TimerNode.cc				\
+	CactusTimer.cc				\
+	TimerSet.cc				\
 	Timing.cc				\
-  UnusedMask.cc   \
+	UnusedMask.cc				\
 	helpers.cc				\
 	modes.cc				\
 	variables.cc
 
 # Subdirectories containing source files
-SUBDIRS = 
+SUBDIRS = LoadBalanceReal
 

@@ -465,6 +465,11 @@ CCTK_INT granularity_boundary "When splitting components, assume this many bound
   0:* :: "TODO: use CoordBase's number of boundary points for this"
 } 0
 
+CCTK_REAL ghost_zone_cost "Relative cost of ghost zones for 'recursive' load balancing" STEERABLE=always
+{
+  0:* :: ""
+} 0.025
+
 
 
 CCTK_INT num_threads "Number of threads per process" STEERABLE=recover

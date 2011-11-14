@@ -157,6 +157,10 @@ namespace Carpet {
   SplitRegions_Automatic (cGH const * cctkGH,
                           vector<region_t> & superregs,
                           vector<region_t> & regs);
+  void
+  SplitRegionsMaps_Recursively (cGH const * cctkGH,
+                                vector<vector<region_t> > & superregss,
+                                vector<vector<region_t> > & regss);
   
   void
   SplitRegionsMaps (cGH const * cctkGH,

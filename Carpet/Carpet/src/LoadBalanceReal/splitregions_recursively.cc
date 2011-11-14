@@ -148,7 +148,11 @@ namespace Carpet {
   CCTK_FNAME(splitregions_recursively) (CCTK_POINTER const& cxx_superregs,
                                         int const& nsuperregs,
                                         CCTK_POINTER const& cxx_regs,
-                                        int const& nprocs);
+                                        int const& nprocs,
+                                        int const& ghostsize,
+                                        CCTK_REAL const& alpha,
+                                        int const& limit_size,
+                                        int const& procid);
   
   void
   SplitRegionsMaps_Recursively (cGH const * const cctkGH,
@@ -222,8 +226,13 @@ namespace Carpet {
     vector<region_t> regs;
     // regs.reserve (...);
     CCTK_POINTER const cxx_regs = & regs;
+    int const ghostsize = maxval(ivect::ref(cctkGH->cctk_nghostzones));
+    CCTK_REAL const alpha = ghost_zone_cost;
+    int const limit_size = true;
+    int const procid = CCTK_MyProc(cctkGH);
     CCTK_FNAME(splitregions_recursively)
-      (cxx_superregs, nsuperregs, cxx_regs, nprocs);
+      (cxx_superregs, nsuperregs, cxx_regs, nprocs,
+       ghostsize, alpha, limit_size, procid);
     int const nregs = regs.size();
     
     // Allocate regions
