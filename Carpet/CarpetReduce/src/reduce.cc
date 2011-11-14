@@ -432,7 +432,7 @@ namespace CarpetReduce {
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
-    MPI_Op mpi_op () const { return MPI_SUM; }
+    MPI_Op mpi_op () const { return dist::mpi_sum; }
   };
   
   struct minimum : reduction {
@@ -446,7 +446,7 @@ namespace CarpetReduce {
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum = CarpetReduce::mymin(accum,accum2); cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
-    MPI_Op mpi_op () const { return MPI_MIN; }
+    MPI_Op mpi_op () const { return dist::mpi_min; }
   };
   
   struct maximum : reduction {
@@ -460,7 +460,7 @@ namespace CarpetReduce {
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum = CarpetReduce::mymax(accum,accum2); cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
-    MPI_Op mpi_op () const { return MPI_MAX; }
+    MPI_Op mpi_op () const { return dist::mpi_max; }
   };
   
   struct product : reduction {
@@ -474,7 +474,7 @@ namespace CarpetReduce {
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum *= accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
-    MPI_Op mpi_op () const { return MPI_PROD; }
+    MPI_Op mpi_op () const { return dist::mpi_prod; }
   };
   
   struct sum : reduction {
@@ -488,7 +488,7 @@ namespace CarpetReduce {
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
-    MPI_Op mpi_op () const { return MPI_SUM; }
+    MPI_Op mpi_op () const { return dist::mpi_sum; }
   };
   
   struct sum_abs : reduction {
@@ -502,7 +502,7 @@ namespace CarpetReduce {
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
-    MPI_Op mpi_op () const { return MPI_SUM; }
+    MPI_Op mpi_op () const { return dist::mpi_sum; }
   };
   
   struct sum_squared : reduction {
@@ -516,7 +516,7 @@ namespace CarpetReduce {
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
-    MPI_Op mpi_op () const { return MPI_SUM; }
+    MPI_Op mpi_op () const { return dist::mpi_sum; }
   };
   
   struct sum_abs_squared : reduction {
@@ -530,7 +530,7 @@ namespace CarpetReduce {
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
-    MPI_Op mpi_op () const { return MPI_SUM; }
+    MPI_Op mpi_op () const { return dist::mpi_sum; }
   };
   
   struct average : reduction {
@@ -544,7 +544,7 @@ namespace CarpetReduce {
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { accum /= cnt; }
     };
-    MPI_Op mpi_op () const { return MPI_SUM; }
+    MPI_Op mpi_op () const { return dist::mpi_sum; }
   };
   
   struct norm1 : reduction {
@@ -558,7 +558,7 @@ namespace CarpetReduce {
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { accum /= cnt; }
     };
-    MPI_Op mpi_op () const { return MPI_SUM; }
+    MPI_Op mpi_op () const { return dist::mpi_sum; }
   };
   
   struct norm2 : reduction {
@@ -572,7 +572,7 @@ namespace CarpetReduce {
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { accum = CarpetReduce::mysqrt(accum / cnt); }
     };
-    MPI_Op mpi_op () const { return MPI_SUM; }
+    MPI_Op mpi_op () const { return dist::mpi_sum; }
   };
   
   struct norm_inf : reduction {
@@ -586,7 +586,7 @@ namespace CarpetReduce {
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum = CarpetReduce::mymax(accum,accum2); cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
-    MPI_Op mpi_op () const { return MPI_MAX; }
+    MPI_Op mpi_op () const { return dist::mpi_max; }
   };
   
   
@@ -989,7 +989,7 @@ namespace CarpetReduce {
              << "mpicount=" << mpicount << endl;
       }
       assert (sendbuf + bufsize == static_cast<const char*>(mycounts));
-      assert (red->mpi_op() == MPI_SUM);
+      assert (red->mpi_op() == dist::mpi_sum);
     }
     
     char* recvbuf = static_cast<char*>(outvals);
