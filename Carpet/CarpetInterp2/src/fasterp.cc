@@ -492,7 +492,7 @@ namespace CarpetInterp2 {
       reflevel (Carpet::reflevel),
       regridding_epoch (reflevel == -1 ?
                         Carpet::regridding_epoch :
-                        Carpet::level_regridding_epochs.at(reflevel))
+                        Carpet::level_regridding_epochs.AT(reflevel))
   {
     // Some global properties
     int const npoints = locations.size();
@@ -1060,7 +1060,7 @@ namespace CarpetInterp2 {
     // Check regridding epoch
     if (regridding_epoch != (reflevel == -1 ?
                              Carpet::regridding_epoch :
-                             Carpet::level_regridding_epochs.at(reflevel)))
+                             Carpet::level_regridding_epochs.AT(reflevel)))
     {
       if (reflevel == -1) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
