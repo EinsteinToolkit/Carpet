@@ -711,6 +711,8 @@ namespace Carpet {
     } // for m
     
     regridding_epoch = 0;
+    level_regridding_epochs.resize (1);
+    level_regridding_epochs.AT(0) = 0;
     
     if (verbose or veryverbose) {
       CCTK_INFO ("Grid structure (grid points):");
