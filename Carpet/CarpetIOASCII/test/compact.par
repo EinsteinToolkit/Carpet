@@ -1,0 +1,43 @@
+ActiveThorns = "
+   Carpet
+   CarpetIOASCII
+   CarpetLib
+   CarpetReduce
+   CartGrid3D
+   CoordBase
+   IOUtil
+   LoopControl
+   SphericalSurface
+   SymBase
+"
+
+IO::out_dir = $parfile
+
+Carpet::global_nx = 7
+Carpet::global_ny = 8
+Carpet::global_nz = 9
+
+SphericalSurface::nsurfaces = 1
+
+IOASCII::one_file_per_group = yes
+IOASCII::compact_format     = yes
+IO::out_every = 1
+
+IOASCII::out0D_vars = "
+   grid::r
+   Carpet::timing
+   Carpet::timing_procs
+   SphericalSurface::sf_radius[0]
+"
+IOASCII::out1D_vars = "
+   grid::r
+   Carpet::timing_procs
+   SphericalSurface::sf_radius[0]
+"
+IOASCII::out2D_vars = "
+   grid::r
+   SphericalSurface::sf_radius[0]
+"
+IOASCII::out3D_vars = "
+   grid::r
+"
