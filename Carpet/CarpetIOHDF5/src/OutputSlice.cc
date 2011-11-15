@@ -1433,6 +1433,10 @@ namespace CarpetIOHDF5 {
             H5Gunlink(file, datasetname.c_str());
           } H5E_END_TRY;
         }
+        // free I/O request structure
+        if (request != slice_requests.at(vi + n)) {
+          IOUtil_FreeIORequest (&request);
+        }
 
         // write the dataset
         hid_t dataset;
@@ -1536,6 +1540,10 @@ namespace CarpetIOHDF5 {
           H5E_BEGIN_TRY {
             H5Gunlink(file, datasetname.c_str());
           } H5E_END_TRY;
+        }
+        // free I/O request structure
+        if (request != slice_requests.at(vi + n)) {
+          IOUtil_FreeIORequest (&request);
         }
 
         // write the dataset
