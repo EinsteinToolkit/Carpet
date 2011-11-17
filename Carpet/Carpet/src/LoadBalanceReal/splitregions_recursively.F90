@@ -106,7 +106,9 @@ subroutine splitregions_recursively ( &
 contains
   
   recursive subroutine insert_region (sreg, cxx_tree, cxx_regs)
-    type(superregion2), pointer, intent(in)  :: sreg
+!   The intent has been removed to make it compile with gfortran 4.1.
+!    type(superregion2), pointer, intent(in)  :: sreg
+    type(superregion2), pointer  :: sreg
     CCTK_POINTER,                intent(in)  :: cxx_regs
     CCTK_POINTER,                intent(out) :: cxx_tree
     
