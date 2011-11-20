@@ -226,7 +226,16 @@ namespace Carpet {
     vector<region_t> regs;
     // regs.reserve (...);
     CCTK_POINTER const cxx_regs = & regs;
-    int const ghostsize = maxval(ivect::ref(cctkGH->cctk_nghostzones));
+    int const ghostsize = vdd.AT(0)->ghost_widths.AT(0)[0][0];
+    for (int m=0; m<maps; ++m) {
+      for (int rl=0; rl<reflevels; ++rl) {
+        for (int f=0; f<2; ++f) {
+          for (int d=0; d<dim; ++d) {
+            assert (vdd.AT(m)->ghost_widths.AT(rl)[f][d] == ghostsize);
+          }
+        }
+      }
+    }
     CCTK_REAL const alpha = ghost_zone_cost;
     int const limit_size = true;
     int const procid = CCTK_MyProc(cctkGH);
@@ -235,12 +244,17 @@ namespace Carpet {
        ghostsize, alpha, limit_size, procid);
     int const nregs = regs.size();
     
+    vector<vector<region_t> > old_superregss;
+    swap (superregss, old_superregss);
+    superregss.resize (old_superregss.size());
+    
     // Allocate regions
     assert ((int)regss.size() == nmaps);
     for (int m=0; m<nmaps; ++m) {
       assert (regss.AT(m).empty());
       // regss.AT(m).reserve (...);
-      superregss.AT(m).clear();
+      // superregss.AT(m).clear();
+      assert (superregss.AT(m).empty());
       // superregss.AT(m).reserve (...);
     }
     // Assign regions
@@ -258,6 +272,63 @@ namespace Carpet {
     if (recompose_verbose) {
       cout << "SRMR superregss " << superregss << endl;
       cout << "SRMR regss " << regss << endl;
+    }
+    
+    // Consistency check
+    bool has_error = false;
+    vector<ibset> all_old_superregss(maps);
+    for (size_t m=0; m<superregss.size(); ++m) {
+      for (size_t r=0; r<old_superregss.AT(m).size(); ++r) {
+        region_t const& reg = old_superregss.AT(m).AT(r);
+        if (not (all_old_superregss.AT(reg.map) & reg.extent).empty()) {
+          has_error = true;
+          cout << "SRMR: old_superregss:\n"
+               << "m=" << m << " r=" << r << " reg=" << reg << "\n";
+        }
+        all_old_superregss.AT(reg.map) += reg.extent;
+      }
+    }
+    vector<ibset> all_superregss(maps);
+    for (size_t m=0; m<superregss.size(); ++m) {
+      for (size_t r=0; r<superregss.AT(m).size(); ++r) {
+        region_t const& reg = superregss.AT(m).AT(r);
+        if (not (all_superregss.AT(reg.map) & reg.extent).empty()) {
+          has_error = true;
+          cout << "SRMR: all_superregss:\n"
+               << "m=" << m << " r=" << r << " reg=" << reg << "\n";
+        }
+        all_superregss.AT(reg.map) += reg.extent;
+      }
+    }
+    for (int m=0; m<maps; ++m) {
+      if (not (all_superregss.AT(m) == all_old_superregss.AT(m))) {
+        has_error = true;
+        cout << "SRMR: all_superregss\n";
+      }
+    }
+    vector<ibset> all_regss(maps);
+    for (size_t m=0; m<regss.size(); ++m) {
+      for (size_t r=0; r<regss.AT(m).size(); ++r) {
+        region_t const& reg = regss.AT(m).AT(r);
+        if (not (all_regss.AT(reg.map) & reg.extent).empty()) {
+          has_error = true;
+          cout << "SRMR: all_regss:\n"
+               << "m=" << m << " r=" << r << " reg=" << reg << "\n";
+        }
+        all_regss.AT(reg.map) += reg.extent;
+      }
+    }
+    for (int m=0; m<maps; ++m) {
+      if (not (all_regss.AT(m) == all_old_superregss.AT(m))) {
+        has_error = true;
+        cout << "SRMR: all_regss\n";
+      }
+    }
+    if (has_error) {
+      cout << "SRMR: all_old_superregss=" << all_old_superregss << "\n"
+           << "SRMR: all_superregss=" << all_superregss << "\n"
+           << "SRMR: all_regss=" << all_regss << "\n";
+      CCTK_WARN(CCTK_WARN_ABORT, "Internal error");
     }
     
     if (recompose_verbose) cout << "SRMR exit" << endl;
