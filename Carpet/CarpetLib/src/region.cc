@@ -276,6 +276,8 @@ operator>> (istream & is, region_t & reg)
 
 
 
+bool region_t::full_output = false;
+
 ostream &
 operator<< (ostream & os, region_t const & reg)
 {
@@ -283,7 +285,17 @@ operator<< (ostream & os, region_t const & reg)
      << "extent=" << reg.extent << ","
      << "outer_boundaries=" << reg.outer_boundaries << ","
      << "map=" << reg.map << ","
-     << "processor=" << reg.processor << ")";
+     << "processor=" << reg.processor;
+  if (region_t::full_output) {
+    os << ","
+       << "processors=";
+    if (reg.processors) {
+      os << *reg.processors;
+    } else {
+      os << "NULL";
+    }
+  }
+  os << ")";
   return os;
 }
 
