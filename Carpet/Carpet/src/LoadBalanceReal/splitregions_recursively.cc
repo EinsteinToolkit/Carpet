@@ -203,8 +203,8 @@ namespace Carpet {
       }
     }
     
-    // Create a mapping from this list of regions to maps, since the
-    // Fortran code will overwrite this information
+    // Create a mapping from this list of regions to maps, and set the
+    // map to the superregion index instead
     vector<int> superreg_maps(nsuperregs);
     for (int r=0; r<nsuperregs; ++r) {
       superreg_maps.AT(r) = superregs.AT(r).map;
@@ -282,8 +282,10 @@ namespace Carpet {
     }
     // Output regions
     if (recompose_verbose) {
+      region_t::full_output = true;
       cout << "SRMR superregss " << superregss << endl;
       cout << "SRMR regss " << regss << endl;
+      region_t::full_output = false;
     }
     
     // Consistency check
@@ -337,9 +339,11 @@ namespace Carpet {
       }
     }
     if (has_error) {
+      region_t::full_output = true;
       cout << "SRMR: all_old_superregss=" << all_old_superregss << "\n"
            << "SRMR: all_superregss=" << all_superregss << "\n"
            << "SRMR: all_regss=" << all_regss << "\n";
+      region_t::full_output = false;
       CCTK_WARN(CCTK_WARN_ABORT, "Internal error");
     }
     
