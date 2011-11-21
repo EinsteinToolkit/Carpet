@@ -208,6 +208,7 @@ namespace Carpet {
     vector<int> superreg_maps(nsuperregs);
     for (int r=0; r<nsuperregs; ++r) {
       superreg_maps.AT(r) = superregs.AT(r).map;
+      superregs.AT(r).map = r;
     }
     
     int const real_nprocs = CCTK_nProcs (cctkGH);
