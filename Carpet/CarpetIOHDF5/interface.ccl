@@ -63,6 +63,17 @@ REQUIRES FUNCTION IO_TruncateOutputFiles
 
 
 
+# Checkpoint only a restricted set of variables
+# (Set ngroups=-1 to checkpoint all variables.)
+CCTK_INT \
+FUNCTION IO_SetCheckpointGroups(CCTK_INT ARRAY IN groups, \
+                                CCTK_INT       IN ngroups)
+PROVIDES FUNCTION IO_SetCheckpointGroups \
+    WITH CarpetIOHDF5_SetCheckpointGroups \
+    LANGUAGE C
+
+
+
 # Return a pointer to an unmodifiable C string
 # which contains a unique ID for this configuration
 CCTK_POINTER_TO_CONST \
