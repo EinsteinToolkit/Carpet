@@ -203,6 +203,13 @@ namespace Carpet {
       }
     }
     
+    // Create a mapping from this list of regions to maps, since the
+    // Fortran code will overwrite this information
+    vector<int> superreg_maps(nsuperregs);
+    for (int r=0; r<nsuperregs; ++r) {
+      superreg_maps.AT(r) = superregs.AT(r).map;
+    }
+    
     int const real_nprocs = CCTK_nProcs (cctkGH);
     if (recompose_verbose) cout << "SRMR real_nprocs " << real_nprocs << endl;
     
@@ -244,11 +251,11 @@ namespace Carpet {
        ghostsize, alpha, limit_size, procid);
     int const nregs = regs.size();
     
+    // Allocate regions, saving the old regions for debugging or
+    // self-checking
     vector<vector<region_t> > old_superregss;
     swap (superregss, old_superregss);
     superregss.resize (old_superregss.size());
-    
-    // Allocate regions
     assert ((int)regss.size() == nmaps);
     for (int m=0; m<nmaps; ++m) {
       assert (regss.AT(m).empty());
@@ -259,11 +266,15 @@ namespace Carpet {
     }
     // Assign regions
     for (int r=0; r<nsuperregs; ++r) {
+      superregs.AT(r).map = superreg_maps.AT(r); // correct map
       int const m = superregs.AT(r).map - map_offset;
       assert (m>=0 and m<nmaps);
       superregss.AT(m).push_back (superregs.AT(r));
     }
     for (int r=0; r<nregs; ++r) {
+      int const s = regs.AT(r).map;
+      assert (s>=0 and s<nsuperregs);
+      regs.AT(r).map = superreg_maps.AT(s); // correct map
       int const m = regs.AT(r).map - map_offset;
       assert (m>=0 and m<nmaps);
       regss.AT(m).push_back (regs.AT(r));
@@ -303,7 +314,7 @@ namespace Carpet {
     for (int m=0; m<maps; ++m) {
       if (not (all_superregss.AT(m) == all_old_superregss.AT(m))) {
         has_error = true;
-        cout << "SRMR: all_superregss\n";
+        cout << "SRMR: all_superregss m=" << m << "\n";
       }
     }
     vector<ibset> all_regss(maps);
@@ -321,7 +332,7 @@ namespace Carpet {
     for (int m=0; m<maps; ++m) {
       if (not (all_regss.AT(m) == all_old_superregss.AT(m))) {
         has_error = true;
-        cout << "SRMR: all_regss\n";
+        cout << "SRMR: all_regss m=" << m << "\n";
       }
     }
     if (has_error) {
