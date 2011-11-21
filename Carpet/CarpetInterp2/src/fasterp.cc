@@ -608,8 +608,6 @@ namespace CarpetInterp2 {
       if (veryverbose) {
         cout << "GetCoordRange[" << m << "]: lower=" << lower.AT(m) << " upper=" << upper.AT(m) << " delta=" << delta.AT(m) << endl;
       }
-
-
     }
     
     // Calculate refinement levels, components, and integer grid point
