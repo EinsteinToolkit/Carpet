@@ -164,12 +164,16 @@ namespace Carpet {
     if (recompose_verbose) cout << "SRMR enter" << endl;
     
     int const nmaps = superregss.size();
+    assert (int(regss.size()) == nmaps);
     int map_offset = 1000000000;
+    int max_map = 0;
     for (int m=0; m<nmaps; ++m) {
       for (int r=0; r<int(superregss.AT(m).size()); ++r) {
         map_offset = min (map_offset, superregss.AT(m).AT(r).map);
+        max_map = max (max_map, superregss.AT(m).AT(r).map);
       }
     }
+    assert (max_map - map_offset == nmaps - 1);
     
     int nsuperregs = 0;
     for (int m=0; m<nmaps; ++m) {
@@ -271,6 +275,17 @@ namespace Carpet {
       int const m = superregs.AT(r).map - map_offset;
       assert (m>=0 and m<nmaps);
       superregss.AT(m).push_back (superregs.AT(r));
+    }
+    // Renumber components
+    for (int m=0; m<nmaps; ++m) {
+      int c=0;
+      for (size_t r=0; r<superregss.AT(m).size(); ++r) {
+        ipfulltree* const procs = superregss.AT(m).AT(r).processors;
+        assert (procs);
+        for (ipfulltree::iterator it (*procs); not it.done(); ++it) {
+          (*it).payload().component = c++;
+        }
+      }
     }
     for (int r=0; r<nregs; ++r) {
       int const s = regs.AT(r).map;
