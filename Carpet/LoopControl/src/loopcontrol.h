@@ -86,17 +86,17 @@ typedef struct lc_statset_t {
   /* Keys */
   
   int num_threads;
-  int npoints[3];
+  int npoints[3];               /* [dim] */
   
   /* Data */
   
   /* Thread topologies */
-  lc_topology_t * restrict topologies;
+  lc_topology_t * restrict topologies; /* [topology] */
   int ntopologies;
   
   /* Tiling specifications */
-  lc_tiling_t * restrict tilings[3];
-  int ntilings[3];
+  lc_tiling_t * restrict tilings[3]; /* [dim] */
+  int ntilings[3];                   /* [dim] */
   int * restrict topology_ntilings[3]; /* [dim][topology] */
   
   /* Simulated annealing state */
