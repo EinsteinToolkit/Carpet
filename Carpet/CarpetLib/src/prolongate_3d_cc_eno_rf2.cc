@@ -52,7 +52,7 @@ namespace CarpetLib {
   
     
   namespace coeffs_3d_cc_eno_rf2 {
-    
+  
   // 1D interpolation coefficients
   
   template<typename RT, int ORDER, int OFFSET = 0>
@@ -242,6 +242,20 @@ namespace CarpetLib {
   
   using namespace coeffs_3d_cc_eno_rf2;
   
+  /*
+  template <typename T>
+  static inline 
+  T 
+  minmod(const T a, const T b)
+  {
+     if (a * b < 0)
+        return T(0);
+     else if (abs(a) < abs(b))
+        return a;
+     else
+        return b;
+     return 0;
+  }*/
   
   
   // 0D "interpolation"
@@ -270,13 +284,25 @@ namespace CarpetLib {
        f[i-coeffs1d<RT,ORDER,di>::minimin] = interp0<T,ORDER> (p + i*d1);
     }
     
+    // get left and right linear slopes of next closest coarse grid point
+    /*typedef coeffs1d<RT,1,di,0> coeffs1;
+    // get left linear slope
+    const T dl = f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin + (1-di)] - f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin-1 + (1-di)];
+    // get right linear slope
+    const T dr = f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin+1 + (1-di)] - f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin + (1-di)];
+    // apply minmod (select smaller of the two slopes)
+    const T slope = minmod<RT>(dl, dr);*/
+    
     switch (ORDER)
     {
        case 2: {
-	 const int shiftleft  = di == 0 ? -1 : 0;
-	 const int shiftright = di == 0 ?  0 : 1;
-	 typedef coeffs1d<RT,ORDER,di,shiftleft>  lcoeffs;
-	 typedef coeffs1d<RT,ORDER,di,shiftright> rcoeffs;
+	 //const int shiftleft  = di == 0 ? -1 : 0;
+	 //const int shiftright = di == 0 ?  0 : 1;
+	 const int shift = di == 0 ?  -1 : 1;
+	 //typedef coeffs1d<RT,ORDER,di,shiftleft>  lcoeffs;
+	 //typedef coeffs1d<RT,ORDER,di,shiftright> rcoeffs;
+	 typedef coeffs1d<RT,ORDER,di,0>     rcoeffs;
+	 typedef coeffs1d<RT,ORDER,di,shift> lcoeffs;
 	 T lV = typeprops<T>::fromreal (0);
 	 T rV = typeprops<T>::fromreal (0);
 	 // compute undivided differences for left-shifted stencil
@@ -285,30 +311,44 @@ namespace CarpetLib {
 	 }
 	 // compute undivided differences for right-shifted stencil
 	 for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
-	    rV += rcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+	    rV += rcoeffs::diff(i) * f[i-rcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
 	 }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
-	 /*if (lV*rV <= 0)
+	 if (lV*rV <= 0)
+	 // if minmod linear slope is smaller than high-order left and right undivided differences, use lowest-order TVD interpolation!
+	 //if (abs(slope) < abs(lV) || abs(slope) < abs(rV))
 	 {
-	    // switch back to first order!
+	    // switch back to first order TVD scheme!
 	    res = 0;
             typedef coeffs1d<RT,1,di,0> coeffs1;
+            // get left slope
+            //const T dl = f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin + (1-di)] - f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin-1 + (1-di)];
+            // get right slope
+            //const T dr = f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin+1 + (1-di)] - f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin + (1-di)];
+            // apply minmod
+            //const T slope = minmod<RT>(dl, dr);
+            
+            // TVD interpoloation/extrapolation
+            //res = f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin + (1-di)] + (2*di-1)*0.25*slope;
+            
             for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
                res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
             }
 	    break;
-	 }*/
+	 }
 	 
 	 if (abs(lV) < abs(rV)) {
+	    //cout << "left ";
 	    // use left-shifted stencil since it is smoother
 	    for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
 	       res += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
 	    }
 	 } else {
+	    //cout << "right ";
 	    // use right-shifted stencil since it is smoother
 	    for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
-	       res += rcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+	       res += rcoeffs::get(i) * f[i-rcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
 	    }
 	 }
 	 
@@ -338,7 +378,9 @@ namespace CarpetLib {
 	 }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
-	 /*if (V[0]*V[2] <= 0)
+	 if (V[0]*V[2] <= 0 || V[0]*V[1] <= 0 || V[1]*V[2] <= 0)
+	 // if minmod linear slope is smaller than high-order left and right undivided differences, use lowest-order TVD interpolation!
+	 //if (abs(slope) < abs(V[0]) || abs(slope) < abs(V[1]) || abs(slope) < abs(V[2]))
 	 {
 	    // switch back to first order!
 	    res = 0;
@@ -346,10 +388,13 @@ namespace CarpetLib {
             for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
                res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
             }
+            return res;
+            // TVD interpoloation/extrapolation
+            //res = f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin + (1-di)] + (2*di-1)*0.25*slope;
 	    break;
-	 }*/
+	 }
 	 
-	 int min = 0;
+	 int min = 1;  // start off with centered stencil
 	 for (int i=0; i < 3; ++i)
 	    if (abs(V[i]) < abs(V[min])) min = i;
 	 
@@ -379,15 +424,29 @@ namespace CarpetLib {
     }
     
     // check that result is reasonable!
-    /*if ((res - f[-coeffs1d<RT,ORDER,di>::minimin-1+di]) * (f[-coeffs1d<RT,ORDER,di>::minimin+di] - res) < 0)
-    {
-       res = 0;
+    if ((res - f[-coeffs1d<RT,ORDER,di>::minimin-1+di]) * (f[-coeffs1d<RT,ORDER,di>::minimin+di] - res) < 0)
+    {/*
+       // switch back to first order TVD scheme!
+	    res = 0;
+            typedef coeffs1d<RT,1,di,0> coeffs1;
+            // get left slope
+            const T dl = f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin + (1-di)] - f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin-1 + (1-di)];
+            // get right slope
+            const T dr = f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin+1 + (1-di)] - f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin + (1-di)];
+            // apply minmod
+            const T slope = minmod<RT>(dl, dr);
+            
+            res = f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin + (1-di)] + (2*di-1)*0.25*slope;
+            //res = f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin] + (2*(1-di)+1)*0.25*slope;
+       */
        // switch back to first order
+       
+       res = 0;
        typedef coeffs1d<RT,1,di,0> coeffs1;
        for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
-          res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
+         res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
        }
-    }*/
+    }
 
     /*typedef coeffs1d<RT,1,di> coeffs;
     for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
@@ -430,13 +489,25 @@ namespace CarpetLib {
        f[i-coeffs1d<RT,ORDER,dj,0>::minimin] = interp1<T,ORDER,di> (p + i*d2, d1);
     }
     
+    // get left and right linear slopes of next closest coarse grid point
+    /*typedef coeffs1d<RT,1,dj,0> coeffs1;
+    // get left linear slope
+    const T dl = f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin + (1-dj)] - f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin-1 + (1-dj)];
+    // get right linear slope
+    const T dr = f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin+1 + (1-dj)] - f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin + (1-dj)];
+    // apply minmod
+    const T slope = minmod<RT>(dl, dr);*/
+    
     switch (ORDER)
     {
        case 2: {
-	 const int shiftleft  = dj == 0 ? -1 : 0;
-	 const int shiftright = dj == 0 ?  0 : 1;
-	 typedef coeffs1d<RT,ORDER,dj,shiftleft>  lcoeffs;
-	 typedef coeffs1d<RT,ORDER,dj,shiftright> rcoeffs;
+	 //const int shiftleft  = dj == 0 ? -1 : 0;
+	 //const int shiftright = dj == 0 ?  0 : 1;
+	 const int shift = dj == 0 ?  -1 : 1;
+	 typedef coeffs1d<RT,ORDER,dj,0>     rcoeffs;
+	 typedef coeffs1d<RT,ORDER,dj,shift> lcoeffs;
+	 //typedef coeffs1d<RT,ORDER,dj,shiftleft>  lcoeffs;
+	 //typedef coeffs1d<RT,ORDER,dj,shiftright> rcoeffs;
 	 T lV = typeprops<T>::fromreal (0);
 	 T rV = typeprops<T>::fromreal (0);
 	 // compute undivided differences for left-shifted stencil
@@ -449,8 +520,22 @@ namespace CarpetLib {
 	 }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
-	 /*if (lV*rV <= 0)
+	 if (lV*rV <= 0)
+	 // if minmod linear slope is smaller than high-order left and right undivided differences, use lowest-order TVD interpolation!
+	 //if (abs(slope) < abs(lV) || abs(slope) < abs(rV))
 	 {
+	    //res = 0;
+            //typedef coeffs1d<RT,1,dj,0> coeffs1;
+            // get left slope
+            //const T dl = f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin + (1-dj)] - f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin-1 + (1-dj)];
+            // get right slope
+            //const T dr = f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin+1 + (1-dj)] - f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin + (1-dj)];
+            // apply minmod
+            //const T slope = minmod<RT>(dl, dr);
+            
+            // TVD interpoloation/extrapolation
+            //res = f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin + (1-dj)] + (2*dj-1)*0.25*slope;
+	    
 	    // switch back to first order!
 	    res = 0;
             typedef coeffs1d<RT,1,dj,0> coeffs1;
@@ -458,7 +543,7 @@ namespace CarpetLib {
                res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
             }
 	    break;
-	 }*/
+	 }
 	 
 	 if (abs(lV) < abs(rV)) {
 	    // use left-shifted stencil since it is smoother
@@ -496,7 +581,9 @@ namespace CarpetLib {
 	 }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
-	 /*if (V[0]*V[2] <= 0)
+	 if (V[0]*V[2] <= 0 || V[0]*V[1] <= 0 || V[1]*V[2] <= 0)
+	 // if minmod linear slope is smaller than high-order left and right undivided differences, use lowest-order TVD interpolation!
+	 //if (abs(slope) < abs(V[0]) || abs(slope) < abs(V[1]) || abs(slope) < abs(V[2]))
 	 {
 	    // switch back to first order!
 	    res = 0;
@@ -504,10 +591,13 @@ namespace CarpetLib {
             for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
                res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
             }
+            return res;
+            // TVD interpoloation/extrapolation
+            //res = f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin + (1-dj)] + (2*dj-1)*0.25*slope;
 	    break;
-	 }*/
+	 }
 	 
-	 int min = 0;
+	 int min = 1;
 	 for (int i=0; i < 3; ++i)
 	    if (abs(V[i]) < abs(V[min])) min = i;
 	 
@@ -537,15 +627,28 @@ namespace CarpetLib {
     }
     
     // check that result is reasonable!
-    /*if ((res - f[-coeffs1d<RT,ORDER,dj>::minimin-1+dj]) * (f[-coeffs1d<RT,ORDER,dj>::minimin+dj] - res) < 0)
-    {
+    if ((res - f[-coeffs1d<RT,ORDER,dj>::minimin-1+dj]) * (f[-coeffs1d<RT,ORDER,dj>::minimin+dj] - res) < 0)
+    {/*
+       res = 0;
+            typedef coeffs1d<RT,1,dj,0> coeffs1;
+            // get left slope
+            const T dl = f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin + (1-dj)] - f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin-1 + (1-dj)];
+            // get right slope
+            const T dr = f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin+1 + (1-dj)] - f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin + (1-dj)];
+            // apply minmod
+            const T slope = minmod<RT>(dl, dr);
+            
+            res = f[coeffs1::imin-coeffs1d<RT,ORDER,dj>::minimin + (1-dj)] + (2*dj-1)*0.25*slope;
+       */
+       
        res = 0;
        // switch back to first order
        typedef coeffs1d<RT,1,dj,0> coeffs1;
        for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
           res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
        }
-    }*/
+       
+    }
 
     /*typedef coeffs1d<RT,1,dj> coeffs;
     for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
@@ -590,13 +693,25 @@ namespace CarpetLib {
        f[i-coeffs1d<RT,ORDER,dk,0>::minimin] = interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
     }
     
+    // get left and right linear slopes of next closest coarse grid point
+    /*typedef coeffs1d<RT,1,dk,0> coeffs1;
+    // get left slope
+    const T dl = f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin + (1-dk)] - f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin-1 + (1-dk)];
+    // get right slope
+    const T dr = f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin+1 + (1-dk)] - f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin + (1-dk)];
+    // apply minmod
+    const T slope = minmod<RT>(dl, dr);*/
+    
     switch (ORDER)
     {
        case 2: {
-	 const int shiftleft  = dk == 0 ? -1 : 0;
-	 const int shiftright = dk == 0 ?  0 : 1;
-	 typedef coeffs1d<RT,ORDER,dk,shiftleft>  lcoeffs;
-	 typedef coeffs1d<RT,ORDER,dk,shiftright> rcoeffs;
+	 //const int shiftleft  = dk == 0 ? -1 : 0;
+	 //const int shiftright = dk == 0 ?  0 : 1;
+	 const int shift = dk == 0 ?  -1 : 1;
+	 //typedef coeffs1d<RT,ORDER,dk,shiftleft>  lcoeffs;
+	 //typedef coeffs1d<RT,ORDER,dk,shiftright> rcoeffs;
+	 typedef coeffs1d<RT,ORDER,dk,0>      rcoeffs;
+	 typedef coeffs1d<RT,ORDER,dk,shift>  lcoeffs;
 	 T lV = typeprops<T>::fromreal (0);
 	 T rV = typeprops<T>::fromreal (0);
 	 // compute undivided differences for left-shifted stencil
@@ -609,8 +724,22 @@ namespace CarpetLib {
 	 }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
-	 /*if (lV*rV <= 0)
+	 if (lV*rV <= 0)
+	 // if minmod linear slope is smaller than high-order left and right undivided differences, use lowest-order TVD interpolation!
+	 //if (abs(slope) < abs(lV) || abs(slope) < abs(rV))
 	 {
+	    //res = 0;
+            //typedef coeffs1d<RT,1,dk,0> coeffs1;
+            // get left slope
+            //const T dl = f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin + (1-dk)] - f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin-1 + (1-dk)];
+            // get right slope
+            //const T dr = f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin+1 + (1-dk)] - f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin + (1-dk)];
+            // apply minmod
+            //const T slope = minmod<RT>(dl, dr);
+            
+            // TVD interpoloation/extrapolation
+            //res = f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin + (1-dk)] + (2*dk-1)*0.25*slope;
+            
 	    // switch back to first order!
 	    res = 0;
             typedef coeffs1d<RT,1,dk,0> coeffs1;
@@ -618,7 +747,7 @@ namespace CarpetLib {
                res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
             }
 	    break;
-	 }*/
+	 }
 	 
 	 if (abs(lV) < abs(rV)) {
 	    // use left-shifted stencil since it is smoother
@@ -656,7 +785,9 @@ namespace CarpetLib {
 	 }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
-	 /*if (V[0]*V[2] <= 0)
+	 if (V[0]*V[2] <= 0 || V[0]*V[1] <= 0 || V[1]*V[2] <= 0)
+	 // if minmod linear slope is smaller than high-order left and right undivided differences, use lowest-order TVD interpolation!
+	 //if (abs(slope) < abs(V[0]) || abs(slope) < abs(V[1]) || abs(slope) < abs(V[2]))
 	 {
 	    // switch back to first order!
 	    res = 0;
@@ -664,10 +795,13 @@ namespace CarpetLib {
             for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
                res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
             }
+            return res;
+            // TVD interpoloation/extrapolation
+            //res = f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin + (1-dk)] + (2*dk-1)*0.25*slope;
 	    break;
-	 }*/
+	 }
 	 
-	 int min = 0;
+	 int min = 1;
 	 for (int i=0; i < 3; ++i)
 	    if (abs(V[i]) < abs(V[min])) min = i;
 	 
@@ -697,15 +831,26 @@ namespace CarpetLib {
     }
     
     // check that result is reasonable!
-    /*if ((res - f[-coeffs1d<RT,ORDER,dk>::minimin-1+dk]) * (f[-coeffs1d<RT,ORDER,dk>::minimin+dk] - res) < 0)
-    {
+    if ((res - f[-coeffs1d<RT,ORDER,dk>::minimin-1+dk]) * (f[-coeffs1d<RT,ORDER,dk>::minimin+dk] - res) < 0)
+    {/*
+       res = 0;
+            typedef coeffs1d<RT,1,dk,0> coeffs1;
+            // get left slope
+            const T dl = f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin + (1-dk)] - f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin-1 + (1-dk)];
+            // get right slope
+            const T dr = f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin+1 + (1-dk)] - f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin + (1-dk)];
+            // apply minmod
+            const T slope = minmod<RT>(dl, dr);
+            
+            res = f[coeffs1::imin-coeffs1d<RT,ORDER,dk>::minimin + (1-dk)] + (2*dk-1)*0.25*slope;
+       */
        res = 0;
        // switch back to first order
        typedef coeffs1d<RT,1,dk,0> coeffs1;
        for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
           res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
        }
-    }*/
+    }
     
     /*typedef coeffs1d<RT,1,dk> coeffs;
     for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {

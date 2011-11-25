@@ -1470,7 +1470,6 @@ namespace Carpet {
     int mydim = -1;
     int nslices = -1;
     if (no_split_direction!=-1 and not dims[no_split_direction]) {
-      // Treat the no_split_direction first
       mydim = no_split_direction;
       nslices = 1;
     } else {
