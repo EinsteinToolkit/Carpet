@@ -243,6 +243,7 @@ namespace Carpet {
 
     replace(s2.begin(), s2.end(), '<', '|');
     replace(s2.begin(), s2.end(), '>', '|');
+    replace(s2.begin(), s2.end(), '&', '|');
 
     return s2;
   }
