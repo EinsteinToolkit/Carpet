@@ -198,22 +198,21 @@ namespace Carpet {
     return 0;
   }
 
-  int NamedBarrier (const cGH* const cgh, const int id)
+  int NamedBarrier (const cGH* const cgh, const unsigned int id)
   {
     const void *dummy = &dummy;
     dummy = &cgh;
 
-    assert (id >= 0);
     const int root = 0;
-    int my_id = dist::rank()==root ? id : -1;
-    Checkpoint ("About to Bcast %d", id);
+    unsigned int my_id = dist::rank()==root ? id : id+1;
+    Checkpoint ("About to Bcast %ud", id);
     MPI_Bcast (&my_id, 1, MPI_INT, root, dist::comm());
     Checkpoint ("Finished Bcast");
     if (my_id != id) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Wrong Barrier name: expected %d, found %d", id, my_id);
+                  "Wrong Barrier name: expected %ud, found %ud", id, my_id);
     }
-    Checkpoint ("About to Barrier %d", id);
+    Checkpoint ("About to Barrier %ud", id);
     MPI_Barrier (dist::comm());
     Checkpoint ("Finished Barrier");
     return 0;
