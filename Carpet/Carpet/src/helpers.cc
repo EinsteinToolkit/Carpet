@@ -198,23 +198,22 @@ namespace Carpet {
     return 0;
   }
 
-  int NamedBarrier (const cGH* const cgh, const unsigned int id)
+  int NamedBarrier (const cGH* const cgh,
+                    const unsigned int id, const char* name)
   {
     const void *dummy = &dummy;
     dummy = &cgh;
-
-    const int root = 0;
-    unsigned int my_id = dist::rank()==root ? id : id+1;
-    Checkpoint ("About to Bcast %ud", id);
-    MPI_Bcast (&my_id, 1, MPI_INT, root, dist::comm());
-    Checkpoint ("Finished Bcast");
-    if (my_id != id) {
-      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Wrong Barrier name: expected %ud, found %ud", id, my_id);
-    }
-    Checkpoint ("About to Barrier %ud", id);
-    MPI_Barrier (dist::comm());
+    
+    // Prevent recursive calls
+    static bool inside = false;
+    if (inside) return 0;
+    inside = true;
+    
+    Checkpoint ("About to Barrier %ud \"%s\"", id, name);
+    dist::barrier (dist::comm(), id, name);
     Checkpoint ("Finished Barrier");
+    
+    inside = false;
     return 0;
   }
 
@@ -222,7 +221,7 @@ namespace Carpet {
 
   int Exit (const cGH* cgh, int retval)
   {
-    CCTK_Barrier (cgh);
+    NamedBarrier (cgh, 792686462, "Carpet::Exit");
     dist::finalize();
     exit (retval);
     return -1;
@@ -446,7 +445,7 @@ namespace Carpet {
     va_end (args);
     CCTK_INFO (msg);
     if (barriers) {
-      MPI_Barrier (dist::comm());
+      NamedBarrier (NULL, 988121033, "Carpet::Output");
     }
   }
 
@@ -464,7 +463,7 @@ namespace Carpet {
       CCTK_INFO (msg);
     }
     if (barriers) {
-      MPI_Barrier (dist::comm());
+      NamedBarrier (NULL, 471561432, "Carpet::Waypoint");
     }
   }
 
@@ -482,7 +481,7 @@ namespace Carpet {
       CCTK_INFO (msg);
     }
     if (barriers) {
-      MPI_Barrier (dist::comm());
+      NamedBarrier (NULL, 572893143, "Carpet::Checkpoint");
     }
   }
 

@@ -329,15 +329,9 @@ namespace CarpetInterp {
 
 
     if (barriers) {
-      static unsigned int magic = 0x2ad072fbUL; // a random starting value
-      unsigned int recv = magic;
-      MPI_Bcast (& recv, 1, MPI_UNSIGNED, 0, dist::comm());
-      if (recv != magic) {
-        CCTK_WARN (CCTK_WARN_ABORT,
-                   "Inconsistent communication schedule: not all processes call CarpetInterp");
-      }
-      ++ magic;
-      MPI_Barrier (dist::comm());
+      Carpet::NamedBarrier (cctkGH,
+                            696681976,
+                            "CarpetInterp::Carpet_DriverInterpolate");
     }
 
     //////////////////////////////////////////////////////////////////////

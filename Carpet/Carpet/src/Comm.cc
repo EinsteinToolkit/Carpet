@@ -149,7 +149,8 @@ namespace Carpet {
       // information about this ask Frank Loeffler
       // <knarf@cct.lsu.edu>.
 #ifdef CARPET_MPI_BARRIER_PROLONGATE_SYNC
-      CCTK_Barrier(cctkGH);
+      Carpet::NamedBarrier(cctkGH,
+                           8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
 #endif
       
       // synchronise ghostzones

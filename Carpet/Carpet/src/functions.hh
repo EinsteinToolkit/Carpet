@@ -37,7 +37,7 @@ namespace Carpet {
   int GroupStorageDecrease (const cGH* cgh, int n_groups, const int* groups,
                             const int* timelevels, int* status);
   int Barrier (const cGH* cgh);
-  int NamedBarrier (const cGH* cgh, unsigned int id);
+  int NamedBarrier (const cGH* cgh, unsigned int id, const char* name);
   int Exit (const cGH* cgh, int retval);
   int Abort (const cGH* cgh, int retval);
   int MyProc (const cGH* cgh) CCTK_ATTRIBUTE_CONST;

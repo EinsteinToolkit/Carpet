@@ -51,7 +51,7 @@ gdata::gdata (const int varindex_,
   allgdatai = allgdata.insert(allgdata.end(), this);
   
   if (barriers) {
-    MPI_Barrier (dist::comm());
+    dist::barrier (dist::comm(), 783988953, "CarpetLib::gdata::gdata");
   }
 }
 
@@ -63,7 +63,7 @@ gdata::~gdata ()
   allgdata.erase(allgdatai);
   
   if (barriers) {
-    MPI_Barrier (dist::comm());
+    dist::barrier (dist::comm(), 109687805, "CarpetLib::gdata::~gdata");
   }
 }
 

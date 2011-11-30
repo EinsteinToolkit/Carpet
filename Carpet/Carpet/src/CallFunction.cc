@@ -297,7 +297,7 @@ namespace Carpet {
       buf << attribute->routine << "\n";
       string const str = buf.str();
       int const id = adler32(str.c_str(), str.length());
-      Carpet::NamedBarrier (NULL, id);
+      Carpet::NamedBarrier (NULL, id, "Carpet::CallFunction");
     }
     
     total_timer.stop();

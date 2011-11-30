@@ -41,6 +41,7 @@ namespace dist {
   void init (int& argc, char**& argv);
   void pseudoinit (MPI_Comm const c);
   void finalize ();
+  void barrier (MPI_Comm const c, int const id, char const *const errormsg);
   
   
   
