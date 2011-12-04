@@ -1357,8 +1357,8 @@ namespace CarpetIOASCII {
             os << " " << col << ":" << CCTK_VarName(n);
             col += CarpetSimpleMPIDatatypeLength (vartype);
           }
+          os << eol;
         }
-        os << eol;
       }
       
     } // if out_fileinfo
