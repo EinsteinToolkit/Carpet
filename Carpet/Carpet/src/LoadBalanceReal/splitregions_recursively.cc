@@ -167,13 +167,16 @@ namespace Carpet {
     assert (int(regss.size()) == nmaps);
     int map_offset = 1000000000;
     int max_map = 0;
+    vector<bool> have_map(maps, false);
     for (int m=0; m<nmaps; ++m) {
       for (int r=0; r<int(superregss.AT(m).size()); ++r) {
         map_offset = min (map_offset, superregss.AT(m).AT(r).map);
         max_map = max (max_map, superregss.AT(m).AT(r).map);
+        have_map.AT(superregss.AT(m).AT(r).map) = true;
       }
     }
-    assert (max_map - map_offset == nmaps - 1);
+    // Apparently this is not always the case:
+    // assert (max_map - map_offset == nmaps - 1);
     
     int nsuperregs = 0;
     for (int m=0; m<nmaps; ++m) {
@@ -254,7 +257,60 @@ namespace Carpet {
     CCTK_FNAME(splitregions_recursively)
       (cxx_superregs, nsuperregs, cxx_regs, nprocs,
        ghostsize, alpha, limit_size, procid);
-    int const nregs = regs.size();
+    int nregs = regs.size();
+    
+#if 1
+    // Ensure all processes have the same number of components
+    vector<int> ncomps(nprocs, 0);
+    for (int r=0; r<nregs; ++r) {
+      int const p = regs.AT(r).processor;
+      assert (p>=0);
+      ++ncomps.AT(p);
+    }
+    int maxncomps = 0;
+    int sumncomps = 0;
+    for (int p=0; p<nprocs; ++p) {
+      maxncomps = max(maxncomps, ncomps.AT(p));
+      sumncomps += ncomps.AT(p);
+    }
+    int const missingcomps = maxncomps * nprocs - sumncomps;
+    if (missingcomps > 0) {
+      // Invent a dummy component
+      ibbox const& ext = superregss.AT(0).AT(0).extent;
+      region_t dummy;
+      dummy.extent = ibbox(ext.lower(), ext.lower()-ext.stride(), ext.stride());
+      assert (dummy.extent.empty());
+      dummy.outer_boundaries = b2vect(true);
+      dummy.map = nmaps-1;      // arbitrary choice
+      // Insert dummy regions at the end
+      regs.resize(nregs + missingcomps, dummy);
+      for (int p=0; p<nprocs; ++p) {
+        for (int i=ncomps.AT(p); i<maxncomps; ++i) {
+          regs.AT(nregs++).processor = p;
+        }
+      }
+      assert (nregs == int(regs.size()));
+      // Insert a superregion
+      pseudoregion_t sample;
+      sample.extent = dummy.extent;
+      // sample.component remains unset (component will be set later)
+      if (missingcomps == 1) {
+        dummy.processors = new ipfulltree(sample);
+      } else {
+        int const dir = 0;      // arbitrary choice
+        vector<int> bounds(missingcomps+1);
+        for (int n=0; n<missingcomps+1; ++n) {
+          bounds.AT(n) = dummy.extent.lower()[dir];
+        }
+        vector<ipfulltree*> subtrees(missingcomps);
+        for (int n=0; n<missingcomps; ++n) {
+          subtrees.AT(n) = new ipfulltree(sample);
+        }
+        dummy.processors = new ipfulltree(dir, bounds, subtrees);
+      }
+      superregs.push_back (dummy);
+    }
+#endif
     
     // Allocate regions, saving the old regions for debugging or
     // self-checking
