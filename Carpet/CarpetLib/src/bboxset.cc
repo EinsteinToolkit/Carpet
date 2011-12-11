@@ -363,6 +363,7 @@ bboxset<T,D> bboxset<T,D>::operator+ (const bboxset& s) const
 template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::operator|= (const box& b)
 {
+  if (b.empty()) return *this;
 #if 0
   // this has a cost of O(n^2)
   bboxset tmp = b - *this;
