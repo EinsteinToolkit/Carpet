@@ -3,7 +3,7 @@
 STORAGE: last_iteration last_map
 STORAGE: active num_levels positions radii radiixyz
 STORAGE: old_active old_positions old_num_levels old_radiixyz
-if (adaptive_mesh_refinement)
+if (adaptive_refinement)
 {
   STORAGE: level_mask
 }
