@@ -84,7 +84,7 @@ namespace CarpetInterp2 {
           }
       dist::mpi_struct_descr_t const descr[] = {
         ENTRY(int, mrc),
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
         ENTRY(int, pn),
         ENTRY(int, ipos),
         ENTRY(int, ind),
@@ -109,7 +109,7 @@ namespace CarpetInterp2 {
   {
     os << "fasterp_iloc_t{"
        << "mrc=" << mrc << ","
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
        << "pn=" << pn << ","
        << "ipos=" << ipos << ","
        << "ind=" << ind << ","
@@ -189,7 +189,7 @@ namespace CarpetInterp2 {
   // Calculate the coefficients for one interpolation stencil
   // TODO: Could templatify this function on the order to improve
   // efficiency
-  void
+  int
   fasterp_src_loc_t::
   calc_stencil (fasterp_iloc_t const & iloc,
                 ivect const & lsh,
@@ -198,7 +198,7 @@ namespace CarpetInterp2 {
     assert (order <= max_order);
     CCTK_REAL const eps = 1.0e-12;
     
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     mrc  = iloc.mrc;
     pn   = iloc.pn;
     ipos = iloc.ipos;
@@ -222,11 +222,11 @@ namespace CarpetInterp2 {
         exact[d] = true;
       }
       
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
       ind   = iloc.ind;
 #endif
       ind3d = iloc.ind3d;
-      return;
+      return 0;
     }
     
     // Choose stencil anchor (first stencil point)
@@ -278,17 +278,22 @@ namespace CarpetInterp2 {
     }
     
     // Set 3D location of stencil anchor
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     ind = iloc.ind + iorigin;
     if (not (all (ind>=0 and ind+either(exact,0,order)<lsh))) {
-      cout << "*this=" << *this << " order=" << order << " lsh=" << lsh << endl;
+      stringstream buf;
+      buf << "*this=" << *this << " order=" << order << " lsh=" << lsh;
+      CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Array access out of bounds: %s. Most likely, the interpolation point is too close to an outer or to a symmetry/inter-patch boundary. More information follows...",
+                  buf.str().c_str());
+      return -1;
     }
-    assert (all (ind>=0 and ind+either(exact,0,order)<lsh));
 #endif
     ind3d = iloc.ind3d + index(lsh, iorigin);
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     assert (index(lsh,ind) == ind3d);
 #endif
+    return 0;
   }
   
   
@@ -309,7 +314,7 @@ namespace CarpetInterp2 {
                CCTK_REAL * restrict const vals)
     const
   {
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     assert (all (lsh == saved_lsh));
 #endif
     assert (O0 == 0 or not exact[0]);
@@ -320,7 +325,7 @@ namespace CarpetInterp2 {
     size_t const dj = di * lsh[0];
     size_t const dk = dj * lsh[1];
     
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     assert (all (ind>=0 and ind+ivect(O0,O1,O2)<lsh));
     assert (ind3d == index(lsh,ind));
     assert (int(di*ind[0] + dj*ind[1] + dk*ind[2]) == index(lsh,ind));
@@ -347,7 +352,7 @@ namespace CarpetInterp2 {
         }
       }
     }
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
 #  if 0
     for (size_t v=0; v<varptrs.size(); ++v) {
       vals[v] = ind[0] + 1000 * (ind[1] + 1000 * ind[2]);
@@ -462,14 +467,14 @@ namespace CarpetInterp2 {
     }
     os << "],";
     os << "exact=" << exact << ",";
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     os << "pn=" << pn << ",";
     os << "mrc=" << mrc << ",";
     os << "ipos=" << ipos << ",";
     os << "ind=" << ind << ",";
 #endif
     os << "ind3d=" << ind3d;
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     os << "," << "saved_lsh=" << saved_lsh;
 #endif
     os << "}";
@@ -695,12 +700,17 @@ namespace CarpetInterp2 {
         } LEAVE_LOCAL_MODE;
       } LEAVE_SINGLEMAP_MODE;
 #endif
+      
       // TODO: assert that there are enough ghost zones
+      
+      // TODO: store for every face/direction/component/map/reflevel
+      // how wide the boundaries are in every direction. Then check
+      // against this when the stencils are set up.
       
       // Store result
       fasterp_iloc_t & iloc = ilocs.AT(n);
       iloc.mrc    = mrc_t(m, rl, c);
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
       iloc.pn.p   = dist::rank();
       iloc.pn.n   = n;
       iloc.ipos   = ipos * ext.stride();
@@ -845,7 +855,7 @@ namespace CarpetInterp2 {
        fasterp_iloc_t::mpi_datatype(),
        comm_world);
     
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     // Ensure that the ilocs were sent to the right processor
     for (int p=0; p<nprocs; ++p) {
 #pragma omp parallel for
@@ -949,7 +959,12 @@ namespace CarpetInterp2 {
         send_proc.index.AT(n) = send_comp.offset + send_comp.locs.size();
         
         fasterp_src_loc_t sloc;
-        sloc.calc_stencil (iloc, send_comp.lsh, order);
+        int const ierr = sloc.calc_stencil (iloc, send_comp.lsh, order);
+        if (ierr) {
+          CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Could not determind valid interpolation stencil for point %d on map %d, refinement level %d, component %d",
+                      n, iloc.mrc.m, iloc.mrc.rl, iloc.mrc.c);
+        }
         send_comp.locs.push_back (sloc);
       }
       
@@ -971,7 +986,7 @@ namespace CarpetInterp2 {
       }
 #endif
       
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
       for (int comp=0; comp<ncomps; ++comp) {
         send_comp_t const & send_comp = send_proc.comps.at(comp);
         assert (int(send_comp.locs.size()) == send_comp.npoints);
@@ -985,7 +1000,7 @@ namespace CarpetInterp2 {
       
     } // for pp
     
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     {
       if (verbose) CCTK_INFO ("Compare send and receive counts");
       
@@ -1110,7 +1125,7 @@ namespace CarpetInterp2 {
     vector<CCTK_REAL> recv_points (recv_descr.npoints * nvars);
     fill_with_poison (recv_points);
     vector<MPI_Request> recv_reqs (recv_descr.procs.size());
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     vector<pn_t> recv_pn (recv_descr.npoints);
     vector<MPI_Request> recv_reqs_pn (recv_descr.procs.size());
 #endif
@@ -1121,7 +1136,7 @@ namespace CarpetInterp2 {
                  recv_proc.npoints * nvars,
                  dist::mpi_datatype<CCTK_REAL>(), recv_proc.p, mpi_tag,
                  comm_world, & recv_reqs.AT(pp));
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
       MPI_Irecv (& recv_pn.AT(recv_proc.offset),
                  recv_proc.npoints * 2,
                  dist::mpi_datatype<int>(), recv_proc.p, mpi_tag,
@@ -1135,7 +1150,7 @@ namespace CarpetInterp2 {
     vector<CCTK_REAL> send_points (send_descr.npoints * nvars);
     fill_with_poison (send_points);
     vector<MPI_Request> send_reqs (send_descr.procs.size());
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     vector<pn_t> send_pn (send_descr.npoints);
     vector<MPI_Request> send_reqs_pn (send_descr.procs.size());
 #endif
@@ -1144,7 +1159,7 @@ namespace CarpetInterp2 {
       
       vector<CCTK_REAL> computed_points (send_proc.npoints * nvars);
       fill_with_poison (computed_points);
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
       vector<pn_t> computed_pn (send_descr.npoints);
 #endif
       for (size_t comp=0; comp<send_proc.comps.size(); ++comp) {
@@ -1177,7 +1192,7 @@ namespace CarpetInterp2 {
           size_t const ind = (send_comp.offset + n) * nvars;
           send_comp.locs.AT(n).interpolate
             (send_comp.lsh, order, varptrs, &computed_points.AT(ind));
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
           computed_pn.AT(send_comp.offset + n) = send_comp.locs.AT(n).pn;
 #endif
         }
@@ -1192,14 +1207,14 @@ namespace CarpetInterp2 {
           send_points.AT((send_proc.offset + n) * nvars + v) =
             computed_points.AT(nn * nvars + v);
         }
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
         send_pn.AT(send_proc.offset + n) = computed_pn.AT(nn);
 #endif
       }
       // TODO: Use a scatter index list instead of a gather index
       // list, and combine the scattering with the calculation
       
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
 #pragma omp parallel for
       for (int n=0; n<send_proc.npoints; ++n) {
         assert (send_pn.AT(send_proc.offset + n).p == send_proc.p);
@@ -1214,7 +1229,7 @@ namespace CarpetInterp2 {
                  send_proc.npoints * nvars,
                  dist::mpi_datatype<CCTK_REAL>(), send_proc.p, mpi_tag,
                  comm_world, & send_reqs.AT(pp));
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
       MPI_Isend (& send_pn.AT(send_proc.offset),
                  send_proc.npoints * 2,
                  dist::mpi_datatype<int>(), send_proc.p, mpi_tag,
@@ -1225,7 +1240,7 @@ namespace CarpetInterp2 {
     // Wait for Irecvs to complete
     if (verbose) CCTK_INFO ("Waiting for MPI_Irevcs to complete");
     MPI_Waitall (recv_reqs.size(), & recv_reqs.front(), MPI_STATUSES_IGNORE);
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     MPI_Waitall (recv_reqs.size(), & recv_reqs_pn.front(), MPI_STATUSES_IGNORE);
 #endif
     
@@ -1240,7 +1255,7 @@ namespace CarpetInterp2 {
         recv_points.AT(nn * nvars + v) = poison;
 #endif
       }
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
       assert (recv_pn.AT(nn).p == dist::rank());
       assert (recv_pn.AT(nn).n == n);
 #endif
@@ -1249,7 +1264,7 @@ namespace CarpetInterp2 {
     // Wait for Isends to complete
     if (verbose) CCTK_INFO ("Waiting for MPI_Isends to complete");
     MPI_Waitall (send_reqs.size(), & send_reqs.front(), MPI_STATUSES_IGNORE);
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTER2_CHECK
     MPI_Waitall (send_reqs.size(), & send_reqs_pn.front(), MPI_STATUSES_IGNORE);
 #endif
     
