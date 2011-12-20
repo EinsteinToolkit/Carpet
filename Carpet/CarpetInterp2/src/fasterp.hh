@@ -17,7 +17,7 @@
 
 // Define this at all times, because otherwise out-of-bounds
 // interpolations may not be detected early enough
-#define CARPETINTER2_CHECK
+#define CARPETINTERP2_CHECK
 
 
 
@@ -144,7 +144,7 @@ namespace CarpetInterp2 {
   struct fasterp_iloc_t {
     mrc_t mrc;                  // map, refinement level, component
     
-#ifdef CARPETINTER2_CHECK
+#ifdef CARPETINTERP2_CHECK
     pn_t pn;                    // origin of this point
     ivect ipos;                 // closest grid point (Carpet indexing)
     ivect ind;                  // closest grid point (local indexing)
@@ -172,7 +172,7 @@ namespace CarpetInterp2 {
     CCTK_REAL coeffs[dim][max_order+1]; // interpolation coefficients
     bvect exact;
     
-#ifdef CARPETINTER2_CHECK
+#ifdef CARPETINTERP2_CHECK
   public:
     pn_t pn;                    // origin of this point
     mrc_t mrc;                  // map, refinement level, component
@@ -182,7 +182,7 @@ namespace CarpetInterp2 {
 #endif
     int ind3d;                  // source grid point offset
     
-#ifdef CARPETINTER2_CHECK
+#ifdef CARPETINTERP2_CHECK
   public:
     ivect saved_lsh;            // copy of lsh
   private:
