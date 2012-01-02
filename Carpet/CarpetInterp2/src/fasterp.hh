@@ -13,6 +13,8 @@
 #include <typeprops.hh>
 #include <vect.hh>
 
+#include <carpet.hh>
+
 
 
 // Define this at all times, because otherwise out-of-bounds
@@ -24,10 +26,11 @@
 namespace CarpetInterp2 {
   
   using namespace std;
+  using namespace Carpet;
   
   
   
-  int const dim = 3;
+  // int const dim = 3;
   
   // Each interpolation point descriptor requires
   //    (dim * (max_order+1) + 1)
@@ -115,6 +118,7 @@ namespace CarpetInterp2 {
   
   // A global location, given by its global coordinates
   struct fasterp_glocs_t {
+    // TODO: use vector<rvect> instead
     vector<CCTK_REAL> coords[dim];
     fasterp_glocs_t (size_t const n)
     {
