@@ -134,8 +134,12 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
            directly on the boundary the weight 1/2 */
         if (! is_staggered[2*d+f]) {
           
+          /* Since we are going to cut off 1/2 at each boundary, the
+             domain size must be at least 1 to begin with */
+          assert (int_points[d] >= 1);
+          
           /* Check whether the domain is empty */
-          if (int_points[d] == 0) {
+          if (int_points[d] == 1) {
             
             /* The domain is empty. The correct thing to do would be
                to set the weights to 0. But this is boring, because
