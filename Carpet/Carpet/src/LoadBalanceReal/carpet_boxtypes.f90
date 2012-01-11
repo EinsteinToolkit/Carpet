@@ -7,6 +7,8 @@ module carpet_boxtypes
   integer :: ghostsize
   real(wp) :: alpha
   logical :: limit_size
+  integer :: granularity
+  integer :: granularity_boundary
   integer :: procid
 
   contains
@@ -329,7 +331,7 @@ module carpet_boxtypes
       integer, intent(inout) :: ncount
       type(bbox) :: reg
       integer, dimension(3) :: cost
-      integer :: maxcost, ngood, i, np1, np2, lo1, up1, str
+      integer :: maxcost, ngood, i, np1, lo1, up1, str
       real(wp) :: p1, p2
       integer, dimension(1) :: mydim
       integer, dimension(maxchoices) :: npr
@@ -394,12 +396,13 @@ module carpet_boxtypes
 !       Find the number of points in each of the 2 chunks while making
 !       sure the chunks are not too small compared to the ghostsize if
 !       limit_size is true.
-        np1 = nint((real(maxcost,wp)*p1)/nprocs)
+!       Take also the granularity into account.
+        np1 = nint((real(maxcost,wp)*p1)/nprocs/granularity)*granularity
+!       TODO: Take granularity_boundary into account as well!
         if ( limit_size ) then
           np1 = max(ghostsize,np1)
           np1 = min(maxcost-ghostsize,np1)
         end if
-        np2 = maxcost - np1
 
 !       Split the region (reg) into two regions (reg1, reg2) taking the
 !       stride into account.
