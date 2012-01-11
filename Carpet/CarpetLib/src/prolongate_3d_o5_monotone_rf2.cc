@@ -88,8 +88,12 @@ namespace CarpetLib {
                                  ivect3 const & restrict dstext,
                                  ibbox3 const & restrict srcbbox,
                                  ibbox3 const & restrict dstbbox,
-                                 ibbox3 const & restrict regbbox)
+                                 ibbox3 const & restrict,
+                                 ibbox3 const & restrict regbbox,
+                                 void * extraargs)
   {
+    assert (not extraargs);
+    
     typedef typename typeprops<T>::real RT;
     
     
@@ -820,21 +824,6 @@ namespace CarpetLib {
   
   
   
-#define TYPECASE(N,T)                                           \
-  template                                                      \
-  void                                                          \
-  prolongate_3d_o5_monotone_rf2 (T const * restrict const src,           \
-                                 ivect3 const & restrict srcext,        \
-                                 T * restrict const dst,                \
-                                 ivect3 const & restrict dstext,        \
-                                 ibbox3 const & restrict srcbbox,       \
-                                 ibbox3 const & restrict dstbbox,       \
-                                 ibbox3 const & restrict regbbox);
-#define CARPET_NO_COMPLEX
-#define CARPET_NO_INT
-#include "typecase.hh"
-#undef TYPECASE
-  
   template <>
   void
   prolongate_3d_o5_monotone_rf2 (CCTK_COMPLEX const * restrict const src,
@@ -843,10 +832,30 @@ namespace CarpetLib {
                                  ivect3 const & restrict dstext,
                                  ibbox3 const & restrict srcbbox,
                                  ibbox3 const & restrict dstbbox,
-                                 ibbox3 const & restrict regbbox) 
+                                 ibbox3 const & restrict,
+                                 ibbox3 const & restrict regbbox,
+                                 void * extraargs) 
   {
     CCTK_WARN(0, "This should never be called!");
   }
+  
+#define TYPECASE(N,T)                                                   \
+  template                                                              \
+  void                                                                  \
+  prolongate_3d_o5_monotone_rf2 (T const * restrict const src,          \
+                                 ivect3 const & restrict srcext,        \
+                                 T * restrict const dst,                \
+                                 ivect3 const & restrict dstext,        \
+                                 ibbox3 const & restrict srcbbox,       \
+                                 ibbox3 const & restrict dstbbox,       \
+                                 ibbox3 const & restrict,               \
+                                 ibbox3 const & restrict regbbox,       \
+                                 void * extraargs);
+#define CARPET_NO_COMPLEX
+#define CARPET_NO_INT
+#include "typecase.hh"
+#undef TYPECASE
+  
   
   
 } // namespace CarpetLib

@@ -42,20 +42,26 @@ call_operator (void
                                  ivect3 const & restrict dstext,
                                  ibbox3 const & restrict srcbbox,
                                  ibbox3 const & restrict dstbbox,
-                                 ibbox3 const & restrict regbbox),
+                                 ibbox3 const & restrict srcregbbox,
+                                 ibbox3 const & restrict dstregbbox,
+                                 void * const extraargs),
                T const * restrict const src,
                ivect3 const & restrict srcext,
                T * restrict const dst,
                ivect3 const & restrict dstext,
                ibbox3 const & restrict srcbbox,
                ibbox3 const & restrict dstbbox,
-               ibbox3 const & restrict regbbox)
+               ibbox3 const & restrict srcregbbox,
+               ibbox3 const & restrict dstregbbox,
+               void * const extraargs)
 {
 #ifndef _OPENMP
-  (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, regbbox);
+  (* the_operator)
+    (src, srcext, dst, dstext, srcbbox, dstbbox,
+     srcregbbox, dstregbbox, slabinfo);
 #else
 #  ifdef CARPET_DEBUG
-  ibset allregbboxes;
+  ibset alldstregbboxes;
 #  endif
 #pragma omp parallel
   {
@@ -64,10 +70,10 @@ call_operator (void
     // Parallelise in z direction
     // int const dir = 2;
     // Parallelise along longest extent
-    int const dir = maxloc (regbbox.shape());
-    int const stride = regbbox.stride()[dir];
-    int const first_point = regbbox.lower()[dir];
-    int const last_point = regbbox.upper()[dir] + stride;
+    int const dir = maxloc (dstregbbox.shape());
+    int const stride = dstregbbox.stride()[dir];
+    int const first_point = dstregbbox.lower()[dir];
+    int const last_point = dstregbbox.upper()[dir] + stride;
     int const num_points = last_point - first_point;
     assert (num_points >= 0);
     assert (num_points % stride == 0);
@@ -78,24 +84,26 @@ call_operator (void
     int const my_last_point =
       min (last_point, my_first_point + my_num_points);
     assert (my_last_point >= my_first_point);
-    ibbox3 const myregbbox
-      (regbbox.lower().replace (dir, my_first_point),
-       regbbox.upper().replace (dir, my_last_point - stride),
-       regbbox.stride());
-    if (not myregbbox.empty()) {
-      (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, myregbbox);
+    ibbox3 const mydstregbbox
+      (dstregbbox.lower().replace (dir, my_first_point),
+       dstregbbox.upper().replace (dir, my_last_point - stride),
+       dstregbbox.stride());
+    if (not mydstregbbox.empty()) {
+      (* the_operator)
+        (src, srcext, dst, dstext, srcbbox, dstbbox,
+         srcregbbox, mydstregbbox, extraargs);
 #  ifdef CARPET_DEBUG
 #pragma omp critical
-      allregbboxes += myregbbox;
+      alldstregbboxes += mydstregbbox;
 #  endif
     }
   }
 #  ifdef CARPET_DEBUG
-  if (not (allregbboxes == ibset (regbbox))) {
-    cout << "allregbboxes=" << allregbboxes << endl
-         << "regbbox=" << regbbox << endl;
+  if (not (alldstregbboxes == ibset (dstregbbox))) {
+    cout << "alldstregbboxes=" << alldstregbboxes << endl
+         << "dstregbbox=" << dstregbbox << endl;
   }
-  assert (allregbboxes == ibset (regbbox));
+  assert (alldstregbboxes == ibset (dstregbbox));
 #  endif
 #endif
 }
@@ -110,20 +118,26 @@ call_operator (void
                                  ivect4 const & restrict dstext,
                                  ibbox4 const & restrict srcbbox,
                                  ibbox4 const & restrict dstbbox,
-                                 ibbox4 const & restrict regbbox),
+                                 ibbox4 const & restrict srcregbbox,
+                                 ibbox4 const & restrict dstregbbox,
+                                 void * const extraargs),
                T const * restrict const src,
                ivect4 const & restrict srcext,
                T * restrict const dst,
                ivect4 const & restrict dstext,
                ibbox4 const & restrict srcbbox,
                ibbox4 const & restrict dstbbox,
-               ibbox4 const & restrict regbbox)
+               ibbox4 const & restrict srcregbbox,
+               ibbox4 const & restrict dstregbbox,
+               void * const extraargs)
 {
 #ifndef _OPENMP
-  (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, regbbox);
+  (* the_operator)
+    (src, srcext, dst, dstext, srcbbox, dstbbox,
+     srcregbbox, dstregbbox, extraargs);
 #else
 #  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
-  ibset allregbboxes;
+  ibset alldstregbboxes;
 #  endif
 #pragma omp parallel
   {
@@ -132,10 +146,10 @@ call_operator (void
     // Parallelise in z direction
     // int const dir = 2;
     // Parallelise along longest extent
-    int const dir = maxloc (regbbox.shape());
-    int const stride = regbbox.stride()[dir];
-    int const first_point = regbbox.lower()[dir];
-    int const last_point = regbbox.upper()[dir] + stride;
+    int const dir = maxloc (dstregbbox.shape());
+    int const stride = dstregbbox.stride()[dir];
+    int const first_point = dstregbbox.lower()[dir];
+    int const last_point = dstregbbox.upper()[dir] + stride;
     int const num_points = last_point - first_point;
     assert (num_points >= 0);
     assert (num_points % stride == 0);
@@ -146,24 +160,26 @@ call_operator (void
     int const my_last_point =
       min (last_point, my_first_point + my_num_points);
     assert (my_last_point >= my_first_point);
-    ibbox4 const myregbbox
-      (regbbox.lower().replace (dir, my_first_point),
-       regbbox.upper().replace (dir, my_last_point - stride),
-       regbbox.stride());
-    if (not myregbbox.empty()) {
-      (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, myregbbox);
+    ibbox4 const mydstregbbox
+      (dstregbbox.lower().replace (dir, my_first_point),
+       dstregbbox.upper().replace (dir, my_last_point - stride),
+       dstregbbox.stride());
+    if (not mydstregbbox.empty()) {
+      (* the_operator)
+        (src, srcext, dst, dstext, srcbbox, dstbbox,
+         srcregbbox, mydstregbbox, extraargs);
 #  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
 #pragma omp critical
-      allregbboxes += myregbbox;
+      alldstregbboxes += mydstregbbox;
 #  endif
     }
   }
 #  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
-  if (not (allregbboxes == ibset (regbbox))) {
-    cout << "allregbboxes=" << allregbboxes << endl
-         << "regbbox=" << regbbox << endl;
+  if (not (alldstregbboxes == ibset (dstregbbox))) {
+    cout << "alldstregbboxes=" << alldstregbboxes << endl
+         << "dstregbbox=" << dstregbbox << endl;
   }
-  assert (allregbboxes == ibset (regbbox));
+  assert (alldstregbboxes == ibset (dstregbbox));
 #  endif
 #endif
 }
@@ -180,7 +196,9 @@ prolongate_3d_eno (T const * restrict const /*src*/,
                    ivect3 const & /*dstext*/,
                    ibbox3 const & /*srcbbox*/,
                    ibbox3 const & /*dstbbox*/,
-                   ibbox3 const & /*regbbox*/)
+                   ibbox3 const & /*srcregbbox*/,
+                   ibbox3 const & /*dstregbbox*/,
+                   void * /*extraargs*/)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -195,7 +213,7 @@ CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_eno)
    const int& dstiext, const int& dstjext, const int& dstkext,
    const int srcbbox[3][3],
    const int dstbbox[3][3],
-   const int regbbox[3][3]);
+   const int dstregbbox[3][3]);
 
 template <>
 void
@@ -205,8 +223,11 @@ prolongate_3d_eno (CCTK_REAL8 const * restrict const src,
                    ivect3 const & dstext,
                    ibbox3 const & srcbbox,
                    ibbox3 const & dstbbox,
-                   ibbox3 const & regbbox)
+                   ibbox3 const & srcregbbox,
+                   ibbox3 const & dstregbbox,
+                   void * extraargs)
 {
+  assert (not extraargs);
   CCTK_FNAME(prolongate_3d_real8_eno)
     (src,
      srcext[0], srcext[1], srcext[2],
@@ -214,7 +235,7 @@ prolongate_3d_eno (CCTK_REAL8 const * restrict const src,
      dstext[0], dstext[1], dstext[2],
      reinterpret_cast <int const (*) [3]> (& srcbbox),
      reinterpret_cast <int const (*) [3]> (& dstbbox),
-     reinterpret_cast <int const (*) [3]> (& regbbox));
+     reinterpret_cast <int const (*) [3]> (& dstregbbox));
 }
 #endif
 
@@ -228,7 +249,9 @@ prolongate_3d_weno (T const * restrict const /*src*/,
                     ivect3 const & /*dstext*/,
                     ibbox3 const & /*srcbbox*/,
                     ibbox3 const & /*dstbbox*/,
-                    ibbox3 const & /*regbbox*/)
+                    ibbox3 const & /*srcregbbox*/,
+                    ibbox3 const & /*dstregbbox*/,
+                    void * extraargs)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -253,7 +276,9 @@ prolongate_3d_weno (CCTK_REAL8 const * restrict const src,
                     ivect3 const & dstext,
                     ibbox3 const & srcbbox,
                     ibbox3 const & dstbbox,
-                    ibbox3 const & regbbox)
+                    ibbox3 const & srcregbbox,
+                    ibbox3 const & dstregbbox,
+                    void * extraargs)
 {
   CCTK_FNAME(prolongate_3d_real8_weno)
     (src,
@@ -262,7 +287,7 @@ prolongate_3d_weno (CCTK_REAL8 const * restrict const src,
      dstext[0], dstext[1], dstext[2],
      reinterpret_cast <int const (*) [3]> (& srcbbox),
      reinterpret_cast <int const (*) [3]> (& dstbbox),
-     reinterpret_cast <int const (*) [3]> (& regbbox));
+     reinterpret_cast <int const (*) [3]> (& dstregbbox));
 }
 #endif
 
@@ -276,7 +301,9 @@ prolongate_3d_tvd (T const * restrict const /*src*/,
                    ivect3 const & /*dstext*/,
                    ibbox3 const & /*srcbbox*/,
                    ibbox3 const & /*dstbbox*/,
-                   ibbox3 const & /*regbbox*/)
+                   ibbox3 const & /*srcregbbox*/,
+                   ibbox3 const & /*dstregbbox*/,
+                   void * /*extraargs*/)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -301,8 +328,11 @@ prolongate_3d_tvd (CCTK_REAL8 const * restrict const src,
                    ivect3 const & dstext,
                    ibbox3 const & srcbbox,
                    ibbox3 const & dstbbox,
-                   ibbox3 const & regbbox)
+                   ibbox3 const & srcregbbox,
+                   ibbox3 const & dstregbbox,
+                   void * const extraargs)
 {
+  assert (not extraargs);
   CCTK_FNAME(prolongate_3d_real8_tvd)
     (src,
      srcext[0], srcext[1], srcext[2],
@@ -310,7 +340,7 @@ prolongate_3d_tvd (CCTK_REAL8 const * restrict const src,
      dstext[0], dstext[1], dstext[2],
      reinterpret_cast <int const (*) [3]> (& srcbbox),
      reinterpret_cast <int const (*) [3]> (& dstbbox),
-     reinterpret_cast <int const (*) [3]> (& regbbox));
+     reinterpret_cast <int const (*) [3]> (& dstregbbox));
 }
 #endif
 
@@ -324,7 +354,9 @@ prolongate_3d_cc_tvd (T const * restrict const /*src*/,
                       ivect3 const & /*dstext*/,
                       ibbox3 const & /*srcbbox*/,
                       ibbox3 const & /*dstbbox*/,
-                      ibbox3 const & /*regbbox*/)
+                      ibbox3 const & /*srcregbbox*/,
+                      ibbox3 const & /*dstregbbox*/,
+                      void * /*extraargs*/)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -349,8 +381,11 @@ prolongate_3d_cc_tvd (CCTK_REAL8 const * restrict const src,
                       ivect3 const & dstext,
                       ibbox3 const & srcbbox,
                       ibbox3 const & dstbbox,
-                      ibbox3 const & regbbox)
+                      ibbox3 const & srcregbbox,
+                      ibbox3 const & dstregbbox,
+                      void * const extraargs)
 {
+  assert (not extraargs);
   CCTK_FNAME(prolongate_3d_cc_real8_tvd)
     (src,
      srcext[0], srcext[1], srcext[2],
@@ -358,7 +393,7 @@ prolongate_3d_cc_tvd (CCTK_REAL8 const * restrict const src,
      dstext[0], dstext[1], dstext[2],
      reinterpret_cast <int const (*) [3]> (& srcbbox),
      reinterpret_cast <int const (*) [3]> (& dstbbox),
-     reinterpret_cast <int const (*) [3]> (& regbbox));
+     reinterpret_cast <int const (*) [3]> (& dstregbbox));
 }
 #endif
 
@@ -376,9 +411,9 @@ data<T>::data (const int varindex_,
     vectorleader(vectorleader_)
 {
   assert (vectorlength>=1);
-  assert (vectorindex>=0 && vectorindex<vectorlength);
-  assert ((vectorindex==0 && not vectorleader)
-          || (vectorindex!=0 && vectorleader));
+  assert (vectorindex>=0 and vectorindex<vectorlength);
+  assert ((vectorindex==0 and not vectorleader) or
+          (vectorindex!=0 and vectorleader));
 }
 
 template<typename T>
@@ -393,9 +428,9 @@ data<T>::data (const int varindex_,
     vectorleader(vectorleader_)
 {
   assert (vectorlength>=1);
-  assert (vectorindex>=0 && vectorindex<vectorlength);
-  assert ((vectorindex==0 && not vectorleader)
-          || (vectorindex!=0 && vectorleader));
+  assert (vectorindex>=0 and vectorindex<vectorlength);
+  assert ((vectorindex==0 and not vectorleader) or
+          (vectorindex!=0 and vectorleader));
   allocate(extent_, proc_);
 }
 
@@ -494,7 +529,9 @@ template <typename T>
 void
 data <T>::
 copy_from_innerloop (gdata const * const gsrc,
-                     ibbox const & box)
+                     ibbox const & dstregbox,
+                     ibbox const & srcregbox,
+                     islab const * restrict const slabinfo)
 {
   data const * const src = dynamic_cast <data const *> (gsrc);
   assert (has_storage() and src->has_storage());
@@ -509,7 +546,7 @@ copy_from_innerloop (gdata const * const gsrc,
     dstbox = this->extent();
     break;
   case cell_centered: {
-    ivect const ioff = box.lower() - this->extent().lower();
+    ivect const ioff = dstbox.lower() - this->extent().lower();
     ivect const is_centered = ioff % this->extent().stride() == 0;
     
     // Shift bboxes to be face centred if necessary, since all grid
@@ -530,18 +567,16 @@ copy_from_innerloop (gdata const * const gsrc,
                       src->shape(),
                       static_cast <T *> (this->storage()),
                       this->shape(),
-                      srcbox,
-                      dstbox,
-                      box);
+                      srcbox, dstbox,
+                      srcregbox, dstregbox, (void*)slabinfo);
 #elif CARPET_DIM == 4
     call_operator<T> (& copy_4d,
                       static_cast <T const *> (src->storage()),
                       src->shape(),
                       static_cast <T *> (this->storage()),
                       this->shape(),
-                      srcbox,
-                      dstbox,
-                      box);
+                      srcbox, dstbox,
+                      srcregbox, dstregbox, (void*)slabinfo);
 #else
 #  error "Value for CARPET_DIM not supported"
 #endif
@@ -551,9 +586,8 @@ copy_from_innerloop (gdata const * const gsrc,
                       src->shape(),
                       static_cast <T *> (this->storage()),
                       this->shape(),
-                      srcbox,
-                      dstbox,
-                      box);
+                      srcbox, dstbox,
+                      srcregbox, dstregbox, (void*)slabinfo);
   }
 }
 
@@ -564,7 +598,9 @@ void
 data <T>::
 transfer_from_innerloop (vector <gdata const *> const & gsrcs,
                          vector <CCTK_REAL> const & times,
-                         ibbox const & box,
+                         ibbox const & dstbox,
+                         ibbox const & srcbox,
+                         islab const * restrict const slabinfo,
                          CCTK_REAL const time,
                          int const order_space,
                          int const order_time)
@@ -578,7 +614,8 @@ transfer_from_innerloop (vector <gdata const *> const & gsrcs,
     }
   }
   
-  transfer_time (gsrcs, times, box, time, order_space, order_time);
+  transfer_time
+    (gsrcs, times, dstbox, srcbox, slabinfo, time, order_space, order_time);
 }
 
 
@@ -588,7 +625,9 @@ void
 data <T>::
 transfer_time (vector <gdata const *> const & gsrcs,
                vector <CCTK_REAL> const & times,
-               ibbox const & box,
+               ibbox const & dstbox,
+               ibbox const & srcbox,
+               islab const * restrict const slabinfo,
                CCTK_REAL const time,
                int const order_space,
                int const order_time)
@@ -611,14 +650,15 @@ transfer_time (vector <gdata const *> const & gsrcs,
     for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
       tmps.AT(tl) =
         new data (this->varindex, this->cent, this->transport_operator);
-      tmps.AT(tl)->allocate (box, this->proc());
+      tmps.AT(tl)->allocate (srcbox, this->proc());
       
       assert (gsrcs.AT(tl));
       data const * const src = dynamic_cast <data const *> (gsrcs.AT(tl));
-      tmps.AT(tl)->transfer_p_r (src, box, order_space);
+      assert (not slabinfo);
+      tmps.AT(tl)->transfer_p_r (src, dstbox, srcbox, NULL, order_space);
     }
     
-    time_interpolate (tmps, box, times, time, order_time);
+    time_interpolate (tmps, dstbox, dstbox, times, time, order_time);
     
     for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
       delete tmps.AT(tl);
@@ -632,7 +672,7 @@ transfer_time (vector <gdata const *> const & gsrcs,
     
     data const * const src = dynamic_cast <data const *> (gsrcs.AT(timelevel0));
     
-    transfer_p_r (src, box, order_space);
+    transfer_p_r (src, dstbox, srcbox, slabinfo, order_space);
     
   } // if
 }
@@ -643,21 +683,25 @@ template <typename T>
 void
 data <T>::
 transfer_p_r (data const * const src,
-              ibbox const & box,
+              ibbox const & dstbox,
+              ibbox const & srcbox,
+              islab const * restrict const slabinfo,
               int const order_space)
 {
   if (all (src->extent().stride() == this->extent().stride())) {
     // Copy
-    copy_from_innerloop (src, box);
+    copy_from_innerloop (src, dstbox, srcbox, slabinfo);
   } else if (all (src->extent().stride() > this->extent().stride())) {
     // Prolongate
     assert (transport_operator != op_sync and
             transport_operator != op_restrict);
-    transfer_p_vc_cc (src, box, order_space);
+    assert (not slabinfo);
+    transfer_p_vc_cc (src, dstbox, srcbox, order_space);
   } else if (all (src->extent().stride() < this->extent().stride())) {
     // Restrict
     assert (transport_operator != op_sync);
-    transfer_restrict (src, box, order_space);
+    assert (not slabinfo);
+    transfer_restrict (src, dstbox, srcbox, order_space);
   } else {
     assert (0);
   }
@@ -669,17 +713,19 @@ template <typename T>
 void
 data <T>::
 transfer_p_vc_cc (data const * const src,
-                  ibbox const & box,
+                  ibbox const & dstbox,
+                  ibbox const & srcbox,
                   int const order_space)
 {
-  transfer_prolongate (src, box, order_space);
+  transfer_prolongate (src, dstbox, srcbox, order_space);
 }
 
 template <>
 void
 data <CCTK_INT>::
 transfer_p_vc_cc (data const * const /*src*/,
-                  ibbox const & /*box*/,
+                  ibbox const & /*dstbox*/,
+                  ibbox const & /*srcbox*/,
                   int const /*order_space*/)
 {
   CCTK_WARN (0, "Data type not supported");
@@ -691,7 +737,8 @@ template <typename T>
 void
 data <T>::
 transfer_prolongate (data const * const src,
-                     ibbox const & box,
+                     ibbox const & dstbox,
+                     ibbox const & srcbox,
                      int const order_space)
 {
   static Timer total ("prolongate");
@@ -715,7 +762,9 @@ transfer_prolongate (data const * const src,
                                   ivect3 const & restrict dstext,
                                   ibbox3 const & restrict srcbbox,
                                   ibbox3 const & restrict dstbbox,
-                                  ibbox3 const & restrict regbbox) =
+                                  ibbox3 const & restrict srcregbbox,
+                                  ibbox3 const & restrict dstregbbox,
+                                  void * const extraargs) =
         {
           NULL,
           & prolongate_3d_rf2<T,1>,
@@ -743,7 +792,7 @@ transfer_prolongate (data const * const src,
                         this->shape(),
                         src->extent(),
                         this->extent(),
-                        box);
+                        srcbox, dstbox, NULL);
       break;
     }
     case cell_centered: {
@@ -754,7 +803,9 @@ transfer_prolongate (data const * const src,
                                   ivect3 const & restrict dstext,
                                   ibbox3 const & restrict srcbbox,
                                   ibbox3 const & restrict dstbbox,
-                                  ibbox3 const & restrict regbbox) =
+                                  ibbox3 const & restrict srcregbbox,
+                                  ibbox3 const & restrict dstregbbox,
+                                  void * const extraargs) =
         {
           & prolongate_3d_cc_rf2<T,0>,
           & prolongate_3d_cc_rf2<T,1>,
@@ -774,7 +825,7 @@ transfer_prolongate (data const * const src,
                         this->shape(),
                         src->extent(),
                         this->extent(),
-                        box);
+                        srcbox, dstbox, NULL);
       break;
     }
     default:
@@ -803,7 +854,7 @@ transfer_prolongate (data const * const src,
 			      this->shape(),
 			      src->extent(),
 			      this->extent(),
-			      box);
+			      srcbox, dstbox, NULL);
 	    break;
 	    case 5:
 	    // There is only one parameter for the prolongation order, but
@@ -816,7 +867,7 @@ transfer_prolongate (data const * const src,
 			      this->shape(),
 			      src->extent(),
 			      this->extent(),
-			      box);
+			      srcbox, dstbox, NULL);
 	    break;
 	    default:
 	    CCTK_WARN (CCTK_WARN_ABORT,
@@ -828,12 +879,14 @@ transfer_prolongate (data const * const src,
       case cell_centered: {
 	 static
 	 void (* the_operators[]) (T const * restrict const src,
-				    ivect3 const & restrict srcext,
-				    T * restrict const dst,
-				    ivect3 const & restrict dstext,
-				    ibbox3 const & restrict srcbbox,
-				    ibbox3 const & restrict dstbbox,
-				    ibbox3 const & restrict regbbox) =
+                                   ivect3 const & restrict srcext,
+                                   T * restrict const dst,
+                                   ivect3 const & restrict dstext,
+                                   ibbox3 const & restrict srcbbox,
+                                   ibbox3 const & restrict dstbbox,
+                                   ibbox3 const & restrict srcregbbox,
+                                   ibbox3 const & restrict dstregbbox,
+                                   void * const extraargs) =
 	 {
 	    & prolongate_3d_cc_eno_rf2<T,2>,
 	    & prolongate_3d_cc_eno_rf2<T,2>,  // note that we cheat here: order is still 2 even though 3 was requested!
@@ -854,7 +907,7 @@ transfer_prolongate (data const * const src,
 			   this->shape(),
 			   src->extent(),
 			   this->extent(),
-			   box);
+			   srcbox, dstbox, NULL);
       }
       break;
     }
@@ -884,7 +937,7 @@ transfer_prolongate (data const * const src,
 			      this->shape(),
 			      src->extent(),
 			      this->extent(),
-			      box);
+			      srcbox, dstbox, NULL);
 	    break;
 	 default:
 	    CCTK_WARN (CCTK_WARN_ABORT,
@@ -919,7 +972,7 @@ transfer_prolongate (data const * const src,
                           this->shape(),
                           src->extent(),
                           this->extent(),
-                          box);
+                          srcbox, dstbox, NULL);
         break;
       default:
         CCTK_WARN (CCTK_WARN_ABORT,
@@ -938,7 +991,7 @@ transfer_prolongate (data const * const src,
                           this->shape(),
                           src->extent(),
                           this->extent(),
-                          box);
+                          srcbox, dstbox, NULL);
         break;
       default:
         CCTK_WARN (CCTK_WARN_ABORT,
@@ -972,7 +1025,7 @@ transfer_prolongate (data const * const src,
                         this->shape(),
                         src->extent(),
                         this->extent(),
-                        box);
+                        srcbox, dstbox, NULL);
       break;
     default:
       CCTK_WARN (CCTK_WARN_ABORT,
@@ -1007,7 +1060,7 @@ transfer_prolongate (data const * const src,
                           this->shape(),
                           src->extent(),
                           this->extent(),
-                          box);
+                          srcbox, dstbox, NULL);
         break;
       default:
         CCTK_WARN (CCTK_WARN_ABORT,
@@ -1036,7 +1089,8 @@ template <>
 void
 data <CCTK_INT>::
 transfer_prolongate (data const * const /*src*/,
-                     ibbox const & /*box*/,
+                     ibbox const & /*dstbox*/,
+                     ibbox const & /*srcbox*/,
                      int const /*order_space*/)
 {
   CCTK_WARN (0, "Data type not supported");
@@ -1048,7 +1102,8 @@ template <typename T>
 void
 data <T>::
 transfer_restrict (data const * const src,
-                   ibbox const & box,
+                   ibbox const & dstregbox,
+                   ibbox const & srcregbox,
                    int const /*order_space*/)
 {
   static Timer total ("restrict");
@@ -1075,11 +1130,11 @@ transfer_restrict (data const * const src,
                         this->shape(),
                         src->extent(),
                         this->extent(),
-                        box);
+                        srcregbox, dstregbox, NULL);
       break;
     case cell_centered: {
-      assert (all (box.stride() == this->extent().stride()));
-      ivect const ioff = box.lower() - this->extent().lower();
+      assert (all (dstregbox.stride() == this->extent().stride()));
+      ivect const ioff = dstregbox.lower() - this->extent().lower();
       ivect const is_centered = ioff % this->extent().stride() == 0;
       
       // Shift bboxes to be face centred if necessary, since all grid
@@ -1095,7 +1150,7 @@ transfer_restrict (data const * const src,
                           this->shape(),
                           srcbox,
                           dstbox,
-                          box);
+                          srcregbox, dstregbox, NULL);
       } else if (all(is_centered == ivect(0,1,1))) {
         call_operator<T> (& restrict_3d_vc_rf2<T,0,1,1>,
                           static_cast <T const *> (src->storage()),
@@ -1104,7 +1159,7 @@ transfer_restrict (data const * const src,
                           this->shape(),
                           srcbox,
                           dstbox,
-                          box);
+                          srcregbox, dstregbox, NULL);
       } else if (all(is_centered == ivect(1,0,1))) {
         call_operator<T> (& restrict_3d_vc_rf2<T,1,0,1>,
                           static_cast <T const *> (src->storage()),
@@ -1113,7 +1168,7 @@ transfer_restrict (data const * const src,
                           this->shape(),
                           srcbox,
                           dstbox,
-                          box);
+                          srcregbox, dstregbox, NULL);
       } else if (all(is_centered == ivect(1,1,0))) {
         call_operator<T> (& restrict_3d_vc_rf2<T,1,1,0>,
                           static_cast <T const *> (src->storage()),
@@ -1122,7 +1177,7 @@ transfer_restrict (data const * const src,
                           this->shape(),
                           srcbox,
                           dstbox,
-                          box);
+                          srcregbox, dstregbox, NULL);
       } else {
         assert (0);
       }
@@ -1153,7 +1208,7 @@ transfer_restrict (data const * const src,
                         this->shape(),
                         src->extent(),
                         this->extent(),
-                        box);
+                        srcregbox, dstregbox, NULL);
       break;
     default:
       assert (0);
@@ -1175,7 +1230,8 @@ template <>
 void
 data <CCTK_INT>::
 transfer_restrict (data const * const /*src*/,
-                   ibbox const & /*box*/,
+                   ibbox const & /*dstbox*/,
+                   ibbox const & /*srcbox*/,
                    int const /*order_space*/)
 {
   CCTK_WARN (0, "Data type not supported");
@@ -1187,7 +1243,8 @@ template <typename T>
 void
 data <T>::
 time_interpolate (vector <data *> const & srcs,
-                  ibbox const & box,
+                  ibbox const & dstbox,
+                  ibbox const & srcbox,
                   vector <CCTK_REAL> const & times,
                   CCTK_REAL const time,
                   int const order_time)
@@ -1217,7 +1274,7 @@ time_interpolate (vector <data *> const & srcs,
                           this->shape(),
                           srcs.AT(0)->extent(),
                           this->extent(),
-                          box);
+                          srcbox, dstbox, NULL);
       break;
       
     case 2:
@@ -1234,7 +1291,7 @@ time_interpolate (vector <data *> const & srcs,
                           this->shape(),
                           srcs.AT(0)->extent(),
                           this->extent(),
-                          box);
+                          srcbox, dstbox, NULL);
       break;
       
     case 3:
@@ -1253,7 +1310,7 @@ time_interpolate (vector <data *> const & srcs,
                           this->shape(),
                           srcs.AT(0)->extent(),
                           this->extent(),
-                          box);
+                          srcbox, dstbox, NULL);
       break;
       
     case 4:
@@ -1274,7 +1331,7 @@ time_interpolate (vector <data *> const & srcs,
                           this->shape(),
                           srcs.AT(0)->extent(),
                           this->extent(),
-                          box);
+                          srcbox, dstbox, NULL);
       break;
       
     default:
@@ -1306,7 +1363,7 @@ time_interpolate (vector <data *> const & srcs,
                           this->shape(),
                           srcs.AT(0)->extent(),
                           this->extent(),
-                          box);
+                          srcbox, dstbox, NULL);
       break;
       
     case 2:
@@ -1323,7 +1380,7 @@ time_interpolate (vector <data *> const & srcs,
                               this->shape(),
                               srcs.AT(0)->extent(),
                               this->extent(),
-                              box);
+                              srcbox, dstbox, NULL);
       break;
       
     default:
@@ -1352,7 +1409,8 @@ template <>
 void
 data <CCTK_INT>::
 time_interpolate (vector <data *> const & /*srcs*/,
-                  ibbox const & /*box*/,
+                  ibbox const & /*dstbox*/,
+                  ibbox const & /*srcbox*/,
                   vector <CCTK_REAL> const & /*times*/,
                   CCTK_REAL const /*time*/,
                   int const /*order_time*/)

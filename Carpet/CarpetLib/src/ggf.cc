@@ -626,7 +626,7 @@ transfer_from_all (comm_state & state,
     }
     
     dst->transfer_from
-      (state, gsrcs, times, recv, send, p1, p2 , time, pos, pot);
+      (state, gsrcs, times, recv, send, NULL, p1, p2 , time, pos, pot);
   }
   
   total.stop (0);

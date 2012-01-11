@@ -56,6 +56,12 @@ data<T>* gf<T>::operator() (int tl, int rl, int lc, int ml)
   assert (rl>=0 and rl<h.reflevels());
   assert (lc>=0 and lc<h.local_components(rl));
   assert (ml>=0 and ml<h.mglevels());
+  if (not (tl>=0 and tl<timelevels(ml, rl))) {
+    cerr << "gf<T>::operator() "
+         << "vi=" << varindex << " name=" << (varindex>=0 ? CCTK_FullName(varindex) : "") << " "
+         << "pot=" << prolongation_order_time << " "
+         << "tl=" << tl << " rl=" << rl << " lc=" << lc << " ml=" << ml << "\n";
+  }
   assert (tl>=0 and tl<timelevels(ml, rl));
   return (data<T>*)storage.AT(ml).AT(rl).AT(lc).AT(tl);
 }

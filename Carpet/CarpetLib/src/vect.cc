@@ -78,7 +78,6 @@ MPI_Datatype vect<T,D>::mpi_datatype () const
 
 
 
-
 // Specialise some constructors for lower dimensions
 // These functions are declared, but must not be used.
 

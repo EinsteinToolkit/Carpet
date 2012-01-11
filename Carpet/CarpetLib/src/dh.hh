@@ -149,6 +149,7 @@ public:
     srpvect fast_ref_bnd_prol_sendrecv;
     
     // refluxing
+    // vect<vect<srpvect,2>,dim> fast_ref_refl_sendrecv;
     srpvect fast_ref_refl_sendrecv_0_0;
     srpvect fast_ref_refl_sendrecv_0_1;
     srpvect fast_ref_refl_sendrecv_1_0;

@@ -36,8 +36,12 @@ namespace CarpetLib {
            ivect4 const & restrict dstext,
            ibbox4 const & restrict srcbbox,
            ibbox4 const & restrict dstbbox,
-           ibbox4 const & restrict regbbox)
+           ibbox4 const & restrict,
+           ibbox4 const & restrict regbbox,
+           void * extraargs)
   {
+    assert (not extraargs);
+    
     if (any (srcbbox.stride() != regbbox.stride() or
              dstbbox.stride() != regbbox.stride()))
     {
@@ -133,7 +137,9 @@ namespace CarpetLib {
            ivect4 const & restrict dstext,      \
            ibbox4 const & restrict srcbbox,     \
            ibbox4 const & restrict dstbbox,     \
-           ibbox4 const & restrict regbbox);
+           ibbox4 const & restrict,             \
+           ibbox4 const & restrict regbbox,     \
+           void * extraargs);
 #include "typecase.hh"
 #undef TYPECASE
   

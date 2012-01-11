@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <typeinfo>
 
 #ifdef CCTK_MPI
 #  include <mpi.h>
@@ -28,6 +29,51 @@
 
 using namespace std;
 using namespace CarpetLib;
+
+
+
+template <typename T, int D>
+ostream& operator<< (ostream& os, slab<T,D> const & slabinfo)
+{
+  return os << "slab<" << typeid(T).name() << "," << D <<">"
+            << "{offset=" << slabinfo.offset << "}";
+}
+
+template ostream& operator<< (ostream& os, slab<int,dim> const & slabinfo);
+template ostream& operator<< (ostream& os, slab<double,dim> const & slabinfo);
+
+template<typename T,int D>
+MPI_Datatype mpi_datatype (slab<T,D> const&)
+{
+  static bool initialised = false;
+  static MPI_Datatype newtype;
+  if (not initialised) {
+    slab<T,D> const s;
+    typedef vect<T,D> avect;
+#define ENTRY(type, name)                                               \
+    {                                                                   \
+      sizeof s.name / sizeof(type), /* count elements */                \
+        (char*)&s.name - (char*)&s, /* offsetof doesn't work (why?) */  \
+        dist::mpi_datatype<type>(), /* find MPI datatype */             \
+        STRINGIFY(name),    /* field name */                            \
+        STRINGIFY(type),    /* type name */                             \
+        }
+    dist::mpi_struct_descr_t const descr[] = {
+      ENTRY(avect, offset),
+      {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}
+    };
+#undef ENTRY
+    ostringstream buf;
+    buf << "slab<" << typeid(T).name() << "," << D << ">";
+    newtype =
+      dist::create_mpi_datatype (sizeof descr / sizeof descr[0], descr,
+                                 buf.str().c_str(), sizeof s);
+    initialised = true;
+  }
+  return newtype;
+}
+
+template MPI_Datatype mpi_datatype (slab<int,dim> const&);
 
 
 
@@ -143,18 +189,20 @@ void
 gdata::
 copy_from (comm_state & state,
            gdata const * const src,
-           ibbox const & box,
+           ibbox const & dstbox,
+           ibbox const & srcbox,
+           islab const * restrict const slabinfo,
            int const dstproc,
            int const srcproc)
 {
   vector <gdata const *> const srcs (1, src);
   CCTK_REAL const time = 0.0;
   vector <CCTK_REAL> const times (1, time);
-  int const order_space = cent == vertex_centered ? 1 : 0;
+  int const order_space = (this ? cent : src->cent)  == vertex_centered ? 1 : 0;
   int const order_time = 0;
   transfer_from (state,
                  srcs, times,
-                 box, box,
+                 dstbox, srcbox, slabinfo,
                  dstproc, srcproc,
                  time, order_space, order_time);
 }
@@ -168,6 +216,7 @@ transfer_from (comm_state & state,
                vector<CCTK_REAL>     const & times,
                ibbox const & dstbox,
                ibbox const & srcbox,
+               islab const * restrict const slabinfo,
                int const dstproc,
                int const srcproc,
                CCTK_REAL const time,
@@ -197,8 +246,10 @@ transfer_from (comm_state & state,
     for (int t=0; t<(int)srcs.size(); ++t) {
       assert (srcs.AT(t)->proc() == srcproc);
       assert (srcs.AT(t)->has_storage());
-      assert (all(srcbox.lower() >= srcs.AT(t)->extent().lower()));
-      assert (all(srcbox.upper() <= srcs.AT(t)->extent().upper()));
+      if (not slabinfo) {
+        assert (all(srcbox.lower() >= srcs.AT(t)->extent().lower()));
+        assert (all(srcbox.upper() <= srcs.AT(t)->extent().upper()));
+      }
     }
   }
   gdata const * const src = is_src ? srcs.AT(0) : NULL;
@@ -260,7 +311,8 @@ transfer_from (comm_state & state,
             src->make_typed (src->varindex, src->cent, src->transport_operator);
           buf->allocate (bufbox, srcproc, sendbuf, sendbufsize);
           buf->transfer_from_innerloop
-            (srcs, times, dstbox, time, order_space, order_time);
+            (srcs, times, dstbox, srcbox, slabinfo,
+             time, order_space, order_time);
           delete buf;
           state.commit_send_space
             (src->c_datatype(), dstproc, prod(allocated_memory_shape(dstbox)));
@@ -275,7 +327,7 @@ transfer_from (comm_state & state,
               src->make_typed (src->varindex, src->cent,
                                src->transport_operator);
             buf->allocate (srcbox, srcproc, sendbuf, sendbufsize);
-            buf->copy_from_innerloop (srcs.AT(tl), srcbox);
+            buf->copy_from_innerloop (srcs.AT(tl), srcbox, srcbox, NULL);
             delete buf;
             state.commit_send_space (src->c_datatype(), dstproc,
                                      prod(allocated_memory_shape(srcbox)));
@@ -289,7 +341,7 @@ transfer_from (comm_state & state,
     // handle the processor-local case
     if (is_dst and is_src) {
       transfer_from_innerloop
-        (srcs, times, dstbox, time, order_space, order_time);
+        (srcs, times, dstbox, srcbox, slabinfo, time, order_space, order_time);
     }
     break;
     
@@ -307,7 +359,7 @@ transfer_from (comm_state & state,
           buf->allocate (dstbox, dstproc, recvbuf, recvbufsize);
           state.commit_recv_space (c_datatype(), srcproc,
                                    prod(allocated_memory_shape(dstbox)));
-          copy_from_innerloop (buf, dstbox);
+          copy_from_innerloop (buf, dstbox, dstbox, NULL);
           delete buf;
         } else {
           if (cent == cell_centered) {
@@ -334,7 +386,8 @@ transfer_from (comm_state & state,
             timebuf.AT(tl) = times.AT(timelevel0 + tl);
           }
           transfer_from_innerloop
-            (bufs, timebuf, dstbox, time, order_space, order_time);
+            (bufs, timebuf, dstbox, srcbox, slabinfo,
+             time, order_space, order_time);
           for (int tl = 0; tl < ntimelevels; ++ tl) {
             delete bufs.AT(tl);
           }

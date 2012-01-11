@@ -22,6 +22,28 @@ using namespace std;
 
 
 
+// Slabbing description
+template <typename T, int D>
+struct slab {
+  vect<T,D> offset;    // dst[ipos] = src[ipos + offset * box.stride];
+};
+typedef slab<int,dim> islab;
+
+template <typename T, int D>
+ostream& operator<< (ostream& os, slab<T,D> const & slabinfo);
+
+template <typename T, int D>
+MPI_Datatype mpi_datatype (slab<T,D> const &)
+  CCTK_ATTRIBUTE_CONST;
+namespace dist {
+  template<> inline MPI_Datatype mpi_datatype<islab> ()
+  CCTK_ATTRIBUTE_CONST;
+  template<> inline MPI_Datatype mpi_datatype<islab> ()
+  { islab dummy; return mpi_datatype(dummy); }
+}
+
+
+
 // A generic data storage without type information
 class gdata {
   
@@ -154,7 +176,9 @@ public:
   void
   copy_from (comm_state & state,
              gdata const * src,
-             ibbox const & box,
+             ibbox const & dstbox,
+             ibbox const & srcbox,
+             islab const * restrict const slabinfo,
              int dstproc,
              int srcproc);
   
@@ -164,6 +188,7 @@ public:
                  vector<CCTK_REAL>     const & times,
                  ibbox const & dstbox,
                  ibbox const & srcbox,
+                 islab const * restrict const slabinfo,
                  int dstproc,
                  int srcproc,
                  CCTK_REAL time,
@@ -183,14 +208,18 @@ private:
   virtual
   void
   copy_from_innerloop (gdata const * gsrc,
-                       ibbox const & box)
+                       ibbox const & dstbox,
+                       ibbox const & srcbox,
+                       islab const * slabinfo)
     = 0;
   
   virtual
   void
   transfer_from_innerloop (vector <gdata const *> const & gsrcs,
                            vector <CCTK_REAL> const & times,
-                           ibbox const & box,
+                           ibbox const & dstbox,
+                           ibbox const & srcbox,
+                           islab const * restrict const slabinfo,
                            CCTK_REAL time,
                            int order_space,
                            int order_time)

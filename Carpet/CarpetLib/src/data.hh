@@ -103,12 +103,16 @@ private:
   
   void
   copy_from_innerloop (gdata const * gsrc,
-                       ibbox const & box);
+                       ibbox const & dstbox,
+                       ibbox const & srcbox,
+                       islab const * slabinfo);
   
   void
   transfer_from_innerloop (vector <gdata const *> const & gsrcs,
                            vector <CCTK_REAL> const & times,
-                           ibbox const & box,
+                           ibbox const & dstbox,
+                           ibbox const & srcbox,
+                           islab const * restrict const slabinfo,
                            CCTK_REAL time,
                            int order_space,
                            int order_time);
@@ -116,34 +120,42 @@ private:
   void
   transfer_time (vector <gdata const *> const & gsrcs,
                  vector <CCTK_REAL> const & times,
-                 ibbox const & box,
+                 ibbox const & dstbox,
+                 ibbox const & srcbox,
+                 islab const * restrict const slabinfo,
                  CCTK_REAL time,
                  int order_space,
                  int order_time);
   
   void
   transfer_p_r (data const * const src,
-                ibbox const & box,
+                ibbox const & dstbox,
+                ibbox const & srcbox,
+                islab const * restrict const slabinfo,
                 int order_space);
   
   void
   transfer_p_vc_cc (data const * const src,
-                    ibbox const & box,
+                    ibbox const & dstbox,
+                    ibbox const & srcbox,
                     int order_space);
   
   void
   transfer_prolongate (data const * const src,
-                       ibbox const & box,
+                       ibbox const & dstbox,
+                       ibbox const & srcbox,
                        int order_space);
   
   void
   transfer_restrict (data const * const src,
-                     ibbox const & box,
+                     ibbox const & dstbox,
+                     ibbox const & srcbox,
                      int order_space);
   
   void
   time_interpolate (vector <data *> const & srcs,
-                    ibbox const & box,
+                    ibbox const & dstbox,
+                    ibbox const & srcbox,
                     vector <CCTK_REAL> const & times,
                     CCTK_REAL time,
                     int order_time);

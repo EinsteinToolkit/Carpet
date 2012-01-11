@@ -950,8 +950,12 @@ namespace CarpetLib {
                             ivect3 const & restrict dstext,
                             ibbox3 const & restrict srcbbox,
                             ibbox3 const & restrict dstbbox,
-                            ibbox3 const & restrict regbbox)
+                            ibbox3 const & restrict,
+                            ibbox3 const & restrict regbbox,
+                            void * extraargs)
   {
+    assert (not extraargs);
+    
     static_assert (ORDER>=0, "ORDER must be non-negative");
     
     typedef typename typeprops<T>::real RT;
@@ -1274,7 +1278,6 @@ namespace CarpetLib {
   
 #define TYPECASE(N,T)                                                   \
                                                                         \
-                                                                        \
   template <>                                                           \
   void                                                                  \
   prolongate_3d_cc_eno_rf2<T,2> (T const * restrict const src,          \
@@ -1283,7 +1286,9 @@ namespace CarpetLib {
                                  ivect3 const & restrict dstext,        \
                                  ibbox3 const & restrict srcbbox,       \
                                  ibbox3 const & restrict dstbbox,       \
-                                 ibbox3 const & restrict regbbox)       \
+                                 ibbox3 const & restrict,               \
+                                 ibbox3 const & restrict regbbox,       \
+                                 void * extraargs)                      \
   {                                                                     \
     CCTK_WARN (CCTK_WARN_ABORT,                                         \
                "ENO operators are not supported for CCTK_COMPLEX");     \
@@ -1297,12 +1302,13 @@ namespace CarpetLib {
                                  ivect3 const & restrict dstext,        \
                                  ibbox3 const & restrict srcbbox,       \
                                  ibbox3 const & restrict dstbbox,       \
-                                 ibbox3 const & restrict regbbox)       \
+                                 ibbox3 const & restrict,               \
+                                 ibbox3 const & restrict regbbox,       \
+                                 void * extraargs)                      \
   {                                                                     \
     CCTK_WARN (CCTK_WARN_ABORT,                                         \
                "ENO operators are not supported for CCTK_COMPLEX");     \
-  }                                                                                                                                      
-  
+  }
 
 #define CARPET_COMPLEX
 #include "typecase.hh"
@@ -1311,37 +1317,37 @@ namespace CarpetLib {
 
 
   
-#define TYPECASE(N,T)                                               \
-                                                                    \
-                                                                    \
-  template                                                          \
-  void                                                              \
-  prolongate_3d_cc_eno_rf2<T,2> (T const * restrict const src,      \
-                                 ivect3 const & restrict srcext,    \
-                                 T * restrict const dst,            \
-                                 ivect3 const & restrict dstext,    \
-                                 ibbox3 const & restrict srcbbox,   \
-                                 ibbox3 const & restrict dstbbox,   \
-                                 ibbox3 const & restrict regbbox);  \
-                                                                    \
-                                                                    \
-  template                                                          \
-  void                                                              \
-  prolongate_3d_cc_eno_rf2<T,3> (T const * restrict const src,      \
-                                 ivect3 const & restrict srcext,    \
-                                 T * restrict const dst,            \
-                                 ivect3 const & restrict dstext,    \
-                                 ibbox3 const & restrict srcbbox,   \
-                                 ibbox3 const & restrict dstbbox,   \
-                                 ibbox3 const & restrict regbbox);  \
-                                                                    \
+#define TYPECASE(N,T)                                                   \
+                                                                        \
+  template                                                              \
+  void                                                                  \
+  prolongate_3d_cc_eno_rf2<T,2> (T const * restrict const src,          \
+                                 ivect3 const & restrict srcext,        \
+                                 T * restrict const dst,                \
+                                 ivect3 const & restrict dstext,        \
+                                 ibbox3 const & restrict srcbbox,       \
+                                 ibbox3 const & restrict dstbbox,       \
+                                 ibbox3 const & restrict,               \
+                                 ibbox3 const & restrict regbbox,       \
+                                 void * extraargs);                     \
+                                                                        \
+                                                                        \
+  template                                                              \
+  void                                                                  \
+  prolongate_3d_cc_eno_rf2<T,3> (T const * restrict const src,          \
+                                 ivect3 const & restrict srcext,        \
+                                 T * restrict const dst,                \
+                                 ivect3 const & restrict dstext,        \
+                                 ibbox3 const & restrict srcbbox,       \
+                                 ibbox3 const & restrict dstbbox,       \
+                                 ibbox3 const & restrict,               \
+                                 ibbox3 const & restrict regbbox,       \
+                                 void * extraargs);
 
 #define CARPET_NO_INT
 #define CARPET_NO_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
-
-
 
   
   
