@@ -4,6 +4,7 @@
 
 #include "bboxset.hh"
 #include "defs.hh"
+#include "mpi_string.hh"
 #include "region.hh"
 
 using namespace std;
@@ -417,4 +418,15 @@ ostream & operator<< (ostream & os, pseudoregion_t const & p)
 ostream & operator<< (ostream & os, sendrecv_pseudoregion_t const & srp)
 {
   return os << "(send:" << srp.send << ",recv:" << srp.recv << ")";
+}
+
+
+  
+namespace CarpetLib {
+  
+  template
+  vector <sendrecv_pseudoregion_t>
+  alltoallv1 (MPI_Comm comm,
+              vector <vector <sendrecv_pseudoregion_t> > const & data);
+  
 }
