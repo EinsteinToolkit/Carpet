@@ -9,9 +9,82 @@
 #include <cctk_Parameters.h>
 
 #include <carpet.hh>
+#include <mpi_string.hh>
+#include <dist.hh>
 
 using namespace std;
 using namespace Carpet;
+
+
+  
+// Divide rounding downwards (towards negative infinity)
+static int divdn(int const a, int const b)
+{
+  assert(b>0);
+  // Note: C++ division rounds towards zero
+  return a>=0 ? a/b : (a-(b-1))/b;
+}
+
+// Round downwards towards next multiple
+static int rounddn(int const a, int const b)
+{
+  assert(b>0);
+  return divdn(a, b) * b;
+}
+
+
+
+struct xferinfo_t {
+  int m;                            // map
+  sendrecv_pseudoregion_t sendrecv; // regions and components
+  islab slab;                       // slabbing offset
+};
+
+MPI_Datatype mpi_datatype(xferinfo_t const &);
+namespace dist {
+  template<> inline MPI_Datatype mpi_datatype<xferinfo_t>()
+  { xferinfo_t dummy; return mpi_datatype(dummy); }
+}
+
+MPI_Datatype
+mpi_datatype(xferinfo_t const&)
+{
+  static bool initialised = false;
+  static MPI_Datatype newtype;
+  if (not initialised) {
+    static xferinfo_t s;
+#define ENTRY(type, name)                                               \
+    {                                                                   \
+      sizeof s.name / sizeof(type), /* count elements */                \
+        (char*)&s.name - (char*)&s, /* offsetof doesn't work (why?) */  \
+        dist::mpi_datatype<type>(), /* find MPI datatype */             \
+        STRINGIFY(name), /* field name */                               \
+        STRINGIFY(type), /* type name */                                \
+        }
+    dist::mpi_struct_descr_t const descr[] = {
+      ENTRY(int, m),
+      ENTRY(sendrecv_pseudoregion_t, sendrecv),
+      ENTRY(islab, slab),
+      {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}
+    };
+#undef ENTRY
+    newtype =
+      dist::create_mpi_datatype (sizeof descr / sizeof descr[0], descr,
+                                 "xferinfo_t", sizeof s);
+    initialised = true;
+  }
+  return newtype;
+}
+
+
+
+struct levelinfo_t {
+  int regridding_epoch;
+  vector<xferinfo_t> xferinfos;
+  levelinfo_t(): regridding_epoch(-1) {}
+};
+
+static vector<levelinfo_t> levelinfos;
 
 
 
@@ -70,171 +143,187 @@ periodic_carpet(cGH const *restrict const cctkGH,
   int const rl = reflevel;
   int const tl = 0;
   
-  struct xferinfo_t {
-    int m;                            // map
-    sendrecv_pseudoregion_t sendrecv; // regions and components
-    islab slab;                       // slabbing offset
-  };
-  
-  struct levelinfo_t {
-    int regridding_epoch;
-    vector<xferinfo_t> xferinfos;
-    levelinfo_t(): regridding_epoch(-1) {}
-  };
-  
-  static vector<levelinfo_t> levelinfos;
-  
   if (reflevels >= (int)levelinfos.size()) {
     levelinfos.resize(reflevels);
   }
   levelinfo_t& levelinfo = levelinfos.at(reflevel);
+  vector<xferinfo_t>& xferinfos = levelinfo.xferinfos;
   
   // Do we need a new levelinfo? (We need a new levelinfo after each
   // regridding.)
   if (levelinfo.regridding_epoch != level_regridding_epochs.at(reflevel)) {
     levelinfo.regridding_epoch = level_regridding_epochs.at(reflevel);
-    levelinfo.xferinfos.clear();
+    xferinfos.clear();
     
     // Loop over all components and find out how to fill their
     // periodic boundaries
     BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
       
-      CCTK_INT width[2*dim];
-      CCTK_INT is_internal[2*dim];
-      CCTK_INT is_staggered[2*dim];
-      CCTK_INT shiftout[2*dim];
-      int ierr = GetBoundarySpecification
-        (2*dim, width, is_internal, is_staggered, shiftout);
-      assert(not ierr);
+      gh const& hh = *vhh.at(Carpet::map);
+      ibbox const& domain_exterior = hh.baseextent(mglevel, reflevel);
+      i2vect const& boundary_width = hh.boundary_width;
+      ibbox const domain_active = domain_exterior.expand(-boundary_width);
+      dh const& dd = *vdd.at(Carpet::map);
+      dh::light_cboxes const& light_level
+        = dd.light_boxes.AT(mglevel).AT(reflevel);
       
-      // Domain size
-      CCTK_REAL physical_min[dim];
-      CCTK_REAL physical_max[dim];
-      CCTK_REAL interior_min[dim];
-      CCTK_REAL interior_max[dim];
-      CCTK_REAL exterior_min[dim];
-      CCTK_REAL exterior_max[dim];
-      CCTK_REAL spacing[dim];
-      ierr = GetDomainSpecification(dim, 
-                                    physical_min, physical_max,
-                                    interior_min, interior_max,
-                                    exterior_min, exterior_max,
-                                    spacing);
-      assert(not ierr);
+      // CCTK_INT width[2*dim];
+      // CCTK_INT is_internal[2*dim];
+      // CCTK_INT is_staggered[2*dim];
+      // CCTK_INT shiftout[2*dim];
+      // int ierr = GetBoundarySpecification
+      //   (2*dim, width, is_internal, is_staggered, shiftout);
+      // assert(not ierr);
+      
+      // // Domain size
+      // CCTK_REAL physical_min[dim];
+      // CCTK_REAL physical_max[dim];
+      // CCTK_REAL interior_min[dim];
+      // CCTK_REAL interior_max[dim];
+      // CCTK_REAL exterior_min[dim];
+      // CCTK_REAL exterior_max[dim];
+      // CCTK_REAL spacing[dim];
+      // ierr = GetDomainSpecification(dim, 
+      //                               physical_min, physical_max,
+      //                               interior_min, interior_max,
+      //                               exterior_min, exterior_max,
+      //                               spacing);
+      // assert(not ierr);
       
       // Domain size on this level, in terms of grid points
-      ivect npoints;
-      for (int d=0; d<dim; ++d) {
-        CCTK_REAL const rnpoints =
-          (exterior_max[d] - exterior_min[d]) / spacing[d]
-          + 1 - (width[2*d] + width[2*d+1]);
-        npoints[d] = floor(rnpoints + 0.01);
-        // Ensure the domain size is integer
-        assert(fabs(npoints[d] - rnpoints) < 0.01);
-      }
+      // ivect npoints;
+      // for (int d=0; d<dim; ++d) {
+      //   CCTK_REAL const rnpoints =
+      //     (exterior_max[d] - exterior_min[d]) / spacing[d]
+      //     + 1 - (width[2*d] + width[2*d+1]);
+      //   npoints[d] = floor(rnpoints + 0.01);
+      //   // Ensure the domain size is integer
+      //   assert(fabs(npoints[d] - rnpoints) < 0.01);
+      // }
       
       BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
         DECLARE_CCTK_ARGUMENTS;
         
-        // Loop over all edges/faces/corners (26 in 3D)
-        int const nefc = prod(ivect(3));
-        for (int efc=0; efc<nefc; ++efc) {
-          ivect face;        // {-1; 0; +1} for {lower, inside, upper}
-          {
-            int efc1 = efc;
-            for (int d=0; d<dim; ++d) {
-              face[d] = efc1 % 3 - 1;
-              efc1 /= 3;
+        // Exterior of this component
+        ibbox const& ext = light_level.at(component).exterior;
+        
+        // Collect all periodic boundaries for this component
+        ibset dst_bset;
+        for (int d=0; d<dim; ++d) {
+          for (int f=0; f<2; ++f) {
+            if (cctk_bbox[2*d+f] and do_periodic[d]) {
+              // This is a periodic boundary
+              ivect lo = ext.lower();
+              ivect up = ext.upper();
+              ivect const str = ext.stride();
+              int const bnd = boundary_width[f][d];
+              if (f==0) {
+                up[d] = lo[d] + (bnd-1) * str[d];
+              } else {
+                lo[d] = up[d] - (bnd-1) * str[d];
+              }
+              ibbox const dst_bbox(lo, up, str);
+              assert(dst_bbox.shape()[d] == bnd);
+              dst_bset |= dst_bbox;
             }
-            assert(efc1==0);
           }
+        }
+        
+        // Determine the source bboxes
+        while (not dst_bset.empty()) {
           
-          // Does this efc have a periodic symmetry?
-          bool have_periodic_face = false;
+          // Pick one (arbitrary) dst_bbox
+          ibbox const& dst_bbox1 = *dst_bset.begin();
+          
+          // Find the slabbing offset (a multiple of the domain size)
+          // that moves dst_bbox1 into the domain
+          islab slab;
           for (int d=0; d<dim; ++d) {
-            if (face[d] !=0 ) {
-              int const f = face[d]>0;
-              // We have a periodic symmetry if we have one for any
-              // face of this efc
-              have_periodic_face |= do_periodic[d] and cctk_bbox[2*d+f];
+            if (not do_periodic[d]) {
+              slab.offset[d] = 0;
+            } else {
+              assert((dst_bbox1.lower()[d] - domain_active.lower()[d]) %
+                     domain_active.stride()[d] == 0);
+              slab.offset[d] =
+                - rounddn(dst_bbox1.lower()[d] - domain_active.lower()[d],
+                        domain_active.shape()[d]) /
+                domain_active.stride()[d];
             }
           }
+          assert(not all(slab.offset == 0)); // this would be trivial
           
-          // We have a periodic efc -- treat it
-          if (have_periodic_face) {
-            
-            // Slabbing offset
-            islab slab;
-            slab.offset = -face * npoints;
-            assert(not all(slab.offset == 0)); // this would be trivial
-            
-            gh const& hh = *vhh.at(Carpet::map);
-            dh const& dd = *vdd.at(Carpet::map);
-            dh::light_cboxes const& light_level
-              = dd.light_boxes.AT(mglevel).AT(reflevel);
-            ibbox const& ext = light_level.at(component).exterior;
-            
-            // Calculate the bbox for this efc
-            ivect lo = ext.lower();
-            ivect up = ext.upper();
-            ivect const str = ext.stride();
-            for (int d=0; d<dim; ++d) {
-              switch (face[d]) {
-              case -1: up[d] = lo[d] + stencil[d] * str[d]; break;
-              case +1: lo[d] = up[d] - stencil[d] * str[d]; break;
+          // Determine corresponding source bbox
+          ibbox const src_bbox1 = dst_bbox1.shift(slab.offset);
+          
+          // Ensure we copy from within the domain, not from boundary
+          // points
+          ibbox const src_bbox = src_bbox1 & domain_active;
+          assert(not src_bbox.empty());
+          ibbox const dst_bbox = src_bbox.shift(-slab.offset);
+          assert(dst_bbox.is_contained_in(dst_bbox1));
+          dst_bset -= dst_bbox;
+          
+          // Find source components for all points
+          ibset src_bset(src_bbox);
+          for (int oc=0; oc<hh.components(reflevel); ++oc) {
+            // We cannot copy only from the interior (the "good"
+            // points), because this excludes the ghost zones, and we
+            // may need to copy from prolongation boundaries. (This
+            // assumes that synchronisation and prolongation occurs
+            // before periodic boundaries are applied!)
+            ibset const intersection =
+              src_bset & light_level.at(oc).exterior;
+            if (not intersection.empty()) {
+              src_bset -= intersection;
+              
+              // Loop over the intersection and insert respective
+              // xferinfos
+              ibset::const_iterator const ib = intersection.begin();
+              ibset::const_iterator const ie = intersection.end();
+              for (ibset::const_iterator ireg = ib; ireg != ie; ++ireg) {
+                ibbox const src_reg = *ireg;
+                ibbox const dst_reg = src_reg.shift(-slab.offset);
+                xferinfo_t xferinfo;
+                xferinfo.m = Carpet::map;
+                xferinfo.sendrecv.send.extent    = src_reg;
+                xferinfo.sendrecv.send.component = oc;
+                xferinfo.sendrecv.recv.extent    = dst_reg;
+                xferinfo.sendrecv.recv.component = component;
+                xferinfo.slab = slab;
+                xferinfos.push_back(xferinfo);
               }
             }
-            ibbox const dst_bbox(lo, up, str);
-            assert(dst_bbox.is_contained_in(ext));
-            
-            // Determine source bbox
-            ibbox const src_bbox = dst_bbox.shift(slab.offset);
-            // Ensure we copy from within the domain, not from
-            // boundary points
-            assert(src_bbox.is_contained_in(hh.baseextent(mglevel, reflevel)));
-            
-            // Find source components for all points
-            ibset src_points(src_bbox);
-            for (int oc=0; oc<hh.components(reflevel); ++oc) {
-              // We cannot copy only from the interior (the "good"
-              // points), because this excludes the ghost zones, and
-              // we may need to copy from prolongation boundaries.
-              // (This assumes that synchronisation and prolongation
-              // occurs before periodic boundaries are applied!)
-              ibset const intersection =
-                src_points & light_level.at(oc).exterior;
-              if (not intersection.empty()) {
-                src_points -= intersection;
-                
-                // Loop over the intersection and insert respective
-                // xferinfos
-                ibset::const_iterator const ib = intersection.begin();
-                ibset::const_iterator const ie = intersection.end();
-                for (ibset::const_iterator ireg = ib; ireg != ie; ++ireg) {
-                  ibbox const src_reg = *ireg;
-                  ibbox const dst_reg = src_reg.shift(-slab.offset);
-                  xferinfo_t xferinfo;
-                  xferinfo.m = Carpet::map;
-                  xferinfo.sendrecv.send.extent    = src_reg;
-                  xferinfo.sendrecv.send.component = oc;
-                  xferinfo.sendrecv.recv.extent    = dst_reg;
-                  xferinfo.sendrecv.recv.component = component;
-                  xferinfo.slab = slab;
-                  levelinfo.xferinfos.push_back(xferinfo);
-                }
-              }
-            } // for oc
-            // Ensure we know how to handle all points
-            assert(src_points.empty());
-            
-          } // if have_periodic_face
-        } // for efc
+          } // for oc
+          // Ensure we know how to handle all points
+          assert(src_bset.empty());
+          
+        } // while dst_bset
         
       } END_LOCAL_COMPONENT_LOOP;
     } END_LOCAL_MAP_LOOP;
     
     // Tell the source processes what they have to send
-    
+    {
+      int const p = dist::rank();
+      vector<vector<xferinfo_t> > sends(dist::size());
+      vector<xferinfo_t>::const_iterator const ib = xferinfos.begin();
+      vector<xferinfo_t>::const_iterator const ie = xferinfos.end();
+      for (vector<xferinfo_t>::const_iterator
+             ixferinfo = ib; ixferinfo != ie; ++ixferinfo)
+      {
+        xferinfo_t const& xferinfo = *ixferinfo;
+        gh const& hh = *vhh.at(xferinfo.m);
+        int const oc = xferinfo.sendrecv.send.component;
+        int const op = hh.processor(rl, oc);
+        if (op != p) {
+          sends.at(op).push_back(xferinfo);
+        }
+      }
+      
+      vector<xferinfo_t> const recv = alltoallv1(dist::comm(), sends);
+      
+      xferinfos.insert(xferinfos.end(), recv.begin(), recv.end());
+    }
     
   } // if need new levelinfo
   
@@ -248,8 +337,8 @@ periodic_carpet(cGH const *restrict const cctkGH,
       int const gi = CCTK_GroupIndexFromVarI(vi);
       int const v0 = CCTK_FirstVarIndexI(gi);
       
-      vector<xferinfo_t>::const_iterator const ib = levelinfo.xferinfos.begin();
-      vector<xferinfo_t>::const_iterator const ie = levelinfo.xferinfos.end();
+      vector<xferinfo_t>::const_iterator const ib = xferinfos.begin();
+      vector<xferinfo_t>::const_iterator const ie = xferinfos.end();
       for (vector<xferinfo_t>::const_iterator
              ixferinfo = ib; ixferinfo != ie; ++ixferinfo)
       {
@@ -266,13 +355,14 @@ periodic_carpet(cGH const *restrict const cctkGH,
         int const p  = hh.processor(rl, c );
         
         // Get pointers to the variable's data
-        gdata *const src = ff(tl, rl, olc, ml);
-        gdata *const dst = ff(tl, rl, lc , ml);
+        gdata *const src = hh.is_local(rl, oc) ? ff(tl, rl, olc, ml) : NULL;
+        gdata *const dst = hh.is_local(rl, c ) ? ff(tl, rl, lc , ml) : NULL;
         
         // Copy
-        ibbox const& box = xferinfo.sendrecv.recv.extent;
+        ibbox const& dstbox = xferinfo.sendrecv.recv.extent;
+        ibbox const& srcbox = xferinfo.sendrecv.send.extent;
         islab const& slab = xferinfo.slab;
-        dst->copy_from(state, src, box, &slab, p, op);
+        dst->copy_from(state, src, dstbox, srcbox, &slab, p, op);
       }
     }
   }
@@ -430,4 +520,12 @@ PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS)
   } // for n
   
   periodic_carpet(cctkGH, dim, stencil, do_periodic, &indices.front(), nvars);
+}
+
+
+  
+namespace CarpetLib {
+  template
+  vector<xferinfo_t>
+  alltoallv1(MPI_Comm comm, vector<vector<xferinfo_t> > const& data);
 }

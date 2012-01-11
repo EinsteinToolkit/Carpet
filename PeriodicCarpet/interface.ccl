@@ -5,6 +5,8 @@ IMPLEMENTS: PeriodicCarpet
 INHERITS: grid
 
 USES INCLUDE: carpet.hh
+USES INCLUDE: mpi_string.hh
+USES INCLUDE: dist.hh
 
 
 
