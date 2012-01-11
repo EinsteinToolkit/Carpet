@@ -648,7 +648,8 @@ namespace CarpetIOHDF5 {
               for (comm_state state; not state.done(); state.step()) {
                 for (size_t n=0; n<datas.size(); ++n) {
                   tmpdatas.at(n)->copy_from
-                    (state, datas.at(n), data_ext, ioproc, proc);
+                    (state, datas.at(n), data_ext, data_ext, NULL,
+                     ioproc, proc);
                 }
               }
 
