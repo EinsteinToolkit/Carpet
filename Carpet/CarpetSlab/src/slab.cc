@@ -229,7 +229,8 @@ namespace CarpetSlab {
           
           // Copy data
           int const proc = myhh->processor(reflevel, component);
-          alldata->copy_from (state, mydata, *ext_iter, collect_proc, proc);
+          alldata->copy_from
+            (state, mydata, *ext_iter, *ext_iter, NULL, collect_proc, proc);
           
         }
         
@@ -252,7 +253,9 @@ namespace CarpetSlab {
       for (comm_state state; not state.done(); state.step()) {
         for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
           if (proc != collect_proc) {
-            tmpdata.at(proc)->copy_from (state, alldata, alldata->extent(), proc, collect_proc);
+            tmpdata.at(proc)->copy_from
+              (state, alldata, alldata->extent(), alldata->extent(), NULL,
+               proc, collect_proc);
           }
         }
       }
