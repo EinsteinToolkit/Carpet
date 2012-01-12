@@ -650,12 +650,11 @@ transfer_time (vector <gdata const *> const & gsrcs,
     for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
       tmps.AT(tl) =
         new data (this->varindex, this->cent, this->transport_operator);
-      tmps.AT(tl)->allocate (srcbox, this->proc());
+      tmps.AT(tl)->allocate (dstbox, this->proc());
       
       assert (gsrcs.AT(tl));
       data const * const src = dynamic_cast <data const *> (gsrcs.AT(tl));
-      assert (not slabinfo);
-      tmps.AT(tl)->transfer_p_r (src, dstbox, srcbox, NULL, order_space);
+      tmps.AT(tl)->transfer_p_r (src, dstbox, srcbox, slabinfo, order_space);
     }
     
     time_interpolate (tmps, dstbox, dstbox, times, time, order_time);
