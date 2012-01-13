@@ -58,7 +58,7 @@ call_operator (void
 #ifndef _OPENMP
   (* the_operator)
     (src, srcext, dst, dstext, srcbbox, dstbbox,
-     srcregbbox, dstregbbox, slabinfo);
+     srcregbbox, dstregbbox, extraargs);
 #else
 #  ifdef CARPET_DEBUG
   ibset alldstregbboxes;
