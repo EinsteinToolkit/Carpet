@@ -394,7 +394,7 @@ namespace CarpetLib
     vector <T> alldata_buffer_out (total_length_out);
     
     // Exchange all data vectors
-    T const dummy;
+    T dummy;
     MPI_Datatype const type = mpi_datatype (dummy);
     int const tag = 4711;
     vector <MPI_Request> reqs (2 * num_procs);
