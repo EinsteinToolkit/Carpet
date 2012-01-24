@@ -223,7 +223,7 @@ periodic_carpet(cGH const *restrict const cctkGH,
                 lo[d] = up[d] - (bnd-1) * str[d];
               }
               ibbox const dst_bbox(lo, up, str);
-              assert(dst_bbox.shape()[d] == bnd);
+              assert(dst_bbox.shape()[d] / dst_bbox.stride()[d] == bnd);
               dst_bset |= dst_bbox;
             }
           }
@@ -355,8 +355,10 @@ periodic_carpet(cGH const *restrict const cctkGH,
         int const p  = hh.processor(rl, c );
         
         // Get pointers to the variable's data
-        gdata *const src = hh.is_local(rl, oc) ? ff(tl, rl, olc, ml) : NULL;
-        gdata *const dst = hh.is_local(rl, c ) ? ff(tl, rl, lc , ml) : NULL;
+        gdata *const src =
+          hh.is_local(rl, oc) ? ff.data_pointer(tl, rl, olc, ml) : NULL;
+        gdata *const dst =
+          hh.is_local(rl, c ) ? ff.data_pointer(tl, rl, lc , ml) : NULL;
         
         // Copy
         ibbox const& dstbox = xferinfo.sendrecv.recv.extent;
