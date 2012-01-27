@@ -25,6 +25,7 @@ using namespace std;
 // Slabbing description
 template <typename T, int D>
 struct slab {
+  slab() {};
   vect<T,D> offset;    // dst[ipos] = src[ipos + offset * box.stride];
 };
 typedef slab<int,dim> islab;
