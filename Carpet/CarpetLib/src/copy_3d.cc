@@ -37,17 +37,24 @@ namespace CarpetLib {
            ivect3 const & restrict dstext,
            ibbox3 const & restrict srcbbox,
            ibbox3 const & restrict dstbbox,
-           ibbox3 const & restrict regbbox)
+           ibbox3 const & restrict srcregbbox1,
+           ibbox3 const & restrict dstregbbox,
+           void * extraargs)
   {
-    if (any (srcbbox.stride() != regbbox.stride() or
-             dstbbox.stride() != regbbox.stride()))
+    islab const * restrict const slabinfo =
+      static_cast<islab const *> (extraargs);
+    
+    if (any (srcbbox.stride() != dstregbbox.stride() or
+             dstbbox.stride() != dstregbbox.stride() or
+             srcregbbox1.stride() != dstregbbox.stride()))
     {
 #pragma omp critical
       {
         cout << "copy_3d.cc:" << endl
              << "srcbbox=" << srcbbox << endl
              << "dstbbox=" << dstbbox << endl
-             << "regbbox=" << regbbox << endl;
+             << "srcregbbox=" << srcregbbox1 << endl
+             << "dstregbbox=" << dstregbbox << endl;
         CCTK_WARN (0, "Internal error: strides disagree");
       }
     }
@@ -58,20 +65,30 @@ namespace CarpetLib {
     
     // This could be handled, but is likely to point to an error
     // elsewhere
-    if (regbbox.empty()) {
+    if (dstregbbox.empty()) {
 #pragma omp critical
       CCTK_WARN (0, "Internal error: region extent is empty");
     }
     
-    if (not regbbox.is_contained_in(srcbbox) or
-        not regbbox.is_contained_in(dstbbox))
+    ibbox const srcregbbox =
+      slabinfo ? dstregbbox.shift(slabinfo->offset) : dstregbbox;
+    assert (srcregbbox.is_contained_in(srcregbbox1));
+    
+    assert(all(srcregbbox.shape() == dstregbbox.shape()));
+    
+    if (not srcregbbox.is_contained_in(srcbbox) or
+        not dstregbbox.is_contained_in(dstbbox))
     {
 #pragma omp critical
       {
         cout << "copy_3d.cc:" << endl
              << "srcbbox=" << srcbbox << endl
              << "dstbbox=" << dstbbox << endl
-             << "regbbox=" << regbbox << endl;
+             << "srcregbbox=" << srcregbbox << endl
+             << "dstregbbox=" << dstregbbox << endl;
+        if (slabinfo) {
+          cout << "slabinfo=" << *slabinfo << endl;
+        }
         CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
       }
     }
@@ -85,11 +102,11 @@ namespace CarpetLib {
     
     
     
-    ivect3 const regext = regbbox.shape() / regbbox.stride();
-    assert (all ((regbbox.lower() - srcbbox.lower()) % srcbbox.stride() == 0));
-    ivect3 const srcoff = (regbbox.lower() - srcbbox.lower()) / srcbbox.stride();
-    assert (all ((regbbox.lower() - dstbbox.lower()) % dstbbox.stride() == 0));
-    ivect3 const dstoff = (regbbox.lower() - dstbbox.lower()) / dstbbox.stride();
+    ivect3 const regext = dstregbbox.shape() / dstregbbox.stride();
+    assert (all ((srcregbbox.lower() - srcbbox.lower()) % srcbbox.stride() == 0));
+    ivect3 const srcoff = (srcregbbox.lower() - srcbbox.lower()) / srcbbox.stride();
+    assert (all ((dstregbbox.lower() - dstbbox.lower()) % dstbbox.stride() == 0));
+    ivect3 const dstoff = (dstregbbox.lower() - dstbbox.lower()) / dstbbox.stride();
     
     
     
@@ -145,7 +162,9 @@ namespace CarpetLib {
            ivect3 const & restrict dstext,      \
            ibbox3 const & restrict srcbbox,     \
            ibbox3 const & restrict dstbbox,     \
-           ibbox3 const & restrict regbbox);
+           ibbox3 const & restrict srcregbbox,  \
+           ibbox3 const & restrict dstregbbox,  \
+           void * extraargs);
 #include "typecase.hh"
 #undef TYPECASE
   

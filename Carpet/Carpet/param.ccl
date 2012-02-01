@@ -308,6 +308,11 @@ BOOLEAN check_for_poison "Explicitely check for the poison value after every tim
 {
 } "no"
 
+CCTK_INT poison_value "UNUSED; use CarpetLib::poison_value instead" STEERABLE=always
+{
+  * :: ""
+} 0
+
 CCTK_INT max_poison_locations "Maximum number of poison locations that are printed to the screen" STEERABLE=always
 {
   -1  :: "print all locations"
@@ -459,6 +464,15 @@ CCTK_INT granularity_boundary "When splitting components, assume this many bound
 {
   0:* :: "TODO: use CoordBase's number of boundary points for this"
 } 0
+
+CCTK_REAL ghost_zone_cost "Relative cost of ghost zones for 'recursive' load balancing" STEERABLE=always
+{
+  0:* :: ""
+} 0.025
+
+BOOLEAN same_number_of_components_on_each_process "Ensure that each process has the same number of components, adding empty dummy components if necessary" STEERABLE=always
+{
+} "yes"
 
 
 

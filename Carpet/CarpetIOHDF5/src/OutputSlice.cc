@@ -648,7 +648,8 @@ namespace CarpetIOHDF5 {
               for (comm_state state; not state.done(); state.step()) {
                 for (size_t n=0; n<datas.size(); ++n) {
                   tmpdatas.at(n)->copy_from
-                    (state, datas.at(n), data_ext, ioproc, proc);
+                    (state, datas.at(n), data_ext, data_ext, NULL,
+                     ioproc, proc);
                 }
               }
 
@@ -1420,10 +1421,22 @@ namespace CarpetIOHDF5 {
         datasetname.append (datasetname_suffix.str());
   
         // remove an already existing dataset of the same name
-        if (slice_requests.at(vi + n)->check_exist) {
+        ioRequest* request = slice_requests.at(vi + n);
+        if (not request) {
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
+        request = IOUtil_DefaultIORequest (cctkGH, vi + n, 1, -1.0);
+#else
+        request = IOUtil_DefaultIORequest (cctkGH, vi + n, 1);
+#endif
+        }
+        if (request->check_exist) {
           H5E_BEGIN_TRY {
             H5Gunlink(file, datasetname.c_str());
           } H5E_END_TRY;
+        }
+        // free I/O request structure
+        if (request != slice_requests.at(vi + n)) {
+          IOUtil_FreeIORequest (&request);
         }
 
         // write the dataset
@@ -1516,10 +1529,22 @@ namespace CarpetIOHDF5 {
         datasetname.append (datasetname_suffix.str());
 
         // remove an already existing dataset of the same name
-        if (slice_requests[vi + n]->check_exist) {
+        ioRequest* request = slice_requests.at(vi + n);
+        if (not request) {
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
+        request = IOUtil_DefaultIORequest (cctkGH, vi + n, 1, -1.0);
+#else
+        request = IOUtil_DefaultIORequest (cctkGH, vi + n, 1);
+#endif
+        }
+        if (request->check_exist) {
           H5E_BEGIN_TRY {
             H5Gunlink(file, datasetname.c_str());
           } H5E_END_TRY;
+        }
+        // free I/O request structure
+        if (request != slice_requests.at(vi + n)) {
+          IOUtil_FreeIORequest (&request);
         }
 
         // write the dataset

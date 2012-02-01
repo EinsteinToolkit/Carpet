@@ -23,7 +23,7 @@ CarpetRegrid::gridpoints        = "[[ ([28,4,4]:[68,12,12]:[2,2,2]) ]]"
 CarpetRegrid::outerbounds       = "[[ [[0,0],[1,1],[1,1]] ]]"
 
 NaNChecker::check_every     = 16
-NaNChecker::check_vars      = "all"
+NaNChecker::check_vars      = "wavetoymol::phi wavetoymol::psi"
 NaNChecker::action_if_found = "terminate"
 
 Grid::domain = full
@@ -41,7 +41,7 @@ Time::dtfac = 0.25
 
 MoL::ODE_Method = "ICN"
 
-IO::out_dir       = $parfilename
+IO::out_dir       = $parfile
 IO::out_fileinfo  = "none"
 IO::parfile_write = "no"
 IO::out_every     = 1

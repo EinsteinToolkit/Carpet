@@ -232,83 +232,92 @@ namespace CarpetLib {
 #endif
         typedef vecprops<T> VP;
         typedef typename VP::vector_t VT;
-        assert (coeffs::ncoeffs % VP::size() == 0);
         ptrdiff_t i = coeffs::imin;
-        VT vres =
-          VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                  VP::loadu(interp0<T,ORDER> (p + i)));
-#if defined(__INTEL_COMPILER)
-        // Unroll the loop manually to help the Intel compiler
-        // (This manual unrolling hurts with other compilers, e.g. PGI)
-        assert (coeffs::ncoeffs / VP::size() <= 12);
-        switch (coeffs::ncoeffs / VP::size()) {
-          // Note that all case statements fall through
-        case 12:
-          i += VP::size();
-          vres = VP::add(vres,
-                         VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                 VP::loadu(interp0<T,ORDER> (p + i))));
-        case 11:
-          i += VP::size();
-          vres = VP::add(vres,
-                         VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                 VP::loadu(interp0<T,ORDER> (p + i))));
-        case 10:
-          i += VP::size();
-          vres = VP::add(vres,
-                         VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                 VP::loadu(interp0<T,ORDER> (p + i))));
-        case 9:
-          i += VP::size();
-          vres = VP::add(vres,
-                         VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                 VP::loadu(interp0<T,ORDER> (p + i))));
-        case 8:
-          i += VP::size();
-          vres = VP::add(vres,
-                         VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                 VP::loadu(interp0<T,ORDER> (p + i))));
-        case 7:
-          i += VP::size();
-          vres = VP::add(vres,
-                         VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                 VP::loadu(interp0<T,ORDER> (p + i))));
-        case 6:
-          i += VP::size();
-          vres = VP::add(vres,
-                         VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                 VP::loadu(interp0<T,ORDER> (p + i))));
-        case 5:
-          i += VP::size();
-          vres = VP::add(vres,
-                         VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                 VP::loadu(interp0<T,ORDER> (p + i))));
-        case 4:
-          i += VP::size();
-          vres = VP::add(vres,
-                         VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                 VP::loadu(interp0<T,ORDER> (p + i))));
-        case 3:
-          i += VP::size();
-          vres = VP::add(vres,
-                         VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                 VP::loadu(interp0<T,ORDER> (p + i))));
-        case 2:
-          i += VP::size();
-          vres = VP::add(vres,
-                         VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                 VP::loadu(interp0<T,ORDER> (p + i))));
-        }
-#else
-        for (i += VP::size(); i < coeffs::imax; i += VP::size()) {
-          vres = VP::add(vres,
-                         VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                 VP::loadu(interp0<T,ORDER> (p + i))));
-        }
-#endif
         T res = typ::fromreal (0);
-        for (int d=0; d<VP::size(); ++d) {
-          res += VP::elt(vres,d);
+        if (coeffs::ncoeffs >= VP::size()) {
+          VT vres =
+            VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                    VP::loadu(interp0<T,ORDER> (p + i)));
+          i += VP::size();
+#if defined(__INTEL_COMPILER)
+          // Unroll the loop manually to help the Intel compiler
+          // (This manual unrolling hurts with other compilers, e.g. PGI)
+          assert (coeffs::ncoeffs / VP::size() <= 12);
+          switch (coeffs::ncoeffs / VP::size()) {
+            // Note that all case statements fall through
+          case 12:
+            vres = VP::add(vres,
+                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            i += VP::size();
+          case 11:
+            vres = VP::add(vres,
+                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            i += VP::size();
+          case 10:
+            vres = VP::add(vres,
+                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            i += VP::size();
+          case 9:
+            vres = VP::add(vres,
+                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            i += VP::size();
+          case 8:
+            vres = VP::add(vres,
+                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            i += VP::size();
+          case 7:
+            vres = VP::add(vres,
+                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            i += VP::size();
+          case 6:
+            vres = VP::add(vres,
+                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            i += VP::size();
+          case 5:
+            vres = VP::add(vres,
+                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            i += VP::size();
+          case 4:
+            vres = VP::add(vres,
+                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            i += VP::size();
+          case 3:
+            vres = VP::add(vres,
+                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            i += VP::size();
+          case 2:
+            vres = VP::add(vres,
+                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            i += VP::size();
+          }
+#else
+          for (; i + VP::size() <= coeffs::imax; i += VP::size()) {
+            vres = VP::add(vres,
+                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
+                                   VP::loadu(interp0<T,ORDER> (p + i))));
+          }
+#endif
+          for (int d=0; d<VP::size(); ++d) {
+            res += VP::elt(vres,d);
+          }
+        }
+        assert (i == coeffs::imax - coeffs::ncoeffs % VP::size());
+        for (i = coeffs::imax - coeffs::ncoeffs % VP::size();
+             i < coeffs::imax;
+             ++ i)
+        {
+          res += coeffs::get(i) * interp0<T,ORDER> (p + i*d1);
         }
         return res;
       } else {
@@ -330,7 +339,8 @@ namespace CarpetLib {
            size_t const d1,
            size_t const d2)
   {
-    typedef typename typeprops<T>::real RT;
+    typedef typeprops<T> typ;
+    typedef typename typ::real RT;
     typedef coeffs1d<RT,ORDER> coeffs;
     if (dj == 0) {
       return interp1<T,ORDER,di> (p, d1);
@@ -352,7 +362,8 @@ namespace CarpetLib {
            size_t const d2,
            size_t const d3)
   {
-    typedef typename typeprops<T>::real RT;
+    typedef typeprops<T> typ;
+    typedef typename typ::real RT;
     typedef coeffs1d<RT,ORDER> coeffs;
     if (dk == 0) {
       return interp2<T,ORDER,di,dj> (p, d1, d2);
@@ -454,8 +465,12 @@ namespace CarpetLib {
                      ivect3 const & restrict dstext,
                      ibbox3 const & restrict srcbbox,
                      ibbox3 const & restrict dstbbox,
-                     ibbox3 const & restrict regbbox)
+                     ibbox3 const & restrict,
+                     ibbox3 const & restrict regbbox,
+                     void * extraargs)
   {
+    assert (not extraargs);
+    
     static_assert (ORDER>=0 and ORDER % 2 == 1,
                    "ORDER must be non-negative and odd");
     
@@ -778,7 +793,9 @@ namespace CarpetLib {
                           ivect3 const & restrict dstext,       \
                           ibbox3 const & restrict srcbbox,      \
                           ibbox3 const & restrict dstbbox,      \
-                          ibbox3 const & restrict regbbox);     \
+                          ibbox3 const & restrict,              \
+                          ibbox3 const & restrict regbbox,      \
+                          void * extraargs);                    \
                                                                 \
   template                                                      \
   void                                                          \
@@ -788,7 +805,9 @@ namespace CarpetLib {
                           ivect3 const & restrict dstext,       \
                           ibbox3 const & restrict srcbbox,      \
                           ibbox3 const & restrict dstbbox,      \
-                          ibbox3 const & restrict regbbox);     \
+                          ibbox3 const & restrict,              \
+                          ibbox3 const & restrict regbbox,      \
+                          void * extraargs);                    \
                                                                 \
   template                                                      \
   void                                                          \
@@ -798,7 +817,9 @@ namespace CarpetLib {
                           ivect3 const & restrict dstext,       \
                           ibbox3 const & restrict srcbbox,      \
                           ibbox3 const & restrict dstbbox,      \
-                          ibbox3 const & restrict regbbox);     \
+                          ibbox3 const & restrict,              \
+                          ibbox3 const & restrict regbbox,      \
+                          void * extraargs);                    \
                                                                 \
   template                                                      \
   void                                                          \
@@ -808,7 +829,9 @@ namespace CarpetLib {
                           ivect3 const & restrict dstext,       \
                           ibbox3 const & restrict srcbbox,      \
                           ibbox3 const & restrict dstbbox,      \
-                          ibbox3 const & restrict regbbox);     \
+                          ibbox3 const & restrict,              \
+                          ibbox3 const & restrict regbbox,      \
+                          void * extraargs);                    \
                                                                 \
   template                                                      \
   void                                                          \
@@ -818,7 +841,9 @@ namespace CarpetLib {
                           ivect3 const & restrict dstext,       \
                           ibbox3 const & restrict srcbbox,      \
                           ibbox3 const & restrict dstbbox,      \
-                          ibbox3 const & restrict regbbox);     \
+                          ibbox3 const & restrict,              \
+                          ibbox3 const & restrict regbbox,      \
+                          void * extraargs);                    \
                                                                 \
   template                                                      \
   void                                                          \
@@ -828,7 +853,9 @@ namespace CarpetLib {
                            ivect3 const & restrict dstext,      \
                            ibbox3 const & restrict srcbbox,     \
                            ibbox3 const & restrict dstbbox,     \
-                           ibbox3 const & restrict regbbox);
+                           ibbox3 const & restrict,             \
+                           ibbox3 const & restrict regbbox,     \
+                           void * extraargs);
 
 #include "typecase.hh"
 #undef TYPECASE

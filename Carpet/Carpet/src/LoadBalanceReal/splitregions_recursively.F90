@@ -3,7 +3,9 @@
 subroutine splitregions_recursively ( &
      cxx_superregs, nsuperregs, &
      cxx_regs, &
-     nprocs)
+     nprocs, &
+     ghostsize_, alpha_, limit_size_, granularity_, granularity_boundary_, &
+     procid_)
   use carpet_boxtypes
   implicit none
   
@@ -11,6 +13,12 @@ subroutine splitregions_recursively ( &
   CCTK_POINTER, intent(in) :: cxx_superregs
   CCTK_POINTER, intent(in) :: cxx_regs
   integer,      intent(in) :: nprocs
+  integer,      intent(in) :: ghostsize_
+  CCTK_REAL,    intent(in) :: alpha_
+  integer,      intent(in) :: limit_size_
+  CCTK_INT,     intent(in) :: granularity_
+  CCTK_INT,     intent(in) :: granularity_boundary_
+  integer,      intent(in) :: procid_
   
   type(ptr), allocatable :: sregions(:)
   type(boundary)         :: outbound
@@ -69,6 +77,16 @@ subroutine splitregions_recursively ( &
   
   
   
+  ! Set global parameters
+  ghostsize            = ghostsize_
+  alpha                = alpha_
+  limit_size           = limit_size_ /= 0
+  granularity          = granularity_
+  granularity_boundary = granularity_boundary_
+  procid               = procid_
+  
+  
+  
   outbound%obound(:,:) = 1
   allocate (sregions(nsuperregs))
   do i=1, nsuperregs
@@ -93,7 +111,9 @@ subroutine splitregions_recursively ( &
 contains
   
   recursive subroutine insert_region (sreg, cxx_tree, cxx_regs)
-    type(superregion2), pointer, intent(in)  :: sreg
+!   The intent has been removed to make it compile with gfortran 4.1.
+!    type(superregion2), pointer, intent(in)  :: sreg
+    type(superregion2), pointer  :: sreg
     CCTK_POINTER,                intent(in)  :: cxx_regs
     CCTK_POINTER,                intent(out) :: cxx_tree
     

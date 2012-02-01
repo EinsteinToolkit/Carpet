@@ -229,6 +229,28 @@ void CarpetIOHDF5_TerminationCheckpoint (CCTK_ARGUMENTS)
 }
 
 
+CCTK_INT CarpetIOHDF5_SetCheckpointGroups (CCTK_INT const * const groups,
+                                           CCTK_INT const ngroups)
+{
+  if (ngroups == -1) {
+    // Checkpoint all groups
+    groups_to_checkpoint.clear();
+  } else {
+    assert (ngroups >= 0);
+    groups_to_checkpoint.resize(CCTK_NumGroups());
+    for (int n=0; n<CCTK_NumGroups(); ++n) {
+      groups_to_checkpoint.at(n) = false;
+    }
+    for (int n=0; n<ngroups; ++n) {
+      groups_to_checkpoint.at(groups[n]) = true;
+    }
+  }
+  return 0;
+}
+
+vector<bool> groups_to_checkpoint;
+
+
 hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
                            int cctk_type, bool single_precision)
 {
@@ -938,9 +960,16 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
       }
 
       for (int group = CCTK_NumGroups () - 1; group >= 0; group--) {
+        /* skip variables which have been disabled for checkpointing */
+        if (not groups_to_checkpoint.empty() and
+            not groups_to_checkpoint.at(group))
+        {
+          continue;
+        }
         /* only dump groups which have storage assigned */
         if (CCTK_QueryGroupStorageI (cctkGH, group) <= 0 or
-          CCTK_NumVarsInGroupI(group) == 0) {
+            CCTK_NumVarsInGroupI(group) == 0)
+        {
           continue;
         }
 

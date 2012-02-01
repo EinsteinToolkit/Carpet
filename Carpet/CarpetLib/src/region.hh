@@ -30,6 +30,9 @@ struct region_t {
   // For regridding
   CCTK_REAL load () const;
   region_t split (CCTK_REAL ratio_new_over_old);
+  
+  // Output processor decomposition? (Off by default.)
+  static bool full_output;
 };
 
 
@@ -57,6 +60,7 @@ size_t memoryof (region_t const & reg) CCTK_ATTRIBUTE_PURE;
 
 istream & operator>> (istream & is, region_t       & reg);
 ostream & operator<< (ostream & os, region_t const & reg);
+void fulloutput (ostream & os, region_t const & reg);
 
 
 

@@ -4,6 +4,7 @@
 
 #include "bboxset.hh"
 #include "defs.hh"
+#include "mpi_string.hh"
 #include "region.hh"
 
 using namespace std;
@@ -276,6 +277,8 @@ operator>> (istream & is, region_t & reg)
 
 
 
+bool region_t::full_output = false;
+
 ostream &
 operator<< (ostream & os, region_t const & reg)
 {
@@ -283,7 +286,17 @@ operator<< (ostream & os, region_t const & reg)
      << "extent=" << reg.extent << ","
      << "outer_boundaries=" << reg.outer_boundaries << ","
      << "map=" << reg.map << ","
-     << "processor=" << reg.processor << ")";
+     << "processor=" << reg.processor;
+  if (region_t::full_output) {
+    os << ","
+       << "processors=";
+    if (reg.processors) {
+      os << *reg.processors;
+    } else {
+      os << "NULL";
+    }
+  }
+  os << ")";
   return os;
 }
 
@@ -405,4 +418,15 @@ ostream & operator<< (ostream & os, pseudoregion_t const & p)
 ostream & operator<< (ostream & os, sendrecv_pseudoregion_t const & srp)
 {
   return os << "(send:" << srp.send << ",recv:" << srp.recv << ")";
+}
+
+
+  
+namespace CarpetLib {
+  
+  template
+  vector <sendrecv_pseudoregion_t>
+  alltoallv1 (MPI_Comm comm,
+              vector <vector <sendrecv_pseudoregion_t> > const & data);
+  
 }

@@ -11,32 +11,27 @@
 
 
 
-static inline
-int
-imin (int const a, int const b)
-{
-  return a < b ? a : b;
-}
+#define debug_assert assert
 
-static inline
-int
-imax (int const a, int const b)
-{
-  return a > b ? a : b;
-}
+
 
 static
 double
 drand (void)
 {
-  return rand() / (RAND_MAX + 1.0);
+  double const r = rand() / (RAND_MAX + 1.0);
+  assert (r >= 0.0 && r < 1.0);
+  return r;
 }
 
 static
 int
 irand (int const imaxval)
 {
-  return rand() / (RAND_MAX + 1.0) * imaxval;
+  assert (imaxval >= 0);
+  int const i = drand() * imaxval;
+  assert (i >= 0 && i < imaxval);
+  return i;
 }
 
 
@@ -169,7 +164,7 @@ lc_hill_init (lc_statset_t * restrict const ls,
  search:;
   
   /* Look which neighbours exist. */
-  typedef enum { nb_boundary, nb_missing, nb_exists } neighbour_t;
+  /* typedef enum { nb_boundary, nb_missing, nb_exists } neighbour_t; */
   /* neighbour_t  neighbours[3][2]; */
   lc_state_t   nb_state[3][2];
   double       nb_time[3][2];
@@ -181,16 +176,20 @@ lc_hill_init (lc_statset_t * restrict const ls,
     for (int f=0; f<2; ++f) {
       nb_state[d][f] = lh->state;
       nb_state[d][f].tiling[d] += f ? + 1: -1;
+      debug_assert (nb_state[d][f].topology >= 0);
+      debug_assert (nb_state[d][f].topology < ls->ntopologies);
       int const ntilings = ls->topology_ntilings[d][nb_state[d][f].topology];
       if (nb_state[d][f].tiling[d] < 0 ||
           nb_state[d][f].tiling[d] >= ntilings)
       {
         /* neighbours[d][f] = nb_boundary; */
+        /* do nothing */
       } else {
         lc_stattime_t const * restrict const nb_lt =
           lc_stattime_find (ls, & nb_state[d][f]);
         if (! nb_lt) {
           /* neighbours[d][f] = nb_missing; */
+          debug_assert (num_nonexist_states < 6);
           nb_nonexist_state[num_nonexist_states++] = & nb_state[d][f];
         } else {
           /* neighbours[d][f] = nb_exists; */
@@ -257,11 +256,14 @@ lc_hill_init (lc_statset_t * restrict const ls,
           /* Change the tiling a bit, but keep the topology */
           for (int d=0; d<3; ++d) {
             int const i0 =
-              imax (try_state.tiling[d] - small_jump_distance, 0);
+              lc_max (try_state.tiling[d] - small_jump_distance, 0);
             int const i1 =
-              imin (try_state.tiling[d] + small_jump_distance + 1,
-                    ls->topology_ntilings[d][try_state.topology]);
+              lc_min (try_state.tiling[d] + small_jump_distance + 1,
+                      ls->topology_ntilings[d][try_state.topology]);
             try_state.tiling[d] = i0 + irand (i1 - i0);
+            debug_assert (try_state.tiling[d] >= 0);
+            debug_assert (try_state.tiling[d] <
+                          ls->topology_ntilings[d][try_state.topology]);
           }
         }
         if (! lc_stattime_find (ls, & try_state)) {

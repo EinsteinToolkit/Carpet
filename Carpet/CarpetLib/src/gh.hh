@@ -53,6 +53,8 @@ public:				// should be readonly
 private:
   vector<vector<int> > global_components_; // [rl][lc]
   vector<vector<int> > local_components_;  // [rl][c]
+  vector<vector<int> > old_global_components_; // [rl][lc]
+  vector<vector<int> > old_local_components_;  // [rl][c]
 public:
   
   // Extents of the regions before distributing them over the
@@ -137,9 +139,18 @@ public:
     return processor(rl,c) == dist::rank();
   }
   
-  int local_components (int rl) const CCTK_ATTRIBUTE_PURE;
-  int get_component (int rl, int lc) const CCTK_ATTRIBUTE_PURE;
-  int get_local_component (int rl, int c) const CCTK_ATTRIBUTE_PURE;
+  int local_components (int rl) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  int get_component (int rl, int lc) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  int get_local_component (int rl, int c) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  
+  bool old_is_local (const int rl, const int c) const CCTK_MEMBER_ATTRIBUTE_PURE
+  {
+    return old_processor(rl,c) == dist::rank();
+  }
+  
+  int old_local_components (int rl) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  int get_old_component (int rl, int lc) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  int get_old_local_component (int rl, int c) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
 #if 0
   // Convert between index positions and coordinate positions

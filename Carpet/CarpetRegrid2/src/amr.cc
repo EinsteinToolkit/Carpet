@@ -132,19 +132,27 @@ namespace CarpetRegrid2 {
                         (bind+1) * block_size - block_offset - lbnd + overlap);
                   
                   bool refine = false;
+                  bool have_nan = false;
                   
                   // Loop over all points in this block
                   for (int k=bimin[2]; k<bimax[2]; ++k) {
                     for (int j=bimin[1]; j<bimax[1]; ++j) {
                       for (int i=bimin[0]; i<bimax[0]; ++i) {
                         int const ind3d = CCTK_GFINDEX3D(cctkGH, i,j,k);
-                        refine = refine or level_mask[ind3d] >= rl;
+                        if (not isnan(level_mask[ind3d])) {
+                          refine = refine or level_mask[ind3d] >= rl;
+                        } else {
+                          have_nan = true;
+                        }
                       }
                     }
                   }
                   
                   // Refine this block if any point in this block requires
                   // refinement
+                  if (have_nan) {
+                    cout << "      *** found nan in block " << bind << " ***\n";
+                  }
                   if (refine) {
                     if (veryverbose) {
                       cout << "      refining block " << bind << "\n";

@@ -135,8 +135,12 @@ namespace CarpetLib {
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
-                      ibbox3 const & restrict regbbox)
+                      ibbox3 const & restrict,
+                      ibbox3 const & restrict regbbox,
+                      void * extraargs)
   {
+    assert (not extraargs);
+    
     DECLARE_CCTK_PARAMETERS;
     
     typedef typename typeprops<T>::real RT;
@@ -254,7 +258,9 @@ namespace CarpetLib {
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
-                               ibbox3 const & restrict regbbox);        \
+                               ibbox3 const & restrict,                 \
+                               ibbox3 const & restrict regbbox,         \
+                               void * extraargs);                       \
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,0,0,1> (T const * restrict const src,            \
@@ -263,7 +269,9 @@ namespace CarpetLib {
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
-                               ibbox3 const & restrict regbbox);        \
+                               ibbox3 const & restrict,                 \
+                               ibbox3 const & restrict regbbox,         \
+                               void * extraargs);                       \
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,0,1,0> (T const * restrict const src,            \
@@ -272,7 +280,9 @@ namespace CarpetLib {
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
-                               ibbox3 const & restrict regbbox);        \
+                               ibbox3 const & restrict,                 \
+                               ibbox3 const & restrict regbbox,         \
+                               void * extraargs);                       \
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,0,1,1> (T const * restrict const src,            \
@@ -281,7 +291,9 @@ namespace CarpetLib {
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
-                               ibbox3 const & restrict regbbox);        \
+                               ibbox3 const & restrict,                 \
+                               ibbox3 const & restrict regbbox,         \
+                               void * extraargs);                       \
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,1,0,0> (T const * restrict const src,            \
@@ -290,7 +302,9 @@ namespace CarpetLib {
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
-                               ibbox3 const & restrict regbbox);        \
+                               ibbox3 const & restrict,                 \
+                               ibbox3 const & restrict regbbox,         \
+                               void * extraargs);                       \
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,1,0,1> (T const * restrict const src,            \
@@ -299,7 +313,9 @@ namespace CarpetLib {
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
-                               ibbox3 const & restrict regbbox);        \
+                               ibbox3 const & restrict,                 \
+                               ibbox3 const & restrict regbbox,         \
+                               void * extraargs);                       \
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,1,1,0> (T const * restrict const src,            \
@@ -308,7 +324,9 @@ namespace CarpetLib {
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
-                               ibbox3 const & restrict regbbox);        \
+                               ibbox3 const & restrict,                 \
+                               ibbox3 const & restrict regbbox,         \
+                               void * extraargs);                       \
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,1,1,1> (T const * restrict const src,            \
@@ -317,7 +335,9 @@ namespace CarpetLib {
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
-                               ibbox3 const & restrict regbbox);
+                               ibbox3 const & restrict,                 \
+                               ibbox3 const & restrict regbbox,         \
+                               void * extraargs);
 #include "typecase.hh"
 #undef TYPECASE
   

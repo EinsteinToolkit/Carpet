@@ -13,26 +13,40 @@ using namespace std;
 
 
 
+#define SKIP_NORMALIZE(s) skip_normalize_t skip_normalize_v(s)
+// #define SKIP_NORMALIZE(s) do { } while(0)
+
+
+
 // Constructors
 template<typename T, int D>
-bboxset<T,D>::bboxset () {
+bboxset<T,D>::bboxset ()
+  : skip_normalize(false)
+{
   assert (invariant());
 }
 
 template<typename T, int D>
-bboxset<T,D>::bboxset (const box& b) {
-  //S if (!b.empty()) bs.insert(b);
-  if (!b.empty()) bs.push_back(b);
+bboxset<T,D>::bboxset (const box& b)
+  : skip_normalize(false)
+{
+  //S if (not b.empty()) bs.insert(b);
+  if (not b.empty()) bs.push_back(b);
   assert (invariant());
 }
 
 template<typename T, int D>
-bboxset<T,D>::bboxset (const bboxset& s): bs(s.bs) {
+bboxset<T,D>::bboxset (const bboxset& s)
+  : bs(s.bs), skip_normalize(false)
+{
   assert (invariant());
 }
 
 template<typename T, int D>
-bboxset<T,D>::bboxset (const list<box>& lb) {
+bboxset<T,D>::bboxset (const list<box>& lb)
+  : skip_normalize(false)
+{
+  SKIP_NORMALIZE(*this);
   for (typename list<box>::const_iterator
          li = lb.begin(); li != lb.end(); ++ li)
   {
@@ -41,7 +55,22 @@ bboxset<T,D>::bboxset (const list<box>& lb) {
 }
 
 template<typename T, int D>
-bboxset<T,D>::bboxset (const vector<list<box> >& vlb) {
+bboxset<T,D>::bboxset (const vector<box>& lb)
+  : skip_normalize(false)
+{
+  SKIP_NORMALIZE(*this);
+  for (typename vector<box>::const_iterator
+         vi = lb.begin(); vi != lb.end(); ++ vi)
+  {
+    *this |= *vi;
+  }
+}
+
+template<typename T, int D>
+bboxset<T,D>::bboxset (const vector<list<box> >& vlb)
+  : skip_normalize(false)
+{
+  SKIP_NORMALIZE(*this);
   for (typename vector<list<box> >::const_iterator
          vli = vlb.begin(); vli != vlb.end(); ++ vli)
   {
@@ -51,7 +80,10 @@ bboxset<T,D>::bboxset (const vector<list<box> >& vlb) {
 
 template<typename T, int D>
 template<typename U>
-bboxset<T,D>::bboxset (const vector<U>& vb, const bbox<T,D> U::* const v) {
+bboxset<T,D>::bboxset (const vector<U>& vb, const bbox<T,D> U::* const v)
+  : skip_normalize(false)
+{
+  SKIP_NORMALIZE(*this);
   for (typename vector<U>::const_iterator
          vi = vb.begin(); vi != vb.end(); ++ vi)
   {
@@ -61,7 +93,10 @@ bboxset<T,D>::bboxset (const vector<U>& vb, const bbox<T,D> U::* const v) {
 
 template<typename T, int D>
 template<typename U>
-bboxset<T,D>::bboxset (const vector<U>& vb, const bboxset U::* const v) {
+bboxset<T,D>::bboxset (const vector<U>& vb, const bboxset U::* const v)
+  : skip_normalize(false)
+{
+  SKIP_NORMALIZE(*this);
   for (typename vector<U>::const_iterator
          vi = vb.begin(); vi != vb.end(); ++ vi)
   {
@@ -79,7 +114,7 @@ bboxset<T,D> bboxset<T,D>::poison () {
 // Invariant
 template<typename T, int D>
 bool bboxset<T,D>::invariant () const {
-// This is very slow when there are many bboxes
+  // This is very slow when there are many bboxes
 #if 0 && defined(CARPET_DEBUG)
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
     if ((*bi).empty()) return false;
@@ -99,6 +134,7 @@ bool bboxset<T,D>::invariant () const {
 template<typename T, int D>
 void bboxset<T,D>::normalize ()
 {
+  if (skip_normalize) return;
   assert (invariant());
   
   bboxset const oldbs = * this;
@@ -147,14 +183,15 @@ void bboxset<T,D>::normalize ()
         int const nblo = * curr;
         int const nbhi = * next;
         assert (nbhi > nblo);   // ensure that the set remains sorted
-        box nb (b.lower().replace(d, nblo),
-                b.upper().replace(d, nbhi - bstr),
-                b.stride());
+        box const nb (b.lower().replace(d, nblo),
+                      b.upper().replace(d, nbhi - bstr),
+                      b.stride());
         //S nbs.insert (nb);
         nbs.push_back (nb);
       }
     }
     // Replace old set
+    bs.clear ();
     bs.swap (nbs);
     assert (invariant());
   }
@@ -226,9 +263,11 @@ void bboxset<T,D>::normalize ()
 
 
 // Accessors
+// cost: O(n)
 template<typename T, int D>
-typename bboxset<T,D>::size_type bboxset<T,D>::size () const {
-  size_type s=0;
+typename bboxset<T,D>::size_type bboxset<T,D>::size () const
+{
+  size_type s = 0;
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
     const size_type bsz = (*bi).size();
     assert (numeric_limits<size_type>::max() - bsz >= s);
@@ -243,8 +282,10 @@ typename bboxset<T,D>::size_type bboxset<T,D>::size () const {
 // Queries
 
 // Intersection
+// cost: O(n)
 template<typename T, int D>
-bool bboxset<T,D>::intersects (const box& b) const {
+bool bboxset<T,D>::intersects (const box& b) const
+{
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
     if ((*bi).intersects(b)) return true;
   }
@@ -254,8 +295,10 @@ bool bboxset<T,D>::intersects (const box& b) const {
 
 
 // Add (bboxes that don't overlap)
+// cost: O(1)
 template<typename T, int D>
-bboxset<T,D>& bboxset<T,D>::operator+= (const box& b) {
+bboxset<T,D>& bboxset<T,D>::operator+= (const box& b)
+{
   if (b.empty()) return *this;
   // This is very slow when there are many bboxes
 #if 0 && defined(CARPET_DEBUG)
@@ -271,8 +314,11 @@ bboxset<T,D>& bboxset<T,D>::operator+= (const box& b) {
   return *this;
 }
 
+// cost: O(n)
 template<typename T, int D>
-bboxset<T,D>& bboxset<T,D>::operator+= (const bboxset& s) {
+bboxset<T,D>& bboxset<T,D>::operator+= (const bboxset& s)
+{
+  SKIP_NORMALIZE(*this);
   for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
     *this += *bi;
   }
@@ -280,24 +326,30 @@ bboxset<T,D>& bboxset<T,D>::operator+= (const bboxset& s) {
   return *this;
 }
 
+// cost: O(1)
 template<typename T, int D>
-bboxset<T,D>& bboxset<T,D>::add_transfer (bboxset& s) {
+bboxset<T,D>& bboxset<T,D>::add_transfer (bboxset& s)
+{
   bs.splice (bs.end(), s.bs);
   assert (invariant());
   normalize();
   return *this;
 }
 
+// cost: O(n)
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::operator+ (const box& b) const {
+bboxset<T,D> bboxset<T,D>::operator+ (const box& b) const
+{
   bboxset r(*this);
   r += b;
   assert (r.invariant());
   return r;
 }
 
+// cost: O(n)
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::operator+ (const bboxset& s) const {
+bboxset<T,D> bboxset<T,D>::operator+ (const bboxset& s) const
+{
   bboxset r(*this);
   r += s;
   assert (r.invariant());
@@ -307,32 +359,54 @@ bboxset<T,D> bboxset<T,D>::operator+ (const bboxset& s) const {
 
 
 // Union
+// cost: O(n)
 template<typename T, int D>
-bboxset<T,D>& bboxset<T,D>::operator|= (const box& b) {
+bboxset<T,D>& bboxset<T,D>::operator|= (const box& b)
+{
+  if (b.empty()) return *this;
+#if 0
+  // this has a cost of O(n^2)
   bboxset tmp = b - *this;
   add_transfer (tmp);
+#else
+  // this has a cost of O(n)
+  bset oldbs;
+  oldbs.swap(bs);
+  bs.push_back(b);
+  SKIP_NORMALIZE(*this);
+  for (const_iterator bi=oldbs.begin(); bi!=oldbs.end(); ++bi) {
+    bboxset tmp = *bi - b;
+    add_transfer(tmp);
+  }
+#endif
   assert (invariant());
   return *this;
 }
 
+// cost: O(n^2)
 template<typename T, int D>
-bboxset<T,D>& bboxset<T,D>::operator|= (const bboxset& s) {
+bboxset<T,D>& bboxset<T,D>::operator|= (const bboxset& s)
+{
   bboxset tmp = s - *this;
   add_transfer (tmp);
   assert (invariant());
   return *this;
 }
 
+// cost: O(n)
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::operator| (const box& b) const {
+bboxset<T,D> bboxset<T,D>::operator| (const box& b) const
+{
   bboxset r(*this);
   r |= b;
   assert (r.invariant());
   return r;
 }
 
+// cost: O(n^2)
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::operator| (const bboxset& s) const {
+bboxset<T,D> bboxset<T,D>::operator| (const bboxset& s) const
+{
   bboxset r(*this);
   r |= s;
   assert (r.invariant());
@@ -342,42 +416,56 @@ bboxset<T,D> bboxset<T,D>::operator| (const bboxset& s) const {
 
 
 // Intersection
+// cost: O(n)
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::operator& (const box& b) const {
+bboxset<T,D> bboxset<T,D>::operator& (const box& b) const
+{
   // start with an empty set
   bboxset r;
-  // walk all my elements
-  for (const_iterator bi=begin(); bi!=end(); ++bi) {
-    // insert the intersection with the bbox
-    r += *bi & b;
+  {
+    SKIP_NORMALIZE(r);
+    // walk all my elements
+    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      // insert the intersection with the bbox
+      r += *bi & b;
+    }
   }
   assert (r.invariant());
   return r;
 }
 
+// cost: O(n)
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::operator& (const bboxset& s) const {
+bboxset<T,D> bboxset<T,D>::operator& (const bboxset& s) const
+{
   // start with an empty set
   bboxset r;
-  // walk all the bboxes
-  for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
-    // insert the intersection with this bbox
-    bboxset tmp = *this & *bi;
-    r.add_transfer (tmp);
+  {
+    SKIP_NORMALIZE(r);
+    // walk all the bboxes
+    for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
+      // insert the intersection with this bbox
+      bboxset tmp = *this & *bi;
+      r.add_transfer (tmp);
+    }
   }
   assert (r.invariant());
   return r;
 }
 
+// cost: O(n)
 template<typename T, int D>
-bboxset<T,D>& bboxset<T,D>::operator&= (const box& b) {
+bboxset<T,D>& bboxset<T,D>::operator&= (const box& b)
+{
   *this = *this & b;
   assert (invariant());
   return *this;
 }
 
+// cost: O(n)
 template<typename T, int D>
-bboxset<T,D>& bboxset<T,D>::operator&= (const bboxset& s) {
+bboxset<T,D>& bboxset<T,D>::operator&= (const bboxset& s)
+{
   *this = *this & s;
   assert (invariant());
   return *this;
@@ -386,8 +474,10 @@ bboxset<T,D>& bboxset<T,D>::operator&= (const bboxset& s) {
 
 
 // Difference
+// cost: O(1)
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b1, const bbox<T,D>& b2) {
+bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b1, const bbox<T,D>& b2)
+{
   assert (b1.is_aligned_with(b2));
   if (b1.empty()) return bboxset<T,D>();
   if (not b1.intersects(b2)) return bboxset<T,D>(b1);
@@ -397,49 +487,60 @@ bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b1, const bbox<T,D>& b2) {
   vect<T,D> const & b1up = b1.upper();
   vect<T,D> const & str = b1.stride();
   bboxset<T,D> r;
-  for (int d=0; d<D; ++d) {
-    // make resulting bboxes as large as possible in x-direction (for
-    // better consumption by Fortranly ordered arrays)
-    vect<T,D> lb, ub;
-    bbox<T,D> b;
-    for (int dd=0; dd<D; ++dd) {
-      if (dd<d) {
-	lb[dd] = b2lo[dd];
-	ub[dd] = b2up[dd];
-      } else if (dd>d) {
-	lb[dd] = b1lo[dd];
-	ub[dd] = b1up[dd];
+  SKIP_NORMALIZE(r);
+  {
+    for (int d=0; d<D; ++d) {
+      // make resulting bboxes as large as possible in x-direction
+      // (for better consumption by Fortranly ordered arrays)
+      vect<T,D> lb, ub;
+      bbox<T,D> b;
+      for (int dd=0; dd<D; ++dd) {
+        if (dd<d) {
+          lb[dd] = b2lo[dd];
+          ub[dd] = b2up[dd];
+        } else if (dd>d) {
+          lb[dd] = b1lo[dd];
+          ub[dd] = b1up[dd];
+        }
       }
+      lb[d] = b1lo[d];
+      ub[d] = b2lo[d] - str[d];
+      b = bbox<T,D>(lb,ub,str);
+      r += b;
+      lb[d] = b2up[d] + str[d];
+      ub[d] = b1up[d];
+      b = bbox<T,D>(lb,ub,str);
+      r += b;
     }
-    lb[d] = b1lo[d];
-    ub[d] = b2lo[d] - str[d];
-    b = bbox<T,D>(lb,ub,str);
-    r += b;
-    lb[d] = b2up[d] + str[d];
-    ub[d] = b1up[d];
-    b = bbox<T,D>(lb,ub,str);
-    r += b;
   }
   assert (r.invariant());
   return r;
 }
 
+// cost: O(n)
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::operator- (const box& b) const {
+bboxset<T,D> bboxset<T,D>::operator- (const box& b) const
+{
   // start with an empty set
   bboxset r;
-  // walk all my elements
-  for (const_iterator bi=begin(); bi!=end(); ++bi) {
-    // insert the difference with the bbox
-    bboxset tmp = *bi - b;
-    r.add_transfer (tmp);
+  {
+    SKIP_NORMALIZE(r);
+    // walk all my elements
+    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      // insert the difference with the bbox
+      bboxset tmp = *bi - b;
+      r.add_transfer (tmp);
+    }
   }
   assert (r.invariant());
   return r;
 }
   
+// cost: O(n^2)
 template<typename T, int D>
-bboxset<T,D>& bboxset<T,D>::operator-= (const bboxset& s) {
+bboxset<T,D>& bboxset<T,D>::operator-= (const bboxset& s)
+{
+  SKIP_NORMALIZE(*this);
   for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
     *this -= *bi;
   }
@@ -447,16 +548,20 @@ bboxset<T,D>& bboxset<T,D>::operator-= (const bboxset& s) {
   return *this;
 }
 
+// cost: O(n^2)
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::operator- (const bboxset& s) const {
+bboxset<T,D> bboxset<T,D>::operator- (const bboxset& s) const
+{
   bboxset r(*this);
   r -= s;
   assert (r.invariant());
   return r;
 }
 
+// cost: O(n^2)
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b, const bboxset<T,D>& s) {
+bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b, const bboxset<T,D>& s)
+{
   bboxset<T,D> r = bboxset<T,D>(b) - s;
   assert (r.invariant());
   return r;
@@ -464,8 +569,10 @@ bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b, const bboxset<T,D>& s) {
 
 
 
+// cost: O(n)
 template<typename T, int D>
-typename bboxset<T,D>::box bboxset<T,D>::container () const {
+typename bboxset<T,D>::box bboxset<T,D>::container () const
+{
   box b;
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
     b = b.expanded_containing(*bi);
@@ -474,58 +581,71 @@ typename bboxset<T,D>::box bboxset<T,D>::container () const {
 }
 
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::pseudo_inverse (const int n) const {
+bboxset<T,D> bboxset<T,D>::pseudo_inverse (const int n) const
+{
   assert (not empty());
   box const c = container().expand(n,n);
   return c - *this;
 }
 
+// cost: O(n^2) in general, but only O(n) for shifting
 template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi)
   const
 {
   bboxset res;
-  if (all (lo == -hi)) {
-    // Special case for shifting, since this is faster
-    for (const_iterator bi=begin(); bi!=end(); ++bi) {
-      res += (*bi).expand(lo,hi);
-    }
-  } else {
-    // We don't know (yet?) how to shrink a set
-    assert (all (lo>=0 and hi>=0));
-    for (const_iterator bi=begin(); bi!=end(); ++bi) {
-      res |= (*bi).expand(lo,hi);
+  {
+    SKIP_NORMALIZE(res);
+    if (all (lo == -hi)) {
+      // Special case for shifting, since this is faster
+      for (const_iterator bi=begin(); bi!=end(); ++bi) {
+        res += (*bi).expand(lo,hi);
+      }
+    } else {
+      // We don't know (yet?) how to shrink a set
+      assert (all (lo>=0 and hi>=0));
+      for (const_iterator bi=begin(); bi!=end(); ++bi) {
+        res |= (*bi).expand(lo,hi);
+      }
     }
   }
   return res;
 }
 
+// cost: O(n^2) in general, but only O(n) for shifting
 template<typename T, int D>
 bboxset<T,D> bboxset<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi,
                                    const vect<T,D>& denom) const
 {
   assert (all(denom > vect<T,D>(0)));
   bboxset res;
-  if (all (lo == -hi)) {
-    // Special case for shifting, since this is faster
-    for (const_iterator bi=begin(); bi!=end(); ++bi) {
-      res += (*bi).expand(lo,hi,denom);
-    }
-  } else {
-    // We don't know (yet?) how to shrink a set
-    assert (all ((lo>=0 and hi>=0) or (lo == hi)));
-    for (const_iterator bi=begin(); bi!=end(); ++bi) {
-      res |= (*bi).expand(lo,hi,denom);
+  {
+    SKIP_NORMALIZE(res);
+    if (all (lo == -hi)) {
+      // Special case for shifting, since this is faster
+      for (const_iterator bi=begin(); bi!=end(); ++bi) {
+        res += (*bi).expand(lo,hi,denom);
+      }
+    } else {
+      // We don't know (yet?) how to shrink a set
+      assert (all ((lo>=0 and hi>=0) or (lo == hi)));
+      for (const_iterator bi=begin(); bi!=end(); ++bi) {
+        res |= (*bi).expand(lo,hi,denom);
+      }
     }
   }
   return res;
 }
 
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::expanded_for (const box& b) const {
+bboxset<T,D> bboxset<T,D>::expanded_for (const box& b) const
+{
   bboxset res;
-  for (const_iterator bi=begin(); bi!=end(); ++bi) {
-    res |= (*bi).expanded_for(b);
+  {
+    SKIP_NORMALIZE(res);
+    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      res |= (*bi).expanded_for(b);
+    }
   }
   return res;
 }
@@ -533,10 +653,14 @@ bboxset<T,D> bboxset<T,D>::expanded_for (const box& b) const {
 #warning "TODO: this is incorrect"
 #if 1
 template<typename T, int D>
-bboxset<T,D> bboxset<T,D>::contracted_for (const box& b) const {
+bboxset<T,D> bboxset<T,D>::contracted_for (const box& b) const
+{
   bboxset res;
-  for (const_iterator bi=begin(); bi!=end(); ++bi) {
-    res |= (*bi).contracted_for(b);
+  {
+    SKIP_NORMALIZE(res);
+    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      res |= (*bi).contracted_for(b);
+    }
   }
   return res;
 }
@@ -546,40 +670,47 @@ bboxset<T,D> bboxset<T,D>::contracted_for (const box& b) const {
 
 // Equality
 template<typename T, int D>
-bool bboxset<T,D>::operator<= (const bboxset<T,D>& s) const {
+bool bboxset<T,D>::operator<= (const bboxset<T,D>& s) const
+{
   return (*this - s).empty();
 }
 
 template<typename T, int D>
-bool bboxset<T,D>::operator< (const bboxset<T,D>& s) const {
-  return (*this - s).empty() && ! (s - *this).empty();
+bool bboxset<T,D>::operator< (const bboxset<T,D>& s) const
+{
+  return (*this - s).empty() && not (s - *this).empty();
 }
 
 template<typename T, int D>
-bool bboxset<T,D>::operator>= (const bboxset<T,D>& s) const {
+bool bboxset<T,D>::operator>= (const bboxset<T,D>& s) const
+{
   return s <= *this;
 }
 
 template<typename T, int D>
-bool bboxset<T,D>::operator> (const bboxset<T,D>& s) const {
+bool bboxset<T,D>::operator> (const bboxset<T,D>& s) const
+{
   return s < *this;
 }
 
 template<typename T, int D>
-bool bboxset<T,D>::operator== (const bboxset<T,D>& s) const {
+bool bboxset<T,D>::operator== (const bboxset<T,D>& s) const
+{
   return (*this <= s) && (*this >= s);
 }
 
 template<typename T, int D>
-bool bboxset<T,D>::operator!= (const bboxset<T,D>& s) const {
-  return ! (*this == s);
+bool bboxset<T,D>::operator!= (const bboxset<T,D>& s) const
+{
+  return not (*this == s);
 }
 
 
 
 // Input
 template<typename T,int D>
-istream& bboxset<T,D>::input (istream& is) {
+istream& bboxset<T,D>::input (istream& is)
+{
   T Tdummy;
   try {
     skipws (is);
@@ -616,7 +747,8 @@ istream& bboxset<T,D>::input (istream& is) {
 
 // Output
 template<typename T,int D>
-ostream& bboxset<T,D>::output (ostream& os) const {
+ostream& bboxset<T,D>::output (ostream& os) const
+{
   T Tdummy;
   os << "bboxset<" << typestring(Tdummy) << "," << D << ">:{"
      << "size=" << size() << ","

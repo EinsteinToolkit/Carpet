@@ -42,6 +42,25 @@ ostream& operator<< (ostream& os, const bboxset<T,D>& s);
 template<typename T, int D>
 class bboxset {
   
+  // Cost annotations depend on the number of bset elements n, and
+  // assume that normalization is skipped.
+  
+  struct skip_normalize_t {
+    bboxset<T,D>& s;
+    bool const saved_skip_normalize;
+    skip_normalize_t(bboxset<T,D>& s_)
+      : s(s_),
+        saved_skip_normalize(s.skip_normalize)
+    {
+      s.skip_normalize = true;
+    }
+    ~skip_normalize_t()
+    {
+      s.skip_normalize = saved_skip_normalize;
+      s.normalize();
+    }
+  };
+  
   // Types
   typedef bbox<T,D> box;
   //S typedef set<box> bset;
@@ -54,14 +73,17 @@ class bboxset {
   // No bbox is empty.
   // The bboxes don't overlap.
   
+  bool skip_normalize;
+  
 public:
   
   // Constructors
-  bboxset ();
-  bboxset (const box& b);
-  bboxset (const bboxset& s);
+  bboxset ();                   // cost: O(1)
+  bboxset (const box& b);       // cost: O(1)
+  bboxset (const bboxset& s);   // cost: O(n)
   
   bboxset (const list<box>& lb);
+  bboxset (const vector<box>& lb);
   bboxset (const vector<list<box> >& vlb);
   template<typename U>
   bboxset (const vector<U>& vb, const bbox<T,D> U::* const v);
@@ -79,51 +101,52 @@ private:
   
 public:
   // Accessors
-  bool empty () const { return bs.empty(); }
+  bool empty () const { return bs.empty(); } // cost: O(1)
   // T size () const;
   typedef typename box::size_type size_type;
-  size_type size () const;
-  int setsize () const { return bs.size(); }
+  size_type size () const;                   // cost: O(n)
+  int setsize () const { return bs.size(); } // cost: O(1)
   
   // Find out whether this bboxset intersects the bbox b
-  bool intersects (const box& b) const;
+  bool intersects (const box& b) const; // cost: O(n)
   
   // Add (bboxes that don't overlap)
-  bboxset& operator+= (const box& b);
-  bboxset& operator+= (const bboxset& s);
-  bboxset& add_transfer (bboxset& s);
-  bboxset operator+ (const box& b) const;
-  bboxset operator+ (const bboxset& s) const;
+  bboxset& operator+= (const box& b);         // cost: O(1)
+  bboxset& operator+= (const bboxset& s);     // cost: O(n)
+  bboxset& add_transfer (bboxset& s);         // cost: O(1)
+  bboxset operator+ (const box& b) const;     // cost: O(n)
+  bboxset operator+ (const bboxset& s) const; // cost: O(n)
   
   // Union
-  bboxset& operator|= (const box& b);
-  bboxset& operator|= (const bboxset& s);
-  bboxset operator| (const box& b) const;
-  bboxset operator| (const bboxset& s) const;
+  bboxset& operator|= (const box& b);         // cost: O(n)
+  bboxset& operator|= (const bboxset& s);     // cost: O(n^2)
+  bboxset operator| (const box& b) const;     // cost: O(n)
+  bboxset operator| (const bboxset& s) const; // cost: O(n^2)
   
   // Intersection
-  bboxset operator& (const box& b) const;
-  bboxset operator& (const bboxset& s) const;
-  bboxset& operator&= (const box& b);
-  bboxset& operator&= (const bboxset& s);
+  bboxset operator& (const box& b) const;     // cost: O(n)
+  bboxset operator& (const bboxset& s) const; // cost: O(n)
+  bboxset& operator&= (const box& b);         // cost: O(n)
+  bboxset& operator&= (const bboxset& s);     // cost: O(n)
   
   // Difference
   // friend bboxset operator- <T,D>(const box& b1, const box& b2);
-  static bboxset minus (const box& b1, const box& b2);
-  bboxset operator- (const box& b) const;
+  static bboxset minus (const box& b1, const box& b2); // cost: O(1)
+  bboxset operator- (const box& b) const;              // cost: O(n)
+  // cost: O(n)
   bboxset& operator-= (const box& b)
   {
     *this = *this - b;
     assert (invariant());
     return *this;
   }
-  bboxset& operator-= (const bboxset& s);
-  bboxset operator- (const bboxset& s) const;
+  bboxset& operator-= (const bboxset& s);     // cost: O(n^2)
+  bboxset operator- (const bboxset& s) const; // cost: O(n^2)
   // friend bboxset operator- <T,D>(const box& b, const bboxset& s);
-  static bboxset minus (const box& b, const bboxset& s);
+  static bboxset minus (const box& b, const bboxset& s); // cost: O(n^2)
   
   /** Find a bbox containing the whole set.  */
-  box container () const;
+  box container () const;       // cost: O(n)
   /** Find the pseudo-inverse.  */
   bboxset pseudo_inverse (const int n) const;
   
@@ -138,12 +161,15 @@ public:
   
   /** Expand (enlarge) the bboxset by multiples of a fraction of the
       stride.  */
+  // cost: O(n^2) in general, but only O(n) for shifting
   bboxset expand (const vect<T,D>& lo, const vect<T,D>& hi,
                   const vect<T,D>& denom) const;
+  // cost: O(n^2) in general, but only O(n) for shifting
   bboxset expand (const vect<vect<T,D>,2>& lohi, const vect<T,D>& denom) const
   { return expand (lohi[0], lohi[1], denom); }
   
   /** Shift the bboxset by multiples of a fraction of the stride.  */
+// cost: O(n)
   bboxset shift (const vect<T,D>& v, const vect<T,D>& denom) const
   { return expand (-v, v, denom); }
   
@@ -196,11 +222,13 @@ inline bboxset<T,D> operator+ (const bbox<T,D>& b, const bboxset<T,D>& s) {
   return bboxset<T,D>(b) + s;
 }
 
+// cost: O(1)
 template<typename T,int D>
 inline bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2) {
   return bboxset<T,D>::minus(b1,b2);
 }
 
+// cost: O(n^2)
 template<typename T,int D>
 inline bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s) {
   return bboxset<T,D>::minus(b,s);

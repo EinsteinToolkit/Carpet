@@ -47,8 +47,12 @@ namespace CarpetLib {
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
-                      ibbox3 const & restrict regbbox)
+                      ibbox3 const & restrict,
+                      ibbox3 const & restrict regbbox,
+                      void * extraargs)
   {
+    assert (not extraargs);
+    
     typedef typename typeprops<T>::real RT;
     
     
@@ -176,7 +180,9 @@ namespace CarpetLib {
                       ivect3 const & restrict dstext,   \
                       ibbox3 const & restrict srcbbox,  \
                       ibbox3 const & restrict dstbbox,  \
-                      ibbox3 const & restrict regbbox);
+                      ibbox3 const & restrict,          \
+                      ibbox3 const & restrict regbbox,  \
+                      void * extraargs);
 #include "typecase.hh"
 #undef TYPECASE
   

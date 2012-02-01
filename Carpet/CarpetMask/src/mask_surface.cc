@@ -11,6 +11,8 @@
 
 #include "mask_surface.hh"
 
+#include <CarpetReduce_bits.h>
+
 
 
 namespace CarpetMask {
@@ -67,14 +69,26 @@ namespace CarpetMask {
       last_output.resize (num_excluded, -1);
     }
     
-    CCTK_INT * const iweight =
+    CCTK_INT * restrict const iweight =
       static_cast <CCTK_INT *>
       (CCTK_VarDataPtr (cctkGH, 0, "CarpetReduce::iweight"));
     
-    if (not iweight) {
+    CCTK_REAL * restrict const excised_cells =
+      static_cast <CCTK_REAL *>
+      (CCTK_VarDataPtr (cctkGH, 0, "CarpetReduce::excised_cells"));
+    
+    if (not iweight or not excised_cells) {
       CCTK_WARN (CCTK_WARN_ABORT,
                  "CarpetReduce is not active, or CarpetReduce::iweight does not have storage");
     }
+    
+    // Volume of a grid cell on this level, in terms of coarse grid
+    // cells
+    CCTK_REAL const cell_volume =
+      1.0 / (cctk_levfac[0] * cctk_levfac[1] * cctk_levfac[2]);
+    
+    unsigned const bits = BMSK(cctk_dim);
+    CCTK_REAL const factor = 1.0 / bits;
     
     for (int n = 0; n < num_excluded; ++ n) {
       
@@ -127,6 +141,8 @@ namespace CarpetMask {
               sqrt (pow (dx, 2) + pow (dy, 2) + pow (dz, 2));
             if (rho < 1.0e-12) {
               // Always excise the surface origin
+              // Tally up the weight we are removing
+              * excised_cells += cell_volume * factor * BCNT(iweight[ind]);
               iweight[ind] = 0;
             } else {
               CCTK_REAL theta =
@@ -171,6 +187,8 @@ namespace CarpetMask {
               CCTK_REAL const dr =
                 sf_radius[a + maxntheta * (b + maxnphi * sn)];
               if (rho <= dr * shrink_factor) {
+                // Tally up the weight we are removing
+                * excised_cells += cell_volume * factor * BCNT(iweight[ind]);
                 iweight[ind] = 0;
               }
             }

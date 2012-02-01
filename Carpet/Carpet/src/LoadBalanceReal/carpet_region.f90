@@ -56,7 +56,9 @@ module carpet_region
       type(bbox), intent(in) :: box
       type(boundary), intent(in) :: outerbound
       integer, intent(in) :: map
-      type(superregion2), pointer, intent(out) :: sregion
+!     The intent has been removed to make it compile with gfortran 4.1.
+!      type(superregion2), pointer, intent(out) :: sregion
+      type(superregion2), pointer :: sregion
 !      gfortran dies with an internal compiler error on this initialization.
 !      type(superregion2), pointer, intent(out) :: sregion => null()
 
@@ -77,7 +79,8 @@ module carpet_region
 !   The use of intent(in) on the sregion just ensures that sregion itself
 !   is not modified. Its childrens pointer can be nullified.
     subroutine disassociate ( sregion )
-      ! type(superregion2), pointer, intent(in) :: sregion
+!     The intent has been removed to make it compile with gfortran 4.1.
+!      type(superregion2), pointer, intent(in) :: sregion
       type(superregion2), pointer :: sregion
       integer :: n, i
 
@@ -94,8 +97,11 @@ module carpet_region
 !   Routine to assign the pointers of the children of sregion1 to the same
 !   super regions as sregion2.
     subroutine point_to_children ( sregion1, sregion2 )
-      type(superregion2), pointer, intent(inout) :: sregion1
-      type(superregion2), pointer, intent(in) :: sregion2
+!     The intent has been removed to make it compile with gfortran 4.1.
+!      type(superregion2), pointer, intent(inout) :: sregion1
+!      type(superregion2), pointer, intent(in) :: sregion2
+      type(superregion2), pointer :: sregion1
+      type(superregion2), pointer :: sregion2
       integer :: n1, n2, i
 
 !     Only do something if sregion2 actually has children.
@@ -126,7 +132,9 @@ module carpet_region
 
 !   Routine to recursively deallocate memory for a super region.
     recursive subroutine destroy_sregion ( sregion )
-      type(superregion2), pointer, intent(inout) :: sregion
+!     The intent has been removed to make it compile with gfortran 4.1.
+!      type(superregion2), pointer, intent(inout) :: sregion
+      type(superregion2), pointer :: sregion
       integer :: n, i
 
 !     If the super region has children.
@@ -159,7 +167,9 @@ module carpet_region
 !   Routine to recursively print all information about a super region tree
 !   structure to stdout. 
     recursive subroutine print_tree ( sregion )
-      type(superregion2), pointer, intent(in) :: sregion
+!     The intent has been removed to make it compile with gfortran 4.1.
+!      type(superregion2), pointer, intent(in) :: sregion
+      type(superregion2), pointer :: sregion
       integer :: n, i
       
 !     Only do something if the super region pointer is associated with a
@@ -201,7 +211,8 @@ module carpet_region
 !   the largest element smaller than the size of the super region in direction
 !   dir. There is currently no check that this is indeed the case.
     subroutine split_sregion ( sregion, dir, frac )
-      ! type(superregion2), pointer, intent(in) :: sregion
+!     The intent has been removed to make it compile with gfortran 4.1.
+!      type(superregion2), pointer, intent(in) :: sregion
       type(superregion2), pointer :: sregion
       integer, intent(in) :: dir
       integer, dimension(:), intent(in) :: frac

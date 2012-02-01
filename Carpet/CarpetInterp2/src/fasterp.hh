@@ -13,15 +13,24 @@
 #include <typeprops.hh>
 #include <vect.hh>
 
+#include <carpet.hh>
+
+
+
+// Define this at all times, because otherwise out-of-bounds
+// interpolations may not be detected early enough
+#define CARPETINTERP2_CHECK
+
 
 
 namespace CarpetInterp2 {
   
   using namespace std;
+  using namespace Carpet;
   
   
   
-  int const dim = 3;
+  // int const dim = 3;
   
   // Each interpolation point descriptor requires
   //    (dim * (max_order+1) + 1)
@@ -109,6 +118,7 @@ namespace CarpetInterp2 {
   
   // A global location, given by its global coordinates
   struct fasterp_glocs_t {
+    // TODO: use vector<rvect> instead
     vector<CCTK_REAL> coords[dim];
     fasterp_glocs_t (size_t const n)
     {
@@ -138,7 +148,7 @@ namespace CarpetInterp2 {
   struct fasterp_iloc_t {
     mrc_t mrc;                  // map, refinement level, component
     
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTERP2_CHECK
     pn_t pn;                    // origin of this point
     ivect ipos;                 // closest grid point (Carpet indexing)
     ivect ind;                  // closest grid point (local indexing)
@@ -166,7 +176,7 @@ namespace CarpetInterp2 {
     CCTK_REAL coeffs[dim][max_order+1]; // interpolation coefficients
     bvect exact;
     
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTERP2_CHECK
   public:
     pn_t pn;                    // origin of this point
     mrc_t mrc;                  // map, refinement level, component
@@ -176,14 +186,14 @@ namespace CarpetInterp2 {
 #endif
     int ind3d;                  // source grid point offset
     
-#ifdef CARPET_DEBUG
+#ifdef CARPETINTERP2_CHECK
   public:
     ivect saved_lsh;            // copy of lsh
   private:
 #endif
     
   public:
-    void
+    int
     calc_stencil (fasterp_iloc_t const & iloc,
                   ivect const & lsh,
                   int order);
@@ -277,6 +287,7 @@ namespace CarpetInterp2 {
     send_descr_t send_descr;
     int order;
     
+    int reflevel;
     int regridding_epoch;
     
     void

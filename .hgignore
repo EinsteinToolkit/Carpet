@@ -1,0 +1,5 @@
+^\.hg
+^\.mq
+.DS_Store
+.Trash
+~$

@@ -1,0 +1,69 @@
+ActiveThorns = "IOUtil Boundary CartGrid3D CoordBase SymBase MoL InitBase"
+ActiveThorns = "Carpet CarpetLib CarpetInterp GSL LoopControl CarpetReduce CarpetSlab"
+
+#---Geometry---
+
+CoordBase::domainsize          = minmax
+CoordBase::spacing             = numcells
+CartGrid3D::type               = coordbase
+driver::ghost_size             = 3
+Carpet::domain_from_coordbase  = yes
+Carpet::convergence_level      = 0
+
+CoordBase::ncells_x            = 11
+CoordBase::xmin                = -1
+CoordBase::xmax                = 1
+CoordBase::boundary_size_x_lower = 0
+CoordBase::boundary_size_x_upper = 0
+CoordBase::boundary_staggered_x_lower = True
+CoordBase::boundary_staggered_x_upper = True
+CoordBase::boundary_shiftout_x_lower = 0
+CoordBase::boundary_shiftout_x_upper = 0
+
+CoordBase::ncells_y            = 14
+CoordBase::ymin                = -1
+CoordBase::ymax                = 1
+CoordBase::boundary_size_y_lower = 3
+CoordBase::boundary_size_y_upper = 3
+CoordBase::boundary_staggered_y_lower = False
+CoordBase::boundary_staggered_y_upper = False
+CoordBase::boundary_shiftout_y_lower = 1
+CoordBase::boundary_shiftout_y_upper = 1
+
+CoordBase::ncells_z            = 14
+CoordBase::zmin                = 0
+CoordBase::zmax                = 1
+CoordBase::boundary_size_z_lower = 2
+CoordBase::boundary_size_z_upper = 2
+CoordBase::boundary_staggered_z_lower = False
+CoordBase::boundary_staggered_z_upper = False
+CoordBase::boundary_shiftout_z_lower = 0
+CoordBase::boundary_shiftout_z_upper = 0
+
+#---Evolution---
+
+Cactus::terminate              = iteration
+Cactus::cctk_itlast              = 2
+
+#---exlude sphere---
+ActiveThorns = "SphericalSurface CarpetMask"
+SphericalSurface::nsurfaces = 1
+SphericalSurface::set_spherical[0] = yes
+SphericalSurface::radius[0] = 0.5
+CarpetMask::excluded_surface[0] = 0 # -1 to ignore
+
+
+#---Output---
+
+ActiveThorns = "CarpetIOASCII CarpetIOBasic"
+IO::out_dir                    = $parfile
+IO::parfile_write              = "no"
+IO::out_fileinfo               = "none"
+IOBasic::outInfo_every         = 1
+Cactus::cctk_full_warnings     = yes
+Carpet::print_timestats_every  = 0
+CarpetReduce::verbose = yes
+IOASCII::out1D_every              = 1
+IOASCII::out0D_every              = 1
+IOASCII::out1D_vars            = "CarpetReduce::weight"
+IOASCII::out0D_vars            = "CarpetReduce::weight"

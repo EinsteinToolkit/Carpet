@@ -31,7 +31,7 @@ MaskBase_TestMask (CCTK_ARGUMENTS)
   assert (weight_var >= 0);
   assert (one_var    >= 0);
   
-  CCTK_REAL sum_weight;
+  CCTK_REAL sum_weight, all_excised_cells;
   
   {
     int const ierr = CCTK_Reduce (cctkGH,
@@ -40,6 +40,16 @@ MaskBase_TestMask (CCTK_ARGUMENTS)
                                   1, CCTK_VARIABLE_REAL, &sum_weight,
                                   1, one_var);
     assert (ierr >= 0);
+  }
+  {
+    int const ierr = CCTK_ReduceLocalScalar (cctkGH,
+                                  proc,
+                                  sum,
+                                  excised_cells,
+                                  &all_excised_cells,
+                                  CCTK_VARIABLE_REAL);
+    assert (ierr >= 0);
+    *excised_cells = all_excised_cells;
   }
   
   
@@ -102,9 +112,14 @@ MaskBase_TestMask (CCTK_ARGUMENTS)
       
     } /* for m */
     
+    /* Don't count excised regions towards the domain volume */
+    domain_volume -= * excised_cells;
+    
     if (verbose) {
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "Simulation domain volume: %.17g", (double)domain_volume);
+                  "Simulation domain volume:  %.17g", (double)domain_volume);
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Additional excised volume: %.17g", (double)*excised_cells);
     }
     
     int const there_is_a_problem =
@@ -113,9 +128,11 @@ MaskBase_TestMask (CCTK_ARGUMENTS)
     if (there_is_a_problem) {
       if (!verbose) {
         CCTK_VInfo (CCTK_THORNSTRING,
-                    "Simulation domain volume: %.15g", (double)domain_volume);
+                    "Simulation domain volume:  %.17g", (double)domain_volume);
         CCTK_VInfo (CCTK_THORNSTRING,
-                    "Reduction weight sum:     %.15g", (double)sum_weight);
+                    "Additional excised volume: %.17g", (double)*excised_cells);
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Reduction weight sum:      %.17g", (double)sum_weight);
       }
       CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Simulation domain volume and reduction weight sum differ");

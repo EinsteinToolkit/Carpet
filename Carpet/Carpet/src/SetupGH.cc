@@ -1,8 +1,11 @@
+#define _GNU_SOURCE 1 // needed for sched_getaffinity, best at the top to avoid inconsistent includes
+
 #include <cassert>
 #include <climits>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -28,6 +31,7 @@
 #ifdef HAVE_SCHED_H
 #  include <sched.h>
 #endif
+#include <unistd.h>
 
 #include <carpet.hh>
 #include "Timers.hh"
@@ -250,7 +254,7 @@ namespace Carpet {
       MPI_Get_processor_name (hostnamebuf, &hostnamelen);
       string const hostname (hostnamebuf);
 #endif
-      int const mypid = getpid ();
+      int const mypid = static_cast<int> (getpid ());
       // Output
       CCTK_VInfo (CCTK_THORNSTRING,
                   "This process runs on host %s, pid=%d",
@@ -631,14 +635,21 @@ namespace Carpet {
                         >= 0)));
     }
     
+    CCTK_INFO ("Buffer zone counts (excluding ghosts):");
+    const streamsize oldprecision = cout.precision();
+    const ios_base::fmtflags oldflags = cout.flags();
+    cout.setf (ios::fixed);
     vector<i2vect> buffers (maxreflevels);
     for (int rl=0; rl<maxreflevels; ++rl) {
       buffers.AT(rl) =
         taper_factor * (buffer_factor * ghosts.AT(rl)
                         + int (additional_buffer_zones))
         - ghosts.AT(rl);
+      cout << "   [" << rl << "]: " << buffers.AT(rl) << "\n";
       assert (all (all (buffers.AT(rl) >= 0)));
     }
+    cout.precision (oldprecision);
+    cout.setf (oldflags);
     
     vector<int> const my_prolongation_orders_space =
       get_prolongation_orders_space ();
@@ -692,9 +703,16 @@ namespace Carpet {
       vhh.AT(m)->recompose (rl, false);
       vhh.AT(m)->regrid_free (false);
       
+      // Output grid structure
+      OutputGrids (cctkGH, m, * vhh.AT(m), * vdd.AT(m));
+      OutputGridStructure (cctkGH, m, regssss.AT(m));
+      OutputGridCoordinates (cctkGH, m, regssss.AT(m));
+      
     } // for m
     
     regridding_epoch = 0;
+    level_regridding_epochs.resize (1);
+    level_regridding_epochs.AT(0) = 0;
     
     if (verbose or veryverbose) {
       CCTK_INFO ("Grid structure (grid points):");

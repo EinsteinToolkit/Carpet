@@ -148,7 +148,13 @@ namespace Carpet {
   CCTK_FNAME(splitregions_recursively) (CCTK_POINTER const& cxx_superregs,
                                         int const& nsuperregs,
                                         CCTK_POINTER const& cxx_regs,
-                                        int const& nprocs);
+                                        int const& nprocs,
+                                        int const& ghostsize,
+                                        CCTK_REAL const& alpha,
+                                        int const& limit_size,
+                                        CCTK_INT const& granularity,
+                                        CCTK_INT const& granularity_boundary,
+                                        int const& procid);
   
   void
   SplitRegionsMaps_Recursively (cGH const * const cctkGH,
@@ -160,12 +166,19 @@ namespace Carpet {
     if (recompose_verbose) cout << "SRMR enter" << endl;
     
     int const nmaps = superregss.size();
+    assert (int(regss.size()) == nmaps);
     int map_offset = 1000000000;
+    int max_map = 0;
+    vector<bool> have_map(maps, false);
     for (int m=0; m<nmaps; ++m) {
       for (int r=0; r<int(superregss.AT(m).size()); ++r) {
         map_offset = min (map_offset, superregss.AT(m).AT(r).map);
+        max_map = max (max_map, superregss.AT(m).AT(r).map);
+        have_map.AT(superregss.AT(m).AT(r).map) = true;
       }
     }
+    // Apparently this is not always the case:
+    // assert (max_map - map_offset == nmaps - 1);
     
     int nsuperregs = 0;
     for (int m=0; m<nmaps; ++m) {
@@ -199,6 +212,14 @@ namespace Carpet {
       }
     }
     
+    // Create a mapping from this list of regions to maps, and set the
+    // map to the superregion index instead
+    vector<int> superreg_maps(nsuperregs);
+    for (int r=0; r<nsuperregs; ++r) {
+      superreg_maps.AT(r) = superregs.AT(r).map;
+      superregs.AT(r).map = r;
+    }
+    
     int const real_nprocs = CCTK_nProcs (cctkGH);
     if (recompose_verbose) cout << "SRMR real_nprocs " << real_nprocs << endl;
     
@@ -222,33 +243,183 @@ namespace Carpet {
     vector<region_t> regs;
     // regs.reserve (...);
     CCTK_POINTER const cxx_regs = & regs;
+    int const ghostsize = vdd.AT(0)->ghost_widths.AT(0)[0][0];
+    for (int m=0; m<maps; ++m) {
+      for (int rl=0; rl<reflevels; ++rl) {
+        for (int f=0; f<2; ++f) {
+          for (int d=0; d<dim; ++d) {
+            assert (vdd.AT(m)->ghost_widths.AT(rl)[f][d] == ghostsize);
+          }
+        }
+      }
+    }
+    CCTK_REAL const alpha = ghost_zone_cost;
+    int const limit_size = true;
+    int const procid = CCTK_MyProc(cctkGH);
     CCTK_FNAME(splitregions_recursively)
-      (cxx_superregs, nsuperregs, cxx_regs, nprocs);
-    int const nregs = regs.size();
+      (cxx_superregs, nsuperregs, cxx_regs, nprocs,
+       ghostsize, alpha, limit_size, granularity, granularity_boundary, procid);
+    int nregs = regs.size();
     
-    // Allocate regions
+    if (same_number_of_components_on_each_process) {
+      // Ensure all processes have the same number of components
+      vector<int> ncomps(nprocs, 0);
+      for (int r=0; r<nregs; ++r) {
+        int const p = regs.AT(r).processor;
+        assert (p>=0);
+        ++ncomps.AT(p);
+      }
+      int maxncomps = 0;
+      int sumncomps = 0;
+      for (int p=0; p<nprocs; ++p) {
+        maxncomps = max(maxncomps, ncomps.AT(p));
+        sumncomps += ncomps.AT(p);
+      }
+      int const missingcomps = maxncomps * nprocs - sumncomps;
+      if (missingcomps > 0) {
+        // Invent a dummy component
+        ibbox const& ext = superregss.AT(0).AT(0).extent;
+        region_t dummy;
+        dummy.extent =
+          ibbox(ext.lower(), ext.lower()-ext.stride(), ext.stride());
+        assert (dummy.extent.empty());
+        dummy.outer_boundaries = b2vect(true);
+        dummy.map = nmaps-1;      // arbitrary choice
+        // Insert dummy regions at the end
+        regs.resize(nregs + missingcomps, dummy);
+        for (int p=0; p<nprocs; ++p) {
+          for (int i=ncomps.AT(p); i<maxncomps; ++i) {
+            regs.AT(nregs++).processor = p;
+          }
+        }
+        assert (nregs == int(regs.size()));
+        // Insert a superregion
+        // TODO: Do we need this? Should we skip this?
+        pseudoregion_t sample;
+        sample.extent = dummy.extent;
+        // sample.component remains unset (component will be set later)
+        if (missingcomps == 1) {
+          dummy.processors = new ipfulltree(sample);
+        } else {
+          int const dir = 0;      // arbitrary choice
+          vector<int> bounds(missingcomps+1);
+          for (int n=0; n<missingcomps+1; ++n) {
+            bounds.AT(n) = dummy.extent.lower()[dir];
+          }
+          vector<ipfulltree*> subtrees(missingcomps);
+          for (int n=0; n<missingcomps; ++n) {
+            subtrees.AT(n) = new ipfulltree(sample);
+          }
+          dummy.processors = new ipfulltree(dir, bounds, subtrees);
+        }
+        superregs.push_back (dummy);
+      }
+    }
+    
+    // Allocate regions, saving the old regions for debugging or
+    // self-checking
+    vector<vector<region_t> > old_superregss;
+    swap (superregss, old_superregss);
+    superregss.resize (old_superregss.size());
     assert ((int)regss.size() == nmaps);
     for (int m=0; m<nmaps; ++m) {
       assert (regss.AT(m).empty());
       // regss.AT(m).reserve (...);
-      superregss.AT(m).clear();
+      // superregss.AT(m).clear();
+      assert (superregss.AT(m).empty());
       // superregss.AT(m).reserve (...);
     }
     // Assign regions
     for (int r=0; r<nsuperregs; ++r) {
+      superregs.AT(r).map = superreg_maps.AT(r); // correct map
       int const m = superregs.AT(r).map - map_offset;
       assert (m>=0 and m<nmaps);
       superregss.AT(m).push_back (superregs.AT(r));
     }
+    // Renumber components
+    for (int m=0; m<nmaps; ++m) {
+      int c=0;
+      for (size_t r=0; r<superregss.AT(m).size(); ++r) {
+        ipfulltree* const procs = superregss.AT(m).AT(r).processors;
+        assert (procs);
+        for (ipfulltree::iterator it (*procs); not it.done(); ++it) {
+          (*it).payload().component = c++;
+        }
+      }
+    }
     for (int r=0; r<nregs; ++r) {
+      int const s = regs.AT(r).map;
+      assert (s>=0 and s<nsuperregs);
+      regs.AT(r).map = superreg_maps.AT(s); // correct map
       int const m = regs.AT(r).map - map_offset;
       assert (m>=0 and m<nmaps);
       regss.AT(m).push_back (regs.AT(r));
     }
     // Output regions
     if (recompose_verbose) {
+      region_t::full_output = true;
       cout << "SRMR superregss " << superregss << endl;
       cout << "SRMR regss " << regss << endl;
+      region_t::full_output = false;
+    }
+    
+    // Consistency check
+    bool has_error = false;
+    vector<ibset> all_old_superregss(maps);
+    for (size_t m=0; m<superregss.size(); ++m) {
+      for (size_t r=0; r<old_superregss.AT(m).size(); ++r) {
+        region_t const& reg = old_superregss.AT(m).AT(r);
+        if (not (all_old_superregss.AT(reg.map) & reg.extent).empty()) {
+          has_error = true;
+          cout << "SRMR: old_superregss:\n"
+               << "m=" << m << " r=" << r << " reg=" << reg << "\n";
+        }
+        all_old_superregss.AT(reg.map) += reg.extent;
+      }
+    }
+    vector<ibset> all_superregss(maps);
+    for (size_t m=0; m<superregss.size(); ++m) {
+      for (size_t r=0; r<superregss.AT(m).size(); ++r) {
+        region_t const& reg = superregss.AT(m).AT(r);
+        if (not (all_superregss.AT(reg.map) & reg.extent).empty()) {
+          has_error = true;
+          cout << "SRMR: all_superregss:\n"
+               << "m=" << m << " r=" << r << " reg=" << reg << "\n";
+        }
+        all_superregss.AT(reg.map) += reg.extent;
+      }
+    }
+    for (int m=0; m<maps; ++m) {
+      if (not (all_superregss.AT(m) == all_old_superregss.AT(m))) {
+        has_error = true;
+        cout << "SRMR: all_superregss m=" << m << "\n";
+      }
+    }
+    vector<ibset> all_regss(maps);
+    for (size_t m=0; m<regss.size(); ++m) {
+      for (size_t r=0; r<regss.AT(m).size(); ++r) {
+        region_t const& reg = regss.AT(m).AT(r);
+        if (not (all_regss.AT(reg.map) & reg.extent).empty()) {
+          has_error = true;
+          cout << "SRMR: all_regss:\n"
+               << "m=" << m << " r=" << r << " reg=" << reg << "\n";
+        }
+        all_regss.AT(reg.map) += reg.extent;
+      }
+    }
+    for (int m=0; m<maps; ++m) {
+      if (not (all_regss.AT(m) == all_old_superregss.AT(m))) {
+        has_error = true;
+        cout << "SRMR: all_regss m=" << m << "\n";
+      }
+    }
+    if (has_error) {
+      region_t::full_output = true;
+      cout << "SRMR: all_old_superregss=" << all_old_superregss << "\n"
+           << "SRMR: all_superregss=" << all_superregss << "\n"
+           << "SRMR: all_regss=" << all_regss << "\n";
+      region_t::full_output = false;
+      CCTK_WARN(CCTK_WARN_ABORT, "Internal error");
     }
     
     if (recompose_verbose) cout << "SRMR exit" << endl;

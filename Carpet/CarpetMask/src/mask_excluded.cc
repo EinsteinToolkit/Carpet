@@ -8,6 +8,8 @@
 
 #include "mask_excluded.hh"
 
+#include <CarpetReduce_bits.h>
+
 
 
 namespace CarpetMask {
@@ -26,14 +28,26 @@ namespace CarpetMask {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    CCTK_INT * const iweight =
+    CCTK_INT * restrict const iweight =
       static_cast <CCTK_INT *>
       (CCTK_VarDataPtr (cctkGH, 0, "CarpetReduce::iweight"));
     
-    if (not iweight) {
+    CCTK_REAL * restrict const excised_cells =
+      static_cast <CCTK_REAL *>
+      (CCTK_VarDataPtr (cctkGH, 0, "CarpetReduce::excised_cells"));
+
+    if (not iweight or not excised_cells) {
       CCTK_WARN (CCTK_WARN_ABORT,
                  "CarpetReduce is not active, or CarpetReduce::iweight does not have storage");
     }
+    
+    // Volume of a grid cell on this level, in terms of coarse grid
+    // cells
+    CCTK_REAL const cell_volume =
+      1.0 / (cctk_levfac[0] * cctk_levfac[1] * cctk_levfac[2]);
+    
+    unsigned const bits = BMSK(cctk_dim);
+    CCTK_REAL const factor = 1.0 / bits;
     
     for (int n = 0; n < 10; ++ n) {
       
@@ -60,6 +74,8 @@ namespace CarpetMask {
               dx2 + dy2 + dz2 >= r2 :
               dx2 + dy2 + dz2 <= r2)
           {
+            // Tally up the weight we are removing
+            * excised_cells += cell_volume * factor * BCNT(iweight[ind]);
             iweight[ind] = 0;
           }
           

@@ -4,6 +4,7 @@
 #include <cstring>
 #include <map>
 #include <string>
+#include <sstream>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
@@ -13,6 +14,8 @@
 
 #include <carpet.hh>
 #include <Timers.hh>
+
+#include "adler32.hh"
 
 
 
@@ -277,23 +280,24 @@ namespace Carpet {
     }
     
     if (schedule_barriers) {
-#if 0
-      static unsigned int magic = 0xe8932329UL; // a random starting value
-      unsigned int recv = magic;
-      Checkpoint ("About to Bcast %u", magic);
-      MPI_Bcast (& recv, 1, MPI_UNSIGNED, 0, dist::comm());
-      Checkpoint ("Finished Bcast");
-      if (recv != magic) {
-        CCTK_WARN (CCTK_WARN_ABORT,
-                   "Inconsistent communication schedule: not all processes return to CallFunction at the same time");
-      }
-      ++ magic;
-      Checkpoint ("About to Barrier");
-      MPI_Barrier (dist::comm());
-      Checkpoint ("Finished Barrier");
-#endif
-      static int id = 513400912; // arbitrary starting value
-      Carpet::NamedBarrier (NULL, id++);
+      // Create an ID that is almost unique for this scheduled
+      // function call
+      stringstream buf;
+      buf << attribute->meta
+          << attribute->meta_early
+          << attribute->meta_late
+          << attribute->global
+          << attribute->global_early
+          << attribute->global_late
+          << attribute->level
+          << attribute->singlemap
+          << attribute->local << "\n";
+      buf << attribute->where << "\n";
+      buf << attribute->thorn << "\n";
+      buf << attribute->routine << "\n";
+      string const str = buf.str();
+      int const id = adler32(str.c_str(), str.length());
+      Carpet::NamedBarrier (NULL, id, "Carpet::CallFunction");
     }
     
     total_timer.stop();

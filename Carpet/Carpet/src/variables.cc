@@ -115,6 +115,7 @@ namespace Carpet {
   vector<dh*> vdd;              // [map]
   th* tt;
   int regridding_epoch;
+  vector<int> level_regridding_epochs;
   
   // Data for the groups
   vector<groupdesc> groupdata;  // [group]

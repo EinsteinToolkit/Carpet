@@ -9,6 +9,7 @@ schedule CarpetReduceStartup at STARTUP
 
 # Should this move to a new thorn MaskBase?
 STORAGE: weight
+STORAGE: excised_cells
 
 
 
@@ -50,7 +51,11 @@ SCHEDULE MaskBase_InitMask IN MaskBase_SetupMaskAll AFTER MaskBase_AllocateMask
   OPTIONS: global loop-local
 } "Initialise the weight function"
 
-SCHEDULE GROUP SetupIMask IN MaskBase_SetupMaskAll AFTER MaskBase_InitMask
+SCHEDULE GROUP SetupIMaskInternal IN MaskBase_SetupMaskAll AFTER MaskBase_InitMask
+{
+} "Set up the integer weight function (schedule other routines in here)"
+
+SCHEDULE GROUP SetupIMask IN MaskBase_SetupMaskAll AFTER SetupIMaskInternal
 {
 } "Set up the integer weight function (schedule other routines in here)"
 
@@ -73,14 +78,14 @@ SCHEDULE MaskBase_TestMask IN MaskBase_SetupMaskAll AFTER SetupMask
 
 
 # Should this move to CoordBase?
-SCHEDULE CoordBase_SetupMask IN SetupIMask
+SCHEDULE CoordBase_SetupMask IN SetupIMaskInternal
 {
   LANG: C
   OPTIONS: global loop-local
 } "Set up the outer boundaries of the weight function"
 
 # Should this move to CarpetMask?
-SCHEDULE CarpetMaskSetup IN SetupIMask
+SCHEDULE CarpetMaskSetup IN SetupIMaskInternal
 {
   LANG: C
   OPTIONS: global loop-singlemap

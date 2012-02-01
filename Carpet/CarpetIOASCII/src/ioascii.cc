@@ -6,12 +6,14 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <map>
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -626,7 +628,8 @@ namespace CarpetIOASCII {
               for (comm_state state; not state.done(); state.step()) {
                 for (size_t n=0; n<datas.size(); ++n) {
                   tmpdatas.at(n)->copy_from
-                    (state, datas.at(n), data_ext, ioproc, proc);
+                    (state, datas.at(n), data_ext, data_ext, NULL,
+                     ioproc, proc);
                 }
               }
               
@@ -667,7 +670,7 @@ namespace CarpetIOASCII {
       
       // Append EOL after every complete set of components
       if (dist::rank() == ioproc) {
-        if (separate_grids) {
+        if (separate_grids and not compact_format) {
           assert (file.good());
           file << eol;
         }
@@ -1289,6 +1292,8 @@ namespace CarpetIOASCII {
     assert (outdim<=dim);
     
     const int vartype = CCTK_VarTypeI(vi);
+    const int grouptype = CCTK_GroupTypeFromVarI(vi);
+    const int groupdim = CCTK_GroupDimFromVarI(vi);
     
     if (CCTK_EQUALS (out_fileinfo, "axis labels") or
         CCTK_EQUALS (out_fileinfo, "all"))
@@ -1296,35 +1301,65 @@ namespace CarpetIOASCII {
       
       assert (os.good());
       
-      os << "# iteration " << time << eol
-         << "# refinement level " << rl
-         << "   multigrid level " << ml
-         << "   map " << m
-         << "   component " << c
-         << "   time level " << tl
-         << eol
-         << "# column format: 1:it\t2:tl 3:rl 4:c 5:ml";
-      int col=6;
-      assert (dim>=1 and dim<=3);
-      const char* const coords = "xyz";
-      for (int d=0; d<dim; ++d) {
-        os << (d==0 ? "\t" : " ") << col++ << ":i" << coords[d];
+      if (not compact_format or grouptype == CCTK_GF) {
+        // Don't output a comment with iteration number and time,
+        // because these are always output with the real data anyway
+        os << "# iteration " << time << "   time " << coord_time << eol;
+        os << "# time level " << tl << eol;
+        os << "# refinement level " << rl
+           << "   multigrid level " << ml
+           << "   map " << m
+           << "   component " << c << eol;
       }
-      os << "\t" << col++ << ":time";
-      for (int d=0; d<dim; ++d) {
-        os << (d==0 ? "\t" : " ") << col++ << ":" << coords[d];
+      static vector<bool> did_output_format;
+      if (did_output_format.empty()) {
+        did_output_format.resize(CCTK_NumVars());
       }
-      os << "\t" << col << ":data" << eol;
-      if (one_file_per_group) {
-        os << "# data columns:";
-        int const gindex = CCTK_GroupIndexFromVarI(vi);
-        int const firstvar = CCTK_FirstVarIndexI(gindex);
-        int const numvars = CCTK_NumVarsInGroupI(gindex);
-        for (int n=firstvar; n<firstvar+numvars; ++n) {
-          os << " " << col << ":" << CCTK_VarName(n);
-          col += CarpetSimpleMPIDatatypeLength (vartype);
+      if (not compact_format or not did_output_format.AT(vi)) {
+        did_output_format.AT(vi) = true;
+        os << "# column format: 1:it";
+        int col=2;
+        if (not compact_format or output_all_timelevels) {
+          os << "\t" << col++ << ":tl";
         }
-        os << eol;
+        if (not compact_format) {
+          os << "\t" << col++ << ":rl";
+          os << " " << col++ << ":c";
+          os << " " << col++ << ":ml";
+        }
+        assert (dim>=0 and dim<=3);
+        const char* const coords = "xyz";
+        if (not compact_format) {
+          for (int d=0; d<dim; ++d) {
+            os << (d==0 ? "\t" : " ") << col++ << ":i" << coords[d];
+          }
+        } else {
+          for (int d=0; d<min(dim,groupdim); ++d) {
+            os << (d==0 ? "\t" : " ") << col++ << ":i" << coords[d];
+          }
+        }
+        os << "\t" << col++ << ":time";
+        if (not compact_format) {
+          for (int d=0; d<dim; ++d) {
+            os << (d==0 ? "\t" : " ") << col++ << ":" << coords[d];
+          }
+        } else {
+          for (int d=0; d<min(dim,groupdim); ++d) {
+            os << (d==0 ? "\t" : " ") << col++ << ":" << coords[d];
+          }
+        }
+        os << "\t" << col << ":data" << eol;
+        if (one_file_per_group) {
+          os << "# data columns:";
+          int const gindex = CCTK_GroupIndexFromVarI(vi);
+          int const firstvar = CCTK_FirstVarIndexI(gindex);
+          int const numvars = CCTK_NumVarsInGroupI(gindex);
+          for (int n=firstvar; n<firstvar+numvars; ++n) {
+            os << " " << col << ":" << CCTK_VarName(n);
+            col += CarpetSimpleMPIDatatypeLength (vartype);
+          }
+          os << eol;
+        }
       }
       
     } // if out_fileinfo
@@ -1351,29 +1386,47 @@ namespace CarpetIOASCII {
           
           ivect index(org);
           for (int d=0; d<outdim; ++d) index[dirs[d]] = (*it)[d];
-          os << time << "\t" << tl << " " << rl << " " << c << " " << ml
-             << "\t";
-          for (int d=0; d<dim-1; ++d) os << index[d] << " ";
-          os << index[dim-1];
-          os << "\t" << coord_time << "\t";
-          for (int d=0; d<dim; ++d) {
-            if (d > 0) os << " ";
-            assert (gfext.upper()[d] - gfext.lower()[d] >= 0);
-            if (gfext.upper()[d] - gfext.lower()[d] == 0) {
-              os << coord_lower[d];
-            } else {
-              CCTK_REAL const dx
-                = ((coord_upper[d] - coord_lower[d])
-                   / (gfext.upper()[d] - gfext.lower()[d]));
-              os << (nicelooking
-                     (coord_lower[d] + (index[d] - gfext.lower()[d]) * dx,
-                      dx * 1.0e-8));
+          os << time;
+          if (not compact_format or output_all_timelevels) {
+            os << "\t" << tl;
+          }
+          if (not compact_format) {
+            // Don't output the grid structure in compact format (it
+            // is still output in the comments above every component)
+            os << "\t" << rl << " " << c << " " << ml;
+          }
+          if (not compact_format) {
+            for (int d=0; d<dim; ++d) {
+              os << (d==0 ? "\t" : " ") << index[d];
+            }
+          } else {
+            // In the compact format, output one column for each of
+            // the group's dimension, don't always output three
+            // columns
+            for (int d=0; d<min(dim,groupdim); ++d) {
+              os << (d==0 ? "\t" : " ") << index[d];
             }
           }
-          os << "\t";
+          os << "\t" << coord_time;
+          if (not compact_format or grouptype == CCTK_GF) {
+            for (int d=0; d<dim; ++d) {
+              os << (d==0 ? "\t" : " ");
+              assert (gfext.upper()[d] - gfext.lower()[d] >= 0);
+              if (gfext.upper()[d] - gfext.lower()[d] == 0) {
+                os << coord_lower[d];
+              } else {
+                CCTK_REAL const dx
+                  = ((coord_upper[d] - coord_lower[d])
+                     / (gfext.upper()[d] - gfext.lower()[d]));
+                os << (nicelooking
+                       (coord_lower[d] + (index[d] - gfext.lower()[d]) * dx,
+                        dx * 1.0e-8));
+              }
+            }
+          }
           for (size_t n=0; n<gfdatas.size(); ++n) {
             const gdata* gfdata = gfdatas.at(n);
-            if (n > 0) os << " ";
+            os << (n==0 ? "\t" : " ");
             switch (specific_cactus_type(vartype)) {
 #define TYPECASE(N,T)                                           \
               case N:                                           \
@@ -1391,14 +1444,20 @@ namespace CarpetIOASCII {
           
           for (int d=0; d<outdim; ++d) {
             if ((*it)[d]!=(*ext.end())[d]) break;
-            os << eol;
+            if (not compact_format or ext.shape()[d] > ext.stride()[d]) {
+              // In the compact format, don't separate outputs that
+              // consist of a single lines only
+              os << eol;
+            }
           }
 	  
         } while (it!=ext.end());
-	
+        
       } else {
         
-        os << "#" << eol;
+        if (not compact_format) {
+          os << "#" << eol;
+        }
 	
       } // if not ext contains org
       
@@ -1426,12 +1485,18 @@ namespace CarpetIOASCII {
         
         // check if the point in question is in our gf's extent
         if(gfext.contains(pos)) {
-          os << time << "\t" << tl << " " << rl << " " << c << " " << ml
-             << "\t";
-          for (int d=0; d<dim-1; ++d) os << pos[d] << " "; os << pos[dim-1];
-          os << "\t" << coord_time << "\t";
+          os << time;
+          if (not compact_format) {
+            // Don't output the grid structure in compact format (it
+            // is still output in the comments above every component)
+            os << "\t" << tl << " " << rl << " " << c << " " << ml;
+          }
           for (int d=0; d<dim; ++d) {
-            if (d > 0) os << " ";
+            os << (d==0 ? "\t" : " ") << pos[d];
+          }
+          os << "\t" << coord_time;
+          for (int d=0; d<dim; ++d) {
+            os << (d==0 ? "\t" : " ");
             assert (gfext.upper()[d] - gfext.lower()[d] >= 0);
             if (gfext.upper()[d] - gfext.lower()[d] == 0) {
               os << coord_lower[d];
@@ -1443,10 +1508,9 @@ namespace CarpetIOASCII {
                       dx * 1.0e-8));
             }
           }
-          os << "\t";
           for (size_t n=0; n<gfdatas.size(); ++n) {
             const gdata* gfdata = gfdatas.at(n);
-            if (n > 0) os << " ";
+            os << (n==0 ? "\t" : " ");
             switch (specific_cactus_type(vartype)) {
 #define TYPECASE(N,T)                                           \
               case N:                                           \
@@ -1458,22 +1522,27 @@ namespace CarpetIOASCII {
               UnsupportedVarType(vi);
             }
           } // for n
-          
           os << eol;
           
         } else {
           
-          os << "#" << eol;
+          if (not compact_format) {
+            os << "#" << eol;
+          }
           
         } // if not ext contains org
 	
       } // end for loop  
       
-      os << eol;
+      if (not compact_format or maxval(base.lower()) > minval(base.upper())) {
+        // In the compact format, don't separate outputs that consist
+        // of a single lines only
+        os << eol;
+      }
       
       assert (os.good());
       
-    } // if(dirs[0]<3)
+    } // if diagonal_output
     
   }
   

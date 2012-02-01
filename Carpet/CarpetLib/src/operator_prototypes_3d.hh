@@ -56,7 +56,9 @@ namespace CarpetLib {
            ivect3 const & restrict dstext,
            ibbox3 const & restrict srcbbox,
            ibbox3 const & restrict dstbbox,
-           ibbox3 const & restrict regbbox);
+           ibbox3 const & restrict srcregbbox,
+           ibbox3 const & restrict dstregbbox,
+           void * extraargs);
   
   template <typename T>
   void
@@ -66,7 +68,9 @@ namespace CarpetLib {
                  ivect3 const & restrict dstext,
                  ibbox3 const & restrict srcbbox,
                  ibbox3 const & restrict dstbbox,
-                 ibbox3 const & restrict regbbox);
+                 ibbox3 const & restrict srcregbbox,
+                 ibbox3 const & restrict dstregbbox,
+                 void * extraargs);
   
   
   
@@ -78,7 +82,9 @@ namespace CarpetLib {
                      ivect3 const & restrict dstext,
                      ibbox3 const & restrict srcbbox,
                      ibbox3 const & restrict dstbbox,
-                     ibbox3 const & restrict regbbox);
+                     ibbox3 const & restrict srcregbbox,
+                     ibbox3 const & restrict dstregbbox,
+                     void * extraargs);
   
 #if 0
   template <typename T>
@@ -89,7 +95,9 @@ namespace CarpetLib {
                         ivect3 const & restrict dstext,
                         ibbox3 const & restrict srcbbox,
                         ibbox3 const & restrict dstbbox,
-                        ibbox3 const & restrict regbbox);
+                        ibbox3 const & restrict srcregbbox,
+                        ibbox3 const & restrict dstregbbox,
+                        void * extraargs);
   
   template <typename T>
   void
@@ -99,7 +107,9 @@ namespace CarpetLib {
                         ivect3 const & restrict dstext,
                         ibbox3 const & restrict srcbbox,
                         ibbox3 const & restrict dstbbox,
-                        ibbox3 const & restrict regbbox);
+                        ibbox3 const & restrict srcregbbox,
+                        ibbox3 const & restrict dstregbbox,
+                        void * extraargs);
   
   template <typename T>
   void
@@ -109,7 +119,9 @@ namespace CarpetLib {
                         ivect3 const & restrict dstext,
                         ibbox3 const & restrict srcbbox,
                         ibbox3 const & restrict dstbbox,
-                        ibbox3 const & restrict regbbox);
+                        ibbox3 const & restrict srcregbbox,
+                        ibbox3 const & restrict dstregbbox,
+                        void * extraargs);
   
   template <typename T>
   void
@@ -119,7 +131,9 @@ namespace CarpetLib {
                         ivect3 const & restrict dstext,
                         ibbox3 const & restrict srcbbox,
                         ibbox3 const & restrict dstbbox,
-                        ibbox3 const & restrict regbbox);
+                        ibbox3 const & restrict srcregbbox,
+                        ibbox3 const & restrict dstregbbox,
+                        void * extraargs);
   
   template <typename T>
   void
@@ -129,7 +143,9 @@ namespace CarpetLib {
                         ivect3 const & restrict dstext,
                         ibbox3 const & restrict srcbbox,
                         ibbox3 const & restrict dstbbox,
-                        ibbox3 const & restrict regbbox);
+                        ibbox3 const & restrict srcregbbox,
+                        ibbox3 const & restrict dstregbbox,
+                        void * extraargs);
   
   template <typename T>
   void
@@ -139,7 +155,9 @@ namespace CarpetLib {
                          ivect3 const & restrict dstext,
                          ibbox3 const & restrict srcbbox,
                          ibbox3 const & restrict dstbbox,
-                         ibbox3 const & restrict regbbox);
+                         ibbox3 const & restrict srcregbbox,
+                         ibbox3 const & restrict dstregbbox,
+                         void * extraargs);
 #endif
   
   
@@ -152,7 +170,9 @@ namespace CarpetLib {
                                  ivect3 const & restrict dstext,
                                  ibbox3 const & restrict srcbbox,
                                  ibbox3 const & restrict dstbbox,
-                                 ibbox3 const & restrict regbbox);
+                                 ibbox3 const & restrict srcregbbox,
+                                 ibbox3 const & restrict dstregbbox,
+                                 void * extraargs);
   
   
   
@@ -164,7 +184,9 @@ namespace CarpetLib {
                         ivect3 const & restrict dstext,
                         ibbox3 const & restrict srcbbox,
                         ibbox3 const & restrict dstbbox,
-                        ibbox3 const & restrict regbbox);
+                        ibbox3 const & restrict srcregbbox,
+                        ibbox3 const & restrict dstregbbox,
+                        void * extraargs);
   
 #if 0
   template <typename T>
@@ -175,7 +197,9 @@ namespace CarpetLib {
                            ivect3 const & restrict dstext,
                            ibbox3 const & restrict srcbbox,
                            ibbox3 const & restrict dstbbox,
-                           ibbox3 const & restrict regbbox);
+                           ibbox3 const & restrict srcregbbox,
+                           ibbox3 const & restrict dstregbbox,
+                           void * extraargs);
   
   template <typename T>
   void
@@ -185,7 +209,9 @@ namespace CarpetLib {
                            ivect3 const & restrict dstext,
                            ibbox3 const & restrict srcbbox,
                            ibbox3 const & restrict dstbbox,
-                           ibbox3 const & restrict regbbox);
+                           ibbox3 const & restrict srcregbbox,
+                           ibbox3 const & restrict dstregbbox,
+                           void * extraargs);
   
   template <typename T>
   void
@@ -195,7 +221,9 @@ namespace CarpetLib {
                            ivect3 const & restrict dstext,
                            ibbox3 const & restrict srcbbox,
                            ibbox3 const & restrict dstbbox,
-                           ibbox3 const & restrict regbbox);
+                           ibbox3 const & restrict srcregbbox,
+                           ibbox3 const & restrict dstregbbox,
+                           void * extraargs);
 #endif
   
   template <typename T, int ORDER>
@@ -206,7 +234,9 @@ namespace CarpetLib {
                             ivect3 const & restrict dstext,
                             ibbox3 const & restrict srcbbox,
                             ibbox3 const & restrict dstbbox,
-                            ibbox3 const & restrict regbbox);
+                            ibbox3 const & restrict srcregbbox,
+                            ibbox3 const & restrict dstregbbox,
+                            void * extraargs);
   
   
   template <typename T>
@@ -217,7 +247,9 @@ namespace CarpetLib {
                    ivect3 const & restrict dstext,
                    ibbox3 const & restrict srcbbox,
                    ibbox3 const & restrict dstbbox,
-                   ibbox3 const & restrict regbbox);
+                   ibbox3 const & restrict srcregbbox,
+                   ibbox3 const & restrict dstregbbox,
+                   void * extraargs);
   
   
   
@@ -233,7 +265,9 @@ namespace CarpetLib {
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
-                      ibbox3 const & restrict regbbox);
+                      ibbox3 const & restrict srcregbbox,
+                      ibbox3 const & restrict dstregbbox,
+                      void * extraargs);
   
   template <typename T>
   void
@@ -249,7 +283,9 @@ namespace CarpetLib {
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
-                      ibbox3 const & restrict regbbox);
+                      ibbox3 const & restrict srcregbbox,
+                      ibbox3 const & restrict dstregbbox,
+                      void * extraargs);
   
   template <typename T>
   void
@@ -267,7 +303,9 @@ namespace CarpetLib {
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
-                      ibbox3 const & restrict regbbox);
+                      ibbox3 const & restrict srcregbbox,
+                      ibbox3 const & restrict dstregbbox,
+                      void * extraargs);
   
   template <typename T>
   void
@@ -287,7 +325,9 @@ namespace CarpetLib {
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
-                      ibbox3 const & restrict regbbox);
+                      ibbox3 const & restrict srcregbbox,
+                      ibbox3 const & restrict dstregbbox,
+                      void * extraargs);
   
   template <typename T>
   void
@@ -303,7 +343,9 @@ namespace CarpetLib {
                           ivect3 const & restrict dstext,
                           ibbox3 const & restrict srcbbox,
                           ibbox3 const & restrict dstbbox,
-                          ibbox3 const & restrict regbbox);
+                          ibbox3 const & restrict srcregbbox,
+                          ibbox3 const & restrict dstregbbox,
+                          void * extraargs);
   
   
   
@@ -315,7 +357,9 @@ namespace CarpetLib {
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
-                      ibbox3 const & restrict regbbox);
+                      ibbox3 const & restrict srcregbbox,
+                      ibbox3 const & restrict dstregbbox,
+                      void * extraargs);
   
   
   
@@ -327,7 +371,9 @@ namespace CarpetLib {
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
-                      ibbox3 const & restrict regbbox);
+                      ibbox3 const & restrict srcregbbox,
+                      ibbox3 const & restrict dstregbbox,
+                      void * extraargs);
   
   
   

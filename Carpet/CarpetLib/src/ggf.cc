@@ -184,7 +184,7 @@ void ggf::recompose_fill (comm_state & state, int const rl,
                            tl, rl, ml,
                            & dh::fast_dboxes::fast_old2new_sync_sendrecv,
                            tl, rl, ml,
-                           & oldstorage);
+                           true);
       } // for tl
     } // if rl
     
@@ -360,7 +360,7 @@ accumulate_all (comm_state & state,
                      tl,rl,ml,
                      & dh::fast_dboxes::fast_sync_sendrecv,
                      tl,rl,ml,
-                     NULL, true);
+                     false, true);
   timer.stop (0);
 }
 
@@ -538,7 +538,7 @@ transfer_from_all (comm_state & state,
                    srpvect const dh::fast_dboxes::* sendrecvs,
                    vector<int> const & tl2s, int const rl2, int const ml2,
                    CCTK_REAL const & time,
-                   mdata * const srcstorage_,
+                   bool const use_old_storage,
                    bool const flip_send_recv)
 {
   assert (rl1>=0 and rl1<h.reflevels());
@@ -553,7 +553,7 @@ transfer_from_all (comm_state & state,
   static Timer total ("transfer_from_all");
   total.start ();
   
-  mdata & srcstorage = srcstorage_ ? * srcstorage_ : storage;
+  mdata & srcstorage = use_old_storage ? oldstorage : storage;
   
   assert (           ml2<(int)srcstorage.size());
   assert (rl2>=0 and rl2<(int)srcstorage.AT(ml2).size());
@@ -603,9 +603,15 @@ transfer_from_all (comm_state & state,
     assert (all (recv.stride() == h.baseextent(ml1,rl1).stride()));
     int const c2 = psend.component;
     int const c1 = precv.component;
-    int const lc2 = h.get_local_component(rl2,c2);
+    int lc2, p2;
+    if (use_old_storage) {
+      lc2 = h.get_old_local_component(rl2,c2);
+      p2 = h.old_processor(rl2,c2);
+    } else {
+      lc2 = h.get_local_component(rl2,c2);
+      p2 = h.processor(rl2,c2);
+    }
     int const lc1 = h.get_local_component(rl1,c1);
-    int const p2 = h.processor(rl2,c2);
     int const p1 = h.processor(rl1,c1);
     // Ensure the communication schedule is consistent
     assert (p1==dist::rank() or p2==dist::rank());
@@ -620,7 +626,7 @@ transfer_from_all (comm_state & state,
     }
     
     dst->transfer_from
-      (state, gsrcs, times, recv, send, p1, p2 , time, pos, pot);
+      (state, gsrcs, times, recv, send, NULL, p1, p2 , time, pos, pot);
   }
   
   total.stop (0);

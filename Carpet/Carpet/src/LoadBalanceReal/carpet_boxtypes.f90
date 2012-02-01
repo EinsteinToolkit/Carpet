@@ -7,6 +7,8 @@ module carpet_boxtypes
   integer :: ghostsize
   real(wp) :: alpha
   logical :: limit_size
+  integer :: granularity
+  integer :: granularity_boundary
   integer :: procid
 
   contains
@@ -133,7 +135,9 @@ module carpet_boxtypes
 !   zones (communication). Ghost zones are added with a multiplication factor
 !   of alpha.
     subroutine calc_imbalance ( sregion, imbalance )
-      type(superregion2), pointer, intent(in) :: sregion
+!     The intent has been removed to make it compile with gfortran 4.1.
+!      type(superregion2), pointer, intent(in) :: sregion
+      type(superregion2), pointer :: sregion
       real(wp), intent(out) :: imbalance
       integer, dimension(3) :: cost
       real(wp) :: maxcost, maxgcost, n
@@ -161,7 +165,9 @@ module carpet_boxtypes
 
 !       Routine to traverse the tree and accumulate the cost of the leaves.
         recursive subroutine traverse_tree ( sreg )
-          type(superregion2), pointer, intent(in) :: sreg
+!         The intent has been removed to make it compile with gfortran 4.1.
+!          type(superregion2), pointer, intent(in) :: sreg
+          type(superregion2), pointer :: sreg
           integer :: ich, nch, tcost, gcost
 
 !         If the region has children recursively traverse the children.
@@ -194,8 +200,10 @@ module carpet_boxtypes
 !   Assign processor numbers to the leaves in a tree starting from start_proc.
     subroutine AssignProcs ( minproc, maxproc, frac1, frac2, sregion )
       integer, intent(in) :: minproc, maxproc
-      real(wp), intent(in) :: frac1, frac2
-      type(superregion2), pointer, intent(inout) :: sregion
+      real(wp ), intent(in) :: frac1, frac2
+!     The intent has been removed to make it compile with gfortran 4.1.
+!      type(superregion2), pointer, intent(inout) :: sregion
+      type(superregion2), pointer :: sregion
 
 !     Initialize.
       if ( frac1 == 0 ) then
@@ -211,7 +219,9 @@ module carpet_boxtypes
 
 !       Routine to traverse the tree and assign processor ids to the leaves.
         recursive subroutine traverse_treep ( sreg )
-          type(superregion2), pointer, intent(inout) :: sreg
+!          The intent has been removed to make it compile with gfortran 4.1.
+!          type(superregion2), pointer, intent(inout) :: sreg
+          type(superregion2), pointer :: sreg
           integer :: ich, nch, maxcost, np
           integer, dimension(3) :: cost
           integer, dimension(1) :: mydim
@@ -258,8 +268,8 @@ module carpet_boxtypes
 !   in the pre-allocated array of length nprocs. The array should be
 !   initialized to zero.
     subroutine calc_proc_load ( sregions, proc_load )
-      type(ptr), dimension(:), allocatable, intent(in) :: sregions
-      integer, dimension(:), allocatable, intent(inout) :: proc_load
+      type(ptr), dimension(:), intent(in) :: sregions
+      integer, dimension(:), intent(inout) :: proc_load
       integer :: i
 
 !     For each of the super regions in the array.
@@ -274,7 +284,9 @@ module carpet_boxtypes
 !       Routine to traverse the tree and add the load of each leaf to the
 !       assigned processor.
         recursive subroutine traverse_treel ( sreg )
-          type(superregion2), pointer, intent(in) :: sreg
+!         The intent has been removed to make it compile with gfortran 4.1.
+!          type(superregion2), pointer, intent(in) :: sreg
+          type(superregion2), pointer :: sreg
           integer, dimension(3) :: cost
           integer :: ich, nch
 
@@ -313,11 +325,13 @@ module carpet_boxtypes
       real(wp), intent(in) :: nprocs, fract
       integer, intent(in) :: maxchoices, maxfactor
       integer, intent(inout) :: clevel
-      type(superregion2), pointer, intent(inout) :: newreg
+!     The intent has been removed to make it compile with gfortran 4.1.
+!      type(superregion2), pointer, intent(inout) :: newreg
+      type(superregion2), pointer :: newreg
       integer, intent(inout) :: ncount
       type(bbox) :: reg
       integer, dimension(3) :: cost
-      integer :: maxcost, ngood, i, np1, np2, lo1, up1, str
+      integer :: maxcost, ngood, i, np1, lo1, up1, str
       real(wp) :: p1, p2
       integer, dimension(1) :: mydim
       integer, dimension(maxchoices) :: npr
@@ -382,12 +396,13 @@ module carpet_boxtypes
 !       Find the number of points in each of the 2 chunks while making
 !       sure the chunks are not too small compared to the ghostsize if
 !       limit_size is true.
-        np1 = nint((real(maxcost,wp)*p1)/nprocs)
+!       Take also the granularity into account.
+        np1 = nint((real(maxcost,wp)*p1)/nprocs/granularity)*granularity
+!       TODO: Take granularity_boundary into account as well!
         if ( limit_size ) then
           np1 = max(ghostsize,np1)
           np1 = min(maxcost-ghostsize,np1)
         end if
-        np2 = maxcost - np1
 
 !       Split the region (reg) into two regions (reg1, reg2) taking the
 !       stride into account.

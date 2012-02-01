@@ -77,7 +77,7 @@ void comm_state::step ()
       CCTK_VInfo (CCTK_THORNSTRING,
                   "before MPI_Barrier; state=%s", tostring(thestate));
     }
-    MPI_Barrier (dist::comm());
+    dist::barrier (dist::comm(), 404924393, "CarpetLib::comm_state::step");
     if (commstate_verbose) {
       CCTK_INFO ("after MPI_Barrier");
     }

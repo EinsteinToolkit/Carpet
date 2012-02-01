@@ -367,6 +367,14 @@ namespace Carpet {
     // }
     
     ++ regridding_epoch;
+    // Mark all vanished levels as changed
+    for (int rl=reflevels; rl<int(level_regridding_epochs.size()); ++rl) {
+      ++ level_regridding_epochs.at(rl);
+    }
+    // Insert entries for new levels
+    if (int(level_regridding_epochs.size()) < reflevels) {
+      level_regridding_epochs.resize(reflevels, 0);
+    }
     
     OutputGridStatistics (cctkGH);
     
@@ -397,6 +405,10 @@ namespace Carpet {
     }
       
     ClassifyPoints (cctkGH, rl);
+    
+    if (did_recompose) {
+      ++ level_regridding_epochs.at(rl);
+    }
     
     timer.stop();
     return did_recompose;
@@ -1348,6 +1360,8 @@ namespace Carpet {
 //       SplitRegionsMaps_AlongDir (cctkGH, superregss, regss, split_direction);
     } else if (CCTK_EQUALS (processor_topology, "automatic")) {
       SplitRegionsMaps_Automatic (cctkGH, superregss, regss);
+    } else if (CCTK_EQUALS (processor_topology, "recursive")) {
+      SplitRegionsMaps_Recursively (cctkGH, superregss, regss);
     } else if (CCTK_EQUALS (processor_topology, "manual")) {
       assert (0);
 //       SplitRegionsMaps_AsSpecified (cctkGH, superregss, regss);
@@ -1454,38 +1468,43 @@ namespace Carpet {
     
     // Choose a direction
     int mydim = -1;
-    int alldims = 0;
-    CCTK_REAL mycost = 0;
-    CCTK_REAL totalcost = 1;
-    // Prefer to split in the z direction
-    for (int d=dim-1; d>=0; --d) {
-      if (not dims[d]) {
-        ++ alldims;
-        CCTK_REAL const thiscost = rcost[d];
-        if (thiscost >= 0.999999 * mycost) {
-          mydim = d;
-          mycost = thiscost;
+    int nslices = -1;
+    if (no_split_direction!=-1 and not dims[no_split_direction]) {
+      mydim = no_split_direction;
+      nslices = 1;
+    } else {
+      int alldims = 0;
+      CCTK_REAL mycost = 0;
+      CCTK_REAL totalcost = 1;
+      // Prefer to split in the z direction
+      for (int d=dim-1; d>=0; --d) {
+        if (not dims[d]) {
+          ++ alldims;
+          CCTK_REAL const thiscost = rcost[d];
+          if (thiscost >= 0.999999 * mycost) {
+            mydim = d;
+            mycost = thiscost;
+          }
+          totalcost *= thiscost;
         }
-        totalcost *= thiscost;
       }
+      assert (mydim>=0 and mydim<dim);
+      assert (mycost>=0);
+      if (recompose_verbose) cout << "SRMAR mydim " << mydim << endl;
+      if (recompose_verbose) cout << "SRMAR mycost " << mycost << endl;
+      
+      // Choose a number of slices for this direction
+      CCTK_REAL const mycost1 =
+        mycost * pow(nprocs / totalcost, CCTK_REAL(1) / alldims);
+      nslices = min (nprocs, int (floor (mycost1 + CCTK_REAL(0.5))));
     }
-    assert (mydim>=0 and mydim<dim);
-    assert (mycost>=0);
-    if (recompose_verbose) cout << "SRMAR mydim " << mydim << endl;
-    if (recompose_verbose) cout << "SRMAR mycost " << mycost << endl;
+    assert (nslices <= nprocs);
+    if (recompose_verbose) cout << "SRMAR " << mydim << " nprocs " << nprocs << endl;
+    if (recompose_verbose) cout << "SRMAR " << mydim << " nslices " << nslices << endl;
     
     // Mark this direction as done
     assert (not dims[mydim]);
     bvect const newdims = dims.replace(mydim, true);
-    
-    // Choose a number of slices for this direction
-    CCTK_REAL const mycost1 =
-      mycost * pow(nprocs / totalcost, CCTK_REAL(1) / alldims);
-    int const nslices1 = min (nprocs, int (floor (mycost1 + CCTK_REAL(0.5))));
-    int const nslices = mydim==no_split_direction ? 1 : nslices1;
-    assert (nslices <= nprocs);
-    if (recompose_verbose) cout << "SRMAR " << mydim << " nprocs " << nprocs << endl;
-    if (recompose_verbose) cout << "SRMAR " << mydim << " nslices " << nslices << endl;
     
     // Split the remaining processors
     vector<int> mynprocs(nslices);

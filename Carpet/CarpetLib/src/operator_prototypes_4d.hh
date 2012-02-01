@@ -57,7 +57,9 @@ namespace CarpetLib {
            ivect4 const & restrict dstext,
            ibbox4 const & restrict srcbbox,
            ibbox4 const & restrict dstbbox,
-           ibbox4 const & restrict regbbox);
+           ibbox4 const & restrict srcregbbox,
+           ibbox4 const & restrict dstregbbox,
+           void * extraargs);
   
   
   
@@ -69,7 +71,9 @@ namespace CarpetLib {
                         ivect4 const & restrict dstext,
                         ibbox4 const & restrict srcbbox,
                         ibbox4 const & restrict dstbbox,
-                        ibbox4 const & restrict regbbox);
+                        ibbox4 const & restrict srcregbbox,
+                        ibbox4 const & restrict dstregbbox,
+                        void * extraargs);
   
   
   
@@ -81,7 +85,9 @@ namespace CarpetLib {
                    ivect4 const & restrict dstext,
                    ibbox4 const & restrict srcbbox,
                    ibbox4 const & restrict dstbbox,
-                   ibbox4 const & restrict regbbox);
+                   ibbox4 const & restrict srcregbbox,
+                   ibbox4 const & restrict dstregbbox,
+                   void * extraargs);
   
   
   

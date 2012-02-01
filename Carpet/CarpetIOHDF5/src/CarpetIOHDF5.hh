@@ -247,7 +247,8 @@ namespace CarpetIOHDF5
 
   };                            // struct IOHDF5
 
-  // scheduled routines (must be declared as C according to schedule.ccl)
+  // scheduled and aliased routines (must be declared as C according
+  // to schedule.ccl)
   extern "C" {
 
     int CarpetIOHDF5_RecoverParameters (void);
@@ -261,7 +262,14 @@ namespace CarpetIOHDF5
     void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS);
     void CarpetIOHDF5_TerminationCheckpoint (CCTK_ARGUMENTS);
 
+    CCTK_INT CarpetIOHDF5_SetCheckpointGroups (CCTK_INT const *groups,
+                                               CCTK_INT ngroups);
+
   } // extern "C"
+
+  // Which groups should be checkpointed. If empty, all variables
+  // should be checkpointed (default).
+  extern vector<bool> groups_to_checkpoint;
 
 } // namespace CarpetIOHDF5
 
