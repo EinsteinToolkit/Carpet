@@ -99,6 +99,10 @@ namespace Carpet {
       } // if storage
     } // for group
     
+    if (CCTK_IsFunctionAliased("Accelerator_Cycle")) {
+      Accelerator_Cycle(cctkGH);
+    }
+    
     if (errors > 0) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Errors in %d groups detected; aborting", errors);

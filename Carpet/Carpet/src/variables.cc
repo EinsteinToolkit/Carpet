@@ -106,6 +106,9 @@ namespace Carpet {
   // Should we warn about groups with insufficiently many time levels?
   bool do_warn_about_storage;
   
+  // Are we in the analysis bin?
+  bool in_analysis_bin;
+  
   
   
   // Data for grid functions

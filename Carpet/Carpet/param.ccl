@@ -558,3 +558,9 @@ INT output_timer_tree_every "Output timing information in tree form to standard 
   0   :: "don't report"
   1:* :: "report every so many iterations"
 } 0
+
+
+
+BOOLEAN requirement_inconsistencies_are_fatal "Abort when encountering inconsistencies in requirements" STEERABLE=recover
+{
+} "no"

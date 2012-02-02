@@ -332,8 +332,20 @@ namespace Carpet {
       
       user_timer.start();
       timer.start();
+      if (CCTK_IsFunctionAliased("Accelerator_PreCallFunction")) {
+        Timer pre_timer("PreCall");
+        pre_timer.start();
+        Accelerator_PreCallFunction(cctkGH, attribute);
+        pre_timer.stop();
+      }
       int const res = CCTK_CallFunction (function, attribute, data);
       assert (res==0);
+      if (CCTK_IsFunctionAliased("Accelerator_PostCallFunction")) {
+        Timer post_timer("PostCall");
+        post_timer.start();
+        Accelerator_PostCallFunction(cctkGH, attribute);
+        post_timer.stop();
+      }
       timer.stop();
       user_timer.stop();
       

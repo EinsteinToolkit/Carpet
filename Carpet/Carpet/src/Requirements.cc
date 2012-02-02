@@ -95,10 +95,15 @@ namespace Carpet {
     CheckEntry (void * const attribute,
                 void * const data)
     {
+      DECLARE_CCTK_PARAMETERS;
+      
       if (not attribute) {
         // Nothing to check
         return 1;
       }
+      
+      int (*const warn) (char const *thorn, char const *format, ...) =
+        requirement_inconsistencies_are_fatal ? CCTK_VParamWarn : CCTK_VInfo;
       
       // Convert argument types
       cFunctionData & function_data =
@@ -125,12 +130,12 @@ namespace Carpet {
              ri != required_but_not_provided.end(); ++ ri)
         {
           string const req = * ri;
-          CCTK_VParamWarn (CCTK_THORNSTRING,
-                           "Requirement inconsistency:\n"
-                           "   Group %s, function %s::%s requires \"%s\" which has not been provided",
-                           function_data.where,
-                           function_data.thorn, function_data.routine,
-                           req.c_str());
+          warn (CCTK_THORNSTRING,
+                "Requirement inconsistency:\n"
+                "   Group %s, function %s::%s requires \"%s\" which has not been provided",
+                function_data.where,
+                function_data.thorn, function_data.routine,
+                req.c_str());
         }
       }
       
@@ -144,10 +149,15 @@ namespace Carpet {
     CheckExit (void * const attribute,
                void * const data)
     {
+      DECLARE_CCTK_PARAMETERS;
+      
       if (not attribute) {
         // Nothing to check
         return 1;
       }
+      
+      int (*const warn) (char const *thorn, char const *format, ...) =
+        requirement_inconsistencies_are_fatal ? CCTK_VParamWarn : CCTK_VInfo;
       
       // Convert argument types
       cFunctionData & function_data =
@@ -187,12 +197,12 @@ namespace Carpet {
              pi != provided_too_often.end(); ++ pi)
         {
           string const prov = * pi;
-          CCTK_VParamWarn (CCTK_THORNSTRING,
-                           "Requirement inconsistency:\n"
-                           "   Group %s, function %s::%s provides (and does not require) \"%s\" which has already been provided",
-                           function_data.where,
-                           function_data.thorn, function_data.routine,
-                           prov.c_str());
+          warn (CCTK_THORNSTRING,
+                "Requirement inconsistency:\n"
+                "   Group %s, function %s::%s provides (and does not require) \"%s\" which has already been provided",
+                function_data.where,
+                function_data.thorn, function_data.routine,
+                prov.c_str());
         }
       }
       

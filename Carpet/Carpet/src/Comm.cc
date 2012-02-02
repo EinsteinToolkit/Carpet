@@ -214,6 +214,10 @@ namespace Carpet {
     Checkpoint ("SyncGroups");
 
     assert (groups.size() > 0);
+    
+    if (CCTK_IsFunctionAliased("Accelerator_PreSync")) {
+      Accelerator_PreSync(cctkGH, &groups.front(), groups.size());
+    }
 
     for (comm_state state; not state.done(); state.step()) {
       for (int group = 0; group < (int)groups.size(); ++group) {
@@ -231,6 +235,10 @@ namespace Carpet {
           }
         }
       }
+    }
+
+    if (CCTK_IsFunctionAliased("Accelerator_PostSync")) {
+      Accelerator_PostSync(cctkGH, &groups.front(), groups.size());
     }
   }
 

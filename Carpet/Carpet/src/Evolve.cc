@@ -602,7 +602,9 @@ namespace Carpet {
               ScheduleTraverse (where, "CCTK_CHECKPOINT", cctkGH);
               
               // Analysis
+              in_analysis_bin = true;
               ScheduleTraverse (where, "CCTK_ANALYSIS", cctkGH);
+              in_analysis_bin = false;
               
               if (do_late_global_mode) {
                 // Timing statistics

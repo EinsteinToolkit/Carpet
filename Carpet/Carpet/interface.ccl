@@ -193,6 +193,34 @@ USES FUNCTION MultiPatch_ConvertFromPhysicalBoundary
 
 
 
+CCTK_INT FUNCTION Accelerator_Cycle             \
+  (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION Accelerator_Cycle
+
+CCTK_INT FUNCTION Accelerator_PreCallFunction   \
+  (CCTK_POINTER_TO_CONST IN cctkGH,             \
+   CCTK_POINTER_TO_CONST IN attribute)
+USES FUNCTION Accelerator_PreCallFunction
+
+CCTK_INT FUNCTION Accelerator_PostCallFunction  \
+  (CCTK_POINTER_TO_CONST IN cctkGH,             \
+   CCTK_POINTER_TO_CONST IN attribute)
+USES FUNCTION Accelerator_PostCallFunction
+
+CCTK_INT FUNCTION Accelerator_PreSync           \
+  (CCTK_POINTER_TO_CONST IN cctkGH,             \
+   CCTK_INT ARRAY        IN groups,             \
+   CCTK_INT              IN ngroups)
+USES FUNCTION Accelerator_PreSync
+
+CCTK_INT FUNCTION Accelerator_PostSync          \
+  (CCTK_POINTER_TO_CONST IN cctkGH,             \
+   CCTK_INT ARRAY        IN groups,             \
+   CCTK_INT              IN ngroups)
+USES FUNCTION Accelerator_PostSync
+
+
+
 # Access coordinate information (on the coarse level)
 CCTK_INT FUNCTION GetCoordRange        \
     (CCTK_POINTER_TO_CONST IN  cctkGH, \
