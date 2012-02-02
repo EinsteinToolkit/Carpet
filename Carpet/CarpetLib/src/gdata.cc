@@ -40,7 +40,7 @@ ostream& operator<< (ostream& os, slab<T,D> const & slabinfo)
 }
 
 template ostream& operator<< (ostream& os, slab<int,dim> const & slabinfo);
-template ostream& operator<< (ostream& os, slab<double,dim> const & slabinfo);
+template ostream& operator<< (ostream& os, slab<CCTK_REAL,dim> const & slabinfo);
 
 template<typename T,int D>
 MPI_Datatype mpi_datatype (slab<T,D> const&)

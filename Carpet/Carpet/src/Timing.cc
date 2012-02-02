@@ -416,7 +416,7 @@ namespace Carpet {
       * current_physical_time_per_hour = * physical_time_per_hour;
     } else {
       CCTK_REAL const window =
-        min (* time_evolution, timing_average_window_minutes * 60.0);
+        min (* time_evolution, (CCTK_REAL) (timing_average_window_minutes * 60.0));
       CCTK_REAL const alpha =
         exp (- (* time_evolution - last_time_evolution) / window);
       * current_physical_time_per_hour =
