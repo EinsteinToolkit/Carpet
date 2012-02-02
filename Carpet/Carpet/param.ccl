@@ -540,8 +540,7 @@ BOOLEAN adaptive_stepsize "Allow adaptive timestep sizes"
 
 BOOLEAN use_unusedpoints_mask "Turn on of off (default) storage and usage of 'unusedpoints_mask'"
 {
-  0:* :: "Anything else than 0 turns unusedpoints_mask on"
-} 0
+} "no"
 
 STRING timer_xml_clock "Which clock to use in the XML timer output file"
 {
