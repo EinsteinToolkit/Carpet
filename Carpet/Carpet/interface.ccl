@@ -48,6 +48,18 @@ PROVIDES FUNCTION GetMPICommWorld WITH Carpet_GetMPICommWorld LANGUAGE C
 
 
 
+# Get access to process->host mapping
+CCTK_INT FUNCTION CCTK_MyHost(CCTK_POINTER_TO_CONST IN cctkGH)
+CCTK_INT FUNCTION CCTK_nHosts(CCTK_POINTER_TO_CONST IN cctkGH)
+CCTK_INT FUNCTION CCTK_nProcsOnHost(CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN host)
+CCTK_INT FUNCTION CCTK_ProcsOnHost(CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN host, CCTK_INT ARRAY OUT procs, CCTK_INT IN nprocs)
+PROVIDES FUNCTION CCTK_MyHost       WITH Carpet_MyHost       LANGUAGE C
+PROVIDES FUNCTION CCTK_nHosts       WITH Carpet_nHosts       LANGUAGE C
+PROVIDES FUNCTION CCTK_nProcsOnHost WITH Carpet_nProcsOnHost LANGUAGE C
+PROVIDES FUNCTION CCTK_ProcsOnHost  WITH Carpet_ProcsOnHost  LANGUAGE C
+
+
+
 # Register and unregister routines which are called before and after
 # every scheduled routine
 CCTK_INT \

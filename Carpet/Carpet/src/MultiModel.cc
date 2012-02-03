@@ -32,12 +32,12 @@ namespace Carpet
   
   
   
-  vector <string> Models () { return models; }
-  std::map <string, int> ModelMap () { return model_map; }
-  vector <int> ModelIds () { return model_ids; }
-  vector <vector <int> > ModelProcs () { return model_procs; }
+  vector <string> const & Models () { return models; }
+  std::map <string, int> const & ModelMap () { return model_map; }
+  vector <int> const & ModelIds () { return model_ids; }
+  vector <vector <int> > const & ModelProcs () { return model_procs; }
   
-  string Models (int const id)
+  string Model (int const id)
   {
     return models.at (id);
   }
@@ -59,9 +59,9 @@ namespace Carpet
     return model_ids.at (proc);
   }
 
-  vector <int> ModelProcs (int const proc)
+  vector <int> const & ModelProcs (int const id)
   {
-    return model_procs.at (proc);
+    return model_procs.at (id);
   }
   
   

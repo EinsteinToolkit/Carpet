@@ -10,6 +10,7 @@ SRCS =	CactusTimer.cc				\
 	Comm.cc					\
 	Cycle.cc				\
 	Evolve.cc				\
+	Hosts.cc				\
 	Initialise.cc				\
 	MultiModel.cc				\
 	OutputGH.cc				\

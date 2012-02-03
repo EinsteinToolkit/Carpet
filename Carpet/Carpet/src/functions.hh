@@ -57,20 +57,45 @@ namespace Carpet {
                  bool verbose);
   
   // Model id to model name
-  vector <string> Models ();
-  string Model (int id) CCTK_ATTRIBUTE_PURE;
+  vector <string> const & Models ();
+  string Model (int id);
   
   // Model name to model id
-  std::map <string, int> ModelMap ();
-  int ModelMap (string name) CCTK_ATTRIBUTE_PURE;
+  std::map <string, int> const & ModelMap ();
+  int ModelMap (string name);
   
   // Processor to model id
-  vector <int> ModelIds ();
-  int ModelId (int proc) CCTK_ATTRIBUTE_PURE;
+  vector <int> const & ModelIds ();
+  int ModelId (int proc);
   
-  // Model id to processors
-  vector <vector <int> > ModelProcs () CCTK_ATTRIBUTE_PURE;
-  vector <int> ModelProcs (int proc) CCTK_ATTRIBUTE_PURE;
+  // Model id to processes
+  vector <vector <int> > const & ModelProcs ();
+  vector <int> const & ModelProcs (int id);
+  
+  
+  
+  // Host mapping
+  void
+  DetermineHosts (string host,
+                  bool verbose);
+  
+  // Host id to host name
+  vector <string> const & Hosts ();
+  string Host (int id);
+  
+  // Host name to host id
+  std::map <string, int> const & HostMap ();
+  int HostMap (string name);
+  
+  // Processor to host id
+  vector <int> const & HostIds ();
+  int HostId (int proc);
+  
+  // Host id to processes
+  vector <vector <int> > const & HostProcs ();
+  vector <int> const & HostProcs (int id);
+  
+  
   
   extern "C" {
     CCTK_POINTER_TO_CONST

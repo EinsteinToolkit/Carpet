@@ -254,16 +254,19 @@ namespace Carpet {
       MPI_Get_processor_name (hostnamebuf, &hostnamelen);
       string const hostname (hostnamebuf);
 #endif
+      DetermineHosts (hostname, true);
+#if HAVE_GETPID
       int const mypid = static_cast<int> (getpid ());
+#else
+      int const mypid = -1;
+#endif
       // Output
       CCTK_VInfo (CCTK_THORNSTRING,
                   "This process runs on host %s, pid=%d",
                   hostname.c_str(), mypid);
       if (verbose or veryverbose) {
-        // Collect host names
-        vector <string> hostnames = allgather_string (dist::comm(), hostname);
-        vector <int> pids (nprocs);
         // Collect process ids
+        vector <int> pids (nprocs);
         MPI_Allgather (const_cast <int *> (& mypid), 1, MPI_INT,
                        & pids.front(), 1, MPI_INT,
                        dist::comm());
@@ -276,9 +279,11 @@ namespace Carpet {
         CCTK_VInfo (CCTK_THORNSTRING,
                     "Running on the following hosts:");
         for (int n = 0; n < nprocs; ++ n) {
+          int const host_id = HostId(n);
           CCTK_VInfo (CCTK_THORNSTRING,
-                      "   %6d: %s, pid=%d, num_threads=%d",
-                      n, hostnames.AT(n).c_str(), pids.AT(n), nthreads.AT(n));
+                      "   %6d: hid=%d (%s), pid=%d, num_threads=%d",
+                      n, host_id, Host(host_id).c_str(),
+                      pids.AT(n), nthreads.AT(n));
         }
       }
       

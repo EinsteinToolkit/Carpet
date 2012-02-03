@@ -149,7 +149,44 @@ namespace Carpet {
   }
   
 
-
+  
+  // Hosts
+  extern "C"
+  CCTK_INT Carpet_MyHost(CCTK_POINTER_TO_CONST const cctkGH_)
+  {
+    return HostId(dist::rank());
+  }
+  
+  extern "C"
+  CCTK_INT Carpet_nHosts(CCTK_POINTER_TO_CONST const cctkGH_)
+  {
+    return Hosts().size();
+  }
+  
+  extern "C"
+  CCTK_INT Carpet_nProcsOnHost(CCTK_POINTER_TO_CONST const cctkGH_,
+                               CCTK_INT const host)
+  {
+    return HostProcs(host).size();
+  }
+  
+  extern "C"
+  CCTK_INT Carpet_ProcsOnHost(CCTK_POINTER_TO_CONST const cctkGH_,
+                              CCTK_INT const host,
+                              CCTK_INT procs[], CCTK_INT const nprocs)
+  {
+    int const nprocs1 = HostProcs(host).size();
+    for (int p=0; p<nprocs1; ++p) {
+      if (p >= nprocs) break;
+      procs[p] = HostProcs(host).AT(p);
+    }
+    return nprocs1;
+  }
+  
+  
+  
+  // Coordinates
+  
   CCTK_INT
   Carpet_GetCoordRange (CCTK_POINTER_TO_CONST const cctkGH_,
                         CCTK_INT              const m,
