@@ -317,6 +317,16 @@ namespace CarpetInterp2 {
     {
       return recv_descr.npoints;
     }
+
+    bool
+    outofdate ()
+      const
+    {
+      return 
+        regridding_epoch != (reflevel == -1 ?
+                             Carpet::regridding_epoch :
+                             Carpet::level_regridding_epochs.AT(reflevel));
+    }
   };
   
   

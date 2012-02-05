@@ -1071,9 +1071,7 @@ namespace CarpetInterp2 {
     DECLARE_CCTK_PARAMETERS;
     
     // Check regridding epoch
-    if (regridding_epoch != (reflevel == -1 ?
-                             Carpet::regridding_epoch :
-                             Carpet::level_regridding_epochs.AT(reflevel)))
+    if (outofdate())
     {
       if (reflevel == -1) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
