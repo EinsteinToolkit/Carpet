@@ -987,14 +987,14 @@ regrid (bool const do_init)
           ibset const tmp3 = tmp2.expand(1,1);
           ibset const tmp4 = all_target - tmp3;
           allrestricted = tmp4;
-          cout << "source=" << source << "\n"
-               << "target=" << target << "\n"
-               << "all=" << all << "\n"
-               << "all_target=" << all_target << "\n"
-               << "tmp1=" << tmp1 << "\n"
-               << "tmp2=" << tmp2 << "\n"
-               << "tmp3=" << tmp3 << "\n"
-               << "allrestricted=" << allrestricted << "\n";
+          // cout << "source=" << source << "\n"
+          //      << "target=" << target << "\n"
+          //      << "all=" << all << "\n"
+          //      << "all_target=" << all_target << "\n"
+          //      << "tmp1=" << tmp1 << "\n"
+          //      << "tmp2=" << tmp2 << "\n"
+          //      << "tmp3=" << tmp3 << "\n"
+          //      << "allrestricted=" << allrestricted << "\n";
           break;
         }
         default:
@@ -1240,8 +1240,10 @@ regrid (bool const do_init)
                       recv.expanded_for (box.exterior.shift(-idir, 2));
                     ASSERT_c (send <= box.exterior.shift(-idir, 2),
                               "Refinement restriction: Send region must be contained in exterior");
-                    
-                    sendrecv_pseudoregion_t const preg (send, c, recv, oc);
+                    ibbox const shifted_recv = recv.shift(idir, 2);
+                    ibbox const shifted_send = send.shift(idir, 2);
+                    sendrecv_pseudoregion_t const preg
+                      (shifted_send, c, shifted_recv, oc);
                     cout << "REF ref_refl ml=" << ml << " rl=" << rl << " olc=" << olc << " c=" << c << " oc=" << oc << " dir=" << dir << " face=" << face << "\n"
                          << "   preg=" << preg << "\n";
                     (fast_olevel.*fast_ref_refl_sendrecv).push_back (preg);

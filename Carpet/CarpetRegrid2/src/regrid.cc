@@ -367,6 +367,7 @@ namespace CarpetRegrid2 {
       // Enforce properties on this level
       for (int count=0;; ++count) {
         bool done_enforcing = true;
+        ibset const old_regions = regions.at(rl);
         for (vector<property*>::iterator
                pi = properties.begin(); pi != properties.end(); ++ pi)
         {
@@ -379,8 +380,11 @@ namespace CarpetRegrid2 {
         
         if (done_enforcing) break;
         
+        if (regions.at(rl) == old_regions) {
+          CCTK_WARN (CCTK_WARN_ABORT, "Could not enforce grid structure properties (not making any progress); giving up");
+        }
         if (count == 10) {
-          CCTK_WARN (CCTK_WARN_ABORT, "Could not enforce grid structure properties; giving up");
+          CCTK_WARN (CCTK_WARN_ABORT, "Could not enforce grid structure properties (maximum number of iterations reached); giving up");
         }
         if (count != 0) {
           // This may not be true. However, the previous version of

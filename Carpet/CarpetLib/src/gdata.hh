@@ -25,8 +25,11 @@ using namespace std;
 // Slabbing description
 template <typename T, int D>
 struct slab {
-  slab() {};
-  vect<T,D> offset;    // dst[ipos] = src[ipos + offset * box.stride];
+  // For periodic boundary conditions:
+  vect<T,D> offset;     // dst[ipos] = src[ipos + offset * box.stride]
+  // For refluxing:
+  vect<T,D> is_centered;
+  slab(): offset(0), is_centered(1) {}
 };
 typedef slab<int,dim> islab;
 

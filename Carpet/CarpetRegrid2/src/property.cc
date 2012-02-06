@@ -269,10 +269,10 @@ namespace CarpetRegrid2 {
       // again.
       
       // In detail, we first expand by reffact-1-N points, then expand
-      // to the next coarser grid, then expand back to the current
-      // grid, and expand by N points again. This sequence is correct
-      // for both vertex and cell centred grids, and N is determined
-      // by the number of buffer zones.
+      // (contract???) to the next coarser grid, then expand back to
+      // the current grid, and expand by N points again. This sequence
+      // is correct for both vertex and cell centred grids, and N is
+      // determined by the number of buffer zones.
       
       // N is the number of buffer zones modulo the refinement factor.
       // We cannot shrink the domain (since we cannot shrink
@@ -299,7 +299,17 @@ namespace CarpetRegrid2 {
     if (not snap_to_coarse) return true;
     
     ibset const snapped = snapped_regions (hh, dd, bnd, regions, rl);
-    return regions.AT(rl) == snapped;
+    
+    // We cannot test for equality, since the difference may be
+    // outside of the domain (and hence irrelevant)
+    // return regions.AT(rl) == snapped;
+    
+    // Test whether any part of the difference (i.e. that part of the
+    // level that would be added by snapping) is inside the domain. If
+    // the difference is outside, we can safely ignore it.
+    ibbox const& baseextent = hh.baseextent(0,rl);
+    ibset const difference = snapped - regions.AT(rl);
+    return (difference & baseextent).empty();
   }
   
   void snap_coarse::

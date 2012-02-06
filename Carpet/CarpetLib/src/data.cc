@@ -539,56 +539,28 @@ copy_from_innerloop (gdata const * const gsrc,
   assert (proc() == src->proc());
   assert (dist::rank() == proc());
   
-  ibbox srcbox, dstbox;
-  switch (cent) {
-  case vertex_centered:
-    srcbox = src->extent();
-    dstbox = this->extent();
-    break;
-  case cell_centered: {
-    ivect const ioff = dstbox.lower() - this->extent().lower();
-    ivect const is_centered = ioff % this->extent().stride() == 0;
-    
-    // Shift bboxes to be face centred if necessary, since all grid
-    // functions are stored as if they were cell-centered
-    // srcbox = src->extent().shift(is_centered-1,2);
-    srcbox = src->extent();
-    dstbox = this->extent().shift(is_centered-1,2);
-    break;
-  }
-  default:
-    assert (0);
-  }
+  ibbox const& srcbox = src->extent();
+  ibbox const& dstbox = this->extent();
   
-  if (transport_operator != op_accumulate) {
 #if CARPET_DIM == 3
-    call_operator<T> (& copy_3d,
-                      static_cast <T const *> (src->storage()),
-                      src->shape(),
-                      static_cast <T *> (this->storage()),
-                      this->shape(),
-                      srcbox, dstbox,
-                      srcregbox, dstregbox, (void*)slabinfo);
+  call_operator<T> (& copy_3d,
+                    static_cast <T const *> (src->storage()),
+                    src->shape(),
+                    static_cast <T *> (this->storage()),
+                    this->shape(),
+                    srcbox, dstbox,
+                    srcregbox, dstregbox, (void*)slabinfo);
 #elif CARPET_DIM == 4
-    call_operator<T> (& copy_4d,
-                      static_cast <T const *> (src->storage()),
-                      src->shape(),
-                      static_cast <T *> (this->storage()),
-                      this->shape(),
-                      srcbox, dstbox,
-                      srcregbox, dstregbox, (void*)slabinfo);
+  call_operator<T> (& copy_4d,
+                    static_cast <T const *> (src->storage()),
+                    src->shape(),
+                    static_cast <T *> (this->storage()),
+                    this->shape(),
+                    srcbox, dstbox,
+                    srcregbox, dstregbox, (void*)slabinfo);
 #else
 #  error "Value for CARPET_DIM not supported"
 #endif
-  } else {
-    call_operator<T> (& accumulate_3d,
-                      static_cast <T const *> (src->storage()),
-                      src->shape(),
-                      static_cast <T *> (this->storage()),
-                      this->shape(),
-                      srcbox, dstbox,
-                      srcregbox, dstregbox, (void*)slabinfo);
-  }
 }
 
 
@@ -699,8 +671,7 @@ transfer_p_r (data const * const src,
   } else if (all (src->extent().stride() < this->extent().stride())) {
     // Restrict
     assert (transport_operator != op_sync);
-    assert (not slabinfo);
-    transfer_restrict (src, dstbox, srcbox, order_space);
+    transfer_restrict (src, dstbox, srcbox, slabinfo, order_space);
   } else {
     assert (0);
   }
@@ -1103,6 +1074,7 @@ data <T>::
 transfer_restrict (data const * const src,
                    ibbox const & dstregbox,
                    ibbox const & srcregbox,
+                   islab const * restrict const slabinfo,
                    int const /*order_space*/)
 {
   static Timer total ("restrict");
@@ -1122,6 +1094,7 @@ transfer_restrict (data const * const src,
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
     case vertex_centered:
+      assert (not slabinfo);
       call_operator<T> (& restrict_3d_rf2,
                         static_cast <T const *> (src->storage()),
                         src->shape(),
@@ -1133,13 +1106,10 @@ transfer_restrict (data const * const src,
       break;
     case cell_centered: {
       assert (all (dstregbox.stride() == this->extent().stride()));
-      ivect const ioff = dstregbox.lower() - this->extent().lower();
-      ivect const is_centered = ioff % this->extent().stride() == 0;
+      ivect const is_centered = slabinfo ? slabinfo->is_centered : 1;
       
-      // Shift bboxes to be face centred if necessary, since all grid
-      // functions are stored as if they were cell-centered
-      ibbox const srcbox = src->extent().shift(is_centered-1,2);
-      ibbox const dstbox = this->extent().shift(is_centered-1,2);
+      ibbox const& srcbox = src->extent();
+      ibbox const& dstbox = this->extent();
       
       if (all(is_centered == ivect(1,1,1))) {
         call_operator<T> (& restrict_3d_cc_rf2,
@@ -1231,6 +1201,7 @@ data <CCTK_INT>::
 transfer_restrict (data const * const /*src*/,
                    ibbox const & /*dstbox*/,
                    ibbox const & /*srcbox*/,
+                   islab const *restrict const /*slabinfo*/,
                    int const /*order_space*/)
 {
   CCTK_WARN (0, "Data type not supported");
