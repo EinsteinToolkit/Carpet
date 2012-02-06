@@ -135,7 +135,7 @@ namespace CarpetLib {
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
-                      ibbox3 const & restrict,
+                      ibbox3 const & restrict srcregbbox,
                       ibbox3 const & restrict regbbox,
                       void * extraargs)
   {
@@ -148,9 +148,6 @@ namespace CarpetLib {
     // false: vertex centered, true: cell centered
     ivect const icent (centi, centj, centk);
     assert (all (icent == 0 or icent == 1));
-    bvect const cent (icent);
-    
-    
     
     if (any (srcbbox.stride() >= regbbox.stride() or
              dstbbox.stride() != regbbox.stride()))
@@ -183,22 +180,19 @@ namespace CarpetLib {
     
     
     ivect3 const regext = regbbox.shape() / regbbox.stride();
-    assert (all (srcbbox.stride() % either (cent, 2, 1) == 0));
-    if (not (all ((regbbox.lower() - srcbbox.lower() -
-                   either (cent, srcbbox.stride() / 2, 0)) %
+    assert (all (srcbbox.stride() % 2 == 0));
+    if (not (all ((regbbox.lower() - srcbbox.lower() - srcbbox.stride() / 2) %
                   srcbbox.stride() == 0)))
     {
       cout << "restrict_3d_vc_rf2.cc\n";
       cout << "regbbox=" << regbbox << "\n";
       cout << "srcbbox=" << srcbbox << "\n";
-      cout << "cent=" << cent << "\n";
+      cout << "icent=" << icent << "\n";
     }
-    assert (all ((regbbox.lower() - srcbbox.lower() -
-                  either (cent, srcbbox.stride() / 2, 0)) %
+    assert (all ((regbbox.lower() - srcbbox.lower() - srcbbox.stride() / 2) %
                  srcbbox.stride() == 0));
     ivect3 const srcoff =
-      (regbbox.lower() - srcbbox.lower() -
-       either (cent, srcbbox.stride() / 2, 0)) /
+      (regbbox.lower() - srcbbox.lower() - srcbbox.stride() / 2) /
       srcbbox.stride();
     assert (all ((regbbox.lower() - dstbbox.lower()) % dstbbox.stride() == 0));
     ivect3 const dstoff =
@@ -226,7 +220,9 @@ namespace CarpetLib {
     int const dstjoff = dstoff[1];
     int const dstkoff = dstoff[2];
     
-    size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
+    // size_t const srcdi == SRCIND3(1,0,0) - SRCIND3(0,0,0);
+    size_t const srcdi = 1;
+    assert (srcdi == SRCIND3(1,0,0) - SRCIND3(0,0,0));
     size_t const srcdj = SRCIND3(0,1,0) - SRCIND3(0,0,0);
     size_t const srcdk = SRCIND3(0,0,1) - SRCIND3(0,0,0);
     

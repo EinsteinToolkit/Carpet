@@ -2169,8 +2169,6 @@ namespace Carpet {
       return op_restrict;
     } else if (CCTK_Equals(prolong_string, "copy")) {
       return op_copy;
-    } else if (CCTK_Equals(prolong_string, "accumulate")) {
-      return op_accumulate;
     } else if (CCTK_Equals(prolong_string, "Lagrange")) {
       return op_Lagrange;
     } else if (CCTK_Equals(prolong_string, "ENO")) {

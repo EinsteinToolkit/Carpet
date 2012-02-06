@@ -374,8 +374,7 @@ namespace Carpet {
       if (groupdata.AT(group).transport_operator != op_none and
           groupdata.AT(group).transport_operator != op_sync and
           groupdata.AT(group).transport_operator != op_restrict and
-          groupdata.AT(group).transport_operator != op_copy and
-          groupdata.AT(group).transport_operator != op_accumulate)
+          groupdata.AT(group).transport_operator != op_copy)
       {
         if (groupdata.AT(group).activetimelevels.AT(ml).AT(rl) != 0 and
             (groupdata.AT(group).activetimelevels.AT(ml).AT(rl) <

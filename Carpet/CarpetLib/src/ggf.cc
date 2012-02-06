@@ -192,7 +192,8 @@ void ggf::recompose_fill (comm_state & state, int const rl,
       // Initialise from a coarser level of the new hierarchy, where
       // possible
       if (rl > 0) {
-        if (transport_operator != op_none and transport_operator != op_sync and
+        if (transport_operator != op_none and
+            transport_operator != op_sync and
             transport_operator != op_restrict)
         {
           int const numtl = timelevels (ml, rl);
@@ -346,26 +347,6 @@ sync_all (comm_state & state,
 
 
 
-// Accumulate the boundaries of all components
-void
-ggf::
-accumulate_all (comm_state & state,
-                int const tl, int const rl, int const ml)
-{
-  assert (transport_operator == op_accumulate);
-  // Accumulate
-  static Timer timer ("accumulate_all");
-  timer.start ();
-  transfer_from_all (state,
-                     tl,rl,ml,
-                     & dh::fast_dboxes::fast_sync_sendrecv,
-                     tl,rl,ml,
-                     false, true);
-  timer.stop (0);
-}
-
-
-
 // Prolongate the boundaries of all components
 void
 ggf::
@@ -375,13 +356,14 @@ ref_bnd_prolongate_all (comm_state & state,
 {
   // Interpolate
   assert (rl>=1);
-  if (transport_operator == op_none or transport_operator == op_sync or
+  if (transport_operator == op_none or
+      transport_operator == op_sync or
       transport_operator == op_restrict)
     return;
   vector<int> tl2s;
   static Timer timer ("ref_bnd_prolongate_all");
   timer.start ();
-  if (transport_operator != op_copy and transport_operator != op_accumulate) {
+  if (transport_operator != op_copy) {
     // Interpolation in time
     if (not (timelevels(ml,rl) >= prolongation_order_time+1)) {
       char * const fullname = CCTK_FullName (varindex);
@@ -487,7 +469,8 @@ ref_prolongate_all (comm_state & state,
                     CCTK_REAL const time)
 {
   assert (rl>=1);
-  if (transport_operator == op_none or transport_operator == op_sync or
+  if (transport_operator == op_none or
+      transport_operator == op_sync or
       transport_operator == op_restrict)
     return;
   static Timer timer ("ref_prolongate_all");
@@ -514,17 +497,20 @@ ref_reflux_all (comm_state & state,
                 int const tl, int const rl, int const ml,
                 int const dir, int const face)
 {
-  // Ignore the transport operator
   static Timer timer ("ref_reflux_all");
   timer.start ();
   // Require same times
   static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
   assert (abs(t.get_time(ml,rl,tl) - t.get_time(ml,rl+1,tl)) <=
           1.0e-8 * (1.0 + abs(t.get_time(ml,rl,tl))));
+  islab slabinfo;
+  slabinfo.is_centered = 1 - ivect::dir(dir);
   transfer_from_all (state,
                      tl,rl,ml,
                      dh::fast_dboxes::fast_ref_refl_sendrecv[dir][face],
-                     tl,rl+1,ml);
+                     tl,rl+1,ml,
+                     false, false,
+                     &slabinfo);
   timer.stop (0);
 }
 
@@ -539,7 +525,8 @@ transfer_from_all (comm_state & state,
                    vector<int> const & tl2s, int const rl2, int const ml2,
                    CCTK_REAL const & time,
                    bool const use_old_storage,
-                   bool const flip_send_recv)
+                   bool const flip_send_recv,
+                   islab const *restrict const slabinfo)
 {
   assert (rl1>=0 and rl1<h.reflevels());
   assert (ml1>=0 and ml1<h.mglevels());
@@ -579,11 +566,9 @@ transfer_from_all (comm_state & state,
   // Interpolation orders
   assert (transport_operator != op_none);
   int const pos =
-    transport_operator == op_copy or transport_operator == op_accumulate
-    ? 0 : d.prolongation_orders_space.AT(rl2);
+    transport_operator == op_copy ? 0 : d.prolongation_orders_space.AT(rl2);
   int const pot =
-    transport_operator == op_copy or transport_operator == op_accumulate
-    ? 0 : prolongation_order_time;
+    transport_operator == op_copy ? 0 : prolongation_order_time;
   
   vector<const gdata*> gsrcs(tl2s.size());
   
@@ -626,7 +611,7 @@ transfer_from_all (comm_state & state,
     }
     
     dst->transfer_from
-      (state, gsrcs, times, recv, send, NULL, p1, p2 , time, pos, pot);
+      (state, gsrcs, times, recv, send, slabinfo, p1, p2 , time, pos, pot);
   }
   
   total.stop (0);

@@ -12,7 +12,6 @@ enum operator_type
   op_restrict,                  // restrict only, do not prolongate
   op_copy,                      // use simple copying for prolongation
                                 // (needs only one time level)
-  op_accumulate,                // accumulate (sum) into the destination
   op_Lagrange,                  // Lagrange interpolation (standard)
   op_ENO,                       // use ENO stencils (for hydro)
   op_WENO,                      // use WENO stencils (for hydro)

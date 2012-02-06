@@ -236,8 +236,7 @@ transfer_from (comm_state & state,
     assert (all(dstbox.lower() >= extent().lower()));
     assert (all(dstbox.upper() <= extent().upper()));
     assert (all(dstbox.stride() == extent().stride()));
-    // This is not satisfied for refluxing
-    // assert (all((dstbox.lower() - extent().lower()) % dstbox.stride() == 0));
+    assert (all((dstbox.lower() - extent().lower()) % dstbox.stride() == 0));
   }
   
   if (is_src) {
@@ -246,10 +245,6 @@ transfer_from (comm_state & state,
     for (int t=0; t<(int)srcs.size(); ++t) {
       assert (srcs.AT(t)->proc() == srcproc);
       assert (srcs.AT(t)->has_storage());
-      if (not slabinfo) {
-        assert (all(srcbox.lower() >= srcs.AT(t)->extent().lower()));
-        assert (all(srcbox.upper() <= srcs.AT(t)->extent().upper()));
-      }
     }
   }
   gdata const * const src = is_src ? srcs.AT(0) : NULL;
@@ -292,16 +287,6 @@ transfer_from (comm_state & state,
       if (is_src) {
         // copy the data into the send buffer
         if (interp_on_src) {
-          ivect ioffset (0);
-          if (src->cent == cell_centered) {
-            assert (all (srcbox.stride() == src->extent().stride()));
-            ivect const ioff = srcbox.lower() - src->extent().lower();
-            ivect const is_centered = ioff % src->extent().stride() == 0;
-            ioffset = 1 - is_centered;
-          }
-          ibbox const bufbox = dstbox.shift(ioffset, 2);
-          assert (prod(allocated_memory_shape(bufbox)) ==
-                  prod(allocated_memory_shape(dstbox)));
           size_t const sendbufsize =
             src->c_datatype_size() * prod(allocated_memory_shape(dstbox));
           void * const sendbuf =
@@ -309,7 +294,7 @@ transfer_from (comm_state & state,
                                prod(allocated_memory_shape(dstbox)));
           gdata * const buf =
             src->make_typed (src->varindex, src->cent, src->transport_operator);
-          buf->allocate (bufbox, srcproc, sendbuf, sendbufsize);
+          buf->allocate (dstbox, srcproc, sendbuf, sendbufsize);
           buf->transfer_from_innerloop
             (srcs, times, dstbox, srcbox, slabinfo,
              time, order_space, order_time);
@@ -327,6 +312,9 @@ transfer_from (comm_state & state,
               src->make_typed (src->varindex, src->cent,
                                src->transport_operator);
             buf->allocate (srcbox, srcproc, sendbuf, sendbufsize);
+            assert (buf->extent().is_aligned_with (this->extent()));
+            assert (srcbox.is_aligned_with (this->extent()));
+            assert (dstbox.is_aligned_with (buf->extent()));
             buf->copy_from_innerloop (srcs.AT(tl), srcbox, srcbox, NULL);
             delete buf;
             state.commit_send_space (src->c_datatype(), dstproc,
@@ -362,13 +350,6 @@ transfer_from (comm_state & state,
           copy_from_innerloop (buf, dstbox, dstbox, NULL);
           delete buf;
         } else {
-          if (cent == cell_centered) {
-            assert (all (dstbox.stride() == this->extent().stride()));
-            ivect const ioff = dstbox.lower() - this->extent().lower();
-            ivect const is_centered = ioff % this->extent().stride() == 0;
-            ivect const ioffset = not is_centered;
-            assert (all (ioffset == 0));
-          }
           gdata const * const null = NULL;
           vector <gdata const *> bufs (ntimelevels, null);
           vector <CCTK_REAL> timebuf (ntimelevels);
@@ -421,7 +402,7 @@ find_source_timelevel (vector <CCTK_REAL> const & times,
   CCTK_REAL const max_time = * max_element (times.begin(), times.end());
   // TODO: Use a real delta-time from somewhere instead of 1.0
   CCTK_REAL const some_time = abs (min_time) + abs (max_time) + 1.0;
-  if (op != op_copy and op != op_accumulate) {
+  if (op != op_copy) {
     if (time < min_time - eps * some_time or
         time > max_time + eps * some_time)
     {
@@ -449,7 +430,7 @@ find_source_timelevel (vector <CCTK_REAL> const & times,
     }
   }
   if (timelevel == -1) {
-    if (op == op_copy or op == op_accumulate) {
+    if (op == op_copy) {
       timelevel = 0;
     }
   }

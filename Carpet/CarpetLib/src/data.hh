@@ -106,7 +106,7 @@ private:
                        ibbox const & dstbox,
                        ibbox const & srcbox,
                        islab const * slabinfo);
-  
+
   void
   transfer_from_innerloop (vector <gdata const *> const & gsrcs,
                            vector <CCTK_REAL> const & times,
@@ -150,6 +150,7 @@ private:
   transfer_restrict (data const * const src,
                      ibbox const & dstbox,
                      ibbox const & srcbox,
+                     islab const * restrict const slabinfo,
                      int order_space);
   
   void
