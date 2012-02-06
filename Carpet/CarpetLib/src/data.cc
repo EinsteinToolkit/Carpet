@@ -749,6 +749,13 @@ transfer_prolongate (data const * const src,
           NULL,
           & prolongate_3d_rf2<T,11>,
         };
+#if defined(CCTK_REAL_PRECISION_4)
+      if (order_space == 11)
+      {
+        CCTK_WARN (CCTK_WARN_ABORT,
+                   "There is no single precision vertex-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space=11");
+      }
+#endif
       if (order_space < 0 or order_space > 11 or
           not the_operators[order_space])
       {

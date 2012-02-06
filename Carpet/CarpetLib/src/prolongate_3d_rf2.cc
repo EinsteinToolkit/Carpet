@@ -76,13 +76,15 @@ namespace CarpetLib {
       for (int n=0; n<=ORDER; ++n) {
         RT res = RT(0.0);
         for (ptrdiff_t i=imin; i<imax; ++i) {
-          RT const x = RT(CCTK_REAL(i) - 0.5);
+          RT const x = RT(i) - RT(0.5);
           RT const y = ipow (x, n);
           res += get(i) * y;
         }
         RT const x0 = RT(0.0);
         RT const y0 = ipow (x0, n);
-        if (not (good::abs (res - y0) < 1.0e-12)) {
+        // Allow losing 3 digits:
+        CCTK_REAL const eps = RT(1.0e+3) * numeric_limits<RT>::epsilon();
+        if (not (good::abs (res - y0) < eps)) {
           RT rt;
           ostringstream buf;
           buf << "Error in prolongate_3d_rf2::coeffs_3d_rf2\n"
@@ -181,13 +183,22 @@ namespace CarpetLib {
     {
       DECLARE_CCTK_ARGUMENTS;
       
-#define TYPECASE(N,RT)                          \
+#ifdef CCTK_REAL_PRECISION_4
+#  define TYPECASE(N,RT)                        \
+      coeffs1d<RT,1>::test();                   \
+      coeffs1d<RT,3>::test();                   \
+      coeffs1d<RT,5>::test();                   \
+      coeffs1d<RT,7>::test();                   \
+      coeffs1d<RT,9>::test();
+#else
+#  define TYPECASE(N,RT)                        \
       coeffs1d<RT,1>::test();                   \
       coeffs1d<RT,3>::test();                   \
       coeffs1d<RT,5>::test();                   \
       coeffs1d<RT,7>::test();                   \
       coeffs1d<RT,9>::test();                   \
       coeffs1d<RT,11>::test();
+#endif
 #define CARPET_NO_COMPLEX
 #define CARPET_NO_INT
 #include "typecase.hh"
