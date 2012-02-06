@@ -94,21 +94,24 @@ namespace CarpetLib {
       if (tested) return;
       tested = true;
       
-      static_assert (ncoeffs == sizeof coeffs_t::coeffs / sizeof *coeffs_t::coeffs,
-                     "coefficient array has wrong size");
+      static_assert
+        (ncoeffs == sizeof coeffs_t::coeffs / sizeof *coeffs_t::coeffs,
+         "coefficient array has wrong size");
       
       // Test all orders
       bool error = false;
       for (int n=0; n<=ORDER; ++n) {
         RT res = RT(0.0);
         for (ptrdiff_t i=imin; i<imax; ++i) {
-          RT const x = RT(CCTK_REAL(i) + 0.5);
+          RT const x = RT(i) + RT(0.5);
           RT const y = ipow (x, n);
           res += get(i) * y;
         }
         RT const x0 = RT(0.25) + di * RT(0.5);
         RT const y0 = ipow (x0, n);
-        if (not (good::abs (res - y0) < 1.0e-12)) {
+        // Allow losing 3 digits:
+        CCTK_REAL const eps = RT(1.0e+3) * numeric_limits<RT>::epsilon();
+        if (not (good::abs (res - y0) < eps)) {
           RT rt;
           ostringstream buf;
           buf << "Error in prolongate_3d_cc_rf2::coeffs_3d_cc_rf2\n"
