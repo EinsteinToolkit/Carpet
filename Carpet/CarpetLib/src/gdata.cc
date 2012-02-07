@@ -312,9 +312,11 @@ transfer_from (comm_state & state,
               src->make_typed (src->varindex, src->cent,
                                src->transport_operator);
             buf->allocate (srcbox, srcproc, sendbuf, sendbufsize);
-            assert (buf->extent().is_aligned_with (this->extent()));
-            assert (srcbox.is_aligned_with (this->extent()));
-            assert (dstbox.is_aligned_with (buf->extent()));
+            if (is_dst) {
+              assert (buf->extent().is_aligned_with (this->extent()));
+              assert (srcbox.is_aligned_with (this->extent()));
+              assert (dstbox.is_aligned_with (buf->extent()));
+            }
             buf->copy_from_innerloop (srcs.AT(tl), srcbox, srcbox, NULL);
             delete buf;
             state.commit_send_space (src->c_datatype(), dstproc,
