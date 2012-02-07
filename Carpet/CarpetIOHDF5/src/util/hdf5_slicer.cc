@@ -335,7 +335,7 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
   int ndims;
   ndims = H5Sget_simple_extent_ndims (dataspace);
   hsize_t dims[3];
-  int iorigin[3];
+  int iorigin[3], cctk_nghostzones[3];
   double origin[3], delta[3];
   int itimestep = 0, level = 0;
 
@@ -377,6 +377,9 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
     CHECK_HDF5 (attr = H5Aopen_name (dataset, "level"));
     CHECK_HDF5 (H5Aread (attr, H5T_NATIVE_INT, &level));
     CHECK_HDF5 (H5Aclose (attr));
+    CHECK_HDF5 (attr = H5Aopen_name (dataset, "cctk_nghostzones"));
+    CHECK_HDF5 (H5Aread (attr, H5T_NATIVE_INT, cctk_nghostzones));
+    CHECK_HDF5 (H5Aclose (attr));
     CHECK_HDF5 (H5Sget_simple_extent_dims (dataspace, dims, NULL));
 
     int i;
@@ -414,7 +417,7 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
   hsize_t slabcount[3] = {dims[0], dims[1], dims[2]};
   hsize_t outslabcount[3];
   double slice_origin[3], slice_delta[3];
-  int slice_iorigin[3];
+  int slice_iorigin[3], slice_cctk_nghostzones[3];
   int j = 0;
   for (int i = 0; i < 3; i++) {
     if (slab_coord[i] != PARAMETER_UNSET) {
@@ -425,6 +428,7 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
       slice_origin[j] = origin[i];
       slice_delta[j] = delta[i];
       slice_iorigin[j] = iorigin[i];
+      slice_cctk_nghostzones[j] = cctk_nghostzones[i];
       j++;
     }
   }
@@ -481,6 +485,10 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
   CHECK_HDF5 (attr = H5Acreate (dataset, "iorigin", H5T_NATIVE_INT,
                                 dataspace, H5P_DEFAULT));
   CHECK_HDF5 (H5Awrite (attr, H5T_NATIVE_INT, slice_iorigin));
+  CHECK_HDF5 (H5Aclose (attr));
+  CHECK_HDF5 (attr = H5Acreate (dataset, "cctk_nghostzones", H5T_NATIVE_INT,
+                                dataspace, H5P_DEFAULT));
+  CHECK_HDF5 (H5Awrite (attr, H5T_NATIVE_INT, slice_cctk_nghostzones));
   CHECK_HDF5 (H5Aclose (attr));
   CHECK_HDF5 (H5Sclose (dataspace));
   CHECK_HDF5 (dataspace = H5Screate (H5S_SCALAR));
