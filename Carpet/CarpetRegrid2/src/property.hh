@@ -128,6 +128,22 @@ namespace CarpetRegrid2 {
   
   
   
+  // Make the boxes periodic in one direction
+  template<int dir>
+  class periodic: public property {
+    ibset symmetrised_regions (gh const& hh, dh const& dd,
+                               level_boundary const& bnd,
+                               vector<ibset> const& regions, int rl);
+    bool test_impl (gh const& hh, dh const& dd,
+                    level_boundary const& bnd,
+                    vector<ibset> const& regions, int rl);
+    void enforce_impl (gh const& hh, dh const& dd,
+                       level_boundary const& bnd,
+                       vector<ibset>& regions, int rl);
+  };
+  
+  
+  
   // Clip at the outer boundary
   class boundary_clip: public property {
     ibset clipped_regions (gh const& hh, dh const& dd,

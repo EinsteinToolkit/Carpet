@@ -566,6 +566,100 @@ namespace CarpetRegrid2 {
   
   
   //////////////////////////////////////////////////////////////////////////////
+  // Make the boxes periodic in one direction
+  //////////////////////////////////////////////////////////////////////////////
+  
+  template<int dir>
+  ibset periodic<dir>::
+  symmetrised_regions (gh const& hh, dh const& dd,
+                       level_boundary const& bnd,
+                       vector<ibset> const& regions, int const rl)
+  {
+    ibbox const& baseextent = hh.baseextent(0,rl);
+    
+    // We are not using level_physical_ilower and
+    // level_physical_iupper here, because these are rounded in
+    // opposite directions for cell centring, so that their difference
+    // is smaller than the domain size
+    ivect const ilower =
+      rpos2ipos (bnd.physical_lower, bnd.origin, bnd.scale, hh, rl);
+    ivect const iupper =
+      rpos2ipos (bnd.physical_upper, bnd.origin, bnd.scale, hh, rl);
+    ivect const ioffset = ivect::dir(dir) * (iupper - ilower);
+    assert (all (ioffset % baseextent.stride() == 0));
+    
+    ibset symmetrised = regions.at(rl);
+    for (ibset::const_iterator
+           ibb = regions.at(rl).begin(); ibb != regions.at(rl).end(); ++ ibb)
+    {
+      ibbox const& bb = *ibb;
+      
+      // Shift boxes upwards and downwards by one period
+      symmetrised |= bb.shift(+ioffset / bb.stride());
+      symmetrised |= bb.shift(-ioffset / bb.stride());
+    }
+    
+    return symmetrised;
+  }
+  
+  template<int dir>
+  bool periodic<dir>::
+  test_impl (gh const& hh, dh const& dd,
+             level_boundary const& bnd,
+             vector<ibset> const& regions, int const rl)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    ivect const symmetry_periodic
+      (symmetry_periodic_x, symmetry_periodic_y, symmetry_periodic_z);
+    if (not symmetry_periodic[dir]) return true;
+    
+    ibset const symmetrised = symmetrised_regions (hh, dd, bnd, regions, rl);
+    
+    // We cannot test for equality, since the difference may be
+    // outside of the domain (and hence irrelevant)
+    // return regions.AT(rl) == symmetrised;
+    
+    // Test whether any part of the difference (i.e. that part of the
+    // level that would be added by symmetrising) is inside the
+    // domain. If the difference is outside, we can safely ignore it.
+    ibbox const& baseextent = hh.baseextent(0,rl);
+    ibset const difference = symmetrised - regions.AT(rl);
+    return (difference & baseextent).empty();
+  }
+  
+  template<int dir>
+  void periodic<dir>::
+  enforce_impl (gh const& hh, dh const& dd,
+                level_boundary const& bnd,
+                vector<ibset>& regions, int const rl)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    ivect const symmetry_periodic
+      (symmetry_periodic_x, symmetry_periodic_y, symmetry_periodic_z);
+    assert (symmetry_periodic[dir]);
+    
+    if (veryverbose) {
+      cout << "Refinement level " << rl << ": making regions periodic in the " << "xyz"[dir] << " direction...\n";
+    }
+    
+    regions.AT(rl) = symmetrised_regions (hh, dd, bnd, regions, rl);
+    
+    if (veryverbose) {
+      cout << "   New regions are " << regions.at(rl) << "\n";
+    }
+  }
+  
+  
+  
+  template class periodic<0>;
+  template class periodic<1>;
+  template class periodic<2>;
+  
+  
+  
+  //////////////////////////////////////////////////////////////////////////////
   // Clip at the outer boundary
   //////////////////////////////////////////////////////////////////////////////
   

@@ -332,6 +332,9 @@ namespace CarpetRegrid2 {
     properties.push_back (new snap_coarse());
     properties.push_back (new rotsym90());
     properties.push_back (new rotsym180());
+    properties.push_back (new periodic<0>());
+    properties.push_back (new periodic<1>());
+    properties.push_back (new periodic<2>());
     properties.push_back (new boundary_clip());
     
     // Properties to be tested (and not enforced) in the end
@@ -366,6 +369,8 @@ namespace CarpetRegrid2 {
       
       // Enforce properties on this level
       for (int count=0;; ++count) {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Enforcing grid structure properties, iteration %d", count);
         bool done_enforcing = true;
         ibset const old_regions = regions.at(rl);
         for (vector<property*>::iterator
@@ -384,7 +389,8 @@ namespace CarpetRegrid2 {
           CCTK_WARN (CCTK_WARN_ABORT, "Could not enforce grid structure properties (not making any progress); giving up");
         }
         if (count == 10) {
-          CCTK_WARN (CCTK_WARN_ABORT, "Could not enforce grid structure properties (maximum number of iterations reached); giving up");
+          CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Could not enforce grid structure properties after %d iterations; giving up", count);
         }
         if (count != 0) {
           // This may not be true. However, the previous version of

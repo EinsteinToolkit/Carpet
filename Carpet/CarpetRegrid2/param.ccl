@@ -62,6 +62,18 @@ BOOLEAN symmetry_rotating180 "Ensure a 180 degree rotating symmetry about the z 
 {
 } no
 
+BOOLEAN symmetry_periodic_x "Ensure a periodicity symmetry in the x direction"
+{
+} no
+
+BOOLEAN symmetry_periodic_y "Ensure a periodicity symmetry in the y direction"
+{
+} no
+
+BOOLEAN symmetry_periodic_z "Ensure a periodicity symmetry in the z direction"
+{
+} no
+
 
 
 BOOLEAN adaptive_refinement "Use level_mask for adaptive refinement" STEERABLE=always
