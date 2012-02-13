@@ -238,6 +238,13 @@ namespace Carpet {
           assert (reflevel>=0 and reflevel<reflevels);
 	  for (int m=0; m<(int)arrdata.AT(group).size(); ++m) {
 	    for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+
+              if (CCTK_IsFunctionAliased("Accelerator_NotifyVariableWritten")) {
+                for (int tl = 1; tl < arrdata.AT(group).AT(m).data.AT(var)->timelevels(mglevel,reflevel); tl++) {
+                  Accelerator_NotifyVariableWritten(cctkGH, CCTK_FirstVarIndexI(group)+var, tl, 1 /* on host */);
+                }
+              }
+
               arrdata.AT(group).AT(m).data.AT(var)->
                 fill_all (reflevel, mglevel);
             }
