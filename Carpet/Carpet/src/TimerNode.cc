@@ -179,17 +179,21 @@ namespace Carpet {
         << "  " << space << d_name << endl;
 
     double children_time = 0;
+    bool printed_children = false;
 
     // Recursively print the children
     for(map<string,TimerNode*>::iterator iter = d_children.begin();
         iter != d_children.end(); iter++)
     {
       if (iter->second->getTime() * 100.0 / total > threshold)
+      {
         iter->second->print(out,total,level+1,threshold);
+        printed_children = true;
+      }
       children_time += iter->second->getTime();
     }
 
-    if (d_children.size() > 0)
+    if (d_children.size() > 0 && printed_children)
     {
       const double untimed = t - children_time;
       
