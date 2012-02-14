@@ -1105,13 +1105,17 @@ regrid (bool const do_init)
             ibbox const coarse_faces = coarse_ext.shift(-idir,2);
             ibbox const fine_faces = fine_ext.shift(-idir,2);
             for (int face=0; face<2; ++face) {
-              cout << "REFREF rl=" << rl << " dir=" << dir << " face=" << face << "\n"
-                   << "   all_fine_boundary=" << all_fine_boundary[dir][face] << "\n"
-                   << "   coarse_ext=" << coarse_ext << "\n"
-                   << "   coarse_faces=" << coarse_faces << "\n";
+              if (verbose) {
+                cout << "REFREF rl=" << rl << " dir=" << dir << " face=" << face << "\n"
+                     << "   all_fine_boundary=" << all_fine_boundary[dir][face] << "\n"
+                     << "   coarse_ext=" << coarse_ext << "\n"
+                     << "   coarse_faces=" << coarse_faces << "\n";
+              }
               all_coarse_boundary[dir][face] =
                 all_fine_boundary[dir][face].contracted_for (coarse_faces);
-              cout << "   all_coarse_boundary=" << all_coarse_boundary[dir][face] << "\n";
+              if (verbose) {
+                cout << "   all_coarse_boundary=" << all_coarse_boundary[dir][face] << "\n";
+              }
               ASSERT_rl (all_coarse_boundary[dir][face].expanded_for(fine_faces) == all_fine_boundary[dir][face],
                          "Refluxing: Coarse grid boundaries must be consistent with fine grid boundaries");
             } // for face
@@ -1133,8 +1137,10 @@ regrid (bool const do_init)
                 // This is not really used (only for debugging)
                 local_box.fine_boundary[dir][face] =
                   box.exterior.shift(-idir,2) & all_fine_boundary[dir][face];
-                cout << "REFREF rl=" << rl << " lc=" << lc << " dir=" << dir << " face=" << face << "\n"
-                     << "   local.fine_boundary=" << local_box.fine_boundary[dir][face] << "\n";
+                if (verbose) {
+                  cout << "REFREF rl=" << rl << " lc=" << lc << " dir=" << dir << " face=" << face << "\n"
+                       << "   local.fine_boundary=" << local_box.fine_boundary[dir][face] << "\n";
+                }
                 
               } // for face
             }   // for dir
@@ -1173,8 +1179,10 @@ regrid (bool const do_init)
                 local_obox.coarse_boundary[dir][face] =
                   obox.owned.shift(-idir,2) & all_coarse_boundary[dir][face];
                 // Cannot reflux into buffer zones
-                cout << "REFREF orl=" << orl << " lc=" << lc << " dir=" << dir << " face=" << face << "\n"
-                     << "   local.coarse_boundary=" << local_obox.coarse_boundary[dir][face] << "\n";
+                if (verbose) {
+                  cout << "REFREF orl=" << orl << " lc=" << lc << " dir=" << dir << " face=" << face << "\n"
+                       << "   local.coarse_boundary=" << local_obox.coarse_boundary[dir][face] << "\n";
+                }
                 assert ((obox.buffers.shift(-idir,2) & all_coarse_boundary[dir][face]).empty());
                 
               } // for face
@@ -1204,7 +1212,9 @@ regrid (bool const do_init)
           for (int olc = 0; olc < h.local_components(orl); ++ olc) {
             int const oc = h.get_component(orl, olc);
             local_dboxes & local_obox = local_olevel.AT(olc);
-            cout << "REF ref_refl ml=" << ml << " rl=" << rl << " olc=" << olc << " oc=" << oc << "\n";
+            if (verbose) {
+              cout << "REF ref_refl ml=" << ml << " rl=" << rl << " olc=" << olc << " oc=" << oc << "\n";
+            }
             
             for (int dir = 0; dir < dim; ++ dir) {
               // Unit vector
@@ -1223,14 +1233,20 @@ regrid (bool const do_init)
                 
                 for (int c = 0; c < h.components(rl); ++ c) {
                   full_dboxes const & box = full_level.AT(c);
-                  cout << "REF ref_refl ml=" << ml << " rl=" << rl << " olc=" << olc << " oc=" << oc << " c=" << c << " dir=" << dir << " face=" << face << "\n";
+                  if (verbose) {
+                    cout << "REF ref_refl ml=" << ml << " rl=" << rl << " olc=" << olc << " oc=" << oc << " c=" << c << " dir=" << dir << " face=" << face << "\n";
+                  }
                   
                   ibbox const contracted_exterior =
                     box.exterior.shift(-idir, 2).contracted_for(coarse_faces);
-                  cout << "   exterior=" << box.exterior.shift(-idir, 2) << "\n"
-                       << "   contracted=" << contracted_exterior << "\n";
+                  if (verbose) {
+                    cout << "   exterior=" << box.exterior.shift(-idir, 2) << "\n"
+                         << "   contracted=" << contracted_exterior << "\n";
+                  }
                   ibset const ovlp = needrecv & contracted_exterior;
-                  cout << "   ovlp=" << ovlp << "\n";
+                  if (verbose) {
+                    cout << "   ovlp=" << ovlp << "\n";
+                  }
                   
                   for (ibset::const_iterator
                          ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -1244,8 +1260,10 @@ regrid (bool const do_init)
                     ibbox const shifted_send = send.shift(idir, 2);
                     sendrecv_pseudoregion_t const preg
                       (shifted_send, c, shifted_recv, oc);
-                    cout << "REF ref_refl ml=" << ml << " rl=" << rl << " olc=" << olc << " c=" << c << " oc=" << oc << " dir=" << dir << " face=" << face << "\n"
-                         << "   preg=" << preg << "\n";
+                    if (verbose) {
+                      cout << "REF ref_refl ml=" << ml << " rl=" << rl << " olc=" << olc << " c=" << c << " oc=" << oc << " dir=" << dir << " face=" << face << "\n"
+                           << "   preg=" << preg << "\n";
+                    }
                     (fast_olevel.*fast_ref_refl_sendrecv).push_back (preg);
                     if (not on_this_proc (rl, c)) {
                       fast_dboxes & fast_level_otherproc =
