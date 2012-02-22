@@ -236,7 +236,6 @@ int main (int argc, char *const argv[])
   }
 
   // browse though input file(s)
-  vector<hid_t> filelist;
   for (; i < argc-1; i++) {
     hid_t file;
 
@@ -252,7 +251,10 @@ int main (int argc, char *const argv[])
     cout << "  iterating through input file '" << argv[i] << "'..." << endl;
     CHECK_HDF5 (H5Giterate (file, "/", NULL, ProcessDataset, &file));
 
-    filelist.push_back (file);
+    // close file
+    if (file >= 0) {
+      CHECK_HDF5 (H5Fclose (file));
+    }
   }
 
   if (slices_extracted == 0) {
@@ -260,12 +262,7 @@ int main (int argc, char *const argv[])
                     "slice parameters." << endl << endl;
   }
 
-  // close all files
-  for (size_t j = 0; j < filelist.size(); j++) {
-    if (filelist[j] >= 0) {
-      CHECK_HDF5 (H5Fclose (filelist[j]));
-    }
-  }
+  // close output file
   CHECK_HDF5 (H5Fclose (outfile));
 
   cout << endl << "Done." << endl << endl;
