@@ -522,9 +522,9 @@ static void ReadPatch (const patch_t& patch, int last_iteration)
              << patch.rflevel << " "
              << patch.component << " "
              << patch.mglevel << "\t"
-             << patch.iorigin[0] + i*(1 << (max_rflevel - patch.rflevel)) << " "
-             << patch.iorigin[1] + j*(1 << (max_rflevel - patch.rflevel)) << " "
-             << patch.iorigin[2] + k*(1 << (max_rflevel - patch.rflevel)) << "\t"
+             << (patch.iorigin[0] + i)*(1 << (max_rflevel - patch.rflevel)) << " "
+             << (patch.iorigin[1] + j)*(1 << (max_rflevel - patch.rflevel)) << " "
+             << (patch.iorigin[2] + k)*(1 << (max_rflevel - patch.rflevel)) << "\t"
              << setiosflags (ios_base::fixed)
              << patch.time << "\t"
              << patch.origin[0] + i*patch.delta[0] << " "
