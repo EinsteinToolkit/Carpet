@@ -59,6 +59,7 @@ namespace CarpetIOBasic {
   bool TimeToOutput (const cGH* cctkGH);
   void OutputHeader (const cGH* cctkGH);
   void OutputVar (const cGH* cctkGH, int vindex);
+  void OutputVar (const cGH* cctkGH, int vindex, const char* out_reductions);
   void CheckSteerableParameters (const cGH * cctkGH);
 
   void
@@ -182,7 +183,12 @@ namespace CarpetIOBasic {
       int const numvars = CCTK_NumVars();
       for (int vindex=0; vindex<numvars; ++vindex) {
         if (IOparameters.requests[vindex]) {
-          OutputVar (cctkGH, vindex);
+          // use individual reductions list for this variable when given
+          // otherwise IOScalar::outInfo_reductions
+          const char* out_reductions = IOparameters.requests[vindex]->reductions;
+          if (not out_reductions) out_reductions = outInfo_reductions;
+ 
+          OutputVar (cctkGH, vindex, out_reductions);
         }
       }
       
@@ -212,10 +218,6 @@ namespace CarpetIOBasic {
     DECLARE_CCTK_PARAMETERS;
     
     if (CCTK_MyProc(cctkGH) == 0) {
-      
-      // Find the set of desired reductions
-      vector<string> const reductions = ParseReductions (outInfo_reductions);
-      int const numreds = reductions.size();
       
       int const numvars = CCTK_NumVars();
       
@@ -269,6 +271,15 @@ namespace CarpetIOBasic {
               assert (0);
             }
             
+            // use individual reductions list for this variable when given
+            // otherwise IOScalar::outInfo_reductions
+            const char* out_reductions = IOparameters.requests[vindex]->reductions;
+            if (not out_reductions) out_reductions = outInfo_reductions;
+            
+            // Find the set of desired reductions
+            vector<string> const reductions = ParseReductions (out_reductions);
+            int const numreds = reductions.size();
+      
             int const width = isint ? int_width : real_width;
             
             int const mynumreds = isscalar ? 1 : numreds;
@@ -325,6 +336,16 @@ namespace CarpetIOBasic {
   OutputVar (const cGH * const cctkGH,
              int const n)
   {
+    DECLARE_CCTK_PARAMETERS;
+
+    OutputVar (cctkGH, n, outInfo_reductions);
+  }
+
+  void
+  OutputVar (const cGH * const cctkGH,
+               int n, 
+               const char* out_reductions)
+  {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
@@ -360,7 +381,7 @@ namespace CarpetIOBasic {
     
     // Find the set of desired reductions
     vector<string> const reductionstrings
-      = ParseReductions (outInfo_reductions);
+      = ParseReductions (out_reductions);
     list<info> reductions;
     for (vector<string>::const_iterator ireduction = reductionstrings.begin();
          ireduction != reductionstrings.end();
