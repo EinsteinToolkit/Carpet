@@ -16,6 +16,14 @@ CCTK_INT surface[10] "Spherical surface index which is the source for the locati
 
 
 
+CCTK_STRING surface_name[10] "Spherical surface name which is the source for the location of the refine regions" STEERABLE=always
+{
+  ""  :: "use surface"
+  ".*" :: "any string"
+} ""
+
+
+
 SHARES: SphericalSurface
 
 USES CCTK_INT nsurfaces

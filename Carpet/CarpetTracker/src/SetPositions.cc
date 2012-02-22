@@ -5,6 +5,7 @@
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
+#include "cctk_Functions.h"
 
 
 
@@ -38,7 +39,7 @@ using namespace std;
     cctk_iteration_done = cctk_iteration;
     
     for (int n = 0; n < num_surfaces; ++ n) {
-      int const sn = surface[n];
+      int const sn = sf_IdFromName(surface[n], surface_name[n]);
       if (sn >= 0) {
         assert (sn >= 0 and sn < nsurfaces);
         
