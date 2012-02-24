@@ -38,6 +38,9 @@ uses include header: CarpetTimers.hh
 uses include header: loopcontrol.h
 uses include header: vectors.h
 
+# DGFE
+uses include header: hrscc.hh
+
 
 
 # Return a pointer to an unmodifiable C string
@@ -69,4 +72,3 @@ CCTK_INT FUNCTION GetBoundarySpecification \
    CCTK_INT OUT ARRAY is_staggered, \
    CCTK_INT OUT ARRAY shiftout)
 USES FUNCTION GetBoundarySpecification
-

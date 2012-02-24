@@ -27,6 +27,12 @@ BOOLEAN commstate_verbose "Print debug info from the commstate class" STEERABLE=
 
 
 
+BOOLEAN use_dgfe "Use DGFE operators instead of Lagrange operators"
+{
+} "no"
+
+
+
 BOOLEAN output_bboxes "Output bounding box information to the screen" STEERABLE=always
 {
 } "no"

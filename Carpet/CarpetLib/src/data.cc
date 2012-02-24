@@ -711,6 +711,8 @@ transfer_prolongate (data const * const src,
                      ibbox const & srcbox,
                      int const order_space)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   static Timer total ("prolongate");
   total.start ();
   
@@ -773,6 +775,17 @@ transfer_prolongate (data const * const src,
       break;
     }
     case cell_centered: {
+      if (use_dgfe) {
+        call_operator<T>(prolongate_3d_dgfe_rf2<T,5>,
+                         static_cast<T const *>(src->storage()),
+                         src->shape(),
+                         static_cast<T *>(this->storage()),
+                         this->shape(),
+                         src->extent(),
+                         this->extent(),
+                         srcbox, dstbox, NULL);
+        break;
+      }
       static
         void (* the_operators[]) (T const * restrict const src,
                                   ivect3 const & restrict srcext,
@@ -1084,6 +1097,8 @@ transfer_restrict (data const * const src,
                    islab const * restrict const slabinfo,
                    int const /*order_space*/)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   static Timer total ("restrict");
   total.start ();
   
@@ -1119,6 +1134,17 @@ transfer_restrict (data const * const src,
       ibbox const& dstbox = this->extent();
       
       if (all(is_centered == ivect(1,1,1))) {
+        if (use_dgfe) {
+          call_operator<T>(restrict_3d_dgfe_rf2<T,5>,
+                           static_cast<T const *>(src->storage()),
+                           src->shape(),
+                           static_cast<T *>(this->storage()),
+                           this->shape(),
+                           srcbox,
+                           dstbox,
+                           srcregbox, dstregbox, NULL);
+          break;
+        }
         call_operator<T> (& restrict_3d_cc_rf2,
                           static_cast <T const *> (src->storage()),
                           src->shape(),

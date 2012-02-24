@@ -35,16 +35,18 @@ SRCS =	balance.cc				\
 	restrict_3d_cc_rf2.cc			\
 	restrict_3d_rf2.cc			\
 	restrict_3d_vc_rf2.cc			\
+	restrict_3d_dgfe_rf2.cc			\
 	restrict_4d_rf2.cc			\
 	prolongate_3d_rf2.cc			\
 	prolongate_3d_cc_rf2.cc			\
+	prolongate_3d_cc_eno_rf2.cc		\
 	prolongate_3d_o5_monotone_rf2.cc	\
 	prolongate_3d_real8_eno.F90		\
 	prolongate_3d_real8_tvd.F90		\
 	prolongate_3d_cc_real8_tvd.F90		\
 	prolongate_3d_real8_weno.F90		\
-	prolongate_4d_o1_rf2.cc			\
-	prolongate_3d_cc_eno_rf2.cc
+	prolongate_3d_dgfe_rf2.cc		\
+	prolongate_4d_o1_rf2.cc
 
 # Subdirectories containing source files
 SUBDIRS = 

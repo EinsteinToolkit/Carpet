@@ -6,8 +6,13 @@ PROVIDES CarpetLib
   LANG
 }
 
+REQUIRES Vectors
+
 OPTIONAL LoopControl
 {
 }
 
-REQUIRES Vectors
+# DGFE
+OPTIONAL HRSCCore
+{
+}
