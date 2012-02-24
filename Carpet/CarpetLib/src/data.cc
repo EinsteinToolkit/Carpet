@@ -543,21 +543,21 @@ copy_from_innerloop (gdata const * const gsrc,
   ibbox const& dstbox = this->extent();
   
 #if CARPET_DIM == 3
-  call_operator<T> (& copy_3d,
-                    static_cast <T const *> (src->storage()),
-                    src->shape(),
-                    static_cast <T *> (this->storage()),
-                    this->shape(),
-                    srcbox, dstbox,
-                    srcregbox, dstregbox, (void*)slabinfo);
+  // Don't use call_operator, because we parallelise ourselves
+  copy_3d(static_cast <T const *> (src->storage()),
+          src->shape(),
+          static_cast <T *> (this->storage()),
+          this->shape(),
+          srcbox, dstbox,
+          srcregbox, dstregbox, (void*)slabinfo);
 #elif CARPET_DIM == 4
-  call_operator<T> (& copy_4d,
-                    static_cast <T const *> (src->storage()),
-                    src->shape(),
-                    static_cast <T *> (this->storage()),
-                    this->shape(),
-                    srcbox, dstbox,
-                    srcregbox, dstregbox, (void*)slabinfo);
+  // Don't use call_operator, because we parallelise ourselves
+  copy_4d(static_cast <T const *> (src->storage()),
+          src->shape(),
+          static_cast <T *> (this->storage()),
+          this->shape(),
+          srcbox, dstbox,
+          srcregbox, dstregbox, (void*)slabinfo);
 #else
 #  error "Value for CARPET_DIM not supported"
 #endif
@@ -776,14 +776,14 @@ transfer_prolongate (data const * const src,
     }
     case cell_centered: {
       if (use_dgfe) {
-        call_operator<T>(prolongate_3d_dgfe_rf2<T,5>,
-                         static_cast<T const *>(src->storage()),
-                         src->shape(),
-                         static_cast<T *>(this->storage()),
-                         this->shape(),
-                         src->extent(),
-                         this->extent(),
-                         srcbox, dstbox, NULL);
+        // Don't use call_operator, because we parallelise ourselves
+        prolongate_3d_dgfe_rf2<T,5>(static_cast<T const *>(src->storage()),
+                                    src->shape(),
+                                    static_cast<T *>(this->storage()),
+                                    this->shape(),
+                                    src->extent(),
+                                    this->extent(),
+                                    srcbox, dstbox, NULL);
         break;
       }
       static
@@ -1135,51 +1135,51 @@ transfer_restrict (data const * const src,
       
       if (all(is_centered == ivect(1,1,1))) {
         if (use_dgfe) {
-          call_operator<T>(restrict_3d_dgfe_rf2<T,5>,
-                           static_cast<T const *>(src->storage()),
+          // Don't use call_operator, because we parallelise ourselves
+          restrict_3d_dgfe_rf2<T,5>(static_cast<T const *>(src->storage()),
+                                    src->shape(),
+                                    static_cast<T *>(this->storage()),
+                                    this->shape(),
+                                    srcbox,
+                                    dstbox,
+                                    srcregbox, dstregbox, NULL);
+          break;
+        }
+        // Don't use call_operator, because we parallelise ourselves
+        restrict_3d_cc_rf2(static_cast <T const *> (src->storage()),
                            src->shape(),
-                           static_cast<T *>(this->storage()),
+                           static_cast <T *> (this->storage()),
                            this->shape(),
                            srcbox,
                            dstbox,
                            srcregbox, dstregbox, NULL);
-          break;
-        }
-        call_operator<T> (& restrict_3d_cc_rf2,
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          srcbox,
-                          dstbox,
-                          srcregbox, dstregbox, NULL);
       } else if (all(is_centered == ivect(0,1,1))) {
-        call_operator<T> (& restrict_3d_vc_rf2<T,0,1,1>,
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          srcbox,
-                          dstbox,
-                          srcregbox, dstregbox, NULL);
+        // Don't use call_operator, because we parallelise ourselves
+        restrict_3d_vc_rf2<T,0,1,1>(static_cast <T const *> (src->storage()),
+                                    src->shape(),
+                                    static_cast <T *> (this->storage()),
+                                    this->shape(),
+                                    srcbox,
+                                    dstbox,
+                                    srcregbox, dstregbox, NULL);
       } else if (all(is_centered == ivect(1,0,1))) {
-        call_operator<T> (& restrict_3d_vc_rf2<T,1,0,1>,
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          srcbox,
-                          dstbox,
-                          srcregbox, dstregbox, NULL);
+        // Don't use call_operator, because we parallelise ourselves
+        restrict_3d_vc_rf2<T,1,0,1>(static_cast <T const *> (src->storage()),
+                                    src->shape(),
+                                    static_cast <T *> (this->storage()),
+                                    this->shape(),
+                                    srcbox,
+                                    dstbox,
+                                    srcregbox, dstregbox, NULL);
       } else if (all(is_centered == ivect(1,1,0))) {
-        call_operator<T> (& restrict_3d_vc_rf2<T,1,1,0>,
-                          static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          srcbox,
-                          dstbox,
-                          srcregbox, dstregbox, NULL);
+        // Don't use call_operator, because we parallelise ourselves
+        restrict_3d_vc_rf2<T,1,1,0>(static_cast <T const *> (src->storage()),
+                                    src->shape(),
+                                    static_cast <T *> (this->storage()),
+                                    this->shape(),
+                                    srcbox,
+                                    dstbox,
+                                    srcregbox, dstregbox, NULL);
       } else {
         assert (0);
       }
@@ -1203,14 +1203,14 @@ transfer_restrict (data const * const src,
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
     case vertex_centered:
-      call_operator<T> (& restrict_4d_rf2,
-                        static_cast <T const *> (src->storage()),
-                        src->shape(),
-                        static_cast <T *> (this->storage()),
-                        this->shape(),
-                        src->extent(),
-                        this->extent(),
-                        srcregbox, dstregbox, NULL);
+      // Don't use call_operator, because we parallelise ourselves
+      restrict_4d_rf2(static_cast <T const *> (src->storage()),
+                      src->shape(),
+                      static_cast <T *> (this->storage()),
+                      this->shape(),
+                      src->extent(),
+                      this->extent(),
+                      srcregbox, dstregbox, NULL);
       break;
     default:
       assert (0);

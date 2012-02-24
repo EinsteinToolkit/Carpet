@@ -123,6 +123,7 @@ namespace CarpetLib {
     assert(all(regext % (ORDER+1) == 0));
     
     // Loop over coarse region
+#pragma omp parallel for collapse(3)
     for (ptrdiff_t k=0; k<regkext; k+=ORDER+1) {
       for (ptrdiff_t j=0; j<regjext; j+=ORDER+1) {
         for (ptrdiff_t i=0; i<regiext; i+=ORDER+1) {
