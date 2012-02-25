@@ -386,6 +386,21 @@ BOOLEAN timers_verbose "Output (debug) messages when a timer is started or stopp
 {
 } "no"
 
+STRING timer_xml_clock "Which clock to use in the XML timer output file"
+{
+  ".*" :: "must be a legal clock name"
+} "gettimeofday"
+
+BOOLEAN output_initialise_timer_tree "Output timing information in tree form to standard output for Initialise"
+{
+} "no"
+
+INT output_timer_tree_every "Output timing information in tree form to standard output for Evolve every so many iterations"
+{
+  0   :: "don't report"
+  1:* :: "report every so many iterations"
+} 0
+
 
 
 BOOLEAN recompose_verbose "Output debug information during recomposing" STEERABLE=ALWAYS
@@ -541,22 +556,6 @@ BOOLEAN adaptive_stepsize "Allow adaptive timestep sizes"
 BOOLEAN use_unusedpoints_mask "Turn on of off (default) storage and usage of 'unusedpoints_mask'"
 {
 } "no"
-
-STRING timer_xml_clock "Which clock to use in the XML timer output file"
-{
-  ".*" :: "must be a legal clock name"
-} "gettimeofday"
-
-
-BOOLEAN output_initialise_timer_tree "Output timing information in tree form to standard output for Initialise"
-{
-} "no"
-
-INT output_timer_tree_every "Output timing information in tree form to standard output for Evolve every so many iterations"
-{
-  0   :: "don't report"
-  1:* :: "report every so many iterations"
-} 0
 
 
 
