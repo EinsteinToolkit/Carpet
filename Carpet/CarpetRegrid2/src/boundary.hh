@@ -5,6 +5,8 @@
 #include <gh.hh>
 #include <vect.hh>
 
+#include <ostream>
+
 
 
 namespace CarpetRegrid2 {
@@ -120,6 +122,11 @@ namespace CarpetRegrid2 {
   };
   
 } // namespace CarpetRegrid2
+
+
+
+ostream& operator<<(ostream& os, CarpetRegrid2::domain_boundary const& bnd);
+ostream& operator<<(ostream& os, CarpetRegrid2::level_boundary const& bnd);
 
 
 

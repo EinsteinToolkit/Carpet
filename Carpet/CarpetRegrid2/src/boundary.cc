@@ -295,3 +295,43 @@ namespace CarpetRegrid2 {
   }
   
 } // namespace CarpetRegrid2
+
+
+
+ostream& operator<<(ostream& os, CarpetRegrid2::domain_boundary const& bnd)
+{
+  return
+    os << "domain_boundary:{"
+       << "nboundaryzones=" << bnd.nboundaryzones << ","
+       << "is_internal=" << bnd.is_internal << ","
+       << "is_staggered=" << bnd.is_staggered << ","
+       << "shiftout=" << bnd.shiftout << ","
+       << "boundary_staggering_mismatch=" << bnd.boundary_staggering_mismatch << ","
+       << "physical_lower=" << bnd.physical_lower << ","
+       << "physical_upper=" << bnd.physical_upper << ","
+       << "spacing=" << bnd.spacing << ","
+       << "exterior_lower=" << bnd.exterior_lower << ","
+       << "exterior_upper=" << bnd.exterior_upper << ","
+       << "origin=" << bnd.origin << ","
+       << "scale=" << bnd.scale << ","
+       << "physical_ilower=" << bnd.physical_ilower << ","
+       << "physical_iupper=" << bnd.physical_iupper << "}";
+}
+
+ostream& operator<<(ostream& os, CarpetRegrid2::level_boundary const& bnd)
+{
+  return
+    os << "level_boundary:{"
+       << *static_cast<CarpetRegrid2::domain_boundary const*>(&bnd) << ","
+       << "level_physical_lower=" << bnd.level_physical_lower << ","
+       << "level_physical_upper=" << bnd.level_physical_upper << ","
+       << "level_spacing=" << bnd.level_spacing << ","
+       << "level_exterior_lower=" << bnd.level_exterior_lower << ","
+       << "level_exterior_upper=" << bnd.level_exterior_upper << ","
+       << "level_physical_ilower=" << bnd.level_physical_ilower << ","
+       << "level_physical_iupper=" << bnd.level_physical_iupper << ","
+       << "level_exterior_ilower=" << bnd.level_exterior_ilower << ","
+       << "level_exterior_iupper=" << bnd.level_exterior_iupper << ","
+       << "min_bnd_dist_away=" << bnd.min_bnd_dist_away << ","
+       << "min_bnd_dist_incl=" << bnd.min_bnd_dist_incl << "}";
+}
