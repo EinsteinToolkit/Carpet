@@ -527,16 +527,14 @@ inline T index (const vect<T,D>& lsh, const vect<T,D>& ind)
 
 // Higher order functions
 
-#if 0
-// They are rarely used, so disable them
+// This rarely used (and conflicts with Carpet::map), so it is renamed
 
 /** Return a new vector where the function func() has been applied to
     all elements.  */
 template<typename T, typename U, int D>
-inline vect<U,D> map (U (* const func)(T x), const vect<T,D>& a)
-   CCTK_ATTRIBUTE_PURE;
+inline vect<U,D> vmap (U (* const func)(T x), const vect<T,D>& a);
 template<typename T, typename U, int D>
-inline vect<U,D> map (U (* const func)(T x), const vect<T,D>& a)
+inline vect<U,D> vmap (U (* const func)(T x), const vect<T,D>& a)
 {
   vect<U,D> r;
   for (int d=0; d<D; ++d) r[d] = func(a[d]);
@@ -547,8 +545,7 @@ inline vect<U,D> map (U (* const func)(T x), const vect<T,D>& a)
     element-wise to combine a and b.  */
 template<typename S, typename T, typename U, int D>
 inline vect<U,D> zip (U (* const func)(S x, T y),
-                      const vect<S,D>& a, const vect<T,D>& b)
-  CCTK_ATTRIBUTE_PURE;
+                      const vect<S,D>& a, const vect<T,D>& b);
 template<typename S, typename T, typename U, int D>
 inline vect<U,D> zip (U (* const func)(S x, T y),
                       const vect<S,D>& a, const vect<T,D>& b)
@@ -561,8 +558,7 @@ inline vect<U,D> zip (U (* const func)(S x, T y),
 /** Return a scalar where the function func() has been used to reduce
     the vector a, starting with the scalar value val.  */
 template<typename T, typename U, int D>
-inline U fold (U (* const func)(U val, T x), U val, const vect<T,D>& a)
-  CCTK_ATTRIBUTE_PURE;
+inline U fold (U (* const func)(U val, T x), U val, const vect<T,D>& a);
 template<typename T, typename U, int D>
 inline U fold (U (* const func)(U val, T x), U val, const vect<T,D>& a)
 {
@@ -573,8 +569,7 @@ inline U fold (U (* const func)(U val, T x), U val, const vect<T,D>& a)
 /** Return a scalar where the function func() has been used to reduce
     the vector a, starting with element 0.  */
 template<typename T, typename U, int D>
-inline U fold1 (U (* const func)(U val, T x), const vect<T,D>& a)
-   CCTK_ATTRIBUTE_PURE;
+inline U fold1 (U (* const func)(U val, T x), const vect<T,D>& a);
 template<typename T, typename U, int D>
 inline U fold1 (U (* const func)(U val, T x), const vect<T,D>& a)
 {
@@ -588,8 +583,7 @@ inline U fold1 (U (* const func)(U val, T x), const vect<T,D>& a)
     the vector a, starting with the scalar value val.  */
 template<typename T, typename U, int D>
 inline vect<U,D> scan0 (U (* const func)(U val, T x), U val,
-                        const vect<T,D>& a)
-  CCTK_ATTRIBUTE_PURE;
+                        const vect<T,D>& a);
 template<typename T, typename U, int D>
 inline vect<U,D> scan0 (U (* const func)(U val, T x), U val,
                         const vect<T,D>& a)
@@ -606,8 +600,7 @@ inline vect<U,D> scan0 (U (* const func)(U val, T x), U val,
     the vector a, starting with element 0.  */
 template<typename T, typename U, int D>
 inline vect<U,D> scan1 (U (* const func)(U val, T x), U val,
-                        const vect<T,D>& a)
-  CCTK_ATTRIBUTE_PURE;
+                        const vect<T,D>& a);
 template<typename T, typename U, int D>
 inline vect<U,D> scan1 (U (* const func)(U val, T x), U val,
                         const vect<T,D>& a)
@@ -619,7 +612,6 @@ inline vect<U,D> scan1 (U (* const func)(U val, T x), U val,
   }
   return r;
 }
-#endif
 
 
 
