@@ -87,7 +87,7 @@ public:
   
 private:
   
-  bool level_did_change (int rl) CCTK_ATTRIBUTE_PURE;
+  bool level_did_change (int rl) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Accessors
   

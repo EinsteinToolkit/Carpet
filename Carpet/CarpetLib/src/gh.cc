@@ -290,7 +290,7 @@ recompose (int const rl,
 
 bool
 gh::
-level_did_change (int const rl)
+level_did_change (int const rl) const
 {
   // Find out whether this level changed
   if (regions.size() != oldregions.size()) return true;
