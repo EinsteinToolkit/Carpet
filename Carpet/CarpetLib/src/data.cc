@@ -203,7 +203,6 @@ prolongate_3d_eno (T const * restrict const /*src*/,
   CCTK_WARN (0, "Data type not supported");
 }
 
-#ifndef OMIT_F90
 extern "C"
 void
 CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_eno)
@@ -237,7 +236,6 @@ prolongate_3d_eno (CCTK_REAL8 const * restrict const src,
      reinterpret_cast <int const (*) [3]> (& dstbbox),
      reinterpret_cast <int const (*) [3]> (& dstregbbox));
 }
-#endif
 
 
 
@@ -256,7 +254,6 @@ prolongate_3d_weno (T const * restrict const /*src*/,
   CCTK_WARN (0, "Data type not supported");
 }
 
-#ifndef OMIT_F90
 extern "C"
 void
 CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_weno)
@@ -289,7 +286,6 @@ prolongate_3d_weno (CCTK_REAL8 const * restrict const src,
      reinterpret_cast <int const (*) [3]> (& dstbbox),
      reinterpret_cast <int const (*) [3]> (& dstregbbox));
 }
-#endif
 
 
 
