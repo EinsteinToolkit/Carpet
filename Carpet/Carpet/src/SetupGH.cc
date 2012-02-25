@@ -400,6 +400,7 @@ namespace Carpet {
     do_prolongate = true;
     do_taper = false;
     do_warn_about_storage = false; // This is enabled later
+    in_analysis_bin = false;
     
     if (enable_all_storage) {
       if (not enable_no_storage) {
