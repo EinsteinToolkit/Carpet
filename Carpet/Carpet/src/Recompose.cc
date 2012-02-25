@@ -801,8 +801,8 @@ namespace Carpet {
     //
     
     // This requires that CoordBase is used
-#warning "TODO: check this (for Carpet, and maybe also for CartGrid3D)"
-#warning "TODO: (the check that these two are consistent should be in Carpet)"
+    // TODO: check this (for Carpet, and maybe also for CartGrid3D)
+    // TODO: (the check that these two are consistent should be in Carpet)
     
     jjvect nboundaryzones;
     jjvect is_internal;
@@ -849,7 +849,7 @@ namespace Carpet {
     }
     
     // Adapt spacing for convergence level
-#warning "TODO: take ml into account"
+    // TODO: take ml into account
     spacing *= ipow ((CCTK_REAL) mgfact, basemglevel);
     
     check (not ConvertFromPhysicalBoundary
@@ -1695,7 +1695,7 @@ namespace Carpet {
       mynprocs.AT(r) = 1;
       -- nregs_left;
     }
-#warning "TODO: split regions if necessary"
+    // TODO: split regions if necessary
     while (nregs_left > 0) {
       if (recompose_verbose) cout << "SRMA nregs_left " << nregs_left << endl;
       int maxr = -1;
@@ -1719,9 +1719,9 @@ namespace Carpet {
     if (recompose_verbose) cout << "SRMA mynprocs " << mynprocs << endl;
     
     if (recompose_verbose) cout << "SRMA: splitting work units" << endl;
-#warning "TODO: rename newregs to regs"
-#warning "TODO: rename nregs to nsuperregs"
-#warning "TODO: rename newnregs to nregs"
+    // TODO: rename newregs to regs
+    // TODO: rename nregs to nsuperregs
+    // TODO: rename newnregs to nregs
     vector<region_t> newregs;
     newregs.reserve (newnregs);
     for (int r=0, p=0; r<nregs; p+=mynprocs.AT(r), ++r) {
@@ -1788,7 +1788,6 @@ namespace Carpet {
         }
       }
       for (int m=0; m<nmaps; ++m) {
-#warning "TODO"
         if (not (tmpncomps.AT(m) == myncomps.AT(m))) {
           cout << "Recompose.cc" << endl
                << "superregss=" << superregss << endl

@@ -90,7 +90,7 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
          << "   Total allocated free system memory: "
          << setprecision(3) << mybuf.malloc_free_bytes / gmem::MEGA << " MB" << endl;
     
-#warning "TODO"
+    // TODO: improve this message
     cout << "   gh::allmemory:    " << gh   ::allmemory() << eol
          << "   dh::allmemory:    " << dh   ::allmemory() << eol
          << "   th::allmemory:    " << th   ::allmemory() << eol
