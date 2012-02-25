@@ -21,11 +21,6 @@ namespace CarpetLib {
   
   static inline
   size_t
-  index4 (size_t const i, size_t const j, size_t const k, size_t const kl,
-          size_t const exti, size_t const extj, size_t const extk, size_t const extl)
-    CCTK_ATTRIBUTE_CONST;
-  static inline
-  size_t
   index4 (size_t const i, size_t const j, size_t const k, size_t const l,
           size_t const exti, size_t const extj, size_t const extk, size_t const extl)
   {

@@ -52,7 +52,7 @@ public:
     typedef ibbox::size_type size_type;
     size_type exterior_size, owned_size, active_size;
     
-    size_t memory () const CCTK_ATTRIBUTE_PURE;
+    size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
     istream & input (istream & is);
     ostream & output (ostream & os) const;
   };
@@ -82,7 +82,7 @@ public:
     vect<vect<ibset,2>,dim> coarse_boundary;
     vect<vect<ibset,2>,dim> fine_boundary;
     
-    size_t memory () const CCTK_ATTRIBUTE_PURE;
+    size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
     istream & input (istream & is);
     ostream & output (ostream & os) const;
   };
@@ -126,13 +126,13 @@ public:
     ibset ghosts;               // ghost zones, as seen from Cactus
     ibbox interior;             // interior (without ghost zones)
     
-    bool operator== (full_dboxes const & b) const;
+    bool operator== (full_dboxes const & b) const CCTK_MEMBER_ATTRIBUTE_PURE;
     bool operator!= (full_dboxes const & b) const
     {
       return not operator==(b);
     }
     
-    size_t memory () const CCTK_ATTRIBUTE_PURE;
+    size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
     istream & input (istream& is);
     ostream & output (ostream & os) const;
   };
@@ -172,13 +172,13 @@ public:
     srpvect fast_old2new_sync_sendrecv;
     srpvect fast_old2new_ref_prol_sendrecv;
     
-    bool operator== (fast_dboxes const & b) const CCTK_ATTRIBUTE_PURE;
+    bool operator== (fast_dboxes const & b) const CCTK_MEMBER_ATTRIBUTE_PURE;
     bool operator!= (fast_dboxes const & b) const
     {
       return not operator==(b);
     }
     
-    size_t memory () const CCTK_ATTRIBUTE_PURE;
+    size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
     istream & input (istream & is);
     ostream & output (ostream & os) const;
   };
@@ -240,7 +240,7 @@ public:
   ~dh ();
   
   // Helpers
-  int prolongation_stencil_size (int rl) const CCTK_ATTRIBUTE_CONST;
+  int prolongation_stencil_size (int rl) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Modifiers
   void regrid (bool do_init);
@@ -248,11 +248,11 @@ public:
   void recompose (int rl, bool do_prolongate);
   
 private:
-  int this_proc (int rl, int c) const CCTK_ATTRIBUTE_PURE;
-  bool on_this_proc (int rl, int c) const CCTK_ATTRIBUTE_PURE;
-  bool on_this_proc (int rl, int c, int cc) const CCTK_ATTRIBUTE_PURE;
-  int this_oldproc (int rl, int c) const CCTK_ATTRIBUTE_PURE;
-  bool on_this_oldproc (int rl, int c) const CCTK_ATTRIBUTE_PURE;
+  int this_proc (int rl, int c) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool on_this_proc (int rl, int c) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool on_this_proc (int rl, int c, int cc) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  int this_oldproc (int rl, int c) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool on_this_oldproc (int rl, int c) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   static
   void
@@ -266,8 +266,8 @@ public:
   void erase (ggf_handle fi);
   
   // Output
-  size_t memory () const CCTK_ATTRIBUTE_PURE;
-  static size_t allmemory () CCTK_ATTRIBUTE_PURE;
+  size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
+  static size_t allmemory () CCTK_MEMBER_ATTRIBUTE_PURE;
   ostream & output (ostream & os) const;
 };
 
@@ -282,31 +282,26 @@ namespace dist {
   { dh::fast_dboxes dummy; return mpi_datatype(dummy); }
 }
 
-inline size_t memoryof (dh::light_dboxes const & b) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (dh::light_dboxes const & b)
 {
   return b.memory ();
 }
 
-inline size_t memoryof (dh::local_dboxes const & b) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (dh::local_dboxes const & b)
 {
   return b.memory ();
 }
 
-inline size_t memoryof (dh::full_dboxes const & b) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (dh::full_dboxes const & b)
 {
   return b.memory ();
 }
 
-inline size_t memoryof (dh::fast_dboxes const & b) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (dh::fast_dboxes const & b)
 {
   return b.memory ();
 }
 
-inline size_t memoryof (dh const & d) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (dh const & d)
 {
   return d.memory ();

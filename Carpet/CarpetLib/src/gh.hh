@@ -93,48 +93,48 @@ private:
   
 public:
   
-  ibbox const & extent (const int ml, const int rl, const int c) const CCTK_ATTRIBUTE_PURE
+  ibbox const & extent (const int ml, const int rl, const int c) const
   {
     return regions.AT(ml).AT(rl).AT(c).extent;
   }
   
-  ibbox const & baseextent (const int ml, const int rl) const CCTK_ATTRIBUTE_PURE
+  ibbox const & baseextent (const int ml, const int rl) const
   {
     return baseextents.AT(ml).AT(rl);
   }
   
-  b2vect const & outer_boundaries (const int rl, const int c) const CCTK_ATTRIBUTE_PURE
+  b2vect const & outer_boundaries (const int rl, const int c) const
   {
     return regions.AT(0).AT(rl).AT(c).outer_boundaries;
   }
   
-  int processor (const int rl, const int c) const CCTK_ATTRIBUTE_PURE
+  int processor (const int rl, const int c) const CCTK_MEMBER_ATTRIBUTE_PURE
   {
     return regions.AT(0).AT(rl).AT(c).processor;
   }
 
-  int old_processor (const int rl, const int c) const CCTK_ATTRIBUTE_PURE
+  int old_processor (const int rl, const int c) const CCTK_MEMBER_ATTRIBUTE_PURE
   {
     return oldregions.AT(0).AT(rl).AT(c).processor;
   }
 
-  int mglevels () const CCTK_ATTRIBUTE_PURE
+  int mglevels () const CCTK_MEMBER_ATTRIBUTE_PURE
   {
     return (int)regions.size();
   }
   
-  int reflevels () const CCTK_ATTRIBUTE_PURE
+  int reflevels () const CCTK_MEMBER_ATTRIBUTE_PURE
   {
     if (mglevels() == 0) return 0;
     return (int)regions.AT(0).size();
   }
   
-  int components (const int rl) const CCTK_ATTRIBUTE_PURE
+  int components (const int rl) const CCTK_MEMBER_ATTRIBUTE_PURE
   {
     return (int)regions.AT(0).AT(rl).size();
   }
   
-  bool is_local (const int rl, const int c) const CCTK_ATTRIBUTE_PURE
+  bool is_local (const int rl, const int c) const CCTK_MEMBER_ATTRIBUTE_PURE
   {
     return processor(rl,c) == dist::rank();
   }
@@ -156,24 +156,27 @@ public:
   // Convert between index positions and coordinate positions
   rvect ipos2rpos (ivect const & ipos,
                    rvect const & origin, rvect const & scale,
-                   int const ml, int const rl) const;
+                   int const ml, int const rl) const CCTK_MEMBER_ATTRIBUTE_PURE;
   ivect rpos2ipos (rvect const & rpos,
                    rvect const & origin, rvect const & scale,
-                   int const ml, int const rl) const;
+                   int const ml, int const rl) const CCTK_MEMBER_ATTRIBUTE_PURE;
   ivect rpos2ipos1 (rvect const & rpos,
                     rvect const & origin, rvect const & scale,
-                    int const ml, int const rl) const;
+                    int const ml, int const rl) const
+    CCTK_MEMBER_ATTRIBUTE_PURE;
 #endif
   
   void locate_position (rvect const & rpos,
                         int const ml,
                         int const minrl, int const maxrl,
-                        int & rl, int & c, ivect & aligned_ipos) const;
+                        int & rl, int & c, ivect & aligned_ipos) const
+    CCTK_MEMBER_ATTRIBUTE_PURE;
   
   void locate_position (ivect const & ipos,
                         int const ml,
                         int const minrl, int const maxrl,
-                        int & rl, int & c, ivect & aligned_ipos) const;
+                        int & rl, int & c, ivect & aligned_ipos) const
+    CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Time hierarchy management
   th_handle add (th * t);
@@ -184,8 +187,8 @@ public:
   void erase (dh_handle di);
   
   // Output
-  size_t memory () const CCTK_ATTRIBUTE_PURE;
-  static size_t allmemory () CCTK_ATTRIBUTE_PURE;
+  size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
+  static size_t allmemory () CCTK_MEMBER_ATTRIBUTE_PURE;
   ostream & output (ostream & os) const;
 
 private:
@@ -196,7 +199,6 @@ private:
 
 
 
-inline size_t memoryof (gh const & g) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (gh const & g)
 {
   return g.memory ();

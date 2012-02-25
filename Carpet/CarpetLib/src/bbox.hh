@@ -46,7 +46,7 @@ class bbox {
   
   // Consistency checks
   
-  void assert_bbox_limits () const;
+  void assert_bbox_limits () const CCTK_MEMBER_ATTRIBUTE_PURE;
   
 public:
   
@@ -85,7 +85,7 @@ public:
   }
   
   // Poison
-  static bbox poison ();
+  static bbox poison () CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Accessors
   // (Don't return references; *this might be a temporary)
@@ -117,31 +117,31 @@ public:
   /** Return the size, which is the number of contained points.  */
   // T size () const;
   typedef long long int size_type;
-  size_type size () const;
+  size_type size () const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Queries
   
   /** Find out whether the bbox contains the point x.  */
-  bool contains (const vect<T,D>& x) const;
+  bool contains (const vect<T,D>& x) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   /** Find out whether this bbox is contained in the bbox b.  */
-  bool is_contained_in (const bbox& b) const;
+  bool is_contained_in (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   /** Find out whether this bbox intersects the bbox b.  */
-  bool intersects (const bbox& b) const;
+  bool intersects (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   /** Find out whether this bbox is aligned with the bbox b.
       ("aligned" means that both bboxes have the same stride and that
       their boundaries are commensurate.)  */
-  bool is_aligned_with (const bbox& b) const;
+  bool is_aligned_with (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Operators
-  bool operator== (const bbox& b) const;
-  bool operator!= (const bbox& b) const;
-  bool operator<= (const bbox& b) const;
-  bool operator>= (const bbox& b) const;
-  bool operator< (const bbox& b) const;
-  bool operator> (const bbox& b) const;
+  bool operator== (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool operator!= (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool operator<= (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool operator>= (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool operator< (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool operator> (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   /** Calculate the intersection (the set of common points) with the
       bbox b.  */
@@ -155,7 +155,8 @@ public:
   }
   
   /** Expand (enlarge) the bbox by multiples of the stride.  */
-  bbox expand (const vect<T,D>& lo, const vect<T,D>& hi) const;
+  bbox expand (const vect<T,D>& lo, const vect<T,D>& hi) const
+    CCTK_MEMBER_ATTRIBUTE_PURE;
   bbox expand (const vect<vect<T,D>,2>& lohi) const
   { return expand (lohi[0], lohi[1]); }
   
@@ -166,7 +167,8 @@ public:
   /** Expand (enlarge) the bbox by multiples of a fraction of the
       stride.  */
   bbox expand (const vect<T,D>& lo, const vect<T,D>& hi,
-               const vect<T,D>& denom) const;
+               const vect<T,D>& denom) const
+    CCTK_MEMBER_ATTRIBUTE_PURE;
   bbox expand (const vect<vect<T,D>,2>& lohi, const vect<T,D>& denom) const
   { return expand (lohi[0], lohi[1], denom); }
   
@@ -176,13 +178,14 @@ public:
   
   /** Find the smallest b-compatible box around this bbox.
       ("compatible" means having the same stride.)  */
-  bbox expanded_for (const bbox& b) const;
+  bbox expanded_for (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   /** Find the largest b-compatible box inside this bbox.  */
-  bbox contracted_for (const bbox& b) const;
+  bbox contracted_for (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   /** Find the smallest bbox containing both boxes.  */
-  bbox expanded_containing (const bbox<T,D>& b) const;
+  bbox expanded_containing (const bbox<T,D>& b) const
+    CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Iterators
   
@@ -205,10 +208,10 @@ public:
   };
   
   /** Create an iterator that points to the first point in a bbox.  */
-  iterator begin () const;
+  iterator begin () const CCTK_MEMBER_ATTRIBUTE_PURE;
   /** Create an iterator that points "after the last point" in a bbox,
       which means that it also points to the first point.  */
-  iterator end () const;
+  iterator end () const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   size_type index (const vect<T,D>& pos) const
   {
@@ -222,7 +225,7 @@ public:
   }
   
   // Memory usage
-  size_t memory () const CCTK_ATTRIBUTE_CONST
+  size_t memory () const
   {
     return memoryof (_lower) + memoryof (_upper) + memoryof (_stride);
   }
@@ -236,8 +239,6 @@ public:
 
 // Memory usage
 
-template<typename T, int D>
-inline size_t memoryof (bbox<T,D> const & b) CCTK_ATTRIBUTE_CONST;
 template<typename T, int D>
 inline size_t memoryof (bbox<T,D> const & b) { return b.memory(); }
 

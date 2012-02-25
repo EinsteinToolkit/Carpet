@@ -164,7 +164,7 @@ private:
 public:
   
   // Memory usage
-  virtual size_t memory () const CCTK_ATTRIBUTE_PURE;
+  virtual size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Output
   virtual ostream & output (ostream& os) const;

@@ -23,11 +23,6 @@ namespace CarpetLib {
   size_t
   index3 (size_t const i, size_t const j, size_t const k,
           size_t const exti, size_t const extj, size_t const extk)
-    CCTK_ATTRIBUTE_CONST;
-  static inline
-  size_t
-  index3 (size_t const i, size_t const j, size_t const k,
-          size_t const exti, size_t const extj, size_t const extk)
   {
 #ifdef CARPET_DEBUG
     assert (static_cast <ptrdiff_t> (i) >= 0 and i < exti);

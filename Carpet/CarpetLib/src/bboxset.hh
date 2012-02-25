@@ -93,7 +93,7 @@ public:
   static bboxset poison ();
   
   // Invariant
-  bool invariant () const;
+  bool invariant () const CCTK_MEMBER_ATTRIBUTE_PURE;
   
 private:
   // Normalisation
@@ -104,35 +104,43 @@ public:
   bool empty () const { return bs.empty(); } // cost: O(1)
   // T size () const;
   typedef typename box::size_type size_type;
-  size_type size () const;                   // cost: O(n)
+  size_type size () const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n)
   int setsize () const { return bs.size(); } // cost: O(1)
   
   // Find out whether this bboxset intersects the bbox b
-  bool intersects (const box& b) const; // cost: O(n)
+  bool intersects (const box& b) const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n)
   
   // Add (bboxes that don't overlap)
-  bboxset& operator+= (const box& b);         // cost: O(1)
-  bboxset& operator+= (const bboxset& s);     // cost: O(n)
-  bboxset& add_transfer (bboxset& s);         // cost: O(1)
-  bboxset operator+ (const box& b) const;     // cost: O(n)
-  bboxset operator+ (const bboxset& s) const; // cost: O(n)
+  bboxset& operator+= (const box& b);     // cost: O(1)
+  bboxset& operator+= (const bboxset& s); // cost: O(n)
+  bboxset& add_transfer (bboxset& s);     // cost: O(1)
+  bboxset operator+ (const box& b)
+    const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n)
+  bboxset operator+ (const bboxset& s)
+    const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n)
   
   // Union
-  bboxset& operator|= (const box& b);         // cost: O(n)
-  bboxset& operator|= (const bboxset& s);     // cost: O(n^2)
-  bboxset operator| (const box& b) const;     // cost: O(n)
-  bboxset operator| (const bboxset& s) const; // cost: O(n^2)
+  bboxset& operator|= (const box& b);     // cost: O(n)
+  bboxset& operator|= (const bboxset& s); // cost: O(n^2)
+  bboxset operator| (const box& b)
+    const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n)
+  bboxset operator| (const bboxset& s)
+    const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n^2)
   
   // Intersection
-  bboxset operator& (const box& b) const;     // cost: O(n)
-  bboxset operator& (const bboxset& s) const; // cost: O(n)
-  bboxset& operator&= (const box& b);         // cost: O(n)
-  bboxset& operator&= (const bboxset& s);     // cost: O(n)
+  bboxset operator& (const box& b)
+    const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n)
+  bboxset operator& (const bboxset& s)
+    const CCTK_MEMBER_ATTRIBUTE_PURE;     // cost: O(n)
+  bboxset& operator&= (const box& b);     // cost: O(n)
+  bboxset& operator&= (const bboxset& s); // cost: O(n)
   
   // Difference
   // friend bboxset operator- <T,D>(const box& b1, const box& b2);
-  static bboxset minus (const box& b1, const box& b2); // cost: O(1)
-  bboxset operator- (const box& b) const;              // cost: O(n)
+  static bboxset minus (const box& b1, const box& b2)
+    CCTK_ATTRIBUTE_PURE;        // cost: O(1)
+  bboxset operator- (const box& b)
+    const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n)
   // cost: O(n)
   bboxset& operator-= (const box& b)
   {
@@ -141,17 +149,20 @@ public:
     return *this;
   }
   bboxset& operator-= (const bboxset& s);     // cost: O(n^2)
-  bboxset operator- (const bboxset& s) const; // cost: O(n^2)
+  bboxset operator- (const bboxset& s)
+    const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n^2)
   // friend bboxset operator- <T,D>(const box& b, const bboxset& s);
-  static bboxset minus (const box& b, const bboxset& s); // cost: O(n^2)
+  static bboxset minus (const box& b, const bboxset& s)
+    CCTK_ATTRIBUTE_PURE;        // cost: O(n^2)
   
   /** Find a bbox containing the whole set.  */
-  box container () const;       // cost: O(n)
+  box container () const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n)
   /** Find the pseudo-inverse.  */
-  bboxset pseudo_inverse (const int n) const;
+  bboxset pseudo_inverse (const int n) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   /** Expand (enlarge) the bboxset by multiples of the stride.  */
-  bboxset expand (const vect<T,D>& lo, const vect<T,D>& hi) const;
+  bboxset expand (const vect<T,D>& lo, const vect<T,D>& hi)
+    const CCTK_MEMBER_ATTRIBUTE_PURE;
   bboxset expand (const vect<vect<T,D>,2>& lohi) const
   { return expand (lohi[0], lohi[1]); }
   
@@ -163,7 +174,7 @@ public:
       stride.  */
   // cost: O(n^2) in general, but only O(n) for shifting
   bboxset expand (const vect<T,D>& lo, const vect<T,D>& hi,
-                  const vect<T,D>& denom) const;
+                  const vect<T,D>& denom) const CCTK_MEMBER_ATTRIBUTE_PURE;
   // cost: O(n^2) in general, but only O(n) for shifting
   bboxset expand (const vect<vect<T,D>,2>& lohi, const vect<T,D>& denom) const
   { return expand (lohi[0], lohi[1], denom); }
@@ -175,21 +186,21 @@ public:
   
   /** Find the smallest b-compatible box around this bbox.
       ("compatible" means having the same stride.)  */
-  bboxset expanded_for (const box& b) const;
+  bboxset expanded_for (const box& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
 #warning "TODO: this is incorrect"
 #if 1
   /** Find the largest b-compatible box inside this bbox.  */
-  bboxset contracted_for (const box& b) const;
+  bboxset contracted_for (const box& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
 #endif
   
   // Equality
-  bool operator== (const bboxset& s) const;
-  bool operator!= (const bboxset& s) const;
-  bool operator< (const bboxset& s) const;
-  bool operator<= (const bboxset& s) const;
-  bool operator> (const bboxset& s) const;
-  bool operator>= (const bboxset& s) const;
+  bool operator== (const bboxset& s) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool operator!= (const bboxset& s) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool operator< (const bboxset& s) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool operator<= (const bboxset& s) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool operator> (const bboxset& s) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bool operator>= (const bboxset& s) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Iterators
   typedef typename bset::const_iterator const_iterator;
@@ -201,7 +212,7 @@ public:
 //   iterator end () const   { return bs.end(); }
   
   // Memory usage
-  size_t memory () const CCTK_ATTRIBUTE_PURE { return memoryof (bs); }
+  size_t memory () const { return memoryof (bs); }
   
   // Input
   istream& input (istream& is);
@@ -250,16 +261,10 @@ inline bboxset<T,D> operator& (const bbox<T,D>& b, const bboxset<T,D>& s) {
 
 template<typename T,int D>
 inline bool operator== (const bbox<T,D>& b, const bboxset<T,D>& s)
-  CCTK_ATTRIBUTE_PURE;
-template<typename T,int D>
-inline bool operator== (const bbox<T,D>& b, const bboxset<T,D>& s)
 {
   return bboxset<T,D>(b) == s;
 }
 
-template<typename T,int D>
-inline bool operator!= (const bbox<T,D>& b, const bboxset<T,D>& s)
-  CCTK_ATTRIBUTE_PURE;
 template<typename T,int D>
 inline bool operator!= (const bbox<T,D>& b, const bboxset<T,D>& s)
 {
@@ -268,16 +273,10 @@ inline bool operator!= (const bbox<T,D>& b, const bboxset<T,D>& s)
 
 template<typename T,int D>
 inline bool operator< (const bbox<T,D>& b, const bboxset<T,D>& s)
-  CCTK_ATTRIBUTE_PURE;
-template<typename T,int D>
-inline bool operator< (const bbox<T,D>& b, const bboxset<T,D>& s)
 {
   return bboxset<T,D>(b) < s;
 }
 
-template<typename T,int D>
-inline bool operator<= (const bbox<T,D>& b, const bboxset<T,D>& s)
-  CCTK_ATTRIBUTE_PURE;
 template<typename T,int D>
 inline bool operator<= (const bbox<T,D>& b, const bboxset<T,D>& s)
 {
@@ -286,16 +285,10 @@ inline bool operator<= (const bbox<T,D>& b, const bboxset<T,D>& s)
 
 template<typename T,int D>
 inline bool operator> (const bbox<T,D>& b, const bboxset<T,D>& s)
-  CCTK_ATTRIBUTE_PURE;
-template<typename T,int D>
-inline bool operator> (const bbox<T,D>& b, const bboxset<T,D>& s)
 {
   return bboxset<T,D>(b) > s;
 }
 
-template<typename T,int D>
-inline bool operator>= (const bbox<T,D>& b, const bboxset<T,D>& s)
-  CCTK_ATTRIBUTE_PURE;
 template<typename T,int D>
 inline bool operator>= (const bbox<T,D>& b, const bboxset<T,D>& s)
 {
@@ -306,16 +299,10 @@ inline bool operator>= (const bbox<T,D>& b, const bboxset<T,D>& s)
 
 template<typename T,int D>
 inline bool operator== (const bboxset<T,D>& s, const bbox<T,D>& b)
-  CCTK_ATTRIBUTE_PURE;
-template<typename T,int D>
-inline bool operator== (const bboxset<T,D>& s, const bbox<T,D>& b)
 {
   return s == bboxset<T,D>(b);
 }
 
-template<typename T,int D>
-inline bool operator!= (const bboxset<T,D>& s, const bbox<T,D>& b)
-  CCTK_ATTRIBUTE_PURE;
 template<typename T,int D>
 inline bool operator!= (const bboxset<T,D>& s, const bbox<T,D>& b)
 {
@@ -324,16 +311,10 @@ inline bool operator!= (const bboxset<T,D>& s, const bbox<T,D>& b)
 
 template<typename T,int D>
 inline bool operator< (const bboxset<T,D>& s, const bbox<T,D>& b)
-  CCTK_ATTRIBUTE_PURE;
-template<typename T,int D>
-inline bool operator< (const bboxset<T,D>& s, const bbox<T,D>& b)
 {
   return s < bboxset<T,D>(b);
 }
 
-template<typename T,int D>
-inline bool operator<= (const bboxset<T,D>& s, const bbox<T,D>& b)
-  CCTK_ATTRIBUTE_PURE;
 template<typename T,int D>
 inline bool operator<= (const bboxset<T,D>& s, const bbox<T,D>& b)
 {
@@ -342,16 +323,10 @@ inline bool operator<= (const bboxset<T,D>& s, const bbox<T,D>& b)
 
 template<typename T,int D>
 inline bool operator> (const bboxset<T,D>& s, const bbox<T,D>& b)
-  CCTK_ATTRIBUTE_PURE;
-template<typename T,int D>
-inline bool operator> (const bboxset<T,D>& s, const bbox<T,D>& b)
 {
   return s > bboxset<T,D>(b);
 }
 
-template<typename T,int D>
-inline bool operator>= (const bboxset<T,D>& s, const bbox<T,D>& b)
-  CCTK_ATTRIBUTE_PURE;
 template<typename T,int D>
 inline bool operator>= (const bboxset<T,D>& s, const bbox<T,D>& b)
 {
@@ -361,9 +336,6 @@ inline bool operator>= (const bboxset<T,D>& s, const bbox<T,D>& b)
 
 
 // Memory usage
-template<typename T, int D>
-inline size_t memoryof (bboxset<T,D> const & s)
-  CCTK_ATTRIBUTE_PURE;
 template<typename T, int D>
 inline size_t memoryof (bboxset<T,D> const & s)
 { return s.memory(); }

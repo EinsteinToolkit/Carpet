@@ -171,8 +171,8 @@ public:
 private:
   // Datatype accessors
   // maps the C datatype of a data class object to a 0-based index
-  virtual unsigned int c_datatype () const = 0;
-  virtual size_t c_datatype_size () const = 0;
+  virtual unsigned int c_datatype () const CCTK_MEMBER_ATTRIBUTE_PURE = 0;
+  virtual size_t c_datatype_size () const CCTK_MEMBER_ATTRIBUTE_PURE = 0;
   
   // Data manipulators
   
@@ -230,14 +230,13 @@ private:
     = 0;
   
 public:
-  virtual size_t memory () const CCTK_ATTRIBUTE_PURE = 0;
-  static size_t allmemory () CCTK_ATTRIBUTE_PURE;
+  virtual size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE = 0;
+  static size_t allmemory () CCTK_MEMBER_ATTRIBUTE_PURE;
   virtual ostream& output (ostream& os) const = 0;
 };
 
 
 
-inline size_t memoryof (gdata const & d) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (gdata const & d)
 {
   return d.memory ();

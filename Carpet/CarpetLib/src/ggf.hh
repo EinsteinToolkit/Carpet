@@ -84,10 +84,10 @@ public:
   virtual ~ggf ();
 
   // Comparison
-  bool operator== (const ggf& f) const CCTK_ATTRIBUTE_PURE;
+  bool operator== (const ggf& f) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Querying
-  int timelevels (int const ml, int const rl) const CCTK_ATTRIBUTE_PURE
+  int timelevels (int const ml, int const rl) const
   {
     return timelevels_.AT(ml).AT(rl);
   }
@@ -205,8 +205,8 @@ public:
   
   
   // Output
-  virtual size_t memory () const CCTK_ATTRIBUTE_PURE = 0;
-  static size_t allmemory () CCTK_ATTRIBUTE_PURE;
+  virtual size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE = 0;
+  static size_t allmemory () CCTK_MEMBER_ATTRIBUTE_PURE;
   virtual ostream& output (ostream& os) const = 0;
 
 private:
@@ -218,7 +218,6 @@ private:
 
 
 
-inline size_t memoryof (ggf const & f) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (ggf const & f)
 {
   return f.memory ();

@@ -40,11 +40,12 @@ namespace Carpet {
   int NamedBarrier (const cGH* cgh, unsigned int id, const char* name);
   int Exit (const cGH* cgh, int retval);
   int Abort (const cGH* cgh, int retval);
-  int MyProc (const cGH* cgh) CCTK_ATTRIBUTE_CONST;
-  int nProcs (const cGH* cgh) CCTK_ATTRIBUTE_CONST;
+  int MyProc (const cGH* cgh) CCTK_ATTRIBUTE_PURE;
+  int nProcs (const cGH* cgh) CCTK_ATTRIBUTE_PURE;
   const int* ArrayGroupSizeB (const cGH* cgh, int dir, int group,
 			      const char* groupname) CCTK_ATTRIBUTE_PURE;
-  int QueryGroupStorageB (const cGH* cgh, int group, const char* groupname) CCTK_ATTRIBUTE_PURE;
+  int QueryGroupStorageB (const cGH* cgh, int group, const char* groupname)
+    CCTK_ATTRIBUTE_PURE;
   int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data);
   
   void Restrict (const cGH* cgh);

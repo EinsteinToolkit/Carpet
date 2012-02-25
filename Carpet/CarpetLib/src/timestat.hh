@@ -119,7 +119,7 @@ namespace CarpetLib {
     // Timer name
     string
     name ()
-      const;
+      const CCTK_MEMBER_ATTRIBUTE_PURE;
     
     // Print timer data
     void

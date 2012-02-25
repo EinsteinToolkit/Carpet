@@ -72,7 +72,7 @@ public:
   }
   
   CCTK_REAL get_time (int const ml, int const rl, int const tl)
-    const CCTK_ATTRIBUTE_PURE
+    const
   {
     assert (ml>=0 and ml<h.mglevels());
     assert (rl>=0 and rl<h.reflevels());
@@ -90,7 +90,7 @@ public:
     deltas.AT(ml).AT(rl) = dt;
   }
   
-  CCTK_REAL get_delta (int const ml, int const rl) const CCTK_ATTRIBUTE_PURE
+  CCTK_REAL get_delta (int const ml, int const rl) const
   {
     assert (ml>=0 and ml<h.mglevels());
     assert (rl>=0 and rl<h.reflevels());
@@ -104,15 +104,14 @@ public:
   void flip_timelevels (int const ml, int const rl);
   
   // Output
-  size_t memory () const CCTK_ATTRIBUTE_PURE;
-  static size_t allmemory () CCTK_ATTRIBUTE_PURE;
+  size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
+  static size_t allmemory () CCTK_MEMBER_ATTRIBUTE_PURE;
   istream& input (istream& is);
   ostream& output (ostream& os) const;
 };
 
 
 
-inline size_t memoryof (th const & t) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (th const & t)
 {
   return t.memory ();

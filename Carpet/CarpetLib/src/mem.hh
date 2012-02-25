@@ -48,7 +48,7 @@ public:
        T * memptr = NULL, size_t memsize = 0);
   ~mem ();
   
-  T * storage (size_t vectorindex) const CCTK_ATTRIBUTE_PURE
+  T * storage (size_t vectorindex) const
   {
     assert (vectorindex < vectorlength_);
     assert (clients_.AT(vectorindex));
@@ -57,14 +57,12 @@ public:
   
   void register_client (size_t vectorindex);
   void unregister_client (size_t vectorindex);
-  bool has_clients () const CCTK_ATTRIBUTE_PURE;
+  bool has_clients () const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Memory usage
-  size_t memory () const CCTK_ATTRIBUTE_PURE;
+  size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
 };
 
-template<typename T>
-inline size_t memoryof (mem<T> const & m) CCTK_ATTRIBUTE_PURE;
 template<typename T>
 inline size_t memoryof (mem<T> const & m) { return m.memory(); }
 
@@ -110,10 +108,9 @@ public:
   void * alloc (size_t nbytes);
   
   // Memory usage
-  size_t memory () const CCTK_ATTRIBUTE_PURE;
+  size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
 };
 
-inline size_t memoryof (mempool const & m) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (mempool const & m) { return m.memory(); }
 
 #endif  // ifndef MEM_HH

@@ -25,10 +25,10 @@ struct region_t {
   region_t & operator= (region_t const & a);
   ~region_t ();
   
-  bool invariant () const CCTK_ATTRIBUTE_PURE;
+  bool invariant () const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // For regridding
-  CCTK_REAL load () const;
+  CCTK_REAL load () const CCTK_MEMBER_ATTRIBUTE_PURE;
   region_t split (CCTK_REAL ratio_new_over_old);
   
   // Output processor decomposition? (Off by default.)
@@ -38,9 +38,6 @@ struct region_t {
 
 
 bool operator== (region_t const & a, region_t const & b)
-  CCTK_ATTRIBUTE_PURE;
-inline
-bool operator!= (region_t const & a, region_t const & b)
   CCTK_ATTRIBUTE_PURE;
 inline
 bool operator!= (region_t const & a, region_t const & b)
@@ -85,10 +82,8 @@ struct pseudoregion_t {
 };
 
 MPI_Datatype mpi_datatype (pseudoregion_t const &)
-  CCTK_ATTRIBUTE_CONST;
+  CCTK_ATTRIBUTE_PURE;
 namespace dist {
-  template<> inline MPI_Datatype mpi_datatype<pseudoregion_t> ()
-  CCTK_ATTRIBUTE_CONST;
   template<> inline MPI_Datatype mpi_datatype<pseudoregion_t> ()
   { pseudoregion_t dummy; return mpi_datatype(dummy); }
 }
@@ -97,14 +92,10 @@ bool operator== (pseudoregion_t const & a, pseudoregion_t const & b)
   CCTK_ATTRIBUTE_PURE;
 inline
 bool operator!= (pseudoregion_t const & a, pseudoregion_t const & b)
-  CCTK_ATTRIBUTE_PURE;
-inline
-bool operator!= (pseudoregion_t const & a, pseudoregion_t const & b)
 {
   return not (a == b);
 }
 
-inline size_t memoryof (pseudoregion_t const & p) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (pseudoregion_t const & p)
 {
   return
@@ -135,16 +126,12 @@ struct sendrecv_pseudoregion_t {
 };
 
 MPI_Datatype mpi_datatype (sendrecv_pseudoregion_t const &)
-  CCTK_ATTRIBUTE_CONST;
+  CCTK_ATTRIBUTE_PURE;
 namespace dist {
-  template<> inline MPI_Datatype mpi_datatype<sendrecv_pseudoregion_t> ()
-  CCTK_ATTRIBUTE_CONST;
   template<> inline MPI_Datatype mpi_datatype<sendrecv_pseudoregion_t> ()
   { sendrecv_pseudoregion_t dummy; return mpi_datatype(dummy); }
 }
 
-inline size_t memoryof (sendrecv_pseudoregion_t const & srp)
-  CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (sendrecv_pseudoregion_t const & srp)
 {
   return memoryof (srp.send) + memoryof (srp.recv);

@@ -30,7 +30,7 @@ using namespace std;
 // Generic arithmetic search
 template <typename T>
 static
-int asearch (T t, vector <T> const & ts);
+int asearch (T t, vector <T> const & ts) CCTK_ATTRIBUTE_PURE;
 
 
 
@@ -89,20 +89,20 @@ public:
   bool is_leaf() const { return type == type_leaf; }
   
   // Compare trees
-  bool operator== (fulltree const & t) const;
+  bool operator== (fulltree const & t) const CCTK_MEMBER_ATTRIBUTE_PURE;
   bool operator!= (fulltree const & t) const
   { return not (*this == t); }
   
   // Invariant
-  bool invariant () const;
+  bool invariant () const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Access the payload
   P const & payload () const { assert (is_leaf()); return p; }
   P & payload () { assert (is_leaf()); return p; }
   
   // Find the leaf payload corresponding to a position
-  P const * search (tvect const & ipos) const;
-  P * search (tvect const & ipos);
+  P const * search (tvect const & ipos) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  P * search (tvect const & ipos) CCTK_MEMBER_ATTRIBUTE_PURE;
   
   class const_iterator {
     fulltree const & f;
@@ -116,12 +116,13 @@ public:
     const_iterator (const_iterator const &);
     const_iterator & operator= (const_iterator const &);
   public:
-    fulltree const & operator* () const;
-    bool operator== (const_iterator const & it2) const;
+    fulltree const & operator* () const CCTK_MEMBER_ATTRIBUTE_PURE;
+    bool operator== (const_iterator const & it2) const
+      CCTK_MEMBER_ATTRIBUTE_PURE;
     bool operator!= (const_iterator const & it2) const
     { return not (*this == it2); }
     const_iterator & operator++ ();
-    bool done () const;
+    bool done () const CCTK_MEMBER_ATTRIBUTE_PURE;
   };
   
   class iterator {
@@ -136,12 +137,12 @@ public:
     iterator (iterator const &);
     iterator & operator= (iterator const &);
   public:
-    fulltree & operator* () const;
-    bool operator== (iterator const & it2) const;
+    fulltree & operator* () const CCTK_MEMBER_ATTRIBUTE_PURE;
+    bool operator== (iterator const & it2) const CCTK_MEMBER_ATTRIBUTE_PURE;
     bool operator!= (iterator const & it2) const
     { return not (*this == it2); }
     iterator & operator++ ();
-    bool done () const;
+    bool done () const CCTK_MEMBER_ATTRIBUTE_PURE;
   };
   
 #if 0
@@ -164,7 +165,7 @@ public:
 #endif
   
   // Memory usage
-  size_t memory () const CCTK_ATTRIBUTE_PURE;
+  size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Output helper
   void output (ostream & os) const;
@@ -173,8 +174,6 @@ public:
 
 
 // Memory usage
-template <typename T, int D, typename P>
-inline size_t memoryof (fulltree<T,D,P> const & f) CCTK_ATTRIBUTE_PURE;
 template <typename T, int D, typename P>
 inline size_t memoryof (fulltree<T,D,P> const & f) { return f.memory(); }
 

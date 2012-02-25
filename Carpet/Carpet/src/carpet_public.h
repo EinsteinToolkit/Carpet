@@ -79,7 +79,8 @@ namespace Carpet {
       
     };
     
-    struct CarpetGH const * GetCarpetGH (const cGH * const cgh) CCTK_ATTRIBUTE_CONST;
+    struct CarpetGH const * GetCarpetGH (const cGH * const cgh)
+      CCTK_ATTRIBUTE_PURE;
     
     
     
@@ -117,10 +118,10 @@ namespace Carpet {
     
     
     /* Helper functions */
-    MPI_Comm CarpetMPIComm (void) CCTK_ATTRIBUTE_CONST;
-    MPI_Datatype CarpetMPIDatatype (int vartype) CCTK_ATTRIBUTE_CONST;
-    MPI_Datatype CarpetSimpleMPIDatatype (int vartype) CCTK_ATTRIBUTE_CONST;
-    int CarpetSimpleMPIDatatypeLength (int vartype) CCTK_ATTRIBUTE_CONST;
+    MPI_Comm CarpetMPIComm (void) CCTK_ATTRIBUTE_PURE;
+    MPI_Datatype CarpetMPIDatatype (int vartype) CCTK_ATTRIBUTE_PURE;
+    MPI_Datatype CarpetSimpleMPIDatatype (int vartype) CCTK_ATTRIBUTE_PURE;
+    int CarpetSimpleMPIDatatypeLength (int vartype) CCTK_ATTRIBUTE_PURE;
     
     
     

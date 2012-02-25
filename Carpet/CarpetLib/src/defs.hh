@@ -122,9 +122,7 @@ enum centering { error_centered, vertex_centered, cell_centered };
 
 // Useful helper
 template<class T>
-inline T square (const T& x) CCTK_ATTRIBUTE_CONST;
-template<class T>
-inline T square (const T& x) { return x*x; }
+inline T square (const T x) { return x*x; }
 
 // Another useful helper
 template<class T>
@@ -133,8 +131,8 @@ T ipow (T x, int y) CCTK_ATTRIBUTE_CONST;
 
 
 // Access to CarpetLib parameters
-CCTK_INT get_poison_value() CCTK_ATTRIBUTE_CONST;
-CCTK_INT get_deadbeef() CCTK_ATTRIBUTE_CONST;
+CCTK_INT get_poison_value() CCTK_ATTRIBUTE_PURE;
+CCTK_INT get_deadbeef() CCTK_ATTRIBUTE_PURE;
 
 
 
@@ -150,61 +148,51 @@ void consume (istream& is, char const * c);
 // Names for types
 
 #ifdef HAVE_CCTK_INT1
-inline const char * typestring (const CCTK_INT1&) CCTK_ATTRIBUTE_CONST;
 inline const char * typestring (const CCTK_INT1&)
 { return "CCTK_INT1"; }
 #endif
 
 #ifdef HAVE_CCTK_INT2
-inline const char * typestring (const CCTK_INT2&) CCTK_ATTRIBUTE_CONST;
 inline const char * typestring (const CCTK_INT2&)
 { return "CCTK_INT2"; }
 #endif
 
 #ifdef HAVE_CCTK_INT4
-inline const char * typestring (const CCTK_INT4&) CCTK_ATTRIBUTE_CONST;
 inline const char * typestring (const CCTK_INT4&)
 { return "CCTK_INT4"; }
 #endif
 
 #ifdef HAVE_CCTK_INT8
-inline const char * typestring (const CCTK_INT8&) CCTK_ATTRIBUTE_CONST;
 inline const char * typestring (const CCTK_INT8&)
 { return "CCTK_INT8"; }
 #endif
 
 #ifdef HAVE_CCTK_REAL4
-inline const char * typestring (const CCTK_REAL4&) CCTK_ATTRIBUTE_CONST;
 inline const char * typestring (const CCTK_REAL4&)
 { return "CCTK_REAL4"; }
 #endif
 
 #ifdef HAVE_CCTK_REAL8
-inline const char * typestring (const CCTK_REAL8&) CCTK_ATTRIBUTE_CONST;
 inline const char * typestring (const CCTK_REAL8&)
 { return "CCTK_REAL8"; }
 #endif
 
 #ifdef HAVE_CCTK_REAL16
-inline const char * typestring (const CCTK_REAL16&) CCTK_ATTRIBUTE_CONST;
 inline const char * typestring (const CCTK_REAL16&)
 { return "CCTK_REAL16"; }
 #endif
 
 #ifdef HAVE_CCTK_REAL4
-inline const char * typestring (const CCTK_COMPLEX8&) CCTK_ATTRIBUTE_CONST;
 inline const char * typestring (const CCTK_COMPLEX8&)
 { return "CCTK_COMPLEX8"; }
 #endif
 
 #ifdef HAVE_CCTK_REAL8
-inline const char * typestring (const CCTK_COMPLEX16&) CCTK_ATTRIBUTE_CONST;
 inline const char * typestring (const CCTK_COMPLEX16&)
 { return "CCTK_COMPLEX16"; }
 #endif
 
 #ifdef HAVE_CCTK_REAL16
-inline const char * typestring (const CCTK_COMPLEX32&) CCTK_ATTRIBUTE_CONST;
 inline const char * typestring (const CCTK_COMPLEX32&)
 { return "CCTK_COMPLEX32"; }
 #endif
@@ -215,90 +203,75 @@ inline const char * typestring (const CCTK_COMPLEX32&)
 // isnormal functions
 
 // #ifdef HAVE_CCTK_REAL4
-// inline int myfpclassify (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
-// int myfpclassify (CCTK_REAL4 const & x)
+// inline int myfpclassify (CCTK_REAL4 const x)
 // { return fpclassify (x); }
 // #endif
 // #ifdef HAVE_CCTK_REAL8
-// inline int myfpclassify (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
-// inline int myfpclassify (CCTK_REAL8 const & x)
+// inline int myfpclassify (CCTK_REAL8 const x)
 // { return fpclassify (x); }
 // #endif
 // #ifdef HAVE_CCTK_REAL16
-// inline int myfpclassify (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
-// inline int myfpclassify (CCTK_REAL16 const & x)
+// inline int myfpclassify (CCTK_REAL16 const x)
 // { return fpclassify (x); }
 // #endif
 // 
 // #undef fpclassify
 
 #ifdef HAVE_CCTK_REAL4
-inline int myisfinite (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
-int myisfinite (CCTK_REAL4 const & x)
+inline int myisfinite (CCTK_REAL4 const x)
 { return isfinite (x); }
 #endif
 #ifdef HAVE_CCTK_REAL8
-inline int myisfinite (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
-inline int myisfinite (CCTK_REAL8 const & x)
+inline int myisfinite (CCTK_REAL8 const x)
 { return isfinite (x); }
 #endif
 #ifdef HAVE_CCTK_REAL16
-inline int myisfinite (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
-inline int myisfinite (CCTK_REAL16 const & x)
+inline int myisfinite (CCTK_REAL16 const x)
 { return isfinite (x); }
 #endif
 
 #undef isfinite
 
 #ifdef HAVE_CCTK_REAL4
-inline int myisinf (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
-int myisinf (CCTK_REAL4 const & x)
+inline int myisinf (CCTK_REAL4 const x)
 { return isinf (x); }
 #endif
 #ifdef HAVE_CCTK_REAL8
-inline int myisinf (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
-inline int myisinf (CCTK_REAL8 const & x)
+inline int myisinf (CCTK_REAL8 const x)
 { return isinf (x); }
 #endif
 #ifdef HAVE_CCTK_REAL16
-inline int myisinf (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
-inline int myisinf (CCTK_REAL16 const & x)
+inline int myisinf (CCTK_REAL16 const x)
 { return isinf (x); }
 #endif
 
 #undef isinf
 
 #ifdef HAVE_CCTK_REAL4
-inline int myisnan (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
-int myisnan (CCTK_REAL4 const & x)
+inline int myisnan (CCTK_REAL4 const x)
 { return isnan (x); }
 #endif
 #ifdef HAVE_CCTK_REAL8
-inline int myisnan (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
-inline int myisnan (CCTK_REAL8 const & x)
+inline int myisnan (CCTK_REAL8 const x)
 { return isnan (x); }
 #endif
 #ifdef HAVE_CCTK_REAL16
-inline int myisnan (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
-inline int myisnan (CCTK_REAL16 const & x)
+inline int myisnan (CCTK_REAL16 const x)
 { return isnan (x); }
 #endif
 
 #undef isnan
 
 #ifdef HAVE_CCTK_REAL4
-inline int myisnormal (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
-int myisnormal (CCTK_REAL4 const & x)
+inline int myisnormal (CCTK_REAL4 const x)
 { return isnormal (x); }
 #endif
 #ifdef HAVE_CCTK_REAL8
-inline int myisnormal (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
-inline int myisnormal (CCTK_REAL8 const & x)
+inline int myisnormal (CCTK_REAL8 const x)
 { return isnormal (x); }
 #endif
 #ifdef HAVE_CCTK_REAL16
-inline int myisnormal (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
-inline int myisnormal (CCTK_REAL16 const & x)
+inline int myisnormal (CCTK_REAL16 const x)
 { return isnormal (x); }
 #endif
 
@@ -318,50 +291,45 @@ namespace CarpetLib {
     //
     
     template <typename T>
-    inline typename typeprops<T>::real abs (T const & x) CCTK_ATTRIBUTE_CONST;
-    template <typename T>
-    inline typename typeprops<T>::real abs (T const & x)
+    inline typename typeprops<T>::real abs (T const x)
     { return std::abs (x); }
     
 //     // This does not work on Linux with Intel compilers, which do not
 //     // always have long long llabs (long long)
-//     template<> inline signed char abs<signed char> (signed char const & x) CCTK_ATTRIBUTE_CONST { return ::abs (x); }
-//     template<> inline unsigned char abs<unsigned char> (unsigned char const & x) CCTK_ATTRIBUTE_CONST { return ::abs (x); }
-//     template<> inline short abs<short> (short const & x) { return ::abs (x); }
-//     template<> inline int abs<int> (int const & x) CCTK_ATTRIBUTE_CONST { return ::abs (x); }
-//     template<> inline long abs<long> (long const & x) CCTK_ATTRIBUTE_CONST { return ::labs (x); }
+//     template<> inline signed char abs<signed char> (signed char const x) { return ::abs (x); }
+//     template<> inline unsigned char abs<unsigned char> (unsigned char const x) CCTK_ATTRIBUTE_CONST { return ::abs (x); }
+//     template<> inline short abs<short> (short const x) { return ::abs (x); }
+//     template<> inline int abs<int> (int const x) { return ::abs (x); }
+//     template<> inline long abs<long> (long const x) { return ::labs (x); }
 // #ifdef SIZEOF_LONG_LONG
-//     inline long long abs<long long> (long long const & x) CCTK_ATTRIBUTE_CONST { return ::llabs (x); }
+//     inline long long abs<long long> (long long const x) { return ::llabs (x); }
 // #endif
     
 //     // This template does not work on AIX, which does not have long
 //     // long abs (long long)
 // #ifdef HAVE_CCTK_INT1
-//     template<> inline CCTK_INT1 abs<CCTK_INT1> (CCTK_INT1 const & x) CCTK_ATTRIBUTE_CONST { return x < 0 ? - x : x; }
+//     template<> inline CCTK_INT1 abs<CCTK_INT1> (CCTK_INT1 const x) { return x < 0 ? - x : x; }
 // #endif
 // #ifdef HAVE_CCTK_INT2
-//     template<> inline CCTK_INT2 abs<CCTK_INT2> (CCTK_INT2 const & x) CCTK_ATTRIBUTE_CONST { return x < 0 ? - x : x; }
+//     template<> inline CCTK_INT2 abs<CCTK_INT2> (CCTK_INT2 const x)  { return x < 0 ? - x : x; }
 // #endif
 // #ifdef HAVE_CCTK_INT4
-//     template<> inline CCTK_INT4 abs<CCTK_INT4> (CCTK_INT4 const & x) CCTK_ATTRIBUTE_CONST { return x < 0 ? - x : x; }
+//     template<> inline CCTK_INT4 abs<CCTK_INT4> (CCTK_INT4 const x) { return x < 0 ? - x : x; }
 // #endif
 // #ifdef HAVE_CCTK_INT8
-//     template<> inline CCTK_INT8 abs<CCTK_INT8> (CCTK_INT8 const & x) CCTK_ATTRIBUTE_CONST { return x < 0 ? - x : x; }
+//     template<> inline CCTK_INT8 abs<CCTK_INT8> (CCTK_INT8 const x) { return x < 0 ? - x : x; }
 // #endif
     
 #ifdef HAVE_CCTK_COMPLEX8
-    template<> inline CCTK_REAL4 abs<CCTK_COMPLEX8> (CCTK_COMPLEX8 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline CCTK_REAL4 abs<CCTK_COMPLEX8> (CCTK_COMPLEX8 const & x)
+    template<> inline CCTK_REAL4 abs<CCTK_COMPLEX8> (CCTK_COMPLEX8 const x)
     { return CCTK_Cmplx8Abs (x); }
 #endif
 #ifdef HAVE_CCTK_COMPLEX16
-    template<> inline CCTK_REAL8 abs<CCTK_COMPLEX16> (CCTK_COMPLEX16 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline CCTK_REAL8 abs<CCTK_COMPLEX16> (CCTK_COMPLEX16 const & x)
+    template<> inline CCTK_REAL8 abs<CCTK_COMPLEX16> (CCTK_COMPLEX16 const x)
     { return CCTK_Cmplx16Abs (x); }
 #endif
 #ifdef HAVE_CCTK_COMPLEX32
-    template<> inline CCTK_REAL16 abs<CCTK_COMPLEX32> (CCTK_COMPLEX32 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline CCTK_REAL16 abs<CCTK_COMPLEX32> (CCTK_COMPLEX32 const & x)
+    template<> inline CCTK_REAL16 abs<CCTK_COMPLEX32> (CCTK_COMPLEX32 const x)
     { return CCTK_Cmplx32Abs (x); }
 #endif
     
@@ -371,40 +339,32 @@ namespace CarpetLib {
 //     
 //     // Default implementation, only good for integers
 //     template <typename T>
-//     inline int fpclassify (T const & x) CCTK_ATTRIBUTE_CONST;
-//     template <typename T>
-//     inline int fpclassify (T const & x)
+//     inline int fpclassify (T const x)
 //     { return x ? FP_NORMAL : FP_ZERO; }
 //     
 // #ifdef HAVE_CCTK_REAL4
-//     template<> inline int fpclassify (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
-//     template<> inline int fpclassify (CCTK_REAL4 const & x)
+//     template<> inline int fpclassify (CCTK_REAL4 const x)
 //     { return myfpclassify (x); }
 // #endif
 // #ifdef HAVE_CCTK_REAL8
-//     template<> inline int fpclassify (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
-//     template<> inline int fpclassify (CCTK_REAL8 const & x)
+//     template<> inline int fpclassify (CCTK_REAL8 const x)
 //     { return myfpclassify (x); }
 // #endif
 // #ifdef HAVE_CCTK_REAL16
-//     template<> inline int fpclassify (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
-//     template<> inline int fpclassify (CCTK_REAL16 const & x)
+//     template<> inline int fpclassify (CCTK_REAL16 const x)
 //     { return myfpclassify (x); }
 // #endif
 //     
 // #ifdef HAVE_CCTK_COMPLEX8
-//     template<> inline int fpclassify (CCTK_COMPLEX8 const & x) CCTK_ATTRIBUTE_CONST;
-//     template<> inline int fpclassify (CCTK_COMPLEX8 const & x)
+//     template<> inline int fpclassify (CCTK_COMPLEX8 const x)
 //     { assert(0); }
 // #endif
 // #ifdef HAVE_CCTK_COMPLEX16
-//     template<> inline int fpclassify (CCTK_COMPLEX16 const & x) CCTK_ATTRIBUTE_CONST;
-//     template<> inline int fpclassify (CCTK_COMPLEX16 const & x)
+//     template<> inline int fpclassify (CCTK_COMPLEX16 const x)
 //     { assert(0); }
 // #endif
 // #ifdef HAVE_CCTK_COMPLEX32
-//     template<> inline int fpclassify (CCTK_COMPLEX32 const & x) CCTK_ATTRIBUTE_CONST;
-//     template<> inline int fpclassify (CCTK_COMPLEX32 const & x)
+//     template<> inline int fpclassify (CCTK_COMPLEX32 const x)
 //     { assert(0); }
 // #endif
     
@@ -414,40 +374,32 @@ namespace CarpetLib {
     
     // Default implementation, only good for integers
     template <typename T>
-    inline int isfinite (T const & x) CCTK_ATTRIBUTE_CONST;
-    template <typename T>
-    inline int isfinite (T const & x)
+    inline int isfinite (T const x)
     { return 1; }
     
 #ifdef HAVE_CCTK_REAL4
-    template<> inline int isfinite (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isfinite (CCTK_REAL4 const & x)
+    template<> inline int isfinite (CCTK_REAL4 const x)
     { return myisfinite (x); }
 #endif
 #ifdef HAVE_CCTK_REAL8
-    template<> inline int isfinite (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isfinite (CCTK_REAL8 const & x)
+    template<> inline int isfinite (CCTK_REAL8 const x)
     { return myisfinite (x); }
 #endif
 #ifdef HAVE_CCTK_REAL16
-    template<> inline int isfinite (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isfinite (CCTK_REAL16 const & x)
+    template<> inline int isfinite (CCTK_REAL16 const x)
     { return myisfinite (x); }
 #endif
     
 #ifdef HAVE_CCTK_COMPLEX8
-    template<> inline int isfinite (CCTK_COMPLEX8 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isfinite (CCTK_COMPLEX8 const & x)
+    template<> inline int isfinite (CCTK_COMPLEX8 const x)
     { return myisfinite (CCTK_Cmplx8Real (x)) and myisfinite (CCTK_Cmplx8Imag (x)); }
 #endif
 #ifdef HAVE_CCTK_COMPLEX16
-    template<> inline int isfinite (CCTK_COMPLEX16 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isfinite (CCTK_COMPLEX16 const & x)
+    template<> inline int isfinite (CCTK_COMPLEX16 const x)
     { return myisfinite (CCTK_Cmplx16Real (x)) and myisfinite (CCTK_Cmplx16Imag (x)); }
 #endif
 #ifdef HAVE_CCTK_COMPLEX32
-    template<> inline int isfinite (CCTK_COMPLEX32 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isfinite (CCTK_COMPLEX32 const & x)
+    template<> inline int isfinite (CCTK_COMPLEX32 const x)
     { return myisfinite (CCTK_Cmplx32Real (x)) and myisfinite (CCTK_Cmplx32Imag (x)); }
 #endif
     
@@ -457,40 +409,32 @@ namespace CarpetLib {
     
     // Default implementation, only good for integers
     template <typename T>
-    inline int isinf (T const & x) CCTK_ATTRIBUTE_CONST;
-    template <typename T>
-    inline int isinf (T const & x)
+    inline int isinf (T const x)
     { return 0; }
     
 #ifdef HAVE_CCTK_REAL4
-    template<> inline int isinf (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isinf (CCTK_REAL4 const & x)
+    template<> inline int isinf (CCTK_REAL4 const x)
     { return myisinf (x); }
 #endif
 #ifdef HAVE_CCTK_REAL8
-    template<> inline int isinf (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isinf (CCTK_REAL8 const & x)
+    template<> inline int isinf (CCTK_REAL8 const x)
     { return myisinf (x); }
 #endif
 #ifdef HAVE_CCTK_REAL16
-    template<> inline int isinf (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isinf (CCTK_REAL16 const & x)
+    template<> inline int isinf (CCTK_REAL16 const x)
     { return myisinf (x); }
 #endif
     
 #ifdef HAVE_CCTK_COMPLEX8
-    template<> inline int isinf (CCTK_COMPLEX8 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isinf (CCTK_COMPLEX8 const & x)
+    template<> inline int isinf (CCTK_COMPLEX8 const x)
     { return myisinf (CCTK_Cmplx8Real (x)) or myisinf (CCTK_Cmplx8Imag (x)); }
 #endif
 #ifdef HAVE_CCTK_COMPLEX16
-    template<> inline int isinf (CCTK_COMPLEX16 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isinf (CCTK_COMPLEX16 const & x)
+    template<> inline int isinf (CCTK_COMPLEX16 const x)
     { return myisinf (CCTK_Cmplx16Real (x)) or myisinf (CCTK_Cmplx16Imag (x)); }
 #endif
 #ifdef HAVE_CCTK_COMPLEX32
-    template<> inline int isinf (CCTK_COMPLEX32 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isinf (CCTK_COMPLEX32 const & x)
+    template<> inline int isinf (CCTK_COMPLEX32 const x)
     { return myisinf (CCTK_Cmplx32Real (x)) or myisinf (CCTK_Cmplx32Imag (x)); }
 #endif
     
@@ -500,40 +444,32 @@ namespace CarpetLib {
     
     // Default implementation, only good for integers
     template <typename T>
-    inline int isnan (T const & x) CCTK_ATTRIBUTE_CONST;
-    template <typename T>
-    inline int isnan (T const & x)
+    inline int isnan (T const x)
     { return 0; }
     
 #ifdef HAVE_CCTK_REAL4
-    template<> inline int isnan (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isnan (CCTK_REAL4 const & x)
+    template<> inline int isnan (CCTK_REAL4 const x)
     { return myisnan (x); }
 #endif
 #ifdef HAVE_CCTK_REAL8
-    template<> inline int isnan (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isnan (CCTK_REAL8 const & x)
+    template<> inline int isnan (CCTK_REAL8 const x)
     { return myisnan (x); }
 #endif
 #ifdef HAVE_CCTK_REAL16
-    template<> inline int isnan (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isnan (CCTK_REAL16 const & x)
+    template<> inline int isnan (CCTK_REAL16 const x)
     { return myisnan (x); }
 #endif
     
 #ifdef HAVE_CCTK_COMPLEX8
-    template<> inline int isnan (CCTK_COMPLEX8 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isnan (CCTK_COMPLEX8 const & x)
+    template<> inline int isnan (CCTK_COMPLEX8 const x)
     { return myisnan (CCTK_Cmplx8Real (x)) or myisnan (CCTK_Cmplx8Imag (x)); }
 #endif
 #ifdef HAVE_CCTK_COMPLEX16
-    template<> inline int isnan (CCTK_COMPLEX16 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isnan (CCTK_COMPLEX16 const & x)
+    template<> inline int isnan (CCTK_COMPLEX16 const x)
     { return myisnan (CCTK_Cmplx16Real (x)) or myisnan (CCTK_Cmplx16Imag (x)); }
 #endif
 #ifdef HAVE_CCTK_COMPLEX32
-    template<> inline int isnan (CCTK_COMPLEX32 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isnan (CCTK_COMPLEX32 const & x)
+    template<> inline int isnan (CCTK_COMPLEX32 const x)
     { return myisnan (CCTK_Cmplx32Real (x)) or myisnan (CCTK_Cmplx32Imag (x)); }
 #endif
     
@@ -543,40 +479,32 @@ namespace CarpetLib {
     
     // Default implementation, only good for integers
     template <typename T>
-    inline int isnormal (T const & x) CCTK_ATTRIBUTE_CONST;
-    template <typename T>
-    inline int isnormal (T const & x)
+    inline int isnormal (T const x)
     { return 1; }
     
 #ifdef HAVE_CCTK_REAL4
-    template<> inline int isnormal (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isnormal (CCTK_REAL4 const & x)
+    template<> inline int isnormal (CCTK_REAL4 const x)
     { return myisnormal (x); }
 #endif
 #ifdef HAVE_CCTK_REAL8
-    template<> inline int isnormal (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isnormal (CCTK_REAL8 const & x)
+    template<> inline int isnormal (CCTK_REAL8 const x)
     { return myisnormal (x); }
 #endif
 #ifdef HAVE_CCTK_REAL16
-    template<> inline int isnormal (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isnormal (CCTK_REAL16 const & x)
+    template<> inline int isnormal (CCTK_REAL16 const x)
     { return myisnormal (x); }
 #endif
     
 #ifdef HAVE_CCTK_COMPLEX8
-    template<> inline int isnormal (CCTK_COMPLEX8 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isnormal (CCTK_COMPLEX8 const & x)
+    template<> inline int isnormal (CCTK_COMPLEX8 const x)
     { return myisnormal (CCTK_Cmplx8Real (x)) and myisnormal (CCTK_Cmplx8Imag (x)); }
 #endif
 #ifdef HAVE_CCTK_COMPLEX16
-    template<> inline int isnormal (CCTK_COMPLEX16 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isnormal (CCTK_COMPLEX16 const & x)
+    template<> inline int isnormal (CCTK_COMPLEX16 const x)
     { return myisnormal (CCTK_Cmplx16Real (x)) and myisnormal (CCTK_Cmplx16Imag (x)); }
 #endif
 #ifdef HAVE_CCTK_COMPLEX32
-    template<> inline int isnormal (CCTK_COMPLEX32 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int isnormal (CCTK_COMPLEX32 const & x)
+    template<> inline int isnormal (CCTK_COMPLEX32 const x)
     { return myisnormal (CCTK_Cmplx32Real (x)) and myisnormal (CCTK_Cmplx32Imag (x)); }
 #endif
     
@@ -593,11 +521,9 @@ namespace CarpetLib {
 namespace CarpetLib {
   namespace good {
     
-#define ALIAS_GOOD_FUNCTION(typ,func)                           \
-    template <typename T>                                       \
-    inline typ func##_ (T const & x) CCTK_ATTRIBUTE_CONST;      \
-    template <typename T>                                       \
-    inline typ func##_ (T const & x)                            \
+#define ALIAS_GOOD_FUNCTION(typ,func)           \
+    template <typename T>                       \
+    inline typ func##_ (T const x)              \
     { return func (x); }
 
     // ALIAS_GOOD_FUNCTION(int,fpclassify)
@@ -632,26 +558,6 @@ bool equals (vector<T> const& v, vector<T> const& w)
 
 
 // Container memory usage
-inline size_t memoryof (char const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (short const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (int const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (long const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (long long const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (unsigned char const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (unsigned short const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (unsigned int const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (unsigned long const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (unsigned long long const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (float const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (double const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (long double const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (void * const e) CCTK_ATTRIBUTE_CONST;
-inline size_t memoryof (void const * const e) CCTK_ATTRIBUTE_CONST;
-template<class T> inline size_t memoryof (T * const e) CCTK_ATTRIBUTE_CONST;
-template<class T> inline size_t memoryof (T const * const e) CCTK_ATTRIBUTE_CONST;
-template<class T> inline size_t memoryof (typename list<T>::iterator const & i) CCTK_ATTRIBUTE_CONST;
-template<class T> inline size_t memoryof (typename list<T>::const_iterator const & i) CCTK_ATTRIBUTE_CONST;
-
 inline size_t memoryof (char const e) { return sizeof e; }
 inline size_t memoryof (short const e) { return sizeof e; }
 inline size_t memoryof (int const e) { return sizeof e; }

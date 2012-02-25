@@ -77,7 +77,7 @@ public:
   
   
   // Output
-  virtual size_t memory () const;
+  virtual size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
   virtual ostream& output (ostream& os) const;
 private:
   gf ();                        // canonical default construtor

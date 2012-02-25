@@ -47,7 +47,7 @@ namespace CarpetInterp2 {
     static int components;
     
     static void determine_mrc_info ();
-    static int get_max_ind () CCTK_ATTRIBUTE_PURE
+    static int get_max_ind () CCTK_MEMBER_ATTRIBUTE_PURE
     {
       return maps * reflevels * components;
     }
@@ -72,12 +72,12 @@ namespace CarpetInterp2 {
     mrc_t (int ind);
     
     // Convert a mrc into an integer index
-    int get_ind () const CCTK_ATTRIBUTE_PURE
+    int get_ind () const CCTK_MEMBER_ATTRIBUTE_PURE
     {
       return c + components * (rl + reflevels * m);
     }
     
-    bool operator== (mrc_t const & a) const CCTK_ATTRIBUTE_PURE
+    bool operator== (mrc_t const & a) const CCTK_MEMBER_ATTRIBUTE_PURE
     {
       return m == a.m and rl == a.rl and c == a.c;
     }
@@ -126,7 +126,7 @@ namespace CarpetInterp2 {
         coords[d].resize(n);
       }
     }
-    size_t size () const CCTK_ATTRIBUTE_PURE { return coords[0].size(); }
+    size_t size () const CCTK_MEMBER_ATTRIBUTE_PURE { return coords[0].size(); }
   };
   
   // A local location, given by map and local coordinates
@@ -140,7 +140,7 @@ namespace CarpetInterp2 {
         coords[d].resize(n);
       }
     }
-    size_t size () const CCTK_ATTRIBUTE_PURE { return maps.size(); }
+    size_t size () const CCTK_MEMBER_ATTRIBUTE_PURE { return maps.size(); }
   };
   
   // An integer location, given by map, refinement level, and
@@ -156,7 +156,7 @@ namespace CarpetInterp2 {
     int ind3d;                  // closest grid point
     rvect offset;               // in terms of grid points
     
-    static MPI_Datatype mpi_datatype () CCTK_ATTRIBUTE_CONST;
+    static MPI_Datatype mpi_datatype () CCTK_MEMBER_ATTRIBUTE_PURE;
     
     void output (ostream& os) const;
   };
@@ -313,7 +313,7 @@ namespace CarpetInterp2 {
     
     size_t
     get_npoints ()
-      const CCTK_ATTRIBUTE_PURE
+      const CCTK_MEMBER_ATTRIBUTE_PURE
     {
       return recv_descr.npoints;
     }
