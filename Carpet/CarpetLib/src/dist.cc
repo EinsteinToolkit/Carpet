@@ -14,6 +14,7 @@
 #  include <omp.h>
 #endif
 
+#include "backtrace.hh"
 #include "defs.hh"
 #include "limits.hh"
 #include "startup_time.hh"
@@ -229,6 +230,9 @@ namespace dist {
     
     // Check and/or modify system limits
     CarpetLib::set_system_limits ();
+    
+    // Request readable backtraces
+    CarpetLib::request_backtraces ();
     
     collect_total_num_threads ();
   }
