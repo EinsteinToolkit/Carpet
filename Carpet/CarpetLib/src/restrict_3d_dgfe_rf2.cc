@@ -123,21 +123,21 @@ namespace CarpetLib {
     assert(all(regext % (ORDER+1) == 0));
     
     // Loop over coarse region
+#ifdef HRSCC_HH
 #pragma omp parallel for collapse(3)
     for (ptrdiff_t k=0; k<regkext; k+=ORDER+1) {
       for (ptrdiff_t j=0; j<regjext; j+=ORDER+1) {
         for (ptrdiff_t i=0; i<regiext; i+=ORDER+1) {
-#ifdef HRSCC_HH
           GLLElement<ORDER>::restrict_full
             (&src[SRCIND3(srcioff+2*i, srcjoff+2*j, srckoff+2*k)], srcstr,
              &dst[DSTIND3(dstioff+i, dstjoff+j, dstkoff+k)], dststr);
-#else
-          // HRSCCore is not available
-          assert(0);
-#endif
         }
       }
     }
+#else
+    // HRSCCore is not available
+    assert(0);
+#endif
     
   }
   

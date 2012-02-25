@@ -138,20 +138,20 @@ namespace CarpetLib {
       int const dststr2d[2] = {dstdj, dstdk};
       
       // Loop over fine region
+#ifdef HRSCC_HH
       ptrdiff_t const i=0;
 #pragma omp parallel for collapse(2)
       for (ptrdiff_t k=0; k<regkext; k+=2*(ORDER+1)) {
         for (ptrdiff_t j=0; j<regjext; j+=2*(ORDER+1)) {
-#ifdef HRSCC_HH
           GLLElement<ORDER>::prolongate_2D
             (&src[SRCIND3(srcioff+i, srcjoff+j, srckoff+k)], srcstr2d,
              &dst[DSTIND3(dstioff+2*i, dstjoff+2*j, dstkoff+2*k)], dststr2d);
-#else
-          // HRSCCore is not available
-          assert(0);
-#endif
         }
       }
+#else
+      // HRSCCore is not available
+      assert(0);
+#endif
       
     } else if (regext[1] == 1) {
       // 2D prolongation on y face
@@ -177,20 +177,20 @@ namespace CarpetLib {
       int const dststr2d[2]= {dstdi, dstdk};
       
       // Loop over fine region
+#ifdef HRSCC_HH
       ptrdiff_t const j=0;
 #pragma omp parallel for collapse(2)
       for (ptrdiff_t k=0; k<regkext; k+=2*(ORDER+1)) {
         for (ptrdiff_t i=0; i<regiext; i+=2*(ORDER+1)) {
-#ifdef HRSCC_HH
           GLLElement<ORDER>::prolongate_2D
             (&src[SRCIND3(srcioff+i, srcjoff+j, srckoff+k)], srcstr2d,
              &dst[DSTIND3(dstioff+2*i, dstjoff+2*j, dstkoff+2*k)], dststr2d);
-#else
-          // HRSCCore is not available
-          assert(0);
-#endif
         }
       }
+#else
+      // HRSCCore is not available
+      assert(0);
+#endif
       
     } else if (regext[2] == 1) {
       // 2D prolongation on z face
@@ -216,20 +216,20 @@ namespace CarpetLib {
       int const dststr2d[2]= {dstdi, dstdj};
       
       // Loop over fine region
+#ifdef HRSCC_HH
       ptrdiff_t const k=0;
 #pragma omp parallel for collapse(2)
       for (ptrdiff_t j=0; j<regjext; j+=2*(ORDER+1)) {
         for (ptrdiff_t i=0; i<regiext; i+=2*(ORDER+1)) {
-#ifdef HRSCC_HH
           GLLElement<ORDER>::prolongate_2D
             (&src[SRCIND3(srcioff+i, srcjoff+j, srckoff+k)], srcstr2d,
              &dst[DSTIND3(dstioff+2*i, dstjoff+2*j, dstkoff+2*k)], dststr2d);
-#else
-          // HRSCCore is not available
-          assert(0);
-#endif
         }
       }
+#else
+      // HRSCCore is not available
+      assert(0);
+#endif
       
     } else {
       // 3D prolongation
@@ -253,21 +253,21 @@ namespace CarpetLib {
       int const dststr[3] = {dstdi, dstdj, dstdk};
       
       // Loop over fine region
+#ifdef HRSCC_HH
 #pragma omp parallel for collapse(3)
       for (ptrdiff_t k=0; k<regkext; k+=2*(ORDER+1)) {
         for (ptrdiff_t j=0; j<regjext; j+=2*(ORDER+1)) {
           for (ptrdiff_t i=0; i<regiext; i+=2*(ORDER+1)) {
-#ifdef HRSCC_HH
             GLLElement<ORDER>::prolongate_full
               (&src[SRCIND3(srcioff+i, srcjoff+j, srckoff+k)], srcstr,
                &dst[DSTIND3(dstioff+2*i, dstjoff+2*j, dstkoff+2*k)], dststr);
-#else
-            // HRSCCore is not available
-            assert(0);
-#endif
           }
         }
       }
+#else
+      // HRSCCore is not available
+      assert(0);
+#endif
       
     }
   }
