@@ -27,6 +27,10 @@
 int read_next_set(FILE *infile, int rlev, int *numelems, 
 		  double *time,
 		  double **coord, double **data, int clip_data, double clip_val)
+  ;
+int read_next_set(FILE *infile, int rlev, int *numelems, 
+		  double *time,
+		  double **coord, double **data, int clip_data, double clip_val)
 {
    char   in_line[200];
    int    it,tl,rl,c,ml,ix,iy,iz;
