@@ -27,11 +27,13 @@ namespace CarpetRegrid2 {
       assert (all (istride % 2 == 0));
     }
     
+    CCTK_REAL const eps = 1.0e-10; // prevent rounding errors
+    
 #if 1
     ivect const ipos =
       hh.refcent == vertex_centered
-      ? ivect (floor (((rpos - origin) * scale                    ) / rvect(istride) + rvect(0.5))) * istride
-      : ivect (floor (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride)             )) * istride + istride/2 + bistride/2;
+      ? ivect (floor (((rpos - origin) * scale                    ) / rvect(istride) + rvect(0.5) + rvect(eps))) * istride
+      : ivect (floor (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride)              + rvect(eps))) * istride + istride/2 + bistride/2;
 #else
     ivect const ipos =
       hh.refcent == vertex_centered
@@ -57,11 +59,13 @@ namespace CarpetRegrid2 {
       assert (all (istride % 2 == 0));
     }
     
+    CCTK_REAL const eps = 1.0e-10; // prevent rounding errors
+    
 #if 1
     ivect const ipos =
       hh.refcent == vertex_centered
-      ? ivect (ceil (((rpos - origin) * scale                    ) / rvect(istride) - rvect(0.5))) * istride
-      : ivect (ceil (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride)             )) * istride - istride/2 + bistride/2;
+      ? ivect (ceil (((rpos - origin) * scale                    ) / rvect(istride) - rvect(0.5) - rvect(eps))) * istride
+      : ivect (ceil (((rpos - origin) * scale - rvect(bistride/2)) / rvect(istride)              - rvect(eps))) * istride - istride/2 + bistride/2;
 #else
     ivect const ipos =
       hh.refcent == vertex_centered
