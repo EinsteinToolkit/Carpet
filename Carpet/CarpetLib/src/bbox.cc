@@ -321,7 +321,7 @@ void bbox<T,D>::input (istream& is) {
 template<typename T,int D>
 void bbox<T,D>::output (ostream& os) const {
   os << "(" << lower() << ":" << upper() << ":" << stride()
-     << "/" << lower() / stride() << ":" << upper() / stride()
+     << "/" << idiv(lower(), stride()) << ":" << idiv(upper(), stride())
      << "/" << shape() / stride()
      << "/" << size() << ")";
 }
