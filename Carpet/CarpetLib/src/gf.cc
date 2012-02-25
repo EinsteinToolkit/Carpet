@@ -16,7 +16,7 @@ gf<T>::gf (const int varindex_, const operator_type transport_operator_,
            th& t_, dh& d_,
            const int prolongation_order_time_,
            const int vectorlength_, const int vectorindex_,
-           gf* const vectorleader_)
+           ggf* const vectorleader_)
   : ggf(varindex_, transport_operator_,
         t_, d_, prolongation_order_time_,
         vectorlength_, vectorindex_, vectorleader_)
@@ -39,6 +39,7 @@ gf<T>::~gf ()
 
 
 
+#if 0
 // Access to the data
 template<typename T>
 const data<T>* gf<T>::operator() (int tl, int rl, int lc, int ml) const
@@ -65,6 +66,7 @@ data<T>* gf<T>::operator() (int tl, int rl, int lc, int ml)
   assert (tl>=0 and tl<timelevels(ml, rl));
   return (data<T>*)storage.AT(ml).AT(rl).AT(lc).AT(tl);
 }
+#endif
 
 
 

@@ -1706,9 +1706,10 @@ namespace CarpetInterp {
           
           int const gi = CCTK_GroupIndexFromVarI (vi);
           int const vi0 = CCTK_FirstVarIndexI (gi);
-          input_arrays[n] =
-            (*arrdata.AT(gi).AT(m).data.AT(vi-vi0))(my_tl, rl, lc, mglevel)->
-            storage();
+          ggf const *const ff = arrdata.AT(gi).AT(m).data.AT(vi-vi0);
+          void const *const ptr =
+            ff->data_pointer(my_tl, rl, lc, mglevel)->storage();
+          input_arrays[n] = ptr;
         }
       } // for input arrays
       

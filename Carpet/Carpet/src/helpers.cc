@@ -124,7 +124,7 @@ namespace Carpet {
       int const lc = arrdata.AT(groupindex).AT(m).hh->get_local_component(rl, c);
       assert (lc >= 0 and
               lc < arrdata.AT(groupindex).AT(m).hh->local_components(rl));
-      gdata * const data = (*ff) (tl, rl, lc, mglevel);
+      gdata * const data = ff->data_pointer (tl, rl, lc, mglevel);
       return data->storage();
     } else {
       return NULL;

@@ -189,8 +189,8 @@ int WriteVarUnchunked (const cGH* const cctkGH,
         const ggf* ff = arrdata.at(gindex).at(Carpet::map).data.at(var);
         const gdata* const data =
           local_component >= 0
-          ? (*ff) (request->timelevel, refinementlevel,
-                   local_component, mglevel)
+          ? ff->data_pointer (request->timelevel, refinementlevel,
+                              local_component, mglevel)
           : NULL;
 #if 0
         // TODO: This does not work; data may be NULL
@@ -367,8 +367,8 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
       const ggf* ff = arrdata.at(gindex).at(Carpet::map).data.at(var);
       const gdata* const data =
         local_component >= 0
-        ? (*ff) (request->timelevel, refinementlevel,
-                 local_component, mglevel)
+        ? ff->data_pointer (request->timelevel, refinementlevel,
+                            local_component, mglevel)
         : NULL;
 #if 0
       // TODO: This does not work; data may be NULL

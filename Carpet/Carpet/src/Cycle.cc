@@ -82,11 +82,13 @@ namespace Carpet {
 	      {
                 int const varindex = firstvarindex + var;
 		for (int tl=0; tl<numtimelevels; ++tl) {
-		  cctkGH->data[varindex][tl]
-		    = (tl < groupdata.AT(group).info.activetimelevels
-		       ? ((*arrdata.AT(group).AT(0).data.AT(var))
-			  (tl, 0, 0, 0)->storage())
-		       : NULL);
+                  if (tl < groupdata.AT(group).info.activetimelevels) {
+                    ggf *const ff = arrdata.AT(group).AT(0).data.AT(var);
+                    void *const ptr = ff->data_pointer(tl, 0, 0, 0)->storage();
+                    cctkGH->data[varindex][tl] = ptr;
+                  } else {
+                    cctkGH->data[varindex][tl] = NULL;
+                  }
 		}
 	      }
             }
@@ -148,11 +150,13 @@ namespace Carpet {
 	      {
                 int const varindex = firstvarindex + var;
 		for (int tl=0; tl<numtimelevels; ++tl) {
-		  cctkGH->data[varindex][tl]
-		    = (tl < groupdata.AT(group).info.activetimelevels
-		       ? ((*arrdata.AT(group).AT(0).data.AT(var))
-			  (tl, 0, 0, 0)->storage())
-		       : NULL);
+                  if (tl < groupdata.AT(group).info.activetimelevels) {
+                    ggf *const ff = arrdata.AT(group).AT(0).data.AT(var);
+                    void *const ptr = ff->data_pointer(tl, 0, 0, 0)->storage();
+                    cctkGH->data[varindex][tl] = ptr;
+                  } else {
+                    cctkGH->data[varindex][tl] = NULL;
+                  }
 		}
 	      }
             }
@@ -205,11 +209,13 @@ namespace Carpet {
 	      {
                 int const varindex = firstvarindex + var;
 		for (int tl=0; tl<numtimelevels; ++tl) {
-		  cctkGH->data[varindex][tl]
-		    = (tl < groupdata.AT(group).info.activetimelevels
-		       ? ((*arrdata.AT(group).AT(0).data.AT(var))
-			  (tl, 0, 0, 0)->storage())
-		       : NULL);
+                  if (tl < groupdata.AT(group).info.activetimelevels) {
+                    ggf *const ff = arrdata.AT(group).AT(0).data.AT(var);
+                    void *const ptr = ff->data_pointer(tl, 0, 0, 0)->storage();
+                    cctkGH->data[varindex][tl] = ptr;
+                  } else {
+                    cctkGH->data[varindex][tl] = NULL;
+                  }
 		}
 	      }
             }

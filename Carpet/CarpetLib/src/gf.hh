@@ -37,7 +37,7 @@ public:
       th& t, dh& d,
       const int prolongation_order_time,
       const int vectorlength, const int vectorindex,
-      gf* const vectorleader);
+      ggf* const vectorleader);
   
   // Destructors
   virtual ~gf ();
@@ -50,7 +50,7 @@ public:
   {
     data<T>* const vl =
       this->vectorleader
-      ? (data<T>*)(*this->vectorleader)(tl,rl,lc,ml)
+      ? ((gf<T>*)this->vectorleader)->typed_data_pointer(tl,rl,lc,ml)
       : NULL;
     return new data<T>(this->varindex,
                        h.refcent, this->transport_operator,
@@ -58,8 +58,7 @@ public:
                        vl);
   }
   
-  virtual gdata*
-  new_typed_data () const
+  virtual gdata* new_typed_data () const
   {
     return new data<T>(this->varindex,
                        h.refcent, this->transport_operator,
@@ -70,9 +69,29 @@ public:
   
   // Access to the data
   
-  virtual const data<T>* operator() (int tl, int rl, int lc, int ml) const;
+#if 0
+  virtual const data<T>* operator() (int tl, int rl, int lc, int ml) const
+    CCTK_MEMBER_ATTRIBUTE_PURE;
+  virtual data<T>* operator() (int tl, int rl, int lc, int ml)
+    CCTK_MEMBER_ATTRIBUTE_PURE;
+#endif
   
-  virtual data<T>* operator() (int tl, int rl, int lc, int ml);
+  data<T> const* typed_data_pointer (int tl, int rl, int lc, int ml) const
+  {
+    assert (rl>=0 and rl<h.reflevels());
+    assert (lc>=0 and lc<h.local_components(rl));
+    assert (ml>=0 and ml<h.mglevels());
+    assert (tl>=0 and tl<timelevels(ml, rl));
+    return (data<T> const*)storage.AT(ml).AT(rl).AT(lc).AT(tl);
+  }  
+  data<T>* typed_data_pointer (int tl, int rl, int lc, int ml)
+  {
+    assert (rl>=0 and rl<h.reflevels());
+    assert (lc>=0 and lc<h.local_components(rl));
+    assert (ml>=0 and ml<h.mglevels());
+    assert (tl>=0 and tl<timelevels(ml, rl));
+    return (data<T>*)storage.AT(ml).AT(rl).AT(lc).AT(tl);
+  }  
   
   
   

@@ -624,7 +624,7 @@ namespace CarpetIOHDF5 {
               if (dist::rank() == proc) {
                 const ggf* const ff =
                   arrdata.at(group).at(m).data.at(n + n_min);
-                datas.at(n) = (*ff) (tl, rl, lc, ml);
+                datas.at(n) = ff->data_pointer (tl, rl, lc, ml);
               } else {
                 datas.at(n) = NULL;
               }

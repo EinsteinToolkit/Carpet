@@ -197,7 +197,7 @@ namespace Carpet {
             for (int tl=0; tl<max_tl; ++tl) {
               if (ff and tl<active_tl) {
                 int const lc = 0;
-                gdata * const data = (*ff) (tl, rl, lc, ml);
+                gdata * const data = ff->data_pointer (tl, rl, lc, ml);
                 assert (data);
                 cctkGH->data[firstvar+var][tl] = data->storage();
               } else {
@@ -622,7 +622,7 @@ namespace Carpet {
               int available_tl;
               int tl_offset;
               if (active_tl == 0) {
-                // gropu has no storage
+                // group has no storage
                 available_tl = active_tl;
                 tl_offset = 0;
               } else if (do_allow_past_timelevels) {
@@ -650,7 +650,8 @@ namespace Carpet {
                 for (int tl=0; tl<max_tl; ++tl) {
                   if (ff and tl<available_tl) {
                     gdata * const data =
-                      (*ff) (tl_offset+tl, reflevel, local_component, mglevel);
+                      ff->data_pointer
+                      (tl_offset+tl, reflevel, local_component, mglevel);
                     assert (data);
                     cctkGH->data[firstvar+var][tl] = data->storage();
                   } else {

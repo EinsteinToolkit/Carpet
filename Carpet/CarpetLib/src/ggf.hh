@@ -119,7 +119,7 @@ public:
   // mg_prolongate, ref_restrict, or ref_prolongate.
 
   // "Updating" means here that the boundaries have to be
-  // synchronised.  They don't need to be prolongated.
+  // synchronised. They don't need to be prolongated.
 
   // Synchronise the boundaries of a component
   void sync_all (comm_state& state, int tl, int rl, int ml);
@@ -153,9 +153,7 @@ public:
   // Helpers
   
   virtual gdata* typed_data (int tl, int rl, int lc, int ml) const = 0;
-  
-  virtual gdata*
-  new_typed_data () const = 0;
+  virtual gdata* new_typed_data () const = 0;
   
   
   
@@ -199,8 +197,29 @@ protected:
 public:
   
   // Access to the data
-  virtual const gdata* operator() (int tl, int rl, int lc, int ml) const CCTK_ATTRIBUTE_PURE = 0;
-  virtual gdata* operator() (int tl, int rl, int lc, int ml) CCTK_ATTRIBUTE_PURE = 0;
+  const gdata* data_pointer (int const tl, int const rl, int const lc, int const ml) const
+  {
+    assert (rl>=0 and rl<h.reflevels());
+    assert (lc>=0 and lc<h.local_components(rl));
+    assert (ml>=0 and ml<h.mglevels());
+    assert (tl>=0 and tl<timelevels(ml, rl));
+    return storage.AT(ml).AT(rl).AT(lc).AT(tl);
+  }
+  gdata* data_pointer (int const tl, int const rl, int const lc, int const ml)
+  {
+    assert (rl>=0 and rl<h.reflevels());
+    assert (lc>=0 and lc<h.local_components(rl));
+    assert (ml>=0 and ml<h.mglevels());
+    assert (tl>=0 and tl<timelevels(ml, rl));
+    return storage.AT(ml).AT(rl).AT(lc).AT(tl);
+  }
+  
+#if 0
+  virtual const gdata* operator() (int tl, int rl, int lc, int ml) const
+    CCTK_MEMBER_ATTRIBUTE_PURE = 0;
+  virtual gdata* operator() (int tl, int rl, int lc, int ml)
+    CCTK_MEMBER_ATTRIBUTE_PURE = 0;
+#endif
   
   
   

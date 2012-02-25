@@ -508,7 +508,7 @@ namespace CarpetInterp2 {
     fasterp_llocs_t local_locations (npoints);
     
     if (CCTK_IsFunctionAliased ("MultiPatch_GlobalToLocal")) {
-      // This is a muulti-patch simulation: convert global to local
+      // This is a multi-patch simulation: convert global to local
       // coordinates
       
       CCTK_REAL const * coords[dim];
@@ -1176,10 +1176,10 @@ namespace CarpetInterp2 {
           assert (gi >= 0);
           int const vi = varinds.AT(v) - CCTK_FirstVarIndexI (gi);
           assert (vi >= 0);
-          varptrs.AT(v) =
-            (CCTK_REAL const *)
-            (* Carpet::arrdata.AT(gi).AT(m).data.AT(vi))
-            (tl, rl, lc, Carpet::mglevel)->storage();
+          ggf const *const ff = Carpet::arrdata.AT(gi).AT(m).data.AT(vi);
+          void const *const ptr =
+            ff->data_pointer(tl, rl, lc, Carpet::mglevel)->storage();
+          varptrs.AT(v) = (CCTK_REAL const *)ptr;
           assert (varptrs.AT(v));
         }
         

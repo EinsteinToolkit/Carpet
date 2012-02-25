@@ -605,7 +605,7 @@ namespace CarpetIOASCII {
               if (dist::rank() == proc) {
                 const ggf* const ff =
                   arrdata.at(group).at(m).data.at(n + n_min);
-                datas.at(n) = (*ff) (tl, rl, lc, ml);
+                datas.at(n) = ff->data_pointer (tl, rl, lc, ml);
               } else {
                 datas.at(n) = NULL;
               }
@@ -1375,7 +1375,7 @@ namespace CarpetIOASCII {
       const vect<int,outdim> str = gfext.stride()[dirs];
       const bbox<int,outdim> ext(lo,up,str);
       
-      // Check whether the output origin is contained in the extent of
+      // check whether the output origin is contained in the extent of
       // the data that should be output
       ivect org1(org);
       for (int d=0; d<outdim; ++d) org1[dirs[d]] = ext.lower()[d];
@@ -1428,10 +1428,10 @@ namespace CarpetIOASCII {
             const gdata* gfdata = gfdatas.at(n);
             os << (n==0 ? "\t" : " ");
             switch (specific_cactus_type(vartype)) {
-#define TYPECASE(N,T)                                           \
-              case N:                                           \
-                os << (*(const data<T>*)gfdata)[index];         \
-              break;
+#define TYPECASE(N,T)                                   \
+              case N:                                   \
+                os << (*(const data<T>*)gfdata)[index]; \
+                break;
 #include "typecase.hh"
 #undef TYPECASE
             default:

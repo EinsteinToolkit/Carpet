@@ -1464,9 +1464,13 @@ namespace CarpetReduce {
                       int const vi = invars[n];
                       int const gi = CCTK_GroupIndexFromVarI (vi);
                       int const vi0 = CCTK_FirstVarIndexI (gi);
-                      myinarrays.AT(tl).AT(n)
-                        = ((*arrdata.AT(gi).AT(Carpet::map).data.AT(vi-vi0))
-                           (tl, reflevel, local_component, mglevel)->storage());
+                       ggf const *const ff =
+                         arrdata.AT(gi).AT(Carpet::map).data.AT(vi-vi0);
+                       void const *const ptr =
+                         ff->
+                         data_pointer(tl, reflevel, local_component, mglevel)->
+                         storage();
+                       myinarrays.AT(tl).AT(n) = ptr;
 #endif
                       assert (myinarrays.AT(tl).AT(n));
                     }

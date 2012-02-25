@@ -142,7 +142,7 @@ namespace CarpetSlab {
     
     // Get sample data
     const gdata* mydata;
-    mydata = (*myff)(tl, rl, 0, 0);
+    mydata = myff->data_pointer(tl, rl, 0, 0);
     
     // Stride of data in memory
     const vect<int,dim> str = mydata->extent().stride();
@@ -183,7 +183,7 @@ namespace CarpetSlab {
       BEGIN_LOCAL_COMPONENT_LOOP (cgh, gp.grouptype) {
         
         // Get data object
-        mydata = (*myff)(tl, rl, component, mglevel);
+        mydata = myff->data_pointer(tl, rl, component, mglevel);
         
         // Calculate overlapping extents
         bboxset<int,dim> const myextents =

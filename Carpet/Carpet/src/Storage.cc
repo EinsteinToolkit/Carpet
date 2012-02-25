@@ -21,7 +21,7 @@ namespace Carpet {
   
   
   static int
-  GroupStorageCrease (const cGH* cgh, int n_groups, const int* groups,
+  GroupStorageCrease (const cGH* cctkGH, int n_groups, const int* groups,
                       const int* tls, int* status,
                       const bool inc);
   
@@ -33,13 +33,13 @@ namespace Carpet {
   
   
   int
-  GroupStorageCrease (const cGH* cgh, int n_groups, const int* groups,
+  GroupStorageCrease (const cGH* cctkGH, int n_groups, const int* groups,
                       const int* tls, int* status,
                       const bool inc)
   {
     DECLARE_CCTK_PARAMETERS;
     
-    assert (cgh);
+    assert (cctkGH);
     assert (n_groups >= 0);
     assert (groups);
     assert (tls);
@@ -184,11 +184,13 @@ namespace Carpet {
                 if (gp.grouptype != CCTK_GF) {
                   assert (rl==0 and m==0);
                   for (int tl=0; tl<gp.numtimelevels; ++tl) {
-                    cgh->data[varindex][tl]
-                      = (tl < groupdata.AT(group).activetimelevels.AT(ml).AT(rl)
-                         ? ((*arrdata.AT(group).AT(m).data.AT(var))
-                            (tl, 0, 0, 0)->storage())
-                         : NULL);
+                    if (tl < groupdata.AT(group).activetimelevels.AT(ml).AT(rl)) {
+                      ggf *const ff = arrdata.AT(group).AT(0).data.AT(var);
+                      void *const ptr = ff->data_pointer(tl, 0, 0, 0)->storage();
+                      cctkGH->data[varindex][tl] = ptr;
+                    } else {
+                      cctkGH->data[varindex][tl] = NULL;
+                    }
                   }
                 } // if grouptype != GF
               
@@ -198,7 +200,7 @@ namespace Carpet {
           } // if really change the number of active time levels
           
           // Complain if there are not enough active time levels
-          GroupStorageCheck (cgh, group, ml, rl);
+          GroupStorageCheck (cctkGH, group, ml, rl);
           
           // Record current number of time levels
           // Note: This adds the time levels of all refinement levels
@@ -218,7 +220,7 @@ namespace Carpet {
   
   
   int
-  GroupStorageIncrease (const cGH* cgh, int n_groups, const int* groups,
+  GroupStorageIncrease (const cGH* cctkGH, int n_groups, const int* groups,
                         const int* tls, int* status)
   {
     DECLARE_CCTK_PARAMETERS
@@ -227,13 +229,13 @@ namespace Carpet {
       Checkpoint ("GroupStorageIncrease");
     }
     return
-      GroupStorageCrease (cgh, n_groups, groups, tls, status, true);
+      GroupStorageCrease (cctkGH, n_groups, groups, tls, status, true);
   }
   
   
   
   int
-  GroupStorageDecrease (const cGH* cgh, int n_groups, const int* groups,
+  GroupStorageDecrease (const cGH* cctkGH, int n_groups, const int* groups,
                         const int* tls, int* status)
   {
     DECLARE_CCTK_PARAMETERS
@@ -242,19 +244,19 @@ namespace Carpet {
       Checkpoint ("GroupStorageDecrease");
     }
     return
-      GroupStorageCrease (cgh, n_groups, groups, tls, status, false);
+      GroupStorageCrease (cctkGH, n_groups, groups, tls, status, false);
   }
   
   
   
   int
-  EnableGroupStorage (const cGH* cgh, const char* groupname)
+  EnableGroupStorage (const cGH* cctkGH, const char* groupname)
   {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 and group<CCTK_NumGroups());
     const int tls = CCTK_MaxTimeLevelsGI(group);
     int status;
-    GroupStorageIncrease (cgh, 1, &group, &tls, &status);
+    GroupStorageIncrease (cctkGH, 1, &group, &tls, &status);
     // Return whether storage was allocated previously
     return status;
   }
@@ -262,13 +264,13 @@ namespace Carpet {
   
   
   int
-  DisableGroupStorage (const cGH* cgh, const char* groupname)
+  DisableGroupStorage (const cGH* cctkGH, const char* groupname)
   {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 and group<CCTK_NumGroups());
     const int tls = 0;
     int status;
-    GroupStorageDecrease (cgh, 1, &group, &tls, &status);
+    GroupStorageDecrease (cctkGH, 1, &group, &tls, &status);
     // Return whether storage was allocated previously
     return status;
   }
@@ -276,7 +278,7 @@ namespace Carpet {
   
   
   int
-  QueryGroupStorageB (const cGH* cgh, int group, const char* groupname)
+  QueryGroupStorageB (const cGH* cctkGH, int group, const char* groupname)
   {
     DECLARE_CCTK_PARAMETERS;
     if (groupname) {
@@ -301,7 +303,7 @@ namespace Carpet {
   
   
   const int*
-  ArrayGroupSizeB (const cGH* cgh, int dir, int group, const char* groupname)
+  ArrayGroupSizeB (const cGH* cctkGH, int dir, int group, const char* groupname)
   {
     static const int zero = 0;
     static const int error = 0;
@@ -323,7 +325,7 @@ namespace Carpet {
     const int gpdim = groupdata.AT(group).info.dim;
     assert (dir>=0 and dir<gpdim);
     
-    if (CCTK_QueryGroupStorageI(cgh, group)) {
+    if (CCTK_QueryGroupStorageI(cctkGH, group)) {
       
       return &groupdata.AT(group).info.lsh[dir];
       
@@ -337,7 +339,7 @@ namespace Carpet {
   
   
   
-  int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data)
+  int GroupDynamicData (const cGH* cctkGH, int group, cGroupDynamicData* data)
   {
     // Return values:
     //  0 for success
@@ -345,10 +347,10 @@ namespace Carpet {
     // -3 if given GH pointer is invalid
     // (-77 if group has zero variables)
     // -78 if group does not exist
-    if (not cgh) return -3;
+    if (not cctkGH) return -3;
     if (not (group>=0 and group<CCTK_NumGroups())) return -78;
     if (not data) return -1;
-    assert (cgh);
+    assert (cctkGH);
     assert (group>=0 and group<CCTK_NumGroups());
     assert (data);
     *data = groupdata.AT(group).info;
