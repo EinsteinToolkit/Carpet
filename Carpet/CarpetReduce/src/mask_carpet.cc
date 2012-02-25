@@ -46,9 +46,7 @@ namespace CarpetMask {
                  "This routine may only be called in singlemap mode");
     }
     
-    gh const& hh = *vhh.AT(Carpet::map);
     dh const& dd = *vdd.AT(Carpet::map);
-    ibbox const& base = hh.baseextent(mglevel, reflevel);
     
     if (reflevel > 0) {
       ivect const reffact =
@@ -98,8 +96,8 @@ namespace CarpetMask {
         unsigned bmask = 0;
         for (int d=0; d<dim; ++d) {
           for (unsigned b=0; b<bits; ++b) {
-            if ((shift[d]==-1 and not BGET(b,d)) or
-                (shift[d]==+1 and     BGET(b,d)))
+            if ((shift[d]==-1 and BGET(b,d) == 0) or
+                (shift[d]==+1 and BGET(b,d) == 1))
             {
               bmask = BSET(bmask, b);
             }
