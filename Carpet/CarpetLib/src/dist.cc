@@ -246,7 +246,7 @@ namespace dist {
     int const root = 0;
     unsigned int my_id = dist::rank()==root ? id : id+1;
     MPI_Bcast (&my_id, 1, MPI_INT, root, c);
-    if (my_id != id) {
+    if (my_id != (unsigned int)id) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Wrong id for Barrier \"%s\": expected %ud, found %ud",
                   name, id, my_id);
