@@ -295,6 +295,65 @@ namespace CarpetLib {
   
   
   
+  // Fortran wrappers
+  extern "C" {
+    
+    // In Fortran, a timer should be declared and used like this:
+    //
+    //    ! Save the timer handle, and initialise it to zero; this
+    //    ! ensures that the timer is created only once:
+    //    CCTK_POINTER, save :: timer = 0
+    //    call Timer_create (timer, "Name")
+    //
+    //    ! Start the timer:
+    //    call Timer_start (timer)
+    //
+    //    ! Stop the timer, and pass the number of bytes:
+    //    CCTK_REAL :: bytes
+    //    bytes = ...
+    //    call Timer_stop (timer, bytes)
+    
+    void CCTK_FCALL
+    CCTK_FNAME(Timer_create) (CCTK_POINTER * timer, ONE_FORTSTRING_ARG)
+    {
+      if (*timer != 0) return;   // create the timer only once
+      ONE_FORTSTRING_CREATE (timername);
+      *timer = new Timer(timername);
+      free (timername);
+    }
+    
+    void CCTK_FCALL
+    CCTK_FNAME(Timer_destroy) (CCTK_POINTER * timer)
+    {
+      if (*timer == 0) return;   // delete the timer only if it has been created
+      delete (Timer*)*timer;
+      *timer = 0;
+    }
+    
+    void CCTK_FCALL
+    CCTK_FNAME(Timer_start) (CCTK_POINTER * timer)
+    {
+      assert (*timer != 0);
+      ((Timer*)*timer)->start();
+    }
+    
+    void CCTK_FCALL
+    CCTK_FNAME(Timer_stop) (CCTK_POINTER * timer, CCTK_REAL const * b)
+    {
+      assert (*timer != 0);
+      ((Timer*)*timer)->stop(*b);
+    }
+    
+    void CCTK_FCALL
+    CCTK_FNAME(Timer_reset) (CCTK_POINTER * timer)
+    {
+      assert (*timer != 0);
+      ((Timer*)*timer)->reset();
+    }
+    
+  } // extern "C"
+  
+  
   extern "C" {
     void
     CarpetLib_printtimestats (CCTK_ARGUMENTS);
