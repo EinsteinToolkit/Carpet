@@ -329,9 +329,15 @@ namespace Carpet {
                   
                 } END_TIMELEVEL_LOOP;
                 
+                if (output_after_regridding) {
+                  // Output
+                  OutputGH (where, cctkGH);
+                }
+                
                 EndTimingLevel (cctkGH);
               } LEAVE_LEVEL_MODE;
             } END_MGLEVEL_LOOP;
+            
           } // if did_recompose
           
         } // for rl
