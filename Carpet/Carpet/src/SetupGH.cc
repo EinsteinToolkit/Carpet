@@ -19,6 +19,11 @@
 #include <util_Network.h>
 #include <util_Table.h>
 
+#ifdef HAVE_SCHED_H
+#  include <sched.h>
+#endif
+#include <unistd.h>
+
 #include <bbox.hh>
 #include <defs.hh>
 #include <dist.hh>
@@ -27,11 +32,6 @@
 #include <mpi_string.hh>
 #include <region.hh>
 #include <vect.hh>
-
-#ifdef HAVE_SCHED_H
-#  include <sched.h>
-#endif
-#include <unistd.h>
 
 #include <carpet.hh>
 #include "Timers.hh"
@@ -199,18 +199,39 @@ namespace Carpet {
       dist::set_num_threads (num_threads);
       int const mynthreads = dist::num_threads();
       int const nthreads_total = dist::total_num_threads();
+      char const * const CACTUS_NUM_PROCS = getenv ("CACTUS_NUM_PROCS");
+      int const cactus_num_procs =
+        CACTUS_NUM_PROCS ? atoi (CACTUS_NUM_PROCS) : 0;
 #ifdef CCTK_MPI
       CCTK_VInfo (CCTK_THORNSTRING,
                   "MPI is enabled");
       CCTK_VInfo (CCTK_THORNSTRING,
                   "Carpet is running on %d processes", nprocs);
+      if (not CACTUS_NUM_PROCS) {
+        CCTK_VWarn (CCTK_WARN_COMPLAIN, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Although MPI is enabled, the environment variable CACTUS_NUM_PROCS is not set.");
+      } else {
+        if (cactus_num_procs != nprocs) {
+          CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "The environment variable CACTUS_NUM_PROCS is set to %d, but there are %d MPI processes. This may indicate a severe problem with the MPI startup mechanism.",
+                      cactus_num_procs, nprocs);
+        } 
+      }
       CCTK_VInfo (CCTK_THORNSTRING,
                   "This is process %d", myproc);
 #else
       CCTK_VInfo (CCTK_THORNSTRING,
                   "MPI is disabled");
+      if (CACTUS_NUM_PROCS and cactus_num_procs != nprocs) {
+        CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Although MPI is disabled, the environment variable CACTUS_NUM_PROCS is set to %d. This may indicate a severe problem with the Cactus startup mechanism.",
+                    cactus_num_procs);
+      } 
 #endif
       char const * const OMP_NUM_THREADS = getenv ("OMP_NUM_THREADS");
+      char const * const CACTUS_NUM_THREADS = getenv ("CACTUS_NUM_THREADS");
+      int const cactus_num_threads =
+        CACTUS_NUM_THREADS ? atoi (CACTUS_NUM_THREADS) : 0;
 #ifdef _OPENMP
       CCTK_VInfo (CCTK_THORNSTRING,
                   "OpenMP is enabled");
@@ -220,6 +241,16 @@ namespace Carpet {
       }
       CCTK_VInfo (CCTK_THORNSTRING,
                   "This process contains %d threads", mynthreads);
+      if (not CACTUS_NUM_THREADS) {
+        CCTK_VWarn (CCTK_WARN_COMPLAIN, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Although OpenMP is enabled, the environment variable CACTUS_NUM_THREADS is not set.");
+      } else {
+        if (cactus_num_threads != mynthreads) {
+          CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "The environment variable CACTUS_NUM_THREADS is set to %d, but there are %d threads on this processes. This may indicate a severe problem with the OpenMP startup mechanism.",
+                      cactus_num_threads, mynthreads);
+        } 
+      }
       CCTK_VInfo (CCTK_THORNSTRING,
                   "There are %d threads in total", nthreads_total);
 #  ifdef CCTK_MPI
@@ -239,6 +270,11 @@ namespace Carpet {
         CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Although OpenMP is disabled, the parameter Carpet::num_threads is set to %d.  It will be ignored.", num_threads);
       }
+      if (CACTUS_NUM_THREADS and cactus_num_threads != mynthreads) {
+        CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Although OpenMP is disabled, the environment variable CACTUS_NUM_THREADS is set to %d. This may indicate a severe problem with the Cactus startup mechanism.",
+                    cactus_num_threads);
+      } 
 #endif
       
 #if 0
