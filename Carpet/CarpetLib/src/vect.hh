@@ -454,6 +454,20 @@ inline int size (const vect<T,D>& a)
   return D;
 }
 
+/** Return the first element.  */
+template<typename T,int D>
+inline int first (const vect<T,D>& a)
+{
+  return a[0];
+}
+
+/** Return the last element.  */
+template<typename T,int D>
+inline int last (const vect<T,D>& a)
+{
+  return a[D-1];
+}
+
 /** Return the index of the first maximum element.  */
 template<typename T,int D>
 inline int maxloc (const vect<T,D>& a)
