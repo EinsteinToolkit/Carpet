@@ -29,7 +29,7 @@ namespace Carpet {
 
   /// Create a timer with a given name, but do not start it, and do
   /// not associate it with a point in the timer hierarchy.
-  Timer::Timer(const string &name_p) : d_name(name_p)
+  Timer::Timer (const string &name_p) : d_name(name_p)
   {
   }
 
@@ -42,7 +42,7 @@ namespace Carpet {
   /// of the most recently started timer that has not been stopped.
   void Timer::start ()
   {
-    TimerNode  *current_timer = TimerNode::getCurrentTimer();
+    TimerNode *current_timer = TimerNode::getCurrentTimer();
     assert(current_timer);
     current_timer->getChildTimer(name())->start();
   }
@@ -51,7 +51,7 @@ namespace Carpet {
   void Timer::stop ()
   {
     TimerNode *current = TimerNode::getCurrentTimer();
-    if(current->getName() != name())
+    if (current->getName() != name())
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Trying to stop enclosing timer '%s' before enclosed time '%s'",
                   name().c_str(), current->getName().c_str());
@@ -65,7 +65,7 @@ namespace Carpet {
   }
 
   /// Return the current time of the timer as a double
-  double Timer::getTime()
+  double Timer::getTime ()
   {
     return TimerNode::getCurrentTimer()->getTime();
   }
