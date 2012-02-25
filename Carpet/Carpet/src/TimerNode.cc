@@ -172,6 +172,8 @@ namespace Carpet {
 
     const int pcw = 6;
     const int tw = 8;
+    const streamsize oldprecision = out.precision();
+    const ios_base::fmtflags oldflags = out.flags();
 
     // Print this timer value
     out << fixed << setw(pcw) << setprecision(1) << 100.0 * t / total << "%"
@@ -205,6 +207,8 @@ namespace Carpet {
             << "  | " << space << "untimed" << endl;
       }
     }
+    out.precision (oldprecision);
+    out.setf (oldflags);
   }
 
   /// Print this node and its children as an XML file
