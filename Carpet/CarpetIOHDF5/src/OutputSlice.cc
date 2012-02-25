@@ -313,8 +313,8 @@ namespace CarpetIOHDF5 {
       if (myoutevery == -2) {
         myoutevery = io_out_every;
       }
-      if (slice_requests[vindex]->out_every >= 0) {
-        myoutevery = slice_requests[vindex]->out_every;
+      if (slice_requests.at(vindex)->out_every >= 0) {
+        myoutevery = slice_requests.at(vindex)->out_every;
       }
       if (myoutevery > 0 and (cctk_iteration % myoutevery) == 0) {
         // we already decided to output this iteration
