@@ -26,24 +26,24 @@ namespace Carpet
   
   
   
-  vector <string> hosts;              // Host id to host name
-  std::map <string, int> host_map;    // Host name to host id
-  vector <int> host_ids;              // Process to host id
-  vector <vector <int> > host_procs;  // Host id to processes
+  vector <string> host_names;        // Host id to host name
+  std::map <string, int> host_map;   // Host name to host id
+  vector <int> host_ids;             // Process to host id
+  vector <vector <int> > host_procs; // Host id to processes
   
   
   
-  vector <string> const & Hosts () { return hosts; }
+  vector <string> const & HostNames () { return host_names; }
   std::map <string, int> const & HostMap () { return host_map; }
   vector <int> const & HostIds () { return host_ids; }
   vector <vector <int> > const & HostProcs () { return host_procs; }
   
-  string Host (int const id)
+  string HostName (int const id)
   {
-    return hosts.at (id);
+    return host_names.AT(id);
   }
 
-  int HostMap (string const name)
+  int HostId (string const name)
   {
     if (host_map.find (name) != host_map.end())
     {
@@ -57,12 +57,12 @@ namespace Carpet
   
   int HostId (int const proc)
   {
-    return host_ids.at (proc);
+    return host_ids.AT(proc);
   }
 
   vector <int> const & HostProcs (int const id)
   {
-    return host_procs.at (id);
+    return host_procs.AT(id);
   }
   
   
@@ -77,7 +77,7 @@ namespace Carpet
     MPI_Comm_rank (dist::comm(), & my_proc);
     
     // Gather all host names
-    hosts = allgather_string (dist::comm(), host);
+    vector <string> const hosts (allgather_string (dist::comm(), host));
     
     // Map host strings to small integers
     int num_hosts = 0;
@@ -101,9 +101,10 @@ namespace Carpet
     vector <int> num_host_procs (num_hosts, 0);
     for (int n = 0; n < num_procs; ++ n)
     {
-      ++ num_host_procs.at (host_ids.AT(n));
+      ++ num_host_procs.AT(host_ids.AT(n));
     }
     
+    host_names.resize (num_hosts);
     host_procs.resize (num_hosts);
     for (int m = 0; m < num_hosts; ++ m)
     {
@@ -111,7 +112,8 @@ namespace Carpet
     }
     for (int n = 0; n < num_procs; ++ n)
     {
-      host_procs.at (host_ids.AT(n)).push_back (n);
+      host_names.AT(host_ids.AT(n)) = hosts.AT(n);
+      host_procs.AT(host_ids.AT(n)).push_back (n);
     }
     for (int m = 0; m < num_hosts; ++ m)
     {
@@ -124,7 +126,7 @@ namespace Carpet
       CCTK_INFO ("Host listing:");
       for (int m = 0; m < num_hosts; ++ m)
       {
-        cout << "   host " << m << ": \"" << hosts.AT(m) << "\"" << endl;
+        cout << "   host " << m << ": \"" << host_names.AT(m) << "\"" << endl;
       }
       CCTK_INFO ("Host/process mapping:");
       for (int n = 0; n < num_procs; ++ n)
@@ -147,10 +149,10 @@ namespace Carpet
             // This process has the same host as the previous one:
             // finish a partial line
             cout << n << ": "
-                 << "host " << m << " \"" << hosts.AT(m) << "\"" << endl;
+                 << "host " << m << " \"" << host_names.AT(m) << "\"" << endl;
           } else {
             cout << "   process " << n << ": "
-                 << "host " << m << " \"" << hosts.AT(m) << "\"" << endl;
+                 << "host " << m << " \"" << host_names.AT(m) << "\"" << endl;
           }
         }
       }

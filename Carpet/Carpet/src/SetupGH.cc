@@ -318,7 +318,7 @@ namespace Carpet {
           int const host_id = HostId(n);
           CCTK_VInfo (CCTK_THORNSTRING,
                       "   %6d: hid=%d (%s), pid=%d, num_threads=%d",
-                      n, host_id, Host(host_id).c_str(),
+                      n, host_id, HostName(host_id).c_str(),
                       pids.AT(n), nthreads.AT(n));
         }
       }

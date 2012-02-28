@@ -160,7 +160,7 @@ namespace Carpet {
   extern "C"
   CCTK_INT Carpet_nHosts(CCTK_POINTER_TO_CONST const cctkGH_)
   {
-    return Hosts().size();
+    return HostNames().size();
   }
   
   extern "C"

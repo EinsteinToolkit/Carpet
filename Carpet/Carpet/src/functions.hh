@@ -58,12 +58,12 @@ namespace Carpet {
                  bool verbose);
   
   // Model id to model name
-  vector <string> const & Models ();
-  string Model (int id);
+  vector <string> const & ModelNames ();
+  string ModelName (int id);
   
   // Model name to model id
   std::map <string, int> const & ModelMap ();
-  int ModelMap (string name);
+  int ModelId (string name);
   
   // Processor to model id
   vector <int> const & ModelIds ();
@@ -81,12 +81,12 @@ namespace Carpet {
                   bool verbose);
   
   // Host id to host name
-  vector <string> const & Hosts ();
-  string Host (int id);
+  vector <string> const & HostNames ();
+  string HostName (int id);
   
   // Host name to host id
   std::map <string, int> const & HostMap ();
-  int HostMap (string name);
+  int HostId (string name);
   
   // Processor to host id
   vector <int> const & HostIds ();

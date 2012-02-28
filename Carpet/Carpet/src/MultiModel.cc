@@ -25,24 +25,24 @@ namespace Carpet
   
   
   
-  vector <string> models;             // Model id to model name
+  vector <string> model_names;        // Model id to model name
   std::map <string, int> model_map;   // Model name to model id
   vector <int> model_ids;             // Process to model id
   vector <vector <int> > model_procs; // Model id to processes
   
   
   
-  vector <string> const & Models () { return models; }
+  vector <string> const & ModelNames () { return model_names; }
   std::map <string, int> const & ModelMap () { return model_map; }
   vector <int> const & ModelIds () { return model_ids; }
   vector <vector <int> > const & ModelProcs () { return model_procs; }
   
-  string Model (int const id)
+  string ModelName (int const id)
   {
-    return models.at (id);
+    return model_names.AT(id);
   }
 
-  int ModelMap (string const name)
+  int ModelId (string const name)
   {
     if (model_map.find (name) != model_map.end())
     {
@@ -56,12 +56,12 @@ namespace Carpet
   
   int ModelId (int const proc)
   {
-    return model_ids.at (proc);
+    return model_ids.AT(proc);
   }
 
   vector <int> const & ModelProcs (int const id)
   {
-    return model_procs.at (id);
+    return model_procs.AT(id);
   }
   
   
@@ -77,7 +77,7 @@ namespace Carpet
     MPI_Comm_rank (world, & my_proc);
     
     // Gather all model names
-    models = allgather_string (world, model);
+    vector <string> const models (allgather_string (world, model));
     
     // Map model strings to small integers
     int num_models = 0;
@@ -101,9 +101,10 @@ namespace Carpet
     vector <int> num_model_procs (num_models, 0);
     for (int n = 0; n < num_procs; ++ n)
     {
-      ++ num_model_procs.at (model_ids.AT(n));
+      ++ num_model_procs.AT(model_ids.AT(n));
     }
     
+    model_names.resize (num_models);
     model_procs.resize (num_models);
     for (int m = 0; m < num_models; ++ m)
     {
@@ -111,7 +112,8 @@ namespace Carpet
     }
     for (int n = 0; n < num_procs; ++ n)
     {
-      model_procs.at (model_ids.AT(n)).push_back (n);
+      model_names.AT(model_ids.AT(n)) = models.AT(n);
+      model_procs.AT(model_ids.AT(n)).push_back (n);
     }
     for (int m = 0; m < num_models; ++ m)
     {
@@ -127,7 +129,7 @@ namespace Carpet
       CCTK_INFO ("Multi-Model listing:");
       for (int m = 0; m < num_models; ++ m)
       {
-        cout << "   model " << m << ": \"" << models.AT(m) << "\"" << endl;
+        cout << "   model " << m << ": \"" << model_names.AT(m) << "\"" << endl;
       }
       CCTK_INFO ("Multi-Model process distribution:");
       for (int n = 0; n < num_procs; ++ n)
@@ -150,10 +152,10 @@ namespace Carpet
             // This process has the same model as the previous one:
             // finish a partial line
             cout << n << ": "
-                 << "model " << m << " \"" << models.AT(m) << "\"" << endl;
+                 << "model " << m << " \"" << model_names.AT(m) << "\"" << endl;
           } else {
             cout << "   process " << n << ": "
-                 << "model " << m << " \"" << models.AT(m) << "\"" << endl;
+                 << "model " << m << " \"" << model_names.AT(m) << "\"" << endl;
           }
         }
       }
