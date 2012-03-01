@@ -33,7 +33,9 @@ namespace Carpet {
                          Timer & user_timer);
   
   static void
-  SyncGroupsInScheduleBlock (cFunctionData * attribute, cGH * cctkGH);
+  SyncGroupsInScheduleBlock (cFunctionData * attribute, cGH * cctkGH,
+                             vector<int> const & sync_groups,
+                             Timer & sync_timer);
   
   /// Traverse one function on all components of one refinement level
   /// of one multigrid level.
@@ -68,6 +70,17 @@ namespace Carpet {
             not not attribute->loop_local
             <= 1);
     
+    // Create list of all groups that need to be synchronised
+    vector<int> sync_groups;
+    sync_groups.reserve (attribute->n_SyncGroups);
+    for (int g = 0; g < attribute->n_SyncGroups; g++) {
+      const int group = attribute->SyncGroups[g];
+      if (CCTK_NumVarsInGroupI (group) > 0) {
+        // don't add empty groups from the list
+        sync_groups.push_back (group);
+      }
+    }
+    
     if (attribute->meta or attribute->meta_early or attribute->meta_late or
         is_meta_mode())
     {
@@ -89,9 +102,7 @@ namespace Carpet {
                        function, attribute, data, user_timer);
                   } END_LOCAL_COMPONENT_LOOP;
                 } END_LOCAL_MAP_LOOP;
-                sync_timer.start();
-                SyncGroupsInScheduleBlock (attribute, cctkGH) ;
-                sync_timer.stop();
+                SyncGroupsInScheduleBlock (attribute, cctkGH, sync_groups, sync_timer);
               } END_REFLEVEL_LOOP;
             } END_MGLEVEL_LOOP;
           } END_META_MODE;
@@ -104,9 +115,7 @@ namespace Carpet {
                     ("Meta time singlemap mode",
                      function, attribute, data, user_timer);
                 } END_MAP_LOOP;
-                sync_timer.start();
-                SyncGroupsInScheduleBlock (attribute, cctkGH) ;
-                sync_timer.stop();
+                SyncGroupsInScheduleBlock (attribute, cctkGH, sync_groups, sync_timer);
               } END_REFLEVEL_LOOP;
             } END_MGLEVEL_LOOP;
           } END_META_MODE;
@@ -117,9 +126,7 @@ namespace Carpet {
                 CallScheduledFunction
                   ("Meta time level mode",
                    function, attribute, data, user_timer);
-                sync_timer.start();
-                SyncGroupsInScheduleBlock (attribute, cctkGH) ;
-                sync_timer.stop();
+                SyncGroupsInScheduleBlock (attribute, cctkGH, sync_groups, sync_timer);
               } END_REFLEVEL_LOOP;
             } END_MGLEVEL_LOOP;
           } END_META_MODE;
@@ -130,9 +137,7 @@ namespace Carpet {
                 ("Meta time global mode",
                  function, attribute, data, user_timer);
               BEGIN_REFLEVEL_LOOP(cctkGH) {
-                sync_timer.start();
-                SyncGroupsInScheduleBlock (attribute, cctkGH) ;
-                sync_timer.stop();
+                SyncGroupsInScheduleBlock (attribute, cctkGH, sync_groups, sync_timer);
               } END_REFLEVEL_LOOP;
             } END_MGLEVEL_LOOP;
           } END_META_MODE;
@@ -143,9 +148,7 @@ namespace Carpet {
                function, attribute, data, user_timer);
             BEGIN_MGLEVEL_LOOP(cctkGH) {
               BEGIN_REFLEVEL_LOOP(cctkGH) {
-                sync_timer.start();
-                SyncGroupsInScheduleBlock (attribute, cctkGH) ;
-                sync_timer.stop();
+                SyncGroupsInScheduleBlock (attribute, cctkGH, sync_groups, sync_timer);
               } END_REFLEVEL_LOOP;
             } END_MGLEVEL_LOOP;
           } END_META_MODE;
@@ -172,9 +175,7 @@ namespace Carpet {
                      function, attribute, data, user_timer);
                 } END_LOCAL_COMPONENT_LOOP;
               } END_LOCAL_MAP_LOOP;
-              sync_timer.start();
-              SyncGroupsInScheduleBlock (attribute, cctkGH) ;
-              sync_timer.stop();
+              SyncGroupsInScheduleBlock (attribute, cctkGH, sync_groups, sync_timer);
             } END_REFLEVEL_LOOP;
           } END_GLOBAL_MODE;
         } else if (attribute->loop_singlemap) {
@@ -185,9 +186,7 @@ namespace Carpet {
                   ("Global time singlemap mode",
                    function, attribute, data, user_timer);
               } END_MAP_LOOP;
-              sync_timer.start();
-              SyncGroupsInScheduleBlock (attribute, cctkGH) ;
-              sync_timer.stop();
+              SyncGroupsInScheduleBlock (attribute, cctkGH, sync_groups, sync_timer);
             } END_REFLEVEL_LOOP;
           } END_GLOBAL_MODE;
         } else if (attribute->loop_level) {
@@ -196,9 +195,7 @@ namespace Carpet {
               CallScheduledFunction
                 ("Global time level mode",
                  function, attribute, data, user_timer);
-              sync_timer.start();
-              SyncGroupsInScheduleBlock (attribute, cctkGH) ;
-              sync_timer.stop();
+              SyncGroupsInScheduleBlock (attribute, cctkGH, sync_groups, sync_timer);
             } END_REFLEVEL_LOOP;
           } END_GLOBAL_MODE;
         } else {
@@ -207,9 +204,7 @@ namespace Carpet {
               ("Global mode",
                function, attribute, data, user_timer);
             BEGIN_REFLEVEL_LOOP(cctkGH) {
-              sync_timer.start();
-              SyncGroupsInScheduleBlock (attribute, cctkGH) ;
-              sync_timer.stop();
+              SyncGroupsInScheduleBlock (attribute, cctkGH, sync_groups, sync_timer);
             } END_REFLEVEL_LOOP;
           } END_GLOBAL_MODE;
         }
@@ -237,9 +232,7 @@ namespace Carpet {
           ("Level mode",
            function, attribute, data, user_timer);
       }
-      sync_timer.start();
-      SyncGroupsInScheduleBlock (attribute, cctkGH) ;
-      sync_timer.stop();
+      SyncGroupsInScheduleBlock (attribute, cctkGH, sync_groups, sync_timer);
       
     } else if (attribute->singlemap) {
       // Single map operation: call once per refinement level and map
@@ -259,9 +252,7 @@ namespace Carpet {
              function, attribute, data, user_timer);
         } END_MAP_LOOP;
       }
-      sync_timer.start();
-      SyncGroupsInScheduleBlock (attribute, cctkGH) ;
-      sync_timer.stop();
+      SyncGroupsInScheduleBlock (attribute, cctkGH, sync_groups, sync_timer);
       
     } else {
       // Local operation: call once per component
@@ -273,9 +264,7 @@ namespace Carpet {
              function, attribute, data, user_timer);
         } END_LOCAL_COMPONENT_LOOP;
       }	END_LOCAL_MAP_LOOP;
-      sync_timer.start();
-      SyncGroupsInScheduleBlock (attribute, cctkGH) ;
-      sync_timer.stop();
+      SyncGroupsInScheduleBlock (attribute, cctkGH, sync_groups, sync_timer);
       
     }
     
@@ -390,22 +379,16 @@ namespace Carpet {
   
   
   
-  void SyncGroupsInScheduleBlock (cFunctionData* attribute, cGH* cctkGH)
+  void SyncGroupsInScheduleBlock (cFunctionData* attribute, cGH* cctkGH,
+                                  vector<int> const & sync_groups,
+                                  Timer & sync_timer)
   {
     // check if there is anything to do
     if (attribute->n_SyncGroups <= 0) return;
 
-    // remove all empty groups from the list
-    vector<int> groups;
-    groups.reserve (attribute->n_SyncGroups);
-    for (int g = 0; g < attribute->n_SyncGroups; g++) {
-      const int group = attribute->SyncGroups[g];
-      if (CCTK_NumVarsInGroupI (group) > 0) {
-        groups.push_back (group);
-      }
-    }
-
-    SyncProlongateGroups (cctkGH, groups);
+    sync_timer.start();
+    SyncProlongateGroups (cctkGH, sync_groups);
+    sync_timer.stop();
   }
   
 } // namespace Carpet
