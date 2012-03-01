@@ -236,12 +236,13 @@ namespace CarpetInterp2 {
     } else {
       // Potentially shift the stencil anchor for odd interpolation
       // orders (i.e., for even numbers of stencil points)
-      ivect const ioffset (iloc.offset < 0.0);
+      ivect const ioffset (iloc.offset < CCTK_REAL(0.0));
       iorigin = - ivect((order-1)/2) - ioffset;
     }
     rvect const offset = iloc.offset - rvect(iorigin);
     // Ensure that the stencil is centred
-    assert (all (offset >= 0.5*(order-1) and offset < 0.5*(order+1)));
+    assert (all (offset >= CCTK_REAL(0.5)*(order-1) and
+                 offset < CCTK_REAL(0.5)*(order+1)));
     
     for (int d=0; d<dim; ++d) {
       // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
@@ -609,7 +610,7 @@ namespace CarpetInterp2 {
       gh const * const hh = Carpet::vhh.AT(m);
       ibbox const & baseext = hh->baseextent(Carpet::mglevel, 0);
       delta.AT(m) /= baseext.stride();
-      idelta.AT(m) = 1.0 / delta.AT(m);
+      idelta.AT(m) = CCTK_REAL(1.0) / delta.AT(m);
       if (veryverbose) {
         cout << "GetCoordRange[" << m << "]: lower=" << lower.AT(m) << " upper=" << upper.AT(m) << " delta=" << delta.AT(m) << endl;
       }
