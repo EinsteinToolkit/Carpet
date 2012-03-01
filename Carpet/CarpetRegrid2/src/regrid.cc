@@ -89,7 +89,7 @@ namespace CarpetRegrid2 {
                     double(this->_radius.at(rl)[2]));
         found_error = true;
       }
-      if (any (rad < 0.0)) {
+      if (any (rad < CCTK_REAL(0))) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "The radius of refinement level %d of region %d is [%g,%g,%g], which is non-negative",
                     rl, n + 1,

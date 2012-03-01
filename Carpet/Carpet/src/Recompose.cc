@@ -1059,12 +1059,12 @@ namespace Carpet {
         min_active.AT(rl) = min (min_active.AT(rl), num_active_per_proc.AT(p));
         max_active.AT(rl) = max (max_active.AT(rl), num_active_per_proc.AT(p));
         avg_active.AT(rl) += num_active_per_proc.AT(p);
-        sdv_active.AT(rl) += pow (num_active_per_proc.AT(p), 2);
+        sdv_active.AT(rl) += ipow (num_active_per_proc.AT(p), 2);
       }
       avg_active.AT(rl) /= dist::size();
       sdv_active.AT(rl) /= dist::size();
       sdv_active.AT(rl) =
-        sqrt (max (rzero, sdv_active.AT(rl) - pow (avg_active.AT(rl), 2)));
+        sqrt (max (rzero, sdv_active.AT(rl) - ipow (avg_active.AT(rl), 2)));
     } // for rl
     
     // Output
