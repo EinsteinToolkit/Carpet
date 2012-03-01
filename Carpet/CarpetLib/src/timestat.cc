@@ -365,9 +365,10 @@ namespace CarpetLib {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    if ((print_timestats_every > 0 and
-         cctk_iteration % print_timestats_every == 0))
-    {
+    static int next_output = 0;
+    if (print_timestats_every > 0 and cctk_iteration >= next_output) {
+      next_output = cctk_iteration + print_timestats_every;
+      
       ostringstream filenamebuf;
       filenamebuf << out_dir << "/" << timestat_file
                   << "." << setw(4) << setfill('0') << dist::rank()

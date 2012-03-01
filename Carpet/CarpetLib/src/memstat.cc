@@ -54,9 +54,12 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
   
   int const ioproc = 0;
   
+  static int next_output = 0;
   if ((print_memstats_every == 0 and cctk_iteration == 0) or
-      (print_memstats_every > 0 and cctk_iteration % print_memstats_every == 0))
+      (print_memstats_every > 0 and cctk_iteration >= next_output))
   {
+    next_output = cctk_iteration + print_memstats_every;
+    
     mstat mybuf;
     mybuf.total_bytes   = gmem::total_allocated_bytes;
     mybuf.total_objects = gmem::total_allocated_objects;
