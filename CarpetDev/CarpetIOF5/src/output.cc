@@ -364,7 +364,9 @@ namespace CarpetIOF5 {
                                        F5_FORTRAN_ORDER);
           assert (charts.at(mi.dim));
         }
-        hid_t const type = charts.at(mi.dim)->DoublePrecision.Point_hid_t;
+        // hid_t const type = charts.at(mi.dim)->DoublePrecision.Point_hid_t;
+        hid_t const type = path->myChart->DoublePrecision.Point_hid_t;
+        assert (type);
         FAILWARN (F5Fwrite_linear (path, FIBER_HDF5_POSITIONS_STRING,
                                    mi.dim, &v2h(mi.gsh)[0],
                                    type,
@@ -395,23 +397,25 @@ namespace CarpetIOF5 {
       
       fragmentname = generate_fragmentname(cctkGH, Carpet::map, component);
       
-      // Define coordinates
-      // TODO: also define and use is_cartesian for each map
-      if (not is_multipatch and group_type == CCTK_GF) {
-        // (This is redundant, since the level's overall bounding box
-        // was already defined above, but it provides the individual
-        // components' bounding boxes.)
-        component_indices_t const ci(cctkGH, group_index);
-        FAILWARN (F5Fwrite_linear_fraction (path, FIBER_HDF5_POSITIONS_STRING,
-                                            ci.dim,
-                                            &v2h(ci.gsh)[0], &v2h(ci.ilen)[0],
-                                            F5T_COORD3_DOUBLE,
-                                            &ci.clower, &ci.delta,
-                                            &v2h(ci.ioff)[0],
-                                            fragmentname.c_str()));
-      } else {
-        // Output coordinates
-        output_variable (path, CCTK_VarIndex("grid::x"), true);
+      if (group_type == CCTK_GF) {
+        // Define coordinates
+        // TODO: also define and use is_cartesian for each map
+        if (not is_multipatch) {
+          // (This is redundant, since the level's overall bounding
+          // box was already defined above, but it provides the
+          // individual components' bounding boxes.)
+          component_indices_t const ci(cctkGH, group_index);
+          FAILWARN (F5Fwrite_linear_fraction (path, FIBER_HDF5_POSITIONS_STRING,
+                                              ci.dim,
+                                              &v2h(ci.gsh)[0], &v2h(ci.ilen)[0],
+                                              F5T_COORD3_DOUBLE,
+                                              &ci.clower, &ci.delta,
+                                              &v2h(ci.ioff)[0],
+                                              fragmentname.c_str()));
+        } else {
+          // Output coordinates
+          output_variable (path, CCTK_VarIndex("grid::x"), true);
+        }
       }
       
       // Output variables
@@ -468,7 +472,6 @@ namespace CarpetIOF5 {
       }
       
       assert (groupdata.stagtype == 0);
-      assert (groupdata.dim == dim);
       
 #warning "TODO: Do not output symmetry zones (unless requested by the user)"
 #warning "TODO: Do not output buffer zones (is that easily possible?)"
@@ -617,28 +620,58 @@ namespace CarpetIOF5 {
       
       component_indices_t const ci(cctkGH, group_index);
       
-      CCTK_REAL const* rdata[num_comps];
-      vector<vector<CCTK_REAL> > idata(num_comps);
       void const* data[num_comps];
-      for (int d=0; d<num_comps; ++d) {
-        rdata[d] = (CCTK_REAL const*)CCTK_VarDataPtrI(cctkGH, timelevel, var+d);
-        assert (rdata[d]);
+      int const vartype = CCTK_VarTypeI(var);
+      switch (vartype) {
         
-        int const vartype = CCTK_VarTypeI(var);
-        assert (vartype == CCTK_VARIABLE_REAL);
-        idata[d].resize (prod(ci.ilen));
-        for (int k=0; k<ci.ilen[2]; ++k) {
-          for (int j=0; j<ci.ilen[1]; ++j) {
-            for (int i=0; i<ci.ilen[0]; ++i) {
-              int const isrc =
-                ci.imin[0]+i + ci.lsh[0] *
-                (ci.imin[1]+j + ci.lsh[1] * (ci.imin[2]+k));
-              int const idst = i + ci.ilen[0] * (j + ci.ilen[1] * k);
-              idata[d][idst] = rdata[d][isrc];
+      case CCTK_VARIABLE_INT: {
+        for (int d=0; d<num_comps; ++d) {
+          CCTK_INT const *const varptr =
+            (CCTK_INT const*)CCTK_VarDataPtrI(cctkGH, timelevel, var+d);
+          assert(varptr);
+          CCTK_INT *const rdata = new CCTK_INT[prod(ci.ilen)];
+          for (int k=0; k<ci.ilen[2]; ++k) {
+            for (int j=0; j<ci.ilen[1]; ++j) {
+              for (int i=0; i<ci.ilen[0]; ++i) {
+                int const isrc =
+                  (ci.imin[0]+i + ci.lsh[0] *
+                   (ci.imin[1]+j + ci.lsh[1] *
+                    (ci.imin[2]+k)));
+                int const idst = i + ci.ilen[0] * (j + ci.ilen[1] * k);
+                rdata[idst] = varptr[isrc];
+              }
             }
           }
+          data[d] = rdata;
         }
-        data[d] = &idata[d].front();
+        break;
+      }
+        
+      case CCTK_VARIABLE_REAL: {
+        for (int d=0; d<num_comps; ++d) {
+          CCTK_REAL const *const varptr =
+            (CCTK_REAL const*)CCTK_VarDataPtrI(cctkGH, timelevel, var+d);
+          assert(varptr);
+          CCTK_REAL *const rdata = new CCTK_REAL[prod(ci.ilen)];
+          for (int k=0; k<ci.ilen[2]; ++k) {
+            for (int j=0; j<ci.ilen[1]; ++j) {
+              for (int i=0; i<ci.ilen[0]; ++i) {
+                int const isrc =
+                  (ci.imin[0]+i + ci.lsh[0] *
+                   (ci.imin[1]+j + ci.lsh[1] *
+                    (ci.imin[2]+k)));
+                int const idst = i + ci.ilen[0] * (j + ci.ilen[1] * k);
+                rdata[idst] = varptr[isrc];
+              }
+            }
+          }
+          data[d] = rdata;
+        }
+        break;
+      }
+        
+      default:
+        assert(0);
       }
       
       // Dataset properties
@@ -646,12 +679,12 @@ namespace CarpetIOF5 {
       assert (prop >= 0);
       // Enable compression if requested
       if (compression_level >= 0) {
-        FAILWARN (H5Pset_chunk (prop, dim, &v2h(ci.ilen).reverse()[0]));
+        FAILWARN (H5Pset_chunk (prop, ci.dim, &v2h(ci.ilen).reverse()[0]));
         FAILWARN (H5Pset_deflate (prop, compression_level));
       }
       // Enable checksums if requested
       if (use_checksums) {
-        FAILWARN (H5Pset_chunk (prop, dim, &v2h(ci.ilen).reverse()[0]));
+        FAILWARN (H5Pset_chunk (prop, ci.dim, &v2h(ci.ilen).reverse()[0]));
         FAILWARN (H5Pset_fletcher32 (prop));
       }
       
@@ -661,7 +694,7 @@ namespace CarpetIOF5 {
         // instead)
         FAILWARN
           (F5Fwrite_fraction (path, name.c_str(),
-                              dim,
+                              ci.dim,
                               is_multipatch ? NULL : &v2h(ci.gsh)[0],
                               &v2h(ci.ilen)[0],
                               type, type, data[0],
@@ -671,7 +704,7 @@ namespace CarpetIOF5 {
       } else {
         FAILWARN
           (F5FSwrite_fraction (path, name.c_str(),
-                               dim,
+                               ci.dim,
                                is_multipatch ? NULL : &v2h(ci.gsh)[0],
                                &v2h(ci.ilen)[0],
                                type, type, data,
@@ -679,6 +712,11 @@ namespace CarpetIOF5 {
                                &v2h(ci.lghosts)[0], &v2h(ci.ughosts)[0],
                                fragmentname.c_str(), prop,
                                will_cover_complete_domain));
+      }
+      
+      for (int d=0; d<num_comps; ++d) {
+        delete[] data[d];
+        data[d] = NULL;
       }
       
       FAILWARN (H5Pclose (prop));
