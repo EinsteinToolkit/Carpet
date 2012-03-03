@@ -1202,10 +1202,52 @@ namespace CarpetReduce {
     
     
     
-    // meta mode
+    // can't have meta mode
     if (is_meta_mode()) {
       CCTK_WARN (CCTK_WARN_ABORT,
                  "Grid variable reductions are not possible in meta mode");
+    }
+    
+    // local mode may be trouble
+    if (is_local_mode()) {
+      assert (mc_grouptype >= 0);
+      if (mc_grouptype == CCTK_GF) {
+        int mynlc = 0;
+        for (int m=0; m<maps; ++m) {
+          mynlc += vhh.AT(m)->local_components(reflevel);
+        }
+        int nlc = mynlc;
+        MPI_Bcast(&nlc, 1, MPI_INT, 0, dist::comm());
+        if (nlc == mynlc) {
+          CCTK_WARN (CCTK_WARN_PICKY,
+                     "Reduction in local mode may lead to deadlock (if different processes own different numbers of components)");
+        } else {
+          CCTK_WARN (CCTK_WARN_ALERT,
+                     "Reduction in local mode will lead to deadlock if different processes own different numbers of components");
+        }
+      }
+    }
+    
+    // singlemap mode may also be trouble
+    if (is_singlemap_mode()) {
+      assert (mc_grouptype >= 0);
+      if (mc_grouptype == CCTK_GF) {
+        int mynlm = 0;
+        for (int m=0; m<maps; ++m) {
+          if (vhh.AT(m)->local_components(reflevel) > 0) {
+            ++mynlm;
+          };
+        }
+        int nlm = mynlm;
+        MPI_Bcast(&nlm, 1, MPI_INT, 0, dist::comm());
+        if (nlm == mynlm) {
+          CCTK_WARN (CCTK_WARN_PICKY,
+                     "Reduction in singlemap mode may lead to deadlock (if different processes own components on different numbers of maps)");
+        } else {
+          CCTK_WARN (CCTK_WARN_ALERT,
+                     "Reduction in singlemap mode will lead to deadlock if different processes own components on different numbers of maps");
+        }
+      }
     }
     
     bool const reduce_arrays = CCTK_GroupTypeFromVarI(vi) != CCTK_GF;
