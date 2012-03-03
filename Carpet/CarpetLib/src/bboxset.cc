@@ -48,7 +48,7 @@ bboxset<T,D>::bboxset (const list<box>& lb)
 {
   SKIP_NORMALIZE(*this);
   for (typename list<box>::const_iterator
-         li = lb.begin(); li != lb.end(); ++ li)
+         li = lb.begin(), le = lb.end(); li != le; ++ li)
   {
     *this |= *li;
   }
@@ -60,7 +60,7 @@ bboxset<T,D>::bboxset (const vector<box>& lb)
 {
   SKIP_NORMALIZE(*this);
   for (typename vector<box>::const_iterator
-         vi = lb.begin(); vi != lb.end(); ++ vi)
+         vi = lb.begin(), ve = lb.end(); vi != ve; ++ vi)
   {
     *this |= *vi;
   }
@@ -72,7 +72,7 @@ bboxset<T,D>::bboxset (const vector<list<box> >& vlb)
 {
   SKIP_NORMALIZE(*this);
   for (typename vector<list<box> >::const_iterator
-         vli = vlb.begin(); vli != vlb.end(); ++ vli)
+         vli = vlb.begin(), vle = vlb.end(); vli != vle; ++ vli)
   {
     *this |= bboxset (*vli);
   }
@@ -85,7 +85,7 @@ bboxset<T,D>::bboxset (const vector<U>& vb, const bbox<T,D> U::* const v)
 {
   SKIP_NORMALIZE(*this);
   for (typename vector<U>::const_iterator
-         vi = vb.begin(); vi != vb.end(); ++ vi)
+         vi = vb.begin(), ve = vb.end(); vi != ve; ++ vi)
   {
     *this |= (*vi).*v;
   }
@@ -98,7 +98,7 @@ bboxset<T,D>::bboxset (const vector<U>& vb, const bboxset U::* const v)
 {
   SKIP_NORMALIZE(*this);
   for (typename vector<U>::const_iterator
-         vi = vb.begin(); vi != vb.end(); ++ vi)
+         vi = vb.begin(), ve = vb.end(); vi != ve; ++ vi)
   {
     *this |= (*vi).*v;
   }
@@ -116,7 +116,7 @@ template<typename T, int D>
 bool bboxset<T,D>::invariant () const {
   // This is very slow when there are many bboxes
 #if 0 && defined(CARPET_DEBUG)
-  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+  for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
     if ((*bi).empty()) return false;
     if (not (*bi).is_aligned_with(*bs.begin())) return false;
     // check for overlap (quadratic -- expensive)
@@ -148,7 +148,9 @@ void bboxset<T,D>::normalize ()
     typedef vector<T> buf;
     buf sbnds;
     sbnds.reserve (2 * bs.size());
-    for (typename bset::const_iterator si = bs.begin(); si != bs.end(); ++ si) {
+    for (typename bset::const_iterator
+           si = bs.begin(), se = bs.end(); si != se; ++ si)
+    {
       box const & b = * si;
       int const bstr = b.stride()[d];
       int const blo = b.lower()[d];
@@ -163,7 +165,9 @@ void bboxset<T,D>::normalize ()
     sbnds.resize (last - sbnds.begin());
     // Split bboxes
     bset nbs;
-    for (typename bset::const_iterator si = bs.begin(); si != bs.end(); ++ si) {
+    for (typename bset::const_iterator
+           si = bs.begin(), se = bs.end(); si != se; ++ si)
+    {
       box const & b = * si;
       int const bstr = b.stride()[d];
       int const blo = b.lower()[d];
@@ -208,7 +212,8 @@ void bboxset<T,D>::normalize ()
       int const blo = b.lower()[d];
       int const bhi = b.upper()[d] + bstr;
       
-      for (typename bset::iterator nsi = nbs.begin(); nsi != nbs.end(); ++ nsi)
+      for (typename bset::iterator
+             nsi = nbs.begin(), nse = nbs.end(); nsi != nse; ++ nsi)
       {
         box const nb = * nsi;
         int const nblo = nb.lower()[d];
@@ -268,7 +273,7 @@ template<typename T, int D>
 typename bboxset<T,D>::size_type bboxset<T,D>::size () const
 {
   size_type s = 0;
-  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+  for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
     const size_type bsz = (*bi).size();
     assert (numeric_limits<size_type>::max() - bsz >= s);
     s += bsz;
@@ -286,7 +291,7 @@ typename bboxset<T,D>::size_type bboxset<T,D>::size () const
 template<typename T, int D>
 bool bboxset<T,D>::intersects (const box& b) const
 {
-  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+  for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
     if ((*bi).intersects(b)) return true;
   }
   return false;
@@ -303,7 +308,7 @@ bboxset<T,D>& bboxset<T,D>::operator+= (const box& b)
   // This is very slow when there are many bboxes
 #if 0 && defined(CARPET_DEBUG)
   // check for overlap
-  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+  for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
     assert (not (*bi).intersects(b));
   }
 #endif
@@ -319,7 +324,7 @@ template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::operator+= (const bboxset& s)
 {
   SKIP_NORMALIZE(*this);
-  for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
+  for (const_iterator bi=s.begin(), be=s.end(); bi!=be; ++bi) {
     *this += *bi;
   }
   assert (invariant());
@@ -374,7 +379,7 @@ bboxset<T,D>& bboxset<T,D>::operator|= (const box& b)
   oldbs.swap(bs);
   bs.push_back(b);
   SKIP_NORMALIZE(*this);
-  for (const_iterator bi=oldbs.begin(); bi!=oldbs.end(); ++bi) {
+  for (const_iterator bi=oldbs.begin(), be=oldbs.end(); bi!=be; ++bi) {
     bboxset tmp = *bi - b;
     add_transfer(tmp);
   }
@@ -425,7 +430,7 @@ bboxset<T,D> bboxset<T,D>::operator& (const box& b) const
   {
     SKIP_NORMALIZE(r);
     // walk all my elements
-    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
       // insert the intersection with the bbox
       r += *bi & b;
     }
@@ -443,7 +448,7 @@ bboxset<T,D> bboxset<T,D>::operator& (const bboxset& s) const
   {
     SKIP_NORMALIZE(r);
     // walk all the bboxes
-    for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
+    for (const_iterator bi=s.begin(), be=s.end(); bi!=be; ++bi) {
       // insert the intersection with this bbox
       bboxset tmp = *this & *bi;
       r.add_transfer (tmp);
@@ -526,7 +531,7 @@ bboxset<T,D> bboxset<T,D>::operator- (const box& b) const
   {
     SKIP_NORMALIZE(r);
     // walk all my elements
-    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
       // insert the difference with the bbox
       bboxset tmp = *bi - b;
       r.add_transfer (tmp);
@@ -541,7 +546,7 @@ template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::operator-= (const bboxset& s)
 {
   SKIP_NORMALIZE(*this);
-  for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
+  for (const_iterator bi=s.begin(), be=s.end(); bi!=be; ++bi) {
     *this -= *bi;
   }
   assert (invariant());
@@ -574,7 +579,7 @@ template<typename T, int D>
 typename bboxset<T,D>::box bboxset<T,D>::container () const
 {
   box b;
-  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+  for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
     b = b.expanded_containing(*bi);
   }
   return b;
@@ -598,13 +603,13 @@ bboxset<T,D> bboxset<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi)
     SKIP_NORMALIZE(res);
     if (all (lo == -hi)) {
       // Special case for shifting, since this is faster
-      for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
         res += (*bi).expand(lo,hi);
       }
     } else {
       // We don't know (yet?) how to shrink a set
       assert (all (lo>=0 and hi>=0));
-      for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
         res |= (*bi).expand(lo,hi);
       }
     }
@@ -623,13 +628,13 @@ bboxset<T,D> bboxset<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi,
     SKIP_NORMALIZE(res);
     if (all (lo == -hi)) {
       // Special case for shifting, since this is faster
-      for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
         res += (*bi).expand(lo,hi,denom);
       }
     } else {
       // We don't know (yet?) how to shrink a set
       assert (all ((lo>=0 and hi>=0) or (lo == hi)));
-      for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
         res |= (*bi).expand(lo,hi,denom);
       }
     }
@@ -643,7 +648,7 @@ bboxset<T,D> bboxset<T,D>::expanded_for (const box& b) const
   bboxset res;
   {
     SKIP_NORMALIZE(res);
-    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
       res |= (*bi).expanded_for(b);
     }
   }
@@ -658,7 +663,7 @@ bboxset<T,D> bboxset<T,D>::contracted_for (const box& b) const
   bboxset res;
   {
     SKIP_NORMALIZE(res);
-    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
       res |= (*bi).contracted_for(b);
     }
   }
