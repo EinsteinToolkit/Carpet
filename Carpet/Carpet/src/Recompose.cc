@@ -1820,6 +1820,19 @@ namespace Carpet {
         assert (tmpncomps.AT(m) == myncomps.AT(m));
       }
     }
+    // Count componets per process
+    {
+      vector<int> ncompsperproc(real_nprocs, 0);
+      for (int r=0; r<newnregs; ++r) {
+        int const p = newregs.AT(r).processor;
+        ++ ncompsperproc.at(p);
+      }
+      if (same_number_of_components_on_each_process) {
+        for (int p=0; p<real_nprocs; ++p) {
+          assert (ncompsperproc.at(p) == ncomps);
+        }
+      }
+    }
     
     // Distribute regions
     // Allocate regions
