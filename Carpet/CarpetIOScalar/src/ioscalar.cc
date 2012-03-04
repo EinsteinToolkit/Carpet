@@ -70,6 +70,7 @@ namespace CarpetIOScalar {
 
   // Definition of static members
   vector<bool> do_truncate;
+  vector<bool> write_header;
   vector<int> last_output;
 
   /* CarpetScalar GH extension structure */
@@ -77,6 +78,10 @@ namespace CarpetIOScalar {
   {
     /* list of variables to output */
     char *out_vars;
+
+    /* reductions to apply */
+    char *out_reductions;
+    char **var_reductions;
 
     /* stop on I/O parameter parsing errors ? */
     int stop_on_parse_errors;
@@ -132,12 +137,15 @@ namespace CarpetIOScalar {
     // Truncate all files if this is not a restart
     const int numvars = CCTK_NumVars ();
     do_truncate.resize (numvars, true);
+    write_header.resize (numvars, true);
 
     // No iterations have yet been output
     last_output.resize (numvars, -1);
 
     IOparameters.requests = (ioRequest **) calloc (numvars, sizeof(ioRequest*));
     IOparameters.out_vars = strdup ("");
+    IOparameters.out_reductions = strdup ("");
+    IOparameters.var_reductions = (char **) calloc (numvars, sizeof(char*));
 
     // initial I/O parameter check
     IOparameters.stop_on_parse_errors = strict_io_parameter_check;
@@ -274,43 +282,65 @@ namespace CarpetIOScalar {
     // Output in global mode
     BEGIN_GLOBAL_MODE(cctkGH) {
 
+      // single fstreams object used for all output files.
+      // This violates resource-allocation-is-initialization but is required
+      // when outputting all reductions into a single file (in which case there
+      // is only a single stream)
+      fstream file;
+      CCTK_REAL io_files = 0;
+      CCTK_REAL io_bytes_begin = 0, io_bytes_end = 0;
+      if (all_reductions_in_one_file) {
+        BeginTimingIO (cctkGH);
+      }
+
       for (list<info>::const_iterator ireduction = reductions.begin();
            ireduction != reductions.end();
            ++ireduction)
       {
         string const reduction = ireduction->reduction;
 
-        fstream file;
-        BeginTimingIO (cctkGH);
-        CCTK_REAL io_files = 0;
-        CCTK_REAL io_bytes_begin = 0, io_bytes_end = 0;
+        if (not all_reductions_in_one_file) {
+          BeginTimingIO (cctkGH);
+          io_files = 0;
+          io_bytes_begin = 0;
+          io_bytes_end = 0;
+        }
         if (CCTK_MyProc(cctkGH)==0) {
 
-          // Invent a file name
-          ostringstream filenamebuf;
-          filenamebuf << myoutdir << "/" << alias << "." << reduction
-                      << ".asc";
-          // we need a persistent temporary here
-          string filenamestr = filenamebuf.str();
-          const char* const filename = filenamestr.c_str();
+          if (not all_reductions_in_one_file || not file.is_open()) {
+            // Invent a file name
+            ostringstream filenamebuf;
+            filenamebuf << myoutdir << "/" << alias;
+            if (not all_reductions_in_one_file)
+              filenamebuf << "." << reduction;
+            else
+              filenamebuf << ".scalars";
+            filenamebuf << ".asc";
+            // we need a persistent temporary here
+            string filenamestr = filenamebuf.str();
+            const char* const filename = filenamestr.c_str();
 
-          if (do_truncate.at(n) and IO_TruncateOutputFiles (cctkGH)) {
-            file.open (filename, ios::out | ios::trunc);
-          } else {
-            file.open (filename, ios::out | ios::app);
-          }
-          if (not file.good()) {
-            CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                        "Could not open output file \"%s\" for variable \"%s\"",
-                        filename, varname);
-          }
-          assert (file.is_open());
+            if (do_truncate.at(n) and IO_TruncateOutputFiles (cctkGH)) {
+              file.open (filename, ios::out | ios::trunc);
+            } else {
+              file.open (filename, ios::out | ios::app);
+            }
+            if (not file.good()) {
+              CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                          "Could not open output file \"%s\" for variable \"%s\"",
+                          filename, varname);
+            }
+            assert (file.is_open());
+            
+            // Don't truncate again
+            do_truncate.at(n) = false;
 
-          io_files += 1;
+            io_files += 1;
+          }
           io_bytes_begin = file.tellg();
 
           // If this is the first time, then write a nice header
-          if (do_truncate.at(n)) {
+          if (write_header.at(n)) {
             bool want_labels = false;
             bool want_date = false;
             bool want_parfilename = false;
@@ -376,17 +406,32 @@ namespace CarpetIOScalar {
               file << "# " << varname << " (" << alias << ")" << eol;
               file << "# 1:iteration 2:time 3:data" << eol;
               int col = 3;
-              if (one_file_per_group) {
+              if (one_file_per_group or all_reductions_in_one_file) {
                 file << "# data columns:";
-                int const firstvar = CCTK_FirstVarIndexI(group);
-                int const numvars = CCTK_NumVarsInGroupI(group);
+                int const firstvar
+                  = one_file_per_group ? CCTK_FirstVarIndexI(group) : n;
+                int const numvars
+                  = one_file_per_group ? CCTK_NumVarsInGroupI(group) : 1;
                 for (int n=firstvar; n<firstvar+numvars; ++n) {
-                  file << " " << col << ":" << CCTK_VarName(n);
-                  col += CarpetSimpleMPIDatatypeLength (vartype);
+                  if (all_reductions_in_one_file) {
+                    for (list<info>::const_iterator jreduction = reductions.begin();
+                         jreduction != reductions.end();
+                         ++jreduction)
+                    {
+                      file << " " << col << ":" << CCTK_VarName(n) << "(" << jreduction->reduction << ")";
+                      col += CarpetSimpleMPIDatatypeLength (vartype);
+                    }
+                  } else {
+                    file << " " << col << ":" << CCTK_VarName(n);
+                    col += CarpetSimpleMPIDatatypeLength (vartype);
+                  }
                 }
                 file << eol;
               }
             }
+
+            // Don't write header again (unless the reductions change)
+            write_header.at(n) = false;
           }
 
           file << setprecision(15);
@@ -395,7 +440,9 @@ namespace CarpetIOScalar {
         } // if on the root processor
         
         if (CCTK_MyProc(cctkGH)==0) {
-          file << cctk_iteration << " " << cctk_time;
+          if (not all_reductions_in_one_file or ireduction == reductions.begin()) {
+            file << cctk_iteration << " " << cctk_time;
+          }
         }
         
         int const handle = ireduction->handle;
@@ -441,6 +488,25 @@ namespace CarpetIOScalar {
           
         } // for n
         
+        if (not all_reductions_in_one_file) {
+          if (CCTK_MyProc(cctkGH)==0) {
+            file << eol;
+            assert (file.good());
+
+            io_bytes_end = file.tellg();
+            file.close();
+            assert (file.good());
+          }
+
+          assert (not file.is_open());
+
+          CCTK_REAL const io_bytes = io_bytes_end - io_bytes_begin;
+          EndTimingIO (cctkGH, io_files, io_bytes, false);
+        }
+
+      } // for reductions
+
+      if (all_reductions_in_one_file) {
         if (CCTK_MyProc(cctkGH)==0) {
           file << eol;
           assert (file.good());
@@ -454,13 +520,11 @@ namespace CarpetIOScalar {
 
         CCTK_REAL const io_bytes = io_bytes_end - io_bytes_begin;
         EndTimingIO (cctkGH, io_files, io_bytes, false);
+      }
 
-      } // for reductions
+      assert (not file.is_open());
 
     } END_GLOBAL_MODE;
-
-    // Don't truncate again
-    do_truncate.at(n) = false;
 
     } END_LEVEL_MODE;
 
@@ -674,6 +738,8 @@ namespace CarpetIOScalar {
   {
     DECLARE_CCTK_PARAMETERS;
 
+    const int numvars = CCTK_NumVars ();
+
     // re-parse the 'IOScalar::outScalar_vars' parameter if it has changed
     if (strcmp (outScalar_vars, IOparameters.out_vars)) {
 #ifdef IOUTIL_PARSER_HAS_OUT_DT
@@ -711,6 +777,37 @@ namespace CarpetIOScalar {
       // save the last setting of 'IOScalar::outScalar_vars' parameter
       free (IOparameters.out_vars);
       IOparameters.out_vars = strdup (outScalar_vars);
+
+      for (int vi=0; vi<numvars; ++vi) {
+        if (not IOparameters.requests[vi]) continue;
+
+        // if the setting differ copy the setting (NULL or string) into IOparameters
+        if ((IOparameters.requests[vi]->reductions and not IOparameters.var_reductions[vi]) or 
+            (not IOparameters.requests[vi]->reductions and IOparameters.var_reductions[vi]) or
+            (IOparameters.requests[vi]->reductions and IOparameters.var_reductions[vi] and 
+             strcmp (IOparameters.requests[vi]->reductions, IOparameters.var_reductions[vi]))) {
+          if (not IOparameters.var_reductions[vi]) {
+            free (IOparameters.var_reductions[vi]);
+          }
+          IOparameters.var_reductions[vi] = IOparameters.requests[vi]->reductions ?
+                                            strdup(IOparameters.requests[vi]->reductions) :
+                                            NULL;
+          // only all_reductions_in_one_file actually mentions the reduction in the header
+          // TODO: re-write header in one_file_per_group mode if variables change
+          write_header[vi] = do_truncate[vi] or all_reductions_in_one_file;
+        }
+      }
+    }
+
+    if (strcmp (outScalar_reductions, IOparameters.out_reductions)) {
+      // save the last seeting of 'IOScalar::outScalar_reductions' parameter
+      free (IOparameters.out_reductions);
+      IOparameters.out_reductions = strdup (outScalar_reductions);
+      // bit of an overkill. We ask for new headers for all variables, even though the ones using per-variable reductions will not have differing headers
+      for (int vi=0; vi<numvars; ++vi) {
+        // only all_reductions_in_one_file actually mentions the reduction in the header
+        write_header[vi] = do_truncate[vi] or all_reductions_in_one_file;
+      }
     }
   }
 

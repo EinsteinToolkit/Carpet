@@ -24,6 +24,10 @@ BOOLEAN one_file_per_group "Write one file per group instead of per variable"
 {
 } "no"
 
+BOOLEAN all_reductions_in_one_file "Write all requested reductions in one file instead of per reduction"
+{
+} "no"
+
 
 
 CCTK_STRING outScalar_dir "Name of scalar output directory, overrides out_dir" STEERABLE = ALWAYS

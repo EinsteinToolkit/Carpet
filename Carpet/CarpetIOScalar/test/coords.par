@@ -1,0 +1,50 @@
+ActiveThorns = "
+   AEILocalInterp
+   Carpet
+   CarpetInterp
+   CarpetIOScalar
+   CarpetLib
+   CarpetReduce
+   CartGrid3D
+   CoordBase
+   InterpToArray
+   IOUtil
+   LoopControl
+   SymBase
+"
+
+IO::out_dir = $parfile
+
+Carpet::global_nx = 7
+Carpet::global_ny = 8
+Carpet::global_nz = 9
+
+InterpToArray::nscalars          = 1
+InterpToArray::scalar_vars[0]    = "grid::r"
+InterpToArray::narrays1d         = 1
+InterpToArray::array1d_vars[0]   = "grid::r"
+InterpToArray::array1d_npoints_i = 8
+InterpToArray::narrays2d         = 1
+InterpToArray::array2d_vars[0]   = "grid::r"
+InterpToArray::array2d_npoints_i = 7
+InterpToArray::array2d_npoints_j = 6
+InterpToArray::narrays3d         = 1
+InterpToArray::array3d_vars[0]   = "grid::r"
+InterpToArray::array3d_npoints_i = 5
+InterpToArray::array3d_npoints_j = 4
+InterpToArray::array3d_npoints_k = 3
+
+Cactus::cctk_itlast = 0
+
+IO::out_every = 1
+IOScalar::all_reductions_in_one_file = yes
+
+IOScalar::outScalar_reductions = "average iaverage norm_inf inorm1 inorm2 maximum minimum norm1 norm2" 
+
+IOScalar::outScalar_vars = "
+   InterpToArray::scalars
+   InterpToArray::arrays1d
+   InterpToArray::arrays2d
+   InterpToArray::arrays3d
+   grid::r
+"
