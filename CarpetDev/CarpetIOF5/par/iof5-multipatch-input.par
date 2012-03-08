@@ -6,6 +6,7 @@ ActiveThorns = "
         CarpetRegrid2
         CartGrid3D
         CoordBase
+        Coordinates
         F5
         Formaline
         GSL
@@ -22,22 +23,18 @@ Cactus::cctk_run_title             = "IOF5"
 Cactus::cctk_full_warnings         = yes
 Cactus::highlight_warning_messages = no
 
-Cactus::cctk_itlast = 1024
+Cactus::cctk_itlast = 0
 
 IO::out_dir = $parfile
 
-Carpet::domain_from_coordbase = yes
-CartGrid3D::type              = "coordbase"
-CoordBase::domainsize         = "minmax"
-CoordBase::xmin               = -1.0
-CoordBase::ymin               = -1.0
-CoordBase::zmin               = -1.0
-CoordBase::xmax               = +1.0
-CoordBase::ymax               = +1.0
-CoordBase::zmax               = +1.0
-CoordBase::dx                 =  0.25
-CoordBase::dy                 =  0.25
-CoordBase::dz                 =  0.25
+Carpet::domain_from_multipatch   = yes
+CartGrid3D::type                 = "multipatch"
+Coordinates::coordinate_system   = "Thornburg04"
+Coordinates::h_cartesian         = 0.25
+Coordinates::h_radial            = 0.25
+Coordinates::sphere_inner_radius = 1.0
+Coordinates::sphere_outer_radius = 3.0
+Coordinates::n_angular           = 8
 
 Carpet::max_refinement_levels = 10
 CarpetRegrid2::num_centres    =  1
@@ -47,6 +44,9 @@ CarpetRegrid2::radius_1[2]    =  0.2
 
 InitBase::initial_data_setup_method = "init_all_levels"
 
-CarpetIOF5::checkpoint = yes
-IO::checkpoint_every   = 1024
-IO::checkpoint_dir     = $parfile
+IO::filereader_ID_dir   = "iof5-multipatch"
+IO::filereader_ID_files = "iof5-multipatch"
+IO::filereader_ID_vars  = "grid::coordinates"
+
+CarpetIOF5::out_every = 1
+CarpetIOF5::out_vars  = "grid::coordinates"

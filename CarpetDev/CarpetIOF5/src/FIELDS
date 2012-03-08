@@ -1,0 +1,18 @@
+Results from test output comparing different number of processes (np),
+contiguous/separated output, and unfragmented/fragmented output. The
+two rightmost columns describe the group hierarchy of a scalar and a
+vector. The first (leftmost) name of these is the F5 field, the last
+(rightmost) name is the actual dataset.
+
+
+
+                       | scalar                     vector
+-----------------------|-----------------------------------------------------------------
+np=1   contig   unfrag | grid.r/Map_0_Component_0   grid.coordinates/Dx
+np=1   contig   frag   | grid.r/Map_0_Component_0   grid.coordinates/Map_0_Component_0/Dx
+np=1   sep      unfrag | grid.r                     grid.coordinates/Dx
+np=1   sep      frag   | grid.r/Map_0_Component_0   grid.coordinates/Map_0_Component_0/Dx
+np=2   contig   unfrag | grid.r/Map_0_Component_0   grid.coordinates/Map_0_Component_0/Dx
+np=2   contig   frag   | grid.r/Map_0_Component_0   grid.coordinates/Map_0_Component_0/Dx
+np=2   sep      unfrag | grid.r/Map_0_Component_0   grid.coordinates/Map_0_Component_0/Dx
+np=2   sep      frag   | grid.r/Map_0_Component_0   grid.coordinates/Map_0_Component_0/Dx

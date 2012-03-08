@@ -47,6 +47,9 @@ CarpetRegrid2::radius_1[2]    =  0.2
 
 InitBase::initial_data_setup_method = "init_all_levels"
 
-CarpetIOF5::checkpoint = yes
-IO::checkpoint_every   = 1024
-IO::checkpoint_dir     = $parfile
+IO::filereader_ID_dir   = "iof5-refined"
+IO::filereader_ID_files = "iof5-refined"
+IO::filereader_ID_vars  = "grid::coordinates"
+
+CarpetIOF5::out_every = 256
+CarpetIOF5::out_vars  = "grid::coordinates"

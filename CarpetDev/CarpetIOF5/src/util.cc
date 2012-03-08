@@ -46,6 +46,18 @@ namespace CarpetIOF5 {
   // Indentation
   int indent_t::level = 0;
   
+  indent_t::indent_t()
+  {
+    if (debug) cout << *this << "{{{\n";
+    ++level;
+  }
+  
+  indent_t::~indent_t()
+  {
+    --level;
+    if (debug) cout << *this << "}}}\n";
+  }
+  
   ostream& indent_t::output(ostream& os) const
   {
     return os << string(width*level, ' ');
@@ -139,12 +151,36 @@ namespace CarpetIOF5 {
   create_filename (cGH const *const cctkGH,
                    string const basename,
                    int const proc,
+                   io_dir_t const io_dir,
                    bool const create_directories)
   {
     DECLARE_CCTK_PARAMETERS;
     
-    bool const use_IO_out_dir = strcmp(out_dir, "") == 0;
-    string path = use_IO_out_dir ? IO_out_dir : out_dir;
+    char const *IO_dir = NULL;
+    char const *F5_dir = NULL;
+    switch (io_dir) {
+    case io_dir_input:
+      IO_dir = IO_filereader_ID_dir;
+      F5_dir = filereader_ID_dir;
+      break;
+    case io_dir_output:
+      IO_dir = IO_out_dir;
+      F5_dir = out_dir;
+      break;
+    case io_dir_recover:
+      IO_dir = IO_recover_dir;
+      F5_dir = recover_dir;
+      break;
+    case io_dir_checkpoint:
+      IO_dir = IO_checkpoint_dir;
+      F5_dir = checkpoint_dir;
+      break;
+    default:
+      assert(0);
+    }
+    
+    bool const use_IO_dir = strcmp(F5_dir, "") == 0;
+    string path = use_IO_dir ? IO_dir : F5_dir;
     
     if (create_subdirs) {
       {
@@ -308,10 +344,34 @@ namespace CarpetIOF5 {
     transform (name.begin(), name.end(), name.begin(), ::tolower);
     string const sep = "::";
     size_t const pos = name.find(sep);
-    if (pos != string::npos) {
-      name.replace (pos, sep.size(), ".");
-    }
+    assert (pos != string::npos);
+    name.replace (pos, sep.size(), ".");
     return name;
+  }
+  
+  void
+  interpret_fieldname(cGH const *const cctkGH, string fieldname, int& vi)
+  {
+    string const sep = ".";
+    size_t const pos = fieldname.find(sep);
+    if (pos == string::npos) {
+      // The field name is not a Cactus group or variable
+      vi = -1;
+      return;
+    }
+    fieldname.replace (pos, sep.size(), "::");
+    
+    vi = CCTK_VarIndex(fieldname.c_str());
+    if (vi < 0) {
+      int const gi = CCTK_GroupIndex(fieldname.c_str());
+      if (gi < 0) {
+        CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Unknown group variable name \"%s\"", fieldname.c_str());
+        return;
+      }
+      vi = CCTK_FirstVarIndexI(gi);
+      assert (vi>=0);
+    }
   }
   
   

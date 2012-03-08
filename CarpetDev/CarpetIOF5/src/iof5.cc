@@ -15,6 +15,7 @@
 #include <hdf5.h>
 #include <iof5.hh>
 
+#include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
 
@@ -49,6 +50,9 @@ namespace CarpetIOF5 {
     DECLARE_CCTK_PARAMETERS;
     
     // register I/O method
+    int const ierr = IOUtil_RegisterRecover("CarpetIOF5 recovery", Input);
+    assert(not ierr);
+    
     int const IOMethod = CCTK_RegisterIOMethod ("IOF5");
     CCTK_RegisterIOMethodOutputGH      (IOMethod, OutputGH     );
     CCTK_RegisterIOMethodTimeToOutput  (IOMethod, TimeToOutput );
@@ -182,7 +186,8 @@ namespace CarpetIOF5 {
       string const basename = generate_basename (cctkGH, vindex);
       int const myproc = CCTK_MyProc(cctkGH);
       int const proc = myproc;
-      string const name = create_filename (cctkGH, basename, proc, first_time);
+      string const name =
+        create_filename (cctkGH, basename, proc, io_dir_output, first_time);
       
       indent_t indent;
       cout << indent << "process=" << proc << "\n";
@@ -216,6 +221,7 @@ namespace CarpetIOF5 {
   {
     assert (is_global_mode());
     
+#if 0
     // generate filenames for both the temporary and real checkpoint
     // files
     int const ioproc = CCTK_MyProc(cctkGH);
@@ -226,9 +232,16 @@ namespace CarpetIOF5 {
     char* const tempname =
       IOUtil_AssembleFilename (cctkGH, NULL, ".tmp", ".f5",
                                called_from, ioproc, not parallel_io);
+#endif
+    int const myproc = CCTK_MyProc(cctkGH);
+    int const proc = myproc;
+    string const name =
+      create_filename (cctkGH, "checkpoint", proc, io_dir_checkpoint, true);
+    string const tempname =
+      create_filename (cctkGH, "checkpoint.tmp", proc, io_dir_checkpoint, true);
     
     hid_t const file =
-      H5Fcreate (tempname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+      H5Fcreate (tempname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     assert (file >= 0);
     
     vector<bool> output_var(CCTK_NumVars());
@@ -266,7 +279,7 @@ namespace CarpetIOF5 {
     // checkpoint files
     // TODO: ensure there were no errors
     CCTK_Barrier (cctkGH);
-    int const ierr = rename (tempname, filename);
+    int const ierr = rename (tempname.c_str(), name.c_str());
     assert (not ierr);
   }
   
@@ -310,6 +323,115 @@ namespace CarpetIOF5 {
         Checkpoint (cctkGH, CP_EVOLUTION_DATA);
       }
     }
+  }
+  
+  
+  
+  int Input (cGH* const cctkGH,
+             char const* const basefilename, int const called_from)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    herr_t herr;
+    
+    
+    
+    assert (is_level_mode());
+    BEGIN_GLOBAL_MODE(cctkGH) {
+      DECLARE_CCTK_ARGUMENTS;
+      
+      CCTK_VInfo (CCTK_THORNSTRING, "F5::Input: iteration=%d", cctk_iteration);
+      
+      
+      
+      assert (called_from == CP_RECOVER_PARAMETERS or
+              called_from == CP_RECOVER_DATA or
+              called_from == FILEREADER_DATA);
+      bool const in_recovery =
+        called_from == CP_RECOVER_PARAMETERS or
+        called_from == CP_RECOVER_DATA;
+      
+      // We don't know how to do this yet
+      assert (called_from != CP_RECOVER_PARAMETERS);
+      
+      // Determine which variables to read
+      ioGH const* const ioUtilGH =
+        (ioGH const*) CCTK_GHExtension (cctkGH, "IO");
+      vector<bool> input_var(CCTK_NumVars(), true);
+      if (ioUtilGH->do_inVars) {
+        for (int n=0; n<CCTK_NumVars(); ++n) {
+          input_var.at(n) = ioUtilGH->do_inVars[n];
+        }
+      }
+      
+      
+      
+      // Open file
+      // string const basename =
+      //   in_recovery
+      //   ? "checkpoint"
+      //   : generate_basename (cctkGH, CCTK_VarIndex("grid::r"));
+      string const basename = basefilename;
+      
+      // Keep track of which files could be read, and which could not
+      int foundproc = -1, notfoundproc = -1;
+      
+#warning "TODO: Store how many processes contributed to the output, and expect exactly that many files"
+      int const myproc = CCTK_MyProc(cctkGH);
+      int const nprocs = CCTK_nProcs(cctkGH);
+      // Loop over all (possible) files
+      for (int proc=myproc; ; proc+=nprocs) {
+        string const name =
+          create_filename (cctkGH, basename, proc,
+                           in_recovery ? io_dir_recover : io_dir_input, false);
+        
+        bool file_exists;
+        H5E_BEGIN_TRY {
+          file_exists = H5Fis_hdf5(name.c_str()) > 0;
+        } H5E_END_TRY;
+        if (not file_exists) {
+          notfoundproc = proc;
+          break;
+        }
+        foundproc = proc;
+        
+        indent_t indent;
+        cout << indent << "process=" << proc << "\n";
+        
+        hid_t const file = H5Fopen (name.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+        assert (file >= 0);
+        
+        // Iterate over all time slices
+        input (cctkGH, file, input_var);
+        
+        // Close file
+        herr = H5Fclose (file);
+        assert (not herr);
+      }
+      
+      {
+        int maxfoundproc;
+        MPI_Allreduce(&foundproc, &maxfoundproc, 1, MPI_INT, MPI_MAX,
+                      dist::comm());
+        if (maxfoundproc == -1) {
+          string const name =
+            create_filename (cctkGH, basename, notfoundproc,
+                             in_recovery ? io_dir_recover : io_dir_input,
+                             false);
+          CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Could not read input file \"%s\"", name.c_str());
+          return 1;
+        }
+        if (notfoundproc <= maxfoundproc) {
+          CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Could not read file of process %d (but could read file of process %d)",
+                     notfoundproc, maxfoundproc);
+        }
+      }
+      
+    } END_GLOBAL_MODE;
+    
+    return 0;                   // no error
   }
   
 } // end namespace CarpetIOF5

@@ -43,7 +43,7 @@ namespace CarpetIOF5 {
     // entries
     cGH* const cctkGH;
     
-    vector<bool> const output_var;    // whether to output this variable
+    vector<bool> const output_var; // whether to output this variable
     bool const output_everything;
     bool const is_multipatch;
     
@@ -304,12 +304,13 @@ namespace CarpetIOF5 {
       DECLARE_CCTK_ARGUMENTS;
       indent_t indent;
       
-      cout << indent << "reflevel=" << reflevel << "\n";
-      
       assert (is_level_mode());
       
       ivect const reffact = spacereffacts.AT(reflevel);
       topologyname = generate_topologyname(cctkGH, group_index, reffact);
+      cout << indent
+           << "reflevel=" << reflevel << " "
+           << "topologyname=" << topologyname << "\n";
       
       // Define grid hierarchy
       map_indices_t const mi(cctkGH, group_index);
@@ -389,13 +390,13 @@ namespace CarpetIOF5 {
       indent_t indent;
       bool error_flag = false;
       
-      cout << indent
-           << "component=" << component << " "
-           << "(local_component=" << local_component << ")\n";
-      
       assert (is_local_mode());
       
       fragmentname = generate_fragmentname(cctkGH, Carpet::map, component);
+      cout << indent
+           << "component=" << component << " "
+           << "(local_component=" << local_component << ") "
+           << "fragmentname=" << fragmentname << "\n";
       
       if (group_type == CCTK_GF) {
         // Define coordinates
@@ -613,6 +614,8 @@ namespace CarpetIOF5 {
         assert (0);
       }
       
+      cout << indent << "fieldname=" << name << "\n";
+      
       // Write data
       assert (type >= 0);
       assert (num_comps > 0);
@@ -692,6 +695,7 @@ namespace CarpetIOF5 {
         // Write single-component tensors into non-separated fractions
         // for convenience (could also use a separated compound
         // instead)
+        // TODO: Extent F5 API to allow writing non-fragmented datasets
         FAILWARN
           (F5Fwrite_fraction (path, name.c_str(),
                               ci.dim,
@@ -702,6 +706,8 @@ namespace CarpetIOF5 {
                               &v2h(ci.lghosts)[0], &v2h(ci.ughosts)[0],
                               fragmentname.c_str(), prop));
       } else {
+        int const full_coverage =
+          will_cover_complete_domain and not fragment_contiguous_components;
         FAILWARN
           (F5FSwrite_fraction (path, name.c_str(),
                                ci.dim,
@@ -711,11 +717,15 @@ namespace CarpetIOF5 {
                                &v2h(ci.ioff)[0],
                                &v2h(ci.lghosts)[0], &v2h(ci.ughosts)[0],
                                fragmentname.c_str(), prop,
-                               will_cover_complete_domain));
+                               full_coverage));
       }
       
       for (int d=0; d<num_comps; ++d) {
-        delete[] data[d];
+        switch (vartype) {
+        case CCTK_VARIABLE_INT:  delete[] (CCTK_INT  const*)data[d]; break;
+        case CCTK_VARIABLE_REAL: delete[] (CCTK_REAL const*)data[d]; break;
+        default: assert(0);
+        }
         data[d] = NULL;
       }
       

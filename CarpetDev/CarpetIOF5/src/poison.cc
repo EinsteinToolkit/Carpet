@@ -29,6 +29,7 @@ namespace CarpetIOF5 {
       BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
         BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
           DECLARE_CCTK_ARGUMENTS;
+#pragma omp parallel
           CCTK_LOOP3_ALL(F5_Poison, cctkGH, i,j,k) {
             int const ind3d = CCTK_GFINDEX3D(cctkGH, i,j,k);
             x[ind3d] = nan;
@@ -56,6 +57,7 @@ namespace CarpetIOF5 {
       BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
         BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
           DECLARE_CCTK_ARGUMENTS;
+#pragma omp parallel
           CCTK_LOOP3_ALL(F5_Check, cctkGH, i,j,k) {
             int const ind3d = CCTK_GFINDEX3D(cctkGH, i,j,k);
             assert (not isnan(x[ind3d]));

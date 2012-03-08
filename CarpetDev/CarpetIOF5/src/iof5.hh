@@ -63,11 +63,15 @@ namespace CarpetIOF5 {
   
   // Indentation
   class indent_t {
+    static bool const debug = false;
     static int const width = 3;
     static int level;
+  private:
+    indent_t(indent_t const&);
+    indent_t& operator=(indent_t const&);
   public:
-    indent_t() { ++level; }
-    ~indent_t() { --level; }
+    indent_t();
+    ~indent_t();
     ostream& output(ostream& os) const;
   };
   
@@ -183,10 +187,13 @@ namespace CarpetIOF5 {
                      int const variable);
   
   // Create the final file name on a particular processor
+  enum io_dir_t
+    {io_dir_input, io_dir_output, io_dir_recover, io_dir_checkpoint};
   string
   create_filename (cGH const* const cctkGH,
                    string const basename,
                    int const proc,
+                   io_dir_t const io_dir,
                    bool const create_directories);
   
   // Generate a good grid name (simulation name)
@@ -215,6 +222,8 @@ namespace CarpetIOF5 {
   string
   generate_fieldname (cGH const* const cctkGH,
                       int const vi, tensortype_t const tt);
+  void
+  interpret_fieldname(cGH const *const cctkGH, string fieldname, int& vi);
   
   
   
@@ -233,6 +242,10 @@ namespace CarpetIOF5 {
                vector<bool> const& output_var,
                bool const output_everything);
   
+  void input (cGH const* const cctkGH,
+              hid_t const file,
+              vector<bool> const& input_var);
+  
   
   
   // Scheduled routines
@@ -248,7 +261,9 @@ namespace CarpetIOF5 {
   void* SetupGH (tFleshConfig* const fleshconfig,
                  int const convLevel, cGH* const cctkGH);
   
-  // Callbacks for CarpetIOHDF5's I/O method
+  // Callbacks for CarpetIOF5's I/O method
+  int Input (cGH* const cctkGH,
+             char const* const basefilename, int const called_from);
   int OutputGH (cGH const* const cctkGH);
   int TimeToOutput (cGH const* const cctkGH, int const vindex);
   int TriggerOutput (cGH const* const cctkGH, int const vindex);

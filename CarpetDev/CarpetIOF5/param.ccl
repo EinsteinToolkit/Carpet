@@ -2,18 +2,29 @@
 
 SHARES: IO
 
+USES STRING  filereader_ID_dir AS IO_filereader_ID_dir
+
 USES STRING  out_dir   AS IO_out_dir
 USES INT     out_every AS IO_out_every
 
 USES INT     out_timesteps_per_file
 
+USES STRING  recover_dir AS IO_recover_dir
+
 USES BOOLEAN checkpoint_ID
 USES INT     checkpoint_every
 USES BOOLEAN checkpoint_on_terminate
+USES STRING  checkpoint_dir AS IO_checkpoint_dir
 
 
 
 PRIVATE:
+
+STRING filereader_ID_dir "Input directory (overrides IO::filereader_ID_dir)" STEERABLE=always
+{
+  "^$" :: "Empty: use IO::filereader_ID_dir"
+  ".+" :: "Not empty: directory name"
+} ""
 
 STRING out_dir "Output directory (overrides IO::out_dir)" STEERABLE=always
 {
@@ -77,6 +88,10 @@ BOOLEAN separate_single_component_tensors "Use a separated representation even f
 {
 } "no"
 
+BOOLEAN fragment_contiguous_components "Use a fragmented representation even for linear representations" STEERABLE=always
+{
+} "no"
+
 
 
 BOOLEAN output_all_timelevels "Output all timelevels (instead of only the current)" STEERABLE=always
@@ -102,6 +117,12 @@ BOOLEAN output_boundary_points "Output outer boundary points" STEERABLE=always
 
 
 
+STRING recover_dir "Recover directory (overrides IO::recover_dir)" STEERABLE=always
+{
+  "^$" :: "Empty: use IO::recover_dir"
+  ".+" :: "Not empty: directory name"
+} ""
+
 BOOLEAN checkpoint "Checkpoint" STEERABLE=always
 {
 } "no"
@@ -109,6 +130,12 @@ BOOLEAN checkpoint "Checkpoint" STEERABLE=always
 BOOLEAN checkpoint_next "Checkpoint at next iteration" STEERABLE=always
 {
 } "no"
+
+STRING checkpoint_dir "Checkpoint directory (overrides IO::checkpoint_dir)" STEERABLE=always
+{
+  "^$" :: "Empty: use IO::checkpoint_dir"
+  ".+" :: "Not empty: directory name"
+} ""
 
 
 
