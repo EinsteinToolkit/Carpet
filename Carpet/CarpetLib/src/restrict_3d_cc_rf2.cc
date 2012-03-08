@@ -65,6 +65,9 @@ namespace CarpetLib {
     if (not regbbox.expanded_for(srcbbox).is_contained_in(srcbbox) or
         not regbbox.is_contained_in(dstbbox))
     {
+      cerr << "srcbbox: " << srcbbox << endl
+           << "dstbbox: " << dstbbox << endl
+           << "regbbox: " << regbbox << endl;
       CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
     }
     
