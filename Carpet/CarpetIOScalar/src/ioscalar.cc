@@ -64,13 +64,13 @@ namespace CarpetIOScalar {
 #if 0
   static void SetFlag (int index, const char* optstring, void* arg);
 #endif
-  static void CheckSteerableParameters (const cGH *const cctkGH);
+  static void CheckSteerableParameters (const cGH *const cctkGH, bool first_time = false);
 
 
 
   // Definition of static members
   vector<bool> do_truncate;
-  vector<bool> write_header;
+  vector<bool> reductions_changed;
   vector<int> last_output;
 
   /* CarpetScalar GH extension structure */
@@ -137,7 +137,7 @@ namespace CarpetIOScalar {
     // Truncate all files if this is not a restart
     const int numvars = CCTK_NumVars ();
     do_truncate.resize (numvars, true);
-    write_header.resize (numvars, true);
+    reductions_changed.resize (numvars, false);
 
     // No iterations have yet been output
     last_output.resize (numvars, -1);
@@ -149,7 +149,7 @@ namespace CarpetIOScalar {
 
     // initial I/O parameter check
     IOparameters.stop_on_parse_errors = strict_io_parameter_check;
-    CheckSteerableParameters (cctkGH);
+    CheckSteerableParameters (cctkGH, true);
     IOparameters.stop_on_parse_errors = 0;
 
     // We register only once, ergo we get only one handle.  We store
@@ -307,6 +307,8 @@ namespace CarpetIOScalar {
         }
         if (CCTK_MyProc(cctkGH)==0) {
 
+          bool created_file = false;
+
           if (not all_reductions_in_one_file || not file.is_open()) {
             // Invent a file name
             ostringstream filenamebuf;
@@ -322,6 +324,7 @@ namespace CarpetIOScalar {
 
             if (do_truncate.at(n) and IO_TruncateOutputFiles (cctkGH)) {
               file.open (filename, ios::out | ios::trunc);
+              created_file = true;
             } else {
               file.open (filename, ios::out | ios::app);
             }
@@ -332,15 +335,12 @@ namespace CarpetIOScalar {
             }
             assert (file.is_open());
             
-            // Don't truncate again
-            do_truncate.at(n) = false;
-
             io_files += 1;
           }
           io_bytes_begin = file.tellg();
 
-          // If this is the first time, then write a nice header
-          if (write_header.at(n)) {
+          // write header if reductions changed or we create a new file
+          if (created_file or reductions_changed.at(n)) {
             bool want_labels = false;
             bool want_date = false;
             bool want_parfilename = false;
@@ -431,7 +431,7 @@ namespace CarpetIOScalar {
             }
 
             // Don't write header again (unless the reductions change)
-            write_header.at(n) = false;
+            reductions_changed.at(n) = false;
           }
 
           file << setprecision(15);
@@ -525,6 +525,11 @@ namespace CarpetIOScalar {
       assert (not file.is_open());
 
     } END_GLOBAL_MODE;
+
+    // Don't truncate again, this is a per-variable setting, not a
+    // per-file setting so it cannot be moved inside of the loop over
+    // reductions
+    do_truncate.at(n) = false;
 
     } END_LEVEL_MODE;
 
@@ -734,7 +739,7 @@ namespace CarpetIOScalar {
   }
 
 
-  static void CheckSteerableParameters (const cGH *const cctkGH)
+  static void CheckSteerableParameters (const cGH *const cctkGH, bool first_time)
   {
     DECLARE_CCTK_PARAMETERS;
 
@@ -793,8 +798,11 @@ namespace CarpetIOScalar {
                                             strdup(IOparameters.requests[vi]->reductions) :
                                             NULL;
           // only all_reductions_in_one_file actually mentions the reduction in the header
+          // we must ignore the initial change when we first learn of
+          // requested reductions. This means no header is generated if
+          // a checkpoint-recovery changes the reductions.
           // TODO: re-write header in one_file_per_group mode if variables change
-          write_header[vi] = do_truncate[vi] or all_reductions_in_one_file;
+          reductions_changed[vi] = all_reductions_in_one_file and not first_time;
         }
       }
     }
@@ -806,7 +814,10 @@ namespace CarpetIOScalar {
       // bit of an overkill. We ask for new headers for all variables, even though the ones using per-variable reductions will not have differing headers
       for (int vi=0; vi<numvars; ++vi) {
         // only all_reductions_in_one_file actually mentions the reduction in the header
-        write_header[vi] = do_truncate[vi] or all_reductions_in_one_file;
+        // we must ignore the initial change when we first learn of
+        // requested reductions. This means no header is generated if
+        // a checkpoint-recovery changes the reductions.
+        reductions_changed[vi] = all_reductions_in_one_file and not first_time;
       }
     }
   }
