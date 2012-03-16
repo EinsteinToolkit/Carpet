@@ -497,6 +497,10 @@ CCTK_INT num_threads "Number of threads per process" STEERABLE=recover
   1:* :: "use this many threads"
 } -1
 
+BOOLEAN set_cpu_affinity "Set the process CPU affinity, overwriting the respective system setting" STEERABLE=recover
+{
+} "no"
+
 
 
 STRING grid_structure_filename "File name to output grid structure to (empty = no output)" STEERABLE=recover
