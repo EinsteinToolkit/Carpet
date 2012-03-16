@@ -1,5 +1,6 @@
 #define _GNU_SOURCE 1 // needed for sched_getaffinity, best at the top to avoid inconsistent includes
 
+#include <algorithm>
 #include <cassert>
 #include <climits>
 #include <cmath>
@@ -323,27 +324,64 @@ namespace Carpet {
         }
       }
       
+      if (set_cpu_affinity) {
 #ifdef HAVE_SCHED_GETAFFINITY
-      cpu_set_t mask;
-      int const ierr = sched_getaffinity (0, sizeof mask, &mask);
-      assert (not ierr);
-      ostringstream buf;
-      bool isfirst = true;
-      int first_active = -1;
-      for (int n=0; n<CPU_SETSIZE; ++n) {
-        if (first_active == -1 and CPU_ISSET(n, &mask)) {
-          if (not isfirst) buf << ", ";
-          isfirst = false;
-          buf << n;
-          first_active = n;
-        } else if (first_active >= 0 and not CPU_ISSET(n, &mask)) {
-          if (n-1 > first_active) buf << "-" << n-1;
-          first_active = -1;
+        cpu_set_t mask;
+        int const ierr = sched_getaffinity (0, sizeof mask, &mask);
+        assert (not ierr);
+        int n0 = -1;
+        for (int n=0; n<CPU_SETSIZE; ++n) {
+          if (CPU_ISSET(n, &mask)) {
+            n0 = n;
+            break;
+          }
+        }
+        if (n0 >= 0) {
+          CCTK_VInfo (CCTK_THORNSTRING,
+                      "Selecting cores %d-%d for this process",
+                      n0, n0+mynthreads-1);
+          CPU_ZERO(&mask);
+          for (int n=n0; n<min(n0 + mynthreads, CPU_SETSIZE); ++n) {
+            CPU_SET(n, &mask);
+          }
+          int const ierr1 = sched_setaffinity(0, sizeof(mask), &mask);
+          assert (not ierr1);
+        }
+#else
+        CCTK_WARN (CCTK_WARN_ALERT,
+                   "Cannot select core set for this process; sched_getaffinity is not available on this system");
+#endif
+      }
+      
+#ifdef HAVE_SCHED_GETAFFINITY
+      {
+        cpu_set_t mask;
+        int const ierr = sched_getaffinity (0, sizeof mask, &mask);
+        assert (not ierr);
+        
+        ostringstream buf;
+        int const num_cores = CPU_COUNT(&mask);
+        bool isfirst = true;
+        int first_active = -1;
+        for (int n=0; n<CPU_SETSIZE; ++n) {
+          if (first_active == -1 and CPU_ISSET(n, &mask)) {
+            if (not isfirst) buf << ", ";
+            isfirst = false;
+            buf << n;
+            first_active = n;
+          } else if (first_active >= 0 and not CPU_ISSET(n, &mask)) {
+            if (n-1 > first_active) buf << "-" << n-1;
+            first_active = -1;
+          }
+        }
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "This process runs on %d core%s: %s",
+                    num_cores, num_cores==1 ? "" : "s", buf.str().c_str());
+        if (num_cores != mynthreads) {
+          CCTK_WARN (CCTK_WARN_ALERT,
+                     "The number of threads for this process is different from its number of cores. This may indicate a performance problem.");
         }
       }
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "This process runs on cores %s",
-                  buf.str().c_str());
 #endif
     }
     
