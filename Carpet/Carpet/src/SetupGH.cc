@@ -360,10 +360,11 @@ namespace Carpet {
         assert (not ierr);
         
         ostringstream buf;
-        int const num_cores = CPU_COUNT(&mask);
+        int num_cores = 0;
         bool isfirst = true;
         int first_active = -1;
         for (int n=0; n<CPU_SETSIZE; ++n) {
+          if (CPU_ISSET(n, &mask)) ++num_cores;
           if (first_active == -1 and CPU_ISSET(n, &mask)) {
             if (not isfirst) buf << ", ";
             isfirst = false;
