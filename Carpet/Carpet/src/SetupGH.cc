@@ -378,9 +378,9 @@ namespace Carpet {
         CCTK_VInfo (CCTK_THORNSTRING,
                     "This process runs on %d core%s: %s",
                     num_cores, num_cores==1 ? "" : "s", buf.str().c_str());
-        if (num_cores != mynthreads) {
+        if (mynthreads > num_cores) {
           CCTK_WARN (CCTK_WARN_ALERT,
-                     "The number of threads for this process is different from its number of cores. This may indicate a performance problem.");
+                     "The number of threads for this process is larger its number of cores. This may indicate a performance problem.");
         }
       }
 #endif
