@@ -326,12 +326,24 @@ namespace Carpet {
       
       if (set_cpu_affinity) {
 #ifdef HAVE_SCHED_GETAFFINITY
-        cpu_set_t mask;
-        int const ierr = sched_getaffinity (0, sizeof mask, &mask);
-        assert (not ierr);
+        // Note: this allows only up to 64 cores
+        typedef unsigned long long mask_t;
+        assert(mynthreads <= 8 * sizeof(mask_t));
+        mask_t mask = 0;
+#pragma omp parallel reduction(|: mask)
+        {
+          cpu_set_t cpumask;
+          int const ierr = sched_getaffinity (0, sizeof cpumask, &cpumask);
+          assert (not ierr);
+          for (int n=0; n<CPU_SETSIZE; ++n) {
+            if (CPU_ISSET(n, &cpumask)) {
+              mask |= (mask_t)1 << n;
+            }
+          }
+        }
         int n0 = -1;
-        for (int n=0; n<CPU_SETSIZE; ++n) {
-          if (CPU_ISSET(n, &mask)) {
+        for (int n=0; n<8*sizeof(mask_t); ++n) {
+          if (mask & ((mask_t)1 << n)) {
             n0 = n;
             break;
           }
@@ -340,12 +352,17 @@ namespace Carpet {
           CCTK_VInfo (CCTK_THORNSTRING,
                       "Selecting cores %d-%d for this process",
                       n0, n0+mynthreads-1);
-          CPU_ZERO(&mask);
-          for (int n=n0; n<min(n0 + mynthreads, CPU_SETSIZE); ++n) {
-            CPU_SET(n, &mask);
+#pragma omp parallel
+          {
+            cpu_set_t cpumask;
+            CPU_ZERO(&cpumask);
+            CPU_SET(n0 + omp_get_thread_num(), &cpumask);
+            int const ierr = sched_setaffinity(0, sizeof(cpumask), &cpumask);
+            assert (not ierr);
           }
-          int const ierr1 = sched_setaffinity(0, sizeof(mask), &mask);
-          assert (not ierr1);
+        } else {
+          CCTK_WARN (CCTK_WARN_ALERT,
+                     "Cannot select core set for this process (no cores seem available to this process)");
         }
 #else
         CCTK_WARN (CCTK_WARN_ALERT,
@@ -355,22 +372,34 @@ namespace Carpet {
       
 #ifdef HAVE_SCHED_GETAFFINITY
       {
-        cpu_set_t mask;
-        int const ierr = sched_getaffinity (0, sizeof mask, &mask);
-        assert (not ierr);
+        // Note: this allows only up to 64 cores
+        typedef unsigned long long mask_t;
+        assert(mynthreads <= 8 * sizeof(mask_t));
+        mask_t mask = 0;
+#pragma omp parallel reduction(|: mask)
+        {
+          cpu_set_t cpumask;
+          int const ierr = sched_getaffinity (0, sizeof cpumask, &cpumask);
+          assert (not ierr);
+          for (int n=0; n<CPU_SETSIZE; ++n) {
+            if (CPU_ISSET(n, &cpumask)) {
+              mask |= (mask_t)1 << n;
+            }
+          }
+        }
         
         ostringstream buf;
         int num_cores = 0;
         bool isfirst = true;
         int first_active = -1;
-        for (int n=0; n<CPU_SETSIZE; ++n) {
-          if (CPU_ISSET(n, &mask)) ++num_cores;
-          if (first_active == -1 and CPU_ISSET(n, &mask)) {
+        for (int n=0; n<8*sizeof(mask_t); ++n) {
+          if (mask & ((mask_t)1 << n)) ++num_cores;
+          if (first_active == -1 and (mask & ((mask_t)1 << n))) {
             if (not isfirst) buf << ", ";
             isfirst = false;
             buf << n;
             first_active = n;
-          } else if (first_active >= 0 and not CPU_ISSET(n, &mask)) {
+          } else if (first_active >= 0 and not (mask & ((mask_t)1 << n))) {
             if (n-1 > first_active) buf << "-" << n-1;
             first_active = -1;
           }
