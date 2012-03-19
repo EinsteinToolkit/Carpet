@@ -53,3 +53,5 @@ IO::filereader_ID_vars  = "grid::coordinates"
 
 CarpetIOF5::out_every = 256
 CarpetIOF5::out_vars  = "grid::coordinates"
+
+Formaline::output_source = no

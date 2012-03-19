@@ -4,12 +4,13 @@ SHARES: IO
 
 USES STRING  filereader_ID_dir AS IO_filereader_ID_dir
 
+USES KEYWORD recover
+USES STRING  recover_dir AS IO_recover_dir
+USES STRING  recover_file
+
 USES STRING  out_dir   AS IO_out_dir
 USES INT     out_every AS IO_out_every
-
 USES INT     out_timesteps_per_file
-
-USES STRING  recover_dir AS IO_recover_dir
 
 USES BOOLEAN checkpoint_ID
 USES INT     checkpoint_every
@@ -19,6 +20,12 @@ USES STRING  checkpoint_dir AS IO_checkpoint_dir
 
 
 PRIVATE:
+
+BOOLEAN verbose "Verbosity" STEERABLE=always
+{
+} "no"
+
+
 
 STRING filereader_ID_dir "Input directory (overrides IO::filereader_ID_dir)" STEERABLE=always
 {
@@ -53,16 +60,16 @@ KEYWORD file_content "Create one file for every x" STEERABLE=always
   "everything" :: ""
 } "everything"
 
-INT iteration_digits "Minimum number of digits for iteration number" STEERABLE=always
-{
-  0:* :: ""
-} 10
-
 STRING out_filename "File name (without extension) for file_content='everything'" STEERABLE=always
 {
   ""   :: "use the parameter file name"
   ".+" :: "use this file name"
 } ""
+
+INT iteration_digits "Minimum number of digits for iteration number" STEERABLE=always
+{
+  0:* :: ""
+} 8
 
 INT processor_digits "Minimum number of digits for processor number" STEERABLE=always
 {

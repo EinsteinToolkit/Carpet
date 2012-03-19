@@ -24,6 +24,8 @@
 
 #include <carpet.hh>
 
+#include "distribute.hh"
+
 
 
 // This requires defining a boolean local variable "error_flag",
@@ -33,13 +35,13 @@
 
 template<typename T>
 static
-T failwarn (bool& error_flag, T const expr,
-            int const line, char const* const file, char const* const thorn,
-            char const* const msg)
+T failwarn(bool& error_flag, T const expr,
+           int const line, char const *const file, char const *const thorn,
+           char const *const msg)
 {
   if (expr < 0) {
-    CCTK_VWarn (CCTK_WARN_ALERT, line, file, thorn,
-                "Expression \"%s\" return %d", msg, (int)expr);
+    CCTK_VWarn(CCTK_WARN_ALERT, line, file, thorn,
+               "Expression \"%s\" return %d", msg, (int)expr);
     error_flag = true;
   }
   return expr;
@@ -84,9 +86,9 @@ namespace CarpetIOF5 {
   CCTK_REAL const nan = numeric_limits<CCTK_REAL>::quiet_NaN();
   
   // Special group and attribute names
-  char const* const metadata_group = "Parameters and Global Attributes";
-  char const* const all_parameters = "All Parameters";
-  extern char const* const grid_structure;
+  char const *const metadata_group = "Parameters and Global Attributes";
+  char const *const all_parameters = "All Parameters";
+  extern char const *const grid_structure;
   
   
   
@@ -102,17 +104,17 @@ namespace CarpetIOF5 {
   
   // Conversion operators for these datatypes
   static inline
-  hvect v2h (ivect const& a)
+  hvect v2h(ivect const& a)
   {
     return hvect(a);
   }
   static inline
-  ivect h2v (hvect const& a)
+  ivect h2v(hvect const& a)
   {
     return ivect(a);
   }
   static inline
-  ivect h2v (hsize_t const* const a)
+  ivect h2v(hsize_t const *const a)
   {
     ivect res;
     for (int d=0; d<dim; ++d) {
@@ -122,7 +124,7 @@ namespace CarpetIOF5 {
   }
   
   static inline
-  F5_vec3_point_t v2p (rvect const& a)
+  F5_vec3_point_t v2p(rvect const& a)
   {
     F5_vec3_point_t res;
     res.x = a[0];
@@ -132,7 +134,7 @@ namespace CarpetIOF5 {
   }
   
   static inline
-  F5_vec3_float_t v2f (rvect const& a)
+  F5_vec3_float_t v2f(rvect const& a)
   {
     F5_vec3_float_t res;
     res.x = a[0];
@@ -142,7 +144,7 @@ namespace CarpetIOF5 {
   }
   
   static inline
-  F5_vec3_double_t v2d (rvect const& a)
+  F5_vec3_double_t v2d(rvect const& a)
   {
     F5_vec3_double_t res;
     res.x = a[0];
@@ -154,120 +156,142 @@ namespace CarpetIOF5 {
   
   
   // Handle HDF5 attributes more comfortably
-  bool WriteAttribute (hid_t const group,
-                       char const*  const name,
-                       int const ivalue);
-  bool WriteAttribute (hid_t const group,
-                       char const*  const name,
-                       double const dvalue);
-  bool WriteAttribute (hid_t const group,
-                       char const* const name,
-                       char const* const svalue);
-  bool WriteAttribute (hid_t const group,
-                       char const* const name,
-                       int const* const ivalues,
-                       int const nvalues);
-  bool WriteAttribute (hid_t const group,
-                       char const* const name,
-                       double const* const dvalues,
-                       int const nvalues);
-  bool WriteAttribute (hid_t const group,
-                       char const* const name,
-                       char const* const* const svalues,
-                       int const nvalues);
-  bool WriteLargeAttribute (hid_t const group,
-                            char const* const name,
-                            char const* const svalue);
+  bool WriteAttribute(hid_t const group,
+                      char const * const name,
+                      int const ivalue);
+  bool WriteAttribute(hid_t const group,
+                      char const * const name,
+                      double const dvalue);
+  bool WriteAttribute(hid_t const group,
+                      char const *const name,
+                      char const *const svalue);
+  bool WriteAttribute(hid_t const group,
+                      char const *const name,
+                      string const svalue);
+  bool WriteAttribute(hid_t const group,
+                      char const *const name,
+                      int const *const ivalues,
+                      int const nvalues);
+  bool WriteAttribute(hid_t const group,
+                      char const *const name,
+                      double const *const dvalues,
+                      int const nvalues);
+  bool WriteAttribute(hid_t const group,
+                      char const *const name,
+                      char const *const *const svalues,
+                      int const nvalues);
+  bool WriteLargeAttribute(hid_t const group,
+                           char const *const name,
+                           char const *const svalue);
+  
+  bool ReadAttribute(hid_t const group,
+                     char const * const name,
+                     int& ivalue);
+  bool ReadAttribute(hid_t const group,
+                     char const * const name,
+                     double& dvalue);
+  bool ReadAttribute(hid_t const group,
+                     char const *const name,
+                     string& svalue);
+  bool ReadLargeAttribute(hid_t const group,
+                          char const *const name,
+                          string& svalue);
   
   
   
   // Generate a good file name ("alias") for a variable
   string
-  generate_basename (cGH const* const cctkGH,
-                     int const variable);
+  generate_basename(cGH const *const cctkGH,
+                    int const variable);
   
   // Create the final file name on a particular processor
   enum io_dir_t
     {io_dir_input, io_dir_output, io_dir_recover, io_dir_checkpoint};
   string
-  create_filename (cGH const* const cctkGH,
-                   string const basename,
-                   int const proc,
-                   io_dir_t const io_dir,
-                   bool const create_directories);
+  create_filename(cGH const *const cctkGH,
+                  string const basename,
+                  int const iteration,
+                  int const proc,
+                  io_dir_t const io_dir,
+                  bool const create_directories);
   
   // Generate a good grid name (simulation name)
   string
-  generate_gridname (cGH const* const cctkGH);
+  generate_gridname(cGH const *const cctkGH);
   
   // Generate a good topology name (refinement level name)
   string
-  generate_topologyname (cGH const* const cctkGH,
-                         int const gi,
-                         ivect const& reffact);
+  generate_topologyname(cGH const *const cctkGH,
+                        int const gi,
+                        ivect const& reffact);
   
   // Generate a good chart name (tensor basis name)
   string
-  generate_chartname (cGH const* const cctkGH);
+  generate_chartname(cGH const *const cctkGH);
   
   // Generate a good fragment name (map and component name)
   string
-  generate_fragmentname (cGH const* const cctkGH, int const m, int const c);
+  generate_fragmentname(cGH const *const cctkGH, int const m, int const c);
   void
-  interpret_fragmentname (cGH const* const cctkGH,
-                          char const* const fragmentname,
-                          int& m, int& c);
+  interpret_fragmentname(cGH const *const cctkGH,
+                         char const *const fragmentname,
+                         int& m, int& c);
   
   // Generate a good field name (group or variable name)
   string
-  generate_fieldname (cGH const* const cctkGH,
-                      int const vi, tensortype_t const tt);
+  generate_fieldname(cGH const *const cctkGH,
+                     int const vi, tensortype_t const tt);
   void
   interpret_fieldname(cGH const *const cctkGH, string fieldname, int& vi);
   
   
   
   void
-  write_metadata (cGH const* const cctkGH, hid_t const file);
+  write_metadata(cGH const *const cctkGH, hid_t const file);
   
   // Handle Carpet's grid structure (this should move to Carpet and/or
   // CarpetLib)
   string
-  serialise_grid_structure (cGH const* const cctkGH);
+  serialise_grid_structure(cGH const *const cctkGH);
   
   
   
-  void output (cGH const* const cctkGH,
-               hid_t const file,
-               vector<bool> const& output_var,
-               bool const output_everything);
-  
-  void input (cGH const* const cctkGH,
+  void output(cGH const *const cctkGH,
               hid_t const file,
-              vector<bool> const& input_var);
+              vector<bool> const& output_var,
+              bool const output_past_timelevels,
+              bool const output_metadata);
+  
+  void input(cGH const *const cctkGH,
+             hid_t const file,
+             vector<bool> const& input_var,
+             bool const input_past_timelevels,
+             bool const input_metadata,
+             scatter_t& scatter);
   
   
   
   // Scheduled routines
   extern "C" {
-    int CarpetIOF5_Startup ();
-    void CarpetIOF5_Init (CCTK_ARGUMENTS);
-    void CarpetIOF5_InitialDataCheckpoint (CCTK_ARGUMENTS);
-    void CarpetIOF5_EvolutionCheckpoint (CCTK_ARGUMENTS);
-    void CarpetIOF5_TerminationCheckpoint (CCTK_ARGUMENTS);
+    int CarpetIOF5_Startup();
+    int CarpetIOF5_RecoverParameters();
+    void CarpetIOF5_Init(CCTK_ARGUMENTS);
+    void CarpetIOF5_InitialDataCheckpoint(CCTK_ARGUMENTS);
+    void CarpetIOF5_EvolutionCheckpoint(CCTK_ARGUMENTS);
+    void CarpetIOF5_TerminationCheckpoint(CCTK_ARGUMENTS);
   }
   
   // Registered GH extension setup routine
-  void* SetupGH (tFleshConfig* const fleshconfig,
-                 int const convLevel, cGH* const cctkGH);
+  void *SetupGH(tFleshConfig *const fleshconfig,
+                int const convLevel, cGH *const cctkGH);
   
   // Callbacks for CarpetIOF5's I/O method
-  int Input (cGH* const cctkGH,
-             char const* const basefilename, int const called_from);
-  int OutputGH (cGH const* const cctkGH);
-  int TimeToOutput (cGH const* const cctkGH, int const vindex);
-  int TriggerOutput (cGH const* const cctkGH, int const vindex);
-  int OutputVarAs (cGH const* const cctkGH,
-                   const char* const varname, const char* const alias);
+  int Input(cGH *const cctkGH,
+            char const *const basefilename, int const called_from);
+  int OutputGH(cGH const *const cctkGH);
+  int TimeToOutput(cGH const *const cctkGH, int const vindex);
+  int TriggerOutput(cGH const *const cctkGH, int const vindex);
+  int OutputVarAs(cGH const *const cctkGH,
+                  const char *const varname, const char *const alias);
   
 } // end namespace CarpetIOF5

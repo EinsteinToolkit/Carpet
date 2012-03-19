@@ -46,3 +46,5 @@ InitBase::initial_data_setup_method = "init_all_levels"
 
 CarpetIOF5::out_every = 1
 CarpetIOF5::out_vars  = "grid::coordinates"
+
+Formaline::output_source = no

@@ -6,10 +6,18 @@ STORAGE: this_iteration next_output_iteration
 
 # Initialisation
 
-SCHEDULE CarpetIOF5_Startup AT startup
+SCHEDULE CarpetIOF5_Startup AT startup AFTER Driver_Startup
 {
   LANG: C
 } "Register I/O method"
+
+if (!CCTK_EQUALS(recover, "no")) {
+  SCHEDULE CarpetIOF5_RecoverParameters AT recover_parameters
+  {
+    LANG: C
+    OPTIONS: level
+  } "Recover parameters"
+}
 
 SCHEDULE CarpetIOF5_Init AT basegrid
 {

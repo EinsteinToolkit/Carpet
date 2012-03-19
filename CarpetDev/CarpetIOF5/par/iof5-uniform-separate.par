@@ -42,3 +42,5 @@ CarpetIOF5::separate_single_component_tensors = yes
 
 CarpetIOF5::out_every = 2
 CarpetIOF5::out_vars  = "grid::coordinates"
+
+Formaline::output_source = no

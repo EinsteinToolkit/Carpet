@@ -1,0 +1,19 @@
+Example parameter files, listed in order of increasing complexity:
+
+iof5-uniform.par
+iof5-uniform-separate.par
+iof5-uniform-fragment.par
+iof5-uniform-separate-fragment.par
+iof5-refined.par
+iof5-refined-cell.par
+iof5-multipatch.par
+iof5-checkpoint.par
+iof5-multipatch-minkowski.par
+
+iof5-uniform-input.par
+iof5-uniform-separate-input.par
+iof5-uniform-fragment-input.par
+iof5-uniform-separate-fragment-input.par
+iof5-refined-input.par
+iof5-refined-cell-input.par
+iof5-multipatch-input.par

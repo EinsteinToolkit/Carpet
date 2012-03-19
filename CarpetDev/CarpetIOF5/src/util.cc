@@ -67,61 +67,61 @@ namespace CarpetIOF5 {
   
   // Generate a good file name ("alias") for a variable
   string
-  generate_basename (cGH const *const cctkGH,
-                     int const variable)
+  generate_basename(cGH const *const cctkGH,
+                    int const variable)
   {
     DECLARE_CCTK_PARAMETERS;
     
     ostringstream filename_buf;
     
-    if (CCTK_EQUALS (file_content, "variable")) {
-      assert (variable >= 0);
+    if (CCTK_EQUALS(file_content, "variable")) {
+      assert(variable >= 0);
       char *const varname = CCTK_FullName(variable);
-      assert (varname);
+      assert(varname);
       for (char *p = varname; *p; ++p) {
         *p = tolower(*p);
       }
       filename_buf << varname;
-      free (varname);
+      free(varname);
     }
-    else if (CCTK_EQUALS (file_content, "group")) {
-      assert (variable >= 0);
+    else if (CCTK_EQUALS(file_content, "group")) {
+      assert(variable >= 0);
       char *const groupname = CCTK_GroupNameFromVarI(variable);
-      assert (groupname);
+      assert(groupname);
       for (char *p = groupname; *p; ++p) {
         *p = tolower(*p);
       }
       filename_buf << groupname;
-      free (groupname);
+      free(groupname);
     }
-    else if (CCTK_EQUALS (file_content, "thorn")) {
-      assert (variable >= 0);
+    else if (CCTK_EQUALS(file_content, "thorn")) {
+      assert(variable >= 0);
       char const *const impname = CCTK_ImpFromVarI(variable);
       char *const thornname = strdup(impname);
-      assert (thornname);
+      assert(thornname);
       char *const colon = strchr(thornname, ':');
-      assert (colon);
+      assert(colon);
       *colon = '\0';
       for (char *p = thornname; *p; ++p) {
         *p = tolower(*p);
       }
       filename_buf << thornname;
-      free (thornname);
+      free(thornname);
     }
-    else if (CCTK_EQUALS (file_content, "everything")) {
+    else if (CCTK_EQUALS(file_content, "everything")) {
       if (CCTK_EQUALS(out_filename, "")) {
         // Obtain the parameter file name
         char buf[10000];
-        int const ilen = CCTK_ParameterFilename (sizeof buf, buf);
-        assert (ilen < int(sizeof buf) - 1);
-        char* parfilename = buf;
+        int const ilen = CCTK_ParameterFilename(sizeof buf, buf);
+        assert(ilen < int(sizeof buf) - 1);
+        char *parfilename = buf;
         // Remove directory prefix, if any
-        char* const slash = strrchr(parfilename, '/');
+        char *const slash = strrchr(parfilename, '/');
         if (slash) {
           parfilename = &slash[1];
         }
         // Remove suffix, if it is there
-        char* const suffix = strrchr(parfilename, '.');
+        char *const suffix = strrchr(parfilename, '.');
         if (suffix and strcmp(suffix, ".par")==0) {
           suffix[0] = '\0';
         }
@@ -131,14 +131,14 @@ namespace CarpetIOF5 {
       }
     }
     else {
-      assert (0);
+      assert(0);
     }
     
     if (out_timesteps_per_file > 0) {
       int const iteration = (cctkGH->cctk_iteration
                              / out_timesteps_per_file * out_timesteps_per_file);
       filename_buf << ".it"
-                   << setw (iteration_digits) << setfill ('0') << iteration;
+                   << setw(iteration_digits) << setfill('0') << iteration;
     }
     
     return filename_buf.str();
@@ -148,11 +148,12 @@ namespace CarpetIOF5 {
   
   // Create the final file name on a particular processor
   string
-  create_filename (cGH const *const cctkGH,
-                   string const basename,
-                   int const proc,
-                   io_dir_t const io_dir,
-                   bool const create_directories)
+  create_filename(cGH const *const cctkGH,
+                  string const basename,
+                  int const iteration,
+                  int const proc,
+                  io_dir_t const io_dir,
+                  bool const create_directories)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -185,26 +186,26 @@ namespace CarpetIOF5 {
     if (create_subdirs) {
       {
         ostringstream buf;
-        buf << path + "/"
+        buf << path << "/"
             << basename
-            << ".p" << setw (max (0, processor_digits - 4)) << setfill ('0')
+            << ".p" << setw(max(0, processor_digits - 4)) << setfill('0')
             << proc / 10000
             << "nnnn/";
         path = buf.str();
         if (create_directories) {
-          check (CCTK_CreateDirectory (mode, path.c_str()) >= 0);
+          check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
         }
       }
       {
         ostringstream buf;
-        buf << path + "/"
+        buf << path << "/"
             << basename
-            << ".p" << setw (max (0, processor_digits - 2)) << setfill ('0')
+            << ".p" << setw(max(0, processor_digits - 2)) << setfill('0')
             << proc / 100
             << "nn/";
         path = buf.str();
         if (create_directories) {
-          check (CCTK_CreateDirectory (mode, path.c_str()) >= 0);
+          check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
         }
       }
     }
@@ -212,38 +213,41 @@ namespace CarpetIOF5 {
       ostringstream buf;
       buf << path
           << basename
-          << ".p" << setw (processor_digits) << setfill ('0')
+          << ".p" << setw(processor_digits) << setfill('0')
           << proc
           << "/";
       path = buf.str();
       if (create_directories) {
-        check (CCTK_CreateDirectory (mode, path.c_str()) >= 0);
+        check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
       }
     }
     ostringstream buf;
-    buf << path + "/"
-        << basename
-        << ".p" << setw (processor_digits) << setfill ('0') << proc
-        << out_extension;
-    return buf.str();
+    buf << path << "/" << basename;
+    if (io_dir==io_dir_recover or io_dir==io_dir_checkpoint) {
+      buf << ".i" << setw(iteration_digits) << setfill('0') << iteration;
+    }
+    buf << ".p" << setw(processor_digits) << setfill('0') << proc;
+    buf << out_extension;
+    path = buf.str();
+    return path;
   }
   
   
   
   // Generate a good grid name (simulation name)
   string
-  generate_gridname (cGH const *const cctkGH)
+  generate_gridname(cGH const *const cctkGH)
   {
 #if 0
     char const *const gridname = (char const*) UniqueSimulationID(cctkGH);
-    assert (gridname);
+    assert(gridname);
     return gridname;
 #endif
     
     // Use the parameter file name, since the simulation ID is too
     // long and doesn't look nice
     char parfilename[10000];
-    CCTK_ParameterFilename (sizeof parfilename, parfilename);
+    CCTK_ParameterFilename(sizeof parfilename, parfilename);
     char const *const suffix = ".par";
     if (strlen(parfilename) >= strlen(suffix)) {
       char *const p = parfilename + strlen(parfilename) - strlen(suffix);
@@ -259,18 +263,19 @@ namespace CarpetIOF5 {
   
   // Generate a good topology name (refinement level name)
   string
-  generate_topologyname (cGH const *const cctkGH,
-                         int const gi,
-                         ivect const& reffact)
+  generate_topologyname(cGH const *const cctkGH,
+                        int const gi,
+                        ivect const& reffact)
   {
     ostringstream buf;
     if (gi == -1) {
       // grid function
-      buf << "VertexLevel_";
-      for (int d=0; d<dim; ++d) {
-        if (d>0) buf << "x";
-        buf << reffact[d];
-      }
+      // bit d of centering indicates whether direction d is centered
+      int const centering =
+        vhh.at(0)->refcent == vertex_centered ? 0 : (1<<dim)-1;
+      char name[1000];
+      TopologyName(name, sizeof name, &v2h(reffact)[0], centering, dim);
+      buf << name;
     } else {
       // grid array
       char *const groupname = CCTK_GroupName(gi);
@@ -278,14 +283,14 @@ namespace CarpetIOF5 {
         *p = tolower(*p);
       }
       buf << "Group_" << groupname;
-      free (groupname);
+      free(groupname);
     }
     return buf.str();
   }
   
   // Generate a good chart name (tensor basis name)
   string
-  generate_chartname (cGH const *const cctkGH)
+  generate_chartname(cGH const *const cctkGH)
   {
     // Assume a global tensor basis, where all maps use the same chart
     return FIBER_HDF5_DEFAULT_CHART;
@@ -303,7 +308,7 @@ namespace CarpetIOF5 {
   // (We assume that fragment names need to be unique only within a
   // topology, not across topologies.)
   string
-  generate_fragmentname (cGH const *const cctkGH, int const m, int const c)
+  generate_fragmentname(cGH const *const cctkGH, int const m, int const c)
   {
     ostringstream buf;
     buf << "Map_" << m << "_Component_" << c;
@@ -311,21 +316,21 @@ namespace CarpetIOF5 {
   }
   
   void
-  interpret_fragmentname (cGH const *const cctkGH,
-                          char const *const fragmentname,
-                          int& m, int& c)
+  interpret_fragmentname(cGH const *const cctkGH,
+                         char const *const fragmentname,
+                         int& m, int& c)
   {
     m = -1;
     c = -1;
-    sscanf (fragmentname, "Map_%d_Component_%d", &m, &c);
-    assert (m>=0 and m<Carpet::maps);
-    assert (c>=0);
+    sscanf(fragmentname, "Map_%d_Component_%d", &m, &c);
+    assert(m>=0 and m<Carpet::maps);
+    assert(c>=0);
   }
   
   // Generate a good field name (group or variable name)
   string
-  generate_fieldname (cGH const *const cctkGH,
-                      int const vi, tensortype_t const tt)
+  generate_fieldname(cGH const *const cctkGH,
+                     int const vi, tensortype_t const tt)
   {
     int const gi = CCTK_GroupIndexFromVarI(vi);
     int const numvars = CCTK_NumVarsInGroupI(gi);
@@ -335,17 +340,17 @@ namespace CarpetIOF5 {
     if (tt == tt_scalar and numvars >1) {
       char *const fullname = CCTK_FullName(vi);
       name = fullname;
-      free (fullname);
+      free(fullname);
     } else {
       char *const groupname = CCTK_GroupName(gi);
       name = groupname;
-      free (groupname);
+      free(groupname);
     }
-    transform (name.begin(), name.end(), name.begin(), ::tolower);
+    transform(name.begin(), name.end(), name.begin(), ::tolower);
     string const sep = "::";
     size_t const pos = name.find(sep);
-    assert (pos != string::npos);
-    name.replace (pos, sep.size(), ".");
+    assert(pos != string::npos);
+    name.replace(pos, sep.size(), ".");
     return name;
   }
   
@@ -359,7 +364,7 @@ namespace CarpetIOF5 {
       vi = -1;
       return;
     }
-    fieldname.replace (pos, sep.size(), "::");
+    fieldname.replace(pos, sep.size(), "::");
     
     vi = CCTK_VarIndex(fieldname.c_str());
     if (vi < 0) {
@@ -370,7 +375,7 @@ namespace CarpetIOF5 {
         return;
       }
       vi = CCTK_FirstVarIndexI(gi);
-      assert (vi>=0);
+      assert(vi>=0);
     }
   }
   
@@ -379,7 +384,7 @@ namespace CarpetIOF5 {
   char const *const grid_structure = "Grid Structure v5";
   
   string
-  serialise_grid_structure (cGH const *const cctkGH)
+  serialise_grid_structure(cGH const *const cctkGH)
   {
     ostringstream buf;
     buf << setprecision(17);

@@ -40,3 +40,5 @@ CoordBase::dz                 =  0.25
 
 CarpetIOF5::out_every = 2
 CarpetIOF5::out_vars  = "grid::coordinates"
+
+Formaline::output_source = no

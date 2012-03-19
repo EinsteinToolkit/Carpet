@@ -43,3 +43,5 @@ CarpetIOF5::fragment_contiguous_components    = yes
 
 CarpetIOF5::out_every = 2
 CarpetIOF5::out_vars  = "grid::coordinates"
+
+Formaline::output_source = no

@@ -38,9 +38,12 @@ CoordBase::dx                 =  0.25
 CoordBase::dy                 =  0.25
 CoordBase::dz                 =  0.25
 
+CarpetIOF5::verbose     = yes
 IO::filereader_ID_dir   = "iof5-uniform"
 IO::filereader_ID_files = "iof5-uniform"
 IO::filereader_ID_vars  = "grid::coordinates"
 
 CarpetIOF5::out_every = 2
 CarpetIOF5::out_vars  = "grid::coordinates"
+
+Formaline::output_source = no

@@ -47,6 +47,10 @@ CarpetRegrid2::radius_1[2]    =  0.2
 
 InitBase::initial_data_setup_method = "init_all_levels"
 
-CarpetIOF5::checkpoint = yes
-IO::checkpoint_every   = 1024
-IO::checkpoint_dir     = $parfile
+CarpetIOF5::checkpoint      = yes
+IO::checkpoint_every        = 1024
+IO::checkpoint_ID           = yes
+IO::checkpoint_on_terminate = yes
+IO::checkpoint_dir          = $parfile
+
+Formaline::output_source = no
