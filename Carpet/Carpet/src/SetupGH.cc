@@ -356,7 +356,7 @@ namespace Carpet {
           {
             cpu_set_t cpumask;
             CPU_ZERO(&cpumask);
-            CPU_SET(n0 + omp_get_thread_num(), &cpumask);
+            CPU_SET(n0 + mynthreads, &cpumask);
             int const ierr = sched_setaffinity(0, sizeof(cpumask), &cpumask);
             assert (not ierr);
           }
