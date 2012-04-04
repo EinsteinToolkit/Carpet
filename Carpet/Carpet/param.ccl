@@ -401,6 +401,15 @@ INT output_timer_tree_every "Output timing information in tree form to standard 
   1:* :: "report every so many iterations"
 } 0
 
+CCTK_REAL timer_tree_threshold_percentage "The percentage of the root timer below which timers are omitted" STEERABLE=always
+{
+  0:* :: ""
+} 1.0
+
+INT timer_tree_output_precision "Number of decimal places to use in standard output for timer tree"
+{
+  1:* :: "number of decimal places"
+} 1
 
 
 BOOLEAN recompose_verbose "Output debug information during recomposing" STEERABLE=ALWAYS

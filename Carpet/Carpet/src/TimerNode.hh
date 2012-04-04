@@ -83,7 +83,7 @@ public:
 
   double getTime();
 
-  void print(ostream& out, double total, int level=0, double threshold=0.0);
+  void print(ostream& out, double total, int level=0, double threshold=0.0, int precision=1);
   void printXML(ostream& out, int level=0);
 
 private:

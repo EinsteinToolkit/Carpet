@@ -146,7 +146,7 @@ namespace Carpet {
     {
       TimerNode *rt = TimerNode::getRootTimer();
       TimerNode *it = rt->getChildTimer("Initialise");
-      it->print(cout, it->getTime(), 0, 1.0);
+      it->print(cout, it->getTime(), 0, timer_tree_threshold_percentage, timer_tree_output_precision);
     }
 
     Waypoint ("Done with initialisation");

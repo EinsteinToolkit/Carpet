@@ -150,7 +150,7 @@ namespace Carpet {
 
   /// Print this node and its children as an ASCII tree
   void TimerNode::print(ostream& out, double total, int level,
-                        double threshold)
+                        double threshold, int precision)
   {
     string space;
 
@@ -162,12 +162,14 @@ namespace Carpet {
       space += "|_";
 
     const double t = getTime();
+    const string hyphens = string(precision-1,'-');
+    const string spaces  = string(precision-1,' ');
 
     if (level == 0)
     {
-      out << "-----------------------" << endl;
-      out << "Percent   t/secs  Timer" << endl;
-      out << "-----------------------" << endl;
+      out << "--------" << hyphens << "--------" << hyphens << "-------" << endl;
+      out << "Percent " << spaces  << "  t/secs" << spaces  << "  Timer" << endl;
+      out << "--------" << hyphens << "--------" << hyphens << "-------" << endl;
     }
 
     const int pcw = 6;
@@ -176,8 +178,8 @@ namespace Carpet {
     const ios_base::fmtflags oldflags = out.flags();
 
     // Print this timer value
-    out << fixed << setw(pcw) << setprecision(1) << 100.0 * t / total << "%"
-        << " " << fixed << setw(tw) << setprecision(1) << t
+    out << fixed << setw(pcw) << setprecision(precision) << 100.0 * t / total << "%"
+        << " " << fixed << setw(tw) << setprecision(precision) << t
         << "  " << space << d_name << endl;
 
     double children_time = 0;
@@ -189,7 +191,7 @@ namespace Carpet {
     {
       if (iter->second->getTime() * 100.0 / total > threshold)
       {
-        iter->second->print(out,total,level+1,threshold);
+        iter->second->print(out,total,level+1,threshold,precision);
         printed_children = true;
       }
       children_time += iter->second->getTime();
