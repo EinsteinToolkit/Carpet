@@ -76,6 +76,12 @@ BOOLEAN symmetry_periodic_z "Ensure a periodicity symmetry in the z direction"
 
 
 
+BOOLEAN expect_symmetric_grids "Expect a grid structure that is symmetric about the origin, and abort if it is not"
+{
+} "no"
+
+
+
 BOOLEAN adaptive_refinement "Use level_mask for adaptive refinement" STEERABLE=always
 {
 } "no"

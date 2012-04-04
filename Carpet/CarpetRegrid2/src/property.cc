@@ -819,4 +819,76 @@ namespace CarpetRegrid2 {
   
   
   
+  //////////////////////////////////////////////////////////////////////////////
+  // Ensure that this grid is in the domain, if desired
+  //////////////////////////////////////////////////////////////////////////////
+  
+  ibset is_symmetric::
+  symmetrised_regions (gh const& hh, dh const& dd, level_boundary const& bnd,
+                       vector<ibset> const& regions, int const rl)
+  {
+    ibset symmetrised = regions.at(rl);
+    for (ibset::const_iterator
+           ibb = regions.at(rl).begin(); ibb != regions.at(rl).end(); ++ ibb)
+    {
+      ibbox const& bb = *ibb;
+      
+      ivect const ilo = bb.lower();
+      ivect const iup = bb.upper();
+      ivect const istr = bb.stride();
+      
+      // Origin
+      rvect const axis (bnd.physical_lower[0],
+                        bnd.physical_lower[1],
+                        bnd.physical_lower[2]);
+      ivect const iaxis0 = rpos2ipos (axis, bnd.origin, bnd.scale, hh, rl);
+      assert (all (iaxis0 % istr == 0));
+      ivect const iaxis1 = rpos2ipos1 (axis, bnd.origin, bnd.scale, hh, rl);
+      assert (all (iaxis1 % istr == 0));
+      ivect const offset = iaxis1 - iaxis0;
+      assert (all (offset % istr == 0));
+      assert (all (offset >= 0 and offset < 2*istr));
+      assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == 0));
+      ivect const iaxis = (iaxis0 + iaxis1 - offset) / 2;
+      // negated (reflected) domain boundaries
+      ivect const neg_ilo = (2*iaxis+offset) - ilo;
+      ivect const neg_iup = (2*iaxis+offset) - iup;
+      
+      // Mirror
+      ivect const new_ilo = neg_iup;
+      ivect const new_iup = neg_ilo;
+      ivect const new_istr (istr);
+      
+      ibbox const new_bb (new_ilo, new_iup, new_istr);
+      
+      symmetrised |= new_bb;
+    }
+    
+    return symmetrised;
+  }
+  
+  bool is_symmetric::
+  test_impl (gh const& hh, dh const& dd,
+             level_boundary const& bnd,
+             vector<ibset> const& regions, int const rl)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (not expect_symmetric_grids) return true;
+    
+    ibset const symmetrised = symmetrised_regions (hh, dd, bnd, regions, rl);
+    return regions.AT(rl) == symmetrised;
+  }
+  
+  void is_symmetric::
+  enforce_impl (gh const& hh, dh const& dd,
+                level_boundary const& bnd,
+                vector<ibset>& regions, int const rl)
+  {
+    // There is nothing we want to do here
+    CCTK_WARN (CCTK_WARN_ABORT, "internal error");
+  }
+  
+  
+  
 } // namespace CarpetRegrid2

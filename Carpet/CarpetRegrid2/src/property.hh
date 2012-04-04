@@ -171,6 +171,21 @@ namespace CarpetRegrid2 {
   
   
   
+  // Ensure that this grid is symmetric, if desired
+  class is_symmetric: public property {
+    ibset symmetrised_regions (gh const& hh, dh const& dd,
+                               level_boundary const& bnd,
+                               vector<ibset> const& regions, int rl);
+    bool test_impl (gh const& hh, dh const& dd,
+                    level_boundary const& bnd,
+                    vector<ibset> const& regions, int rl);
+    void enforce_impl (gh const& hh, dh const& dd,
+                       level_boundary const& bnd,
+                       vector<ibset>& regions, int rl);
+  };
+  
+  
+  
 } // namespace CarpetRegrid2
 
 

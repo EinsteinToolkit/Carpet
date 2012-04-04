@@ -340,6 +340,7 @@ namespace CarpetRegrid2 {
     // Properties to be tested (and not enforced) in the end
     vector<property*> final_properties;
     final_properties.push_back (new in_domain());
+    final_properties.push_back (new is_symmetric());
     
     
     
