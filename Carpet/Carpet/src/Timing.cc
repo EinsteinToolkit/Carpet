@@ -66,7 +66,10 @@ namespace Carpet {
   static
   void
   current_level_updates (cGH const * const cctkGH,
-                         CCTK_REAL & local_updates, CCTK_REAL & global_updates)
+                         CCTK_REAL & local_grid_updates,
+                         CCTK_REAL & global_grid_updates,
+                         CCTK_REAL & local_interior_updates,
+                         CCTK_REAL & global_interior_updates)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -74,6 +77,8 @@ namespace Carpet {
     // (int is not good enough for this calculation)
     CCTK_REAL local_num_grid_points = 0;
     CCTK_REAL global_num_grid_points = 0;
+    CCTK_REAL local_num_interior_points = 0;
+    CCTK_REAL global_num_interior_points = 0;
     for (int m = 0; m < maps; ++ m) {
       assert (reflevel >= 0);
       int const rl = reflevel;
@@ -81,16 +86,22 @@ namespace Carpet {
         assert (mglevel >= 0);
         int const ml = mglevel;
         
-        // Base region
-        ibbox const ext = vhh.AT(m)->extent(ml,rl,c);
+        // Regions
+        dh::light_dboxes const& light_box =
+          vdd.AT(m)->light_boxes.AT(ml).AT(rl).AT(c);
+        ibbox const& interior = light_box.interior; // with outer boundary
+        ibbox const& owned = light_box.owned; // without outer boundary
         
         // Count the grid points
-        CCTK_REAL const domainsize = ext.size();
+        CCTK_REAL const interior_size = interior.size();
+        CCTK_REAL const owned_size = owned.size();
         
         if (vhh.AT(m)->is_local (rl, c)) {
-          local_num_grid_points += domainsize;
+          local_num_grid_points += interior_size;
+          local_num_interior_points += owned_size;
         }
-        global_num_grid_points += domainsize;
+        global_num_grid_points += interior_size;
+        global_num_interior_points += owned_size;
         
       } // for c
     }   // for m
@@ -111,8 +122,10 @@ namespace Carpet {
         int_steps = 1;
       }
     }
-    local_updates = local_num_grid_points * int_steps;
-    global_updates = global_num_grid_points * int_steps;
+    local_grid_updates = local_num_grid_points * int_steps;
+    global_grid_updates = global_num_grid_points * int_steps;
+    local_interior_updates = local_num_interior_points * int_steps;
+    global_interior_updates = global_num_interior_points * int_steps;
   }
   
   
@@ -214,15 +227,21 @@ namespace Carpet {
     assert (in_evolution);
     assert (timing_state == state_computing);
     
-    CCTK_REAL local_updates, global_updates;
-    current_level_updates (cctkGH, local_updates, global_updates);
+    CCTK_REAL local_grid_updates, global_grid_updates;
+    CCTK_REAL local_interior_updates, global_interior_updates;
+    current_level_updates (cctkGH,
+                           local_grid_updates, global_grid_updates,
+                           local_interior_updates, global_interior_updates);
     
     ++ * evolution_steps_count;
     
-    * local_grid_point_updates_count += local_updates;
-    * total_grid_point_updates_count += global_updates;
+    * local_grid_point_updates_count += local_grid_updates;
+    * total_grid_point_updates_count += global_grid_updates;
+    * local_interior_point_updates_count += local_interior_updates;
+    * total_interior_point_updates_count += global_interior_updates;
     
     * grid_point_updates_count = * local_grid_point_updates_count;
+    * interior_point_updates_count = * local_interior_point_updates_count;
   }
   
   
@@ -340,8 +359,13 @@ namespace Carpet {
       * local_grid_point_updates_count / max (* time_computing, eps);
     * total_grid_points_per_second =
       * total_grid_point_updates_count / max (* time_computing, eps);
+    * local_interior_points_per_second =
+      * local_interior_point_updates_count / max (* time_computing, eps);
+    * total_interior_points_per_second =
+      * total_interior_point_updates_count / max (* time_computing, eps);
     
     * grid_points_per_second = * local_grid_points_per_second;
+    * interior_points_per_second = * local_interior_points_per_second;
   }
   
   
@@ -480,11 +504,17 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     CCTK_VInfo (CCTK_THORNSTRING,
-                "This processor's grid point updates per second (local): %g",
+                "This processor's grid point updates per second (local)    : %g",
                 double (* local_grid_points_per_second));
     CCTK_VInfo (CCTK_THORNSTRING,
-                "Overall grid point updates per second (total)         : %g",
+                "Overall grid point updates per second (total)             : %g",
                 double (* total_grid_points_per_second));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "This processor's interior point updates per second (local): %g",
+                double (* local_interior_points_per_second));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Overall interior point updates per second (total)         : %g",
+                double (* total_interior_points_per_second));
     
 #if 0
     CCTK_REAL const updates_per_second_2 = ipow (updates_per_second, 2);

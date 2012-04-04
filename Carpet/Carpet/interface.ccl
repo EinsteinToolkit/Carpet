@@ -360,6 +360,8 @@ CCTK_REAL timing TAGS='checkpoint="no"'
   
   local_grid_points_per_second total_grid_points_per_second
   local_grid_point_updates_count total_grid_point_updates_count
+  local_interior_points_per_second total_interior_points_per_second
+  local_interior_point_updates_count total_interior_point_updates_count
   
   io_per_second
   io_bytes_per_second io_bytes_ascii_per_second io_bytes_binary_per_second
@@ -378,6 +380,8 @@ CCTK_REAL timing_procs TYPE=array DIM=1 SIZE=1 DISTRIB=constant TAGS='checkpoint
 {
   grid_points_per_second
   grid_point_updates_count
+  interior_points_per_second
+  interior_point_updates_count
 } "Per-processor timing information"
 
 CCTK_REAL timing_levels TYPE=array DIM=1 SIZE=max_refinement_levels DISTRIB=constant TAGS='checkpoint="no"'
