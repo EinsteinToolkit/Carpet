@@ -105,7 +105,24 @@ namespace CarpetIOASCII {
                                   const vect<int,outdim>& dirs);
 
   };                            // struct IOASCII
-
+  
+  template<int outdim>
+  void WriteASCII (ostream& os,
+		   vector<gdata*> const gfdatas,
+		   const bbox<int,dim>& gfext,
+		   const int vi,
+		   const int time,
+		   const vect<int,dim>& org,
+		   const vect<int,outdim>& dirs,
+		   const int rl,
+		   const int ml,
+                   const int m,
+		   const int c,
+		   const int tl,
+		   const CCTK_REAL coord_time,
+		   const vect<CCTK_REAL,dim>& coord_lower,
+		   const vect<CCTK_REAL,dim>& coord_upper);
+  
 } // namespace CarpetIOASCII
 
 #endif // ! defined CARPETIOASCII_HH
