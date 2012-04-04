@@ -47,7 +47,7 @@ public:
     
     ibbox exterior;             // whole region (including boundaries)
     ibbox owned;                // evolved in time
-    ibbox interior;             // interior (without ghost zones)
+    ibbox interior;             // owned, plus outer boundary
     // Region statistics:
     typedef ibbox::size_type size_type;
     size_type exterior_size, owned_size, active_size;
