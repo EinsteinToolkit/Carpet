@@ -1280,7 +1280,10 @@ namespace Carpet {
   
   void OutputGH (char const * const where, cGH * const cctkGH)
   {
+    static Timer timer("OutputGH");
+    timer.start();
     CCTK_OutputGH (cctkGH);
+    timer.stop();
   }
   
   
