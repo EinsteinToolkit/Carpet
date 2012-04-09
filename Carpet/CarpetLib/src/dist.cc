@@ -39,6 +39,7 @@ namespace dist {
   
   int num_threads_ = -1;
   int total_num_threads_ = -1;
+  int thread_num_ = -1;
   
   
   
@@ -464,6 +465,7 @@ namespace dist {
       {
         num_threads_ = omp_get_num_threads();
       }
+      thread_num_ = omp_get_thread_num();
     }
     int const max_threads = omp_get_max_threads();
     if (max_threads != num_threads_) {
@@ -473,8 +475,10 @@ namespace dist {
     }
 #else
     num_threads_ = 1;
+    thread_num_ = 0;
 #endif
     assert (num_threads_ >= 1);
+    assert (thread_num_ >= 0 and thread_num_ < num_threads_);
     
     MPI_Allreduce
       (const_cast <int *> (& num_threads_), & total_num_threads_, 1, MPI_INT,

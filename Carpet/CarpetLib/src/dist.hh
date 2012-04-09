@@ -37,6 +37,8 @@ namespace dist {
   
   extern int num_threads_;
   extern int total_num_threads_;
+  extern int thread_num_;
+#pragma omp threadprivate(thread_num_)
   
   void init (int& argc, char**& argv);
   void pseudoinit (MPI_Comm const c);
@@ -179,6 +181,12 @@ namespace dist {
   inline int num_threads ()
   {
     return num_threads_;
+  }
+
+  // My own thread number
+  inline int thread_num ()
+  {
+    return thread_num_;
   }
   
   // Global number of threads
