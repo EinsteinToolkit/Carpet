@@ -200,6 +200,7 @@ namespace Carpet {
       dist::set_num_threads (num_threads);
       int const mynthreads = dist::num_threads();
       int const nthreads_total = dist::total_num_threads();
+      int const mythreadnum = dist::thread_num();
       char const * const CACTUS_NUM_PROCS = getenv ("CACTUS_NUM_PROCS");
       int const cactus_num_procs =
         CACTUS_NUM_PROCS ? atoi (CACTUS_NUM_PROCS) : 0;
@@ -241,7 +242,7 @@ namespace Carpet {
                     "Although OpenMP is enabled, neither the environment variable OMP_NUM_THREADS nor the parameter Carpet::num_threads are set.  A system-specific default value is used instead.");
       }
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "This process contains %d threads", mynthreads);
+                  "This process contains %d threads, this is thread %d", mynthreads, mythreadnum);
       if (not CACTUS_NUM_THREADS) {
         CCTK_VWarn (CCTK_WARN_COMPLAIN, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Although OpenMP is enabled, the environment variable CACTUS_NUM_THREADS is not set.");
@@ -356,7 +357,7 @@ namespace Carpet {
           {
             cpu_set_t cpumask;
             CPU_ZERO(&cpumask);
-            CPU_SET(n0 + omp_get_thread_num(), &cpumask);
+            CPU_SET(n0 + mythreadnum, &cpumask);
             int const ierr = sched_setaffinity(0, sizeof(cpumask), &cpumask);
             assert (not ierr);
           }
