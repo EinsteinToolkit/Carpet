@@ -83,6 +83,9 @@ namespace Carpet {
     TimerNode *rt = TimerNode::getRootTimer();
     rt->stop();
 
+    if (output_xml_timer_tree)
+      rt->outputXML(out_dir,CCTK_MyProc (cctkGH));
+
     // earlier checkpoint before finalising MPI
     Waypoint ("Done with shutdown");
     

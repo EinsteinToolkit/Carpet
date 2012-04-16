@@ -32,6 +32,7 @@
 #include <string>
 #include <ostream>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <iomanip>
 
@@ -211,6 +212,21 @@ namespace Carpet {
     }
     out.precision (oldprecision);
     out.setf (oldflags);
+  }
+
+  void TimerNode::outputXML(const string &out_dir, int proc)
+  {
+    ostringstream filenamebuf;
+    filenamebuf << out_dir << "/timertree." << proc << ".xml";
+    string filenamestr = filenamebuf.str();
+    const char * filename = filenamestr.c_str();
+    ofstream file;
+    file.open (filename, ios::out | ios::trunc);
+
+    printXML(file,0);
+
+    file.close();
+    assert (file.good());
   }
 
   /// Print this node and its children as an XML file

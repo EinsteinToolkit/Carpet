@@ -401,6 +401,10 @@ INT output_timer_tree_every "Output timing information in tree form to standard 
   1:* :: "report every so many iterations"
 } 0
 
+BOOLEAN output_xml_timer_tree "Output timing information in tree form as XML"
+{
+} "no"
+
 CCTK_REAL timer_tree_threshold_percentage "The percentage of the root timer below which timers are omitted" STEERABLE=always
 {
   0:* :: ""
