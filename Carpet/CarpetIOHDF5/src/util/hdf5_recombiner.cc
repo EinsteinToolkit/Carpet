@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#define H5_USE_16_API 1
 #include <cctk_Config.h>
 
 #include <hdf5.h>
@@ -87,10 +88,10 @@ int main (int argc, char **argv)
   
   hid_t const output_dataset =
     file_exists ?
-    H5Dopen (output_file, output_dataset_name, H5P_DEFAULT) :
+    H5Dopen (output_file, output_dataset_name) :
     H5Dcreate (output_file, output_dataset_name,
                output_datatype, output_dataspace,
-               H5P_DEFAULT, output_properties, H5P_DEFAULT);
+               output_properties);
   assert (output_dataset >= 0);
   
   
@@ -137,7 +138,7 @@ int main (int argc, char **argv)
       int const iteration = it / iteration_divisor;
       
       hid_t const input_dataset =
-        H5Dopen (input_file, input_dataset_name, H5P_DEFAULT);
+        H5Dopen (input_file, input_dataset_name);
       assert (input_dataset >= 0);
       
       int iorigin[dim];
