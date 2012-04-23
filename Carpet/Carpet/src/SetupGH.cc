@@ -327,28 +327,101 @@ namespace Carpet {
       
       if (set_cpu_affinity) {
 #ifdef HAVE_SCHED_GETAFFINITY
-        // Note: this allows only up to 64 cores
-        typedef unsigned long long mask_t;
-        assert(mynthreads <= 8 * sizeof(mask_t));
-        mask_t mask = 0;
-#pragma omp parallel reduction(|: mask)
+        // Cores available to this process
+        assert(mynthreads <= CPU_SETSIZE);
+        vector<bool> mask(CPU_SETSIZE, false);
+#pragma omp parallel
         {
           cpu_set_t cpumask;
           int const ierr = sched_getaffinity (0, sizeof cpumask, &cpumask);
           assert (not ierr);
           for (int n=0; n<CPU_SETSIZE; ++n) {
             if (CPU_ISSET(n, &cpumask)) {
-              mask |= (mask_t)1 << n;
+#pragma omp critical
+              mask.at(n) = true;
             }
           }
         }
+        // Number of MPI processes on this host
+        int const myproc = CCTK_MyProc(cctkGH);
+        int const nprocs = CCTK_nProcs(cctkGH);
+        int const host_id = HostId(myproc);
+        vector<int> const host_procs = HostProcs(host_id);
+        int const num_host_procs = host_procs.size();
+        assert(num_host_procs > 0);
+        cout << "HHH\n";
+        cout << "num_host_procs=" << num_host_procs << "\n";
+#if 0
+        // Collect information from all processes on this host
+        vector<char> sendbuf(num_host_procs * CPU_SETSIZE, 0);
+        vector<char> recvbuf(num_host_procs * CPU_SETSIZE);
+        for (int i=0; i<num_host_procs; ++i) {
+          for (int n=0; n<CPU_SETSIZE; ++n) {
+            sendbuf.at(i * CPU_SETSIZE + n) = mask.at(n);
+          }
+        }
+        vector<int> sendcount(nprocs, 0);
+        vector<int> recvcount(nprocs, 0);
+        for (int i=0; i<num_host_procs; ++i) {
+          int const p = host_procs.at(i);
+          sendcount.at(p) = CPU_SETSIZE;
+          recvcount.at(p) = CPU_SETSIZE;
+        }
+        vector<int> senddispls(nprocs);
+        vector<int> recvdispls(nprocs);
+        senddispls.at(0) = 0;
+        recvdispls.at(0) = 0;
+        for (int p=1; p<nprocs; ++p) {
+          senddispls.at(p) = senddispls.at(p-1) + sendcount.at(p-1);
+          recvdispls.at(p) = recvdispls.at(p-1) + recvcount.at(p-1);
+        }
+        MPI_Alltoallv(&sendbuf[0], &sendcounts[0], &senddispls[0], MPI_CHAR,
+                      &recvbuf[0], &recvcounts[0], &recvdispls[0], MPI_CHAR,
+                      MPI_COMM_WORLD);
+        // Cores available on this host
+        vector<bool> othermasks(CPU_SETSIZE, false);
+        for (int i=0; i<num_host_procs; ++i) {
+          int const p = host_procs.at(i);
+          if (p != myproc) {
+            for (int n=0; n<CPU_SETSIZE; ++n) {
+              othermasks.at(n) =
+                othermasks.at(n) or recvbuf.at(i * CPU_SETSIZE + n);
+            }
+          }
+        }
+#endif
+        int num_cores = 0;
+        for (int n=0; n<CPU_SETSIZE; ++n) {
+          if (mask.at(n)) ++num_cores;
+        }
+        cout << "num_cores=" << num_cores << "\n";
+        if (num_cores >= mynthreads * num_host_procs) {
+          // It seems that all cores are available to all processes on
+          // this host. Split the cores evenly across the processes.
+          int skip_cores = 0;
+          for (int i=0; i<num_host_procs; ++i) {
+            int const p = host_procs.at(i);
+            if (p == myproc) break;
+            skip_cores += mynthreads;
+          }
+          cout << "skip_cores=" << skip_cores << "\n";
+          for (int n=0; n<mynthreads; ++n) {
+            if (skip_cores == 0) break;
+            if (mask.at(n)) {
+              -- skip_cores;
+              mask.at(n) = false;
+            }
+          }
+        }
+        // Choose cores for this process
         int n0 = -1;
-        for (int n=0; n<8*sizeof(mask_t); ++n) {
-          if (mask & ((mask_t)1 << n)) {
+        for (int n=0; n<mynthreads; ++n) {
+          if (mask.at(n)) {
             n0 = n;
             break;
           }
         }
+        cout << "n0=" << n0 << "\n";
         if (n0 >= 0) {
           CCTK_VInfo (CCTK_THORNSTRING,
                       "Selecting cores %d-%d for this process",
@@ -373,18 +446,16 @@ namespace Carpet {
       
 #ifdef HAVE_SCHED_GETAFFINITY
       {
-        // Note: this allows only up to 64 cores
-        typedef unsigned long long mask_t;
-        assert(mynthreads <= 8 * sizeof(mask_t));
-        mask_t mask = 0;
-#pragma omp parallel reduction(|: mask)
+        vector<bool> mask(CPU_SETSIZE, false);
+#pragma omp parallel
         {
           cpu_set_t cpumask;
           int const ierr = sched_getaffinity (0, sizeof cpumask, &cpumask);
           assert (not ierr);
           for (int n=0; n<CPU_SETSIZE; ++n) {
             if (CPU_ISSET(n, &cpumask)) {
-              mask |= (mask_t)1 << n;
+#pragma omp critical
+              mask.at(n) = true;
             }
           }
         }
@@ -393,14 +464,14 @@ namespace Carpet {
         int num_cores = 0;
         bool isfirst = true;
         int first_active = -1;
-        for (int n=0; n<8*sizeof(mask_t); ++n) {
-          if (mask & ((mask_t)1 << n)) ++num_cores;
-          if (first_active == -1 and (mask & ((mask_t)1 << n))) {
+        for (int n=0; n<CPU_SETSIZE; ++n) {
+          if (mask.at(n)) ++num_cores;
+          if (first_active == -1 and mask.at(n)) {
             if (not isfirst) buf << ", ";
             isfirst = false;
             buf << n;
             first_active = n;
-          } else if (first_active >= 0 and not (mask & ((mask_t)1 << n))) {
+          } else if (first_active >= 0 and not mask.at(n)) {
             if (n-1 > first_active) buf << "-" << n-1;
             first_active = -1;
           }
@@ -1209,7 +1280,7 @@ namespace Carpet {
     groupdata.AT(group).info.dim         = gdata.dim;
     groupdata.AT(group).info.gsh         = new int [dim];
     groupdata.AT(group).info.lsh         = new int [dim];
-#ifdef CCTK_HAVE_CGROUPDYNAMICDATA_LSSH
+#ifdef CCTK_GROUPDYNAMICDATA_HAS_LSSH
     groupdata.AT(group).info.lssh        = new int [CCTK_NSTAGGER*dim];
 #endif
     groupdata.AT(group).info.lbnd        = new int [dim];
