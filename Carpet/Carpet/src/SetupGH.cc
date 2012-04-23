@@ -349,8 +349,6 @@ namespace Carpet {
         vector<int> const host_procs = HostProcs(host_id);
         int const num_host_procs = host_procs.size();
         assert(num_host_procs > 0);
-        cout << "HHH\n";
-        cout << "num_host_procs=" << num_host_procs << "\n";
 #if 0
         // Collect information from all processes on this host
         vector<char> sendbuf(num_host_procs * CPU_SETSIZE, 0);
@@ -394,7 +392,6 @@ namespace Carpet {
         for (int n=0; n<CPU_SETSIZE; ++n) {
           if (mask.at(n)) ++num_cores;
         }
-        cout << "num_cores=" << num_cores << "\n";
         if (num_cores >= mynthreads * num_host_procs) {
           // It seems that all cores are available to all processes on
           // this host. Split the cores evenly across the processes.
@@ -404,7 +401,6 @@ namespace Carpet {
             if (p == myproc) break;
             skip_cores += mynthreads;
           }
-          cout << "skip_cores=" << skip_cores << "\n";
           for (int n=0; n<mynthreads; ++n) {
             if (skip_cores == 0) break;
             if (mask.at(n)) {
@@ -421,7 +417,6 @@ namespace Carpet {
             break;
           }
         }
-        cout << "n0=" << n0 << "\n";
         if (n0 >= 0) {
           CCTK_VInfo (CCTK_THORNSTRING,
                       "Selecting cores %d-%d for this process",
