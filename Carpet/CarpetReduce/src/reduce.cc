@@ -1132,6 +1132,68 @@ namespace CarpetReduce {
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
     
+    // local mode may be trouble
+    if (is_local_mode()) {
+      assert (mc_grouptype >= 0);
+      if (mc_grouptype == CCTK_GF) {
+        int mynlc = 0;
+        for (int m=0; m<maps; ++m) {
+          mynlc += vhh.AT(m)->local_components(reflevel);
+        }
+        int nlc = mynlc;
+        MPI_Bcast(&nlc, 1, MPI_INT, 0, dist::comm());
+        if (nlc == mynlc) {
+          const cFunctionData * calling_function = 
+            CCTK_ScheduleQueryCurrentFunction(cgh);
+          CCTK_VWarn (CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Reduction in local mode may lead to deadlock (if different processes own different numbers of components). Called from '%s::%s' AT %s.",
+                     calling_function ? calling_function->thorn : "unknown", 
+                     calling_function ? calling_function->routine : "unknown", 
+                     calling_function ? calling_function->where : "unknown");
+        } else {
+          const cFunctionData * calling_function = 
+            CCTK_ScheduleQueryCurrentFunction(cgh);
+          CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Reduction in local mode will lead to deadlock if different processes own different numbers of components. Called from '%s::%s' AT %s.",
+                     calling_function ? calling_function->thorn : "unknown", 
+                     calling_function ? calling_function->routine : "unknown", 
+                     calling_function ? calling_function->where : "unknown");
+        }
+      }
+    }
+    
+    // singlemap mode may also be trouble
+    if (is_singlemap_mode()) {
+      assert (mc_grouptype >= 0);
+      if (mc_grouptype == CCTK_GF) {
+        int mynlm = 0;
+        for (int m=0; m<maps; ++m) {
+          if (vhh.AT(m)->local_components(reflevel) > 0) {
+            ++mynlm;
+          };
+        }
+        int nlm = mynlm;
+        MPI_Bcast(&nlm, 1, MPI_INT, 0, dist::comm());
+        if (nlm == mynlm) {
+          const cFunctionData * calling_function = 
+            CCTK_ScheduleQueryCurrentFunction(cgh);
+          CCTK_VWarn (CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Reduction in singlemap mode may lead to deadlock (if different processes own components on different numbers of maps). Called from '%s::%s' AT %s.",
+                     calling_function ? calling_function->thorn : "unknown", 
+                     calling_function ? calling_function->routine : "unknown", 
+                     calling_function ? calling_function->where : "unknown");
+        } else {
+          const cFunctionData * calling_function = 
+            CCTK_ScheduleQueryCurrentFunction(cgh);
+          CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Reduction in singlemap mode will lead to deadlock if different processes own components on different numbers of maps. Called from '%s::%s' AT %s.",
+                     calling_function ? calling_function->thorn : "unknown", 
+                     calling_function ? calling_function->routine : "unknown", 
+                     calling_function ? calling_function->where : "unknown");
+        }
+      }
+    }
+    
     // keep local outvals and counts in a single buffer
     // to save a copy operation in the Finalise() step
     vector<char> buffer (2 * vartypesize * num_inarrays * num_outvals);
@@ -1219,11 +1281,21 @@ namespace CarpetReduce {
         int nlc = mynlc;
         MPI_Bcast(&nlc, 1, MPI_INT, 0, dist::comm());
         if (nlc == mynlc) {
-          CCTK_WARN (CCTK_WARN_PICKY,
-                     "Reduction in local mode may lead to deadlock (if different processes own different numbers of components)");
+          const cFunctionData * calling_function = 
+            CCTK_ScheduleQueryCurrentFunction(cgh);
+          CCTK_VWarn (CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Reduction in local mode may lead to deadlock (if different processes own different numbers of components). Called from '%s::%s' AT %s.",
+                     calling_function ? calling_function->thorn : "unknown", 
+                     calling_function ? calling_function->routine : "unknown", 
+                     calling_function ? calling_function->where : "unknown");
         } else {
-          CCTK_WARN (CCTK_WARN_ALERT,
-                     "Reduction in local mode will lead to deadlock if different processes own different numbers of components");
+          const cFunctionData * calling_function = 
+            CCTK_ScheduleQueryCurrentFunction(cgh);
+          CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Reduction in local mode will lead to deadlock if different processes own different numbers of components. Called from '%s::%s' AT %s.",
+                     calling_function ? calling_function->thorn : "unknown", 
+                     calling_function ? calling_function->routine : "unknown", 
+                     calling_function ? calling_function->where : "unknown");
         }
       }
     }
@@ -1241,11 +1313,21 @@ namespace CarpetReduce {
         int nlm = mynlm;
         MPI_Bcast(&nlm, 1, MPI_INT, 0, dist::comm());
         if (nlm == mynlm) {
-          CCTK_WARN (CCTK_WARN_PICKY,
-                     "Reduction in singlemap mode may lead to deadlock (if different processes own components on different numbers of maps)");
+          const cFunctionData * calling_function = 
+            CCTK_ScheduleQueryCurrentFunction(cgh);
+          CCTK_VWarn (CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Reduction in singlemap mode may lead to deadlock (if different processes own components on different numbers of maps). Called from '%s::%s' AT %s.",
+                     calling_function ? calling_function->thorn : "unknown", 
+                     calling_function ? calling_function->routine : "unknown", 
+                     calling_function ? calling_function->where : "unknown");
         } else {
-          CCTK_WARN (CCTK_WARN_ALERT,
-                     "Reduction in singlemap mode will lead to deadlock if different processes own components on different numbers of maps");
+          const cFunctionData * calling_function = 
+            CCTK_ScheduleQueryCurrentFunction(cgh);
+          CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Reduction in singlemap mode will lead to deadlock if different processes own components on different numbers of maps. Called from '%s::%s' AT %s.",
+                     calling_function ? calling_function->thorn : "unknown", 
+                     calling_function ? calling_function->routine : "unknown", 
+                     calling_function ? calling_function->where : "unknown");
         }
       }
     }
