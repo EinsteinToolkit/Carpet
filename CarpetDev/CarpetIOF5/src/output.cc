@@ -363,8 +363,10 @@ namespace CarpetIOF5 {
       // Define default topology (once per grid)
       if (group_type == CCTK_GF and reflevel == 0 and timelevel == 0) {
         FAILWARN(F5Rlink_default_vertex_topology(path, &v2h(reffact)[0]));
-        
-        // Define iteration
+      }
+      
+      // Define iteration
+      if (reflevel == 0 and timelevel == 0) {
         FAILWARN(F5Rset_timestep(path, cctk_iteration));
       }
       
