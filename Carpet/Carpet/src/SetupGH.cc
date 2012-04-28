@@ -837,8 +837,8 @@ namespace Carpet {
         rl == 0 ?
         i2vect (0) :
         (use_buffer2_zones ?
-         i2vect (0) :
-         hh.reffacts.AT(rl) / hh.reffacts.AT(rl-1) * ghosts.AT(rl));
+         hh.reffacts.AT(rl) / hh.reffacts.AT(rl-1) * ghosts.AT(rl) :
+         i2vect (0));
       cout << "   [" << rl << "]: " << buffers.AT(rl) << "\n";
       assert (all (all (buffers.AT(rl) >= 0)));
     }
