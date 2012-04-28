@@ -320,7 +320,10 @@ namespace Carpet {
       buf << attribute->routine << "\n";
       string const str = buf.str();
       int const id = adler32(str.c_str(), str.length());
+      static Timer barrier_timer  ("barrier");
+      barrier_timer.start();
       Carpet::NamedBarrier (NULL, id, "Carpet::CallFunction");
+      barrier_timer.stop();
     }
     
     total_timer.stop();
