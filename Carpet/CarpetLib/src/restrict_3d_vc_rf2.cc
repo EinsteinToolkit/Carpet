@@ -170,13 +170,20 @@ namespace CarpetLib {
     if (regbbox.empty()) {
       CCTK_WARN (0, "Internal error: region extent is empty");
     }
+
+    // shift vertex centered directions to lower interface (see Refluxing for conventions)
+    ivect const ivert(icent == 0);
+    ibbox3 const unshifted_srcbbox = srcbbox.shift(-ivert,2);
+    ibbox3 const unshifted_dstbbox = dstbbox.shift(-ivert,2);
+    ibbox3 const unshifted_srcregbbox = srcregbbox.shift(-ivert,2);
+    ibbox3 const unshifted_regbbox = regbbox.shift(-ivert,2);
     
-    if (not regbbox.expanded_for(srcbbox).is_contained_in(srcbbox) or
-        not regbbox.is_contained_in(dstbbox))
+    if (not unshifted_regbbox.expanded_for(unshifted_srcbbox).is_contained_in(unshifted_srcbbox) or
+        not unshifted_regbbox.is_contained_in(unshifted_dstbbox))
     {
-      cerr << "srcbbox: " << srcbbox << endl
-           << "dstbbox: " << dstbbox << endl
-           << "regbbox: " << regbbox << endl;
+      cerr << "unshifted_srcbbox: " << unshifted_srcbbox << endl
+           << "unshifted_dstbbox: " << unshifted_dstbbox << endl
+           << "unshifted_regbbox: " << unshifted_regbbox << endl;
       CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
     }
     
