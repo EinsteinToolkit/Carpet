@@ -200,7 +200,9 @@ namespace Carpet {
       dist::set_num_threads (num_threads);
       int const mynthreads = dist::num_threads();
       int const nthreads_total = dist::total_num_threads();
-      int const mythreadnum = dist::thread_num();
+      // Can't store this in a variable because the value is different
+      // for each thread
+      // int const mythreadnum = dist::thread_num();
       char const * const CACTUS_NUM_PROCS = getenv ("CACTUS_NUM_PROCS");
       int const cactus_num_procs =
         CACTUS_NUM_PROCS ? atoi (CACTUS_NUM_PROCS) : 0;
@@ -242,7 +244,7 @@ namespace Carpet {
                     "Although OpenMP is enabled, neither the environment variable OMP_NUM_THREADS nor the parameter Carpet::num_threads are set.  A system-specific default value is used instead.");
       }
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "This process contains %d threads, this is thread %d", mynthreads, mythreadnum);
+                  "This process contains %d threads, this is thread %d", mynthreads, dist::thread_num());
       if (not CACTUS_NUM_THREADS) {
         CCTK_VWarn (CCTK_WARN_COMPLAIN, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Although OpenMP is enabled, the environment variable CACTUS_NUM_THREADS is not set.");
@@ -425,7 +427,7 @@ namespace Carpet {
           {
             cpu_set_t cpumask;
             CPU_ZERO(&cpumask);
-            CPU_SET(n0 + mythreadnum, &cpumask);
+            CPU_SET(n0 + dist::thread_num(), &cpumask);
             int const ierr = sched_setaffinity(0, sizeof(cpumask), &cpumask);
             assert (not ierr);
           }
@@ -812,16 +814,31 @@ namespace Carpet {
                         >= 0)));
     }
     
-    CCTK_INFO ("Buffer zone counts (excluding ghosts):");
     const streamsize oldprecision = cout.precision();
     const ios_base::fmtflags oldflags = cout.flags();
     cout.setf (ios::fixed);
+    CCTK_INFO ("Buffer zone counts (excluding ghosts):");
     vector<i2vect> buffers (maxreflevels);
     for (int rl=0; rl<maxreflevels; ++rl) {
       buffers.AT(rl) =
+        rl == 0 ?
+        i2vect (0) :
         taper_factor * (buffer_factor * ghosts.AT(rl)
                         + int (additional_buffer_zones))
         - ghosts.AT(rl);
+      cout << "   [" << rl << "]: " << buffers.AT(rl) << "\n";
+      assert (all (all (buffers.AT(rl) >= 0)));
+    }
+    CCTK_INFO ("Buffer2 zone counts (excluding ghosts):");
+    vector<i2vect> buffers2 (maxreflevels);
+    for (int rl=1; rl<maxreflevels; ++rl) {
+      gh const& hh = * vhh.AT(m);
+      buffers2.AT(rl) =
+        rl == 0 ?
+        i2vect (0) :
+        (use_buffer2_zones ?
+         i2vect (0) :
+         hh.reffacts.AT(rl) / hh.reffacts.AT(rl-1) * ghosts.AT(rl));
       cout << "   [" << rl << "]: " << buffers.AT(rl) << "\n";
       assert (all (all (buffers.AT(rl) >= 0)));
     }
@@ -833,7 +850,7 @@ namespace Carpet {
     
     vdd.resize(maps);
     vdd.AT(m) = new dh (* vhh.AT(m),
-                        ghosts, buffers,
+                        ghosts, buffers, buffers2,
                         my_prolongation_orders_space);
     
     if (maxreflevels > 1) {
@@ -1111,10 +1128,11 @@ namespace Carpet {
               baseexts, nboundaryzones);
     
     vector<i2vect> const buffers (1, i2vect (0));
+    vector<i2vect> const buffers2 (1, i2vect (0));
     vector<int> const my_prolongation_orders_space (1, 0);
     arrdata.AT(group).AT(m).dd =
       new dh (*arrdata.AT(group).AT(m).hh,
-              ghosts, buffers, my_prolongation_orders_space);
+              ghosts, buffers, buffers2, my_prolongation_orders_space);
     
     arrdata.AT(group).AT(m).tt =
       new th (*arrdata.AT(group).AT(m).hh, timelevels, grouptimereffacts,
