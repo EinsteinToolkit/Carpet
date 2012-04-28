@@ -15,6 +15,14 @@ using namespace std;
 
 
 
+// Choose the implementation of bboxset by #defining exactly one of
+// these
+#undef BBOXSET_SET              // outdated
+#undef BBOXSET_LIST             // well tested
+#define BBOXSET_VECTOR          // brand new
+
+
+
 // Forward declaration
 template<typename T, int D> class bboxset;
 
@@ -63,8 +71,15 @@ class bboxset {
   
   // Types
   typedef bbox<T,D> box;
+#ifdef BBOXSET_SET
   //S typedef set<box> bset;
+#endif
+#ifdef BBOXSET_LIST
   typedef list<box> bset;
+#endif
+#ifdef BBOXSET_VECTOR
+  typedef vector<box> bset;
+#endif
   
   // Fields
   bset bs;
