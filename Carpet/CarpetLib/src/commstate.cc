@@ -13,6 +13,7 @@
 
 #include "commstate.hh"
 #include "timestat.hh"
+#include "CarpetTimers.hh"
 
 
 
@@ -41,11 +42,20 @@ comm_state::comm_state ()
 {
   DECLARE_CCTK_PARAMETERS;
   
+  init();
+
+}
+
+void comm_state::init(){
+  DECLARE_CCTK_PARAMETERS;
+
   static Timer timer ("commstate::create");
   timer.start ();
   thestate = state_get_buffer_sizes;
-  
-  typebufs.resize (dist::c_ndatatypes());
+
+  if(typebufs.size() < dist::c_ndatatypes())
+      typebufs.resize (dist::c_ndatatypes());
+  for (int i = dist::c_ndatatypes() - 1; i >= 0; --i) typebufs[i].init();
 #define TYPECASE(N,T)                                                   \
   {                                                                     \
     T dummy;                                                            \
@@ -55,10 +65,10 @@ comm_state::comm_state ()
   }
 #include "typecase.hh"
 #undef TYPECASE
-  
+
   srequests.reserve (dist::c_ndatatypes() * dist::size());
   rrequests.reserve (dist::c_ndatatypes() * dist::size());
-  
+
   timer.stop (0);
 }
 
@@ -67,8 +77,10 @@ comm_state::comm_state ()
 void comm_state::step ()
 {
   DECLARE_CCTK_PARAMETERS;
-  static Timer total ("commstate::step");
-  total.start ();
+  static Carpet::Timer total ("commstate::step");
+  total.start();
+  Carpet::Timer state(tostring(thestate));
+  state.start();
   
   if (barrier_between_stages) {
     // Add a barrier, ensuring e.g. that all Irecvs are posted before
@@ -83,12 +95,19 @@ void comm_state::step ()
     }
   }
   
+
+
   switch (thestate) {
     
     
     
   case state_get_buffer_sizes: {
+
+    static Carpet::Timer t1("check_communication_schedule");
+
+    static Carpet::Timer t3("check_communication_schedule2");
     
+    t1.start();
     if (check_communication_schedule) {
       vector<int> sendcount(dist::size() * dist::c_ndatatypes());
       for (unsigned type = 0; type < dist::c_ndatatypes(); ++ type) {
@@ -120,16 +139,28 @@ void comm_state::step ()
         assert (recvcount.AT(dist::rank() * dist::c_ndatatypes() + type) == 0);
       }
     }
+    t1.stop();
     
     // The sizes of the collective communication buffers are known so
     // now allocate them.
     // The receive operations are also posted here already (a clever
     // MPI layer may take advantage of such early posting).
     
+
     for (unsigned type = 0; type < dist::c_ndatatypes(); ++ type) {
       if (typebufs.AT(type).in_use) {
         
         for (int proc1 = 0; proc1 < dist::size(); ++ proc1) {
+          static Carpet::Timer t2("MPI_Irecv");
+          static Carpet::Timer t4("poison, memset & resize");
+
+          static Carpet::Timer t4_1("poison... _1");
+          static Carpet::Timer t4_2("poison... _2");
+          static Carpet::Timer t4_3("poison... _3");
+
+          t4.start();
+
+          t4_1.start();
           int const proc =
             interleave_communications ?
             (proc1 + dist::rank()) % dist::size() :
@@ -137,13 +168,19 @@ void comm_state::step ()
           
           int const datatypesize = typebufs.AT(type).datatypesize;
           procbufdesc & procbuf = typebufs.AT(type).procbufs.AT(proc);
-          
-          assert (procbuf.sendbufbase.empty());
-          assert (procbuf.recvbufbase.empty());
-          procbuf.sendbufbase.resize
-            (procbuf.sendbufsize * datatypesize * message_size_multiplier);
-          procbuf.recvbufbase.resize
-            (procbuf.recvbufsize * datatypesize * message_size_multiplier);
+          t4_1.stop();
+
+          t4_3.start();
+          if(procbuf.sendbufbase.size() < procbuf.sendbufsize * datatypesize * message_size_multiplier){
+            procbuf.sendbufbase.resize
+              (procbuf.sendbufsize * datatypesize * message_size_multiplier);
+          }
+          if(procbuf.recvbufbase.size() < procbuf.recvbufsize * datatypesize * message_size_multiplier){
+            procbuf.recvbufbase.resize
+              (procbuf.recvbufsize * datatypesize * message_size_multiplier);
+          }
+          t4_3.stop();
+
           // TODO: this may be a bit extreme, and it is only for
           // internal consistency checking
           if (poison_new_memory) {
@@ -154,7 +191,9 @@ void comm_state::step ()
           }
           procbuf.sendbuf = &procbuf.sendbufbase.front();
           procbuf.recvbuf = &procbuf.recvbufbase.front();
+          t4.stop();
           
+          t2.start();
           if (procbuf.recvbufsize > 0) {
             static Timer timer ("commstate::sizes_irecv");
             timer.start ();
@@ -175,12 +214,15 @@ void comm_state::step ()
             procbuf.did_post_recv = true;
             timer.stop (procbuf.recvbufsize * datatypesize);
           }
+          t2.stop();
           
         } // for proc
         
       }
     } // for type
     
+
+    t3.start();
     if (check_communication_schedule) {
       for (unsigned type = 0; type < dist::c_ndatatypes(); ++ type) {
         if (typebufs.AT(type).in_use) {
@@ -191,6 +233,7 @@ void comm_state::step ()
         }
       }
     }
+    t3.stop();
     
     thestate = state_fill_send_buffers;
     break;
@@ -469,8 +512,8 @@ void comm_state::step ()
   }
   
   
-  
-  total.stop (0);
+  state.stop();
+  total.stop();
 }
 
 
@@ -502,7 +545,11 @@ reserve_send_space (unsigned const type,
   assert (npoints >= 0);
   typebufdesc & typebuf = typebufs.AT(type);
   if (not typebuf.in_use) {
-    typebuf.procbufs.resize (dist::size());
+    int size = dist::size();
+    if (typebuf.procbufs.size() < size)
+        typebuf.procbufs.resize(size);
+    for (int i = size - 1; i >= 0 ; --i)
+        typebuf.procbufs[i].init();
     typebuf.in_use = true;
   }
   procbufdesc & procbuf = typebuf.procbufs.AT(proc);
@@ -522,7 +569,11 @@ reserve_recv_space (unsigned const type,
   assert (npoints >= 0);
   typebufdesc & typebuf = typebufs.AT(type);
   if (not typebuf.in_use) {
-    typebuf.procbufs.resize (dist::size());
+    int size = dist::size();
+    if (typebuf.procbufs.size() < size)
+        typebuf.procbufs.resize(size);
+    for (int i = size - 1; i >= 0 ; --i)
+        typebuf.procbufs[i].init();
     typebuf.in_use = true;
   }
   procbufdesc & procbuf = typebuf.procbufs.AT(proc);
