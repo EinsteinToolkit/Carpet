@@ -35,6 +35,7 @@ public:
 template<typename T>
 class mem: public gmem
 {
+  T * unaligned_storage_;
   T * storage_;
   size_t nelems_;
   size_t vectorlength_;

@@ -62,7 +62,11 @@ mem (size_t const vectorlength, size_t const nelems,
                   int(max_allowed_memory_MB));
     }
     try {
-      storage_ = new T [vectorlength * nelems];
+      size_t const alignment_T = (alignment + sizeof (T) - 1) / sizeof (T);
+      unaligned_storage_ = new T [vectorlength * nelems + alignment_T];
+      storage_ =
+        (T*)
+        ((size_t(unaligned_storage_) + alignment - 1) / alignment * alignment);
       owns_storage_ = true;
     } catch (...) {
       T Tdummy;
@@ -73,16 +77,6 @@ mem (size_t const vectorlength, size_t const nelems,
                   double(total_allocated_bytes),
                   double(total_allocated_bytes/MEGA),
                   int(total_allocated_objects));
-    }
-    size_t const expected_pagesize = 4096;
-    size_t const min_alignment = 64;
-    if (nbytes >= expected_pagesize and (size_t)storage_ % min_alignment != 0) {
-      T Tdummy;
-      CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Allocated %.0f bytes (%.3f MB) of memory for type %s, but the result is not aligned to %d bytes",
-                  double(nbytes), double(nbytes/MEGA),
-                  typestring(Tdummy),
-                  int(min_alignment));
     }
     total_allocated_bytes += nbytes;
     max_allocated_bytes = max (max_allocated_bytes, total_allocated_bytes);
@@ -106,7 +100,7 @@ mem<T>::
 {
   assert (not has_clients());
   if (owns_storage_) {
-    delete [] storage_;
+    delete [] unaligned_storage_;
     const double nbytes = vectorlength_ * nelems_ * sizeof (T);
     total_allocated_bytes -= nbytes;
   }
