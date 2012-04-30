@@ -74,16 +74,6 @@ mem (size_t const vectorlength, size_t const nelems,
                   double(total_allocated_bytes/MEGA),
                   int(total_allocated_objects));
     }
-    size_t const expected_pagesize = 4096;
-    size_t const min_alignment = 64;
-    if (nbytes >= expected_pagesize and (size_t)storage_ % min_alignment != 0) {
-      T Tdummy;
-      CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Allocated %.0f bytes (%.3f MB) of memory for type %s, but the result is not aligned to %d bytes",
-                  double(nbytes), double(nbytes/MEGA),
-                  typestring(Tdummy),
-                  int(min_alignment));
-    }
     total_allocated_bytes += nbytes;
     max_allocated_bytes = max (max_allocated_bytes, total_allocated_bytes);
     if (poison_new_memory) {
