@@ -403,7 +403,7 @@ namespace Carpet {
             if (p == myproc) break;
             skip_cores += mynthreads;
           }
-          for (int n=0; n<mynthreads; ++n) {
+          for (int n=0; n<CPU_SETSIZE; ++n) {
             if (skip_cores == 0) break;
             if (mask.at(n)) {
               -- skip_cores;
@@ -413,7 +413,7 @@ namespace Carpet {
         }
         // Choose cores for this process
         int n0 = -1;
-        for (int n=0; n<mynthreads; ++n) {
+        for (int n=0; n<CPU_SETSIZE; ++n) {
           if (mask.at(n)) {
             n0 = n;
             break;
