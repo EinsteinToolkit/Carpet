@@ -71,26 +71,20 @@ init_fast_ref_refl_sendrecv ()
 // Constructors
 dh::
 dh (gh & h_,
-    vector<i2vect> const & ghost_widths_,
-    vector<i2vect> const & buffer_widths_,
-    vector<i2vect> const & buffer2_widths_,
+    vector<i2vect> const & ghost_widths_, vector<i2vect> const & buffer_widths_,
     vector<int> const & prolongation_orders_space_)
   : h(h_),
-    ghost_widths(ghost_widths_),
-    buffer_widths(buffer_widths_),
-    buffer2_widths(buffer2_widths_),
+    ghost_widths(ghost_widths_), buffer_widths(buffer_widths_),
     prolongation_orders_space(prolongation_orders_space_)
 {
   fast_dboxes::init_fast_ref_refl_sendrecv();
   size_t const maxreflevels = h.reffacts.size();
   assert (ghost_widths.size() >= maxreflevels);
   assert (buffer_widths.size() >= maxreflevels);
-  assert (buffer2_widths.size() >= maxreflevels);
   assert (prolongation_orders_space.size() >= maxreflevels);
   for (size_t rl=0; rl<maxreflevels; ++rl) {
     assert (all (all (ghost_widths.AT(rl) >= 0)));
     assert (all (all (buffer_widths.AT(rl) >= 0)));
-    assert (all (all (buffer2_widths.AT(rl) >= 0)));
     assert (prolongation_orders_space.AT(rl) >= 0);
   }
   
@@ -290,7 +284,6 @@ regrid (bool const do_init)
       
       i2vect const& ghost_width = ghost_widths.AT(rl);
       i2vect const& buffer_width = buffer_widths.AT(rl);
-      i2vect const& buffer2_width = buffer2_widths.AT(rl);
       
       
       
@@ -976,14 +969,11 @@ regrid (bool const do_init)
         ibbox const& odomext = h.baseextent(ml,orl);
         
         // Refinement restriction may fill all coarse interior points,
-        // and must use all fine active points that are not buffer2
-        // points
+        // and must use all fine active points
         
         ibset allrestricted;
         switch (h.refcent) {
         case vertex_centered:
-          // TODO: support this
-          assert (all (all (buffer2_width == 0)));
           allrestricted = allactive.contracted_for(odomext);
           break;
         case cell_centered: {
@@ -994,7 +984,7 @@ regrid (bool const do_init)
           ibset const tmp0 = source;
           ibset const tmp1 = tmp0.expanded_for(target);
           ibset const tmp2 = all_target - tmp1;
-          ibset const tmp3 = tmp2.expand(1,1).expand(buffer2_width);
+          ibset const tmp3 = tmp2.expand(1,1);
           ibset const tmp4 = all_target - tmp3;
           allrestricted = tmp4;
           // cout << "source=" << source << "\n"

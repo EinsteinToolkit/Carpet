@@ -18,7 +18,6 @@
 using namespace std;
 
 #define CARPET_HAVE_BUFFER_WIDTHS
-#define CARPET_HAVE_BUFFER2_WIDTHS
 
 // Forward declaration
 class ggf;
@@ -218,9 +217,8 @@ public:                         // should be readonly
   i2vect buffer_width;          // number of buffer zones
   int prolongation_order_space; // order of spatial prolongation operator
 #endif
-  vector<i2vect> ghost_widths;   // number of ghost zones [rl]
-  vector<i2vect> buffer_widths;  // number of buffer zones [rl]
-  vector<i2vect> buffer2_widths; // number of2 buffer zones [rl]
+  vector<i2vect> ghost_widths;  // number of ghost zones [rl]
+  vector<i2vect> buffer_widths; // number of buffer zones [rl]
   vector<int> prolongation_orders_space; // order of spatial
                                          // prolongation operator [rl]
   
@@ -235,9 +233,7 @@ public:
   
   // Constructors
   dh (gh & h,
-      vector<i2vect> const & ghost_widths,
-      vector<i2vect> const & buffer_widths,
-      vector<i2vect> const & buffer2_widths,
+      vector<i2vect> const & ghost_widths, vector<i2vect> const & buffer_widths,
       vector<int> const & prolongation_orders_space);
   
   // Destructors
