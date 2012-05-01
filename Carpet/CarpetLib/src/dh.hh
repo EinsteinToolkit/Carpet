@@ -18,7 +18,7 @@
 using namespace std;
 
 #define CARPET_HAVE_BUFFER_WIDTHS
-#define CARPET_HAVE_BUFFER2_WIDTHS
+#define CARPET_HAVE_OVERLAP_WIDTHS
 
 // Forward declaration
 class ggf;
@@ -63,7 +63,8 @@ public:
     // Information about the processor-local region:
     
     ibset buffers;                 // buffer zones
-    ibset active;                  // owned minus buffers
+    ibset overlaps;                // overlap zones
+    ibset active;                  // owned minus (buffers + overlaps)
 #if 0
     vector<ibset> buffers_stepped; // buffer zones [substep]
 #endif
@@ -98,6 +99,7 @@ public:
     // ibset boundaries;
     // ibset owned;
     // ibset buffers;
+    // ibset overlaps;
     ibset active;
     // ibset bndref;
     
@@ -117,7 +119,8 @@ public:
     ibbox owned;                // evolved in time
     
     ibset buffers;              // buffer zones
-    ibset active;               // owned minus buffers
+    ibset overlaps;             // overlap zones
+    ibset active;               // owned minus (buffers plus overlaps)
     
     ibset sync;                 // filled by synchronisation
     ibset bndref;               // filled by boundary prolongation
@@ -220,7 +223,7 @@ public:                         // should be readonly
 #endif
   vector<i2vect> ghost_widths;   // number of ghost zones [rl]
   vector<i2vect> buffer_widths;  // number of buffer zones [rl]
-  vector<i2vect> buffer2_widths; // number of2 buffer zones [rl]
+  vector<i2vect> overlap_widths; // number of overlap zones [rl]
   vector<int> prolongation_orders_space; // order of spatial
                                          // prolongation operator [rl]
   
@@ -237,7 +240,7 @@ public:
   dh (gh & h,
       vector<i2vect> const & ghost_widths,
       vector<i2vect> const & buffer_widths,
-      vector<i2vect> const & buffer2_widths,
+      vector<i2vect> const & overlap_widths,
       vector<int> const & prolongation_orders_space);
   
   // Destructors

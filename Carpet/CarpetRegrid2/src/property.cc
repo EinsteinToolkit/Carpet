@@ -141,7 +141,7 @@ namespace CarpetRegrid2 {
                     vector<ibset> const& regions, int const rl)
   {
     return regions.at(rl).expand (dd.buffer_widths.at(rl) +
-                                  dd.buffer2_widths.at(rl));
+                                  dd.overlap_widths.at(rl));
   }
   
   bool add_buffers::

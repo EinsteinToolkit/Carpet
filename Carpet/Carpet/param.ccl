@@ -202,7 +202,7 @@ CCTK_INT additional_buffer_zones "Additional buffer zones"
   *:* :: ""
 } 0
 
-BOOLEAN use_buffer2_zones "Use buffer2 zones"
+BOOLEAN use_overlap_zones "Use overlap zones"
 {
 } "no"
 

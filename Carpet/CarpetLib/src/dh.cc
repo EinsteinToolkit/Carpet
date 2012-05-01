@@ -73,24 +73,24 @@ dh::
 dh (gh & h_,
     vector<i2vect> const & ghost_widths_,
     vector<i2vect> const & buffer_widths_,
-    vector<i2vect> const & buffer2_widths_,
+    vector<i2vect> const & overlap_widths_,
     vector<int> const & prolongation_orders_space_)
   : h(h_),
     ghost_widths(ghost_widths_),
     buffer_widths(buffer_widths_),
-    buffer2_widths(buffer2_widths_),
+    overlap_widths(overlap_widths_),
     prolongation_orders_space(prolongation_orders_space_)
 {
   fast_dboxes::init_fast_ref_refl_sendrecv();
   size_t const maxreflevels = h.reffacts.size();
   assert (ghost_widths.size() >= maxreflevels);
   assert (buffer_widths.size() >= maxreflevels);
-  assert (buffer2_widths.size() >= maxreflevels);
+  assert (overlap_widths.size() >= maxreflevels);
   assert (prolongation_orders_space.size() >= maxreflevels);
   for (size_t rl=0; rl<maxreflevels; ++rl) {
     assert (all (all (ghost_widths.AT(rl) >= 0)));
     assert (all (all (buffer_widths.AT(rl) >= 0)));
-    assert (all (all (buffer2_widths.AT(rl) >= 0)));
+    assert (all (all (overlap_widths.AT(rl) >= 0)));
     assert (prolongation_orders_space.AT(rl) >= 0);
   }
   
@@ -290,7 +290,7 @@ regrid (bool const do_init)
       
       i2vect const& ghost_width = ghost_widths.AT(rl);
       i2vect const& buffer_width = buffer_widths.AT(rl);
-      i2vect const& buffer2_width = buffer2_widths.AT(rl);
+      i2vect const& overlap_width = overlap_widths.AT(rl);
       
       
       
@@ -506,7 +506,7 @@ regrid (bool const do_init)
       ibset const notowned = domain_enlarged - allowned;
       
       // All not-active points
-      ibset const notactive = notowned.expand (buffer_width);
+      ibset const notactive = notowned.expand (buffer_width + overlap_width);
       
       // All not-active points, in stages
       int const num_substeps =
@@ -519,8 +519,9 @@ regrid (bool const do_init)
         CCTK_WARN (CCTK_WARN_COMPLAIN, buf.str().c_str());
       }
       
+      ibset const notactive_overlaps = notowned.expand (overlap_width);;
       vector<ibset> notactive_stepped (num_substeps+1);
-      notactive_stepped.AT(0) = notowned;
+      notactive_stepped.AT(0) = notactive_overlaps;
       for (int substep = 1; substep <= num_substeps; ++ substep) {
         notactive_stepped.AT(substep) =
           notactive_stepped.AT(substep-1).expand (ghost_width);
@@ -530,8 +531,11 @@ regrid (bool const do_init)
                    "The stepped not-active region must be equal to the not-active region");
       }
       
+      // All overlap zones
+      ibset const alloverlaps = allowned & notactive_overlaps;
+      
       // All buffer zones
-      ibset const allbuffers = allowned & notactive;
+      ibset const allbuffers = allowned & notactive - alloverlaps;
       
       // All active points
       ibset& allactive = level_level.active;
@@ -551,15 +555,22 @@ regrid (bool const do_init)
                    "The stepped buffer zones must be equal to the buffer zones");
       }
       
-      // Buffer zones must be in the active part of the domain
+      // Overlap zones and buffer zones must be in the active part of
+      // the domain
       ASSERT_rl (allactive <= domain_active,
                  "The active region must be in the active part of the domain");
+      ASSERT_rl (alloverlaps <= domain_active,
+                 "The overlap zones must be in the active part of the domain");
       ASSERT_rl (allbuffers <= domain_active,
                  "The buffer zones must be in the active part of the domain");
+      ASSERT_rl ((allactive & alloverlaps).empty(), 
+                 "The active points and the overlap zones cannot overlap");
       ASSERT_rl ((allactive & allbuffers).empty(), 
                  "The active points and the buffer zones cannot overlap");
-      ASSERT_rl (allactive + allbuffers == allowned,
-                 "The active points and the buffer points together must be exactly the owned region");
+      ASSERT_rl ((alloverlaps & allbuffers).empty(), 
+                 "The overlap zones and the buffer zones cannot overlap");
+      ASSERT_rl (allactive + alloverlaps + allbuffers == allowned,
+                 "The active points, the overlap points, and buffer points together must be exactly the owned region");
       
       
       
@@ -569,10 +580,13 @@ regrid (bool const do_init)
         // Buffer zones:
         box.buffers = box.owned & allbuffers;
         
+        // Overlap zones:
+        box.overlaps = box.owned & alloverlaps;
+        
         // Active region:
         box.active = box.owned & allactive;
-        ASSERT_c (box.active == box.owned - box.buffers,
-                  "The active region must equal the owned region minus the buffer zones");
+        ASSERT_c (box.active == box.owned - (box.buffers + box.overlaps),
+                  "The active region must equal the owned region minus the (buffer zones plus overlap zones)");
       } // for c
       
       for (int lc = 0; lc < h.local_components(rl); ++ lc) {
@@ -580,10 +594,11 @@ regrid (bool const do_init)
         local_dboxes & local_box = local_level.AT(lc);
         full_dboxes const& box = full_level.AT(c);
         
-        // Stepped buffer zones:
         local_box.buffers = box.buffers;
+        local_box.overlaps = box.overlaps;
         
 #if 0
+        // Stepped buffer zones:
         local_box.buffers_stepped.resize (num_substeps);
         for (int substep = 0; substep < num_substeps; ++ substep) {
           local_box.buffers_stepped.AT(substep) =
@@ -615,7 +630,11 @@ regrid (bool const do_init)
         
         ASSERT_c ((box.active & box.buffers).empty(),
                   "Consistency check");
-        ASSERT_c ((box.active | box.buffers) == box.owned,
+        ASSERT_c ((box.active & box.overlaps).empty(),
+                  "Consistency check");
+        ASSERT_c ((box.overlaps & box.buffers).empty(),
+                  "Consistency check");
+        ASSERT_c ((box.active | box.overlaps | box.buffers) == box.owned,
                   "Consistency check");
         
         ASSERT_c ((box.owned & box.boundaries).empty(),
@@ -976,35 +995,33 @@ regrid (bool const do_init)
         ibbox const& odomext = h.baseextent(ml,orl);
         
         // Refinement restriction may fill all coarse interior points,
-        // and must use all fine active points that are not buffer2
-        // points
+        // and must use all fine active points
         
         ibset allrestricted;
         switch (h.refcent) {
         case vertex_centered:
           // TODO: support this
-          assert (all (all (buffer2_width == 0)));
           allrestricted = allactive.contracted_for(odomext);
           break;
         case cell_centered: {
           ibset const& source = allactive;
           ibbox const& target = odomext;
-          ibbox const all = allactive.container().expand(10,10);
-          ibbox const all_target = all.contracted_for(target);
+          ibbox const all_source = allactive.container().expand(10,10);
+          ibbox const all_target = all_source.contracted_for(target);
           ibset const tmp0 = source;
           ibset const tmp1 = tmp0.expanded_for(target);
           ibset const tmp2 = all_target - tmp1;
-          ibset const tmp3 = tmp2.expand(1,1).expand(buffer2_width);
+          ibset const tmp3 = tmp2.expand(1,1);
           ibset const tmp4 = all_target - tmp3;
           allrestricted = tmp4;
-          // cout << "source=" << source << "\n"
-          //      << "target=" << target << "\n"
-          //      << "all=" << all << "\n"
-          //      << "all_target=" << all_target << "\n"
-          //      << "tmp1=" << tmp1 << "\n"
-          //      << "tmp2=" << tmp2 << "\n"
-          //      << "tmp3=" << tmp3 << "\n"
-          //      << "allrestricted=" << allrestricted << "\n";
+          cout << "source=" << source << "\n"
+               << "target=" << target << "\n"
+               << "all_source=" << all_source << "\n"
+               << "all_target=" << all_target << "\n"
+               << "tmp1=" << tmp1 << "\n"
+               << "tmp2=" << tmp2 << "\n"
+               << "tmp3=" << tmp3 << "\n"
+               << "allrestricted=" << allrestricted << "\n";
           break;
         }
         default:
@@ -2165,6 +2182,7 @@ operator== (full_dboxes const & b) const
     boundaries       == b.boundaries       and
     owned            == b.owned            and
     buffers          == b.buffers          and
+    overlaps         == b.overlaps         and
     active           == b.active           and
     sync             == b.sync             and
     bndref           == b.bndref           and
@@ -2274,6 +2292,7 @@ memory ()
     sizeof gh_handle +          // memoryof (gh_handle) +
     memoryof (ghost_widths) +
     memoryof (buffer_widths) +
+    memoryof (overlap_widths) +
     memoryof (prolongation_orders_space) +
     memoryof (light_boxes) +
     memoryof (fast_boxes) +
@@ -2314,6 +2333,7 @@ memory ()
 {
   return
     memoryof (buffers) +
+    memoryof (overlaps) +
     memoryof (active) +
 #if 0
     memoryof (buffers_stepped) +
@@ -2342,6 +2362,7 @@ memory ()
     memoryof (boundaries) +
     memoryof (owned) +
     memoryof (buffers) +
+    memoryof (overlaps) +
     memoryof (active) +
     memoryof (sync) +
     memoryof (bndref) +
@@ -2419,6 +2440,9 @@ input (istream & is)
     consume (is, "buffers:");
     is >> buffers;
     skipws (is);
+    consume (is, "overlaps:");
+    is >> overlaps;
+    skipws (is);
     consume (is, "active:");
     is >> active;
 #if 0
@@ -2487,6 +2511,9 @@ input (istream & is)
     skipws (is);
     consume (is, "buffers:");
     is >> buffers;
+    skipws (is);
+    consume (is, "overlaps:");
+    is >> overlaps;
     skipws (is);
     consume (is, "active:");
     is >> active;
@@ -2564,6 +2591,7 @@ output (ostream & os)
   os << "dh:"
      << "ghost_widths=" << ghost_widths << ","
      << "buffer_widths=" << buffer_widths << ","
+     << "overlap_widths=" << overlap_widths << ","
      << "prolongation_orders_space=" << prolongation_orders_space << ","
      << "light_boxes=" << light_boxes << ","
      << "fast_boxes=" << fast_boxes << ","
@@ -2604,6 +2632,7 @@ output (ostream & os)
   // Regions:
   os << "dh::local_dboxes:{" << eol
      << "   buffers: " << buffers << eol
+     << "   overlaps: " << overlaps << eol
      << "   active: " << active << eol
 #if 0
      << "   buffers_stepped: " << buffers_stepped << eol
@@ -2635,6 +2664,7 @@ output (ostream & os)
      << "   boundaries: " << boundaries << eol
      << "   owned: " << owned << eol
      << "   buffers: " << buffers << eol
+     << "   overlaps: " << overlaps << eol
      << "   active: " << active << eol
      << "   sync: " << sync << eol
      << "   bndref: " << bndref << eol
