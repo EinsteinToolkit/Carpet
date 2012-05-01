@@ -1,0 +1,230 @@
+ActiveThorns    =       "time
+                         symbase
+                         aeilocalinterp
+                         carpetinterp
+                         carpet
+                         carpetlib
+                         carpetregrid2
+                         carpetreduce
+                         carpetslab
+                         cartgrid3d
+                         coordbase
+                         mol
+                         boundary
+                         admbase
+                         staticconformal
+                         spacemask
+                         admcoupling
+                         coordgauge
+                         admmacros
+                         constants
+                         initbase
+                         tmunubase
+                         loopcontrol
+                         hydrobase
+                         ioutil
+                        "
+
+# EOS
+ActiveThorns     =      "EOS_Omni
+                         EOS_Polytrope
+                         EOS_Base
+                         eos_idealfluid
+                        "
+# Hydro
+ActiveThorns     =      "grhydro
+                         grhydro_initdata
+                         refluxing
+                        "
+
+# I/O
+ActiveThorns     =      "carpetiobasic
+                         carpetioascii
+                         carpetioscalar
+                        "
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# I/O
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+carpetioscalar::outScalar_vars  =       "hydrobase::rho
+                                         #hydrobase::vel
+                                         #hydrobase::eps
+                                         #hydrobase::press
+                                         #grhydro::dens
+                                         #grhydro::scon
+                                         #grhydro::tau
+                                         "
+
+IOBasic::outInfo_vars           =       "hydrobase::rho
+                                         #hydrobase::vel[0]
+                                         "
+
+IOASCII::out1D_vars             =       "grid::coordinates
+                                         carpetreduce::weight
+                                         hydrobase::rho
+                                         #hydrobase::vel
+                                         #hydrobase::eps
+                                         #hydrobase::press
+                                         #grhydro::dens
+                                         #grhydro::scon
+                                         #grhydro::tau
+                                         #grhydro::densrhs
+                                         #grhydro::srhs
+                                         #grhydro::taurhs
+                                         #refluxing::flux_weight_fine
+                                         #refluxing::flux_weight_coarse
+                                         #refluxing::densflux_register_fine
+                                         #refluxing::densflux_register_coarse
+                                         #refluxing::densflux_stored
+                                         #refluxing::densflux_correction
+                                         #refluxing::dens_correction_total
+                                         #refluxing::sconflux_register_fine
+                                         #refluxing::sconflux_register_coarse
+                                         #refluxing::sconflux_stored
+                                         #refluxing::sconflux_correction
+                                         #refluxing::scon_correction_total
+                                         #refluxing::tauflux_register_fine
+                                         #refluxing::tauflux_register_coarse
+                                         #refluxing::tauflux_stored
+                                         #refluxing::tauflux_correction
+                                         #refluxing::tau_correction_total
+                                         "
+
+IO::out_dir                                  = $parfile
+IO::out_fileinfo                             = "none"
+IO::parfile_write                            = "no"
+
+carpetioscalar::outScalar_every              =  1
+carpetioscalar::outScalar_reductions         = "sum"
+IOASCII::out1D_every                         =  1
+IOBasic::outInfo_every                       =  1
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Initialization
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+Carpet::init_fill_timelevels                 = yes
+
+grhydro_initdata::shocktube_type        =       "xshock"
+grhydro_initdata::shock_case            =       "sod"
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# AMR and Grid Setup
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+carpet::veryverbose                          = no
+carpet::verbose                              = no
+
+carpet::max_refinement_levels                = 2
+carpet::use_buffer_zones                     = yes
+carpet::use_overlap_zones                    = no
+Carpet::refinement_centering                 = "cell"
+Carpet::prolongation_order_space             =  1
+Carpet::prolongation_order_time              =  1
+
+Carpet::poison_new_timelevels = yes
+CarpetLib::poison_new_memory  = yes
+
+
+cartgrid3d::type                             = "coordbase"
+cartgrid3d::domain                           = "full"
+cartgrid3d::avoid_origin                     = no
+
+coordbase::xmin                              = -1.0
+coordbase::xmax                              = +1.0
+coordbase::ymin                              = -0.0125
+coordbase::ymax                              = +0.0125
+coordbase::zmin                              = -0.0125
+coordbase::zmax                              = +0.0125
+coordbase::dx                                =  0.025
+coordbase::dy                                =  0.025
+coordbase::dz                                =  0.025
+
+CoordBase::boundary_staggered_x_lower        = yes
+CoordBase::boundary_staggered_y_lower        = yes
+CoordBase::boundary_staggered_z_lower        = yes
+CoordBase::boundary_staggered_x_upper        = yes
+CoordBase::boundary_staggered_y_upper        = yes
+CoordBase::boundary_staggered_z_upper        = yes
+
+driver::ghost_size                           = 3
+
+cactus::cctk_itlast                          = 0 #TODO# 100
+
+Carpet::domain_from_coordbase                = yes
+
+CoordBase::boundary_size_x_lower             = 3
+CoordBase::boundary_size_y_lower             = 3
+CoordBase::boundary_size_z_lower             = 3
+CoordBase::boundary_size_x_upper             = 3
+CoordBase::boundary_size_y_upper             = 3
+CoordBase::boundary_size_z_upper             = 3
+
+CarpetRegrid2::regrid_every                  = 0
+CarpetRegrid2::verbose                       = yes
+CarpetRegrid2::snap_to_coarse                = yes
+
+CarpetRegrid2::num_centres                   = 1
+CarpetRegrid2::num_levels_1                  = 2
+CarpetRegrid2::position_x_1                  = 0.0
+CarpetRegrid2::radius_1[1]                   = 0.2
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Hydro
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+hydrobase::timelevels                        = 3
+hydrobase::evolution_method                  = "grhydro"
+hydrobase::prolongation_type                 = "Lagrange"
+hydrobase::initial_hydro                     = "shocktube"
+
+refluxing::refluxing_debug_variables         = yes
+
+grhydro::grhydro_maxnumevolvedvars           = 5
+grhydro::grhydro_maxnumsandrvars             = 16
+grhydro::evolve_tracer                       = no
+grhydro::number_of_tracers                   = 0
+
+grhydro::grhydro_rho_central                 = 1.61930347e-08
+grhydro::riemann_solver                      = "HLLE"
+grhydro::grhydro_eos_type                    = "General"
+grhydro::recon_method                        = "ppm"
+grhydro::tvd_limiter                         = "vanleerMC2"
+
+grhydro::ppm_detect                          = "yes"
+grhydro::grhydro_stencil                     = 3
+grhydro::bound                               = "flat"
+
+EOS_Polytrope::eos_gamma                     = 1.4
+EOS_Polytrope::eos_k                         = 1
+EOS_Polytrope::use_cgs                       = "yes"
+EOS_Polytrope::gamma_ini                     = 1.4
+
+EOS_IdealFluid::eos_ideal_fluid_gamma        = 1.4
+
+# Atmosphere
+SpaceMask::use_mask                          =  yes
+
+grhydro::rho_rel_min                         =  1.e-9
+grhydro::initial_atmosphere_factor           =  1.e2
+grhydro::initial_rho_abs_min                 =  5e-17
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Timestepping and MoL
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+time::dtfac                                  = 0.5
+mol::ode_method                              ="icn"
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Curvature
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+admbase::evolution_method                    =  "none"
+admbase::metric_type                         =  "physical"

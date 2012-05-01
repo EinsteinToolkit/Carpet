@@ -1,0 +1,81 @@
+ActiveThorns = "
+        Boundary
+        Carpet
+        CarpetIOASCII
+        CarpetIOBasic
+        CarpetLib
+        CarpetReduce
+        CarpetRegrid2
+        CartGrid3D
+        CoordBase
+        IOUtil
+        InitBase
+        LoopControl
+        MoL
+        SymBase
+"
+
+IOBasic::outInfo_every = 1
+
+IOASCII::out1D_vars = "
+        grid::coordinates
+        CarpetReduce::weight
+"
+
+IO::out_dir       = $parfile
+IO::out_fileinfo  = "none"
+IO::parfile_write = no
+
+IOASCII::out1D_every = 1
+IOASCII::out1D_d     = no
+
+Carpet::max_refinement_levels    = 2
+Carpet::use_buffer_zones         = yes
+Carpet::use_overlap_zones        = yes
+Carpet::refinement_centering     = "cell"
+Carpet::prolongation_order_space =  1
+Carpet::prolongation_order_time  =  1
+
+Carpet::init_fill_timelevels = yes
+
+CartGrid3D::type         = "CoordBase"
+CartGrid3D::domain       = "full"
+CartGrid3D::avoid_origin = no
+
+CoordBase::xmin = -1.0
+CoordBase::xmax = +1.0
+CoordBase::ymin = -0.0125
+CoordBase::ymax = +0.0125
+CoordBase::zmin = -0.0125
+CoordBase::zmax = +0.0125
+CoordBase::dx   =  0.025
+CoordBase::dy   =  0.025
+CoordBase::dz   =  0.025
+
+CoordBase::boundary_staggered_x_lower = yes
+CoordBase::boundary_staggered_y_lower = yes
+CoordBase::boundary_staggered_z_lower = yes
+CoordBase::boundary_staggered_x_upper = yes
+CoordBase::boundary_staggered_y_upper = yes
+CoordBase::boundary_staggered_z_upper = yes
+
+driver::ghost_size  = 3
+Cactus::cctk_itlast = 0
+
+Carpet::domain_from_CoordBase = yes
+
+CoordBase::boundary_size_x_lower = 3
+CoordBase::boundary_size_y_lower = 3
+CoordBase::boundary_size_z_lower = 3
+CoordBase::boundary_size_x_upper = 3
+CoordBase::boundary_size_y_upper = 3
+CoordBase::boundary_size_z_upper = 3
+
+CarpetRegrid2::regrid_every   = 0
+CarpetRegrid2::verbose        = yes
+CarpetRegrid2::snap_to_coarse = yes
+
+CarpetRegrid2::num_centres  = 1
+CarpetRegrid2::num_levels_1 = 2
+CarpetRegrid2::position_x_1 = 0.0
+CarpetRegrid2::radius_1[1]  = 0.2
