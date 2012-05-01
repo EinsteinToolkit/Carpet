@@ -140,8 +140,14 @@ namespace CarpetRegrid2 {
                     level_boundary const& bnd,
                     vector<ibset> const& regions, int const rl)
   {
-    return regions.at(rl).expand (dd.buffer_widths.at(rl) +
-                                  dd.buffer2_widths.at(rl));
+    ibset buffered;
+    for (ibset::const_iterator
+           ibb = regions.at(rl).begin(); ibb != regions.at(rl).end(); ++ ibb)
+    {
+      ibbox const& bb = *ibb;
+      buffered |= bb.expand (dd.buffer_widths.at(rl));
+    }
+    return buffered;
   }
   
   bool add_buffers::
