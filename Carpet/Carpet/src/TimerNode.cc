@@ -101,6 +101,8 @@ namespace Carpet {
 
       d_running=false;
       d_current=d_parent;
+
+      d_history.push_back(getTime());
     }
     else
     {
@@ -214,7 +216,7 @@ namespace Carpet {
     out.setf (oldflags);
   }
 
-  void TimerNode::outputXML(const string &out_dir, int proc)
+  void TimerNode::outputXML(const string &out_dir, int proc, bool include_history)
   {
     ostringstream filenamebuf;
     filenamebuf << out_dir << "/timertree." << proc << ".xml";
@@ -223,23 +225,38 @@ namespace Carpet {
     ofstream file;
     file.open (filename, ios::out | ios::trunc);
 
-    printXML(file,0);
+    printXML(file,0,include_history);
 
     file.close();
     assert (file.good());
   }
 
   /// Print this node and its children as an XML file
-  void TimerNode::printXML(ostream& out, int level)
+  void TimerNode::printXML(ostream& out, int level, bool include_history)
   {
     string space;
+    string space2;
+    string space3;
 
     // Compute the level of indentation for this node
     for(int i=0;i<level;i++)
       space=space+"  ";
 
+    space2=space+"  ";
+    space3=space2+"  ";
+
     out << space << "<timer name = " << "\"" << escapeForXML(d_name) << "\"> ";
     out << getTime() << " ";
+    if (include_history) {
+      out << endl << space2 << "<history>";
+    
+      for(std::vector<double>::iterator it = d_history.begin(); it != d_history.end(); ++it) {
+        out << endl;
+        out << space3 << "<value>" << *it << "</value> ";
+      }
+
+      out << endl << space2 << "</history>";
+    }
 
     // For compactness, only use multiple lines if there are children
     if (d_children.size() != 0)
@@ -248,7 +265,7 @@ namespace Carpet {
 
       // Recursively print the children
       for(map<string,TimerNode*>::iterator iter=d_children.begin();iter!=d_children.end();++iter)
-        iter->second->printXML(out,level+1);
+        iter->second->printXML(out,level+1,include_history);
       out << space;
     }
 

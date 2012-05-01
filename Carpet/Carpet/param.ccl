@@ -413,6 +413,10 @@ BOOLEAN output_xml_timer_tree "Output timing information in tree form as XML"
 {
 } "no"
 
+BOOLEAN output_history_in_xml_timer_tree "Include timer values from every time the timer is stopped in the XML file"
+{
+} "no"
+
 CCTK_REAL timer_tree_threshold_percentage "The percentage of the root timer below which timers are omitted" STEERABLE=always
 {
   0:* :: ""

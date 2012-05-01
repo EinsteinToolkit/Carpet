@@ -39,6 +39,7 @@
 #include <string>
 #include <ostream>
 #include <iostream>
+#include <vector>
 
 #include "CactusTimer.hh"
 
@@ -84,8 +85,8 @@ public:
   double getTime();
 
   void print(ostream& out, double total, int level=0, double threshold=0.0, int precision=1);
-  void printXML(ostream& out, int level=0);
-  void outputXML(const string &out_dir, int proc);
+  void printXML(ostream& out, int level, bool include_history);
+  void outputXML(const string &out_dir, int proc, bool include_history);
 
 private:
   string escapeForXML(const string &s) const;
@@ -97,6 +98,7 @@ private:
   TimerNode *d_parent;
   bool d_running;
   CactusTimer *timer;
+  std::vector<double> d_history;
 };
 }
 
