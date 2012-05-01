@@ -829,19 +829,6 @@ namespace Carpet {
       cout << "   [" << rl << "]: " << buffers.AT(rl) << "\n";
       assert (all (all (buffers.AT(rl) >= 0)));
     }
-    CCTK_INFO ("Buffer2 zone counts (excluding ghosts):");
-    vector<i2vect> buffers2 (maxreflevels);
-    for (int rl=1; rl<maxreflevels; ++rl) {
-      gh const& hh = * vhh.AT(m);
-      buffers2.AT(rl) =
-        rl == 0 ?
-        i2vect (0) :
-        (use_buffer2_zones ?
-         i2vect (0) :
-         hh.reffacts.AT(rl) / hh.reffacts.AT(rl-1) * ghosts.AT(rl));
-      cout << "   [" << rl << "]: " << buffers.AT(rl) << "\n";
-      assert (all (all (buffers.AT(rl) >= 0)));
-    }
     cout.precision (oldprecision);
     cout.setf (oldflags);
     
@@ -850,7 +837,7 @@ namespace Carpet {
     
     vdd.resize(maps);
     vdd.AT(m) = new dh (* vhh.AT(m),
-                        ghosts, buffers, buffers2,
+                        ghosts, buffers,
                         my_prolongation_orders_space);
     
     if (maxreflevels > 1) {
@@ -1128,11 +1115,10 @@ namespace Carpet {
               baseexts, nboundaryzones);
     
     vector<i2vect> const buffers (1, i2vect (0));
-    vector<i2vect> const buffers2 (1, i2vect (0));
     vector<int> const my_prolongation_orders_space (1, 0);
     arrdata.AT(group).AT(m).dd =
       new dh (*arrdata.AT(group).AT(m).hh,
-              ghosts, buffers, buffers2, my_prolongation_orders_space);
+              ghosts, buffers, my_prolongation_orders_space);
     
     arrdata.AT(group).AT(m).tt =
       new th (*arrdata.AT(group).AT(m).hh, timelevels, grouptimereffacts,
