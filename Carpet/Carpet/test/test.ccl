@@ -1,4 +1,14 @@
+TEST no-overlap
+{
+  NPROCS 2
+}
+
 TEST outer-buffers
 {
   NPROCS 1
+}
+
+TEST overlap
+{
+  NPROCS 2
 }
