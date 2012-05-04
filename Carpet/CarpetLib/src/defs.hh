@@ -571,9 +571,7 @@ inline size_t memoryof (unsigned long long const & e) { return sizeof e; }
 inline size_t memoryof (float const & e) { return sizeof e; }
 inline size_t memoryof (double const & e) { return sizeof e; }
 inline size_t memoryof (long double const & e) { return sizeof e; }
-inline size_t memoryof (void * const & e) { return sizeof e; }
 inline size_t memoryof (void const * const & e) { return sizeof e; }
-template<class T> inline size_t memoryof (T * const & e) { return sizeof e; }
 template<class T> inline size_t memoryof (T const * const & e) { return sizeof e; }
 template<class T> inline size_t memoryof (typename list<T>::iterator const & i) { return sizeof i; }
 template<class T> inline size_t memoryof (typename list<T>::const_iterator const & i) { return sizeof i; }
