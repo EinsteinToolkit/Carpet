@@ -35,6 +35,16 @@ namespace CarpetLib {
   
   
   
+  static inline
+  size_t
+  offset3 (size_t const i, size_t const j, size_t const k,
+          size_t const exti, size_t const extj, size_t const extk)
+  {
+    return i + exti * (j + extj * k);
+  }
+  
+  
+  
   static int const dim3 = 3;
   
   typedef vect <bool, dim3> bvect3;

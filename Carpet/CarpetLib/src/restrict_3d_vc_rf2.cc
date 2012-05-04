@@ -23,6 +23,12 @@ namespace CarpetLib {
 #define DSTIND3(i,j,k)                                  \
   index3 (dstioff + (i), dstjoff + (j), dstkoff + (k),  \
           dstiext, dstjext, dstkext)
+#define SRCOFF3(i,j,k)                                  \
+  offset3 (srcioff + (i), srcjoff + (j), srckoff + (k),  \
+          srciext, srcjext, srckext)
+#define DSTOFF3(i,j,k)                                  \
+  offset3 (dstioff + (i), dstjoff + (j), dstkoff + (k),  \
+          dstiext, dstjext, dstkext)
   
   
   
@@ -223,12 +229,11 @@ namespace CarpetLib {
     int const dstjoff = dstoff[1];
     int const dstkoff = dstoff[2];
     
-    // size_t const srcdi == SRCIND3(1,0,0) - SRCIND3(0,0,0);
+    // size_t const srcdi == SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
     size_t const srcdi = 1;
-    assert (srcdi == SRCIND3(1,0,0) - SRCIND3(0,0,0));
-    size_t const srcdj = SRCIND3(0,1,0) - SRCIND3(0,0,0);
-    size_t const srcdk = SRCIND3(0,0,1) - SRCIND3(0,0,0);
-    
+    assert (srcdi == SRCOFF3(1,0,0) - SRCOFF3(0,0,0));
+    size_t const srcdj = SRCOFF3(0,1,0) - SRCOFF3(0,0,0);
+    size_t const srcdk = SRCOFF3(0,0,1) - SRCOFF3(0,0,0);
     
     
     // Loop over coarse region

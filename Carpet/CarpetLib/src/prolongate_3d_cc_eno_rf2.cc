@@ -47,6 +47,8 @@ namespace CarpetLib {
   
 #define SRCIND3(i,j,k) index3 (i, j, k, srciext, srcjext, srckext)
 #define DSTIND3(i,j,k) index3 (i, j, k, dstiext, dstjext, dstkext)
+#define SRCOFF3(i,j,k) offset3 (i, j, k, srciext, srcjext, srckext)
+#define DSTOFF3(i,j,k) offset3 (i, j, k, dstiext, dstjext, dstkext)
   
   
   
@@ -1069,11 +1071,11 @@ namespace CarpetLib {
     size_t const j0 = srcjoff / 2;
     size_t const k0 = srckoff / 2;
     
-    // size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
+    // size_t const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
     size_t const srcdi = 1;
-    assert (srcdi == SRCIND3(1,0,0) - SRCIND3(0,0,0));
-    size_t const srcdj = SRCIND3(0,1,0) - SRCIND3(0,0,0);
-    size_t const srcdk = SRCIND3(0,0,1) - SRCIND3(0,0,0);
+    assert (srcdi == SRCOFF3(1,0,0) - SRCOFF3(0,0,0));
+    size_t const srcdj = SRCOFF3(0,1,0) - SRCOFF3(0,0,0);
+    size_t const srcdk = SRCOFF3(0,0,1) - SRCOFF3(0,0,0);
     
     
     

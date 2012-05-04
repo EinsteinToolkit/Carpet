@@ -22,6 +22,8 @@ namespace CarpetLib {
   
 #define SRCIND3(i,j,k) ptrdiff_t(index3(i, j, k, srciext, srcjext, srckext))
 #define DSTIND3(i,j,k) ptrdiff_t(index3(i, j, k, dstiext, dstjext, dstkext))
+#define SRCOFF3(i,j,k) ptrdiff_t(offset3(i, j, k, srciext, srcjext, srckext))
+#define DSTOFF3(i,j,k) ptrdiff_t(offset3(i, j, k, dstiext, dstjext, dstkext))
   
   
   
@@ -102,17 +104,17 @@ namespace CarpetLib {
     
     
     
-    // int const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
+    // int const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
     int const srcdi = 1;
-    assert(srcdi == SRCIND3(1,0,0) - SRCIND3(0,0,0));
-    int const srcdj = SRCIND3(0,1,0) - SRCIND3(0,0,0);
-    int const srcdk = SRCIND3(0,0,1) - SRCIND3(0,0,0);
+    assert(srcdi == SRCOFF3(1,0,0) - SRCOFF3(0,0,0));
+    int const srcdj = SRCOFF3(0,1,0) - SRCOFF3(0,0,0);
+    int const srcdk = SRCOFF3(0,0,1) - SRCOFF3(0,0,0);
     
-    // int const dstdi = DSTIND3(1,0,0) - DSTIND3(0,0,0);
+    // int const dstdi = DSTOFF3(1,0,0) - DSTOFF3(0,0,0);
     int const dstdi = 1;
-    assert(dstdi == DSTIND3(1,0,0) - DSTIND3(0,0,0));
-    int const dstdj = DSTIND3(0,1,0) - DSTIND3(0,0,0);
-    int const dstdk = DSTIND3(0,0,1) - DSTIND3(0,0,0);
+    assert(dstdi == DSTOFF3(1,0,0) - DSTOFF3(0,0,0));
+    int const dstdj = DSTOFF3(0,1,0) - DSTOFF3(0,0,0);
+    int const dstdk = DSTOFF3(0,0,1) - DSTOFF3(0,0,0);
     
     int const srcstr[3] = {srcdi, srcdj, srcdk};
     int const dststr[3] = {dstdi, dstdj, dstdk};
