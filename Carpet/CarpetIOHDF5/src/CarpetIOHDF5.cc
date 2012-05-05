@@ -168,13 +168,17 @@ void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS)
   bool const checkpoint_by_iteration =
     checkpoint_every > 0 and
     iteration >= last_checkpoint_iteration + checkpoint_every;
+  bool const checkpoint_by_iteration_divisor =
+    checkpoint_every_divisor > 0 and
+    iteration % checkpoint_every_divisor == 0;
   bool const checkpoint_by_walltime =
     checkpoint_every_walltime_hours > 0 and
     walltime >= last_checkpoint_walltime + checkpoint_every_walltime_hours;
   
   int do_checkpoint =
     checkpoint and
-    (checkpoint_by_iteration or checkpoint_by_walltime or checkpoint_next);
+    (checkpoint_by_iteration or checkpoint_by_iteration_divisor or
+     checkpoint_by_walltime or checkpoint_next);
   if (checkpoint_every_walltime_hours > 0) {
     // broadcast the decision since comparing wall times may differ on
     // different processors
