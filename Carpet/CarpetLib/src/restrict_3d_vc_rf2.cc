@@ -248,6 +248,24 @@ namespace CarpetLib {
     for (int k=0; k<regkext; ++k) {
       for (int j=0; j<regjext; ++j) {
         for (int i=0; i<regiext; ++i) {
+#ifdef CARPET_DEBUG
+    if(not (2 * k + centk < srckext and
+            2 * j + centj < srcjext and
+            2 * i + centi < srciext))
+    {
+      cout << "restrict_3d_vc_rf2.cc\n";
+      cout << "regext " << regext << "\n";
+      cout << "srcext " << srcext << "\n";
+      cout << "srcbbox=" << srcbbox << "\n";
+      cout << "dstbbox=" << dstbbox << "\n";
+      cout << "regbbox=" << regbbox << "\n";
+      cout << "srcregbbox=" << srcregbbox << "\n";
+      cout << "icent=" << icent << "\n";
+    }
+    assert(2 * k + centk < srckext and
+           2 * j + centj < srcjext and
+           2 * i + centi < srciext);
+#endif    
           
           dst [DSTIND3(i, j, k)] =
             restrict3<T,centi,centj,centk>::call
