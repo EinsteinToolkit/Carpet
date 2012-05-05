@@ -22,20 +22,6 @@ namespace CarpetEvolutionMask {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    // ask the flesh what the value of carpet::buffer_width is...
-    // this should be fixed at some point...
-
-    CCTK_INT use_outer_buffer_zones = *(CCTK_INT*) CCTK_ParameterGet
-      ("use_outer_buffer_zones","Carpet",0);
-
-    CCTK_INT buffer_width;
-    if (use_outer_buffer_zones) {
-      buffer_width = 0;
-    } else {
-      buffer_width = *(CCTK_INT*) CCTK_ParameterGet
-        ("buffer_width","Carpet",0);
-    }
-    // cout << "buffer width: " << buffer_width << endl;
     
     if (! is_singlemap_mode()) {
       CCTK_WARN (0, "This routine may only be called in singlemap mode");
@@ -57,6 +43,8 @@ namespace CarpetEvolutionMask {
       ivect const reffact
         = spacereffacts.at(reflevel) / spacereffacts.at(reflevel-1);
       assert (all (reffact == 2));
+
+      const i2vect buffer_widths = dd.buffer_widths.at(reflevel);
       
       // cout << "base: " << base << endl;
       // cout << "coarsebase: " << coarsebase << endl;
@@ -96,12 +84,14 @@ namespace CarpetEvolutionMask {
 
       // now make antibase larger
       // make refined regions SMALLER
-      ivect antishrinkby;
-      for (int d=0; d<dim;d++) {
-	antishrinkby[d] = cctkGH->cctk_nghostzones[d] + buffer_width;
+      i2vect antishrinkby;
+      for (int f=0; f<2;f++) {
+        for (int d=0; d<dim;d++) {
+	  antishrinkby[f][d] = cctkGH->cctk_nghostzones[d] + buffer_widths[f][d];
+        }
       }
       ibset antishrunk
-        (antirefined.expand(antishrinkby, antishrinkby).
+        (antirefined.expand(antishrinkby).
          expanded_for(coarsebase));
       
       //      cout << "antishrunk1: " << antishrunk << endl;
@@ -129,13 +119,15 @@ namespace CarpetEvolutionMask {
 
       //      cout << "notrefined: " << notrefined << endl;
 
-      ivect enlargeby;
+      i2vect enlargeby;
       int stencil_size = dd.prolongation_stencil_size(reflevel);
-      for (int d=0; d<dim;d++) {
-	enlargeby[d] = cctkGH->cctk_nghostzones[d] + buffer_width +
-	  stencil_size;
+      for (int f=0; f<2;f++) {
+        for (int d=0; d<dim;d++) {
+	  enlargeby[f][d] = cctkGH->cctk_nghostzones[d] + buffer_widths[f][d] +
+	    stencil_size;
+        }
       }
-      ibset const enlarged (notrefined.expand(enlargeby, enlargeby));
+      ibset const enlarged (notrefined.expand(enlargeby));
 
       //      cout << "enlarged: " << enlarged << endl;
       
