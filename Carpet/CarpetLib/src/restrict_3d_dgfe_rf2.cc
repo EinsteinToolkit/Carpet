@@ -124,7 +124,7 @@ namespace CarpetLib {
     
     // Loop over coarse region
 #ifdef HRSCC_HH
-#pragma omp parallel for collapse(3)
+#pragma omp parallel for //collapse(3)
     for (ptrdiff_t k=0; k<regkext; k+=ORDER+1) {
       for (ptrdiff_t j=0; j<regjext; j+=ORDER+1) {
         for (ptrdiff_t i=0; i<regiext; i+=ORDER+1) {

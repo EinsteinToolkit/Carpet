@@ -140,7 +140,7 @@ namespace CarpetLib {
       // Loop over fine region
 #ifdef HRSCC_HH
       ptrdiff_t const i=0;
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for //collapse(2)
       for (ptrdiff_t k=0; k<regkext; k+=2*(ORDER+1)) {
         for (ptrdiff_t j=0; j<regjext; j+=2*(ORDER+1)) {
           GLLElement<ORDER>::prolongate_2D
@@ -179,7 +179,7 @@ namespace CarpetLib {
       // Loop over fine region
 #ifdef HRSCC_HH
       ptrdiff_t const j=0;
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for //collapse(2)
       for (ptrdiff_t k=0; k<regkext; k+=2*(ORDER+1)) {
         for (ptrdiff_t i=0; i<regiext; i+=2*(ORDER+1)) {
           GLLElement<ORDER>::prolongate_2D
@@ -218,7 +218,7 @@ namespace CarpetLib {
       // Loop over fine region
 #ifdef HRSCC_HH
       ptrdiff_t const k=0;
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for //collapse(2)
       for (ptrdiff_t j=0; j<regjext; j+=2*(ORDER+1)) {
         for (ptrdiff_t i=0; i<regiext; i+=2*(ORDER+1)) {
           GLLElement<ORDER>::prolongate_2D
@@ -254,7 +254,7 @@ namespace CarpetLib {
       
       // Loop over fine region
 #ifdef HRSCC_HH
-#pragma omp parallel for collapse(3)
+#pragma omp parallel for //collapse(3)
       for (ptrdiff_t k=0; k<regkext; k+=2*(ORDER+1)) {
         for (ptrdiff_t j=0; j<regjext; j+=2*(ORDER+1)) {
           for (ptrdiff_t i=0; i<regiext; i+=2*(ORDER+1)) {
