@@ -412,17 +412,17 @@ namespace CarpetIOScalar {
                   = one_file_per_group ? CCTK_FirstVarIndexI(group) : n;
                 int const numvars
                   = one_file_per_group ? CCTK_NumVarsInGroupI(group) : 1;
-                for (int n=firstvar; n<firstvar+numvars; ++n) {
-                  if (all_reductions_in_one_file) {
-                    for (list<info>::const_iterator jreduction = reductions.begin();
-                         jreduction != reductions.end();
-                         ++jreduction)
-                    {
-                      file << " " << col << ":" << CCTK_VarName(n) << "(" << jreduction->reduction << ")";
-                      col += CarpetSimpleMPIDatatypeLength (vartype);
-                    }
-                  } else {
+                list<info>::const_iterator first_reduction
+                  = all_reductions_in_one_file ? reductions.begin() : ireduction;
+                list<info>::const_iterator end_reduction
+                  = all_reductions_in_one_file ? reductions.end() : ++list<info>::const_iterator(ireduction);
+                for (list<info>::const_iterator jreduction = first_reduction;
+                     jreduction != end_reduction;
+                     ++jreduction)
+                {
+                  for (int n=firstvar; n<firstvar+numvars; ++n) {
                     file << " " << col << ":" << CCTK_VarName(n);
+                    if (all_reductions_in_one_file) file << "(" << jreduction->reduction << ")";
                     col += CarpetSimpleMPIDatatypeLength (vartype);
                   }
                 }
