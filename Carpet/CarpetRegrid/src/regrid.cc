@@ -194,7 +194,7 @@ namespace CarpetRegrid {
     // make multiprocessor aware
     vector<vector<region_t> > regss(superregss.size());
     for (size_t rl=0; rl<superregss.size(); ++rl) {
-#warning "TODO: delete .processors"
+      // TODO: delete .processors
       SplitRegions (cctkGH, superregss.at(rl), regss.at(rl));
     }
     

@@ -117,7 +117,7 @@ namespace CarpetIOF5 {
       
       F5iterate_grids(path, NULL, grid_iterator, this, NULL, NULL);
       
-#warning "TODO: synchronise all read grid functions"
+      // TODO: synchronise all read grid functions
     }
   
     void read_grid(F5Path *const path)
@@ -191,8 +191,8 @@ namespace CarpetIOF5 {
       cout << indent << "field=" << fieldname << "\n";
       
       interpret_fieldname(cctkGH, fieldname, varindex);
-#warning "TODO: check all variables in the group"
-#warning "TODO: loop over all variables in the group"
+      // TODO: check all variables in the group
+      // TODO: loop over all variables in the group
       if (varindex>=0 and input_var.at(varindex)) {
 
         int major_version, minor_version, release_version;
@@ -205,7 +205,9 @@ namespace CarpetIOF5 {
         assert(iret);
         
         // Do we need to iterate over fragments?
-#warning "TODO: Should instead check whether attribute FIBER_HDF5_TYPEID_ATTRIB exists (existence indicates fragmentation)"
+        // TODO: Should instead check whether attribute
+        // FIBER_HDF5_TYPEID_ATTRIB exists (existence indicates
+        // fragmentation)
         int const is_fragmented = F5Fis_fragmented(path, fieldname);
         cout << indent
              << (is_fragmented ? "fragmented" : "not fragmented") << "\n";
@@ -221,8 +223,10 @@ namespace CarpetIOF5 {
         indent_t indent;
         cout << indent << "ignoring this field\n";
       }
-#warning "TODO: keep track of which fields have been read, and complain about unread ones"
-#warning "TODO: keep track of which part of a field has been read, and complain about unread parts"
+      // TODO: keep track of which fields have been read, and complain
+      // about unread ones
+      // TODO: keep track of which part of a field has been read, and
+      // complain about unread parts
     }
     
     void read_fragment(F5Path *const path)
@@ -440,7 +444,7 @@ namespace CarpetIOF5 {
       fragdesc.reflevel = reflevel;
       fragdesc.map = map;
       fragdesc.component = component;
-#warning "TODO: set timelevel correctly"
+      // TODO: set timelevel correctly
       fragdesc.timelevel = 0;
       fragdesc.imin = fbox.lower();
       fragdesc.imax = fbox.upper();
@@ -599,7 +603,7 @@ namespace CarpetIOF5 {
     // Grid structure
     string gs;
     ReadLargeAttribute(group, grid_structure, gs);
-#warning "TODO: set grid structure"
+    // TODO: set grid structure
     
     herr = H5Gclose(group);
     assert(not herr);
@@ -614,7 +618,7 @@ namespace CarpetIOF5 {
              bool const input_metadata,
              scatter_t& scatter)
   {
-#warning "TODO: not yet implemented"
+    // TODO: not yet implemented
     assert (not input_metadata);
     input_iterator_t iterator(cctkGH, input_var,
                               input_past_timelevels, input_metadata,

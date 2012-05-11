@@ -474,7 +474,8 @@ namespace CarpetIOF5 {
       // Keep track of which files could be read, and which could not
       int foundproc = -1, notfoundproc = -1;
       
-#warning "TODO: Store how many processes contributed to the output, and expect exactly that many files"
+      // TODO: Store how many processes contributed to the output, and
+      // expect exactly that many files
       int const myproc = CCTK_MyProc(cctkGH);
       int const nprocs = CCTK_nProcs(cctkGH);
       // Loop over all (possible) files
@@ -501,7 +502,7 @@ namespace CarpetIOF5 {
         
         // Iterate over all time slices
         bool const input_past_timelevels = in_recovery;
-#warning "TODO: read metadata when recoverying parameters"
+        // TODO: read metadata when recoverying parameters
         bool const input_metadata = false;
         input(cctkGH, file, input_var, input_past_timelevels, input_metadata,
               scatter);

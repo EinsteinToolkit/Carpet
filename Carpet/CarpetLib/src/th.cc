@@ -75,7 +75,8 @@ void th::regrid ()
         }
       } else {
         if (time_interpolation_during_regridding) {
-#warning "We probably don't want to do this, but it is nice for compatibility"
+          // We probably don't want to do this, but it is nice for
+          // compatibility
           times.AT(ml).AT(rl).resize(timelevels);
           for (int tl=0; tl<timelevels; ++tl) {
             // linear interpolation between the two surrounding coarse

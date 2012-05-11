@@ -203,7 +203,7 @@ public:
       ("compatible" means having the same stride.)  */
   bboxset expanded_for (const box& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
-#warning "TODO: this is incorrect"
+  // TODO: this is incorrect
 #if 1
   /** Find the largest b-compatible box inside this bbox.  */
   bboxset contracted_for (const box& b) const CCTK_MEMBER_ATTRIBUTE_PURE;

@@ -148,7 +148,8 @@ namespace CarpetIOF5 {
           imin[d] = 0;
           imax[d] = lssh[d];
           if (not output_ghost_points) {
-#warning "TODO: Don't output ghosts on refinement boundaries; only output ghosts for inter-process boundaries"
+            // TODO: Don't output ghosts on refinement boundaries;
+            // only output ghosts for inter-process boundaries
             int const overlap = min(ughosts[d], minimum_component_overlap);
             imin[d] += lghosts[d];
             imax[d] -= ughosts[d] - overlap;
@@ -241,7 +242,7 @@ namespace CarpetIOF5 {
         int const do_every =
           group_type == CCTK_GF ? maxtimereflevelfact / timereffacts.AT(rl) : 1;
         if (cctkGH->cctk_iteration % do_every == 0) {
-#warning "TODO: don't switch modes"
+          // TODO: don't switch modes
           ENTER_LEVEL_MODE(cctkGH, rl) {
             DECLARE_CCTK_ARGUMENTS;
             
@@ -264,7 +265,9 @@ namespace CarpetIOF5 {
                   (file, cctk_time, gridname.c_str(), &v2h(reffact)[0],
                    chartname.c_str());
                 assert(globalpath);
-#warning "TODO: Probably must not call this for cell-centred AMR; this probably makes the call to F5Rcreate_coordinate_topology below fail"
+                // TODO: Probably must not call this for cell-centred
+                // AMR; this probably makes the call to
+                // F5Rcreate_coordinate_topology below fail
                 FAILWARN(F5Rlink_default_vertex_topology(globalpath,
                                                          &v2h(reffact)[0]));
                 
@@ -336,7 +339,7 @@ namespace CarpetIOF5 {
                                           topologyname.c_str(),
                                           indexdepth,
                                           mi.dim, mi.dim, &v2h(reffact)[0]);
-#warning "TODO: how should these two topologies be linked?"
+          // TODO: how should these two topologies be linked?
           // assert(mi.dim == 3);
           // assert(all(reffact == 1));
           // path =
@@ -358,7 +361,8 @@ namespace CarpetIOF5 {
       assert(coordpath);
       assert(path);
       
-#warning "TODO: Attach the number of I/O processes to the topology. WB sent email with suggestions."
+      // TODO: Attach the number of I/O processes to the topology. WB
+      // sent email with suggestions.
       
       // Define default topology (once per grid)
       if (group_type == CCTK_GF and reflevel == 0 and timelevel == 0) {
@@ -440,7 +444,7 @@ namespace CarpetIOF5 {
                                  mi.dim, &v2h(mi.gsh)[0],
                                  type,
                                  &vlower, &vdelta));
-#warning "TODO: path and chart don't match"
+        // TODO: path and chart don't match
         FAILWARN(F5Fset_range(path, &vlower, &vupper));
       }
       
@@ -545,8 +549,9 @@ namespace CarpetIOF5 {
       
       assert(groupdata.stagtype == 0);
       
-#warning "TODO: Do not output symmetry zones (unless requested by the user)"
-#warning "TODO: Do not output buffer zones (is that easily possible?)"
+      // TODO: Do not output symmetry zones (unless requested by the
+      // user)
+      // TODO: Do not output buffer zones (is that easily possible?)
       
       int const will_cover_complete_domain =
         (group_type != CCTK_GF or not is_multipatch) and reflevel==0;

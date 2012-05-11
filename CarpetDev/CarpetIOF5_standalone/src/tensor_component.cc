@@ -120,7 +120,9 @@ namespace CarpetIOF5 {
     
     
     
-#warning "TODO: This assumes that the shape of data is the same as the shape of the region; this may not be so if not all of the data are written out"
+    // TODO: This assumes that the shape of data is the same as the
+    // shape of the region; this may not be so if not all of the data
+    // are written out
     void tensor_component_t::
     write (void const * const data,
            int const cactus_datatype)

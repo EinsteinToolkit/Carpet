@@ -213,7 +213,7 @@ namespace Carpet {
       CCTK_INT const do_recompose =
         Carpet_RegridMaps (cctkGH, & superregsss, & regssss, force_recompose);
       assert (do_recompose >= 0);
-#warning "TODO"
+      // TODO
 #if 1 // #ifdef CARPET_DEBUG
       {
         int ival = do_recompose;
@@ -271,7 +271,7 @@ namespace Carpet {
     
     Waypoint ("Regridding map %d...", m);
     
-#warning "TODO: keep levels fixed here"
+    // TODO: keep levels fixed here
 #if 0
     //
     // Keep this level fixed if it is not evolved
@@ -336,7 +336,7 @@ namespace Carpet {
       assert (vhh.AT(m)->reflevels() == reflevels);
     }
     
-#warning "TODO"
+    // TODO
 #if 1 // #ifdef CARPET_DEBUG
       {
         // All processes must use the same number of levels

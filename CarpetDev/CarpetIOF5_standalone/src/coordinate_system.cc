@@ -125,7 +125,7 @@ namespace CarpetIOF5 {
         = open_or_create_group (m_topology.get_hdf5_topology(), name);
       assert (m_hdf5_coordinate_system >= 0);
       
-#warning "TODO: don't output coordinates as attributes"
+      // TODO: don't output coordinates as attributes
       write_or_check_attribute
         (m_hdf5_coordinate_system, "origin", m_level_origin);
       write_or_check_attribute

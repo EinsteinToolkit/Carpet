@@ -621,7 +621,7 @@ namespace CarpetMG {
           leave_level_mode (const_cast<cGH *>(cctkGH));
         } END_GLOBAL_MODE;
             
-#warning "TODO"
+        // TODO
         // save old solution
         copy (cctkGH, sav, var, options);
 

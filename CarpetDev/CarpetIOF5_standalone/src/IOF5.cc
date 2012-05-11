@@ -467,7 +467,8 @@ namespace CarpetIOF5 {
     }
     {
       writer_t writer (cctkGH, variable);
-#warning "TODO: handle the case where not all processors are writing to their own file"
+      // TODO: handle the case where not all processors are writing to
+      // their own file
       assert (proc == output_processor);
       assert (file);
       writer.write (* file);

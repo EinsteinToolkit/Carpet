@@ -149,8 +149,9 @@ namespace CarpetRegrid2 {
     //
     
     // This requires that CoordBase is used
-#warning "TODO: check this (for Carpet, and maybe also for CartGrid3D)"
-#warning "TODO: (the check that these two are consistent should be in Carpet)"
+    // TODO: check this (for Carpet, and maybe also for CartGrid3D)
+    // TODO: (the check that these two are consistent should be in
+    // Carpet)
     
     jjvect nboundaryzones, is_internal;
     jjvect is_staggered, shiftout;
@@ -177,8 +178,8 @@ namespace CarpetRegrid2 {
       while (min_rl < int(regss.size())) {
         // Increase min_rl until we find a level that can be changed
 #if 0
-#warning "think about this a bit more"
-#warning "use this taper-checking also in Comm.cc"
+        // TODO: think about this a bit more
+        // TODO: use this taper-checking also in Comm.cc
         bool in_sync = true;
         if (freeze_unaligned_parent_levels) {
           int const parent_do_every =

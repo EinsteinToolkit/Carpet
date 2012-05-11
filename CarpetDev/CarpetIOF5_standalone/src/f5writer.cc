@@ -251,7 +251,7 @@ namespace CarpetIOF5 {
                                                    rootlevel_refinement);
     }
     
-#warning "TODO: what is this doing?"
+    // TODO: what is this doing?
     F5T_REFINEMENT3D_POINT = refinement_path->myChart->Point_hid_t; 
     
     if (Carpet::is_level_mode())
@@ -303,7 +303,7 @@ namespace CarpetIOF5 {
     // assert (group >= 0 and group < CCTK_NumGroups());
     // F5::physical_quantity_t physical_quantity (coordinate_system, group);
     
-#warning "TODO: this should depend on the patch number"
+    // TODO: this should depend on the patch number
     char const * const coordinate_system = NULL;
     
     // Depends on the refinement level
@@ -326,7 +326,7 @@ namespace CarpetIOF5 {
     // Global information for this refinement level 
     vect <hsize_t, dim> const level_dims
       = vect <int, dim>::ref (m_cctkGH->cctk_gsh);
-#warning "TODO: switch to double precision"
+    // TODO: switch to double precision
     vect <float, dim> const level_min
       (CCTK_ORIGIN_SPACE(0), CCTK_ORIGIN_SPACE(1), CCTK_ORIGIN_SPACE(2));
     vect <float, dim> const level_spacing
@@ -419,7 +419,8 @@ namespace CarpetIOF5 {
   {
     DECLARE_CCTK_PARAMETERS;
     
-#warning "TODO: use superregions instead of regions (?  only if the regions are on the same processor?); use HDF5 chunks as well"
+    // TODO: use superregions instead of regions (? only if the
+    // regions are on the same processor?); use HDF5 chunks as well
     
     bbox<int,dim> dh::dboxes::* boxptr;
     if (CCTK_EQUALS (output_regions, "exterior"))

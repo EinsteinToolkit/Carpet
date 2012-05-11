@@ -464,8 +464,8 @@ locate_position (rvect const & rpos,
     
     // TODO: Ignore this level if this point is not in the active
     // region (i.e. if it is a buffer point or similar)
-#warning "TODO: check the level_bbox"
-#warning "TODO: (assume this gh has only one dh)"
+    // TODO: check the level_bbox
+    // TODO: (assume this gh has only one dh)
     
     // Search all superregions linearly.  Each superregion corresponds
     // to a "refined region", and the number of superregions is thus

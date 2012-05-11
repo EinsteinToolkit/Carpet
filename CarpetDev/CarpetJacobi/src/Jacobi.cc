@@ -190,7 +190,7 @@ namespace CarpetJacobi {
       return -1;
     }
     
-#warning "TODO: assert that all levels are at the same time"
+    // TODO: assert that all levels are at the same time
     
     // Switch to global mode
     BEGIN_GLOBAL_MODE(cctkGH) {
@@ -430,7 +430,7 @@ namespace CarpetJacobi {
             norm_counts.at(reflevel) = reduce_out[0];
             norm_l2s.at(reflevel) = reduce_out[1];
             
-#warning "TODO"
+            // TODO
 #if 0
             CCTK_OutputVarAs (cctkGH, "WaveToyFO::phi", "phi-ell");
             CCTK_OutputVarAs (cctkGH, "IDSWTEsimpleFO::residual", "residual-ell");
@@ -556,7 +556,7 @@ namespace CarpetJacobi {
       
       
       // Reset the initial time
-#warning "TODO: reset the initial time a bit more intelligently"
+      // TODO: reset the initial time a bit more intelligently
       global_time = 0;
       delta_time = 1;
       * const_cast<CCTK_REAL *> (& cctkGH->cctk_time) = global_time;

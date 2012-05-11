@@ -157,7 +157,7 @@ namespace Carpet {
                      ? arrdata.AT(group).AT(m).data.AT(var - vectorindex)
                      : NULL);
                 const int varindex = firstvarindex + var;
-#warning "TODO: allocate these in SetupGH, and after recomposing"
+                // TODO: allocate these in SetupGH, and after recomposing
                 if (not arrdata.AT(group).AT(m).data.AT(var)) {
                   switch (specific_cactus_type(gp.vartype)) {
 #define TYPECASE(N,T)                                                   \

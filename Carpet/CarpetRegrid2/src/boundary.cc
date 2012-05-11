@@ -204,7 +204,7 @@ namespace CarpetRegrid2 {
     
     boundary_staggering_mismatch =
       xpose ((hh.refcent == vertex_centered) != (is_staggered == 0));
-#warning "TODO: This is too strict"
+    // TODO: This is too strict
     assert (all (all (not boundary_staggering_mismatch)));
     
     get_physical_boundary (physical_lower, physical_upper, spacing);

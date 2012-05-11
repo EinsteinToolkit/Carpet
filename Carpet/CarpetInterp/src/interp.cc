@@ -1364,7 +1364,8 @@ namespace CarpetInterp {
                 1));
       }
       
-#warning "TODO: Loop only over those maps and components that exist for this variable group"
+      // TODO: Loop only over those maps and components that exist for
+      // this variable group
       for (int m=0; m<maps; ++m) {
         for (int lc=0; lc<vhh.AT(m)->local_components(rl); ++lc) {
           int const c = vhh.AT(m)->get_component(rl,lc);
