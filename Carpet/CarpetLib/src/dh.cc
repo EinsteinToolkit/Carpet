@@ -536,7 +536,7 @@ regrid (bool const do_init)
       ibset const allbuffers = allowned & notowned.expand (buffer_width);
       
       // All overlap zones
-      ibset const alloverlaps = allowned & notactive - allbuffers;
+      ibset const alloverlaps = (allowned & notactive) - allbuffers;
       
       // All active points
       ibset& allactive = level_level.active;
@@ -1539,7 +1539,9 @@ regrid (bool const do_init)
             }
             case cell_centered: {
               enlarged[d][f] = notrefined;
-#warning "TODO: restriction boundaries are wrong (they are empty, but should not be) with cell centring when fine cell cut coarse cells"
+              // TODO: restriction boundaries are wrong (they are
+              // empty, but should not be) with cell centring when
+              // fine cell cut coarse cells
               bool const old_there_was_an_error = there_was_an_error;
               ASSERT_rl (notrefined.contracted_for(obase).expanded_for(base) ==
                          notrefined,
@@ -1562,9 +1564,12 @@ regrid (bool const do_init)
           }
         }
         
-#warning "TODO: Ensure that the prolongation boundaries all_boundaries are contained in the boundary prolongated region"
+        // TODO: Ensure that the prolongation boundaries
+        // all_boundaries are contained in the boundary prolongated
+        // region
         
-#warning "TODO: Ensure that the restriction boundaries and the restricted region are contained in the restricted region"
+        // TODO: Ensure that the restriction boundaries and the
+        // restricted region are contained in the restricted region
         
         // Subtract the boundaries from the refined region
         all_refined = allactive;
@@ -2108,7 +2113,8 @@ recompose (int const rl, bool const do_prolongate)
     for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
       (*f)->recompose_allocate (rl);
     }
-#warning "TODO: If this works, rename do_prolongate to do_init here, and remove the do_prolongate parameter from ggf::recompose_fill"
+    // TODO: If this works, rename do_prolongate to do_init here, and
+    // remove the do_prolongate parameter from ggf::recompose_fill
 #if 0
     for (comm_state state; not state.done(); state.step()) {
       for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
