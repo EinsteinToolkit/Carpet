@@ -519,23 +519,24 @@ regrid (bool const do_init)
         CCTK_WARN (CCTK_WARN_COMPLAIN, buf.str().c_str());
       }
       
-      ibset const notactive_overlaps = notowned.expand (overlap_width);;
       vector<ibset> notactive_stepped (num_substeps+1);
-      notactive_stepped.AT(0) = notactive_overlaps;
+      notactive_stepped.AT(0) = notowned;
       for (int substep = 1; substep <= num_substeps; ++ substep) {
         notactive_stepped.AT(substep) =
           notactive_stepped.AT(substep-1).expand (ghost_width);
       }
+      ibset const notactive_overlaps =
+        notactive_stepped.AT(num_substeps).expand (overlap_width);
       if (all (all (buffer_width == num_substeps * ghost_width))) {
-        ASSERT_rl (notactive_stepped.AT(num_substeps) == notactive,
-                   "The stepped not-active region must be equal to the not-active region");
+        ASSERT_rl (notactive_overlaps == notactive,
+                   "The stepped not-owned region including overlaps must be equal to the not-active region");
       }
       
-      // All overlap zones
-      ibset const alloverlaps = allowned & notactive_overlaps;
-      
       // All buffer zones
-      ibset const allbuffers = allowned & notactive - alloverlaps;
+      ibset const allbuffers = allowned & notowned.expand (buffer_width);
+      
+      // All overlap zones
+      ibset const alloverlaps = allowned & notactive - allbuffers;
       
       // All active points
       ibset& allactive = level_level.active;
