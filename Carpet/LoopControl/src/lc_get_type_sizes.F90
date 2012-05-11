@@ -14,6 +14,7 @@ subroutine lc_get_fortran_type_sizes (lc_control_size, lc_statmap_size)
   type(lc_control_t), dimension(2) :: lc_lc
   type(lc_statmap_t), dimension(2) :: lc_lm
   
+  ! Note: This conversion from pointer to (small) integer is safe
   lc_control_size = CCTK_PointerTo(lc_lc(2)) - CCTK_PointerTo(lc_lc(1))
   lc_statmap_size = CCTK_PointerTo(lc_lm(2)) - CCTK_PointerTo(lc_lm(1))
   
