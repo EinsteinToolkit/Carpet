@@ -772,7 +772,7 @@ regrid (bool const do_init)
           
           // Refinement prolongation must fill all active points
           
-          ibset needrecv = box.active;
+          ibset needrecv = box.active + box.overlaps;
           
           i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
           
@@ -1646,7 +1646,7 @@ regrid (bool const do_init)
           
           full_dboxes & box = full_level.AT(c);
           
-          ibset needrecv = box.active;
+          ibset needrecv = box.active + box.overlaps;
           
           
           
