@@ -1,3 +1,5 @@
+RELTOL 1e-12
+
 TEST CarpetEvolutionMask_test
 {
   NPROCS 1
