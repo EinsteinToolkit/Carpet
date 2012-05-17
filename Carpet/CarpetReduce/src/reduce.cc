@@ -1145,7 +1145,7 @@ namespace CarpetReduce {
         if (nlc == mynlc) {
           const cFunctionData * calling_function = 
             CCTK_ScheduleQueryCurrentFunction(cgh);
-          CCTK_VWarn (CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
+          CCTK_VWarn (CCTK_WARN_DEBUG, __LINE__, __FILE__, CCTK_THORNSTRING,
                      "Reduction in local mode may lead to deadlock (if different processes own different numbers of components). Called from '%s::%s' AT %s.",
                      calling_function ? calling_function->thorn : "unknown", 
                      calling_function ? calling_function->routine : "unknown", 
@@ -1283,7 +1283,7 @@ namespace CarpetReduce {
         if (nlc == mynlc) {
           const cFunctionData * calling_function = 
             CCTK_ScheduleQueryCurrentFunction(cgh);
-          CCTK_VWarn (CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
+          CCTK_VWarn (CCTK_WARN_DEBUG, __LINE__, __FILE__, CCTK_THORNSTRING,
                      "Reduction in local mode may lead to deadlock (if different processes own different numbers of components). Called from '%s::%s' AT %s.",
                      calling_function ? calling_function->thorn : "unknown", 
                      calling_function ? calling_function->routine : "unknown", 
