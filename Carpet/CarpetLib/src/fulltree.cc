@@ -77,6 +77,9 @@ template <typename T, int D, typename P>
 fulltree<T,D,P> &
 fulltree<T,D,P>::operator= (fulltree const & t)
 {
+  assert (&t != this); // subtree delet handling is currently incorrect in this case
+  if (&t == this) return *this; // nothing to do
+
   assert (invariant());
   if (is_branch()) {
     for (size_t i=0; i<subtrees.size(); ++i) {

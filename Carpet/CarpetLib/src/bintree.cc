@@ -75,6 +75,9 @@ template <typename T, int D, typename P>
 bintree<T,D,P> &
 bintree<T,D,P>::operator= (bintree const & t)
 {
+  assert (&t != this); // subtree delet handling is currently incorrect in this case
+  if (&t == this) return *this; // nothing to do
+
   assert (invariant());
   if (is_branch()) {
     for (int i=0; i<2; ++i) {

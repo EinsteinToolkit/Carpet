@@ -25,7 +25,7 @@ function eno1d(q)
   implicit none
 
   CCTK_REAL8 :: eno1d
-  CCTK_REAL8 :: q(4)
+  CCTK_REAL8, INTENT(IN) :: q(4)
   CCTK_REAL8 :: zero, one, two, three, six, half, eighth
   parameter (zero = 0)
   parameter (two = 2)
