@@ -1093,7 +1093,7 @@ void dh::regrid(bool const do_init) {
       timer_comm_reflux.start();
 
       // If there is no coarser level, do nothing
-      if (rl > 0) {
+      if (use_refluxing and rl > 0) {
         int const orl = rl - 1;
         local_cboxes &local_olevel = local_boxes.AT(ml).AT(orl);
         full_cboxes const &full_olevel = full_boxes.AT(ml).AT(orl);

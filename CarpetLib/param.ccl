@@ -240,6 +240,14 @@ BOOLEAN pad_to_cachelines "Pad arrays to the cache line size (only when VECTORIS
 
 
 
+# Refluxing
+
+BOOLEAN use_refluxing "Provide support for refluxing at level boundaries when using a cell centered grid" STEERABLE=always
+{
+} "yes"
+
+
+
 SHARES: IO
 
 USES STRING out_dir
