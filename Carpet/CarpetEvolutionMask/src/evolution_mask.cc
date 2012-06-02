@@ -90,7 +90,8 @@ namespace CarpetEvolutionMask {
       i2vect antishrinkby;
       for (int f=0; f<2;f++) {
         for (int d=0; d<dim;d++) {
-	  antishrinkby[f][d] = ghost_widths[f][d] + buffer_widths[f][d];
+	  antishrinkby[f][d] = ghost_widths[f][d] + buffer_widths[f][d] +
+                               enlarge_evolved_region_by;
         }
       }
       ibset antishrunk

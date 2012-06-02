@@ -20,3 +20,9 @@ STRING enforce_vars "Enforce mask in MoL automatically on the following variable
 {
   "" :: "a list of variables or groups"
 } ""
+
+INT enlarge_evolved_region_by "enlarge or shrink evolved region" STEERABLE=always
+{
+ 0:*  :: "positive values enlarge the evolved region"
+ *:0) :: "negative values shrink the evolved region. Up to buffer_width + nghostzones points can be removed"
+} 0
