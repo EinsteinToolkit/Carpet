@@ -53,6 +53,8 @@ namespace CarpetEvolutionMask {
       // cout << "coarsebase: " << coarsebase << endl;
       
       // Calculate the union of all refined regions
+      // TODO: we really want allrestricted but that is not stored and would have
+      //       to be copied out of dh.cc/regrid()
       ibset refined;
       for (int c=0; c<hh.components(reflevel); ++c) {
 	ibbox refcomp = hh.extent(mglevel,reflevel,c);
@@ -87,6 +89,8 @@ namespace CarpetEvolutionMask {
 
       // now make antibase larger
       // make refined regions SMALLER
+      // TODO: this is wrong at outer boundaries (which are unlikely to exist on
+      //     rl>0) and symmetry boundaries (which are likely to also exist on rl>0)
       i2vect antishrinkby;
       for (int f=0; f<2;f++) {
         for (int d=0; d<dim;d++) {
