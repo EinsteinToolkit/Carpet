@@ -369,7 +369,7 @@ BOOLEAN sync_barriers "Insert barriers before syncs, so that the sync timer is m
 {
 } "no"
 
-BOOLEAN output_internal_data "Periodically print internal data to the screen for debugging purposes"
+BOOLEAN output_internal_data "Periodically print internal data to the screen for debugging purposes" STEERABLE=always
 {
 } "no"
 
@@ -402,7 +402,7 @@ BOOLEAN timers_verbose "Output (debug) messages when a timer is started or stopp
 {
 } "no"
 
-STRING timer_xml_clock "Which clock to use in the XML timer output file"
+STRING timer_xml_clock "Which clock to use in the XML timer output file" STEERABLE=always
 {
   ".*" :: "must be a legal clock name"
 } "gettimeofday"
@@ -411,13 +411,13 @@ BOOLEAN output_initialise_timer_tree "Output timing information in tree form to 
 {
 } "no"
 
-INT output_timer_tree_every "Output timing information in tree form to standard output for Evolve every so many iterations"
+INT output_timer_tree_every "Output timing information in tree form to standard output for Evolve every so many iterations" STEERABLE=always
 {
   0   :: "don't report"
   1:* :: "report every so many iterations"
 } 0
 
-BOOLEAN output_xml_timer_tree "Output timing information in tree form as XML"
+BOOLEAN output_xml_timer_tree "Output timing information in tree form as XML" STEERABLE=always
 {
 } "no"
 
@@ -426,7 +426,7 @@ CCTK_REAL timer_tree_threshold_percentage "The percentage of the root timer belo
   0:* :: ""
 } 1.0
 
-INT timer_tree_output_precision "Number of decimal places to use in standard output for timer tree"
+INT timer_tree_output_precision "Number of decimal places to use in standard output for timer tree" STEERABLE=always
 {
   1:* :: "number of decimal places"
 } 1
@@ -590,7 +590,7 @@ BOOLEAN adaptive_stepsize "Allow adaptive timestep sizes"
 {
 } "no"
 
-BOOLEAN use_unusedpoints_mask "Turn on of off (default) storage and usage of 'unusedpoints_mask'"
+BOOLEAN use_unusedpoints_mask "Turn on storage and usage of 'unusedpoints_mask'" STEERABLE=recover
 {
 } "no"
 
