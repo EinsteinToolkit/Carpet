@@ -92,6 +92,9 @@ namespace CarpetEvolutionMask {
         for (int d=0; d<dim;d++) {
 	  antishrinkby[f][d] = ghost_widths[f][d] + buffer_widths[f][d] +
                                enlarge_evolved_region_by;
+          if (hh.refcent == vertex_centered) {
+            antishrinkby[f][d] += 1; // remove the weight = 1/2 points so that reduction operation are unaffected
+          }
         }
       }
       ibset antishrunk
