@@ -1696,7 +1696,8 @@ namespace CarpetInterp {
           assert (my_tl < num_tl.AT(n));
           
           // Are there enough time levels?
-          int const active_tl = CCTK_ActiveTimeLevelsVI (cctkGH, vi);
+          int const gi = CCTK_GroupIndexFromVarI (vi);
+          int const active_tl = groupdata.AT(gi).activetimelevels.AT(m).AT(rl);
           if (active_tl <= my_tl) {
             char * const fullname = CCTK_FullName(vi);
             CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -1705,7 +1706,6 @@ namespace CarpetInterp {
             free (fullname);
           }
           
-          int const gi = CCTK_GroupIndexFromVarI (vi);
           int const vi0 = CCTK_FirstVarIndexI (gi);
           ggf const *const ff = arrdata.AT(gi).AT(m).data.AT(vi-vi0);
           void const *const ptr =
