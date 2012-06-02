@@ -45,6 +45,9 @@ namespace CarpetEvolutionMask {
       assert (all (reffact == 2));
 
       const i2vect buffer_widths = dd.buffer_widths.at(reflevel);
+      //const i2vect overlap_widths = dd.overlap_widths.at(reflevel);
+      // overlap_widths do not need to be taken into account since coincide with the prolongation stencil
+      const i2vect ghost_widths = dd.ghost_widths.at(reflevel);
       
       // cout << "base: " << base << endl;
       // cout << "coarsebase: " << coarsebase << endl;
@@ -87,7 +90,7 @@ namespace CarpetEvolutionMask {
       i2vect antishrinkby;
       for (int f=0; f<2;f++) {
         for (int d=0; d<dim;d++) {
-	  antishrinkby[f][d] = cctkGH->cctk_nghostzones[d] + buffer_widths[f][d];
+	  antishrinkby[f][d] = ghost_widths[f][d] + buffer_widths[f][d];
         }
       }
       ibset antishrunk
