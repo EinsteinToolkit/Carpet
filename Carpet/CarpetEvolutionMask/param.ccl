@@ -2,21 +2,21 @@
 
 
 
-BOOLEAN verbose "Do verbose debugging output"
+BOOLEAN verbose "Do verbose debugging output" STEERABLE=always
 {
 } "no"
 
-BOOLEAN enforce_mask "Set RHS to zero where mask value is 0?"
+BOOLEAN enforce_mask "Set RHS to zero where mask value is 0?" STEERABLE=recover
 {
 } "no"
 
 
 
-BOOLEAN writeNaNs "Write NaNs into masked regions"
+BOOLEAN writeNaNs "Write NaNs into masked regions" STEERABLE=always
 {
 } "no"
 
-STRING enforce_vars "Enforce mask in MoL automatically on the following variables"
+STRING enforce_vars "Enforce mask in MoL automatically on the following variables" STEERABLE=always
 {
   "" :: "a list of variables or groups"
 } ""
