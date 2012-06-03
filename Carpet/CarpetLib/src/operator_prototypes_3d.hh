@@ -372,6 +372,20 @@ namespace CarpetLib {
   
   
   
+  template <typename T>
+  void
+  restrict_3d_cc_o3_rf2 (T const * restrict const src,
+                         ivect3 const & restrict srcext,
+                         T * restrict const dst,
+                         ivect3 const & restrict dstext,
+                         ibbox3 const & restrict srcbbox,
+                         ibbox3 const & restrict dstbbox,
+                         ibbox3 const & restrict srcregbbox,
+                         ibbox3 const & restrict dstregbbox,
+                         void * extraargs);
+  
+  
+  
   template <typename T, int centi, int centj, int centk>
   void
   restrict_3d_vc_rf2 (T const * restrict const src,

@@ -1034,13 +1034,20 @@ regrid (bool const do_init)
           full_dboxes const& obox = full_olevel.AT(oc);
           
           ibset needrecv = allrestricted & obox.owned;
+          if(use_cc_o3) {
+            // NOTE: change in behaviour (affects only outer boundaries I think)!!!!
+            // NOTE: b/c of this we need a low-level sync after the restrict
+            needrecv = allrestricted & obox.interior;
+          }
           // Cannot restrict into buffer zones
           assert ((allrestricted & obox.buffers).empty());
           
           for (int c = 0; c < h.components(rl); ++ c) {
             full_dboxes const& box = full_level.AT(c);
             
+            // HORRIBLE HACK
             ibbox const contracted_exterior =
+              use_cc_o3 ? box.interior.expand(ivect(int(h.refcent==cell_centered))).contracted_for(odomext) :
               box.exterior.contracted_for(odomext);
             ibset const ovlp = needrecv & contracted_exterior;
             
@@ -1051,6 +1058,10 @@ regrid (bool const do_init)
               ibbox const send = recv.expanded_for(box.exterior);
               ASSERT_c (send <= box.exterior,
                         "Refinement restriction: Send region must be contained in exterior");
+              if(use_cc_o3) {
+                ASSERT_c (send <= box.interior.expand(ivect(int(h.refcent==cell_centered))),
+                          "Refinement restriction: Send region must be contained in interior");
+              }
               
               sendrecv_pseudoregion_t const preg (send, c, recv, oc);
               fast_olevel.fast_ref_rest_sendrecv.push_back(preg);

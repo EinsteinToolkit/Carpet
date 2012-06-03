@@ -1141,6 +1141,19 @@ transfer_restrict (data const * const src,
                                     srcregbox, dstregbox, NULL);
           break;
         }
+        if (use_cc_o3 and
+            transport_operator != op_WENO and 
+            transport_operator != op_ENO) { // HACK
+          // Don't use call_operator, because we parallelise ourselves
+          restrict_3d_cc_o3_rf2(static_cast <T const *> (src->storage()),
+                             src->shape(),
+                             static_cast <T *> (this->storage()),
+                             this->shape(),
+                             srcbox,
+                             dstbox,
+                             srcregbox, dstregbox, NULL);
+          break;
+        }
         // Don't use call_operator, because we parallelise ourselves
         restrict_3d_cc_rf2(static_cast <T const *> (src->storage()),
                            src->shape(),
