@@ -798,6 +798,11 @@ namespace CarpetRegrid2 {
              level_boundary const& bnd,
              vector<ibset> const& regions, int const rl)
   {
+    // TODO: baseextent is the exterior of the domain (i.e. it
+    // includes the boundary); we need to use the interior of the
+    // domain here (i.e. baseextent minus the boundary). Such a
+    // calculation is already performed in the beginning of dh.cc's
+    // regrid.
     return regions.at(rl) <= hh.baseextent(0,rl);
   }
   

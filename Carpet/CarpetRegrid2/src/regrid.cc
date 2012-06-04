@@ -343,6 +343,10 @@ namespace CarpetRegrid2 {
     final_properties.push_back (new in_domain());
     final_properties.push_back (new is_symmetric());
     
+    // TODO: Check that the coarse grid contains all finer grids. To
+    // do this, apply proper_nesting to the coarse grid, and then
+    // check whether it grew -- if so, this is an error.
+    
     
     
     regss.resize (regions.size());
