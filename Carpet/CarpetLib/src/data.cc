@@ -1141,17 +1141,35 @@ transfer_restrict (data const * const src,
                                     srcregbox, dstregbox, NULL);
           break;
         }
-        if (use_cc_o3 and
+        if (use_higher_order_restriction and
             transport_operator != op_WENO and 
             transport_operator != op_ENO) { // HACK
-          // Don't use call_operator, because we parallelise ourselves
-          restrict_3d_cc_o3_rf2(static_cast <T const *> (src->storage()),
-                             src->shape(),
-                             static_cast <T *> (this->storage()),
-                             this->shape(),
-                             srcbox,
-                             dstbox,
-                             srcregbox, dstregbox, NULL);
+	  switch (restriction_order_space) {
+	    case 1:
+            // Don't use call_operator, because we parallelise ourselves
+            restrict_3d_cc_rf2(static_cast <T const *> (src->storage()),
+                               src->shape(),
+                               static_cast <T *> (this->storage()),
+                               this->shape(),
+                               srcbox,
+                               dstbox,
+                               srcregbox, dstregbox, NULL);
+	    break;
+	    case 3:
+            // Don't use call_operator, because we parallelise ourselves
+            restrict_3d_cc_o3_rf2(static_cast <T const *> (src->storage()),
+                               src->shape(),
+                               static_cast <T *> (this->storage()),
+                               this->shape(),
+                               srcbox,
+                               dstbox,
+                               srcregbox, dstregbox, NULL);
+	    break;
+	    default:
+	    CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+			"There is no restriction stencil with restriction_order_space==%d", restriction_order_space);
+	    break;
+	  }
           break;
         }
         // Don't use call_operator, because we parallelise ourselves

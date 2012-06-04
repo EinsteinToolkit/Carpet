@@ -25,6 +25,15 @@ namespace CarpetLib {
           dstiext, dstjext, dstkext)
   
   
+// This operator offers third-order accurate restriction operators for cell
+// centered grids when use_higher_order_restriction is set. This interpolation
+// is done for samples at the cell centres (so this is not a ppm scheme or
+// anything like that).  It really only fits a polynomial of the form
+//    f(x,y,z) = \sum_{i,j,k=0}^3 a_{i,j,k} x^i y^j z^k
+// to the fine cells and evaluates at x=y=z=0. So it is good for the metric,
+// but bad for matter (since it will destroy the conservation).  Because of
+// this it should not be used for grid functions whose transport operator is
+// not WENO or ENO which hopefully excludes all matter variables.
   
   template <typename T>
   void

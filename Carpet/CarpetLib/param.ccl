@@ -33,9 +33,15 @@ BOOLEAN use_dgfe "Use DGFE operators instead of Lagrange operators"
 
 
 
-BOOLEAN use_cc_o3 "Use third order cell centered restriction operators instead of first order"
+BOOLEAN use_higher_order_restriction "Use third order cell centered restriction operators instead of first order"
 {
 } "no"
+
+INT restriction_order_space "Order of restriction operator to use with use_higher_order_restriction"
+{
+  1 :: "linear interpolation, this is Carpet's original implementation"
+  3 :: "third order accurate restriction for grid functions where prolongation is not (W)ENO"
+} 3
 
 
 

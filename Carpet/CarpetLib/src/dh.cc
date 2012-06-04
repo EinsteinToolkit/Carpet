@@ -1034,7 +1034,7 @@ regrid (bool const do_init)
           full_dboxes const& obox = full_olevel.AT(oc);
           
           ibset needrecv = allrestricted & obox.owned;
-          if(use_cc_o3) {
+          if(use_higher_order_restriction) {
             // NOTE: change in behaviour (affects only outer boundaries I think)!!!!
             // NOTE: b/c of this we need a low-level sync after the restrict
             needrecv = allrestricted & obox.interior;
@@ -1045,10 +1045,14 @@ regrid (bool const do_init)
           for (int c = 0; c < h.components(rl); ++ c) {
             full_dboxes const& box = full_level.AT(c);
             
-            // HORRIBLE HACK
-            ibbox const contracted_exterior =
-              use_cc_o3 ? box.interior.expand(ivect(int(h.refcent==cell_centered))).contracted_for(odomext) :
-              box.exterior.contracted_for(odomext);
+            // If we make a mistake expanding the domain of dependence here, it
+            // _should_ be caught be by the expand()ed is_contained_in(srcbbox)
+            // test in the actual operator. 
+            int const shrink_by =
+              use_higher_order_restriction and (h.refcent == cell_centered) ?
+              restriction_order_space/2  : 0;
+            ibbox const contracted_exterior = 
+              box.exterior.expand(ivect(-shrink_by)).contracted_for(odomext);
             ibset const ovlp = needrecv & contracted_exterior;
             
             for (ibset::const_iterator
@@ -1058,7 +1062,7 @@ regrid (bool const do_init)
               ibbox const send = recv.expanded_for(box.exterior);
               ASSERT_c (send <= box.exterior,
                         "Refinement restriction: Send region must be contained in exterior");
-              if(use_cc_o3) {
+              if(use_higher_order_restriction) {
                 ASSERT_c (send <= box.interior.expand(ivect(int(h.refcent==cell_centered))),
                           "Refinement restriction: Send region must be contained in interior");
               }
