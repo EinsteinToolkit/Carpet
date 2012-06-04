@@ -3,7 +3,7 @@
       implicit none
 
       integer a
-      character*100 b
+      character*(*) b
       
       write(*,*) b
       stop
