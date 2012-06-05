@@ -20,6 +20,12 @@ shares: IO
 USES STRING out_dir
 
 
+shares: CarpetLib
+
+USES BOOLEAN use_higher_order_restriction
+USES INT restriction_order_space
+
+
 private:
 
 BOOLEAN domain_from_coordbase "Use the domain description from CoordBase"

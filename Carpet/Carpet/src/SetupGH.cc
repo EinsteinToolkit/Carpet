@@ -2683,10 +2683,18 @@ namespace Carpet {
       int const min_nghosts =
         ((prolongation_stencil_size + refinement_factor - 1)
          / (refinement_factor - 1));
+      int const min_nghosts_restrict =
+        restriction_order_space / 2;
       if (any (any (ghosts.AT(rl) < i2vect (min_nghosts)))) {
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "There are not enough ghost zones for the desired spatial prolongation order on map %d, refinement level %d.  With a spatial prolongation order of %d, you need at least %d ghost zones.",
                     m, rl, my_prolongation_order_space, min_nghosts);
+      }
+      if (use_higher_order_restriction and 
+          any (any (ghosts.AT(rl) < i2vect (min_nghosts_restrict)))) {
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "There are not enough ghost zones for the desired restriction order on map %d, refinement level %d.  With a restriction order of %d, you need at least %d ghost zones.",
+                    m, rl, restriction_order_space, min_nghosts_restrict);
       }
     }
   }
