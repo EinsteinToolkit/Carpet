@@ -33,6 +33,8 @@ BOOLEAN use_dgfe "Use DGFE operators instead of Lagrange operators"
 
 
 
+restricted:
+
 BOOLEAN use_higher_order_restriction "Use third order cell centered restriction operators instead of first order"
 {
 } "no"
@@ -45,6 +47,8 @@ INT restriction_order_space "Order of restriction operator to use with use_highe
 } 3
 
 
+
+private:
 
 BOOLEAN output_bboxes "Output bounding box information to the screen" STEERABLE=always
 {
