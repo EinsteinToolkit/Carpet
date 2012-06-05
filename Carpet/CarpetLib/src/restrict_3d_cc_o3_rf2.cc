@@ -138,7 +138,7 @@ namespace CarpetLib {
       for (int j=0; j<regjext; ++j) {
         for (int i=0; i<regiext; ++i) {
           
-#if(1 || defined(CARPET_DEBUG))
+#ifdef CARPET_DEBUG
     if(not (2 * k + 2 + srckoff < srckext and
             2 * j + 2 + srcjoff < srcjext and
             2 * i + 2 + srcioff < srciext and
