@@ -1165,6 +1165,16 @@ transfer_restrict (data const * const src,
                                dstbox,
                                srcregbox, dstregbox, NULL);
 	    break;
+	    case 5:
+            // Don't use call_operator, because we parallelise ourselves
+            restrict_3d_cc_o5_rf2(static_cast <T const *> (src->storage()),
+                               src->shape(),
+                               static_cast <T *> (this->storage()),
+                               this->shape(),
+                               srcbox,
+                               dstbox,
+                               srcregbox, dstregbox, NULL);
+	    break;
 	    default:
 	    CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
 			"There is no restriction stencil with restriction_order_space==%d", restriction_order_space);

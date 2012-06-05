@@ -41,6 +41,7 @@ INT restriction_order_space "Order of restriction operator to use with use_highe
 {
   1 :: "linear interpolation, this is Carpet's original implementation"
   3 :: "third order accurate restriction for grid functions where prolongation is not (W)ENO"
+  5 :: "fifth order accurate restriction for grid functions where prolongation is not (W)ENO"
 } 3
 
 

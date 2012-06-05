@@ -35,6 +35,7 @@ SRCS =	backtrace.cc				\
 	interpolate_eno_3d_3tl.cc		\
 	restrict_3d_cc_rf2.cc			\
 	restrict_3d_cc_o3_rf2.cc		\
+	restrict_3d_cc_o5_rf2.cc		\
 	restrict_3d_rf2.cc			\
 	restrict_3d_vc_rf2.cc			\
 	restrict_3d_dgfe_rf2.cc			\
