@@ -1059,13 +1059,9 @@ regrid (bool const do_init)
                    ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
             {
               ibbox const& recv = *ri;
-              ibbox const send = recv.expanded_for(box.exterior);
+              ibbox const send = recv.expanded_for(box.exterior).expand(ivect(shrink_by));
               ASSERT_c (send <= box.exterior,
                         "Refinement restriction: Send region must be contained in exterior");
-              if(use_higher_order_restriction) {
-                ASSERT_c (send <= box.interior.expand(ivect(int(h.refcent==cell_centered))),
-                          "Refinement restriction: Send region must be contained in interior");
-              }
               
               sendrecv_pseudoregion_t const preg (send, c, recv, oc);
               fast_olevel.fast_ref_rest_sendrecv.push_back(preg);
