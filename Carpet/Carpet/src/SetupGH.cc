@@ -394,46 +394,58 @@ namespace Carpet {
         for (int n=0; n<CPU_SETSIZE; ++n) {
           if (mask.at(n)) ++num_cores;
         }
-        if (num_cores >= mynthreads * num_host_procs) {
-          // It seems that all cores are available to all processes on
-          // this host. Split the cores evenly across the processes.
-          int skip_cores = 0;
-          for (int i=0; i<num_host_procs; ++i) {
-            int const p = host_procs.at(i);
-            if (p == myproc) break;
-            skip_cores += mynthreads;
-          }
-          for (int n=0; n<CPU_SETSIZE; ++n) {
-            if (skip_cores == 0) break;
-            if (mask.at(n)) {
-              -- skip_cores;
-              mask.at(n) = false;
+        if (num_cores == 0) {
+          CCTK_WARN (CCTK_WARN_ALERT,
+                     "Cannot select core set for this process (no cores seem available to this process)");
+        } else {
+          bool const other_procs_need_cores = 
+            num_cores >= mynthreads * num_host_procs;
+          int my_host_index = 0;
+          if (other_procs_need_cores) {
+            // It seems that all cores are available to all processes
+            // on this host. Split the cores evenly across the
+            // processes.
+            for (int i=0; i<num_host_procs; ++i) {
+              int const p = host_procs.at(i);
+              if (p == myproc) {
+                my_host_index = i;
+                break;
+              }
             }
+            if (num_cores % num_host_procs != 0) {
+              CCTK_WARN (CCTK_WARN_ALERT,
+                         "The number of processes on this host does not evenly divide the number of cores on this host -- leaving some cores unassigned");
+            }
+            num_cores /= num_host_procs;
           }
-        }
-        // Choose cores for this process
-        int n0 = -1;
-        for (int n=0; n<CPU_SETSIZE; ++n) {
-          if (mask.at(n)) {
-            n0 = n;
-            break;
+          if (num_cores % mynthreads != 0) {
+            CCTK_WARN (CCTK_WARN_ALERT,
+                       "The number of threads in this process does not evenly divide the number of cores for this process -- leaving some cores unassigned");
           }
-        }
-        if (n0 >= 0) {
+          int const num_cores_per_thread = num_cores / mynthreads;
+          // Choose cores for this process
+          int const first_core_index =
+            my_host_index * mynthreads * num_cores_per_thread;
+          vector<int> available_cores;
+          for (int n=0; n<CPU_SETSIZE; ++n) {
+            if (mask.at(n)) available_cores.push_back(n);
+          }
+          int const n0 = available_cores.at(first_core_index);
           CCTK_VInfo (CCTK_THORNSTRING,
-                      "Selecting cores %d-%d for this process",
-                      n0, n0+mynthreads-1);
+                      "Selecting cores %d (and following) for this process",
+                      n0);
 #pragma omp parallel
           {
             cpu_set_t cpumask;
             CPU_ZERO(&cpumask);
-            CPU_SET(n0 + dist::thread_num(), &cpumask);
+            int const i0 =
+              first_core_index + dist::thread_num() * num_cores_per_thread;
+            for (int i=0; i<num_cores_per_thread; ++i) {
+              CPU_SET(available_cores[i0+i], &cpumask);
+            }
             int const ierr = sched_setaffinity(0, sizeof(cpumask), &cpumask);
             assert (not ierr);
           }
-        } else {
-          CCTK_WARN (CCTK_WARN_ALERT,
-                     "Cannot select core set for this process (no cores seem available to this process)");
         }
 #else
         CCTK_WARN (CCTK_WARN_ALERT,
