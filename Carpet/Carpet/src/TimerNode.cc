@@ -46,9 +46,8 @@ namespace Carpet {
   TimerNode *TimerNode::root_timer = 0;
 
   TimerNode::TimerNode(string name): d_name(name), d_parent(0),
-                                     d_running(false)
+                                     d_running(false), timer(0)
   {
-    timer = 0;
   }
 
   TimerNode::~TimerNode()
@@ -70,13 +69,23 @@ namespace Carpet {
       return getName();
   }
 
+  void TimerNode::instantiate()
+  {
+    assert(!d_running);
+    d_parent = d_current;
+    d_current = this;
+    if (timer == 0)
+      timer = new CactusTimer(pathName());
+    d_current = d_parent;
+  }
+
   void TimerNode::start()
   {
-    if(!d_running)
+    if (!d_running)
     {
       d_running = true;
       d_parent = d_current;
-      d_current=this;
+      d_current = this;
       if (timer == 0)
         timer = new CactusTimer(pathName());
       assert(timer);
@@ -90,7 +99,7 @@ namespace Carpet {
 
   void TimerNode::stop()
   {
-    if(d_running)
+    if (d_running)
     {
       // A timer can only be stopped if it is the current timer
       if(this != d_current)
@@ -99,8 +108,8 @@ namespace Carpet {
 
       timer->stop();
 
-      d_running=false;
-      d_current=d_parent;
+      d_running = false;
+      d_current = d_parent;
     }
     else
     {
@@ -212,6 +221,11 @@ namespace Carpet {
     }
     out.precision (oldprecision);
     out.setf (oldflags);
+
+    if (level == 0)
+    {
+      out << "--------" << hyphens << "--------" << hyphens << "-------" << endl;
+    }
   }
 
   void TimerNode::outputXML(const string &out_dir, int proc)

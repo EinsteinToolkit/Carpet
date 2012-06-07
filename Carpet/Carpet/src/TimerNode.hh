@@ -68,6 +68,7 @@ public:
   TimerNode(string name);
   ~TimerNode();
 
+  void instantiate();
   void start();
   void stop();
 

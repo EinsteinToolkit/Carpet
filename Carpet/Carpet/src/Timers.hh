@@ -53,6 +53,7 @@ Timer objects can be allocated as "static" or not - it does not matter.
     Timer (const string &name);
     ~Timer ();
 
+    void instantiate ();
     void start ();
     void stop ();
     string name () const;

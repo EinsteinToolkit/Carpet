@@ -38,6 +38,17 @@ namespace Carpet {
   {
   }
 
+  /// Insert the timer into the tree of timers as a child of the most
+  /// recently started timer that has not been stopped. Don't start
+  /// the timer. This routine ensures a timer is created even if it is
+  /// never started.
+  void Timer::instantiate ()
+  {
+    TimerNode *current_timer = TimerNode::getCurrentTimer();
+    assert(current_timer);
+    current_timer->getChildTimer(name())->instantiate();
+  }
+
   /// Start the timer and insert it into the tree of timers as a child
   /// of the most recently started timer that has not been stopped.
   void Timer::start ()
