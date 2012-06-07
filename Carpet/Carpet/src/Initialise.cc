@@ -289,7 +289,6 @@ namespace Carpet {
           do_global_mode = do_early_global_mode; // on first iteration, coarsest grid
           do_meta_mode = do_early_meta_mode; // on first iteration, coarsest grid
           
-#if 0
           BEGIN_TIMELEVEL_LOOP(cctkGH) {
             
             Waypoint ("Recovering II at iteration %d time %g timelevel %d%s%s",
@@ -303,16 +302,6 @@ namespace Carpet {
             ScheduleTraverse (where, "CCTK_POST_RECOVER_VARIABLES", cctkGH);
             
           } END_TIMELEVEL_LOOP;
-#else
-          Waypoint ("Recovering II at iteration %d time %g%s%s",
-                    cctkGH->cctk_iteration,
-                    (double)cctkGH->cctk_time,
-                    (do_global_mode ? " (global)" : ""),
-                    (do_meta_mode ? " (meta)" : ""));
-          
-          // Post recover variables
-          ScheduleTraverse (where, "CCTK_POST_RECOVER_VARIABLES", cctkGH);
-#endif
           
           // Checking
           PoisonCheck (cctkGH, currenttime);
