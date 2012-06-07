@@ -364,7 +364,7 @@ namespace CarpetLib {
       typename coll_t::iterator const worker = w->empty() ? nonempty_worker : w;
       while (w->size() < max_items) {
         CCTK_REAL const ratio = 0.0; // create empty fill-up items
-        w->add_item (item_split (w->get_one_item(), ratio));
+        w->add_item (item_split (worker->get_one_item(), ratio));
       }
     }
     
