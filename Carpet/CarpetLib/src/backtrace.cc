@@ -500,6 +500,10 @@ namespace CarpetLib {
     cerr << "Writing backtrace to " << filename << endl;
     myfile.open(filename.c_str());
     generate_backtrace(myfile);
+    myfile << "\n"
+           << "The hexadecimal addresses in this backtrace can also be interpreted\n"
+           << "with a debugger (e.g. gdb), or with the 'addr2line' (or 'gaddr2line')\n"
+           << "command line tool.\n";
     myfile.close();
   }
   
