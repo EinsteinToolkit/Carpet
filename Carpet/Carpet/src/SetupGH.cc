@@ -909,10 +909,9 @@ namespace Carpet {
       vhh.AT(m)->recompose (rl, false);
       vhh.AT(m)->regrid_free (false);
       
-      // Output grid structure
+      // Output grid structure to screen but not to files since
+      // IO_TruncateFiles might not be present yet
       OutputGrids (cctkGH, m, * vhh.AT(m), * vdd.AT(m));
-      OutputGridStructure (cctkGH, m, regssss.AT(m));
-      OutputGridCoordinates (cctkGH, m, regssss.AT(m));
       
     } // for m
     
