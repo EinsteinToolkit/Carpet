@@ -1404,7 +1404,7 @@ namespace CarpetIOHDF5 {
         const b2vect obnds       = vhh.at(m)->outer_boundaries(rl,c);
         const i2vect ghost_width = arrdata.at(gi).at(m).dd->ghost_widths.AT(rl);
         for (int d = 0; d < outdim; d++) {
-          nghostzones[d] = ghost_width[0][dirs[d]];
+          nghostzones[d] = output_ghost_points ? ghost_width[0][dirs[d]] : 0;
           assert (all (ghost_width[0] == ghost_width[1]));
 
           bbox[2*d] = obnds[0][dirs[d]];
