@@ -1068,7 +1068,32 @@ namespace CarpetIOHDF5 {
     ibset exts(ibbox(lo,hi,str));
     // do grid arrays have buffer zones?
     if (not output_buffer_points) {
-      exts &= allactive;
+      ivect loghosts(0);
+      ivect highosts(0);
+      // possibly re-add ghost points and symmetry points 
+      // TODO: come up with a nicer way to do this
+      for (int d=0; d<groupdim; ++d) {
+        bool const output_lower_ghosts =
+          obnds[0][d]
+          ? (is_symbnd[2*d]
+             ? output_symmetry_points
+             : (output_boundary_points and out3D_outer_ghosts))
+          : (output_ghost_points and out3D_ghosts);
+        bool const output_upper_ghosts =
+          obnds[1][d]
+          ? (is_symbnd[2*d+1]
+             ? output_symmetry_points
+             : (output_boundary_points and out3D_outer_ghosts))
+          : (output_ghost_points and out3D_ghosts);
+
+        if (output_lower_ghosts) {
+          loghosts[d] = ghost_width[0][d];
+        }
+        if (output_upper_ghosts) {
+          highosts[d] = ghost_width[1][d];
+        }
+      }
+      exts = exts & allactive.expand(loghosts, highosts);
     }
 
     return exts;
