@@ -1001,7 +1001,6 @@ regrid (bool const do_init)
         ibset allrestricted;
         switch (h.refcent) {
         case vertex_centered:
-          // TODO: support this
           allrestricted = allactive.contracted_for(odomext);
           break;
         case cell_centered: {
