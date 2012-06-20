@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <string>
 #include <sstream>
@@ -104,7 +106,8 @@ namespace Carpet {
       {
         Timer timer("CheckLevelTimes");
         timer.start();
-        CCTK_REAL const eps = 1.0e-12;
+        CCTK_REAL const eps =
+          pow(numeric_limits<CCTK_REAL>::epsilon(), CCTK_REAL(0.75));
         assert (abs (cctkGH->cctk_time - global_time) <= eps * global_time);
         for (int ml=0; ml<mglevels; ++ml) {
           for (int rl=0; rl<reflevels; ++rl) {
