@@ -171,11 +171,12 @@ namespace CarpetLib {
       CCTK_WARN (0, "Internal error: region extent is empty");
     }
 
-    // shift vertex centered directions to lower interface (see Refluxing for conventions)
+    // shift vertex centered directions to lower interface (see
+    // Refluxing for conventions)
     ivect const ivert(icent == 0);
     ibbox3 const unshifted_srcbbox = srcbbox.shift(-ivert,2);
     ibbox3 const unshifted_dstbbox = dstbbox.shift(-ivert,2);
-    ibbox3 const unshifted_srcregbbox = srcregbbox.shift(-ivert,2);
+    // ibbox3 const unshifted_srcregbbox = srcregbbox.shift(-ivert,2);
     ibbox3 const unshifted_regbbox = regbbox.shift(-ivert,2);
     
     if (not unshifted_regbbox.expanded_for(unshifted_srcbbox).is_contained_in(unshifted_srcbbox) or
