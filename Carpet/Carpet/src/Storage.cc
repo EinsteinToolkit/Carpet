@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <cassert>
+#include <climits>
 #include <cstdlib>
 
 #include <cctk.h>
@@ -60,7 +62,7 @@ namespace Carpet {
     int const min_ml = all_ml ? 0        : mglevel;
     int const max_ml = all_ml ? mglevels : mglevel+1;
     
-    int total_num_timelevels = 0;
+    int min_num_timelevels = INT_MAX;
     
     for (int n=0; n<n_groups; ++n) {
       int const group = groups[n];
@@ -202,19 +204,21 @@ namespace Carpet {
           // Complain if there are not enough active time levels
           GroupStorageCheck (cctkGH, group, ml, rl);
           
-          // Record current number of time levels
-          // Note: This adds the time levels of all refinement levels
-          total_num_timelevels
-            += groupdata.AT(group).activetimelevels.AT(ml).AT(rl);
+          // Record (minimum of) current number of time levels
+          min_num_timelevels =
+            min(min_num_timelevels,
+                groupdata.AT(group).activetimelevels.AT(ml).AT(rl));
           
         } // for rl
       } // for ml
       
     } // for n
+    if (min_num_timelevels == INT_MAX) {
+      min_num_timelevels = 0;
+    }
     
-    //    return total_num_timelevels;
     return do_allow_past_timelevels ? 
-      total_num_timelevels : min(1,total_num_timelevels);
+      min_num_timelevels : min(1,min_num_timelevels);
   }
   
   
