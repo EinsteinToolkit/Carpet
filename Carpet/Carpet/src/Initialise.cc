@@ -287,6 +287,39 @@ namespace Carpet {
           do_global_mode = do_early_global_mode; // on first iteration, coarsest grid
           do_meta_mode = do_early_meta_mode; // on first iteration, coarsest grid
           
+          // This has been activated and deactivated a number of times by now,
+          // so I'll put down the reasoning behind deactivating it. Maybe the
+          // other party in this tug of war will be able to respond. Most of
+          // this is from b4429f4006e5:
+          //
+          // Traverse post_recover_variables in only for current timelevel (not
+          // for all timelevels). Variables on past timelevels cannot have
+          // their boundary conditions applied consistently, because time
+          // interpolation for these may requires even older timelevels that
+          // are not available.  The problem is not that prolongation in time
+          // on the older timelevels will fail. Prolongation will succeed and
+          // is not an extrapolation in time, so Carpet does not abort. However
+          // the time slices used as sources for the interpolation differ from
+          // the ones that were originally used during the evolution. This
+          // means that data on the old slices differs from what was present
+          // during the evolution ie. checkpointing and recovery change data
+          // on the grid.
+          //
+          // Current wisdom (ie. Erik says) is that all grid functions with
+          // multiple time levels should to be checkpointed because of this. If
+          // you do not checkpoint them, then you must be able to recompute
+          // them exactly using a pointwise, local, algebraic method that does
+          // not rely on present values of the re-computed data on the grid.
+          // This exlcudes the Hydro primitives (since con2prim requires an
+          // initial guess), but would in principle (I think) work with the ADM
+          // variables. 
+          //
+          // In particular one cannot call MoL_PostStep on all levels since it
+          // involves prolongation.
+          //
+          // Roland Haas, June 21st 2012
+
+#if 0
           BEGIN_TIMELEVEL_LOOP(cctkGH) {
             
             Waypoint ("Recovering II at iteration %d time %g timelevel %d%s%s",
@@ -300,6 +333,16 @@ namespace Carpet {
             ScheduleTraverse (where, "CCTK_POST_RECOVER_VARIABLES", cctkGH);
             
           } END_TIMELEVEL_LOOP;
+#else
+          Waypoint ("Recovering II at iteration %d time %g%s%s",
+                    cctkGH->cctk_iteration,
+                    (double)cctkGH->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
+          
+          // Post recover variables
+          ScheduleTraverse (where, "CCTK_POST_RECOVER_VARIABLES", cctkGH);
+#endif
           
           // Checking
           PoisonCheck (cctkGH, currenttime);
