@@ -493,6 +493,8 @@ namespace Carpet {
                      "The number of threads for this process is larger its number of cores. This may indicate a performance problem.");
         }
       }
+#else
+      CCTK_INFO ("Cannot determine core affinity");
 #endif
     }
     
