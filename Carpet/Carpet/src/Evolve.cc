@@ -294,6 +294,12 @@ namespace Carpet {
     if (did_regrid) {
       bool did_any_recompose = false;
       BEGIN_META_MODE (cctkGH) {
+
+        bool have_done_global_mode = false;
+        bool have_done_early_global_mode = false;
+        bool have_done_late_global_mode = false;
+        bool have_done_anything = false;
+
         for (int rl=0; rl<reflevels; ++rl) {
           
           bool const did_recompose = Recompose (cctkGH, rl, true);
@@ -310,13 +316,22 @@ namespace Carpet {
               ENTER_LEVEL_MODE (cctkGH, rl) {
                 BeginTimingLevel (cctkGH);
                 
-                do_early_global_mode = reflevel==0;
+                do_early_global_mode = not have_done_early_global_mode;
                 do_late_global_mode = reflevel==reflevels-1;
                 do_early_meta_mode =
                   do_early_global_mode and mglevel==mglevels-1;
                 do_late_meta_mode = do_late_global_mode and mglevel==0;
                 do_global_mode = do_late_global_mode;
                 do_meta_mode = do_late_meta_mode;
+                assert (not (have_done_global_mode and do_global_mode));
+                assert (not (have_done_early_global_mode and
+                             do_early_global_mode));
+                assert (not (have_done_late_global_mode and
+                             do_late_global_mode));
+                have_done_global_mode |= do_global_mode;
+                have_done_early_global_mode |= do_early_global_mode;
+                have_done_late_global_mode |= do_late_global_mode;
+                have_done_anything = true;
                 
                 BEGIN_TIMELEVEL_LOOP(cctkGH) {
                   
@@ -344,6 +359,11 @@ namespace Carpet {
           } // if did_recompose
           
         } // for rl
+
+        if (have_done_anything) assert (have_done_global_mode);
+        if (have_done_anything) assert (have_done_early_global_mode);
+        if (have_done_anything) assert (have_done_late_global_mode);
+        
       } END_META_MODE;
     } // if did_regrid
     
