@@ -305,12 +305,10 @@ namespace Carpet {
           bool const did_recompose = Recompose (cctkGH, rl, true);
           did_any_recompose = did_any_recompose or did_recompose;
           
-          // Do not omit the global mode call when the finest level
-          // does not change:
-          // if (did_recompose or (did_remove_level and rl == reflevels - 1)) {
-          if (did_recompose or
-              ((did_remove_level or did_any_recompose) and
-               rl == reflevels - 1))
+          // Carpet assumes that a regridding operation always changes "level N
+          // and all finer levels" so we should call POSTREGRID on all finer levels
+          if (did_any_recompose or
+              (did_remove_level and rl == reflevels - 1))
           {
             BEGIN_MGLEVEL_LOOP (cctkGH) {
               ENTER_LEVEL_MODE (cctkGH, rl) {

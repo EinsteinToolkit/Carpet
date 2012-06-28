@@ -913,9 +913,13 @@ namespace Carpet {
     
     // Regrid
     Checkpoint ("Regrid");
+    int const oldreflevels = reflevels;
     bool const did_regrid = Regrid (cctkGH, true, prolongate_initial_data);
+    bool const did_remove_level = reflevels < oldreflevels;
+    assert (not did_remove_level or did_regrid);
     
     if (did_regrid) {
+      bool did_any_recompose = false;
       BEGIN_META_MODE (cctkGH) {
 
         bool have_done_global_mode = false;
@@ -926,11 +930,14 @@ namespace Carpet {
         for (int rl=0; rl<reflevels; ++rl) {
           
           bool did_recompose = false;
-          if (did_regrid) {
-            did_recompose = Recompose (cctkGH, rl, prolongate_initial_data);
-          }
+          did_recompose = Recompose (cctkGH, rl, prolongate_initial_data);
+          did_any_recompose = did_any_recompose or did_recompose;
           
-          if (did_recompose) {
+          // Carpet assumes that a regridding operation always changes "level N
+          // and all finer levels" so we should call POSTREGRID on all finer levels
+          if (did_any_recompose or
+              (did_remove_level and rl == reflevels - 1))
+          {
             BEGIN_MGLEVEL_LOOP (cctkGH) {
               ENTER_LEVEL_MODE (cctkGH, rl) {
                 BeginTimingLevel (cctkGH);
@@ -1094,9 +1101,13 @@ namespace Carpet {
     
     // Regrid
     Checkpoint ("Regrid");
+    int const oldreflevels = reflevels;
     bool const did_regrid = Regrid (cctkGH, true, prolongate_initial_data);
+    bool const did_remove_level = reflevels < oldreflevels;
+    assert (not did_remove_level or did_regrid);
     
     if (did_regrid) {
+      bool did_any_recompose = false;
       BEGIN_META_MODE (cctkGH) {
 
         bool have_done_global_mode = false;
@@ -1106,12 +1117,14 @@ namespace Carpet {
 
         for (int rl=0; rl<reflevels; ++rl) {
           
-          bool did_recompose = false;
-          if (did_regrid) {
-            did_recompose = Recompose (cctkGH, rl, prolongate_initial_data);
-          }
+          bool did_recompose = Recompose (cctkGH, rl, prolongate_initial_data);
+          did_any_recompose = did_any_recompose or did_recompose;
           
-          if (did_recompose) {
+          // Carpet assumes that a regridding operation always changes "level N
+          // and all finer levels" so we should call POSTREGRID on all finer levels
+          if (did_any_recompose or
+              (did_remove_level and rl == reflevels - 1))
+          {
             BEGIN_MGLEVEL_LOOP (cctkGH) {
               ENTER_LEVEL_MODE (cctkGH, rl) {
                 BeginTimingLevel (cctkGH);
