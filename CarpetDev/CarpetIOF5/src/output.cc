@@ -104,7 +104,8 @@ namespace CarpetIOF5 {
     
     struct component_indices_t: map_indices_t {
       // elements >=dim remain undefined
-      ivect lbnd, lssh, lghosts, ughosts;
+      ivect ash;
+      ivect lbnd, lsh, lghosts, ughosts;
       ivect imin, imax, ioff, ilen;
       rvect clower, cupper;
       
@@ -117,8 +118,9 @@ namespace CarpetIOF5 {
         if (gindex == -1) {
           // grid function
           for (int d=0; d<(::dim); ++d) {
+            ash[d]     = cctk_ash[d];
             lbnd[d]    = cctk_lbnd[d];
-            lssh[d]    = CCTK_LSSH(0,d);
+            lsh[d]     = cctk_lsh[d];
             lghosts[d] = cctk_bbox[2*d  ] ? 0 : cctk_nghostzones[d];
             ughosts[d] = cctk_bbox[2*d+1] ? 0 : cctk_nghostzones[d];
           }
@@ -128,25 +130,23 @@ namespace CarpetIOF5 {
           int const ierr = CCTK_GroupDynamicData(cctkGH, gindex, &dyndata);
           assert(not ierr);
           for (int d=0; d<dyndata.dim; ++d) {
+            ash[d]     = dyndata.ash[d];
             lbnd[d]    = dyndata.lbnd[d];
-#ifdef CCTK_GROUPDYNAMICDATA_HAS_LSSH
-            lssh[d]    = dyndata.lssh[CCTK_LSSH_IDX(0,d)];
-#else
-            lssh[d]    = dyndata.lsh[d];
-#endif
+            lsh[d]     = dyndata.lsh[d];
             lghosts[d] = dyndata.bbox[2*d  ] ? 0 : dyndata.nghostzones[d];
             ughosts[d] = dyndata.bbox[2*d+1] ? 0 : dyndata.nghostzones[d];
           }
           for (int d=dyndata.dim; d<(::dim); ++d) {
+            ash[d]     = 1;
             lbnd[d]    = 0;
-            lssh[d]    = 1;
+            lsh[d]     = 1;
             lghosts[d] = 0;
             ughosts[d] = 0;
           }
         }
         for (int d=0; d<(::dim); ++d) {
           imin[d] = 0;
-          imax[d] = lssh[d];
+          imax[d] = lsh[d];
           if (not output_ghost_points) {
             // TODO: Don't output ghosts on refinement boundaries;
             // only output ghosts for inter-process boundaries
@@ -547,8 +547,6 @@ namespace CarpetIOF5 {
         assert(0);
       }
       
-      assert(groupdata.stagtype == 0);
-      
       // TODO: Do not output symmetry zones (unless requested by the
       // user)
       // TODO: Do not output buffer zones (is that easily possible?)
@@ -717,8 +715,8 @@ namespace CarpetIOF5 {
             for (int j=0; j<ci.ilen[1]; ++j) {
               for (int i=0; i<ci.ilen[0]; ++i) {
                 int const isrc =
-                  (ci.imin[0]+i + ci.lssh[0] *
-                   (ci.imin[1]+j + ci.lssh[1] *
+                  (ci.imin[0]+i + ci.ash[0] *
+                   (ci.imin[1]+j + ci.ash[1] *
                     (ci.imin[2]+k)));
                 int const idst = i + ci.ilen[0] * (j + ci.ilen[1] * k);
                 rdata[idst] = varptr[isrc];
@@ -740,8 +738,8 @@ namespace CarpetIOF5 {
             for (int j=0; j<ci.ilen[1]; ++j) {
               for (int i=0; i<ci.ilen[0]; ++i) {
                 int const isrc =
-                  (ci.imin[0]+i + ci.lssh[0] *
-                   (ci.imin[1]+j + ci.lssh[1] *
+                  (ci.imin[0]+i + ci.ash[0] *
+                   (ci.imin[1]+j + ci.ash[1] *
                     (ci.imin[2]+k)));
                 int const idst = i + ci.ilen[0] * (j + ci.ilen[1] * k);
                 rdata[idst] = varptr[isrc];
