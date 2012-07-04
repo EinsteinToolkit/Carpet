@@ -250,11 +250,6 @@ namespace CarpetInterp {
                     "input array variable %d is not of type CCTK_GF or "
                     "CCTK_ARRY", n);
       }
-      if (CCTK_GroupStaggerIndexGI (group) != 0) {
-        CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "interpolation of staggered input array variable %d "
-                    "is not supported", n);
-      }
       if (coord_group < 0) {
         coord_group = group;
         CCTK_GroupDynamicData (cctkGH, coord_group, &coord_group_data);

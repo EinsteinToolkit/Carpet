@@ -128,30 +128,17 @@ namespace Carpet {
           = (ext.lower() - baseext.lower()) / ext.stride();
         ivect_ref(info.ubnd)
           = (ext.upper() - baseext.lower()) / ext.stride();
-        ivect_ref(info.lsh) = gdata::allocated_memory_shape (ext);
-#ifdef CCTK_HAVE_CGROUPDYNAMICDATA_LSSH
-        for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-          for (int d=0; d<dim; ++d) {
-            // TODO: support staggering
-            const_cast<int*>(info.lssh)[CCTK_LSSH_IDX(stg,d)]
-              = (ext.shape() / ext.stride())[d];
-          }
-        }
-#endif
+        ivect_ref(info.lsh) = ext.shape() / ext.stride();
+        ivect_ref(info.ash) = gdata::allocated_memory_shape (ext);
         if (gp.disttype == CCTK_DISTRIB_CONSTANT) {
           int const dir = gp.dim==0 ? 0 : gp.dim-1;
           ivect & gsh = ivect_ref(info.gsh);
-          ivect lssh = ivect_ref(info.lsh);
-#ifdef CCTK_HAVE_CGROUPDYNAMICDATA_LSSH
-          for (int d=0; d<dim; ++d) {
-            lssh[d] = info.lssh[CCTK_LSSH_IDX(0,d)];
-          }
-#endif
           ivect & lbnd = ivect_ref(info.lbnd);
           ivect & ubnd = ivect_ref(info.ubnd);
-          gsh[dir] = lssh[dir];
+          ivect const & lsh = ivect_ref(info.lsh);
+          gsh[dir] = lsh[dir];
           lbnd[dir] = 0;
-          ubnd[dir] = lssh[dir] - 1;
+          ubnd[dir] = lsh[dir] - 1;
         }
         for (int d=0; d<dim; ++d) {
           const_cast<int*>(info.bbox)[2*d  ] = obnds[0][d];
@@ -162,22 +149,13 @@ namespace Carpet {
         
         for (int d=0; d<dim; ++d) {
           assert (info.lsh[d]>=0);
-          //assert (info.lsh[d]<=info.gsh[d]);
-#ifdef CCTK_HAVE_CGROUPDYNAMICDATA_LSSH
-          for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-            assert (info.lssh[CCTK_LSSH_IDX(0,d)]>=0);
-            assert (info.lssh[CCTK_LSSH_IDX(0,d)]<=info.gsh[d]);
-          }
-#endif
+          assert (info.lsh[d]<=info.gsh[d]);
           assert (info.lbnd[d]>=0);
           assert (info.lbnd[d]<=info.ubnd[d]+1);
           assert (info.ubnd[d]<info.gsh[d]);
-          //assert (info.lbnd[d] + info.lsh[d] - 1 == info.ubnd[d]);
-#ifdef CCTK_HAVE_CGROUPDYNAMICDATA_LSSH
-          assert (info.lbnd[d] + info.lssh[CCTK_LSSH_IDX(0,d)] - 1
-                  == info.ubnd[d]);
-#endif
+          assert (info.lbnd[d] + info.lsh[d] - 1 == info.ubnd[d]);
           assert (info.lbnd[d]<=info.ubnd[d]+1);
+          assert (info.lsh[d]<=info.ash[d]);
         }
         
         const int numvars = CCTK_NumVarsInGroupI (group);
@@ -256,13 +234,7 @@ namespace Carpet {
           const_cast<int*>(info.bbox)[2*d  ] = deadbeef;
           const_cast<int*>(info.bbox)[2*d+1] = deadbeef;
         }
-#ifdef CCTK_HAVE_CGROUPDYNAMICDATA_LSSH
-        for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-          for (int d=0; d<dim; ++d) {
-            const_cast<int*>(info.lssh)[CCTK_LSSH_IDX(stg,d)] = deadbeef;
-          }
-        }
-#endif
+        ivect_ref(info.ash)  = deadbeef;
         info.activetimelevels = deadbeef;
         
         const int numvars = CCTK_NumVarsInGroupI (group);
@@ -551,37 +523,28 @@ namespace Carpet {
         (ext.lower() - baseext.lower()) / ext.stride();
       ivect_ref(cctkGH->cctk_ubnd) =
         (ext.upper() - baseext.lower()) / ext.stride();
-      ivect_ref(cctkGH->cctk_lsh) = gdata::allocated_memory_shape (ext);
+      ivect_ref(cctkGH->cctk_lsh) = ext.shape() / ext.stride();
+      ivect_ref(cctkGH->cctk_ash) = gdata::allocated_memory_shape (ext);
       
       for (int d=0; d<dim; ++d) {
         cctkGH->cctk_bbox[2*d  ] = obnds[0][d];
         cctkGH->cctk_bbox[2*d+1] = obnds[1][d];
       }
       
-      for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-        for (int d=0; d<dim; ++d) {
-          // TODO: support staggering
-          cctkGH->cctk_lssh[CCTK_LSSH_IDX(stg,d)]
-            = (ext.shape() / ext.stride())[d];
-        }
-      }
       for (int d=0; d<dim; ++d) {
         cctkGH->cctk_from[d] = 0;
-        cctkGH->cctk_to  [d] = cctkGH->cctk_lssh[CCTK_LSSH_IDX(0,d)];
+        cctkGH->cctk_to  [d] = cctkGH->cctk_lsh[d];
       }
       
       for (int d=0; d<dim; ++d) {
-        //assert (cctkGH->cctk_lsh[d] >= 0);
-        //assert (cctkGH->cctk_lsh[d] <= cctkGH->cctk_gsh[d]);
-        assert (cctkGH->cctk_lssh[CCTK_LSSH_IDX(0,d)] >= 0);
-        assert (cctkGH->cctk_lssh[CCTK_LSSH_IDX(0,d)] <= cctkGH->cctk_gsh[d]);
+        assert (cctkGH->cctk_lsh[d] >= 0);
+        assert (cctkGH->cctk_lsh[d] <= cctkGH->cctk_gsh[d]);
         assert (cctkGH->cctk_lbnd[d] >= 0);
         assert (cctkGH->cctk_lbnd[d] <= cctkGH->cctk_ubnd[d] + 1);
         assert (cctkGH->cctk_ubnd[d] < cctkGH->cctk_gsh[d]);
-        //assert (cctkGH->cctk_lbnd[d] + cctkGH->cctk_lsh[d] - 1 == cctkGH->cctk_ubnd[d]);
-        assert (cctkGH->cctk_lbnd[d] + cctkGH->cctk_lssh[CCTK_LSSH_IDX(0,d)] - 1 == cctkGH->cctk_ubnd[d]);
+        assert (cctkGH->cctk_lbnd[d] + cctkGH->cctk_lsh[d] - 1 == cctkGH->cctk_ubnd[d]);
         assert (cctkGH->cctk_lbnd[d] <= cctkGH->cctk_ubnd[d]+1);
-        assert (cctkGH->cctk_lssh[CCTK_LSSH_IDX(0,d)] <= cctkGH->cctk_lsh[d]);
+        assert (cctkGH->cctk_lsh[d] <= cctkGH->cctk_ash[d]);
         assert (cctkGH->cctk_from[d] >= 0);
         assert (cctkGH->cctk_from[d] <= cctkGH->cctk_to[d]);
         assert (cctkGH->cctk_to[d] <= cctkGH->cctk_lsh[d]);
@@ -594,20 +557,13 @@ namespace Carpet {
           
           ivect_ref(info.lbnd) = ivect_ref(cctkGH->cctk_lbnd);
           ivect_ref(info.ubnd) = ivect_ref(cctkGH->cctk_ubnd);
-          
           ivect_ref(info.lsh) = ivect_ref(cctkGH->cctk_lsh);
+          ivect_ref(info.ash) = ivect_ref(cctkGH->cctk_ash);
           
           for (int d=0; d<dim; ++d) {
             const_cast<int*>(info.bbox)[2*d  ] = cctkGH->cctk_bbox[2*d  ];
             const_cast<int*>(info.bbox)[2*d+1] = cctkGH->cctk_bbox[2*d+1];
           }
-      
-          // for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-          //   for (int d=0; d<dim; ++d) {
-          //     const_cast<int*>(info.lssh)[CCTK_LSSH_IDX(stg,d)]
-          //       = cctkGH->cctk_lssh[CCTK_LSSH_IDX(stg,d)];
-          //   }
-          // }
           
           if (local_component != -1) {
             const int numvars = CCTK_NumVarsInGroupI (group);
@@ -690,17 +646,11 @@ namespace Carpet {
       ivect_ref(cctkGH->cctk_from) = -deadbeef;
       ivect_ref(cctkGH->cctk_to  ) = deadbeef;
       ivect_ref(cctkGH->cctk_lsh ) = deadbeef;
+      ivect_ref(cctkGH->cctk_ash ) = deadbeef;
       
       for (int d=0; d<dim; ++d) {
         cctkGH->cctk_bbox[2*d  ] = deadbeef;
         cctkGH->cctk_bbox[2*d+1] = deadbeef;
-      }
-      
-      for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-        for (int d=0; d<dim; ++d) {
-          // TODO: support staggering
-          cctkGH->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cctkGH->cctk_lsh[d];
-        }
       }
       
       for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -710,22 +660,13 @@ namespace Carpet {
           
           ivect_ref(info.lbnd) = ivect_ref(cctkGH->cctk_lbnd);
           ivect_ref(info.ubnd) = ivect_ref(cctkGH->cctk_ubnd);
-          
           ivect_ref(info.lsh) = ivect_ref(cctkGH->cctk_lsh);
+          ivect_ref(info.ash) = ivect_ref(cctkGH->cctk_ash);
           
           for (int d=0; d<dim; ++d) {
             const_cast<int*>(info.bbox)[2*d  ] = cctkGH->cctk_bbox[2*d  ];
             const_cast<int*>(info.bbox)[2*d+1] = cctkGH->cctk_bbox[2*d+1];
           }
-          
-#ifdef CCTK_HAVE_CGROUPDYNAMICDATA_LSSH
-          for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-            for (int d=0; d<dim; ++d) {
-              const_cast<int*>(info.lssh)[CCTK_LSSH_IDX(stg,d)]
-                = cctkGH->cctk_lssh[CCTK_LSSH_IDX(stg,d)];
-            }
-          }
-#endif
           
           if (local_component != -1) {
             const int numvars = CCTK_NumVarsInGroupI (group);

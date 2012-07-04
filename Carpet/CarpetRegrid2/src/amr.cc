@@ -102,12 +102,12 @@ namespace CarpetRegrid2 {
             }
             
             ivect const lbnd = ivect::ref(cctk_lbnd);
-            ivect const lssh (CCTK_LSSH(0,0), CCTK_LSSH(0,1), CCTK_LSSH(0,2));
+            ivect const lsh = ivect::ref(cctk_lbnd);
             ivect const bboxlo (cctk_bbox[0], cctk_bbox[2], cctk_bbox[4]);
             ivect const bboxhi (cctk_bbox[1], cctk_bbox[3], cctk_bbox[5]);
             
-            ivect const imin = 0    + either(bboxlo, 0, nghostzones);
-            ivect const imax = lssh - either(bboxhi, 0, nghostzones);
+            ivect const imin = 0   + either(bboxlo, 0, nghostzones);
+            ivect const imax = lsh - either(bboxhi, 0, nghostzones);
             
             ivect const bmin =
               max (0,

@@ -1306,9 +1306,7 @@ namespace Carpet {
     groupdata.AT(group).info.dim         = gdata.dim;
     groupdata.AT(group).info.gsh         = new int [dim];
     groupdata.AT(group).info.lsh         = new int [dim];
-#ifdef CCTK_GROUPDYNAMICDATA_HAS_LSSH
-    groupdata.AT(group).info.lssh        = new int [CCTK_NSTAGGER*dim];
-#endif
+    groupdata.AT(group).info.ash         = new int [dim];
     groupdata.AT(group).info.lbnd        = new int [dim];
     groupdata.AT(group).info.ubnd        = new int [dim];
     groupdata.AT(group).info.bbox        = new int [2*dim];
@@ -2737,15 +2735,6 @@ namespace Carpet {
       free (groupname);
     }
 #endif
-    
-    // Staggered groups are not supported
-    if (gdata.stagtype != 0) {
-      char * const groupname = CCTK_GroupName (group);
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The group \"%s\" is staggered.  Staggered groups are not yet supported",
-                  groupname);
-      free (groupname);
-    }
   }
   
   

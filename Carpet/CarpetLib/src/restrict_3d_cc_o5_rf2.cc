@@ -24,11 +24,12 @@ namespace CarpetLib {
   index3 (dstioff + (i), dstjoff + (j), dstkoff + (k),  \
           dstiext, dstjext, dstkext)
 #define SRCOFF3(i,j,k)                                  \
-  offset3 (srcioff + (i), srcjoff + (j), srckoff + (k),  \
-          srciext, srcjext, srckext)
+  offset3 (srcioff + (i), srcjoff + (j), srckoff + (k), \
+           srciext, srcjext, srckext)
 #define DSTOFF3(i,j,k)                                  \
-  offset3 (dstioff + (i), dstjoff + (j), dstkoff + (k),  \
-          dstiext, dstjext, dstkext)
+  offset3 (dstioff + (i), dstjoff + (j), dstkoff + (k), \
+           dstiext, dstjext, dstkext)
+  
   
   
 // This operator offers fifth-order accurate restriction operators for cell
@@ -43,10 +44,12 @@ namespace CarpetLib {
 // TODO: use prolongate_3d_rf2 instead of writing new operators, its the same
 // interpolation.
 
+  namespace {
+
   // 1D restriction
   template <typename T>
-    static inline T restrict1 (T const * restrict const p,
-                          size_t const d1)
+    inline T restrict1 (T const * restrict const p,
+                        size_t const d1)
     {
       typedef typename typeprops<T>::real RT;
       RT const den = 256;
@@ -63,8 +66,8 @@ namespace CarpetLib {
   
   // 2D restriction
   template <typename T>
-    static inline T restrict2 (T const * restrict const p,
-                          size_t const d1, size_t const d2)
+    inline T restrict2 (T const * restrict const p,
+                        size_t const d1, size_t const d2)
     {
       typedef typename typeprops<T>::real RT;
       RT const den = 256;
@@ -81,8 +84,8 @@ namespace CarpetLib {
   
   // 3D restriction
   template <typename T>
-    static inline T restrict3 (T const * restrict const p,
-                          size_t const d1, size_t const d2, size_t const d3)
+    inline T restrict3 (T const * restrict const p,
+                        size_t const d1, size_t const d2, size_t const d3)
     {
       typedef typename typeprops<T>::real RT;
       RT const den = 256;
@@ -97,6 +100,10 @@ namespace CarpetLib {
       return res;
     }
   
+  } // namespace
+
+
+
   template <typename T>
   void
   restrict_3d_cc_o5_rf2 (T const * restrict const src,
@@ -221,7 +228,7 @@ namespace CarpetLib {
     }
 #endif    
           dst [DSTIND3(i, j, k)] =
-            restrict3
+            CarpetLib::restrict3
             (& src[SRCIND3(2*i, 2*j, 2*k)], srcdi, srcdj, srcdk);
 
         }
