@@ -120,7 +120,6 @@ periodic_carpet(cGH const *restrict const cctkGH,
     assert(not ierr);
     assert(group.grouptype == CCTK_GF);
     assert(group.disttype == CCTK_DISTRIB_DEFAULT);
-    assert(group.stagtype == 0);
     int const vartypesize = CCTK_VarTypeSize(group.vartype);
     assert(vartypesize>0);
     
