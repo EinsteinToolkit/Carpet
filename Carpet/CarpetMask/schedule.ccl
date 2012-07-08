@@ -11,6 +11,8 @@ SCHEDULE GROUP MaskBase_SetupMask AT poststep AFTER SphericalSurface_HasBeenSet
 {
 } "Set up the weight function"
 
+# these two need to be global loop-local since SphericalSurface_Set and
+# AHFinder are global
 SCHEDULE CarpetExcludedSetup IN SetupIMask
 {
   LANG: C
