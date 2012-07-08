@@ -102,7 +102,7 @@ namespace CarpetRegrid2 {
             }
             
             ivect const lbnd = ivect::ref(cctk_lbnd);
-            ivect const lsh = ivect::ref(cctk_lbnd);
+            ivect const lsh = ivect::ref(cctk_lsh);
             ivect const bboxlo (cctk_bbox[0], cctk_bbox[2], cctk_bbox[4]);
             ivect const bboxhi (cctk_bbox[1], cctk_bbox[3], cctk_bbox[5]);
             
