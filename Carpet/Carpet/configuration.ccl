@@ -4,9 +4,8 @@ PROVIDES Carpet
 {
 }
 
-REQUIRES IOUtil CarpetLib
+REQUIRES IOUtil CarpetLib MPI
+
 OPTIONAL LoopControl
 {
 }
-
-REQUIRES THORNS: IOUtil CarpetLib

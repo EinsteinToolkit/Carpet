@@ -1,5 +1,3 @@
 # Configuration definitions for thorn CarpetInterp
 
-REQUIRES Carpet CarpetLib
-
-REQUIRES THORNS: Carpet CarpetLib
+REQUIRES Carpet CarpetLib MPI
