@@ -32,6 +32,8 @@
 // initialised to false
 #define FAILWARN(_expr)                                                 \
   failwarn(error_flag, _expr, __LINE__, __FILE__, CCTK_THORNSTRING, #_expr)
+#define FAILWARN0(_expr)                                                \
+  failwarn0(error_flag, _expr, __LINE__, __FILE__, CCTK_THORNSTRING, #_expr)
 
 template<typename T>
 static
@@ -39,7 +41,23 @@ T failwarn(bool& error_flag, T const expr,
            int const line, char const *const file, char const *const thorn,
            char const *const msg)
 {
+  static_assert(T(-1) < T(0), "Type T must be signed");
   if (expr < 0) {
+    CCTK_VWarn(CCTK_WARN_ALERT, line, file, thorn,
+               "Expression \"%s\" return %d", msg, (int)expr);
+    error_flag = true;
+  }
+  return expr;
+}
+
+template<typename T>
+static
+T failwarn0(bool& error_flag, T const expr,
+            int const line, char const *const file, char const *const thorn,
+            char const *const msg)
+{
+  static_assert(T(-1) > T(0), "Type T must be unsigned");
+  if (expr == 0) {
     CCTK_VWarn(CCTK_WARN_ALERT, line, file, thorn,
                "Expression \"%s\" return %d", msg, (int)expr);
     error_flag = true;

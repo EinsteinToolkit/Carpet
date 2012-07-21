@@ -231,7 +231,7 @@ namespace CarpetIOF5 {
     
     hid_t const attribute = FAILWARN(H5Aopen_name(group, name));
     hid_t const datatype = FAILWARN(H5Aget_type(attribute));
-    hsize_t const size = FAILWARN(H5Tget_size(datatype));
+    hsize_t const size = FAILWARN0(H5Tget_size(datatype));
     char buf[size+1];
     hid_t const memdatatype = FAILWARN(H5Tcopy(H5T_C_S1));
     FAILWARN(H5Tset_size(memdatatype, size));
