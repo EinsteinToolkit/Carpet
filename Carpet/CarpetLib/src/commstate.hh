@@ -51,6 +51,8 @@ struct comm_state {
   bool done () const;
   ~comm_state ();
   
+  void init();
+
 private:
   // Forbid copying and passing by value
   comm_state (comm_state const &);
@@ -77,12 +79,20 @@ private:
     bool did_post_recv;
     
     // constructor for an instance of this structure
-    procbufdesc() :
-      sendbufsize(0), recvbufsize(0),
-      sendbuf(NULL), recvbuf(NULL),
-      did_post_send(false), did_post_recv(false)
+    procbufdesc()
     {
+        init();
     }
+
+    void init(){
+        did_post_send = false;
+        did_post_recv = false;
+        sendbuf = NULL;
+        recvbuf = NULL;
+        sendbufsize = 0;
+        recvbufsize = 0;
+    }
+
   };
   
   
@@ -102,10 +112,15 @@ private:
     vector<procbufdesc> procbufs; // [dist::size()]
     
     // constructor for an instance of this structure
-    typebufdesc() :
-      in_use(false),
-      mpi_datatype(MPI_DATATYPE_NULL), datatypesize(0)
+    typebufdesc()
     {
+        init();
+    }
+
+    void init(){
+        in_use = false;
+        mpi_datatype = MPI_DATATYPE_NULL;
+        datatypesize = 0;
     }
   };
   

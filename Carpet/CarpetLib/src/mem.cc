@@ -62,7 +62,11 @@ mem (size_t const vectorlength, size_t const nelems,
                   int(max_allowed_memory_MB));
     }
     try {
-      storage_ = new T [vectorlength * nelems];
+      size_t const alignment_T = (alignment + sizeof (T) - 1) / sizeof (T);
+      unaligned_storage_ = new T [vectorlength * nelems + alignment_T];
+      storage_ =
+        (T*)
+        ((size_t(unaligned_storage_) + alignment - 1) / alignment * alignment);
       owns_storage_ = true;
     } catch (...) {
       T Tdummy;
@@ -96,7 +100,7 @@ mem<T>::
 {
   assert (not has_clients());
   if (owns_storage_) {
-    delete [] storage_;
+    delete [] unaligned_storage_;
     const double nbytes = vectorlength_ * nelems_ * sizeof (T);
     total_allocated_bytes -= nbytes;
   }

@@ -155,6 +155,11 @@ INT avoid_arraysize_bytes "Avoid array sizes that are multiples of this" STEERAB
   2:* :: ""
 } 0
 
+INT alignment "Align all grid variables to a multiple of this (in bytes)" STEERABLE=always
+{
+  1:* :: ""
+} 1
+
 
 
 # Communication experiment parameters

@@ -331,17 +331,11 @@ bboxset<T,D>& bboxset<T,D>::operator+= (const bboxset& s)
   return *this;
 }
 
-//L cost: O(1)
-// cost O(n)
+// cost: O(1)
 template<typename T, int D>
 bboxset<T,D>& bboxset<T,D>::add_transfer (bboxset& s)
 {
-#ifdef BBOXSET_LIST
   bs.splice (bs.end(), s.bs);
-#else
-  bs.insert (bs.end(), s.bs.begin(), s.bs.end());
-  s.bs.clear ();
-#endif
   assert (invariant());
   normalize();
   return *this;

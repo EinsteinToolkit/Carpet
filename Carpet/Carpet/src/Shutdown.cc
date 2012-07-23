@@ -84,7 +84,7 @@ namespace Carpet {
     rt->stop();
 
     if (output_xml_timer_tree)
-      rt->outputXML(out_dir,CCTK_MyProc (cctkGH));
+      rt->outputXML(out_dir,CCTK_MyProc (cctkGH),output_history_in_xml_timer_tree);
 
     // earlier checkpoint before finalising MPI
     Waypoint ("Done with shutdown");
