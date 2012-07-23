@@ -208,6 +208,10 @@ CCTK_INT additional_buffer_zones "Additional buffer zones"
   *:* :: ""
 } 0
 
+BOOLEAN use_overlap_zones "Use overlap zones"
+{
+} "no"
+
 BOOLEAN use_tapered_grids "Use tapered grids, avoiding time interpolation during evolution"
 {
 } "no"
