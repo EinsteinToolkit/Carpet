@@ -493,6 +493,43 @@ namespace Carpet {
                      "The number of threads for this process is larger its number of cores. This may indicate a performance problem.");
         }
       }
+      
+#pragma omp parallel
+      for (int thread=0; thread<mynthreads; ++thread) {
+        if (thread == dist::thread_num()) {
+          vector<bool> mask(CPU_SETSIZE, false);
+          cpu_set_t cpumask;
+          int const ierr = sched_getaffinity (0, sizeof cpumask, &cpumask);
+          assert (not ierr);
+          for (int n=0; n<CPU_SETSIZE; ++n) {
+            if (CPU_ISSET(n, &cpumask)) {
+              mask.at(n) = true;
+            }
+          }
+          
+          ostringstream buf;
+          int num_cores = 0;
+          bool isfirst = true;
+          int first_active = -1;
+          for (int n=0; n<CPU_SETSIZE; ++n) {
+            if (mask.at(n)) ++num_cores;
+            if (first_active == -1 and mask.at(n)) {
+              if (not isfirst) buf << ", ";
+              isfirst = false;
+              buf << n;
+              first_active = n;
+            } else if (first_active >= 0 and not mask.at(n)) {
+              if (n-1 > first_active) buf << "-" << n-1;
+              first_active = -1;
+            }
+          }
+          CCTK_VInfo (CCTK_THORNSTRING,
+                      "Thread %d runs on %d core%s: %s",
+                      thread,
+                      num_cores, num_cores==1 ? "" : "s", buf.str().c_str());
+        }
+#pragma omp barrier
+      }
 #else
       CCTK_INFO ("Cannot determine core affinity");
 #endif
