@@ -236,6 +236,40 @@ namespace Carpet {
     Checkpoint ("FillTimeLevels");
     assert (is_level_mode());
     
+    if (CCTK_IsFunctionAliased("Accelerator_RequireValidData")) {
+      assert(Carpet::maps == 1); // TODO
+      int const tl = 0;
+      vector<int> vis, rls, tls;
+      int const nvars = CCTK_NumVars();
+      vis.reserve(nvars);
+      rls.reserve(nvars);
+      tls.reserve(nvars);
+      for (int gi=0; gi<CCTK_NumGroups(); ++gi) {
+        if (CCTK_QueryGroupStorageI(cctkGH, gi)) {
+          if (CCTK_GroupTypeI(gi) == CCTK_GF) {
+            int const v0 = CCTK_FirstVarIndexI(gi);
+            int const nv = CCTK_NumVarsInGroupI(gi);
+            for (int var=0; var<nv; ++var) {
+              int const vi = v0+var;
+              vis.push_back(vi);
+              rls.push_back(reflevel);
+              tls.push_back(tl);
+            }
+          }
+        }
+      }
+      assert(maps == 1);
+      BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
+        int const nlcs = GetLocalComponents(cctkGH);
+        assert(nlcs == 1);
+        BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+          Accelerator_RequireValidData(cctkGH,
+                                       &vis.front(), &rls.front(), &tls.front(),
+                                       vis.size(), 0 /* on host */);
+        } END_LOCAL_COMPONENT_LOOP;
+      } END_LOCAL_MAP_LOOP;
+    }
+    
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cctkGH, group)) {
         switch (CCTK_GroupTypeI(group)) {
@@ -244,13 +278,6 @@ namespace Carpet {
           assert (reflevel>=0 and reflevel<reflevels);
 	  for (int m=0; m<(int)arrdata.AT(group).size(); ++m) {
 	    for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-
-              if (CCTK_IsFunctionAliased("Accelerator_NotifyVariableWritten")) {
-                for (int tl = 1; tl < arrdata.AT(group).AT(m).data.AT(var)->timelevels(mglevel,reflevel); tl++) {
-                  Accelerator_NotifyVariableWritten(cctkGH, CCTK_FirstVarIndexI(group)+var, tl, 1 /* on host */);
-                }
-              }
-
               arrdata.AT(group).AT(m).data.AT(var)->
                 fill_all (reflevel, mglevel);
             }
@@ -271,6 +298,44 @@ namespace Carpet {
         } // switch grouptype
       } // if storage
     } // for group
+
+    if (CCTK_IsFunctionAliased("Accelerator_NotifyDataModified")) {
+      assert(Carpet::maps == 1); // TODO
+      int const m = 0;
+      vector<int> vis, rls, tls;
+      int const nvars = 4 * CCTK_NumVars();
+      vis.reserve(nvars);
+      rls.reserve(nvars);
+      tls.reserve(nvars);
+      for (int gi=0; gi<CCTK_NumGroups(); ++gi) {
+        if (CCTK_QueryGroupStorageI(cctkGH, gi)) {
+          if (CCTK_GroupTypeI(gi) == CCTK_GF) {
+            int const v0 = CCTK_FirstVarIndexI(gi);
+            int const nv = CCTK_NumVarsInGroupI(gi);
+            for (int var=0; var<nv; ++var) {
+              int const vi = v0+var;
+              int const ntls =
+                arrdata.AT(gi).AT(m).data.AT(var)->timelevels(mglevel,reflevel);
+              for (int tl=1; tl<ntls; ++tl) {
+                vis.push_back(vi);
+                rls.push_back(reflevel);
+                tls.push_back(tl);
+              }
+            }
+          }
+        }
+      }
+      assert(maps == 1);
+      BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
+        int const nlcs = GetLocalComponents(cctkGH);
+        assert(nlcs == 1);
+        BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+          Accelerator_NotifyDataModified(cctkGH,
+                                         &vis.front(), &rls.front(), &tls.front(),
+                                         vis.size(), 0 /* on host */);
+        } END_LOCAL_COMPONENT_LOOP;
+      } END_LOCAL_MAP_LOOP;
+    }
   }
   
 } // namespace Carpet

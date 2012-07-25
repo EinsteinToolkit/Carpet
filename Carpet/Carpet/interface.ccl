@@ -231,12 +231,24 @@ CCTK_INT FUNCTION Accelerator_PostSync          \
    CCTK_INT              IN ngroups)
 USES FUNCTION Accelerator_PostSync
 
-CCTK_INT FUNCTION Accelerator_NotifyVariableWritten       \
-  (CCTK_POINTER_TO_CONST IN cctkGH,                       \
-   CCTK_INT              IN vi,                           \
-   CCTK_INT              IN tl,                           \
-   CCTK_INT              IN onhost)
-USES FUNCTION Accelerator_NotifyVariableWritten
+CCTK_INT FUNCTION Accelerator_NotifyDataModified        \
+  (CCTK_POINTER_TO_CONST IN cctkGH,                     \
+   CCTK_INT ARRAY        IN variables,                  \
+   CCTK_INT ARRAY        IN rls,                        \
+   CCTK_INT ARRAY        IN tls,                        \
+   CCTK_INT              IN nvariables,                 \
+   CCTK_INT              IN on_device)
+USES FUNCTION Accelerator_NotifyDataModified
+
+CCTK_INT FUNCTION Accelerator_RequireValidData  \
+  (CCTK_POINTER_TO_CONST IN cctkGH,             \
+   CCTK_INT ARRAY        IN variables,          \
+   CCTK_INT ARRAY        IN rls,                \
+   CCTK_INT ARRAY        IN tls,                \
+   CCTK_INT              IN nvariables,         \
+   CCTK_INT              IN on_device)
+USES FUNCTION Accelerator_RequireValidData
+
 
 
 # Access coordinate information (on the coarse level)

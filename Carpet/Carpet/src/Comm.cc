@@ -181,6 +181,38 @@ namespace Carpet {
     // use the current time here (which may be modified by the user)
     const CCTK_REAL time = cctkGH->cctk_time;
     
+    if (CCTK_IsFunctionAliased("Accelerator_RequireValidData")) {
+      // TODO: copy only those timelevels that are needed
+      int const ntls = prolongation_order_time+1;
+      vector<int> vis, rls, tls;
+      int const nvars = ntls * CCTK_NumVars();
+      vis.reserve(nvars);
+      rls.reserve(nvars);
+      tls.reserve(nvars);
+      for (int group = 0; group < (int)groups.size(); ++group) {
+        int const gi = groups.AT(group);
+        int const v0 = CCTK_FirstVarIndexI(gi);
+        int const nv = CCTK_NumVarsInGroupI(gi);
+        for (int vi=v0; vi<v0+nv; ++vi) {
+          for (int tl=0; tl<ntls; ++tl) {
+            vis.push_back(vi);
+            rls.push_back(reflevel-1);
+            tls.push_back(tl);
+          }
+        }
+      }
+      assert(maps == 1);
+      BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
+        int const nlcs = GetLocalComponents(cctkGH);
+        assert(nlcs == 1);
+        BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+          Accelerator_RequireValidData(cctkGH,
+                                       &vis.front(), &rls.front(), &tls.front(),
+                                       vis.size(), 0 /* on host */);
+        } END_LOCAL_COMPONENT_LOOP;
+      } END_LOCAL_MAP_LOOP;
+    }
+    
     for (comm_state state; not state.done(); state.step()) {
       for (int group = 0; group < (int)groups.size(); ++group) {
         const int g = groups.AT(group);
@@ -202,6 +234,36 @@ namespace Carpet {
           }
         }
       }
+    }
+
+    if (CCTK_IsFunctionAliased("Accelerator_NotifyDataModified")) {
+      // TODO: copy back the time level that was modified
+      int const tl = 0;
+      vector<int> vis, rls, tls;
+      int const nvars = CCTK_NumVars();
+      vis.reserve(nvars);
+      rls.reserve(nvars);
+      tls.reserve(nvars);
+      for (int group = 0; group < (int)groups.size(); ++group) {
+        int const gi = groups.AT(group);
+        int const v0 = CCTK_FirstVarIndexI(gi);
+        int const nv = CCTK_NumVarsInGroupI(gi);
+        for (int vi=v0; vi<v0+nv; ++vi) {
+          vis.push_back(vi);
+          rls.push_back(reflevel);
+          tls.push_back(tl);
+        }
+      }
+      assert(maps == 1);
+      BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
+        int const nlcs = GetLocalComponents(cctkGH);
+        assert(nlcs == 1);
+        BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+          Accelerator_NotifyDataModified(cctkGH,
+                                         &vis.front(), &rls.front(), &tls.front(),
+                                         vis.size(), 0 /* on host */);
+        } END_LOCAL_COMPONENT_LOOP;
+      } END_LOCAL_MAP_LOOP;
     }
   }
 

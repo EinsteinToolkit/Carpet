@@ -61,7 +61,36 @@ namespace Carpet {
   // restrict a set of groups
   static void RestrictGroups (const cGH* cctkGH, const vector<int>& groups) {
     DECLARE_CCTK_PARAMETERS;
-
+    
+    if (CCTK_IsFunctionAliased("Accelerator_RequireValidData")) {
+      int const tl = 0;
+      vector<int> vis, rls, tls;
+      int const nvars = CCTK_NumVars();
+      vis.reserve(nvars);
+      rls.reserve(nvars);
+      tls.reserve(nvars);
+      for (int group = 0; group < (int)groups.size(); ++group) {
+        int const gi = groups.AT(group);
+        int const v0 = CCTK_FirstVarIndexI(gi);
+        int const nv = CCTK_NumVarsInGroupI(gi);
+        for (int vi=v0; vi<v0+nv; ++vi) {
+          vis.push_back(vi);
+          rls.push_back(reflevel+1);
+          tls.push_back(tl);
+        }
+      }
+      assert(maps == 1);
+      BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
+        int const nlcs = GetLocalComponents(cctkGH);
+        assert(nlcs == 1);
+        BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+          Accelerator_RequireValidData(cctkGH,
+                                       &vis.front(), &rls.front(), &tls.front(),
+                                       vis.size(), 0 /* on host */);
+        } END_LOCAL_COMPONENT_LOOP;
+      } END_LOCAL_MAP_LOOP;
+    }
+    
     for (comm_state state; not state.done(); state.step()) {
       for (int group = 0; group < (int)groups.size(); ++group) {
         const int g = groups.AT(group);
@@ -76,6 +105,36 @@ namespace Carpet {
         }
       } // loop over groups
     } // for state
+    
+    if (CCTK_IsFunctionAliased("Accelerator_NotifyDataModified")) {
+      // TODO: copy back the time level that was modified
+      int const tl = 0;
+      vector<int> vis, rls, tls;
+      int const nvars = CCTK_NumVars();
+      vis.reserve(nvars);
+      rls.reserve(nvars);
+      tls.reserve(nvars);
+      for (int group = 0; group < (int)groups.size(); ++group) {
+        int const gi = groups.AT(group);
+        int const v0 = CCTK_FirstVarIndexI(gi);
+        int const nv = CCTK_NumVarsInGroupI(gi);
+        for (int vi=v0; vi<v0+nv; ++vi) {
+          vis.push_back(vi);
+          rls.push_back(reflevel);
+          tls.push_back(tl);
+        }
+      }
+      assert(maps == 1);
+      BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
+        int const nlcs = GetLocalComponents(cctkGH);
+        assert(nlcs == 1);
+        BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+          Accelerator_NotifyDataModified(cctkGH,
+                                         &vis.front(), &rls.front(), &tls.front(),
+                                         vis.size(), 0 /* on host */);
+        } END_LOCAL_COMPONENT_LOOP;
+      } END_LOCAL_MAP_LOOP;
+    }
   }
 
 } // namespace Carpet
