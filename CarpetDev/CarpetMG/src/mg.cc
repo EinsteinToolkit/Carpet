@@ -16,12 +16,6 @@
 
 
 
-#ifdef CCTK_CXX_RESTRICT
-#  define restrict CCTK_CXX_RESTRICT
-#endif
-
-
-
 namespace CarpetMG {
   
   using namespace std;
