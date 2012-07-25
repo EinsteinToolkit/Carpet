@@ -305,8 +305,9 @@ namespace Carpet {
           bool const did_recompose = Recompose (cctkGH, rl, true);
           did_any_recompose = did_any_recompose or did_recompose;
           
-          // Carpet assumes that a regridding operation always changes "level N
-          // and all finer levels" so we should call POSTREGRID on all finer levels
+          // Carpet assumes that a regridding operation always changes
+          // "level N and all finer levels" so we should call
+          // POSTREGRID on all finer levels
           if (did_any_recompose or
               (did_remove_level and rl == reflevels - 1))
           {

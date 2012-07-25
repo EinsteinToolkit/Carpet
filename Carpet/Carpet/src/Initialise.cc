@@ -1120,8 +1120,9 @@ namespace Carpet {
           bool did_recompose = Recompose (cctkGH, rl, prolongate_initial_data);
           did_any_recompose = did_any_recompose or did_recompose;
           
-          // Carpet assumes that a regridding operation always changes "level N
-          // and all finer levels" so we should call POSTREGRID on all finer levels
+          // Carpet assumes that a regridding operation always changes
+          // "level N and all finer levels" so we should call
+          // POSTREGRID on all finer levels
           if (did_any_recompose or
               (did_remove_level and rl == reflevels - 1))
           {
@@ -1131,7 +1132,8 @@ namespace Carpet {
                 
                 do_early_global_mode = not have_done_early_global_mode;
                 do_late_global_mode = reflevel==reflevels-1;
-                do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+                do_early_meta_mode =
+                  do_early_global_mode and mglevel==mglevels-1;
                 do_late_meta_mode = do_late_global_mode and mglevel==0;
                 do_global_mode = do_late_global_mode;
                 do_meta_mode = do_late_meta_mode;
