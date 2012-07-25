@@ -746,12 +746,14 @@ lc_control_init (lc_control_t * restrict const lc,
       
       if (lc_inthreads == -1 || lc_jnthreads == -1 || lc_knthreads == -1) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Illegal thread topology [%d,%d,%d]x[1,1,1] specified",
+                    "Loop %s: Illegal thread topology [%d,%d,%d]x[1,1,1] specified",
+                    lm->name,
                     (int)lc_inthreads, (int)lc_jnthreads, (int)lc_knthreads);
       }
       if (lc_inthreads * lc_jnthreads * lc_knthreads != ls->num_threads) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Specified thread topology [%d,%d,%d]x[1,1,1] is not compatible with the number of threads %d",
+                    "Loop %s: Specified thread topology [%d,%d,%d]x[1,1,1] is not compatible with the number of threads %d",
+                    lm->name,
                     (int)lc_inthreads, (int)lc_jnthreads, (int)lc_knthreads,
                     ls->num_threads);
       }
@@ -1076,8 +1078,10 @@ lc_control_finish (lc_control_t * restrict const lc)
   if (do_selftest) {
     /* Assert that exactly the specified points have been set */
     static int failure = 0;
+    int k;             /* PGI doesn't allow declaring k in the loop */
 #pragma omp for
-    for (int k=0; k<lc->klsh; ++k) {
+    // for (int k=0; k<lc->klsh; ++k) {
+    for (k=0; k<lc->klsh; ++k) {
       for (int j=0; j<lc->jlsh; ++j) {
         for (int i=0; i<lc->ilsh; ++i) {
           int const ind3d = i + lc->ilsh * (j + lc->jlsh * k);
