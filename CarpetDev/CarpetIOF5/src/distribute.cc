@@ -21,10 +21,7 @@ namespace CarpetIOF5 {
   
   int fragdesc_t::npoints() const
   {
-    int np = 1;
-    for (int d=0; d<dim; ++d) {
-      np *= imax[d] - imin[d] + 1;
-    }
+    int const np = prod(imax-imin+1);
     assert(np>0);
     return np;
   }
@@ -479,7 +476,6 @@ namespace CarpetIOF5 {
     
     gh const& hh = *Carpet::arrdata.at(groupindex).at(fd.map).hh;
     dh const& dd = *Carpet::arrdata.at(groupindex).at(fd.map).dd;
-    th const& tt = *Carpet::arrdata.at(groupindex).at(fd.map).tt;
     
     ibbox const& baseext =
       hh.baseextents.AT(fd.mglevel).AT(fd.reflevel);
@@ -512,11 +508,11 @@ namespace CarpetIOF5 {
         ptrdiff_t const ni = tm->fragdesc.imax[0] - tm->fragdesc.imin[0] + 1;
         ptrdiff_t const nj = tm->fragdesc.imax[1] - tm->fragdesc.imin[1] + 1;
         ptrdiff_t const nk = tm->fragdesc.imax[2] - tm->fragdesc.imin[2] + 1;
-        ptrdiff_t const di = 1;
-        ptrdiff_t const dj = ni;
-        ptrdiff_t const dk = ni * nj;
-        ptrdiff_t const np = ni * nj * nk;
-        tm->data.resize(np * vartypesize);
+        ptrdiff_t const di = vartypesize;
+        ptrdiff_t const dj = di * ni;
+        ptrdiff_t const dk = dj * nj;
+        ptrdiff_t const np = dk * nk;
+        tm->data.resize(np);
         bytes_allocated += tm->data.size();
         if (verbose) {
           CCTK_VInfo(CCTK_THORNSTRING,
@@ -527,21 +523,24 @@ namespace CarpetIOF5 {
         ptrdiff_t const nis = fd.imax[0] - fd.imin[0] + 1;
         ptrdiff_t const njs = fd.imax[1] - fd.imin[1] + 1;
         ptrdiff_t const nks = fd.imax[2] - fd.imin[2] + 1;
-        ptrdiff_t const dis = 1;
-        ptrdiff_t const djs = nis;
-        ptrdiff_t const dks = nis * njs;
-        ptrdiff_t const nps = nis * njs * nks;
+        ptrdiff_t const dis = vartypesize;
+        ptrdiff_t const djs = vartypesize * nis;
+        ptrdiff_t const dks = vartypesize * nis * njs;
+        ptrdiff_t const nps = vartypesize * nis * njs * nks;
         ptrdiff_t const i0s = tm->fragdesc.imin[0] - fd.imin[0];
         ptrdiff_t const j0s = tm->fragdesc.imin[1] - fd.imin[1];
         ptrdiff_t const k0s = tm->fragdesc.imin[2] - fd.imin[2];
         ptrdiff_t const ind0s = i0s * dis + j0s * djs + k0s * dks;
-        char const *const src = &((char const*)data)[vartypesize * ind0s];
+        assert(ind0s < nps);
+        char const *const src = &((char const*)data)[ind0s];
         
 #pragma omp parallel for //collapse(2)
         for (ptrdiff_t k=0; k<nk; ++k) {
           for (ptrdiff_t j=0; j<nj; ++j) {
             ptrdiff_t const ind = j*dj + k*dk;
             ptrdiff_t const inds = j*djs + k*dks;
+            assert(ind+ni*vartypesize <= np);
+            assert(inds+ni*vartypesize <= nps);
             memcpy(&dst[ind], &src[inds], ni*vartypesize);
           }
         }
@@ -568,7 +567,6 @@ namespace CarpetIOF5 {
     
     gh const& hh = *Carpet::arrdata.at(groupindex).at(fd.map).hh;
     dh const& dd = *Carpet::arrdata.at(groupindex).at(fd.map).dd;
-    th const& tt = *Carpet::arrdata.at(groupindex).at(fd.map).tt;
     ggf const& ff =
       *Carpet::arrdata.at(groupindex).at(fd.map).data.at(varoffset);
     int const lc = hh.get_local_component(fd.reflevel, fd.component);
@@ -592,10 +590,10 @@ namespace CarpetIOF5 {
     ptrdiff_t const ni = fd.imax[0] - fd.imin[0] + 1;
     ptrdiff_t const nj = fd.imax[1] - fd.imin[1] + 1;
     ptrdiff_t const nk = fd.imax[2] - fd.imin[2] + 1;
-    ptrdiff_t const di = 1;
-    ptrdiff_t const dj = ni;
-    ptrdiff_t const dk = ni * nj;
-    ptrdiff_t const np = ni * nj * nk;
+    ptrdiff_t const di = vartypesize;
+    ptrdiff_t const dj = di * ni;
+    ptrdiff_t const dk = dj * nj;
+    ptrdiff_t const np = dk * nk;
     char const *const src = (char const*)&tm->data[0];
     
     ivect const lbnd = (extr.lower() - baseext.lower()) / baseext.stride();
@@ -603,10 +601,10 @@ namespace CarpetIOF5 {
     ptrdiff_t const nid = lsh[0];
     ptrdiff_t const njd = lsh[1];
     ptrdiff_t const nkd = lsh[2];
-    ptrdiff_t const did = 1;
-    ptrdiff_t const djd = nid;
-    ptrdiff_t const dkd = nid * njd;
-    ptrdiff_t const npd = nid * njd * nkd;
+    ptrdiff_t const did = vartypesize;
+    ptrdiff_t const djd = vartypesize * nid;
+    ptrdiff_t const dkd = vartypesize * nid * njd;
+    ptrdiff_t const npd = vartypesize * nid * njd * nkd;
     ptrdiff_t const i0d = fd.imin[0] - lbnd[0];
     ptrdiff_t const j0d = fd.imin[1] - lbnd[1];
     ptrdiff_t const k0d = fd.imin[2] - lbnd[2];
@@ -619,6 +617,8 @@ namespace CarpetIOF5 {
       for (ptrdiff_t j=0; j<nj; ++j) {
         ptrdiff_t const indd = j*djd + k*dkd;
         ptrdiff_t const ind = j*dj + k*dk;
+        assert(indd+ni*vartypesize <= npd);
+        assert(ind+ni*vartypesize <= np);
         memcpy(&dst[indd], &src[ind], ni*vartypesize);
       }
     }

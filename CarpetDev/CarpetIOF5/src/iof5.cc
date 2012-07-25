@@ -249,6 +249,29 @@ namespace CarpetIOF5 {
       // We don't know how to open multiple files yet
       assert(CCTK_EQUALS(file_content, "everything"));
       
+      // Determine number of I/O processes
+      int const myproc = CCTK_MyProc(cctkGH);
+      int const nprocs = CCTK_nProcs(cctkGH);
+      
+      int const ioproc_every =
+        max_nioprocs == 0 ? 1 : (nprocs + max_nioprocs - 1) / max_nioprocs;
+      assert(ioproc_every > 0);
+      int const nioprocs = nprocs / ioproc_every;
+      assert(nioprocs > 0 and nioprocs <= max_nioprocs);
+      int const myioproc = myproc / ioproc_every * ioproc_every;
+      // We split processes into "I/O groups" which range from
+      // myioproc to myioproc+ioproc_every-1 (inclusive). Within each
+      // group, at most one process can perform I/O.
+      
+      // If I am not the first process in my I/O group, wait for a
+      // token from my predecessor
+      if (myproc > myioproc) {
+        MPI_Recv(NULL, 0, MPI_INT, myproc-1, 0, dist::comm(),
+                 MPI_STATUS_IGNORE);
+      }
+      
+      
+      
       // Open file
       static bool first_time = true;
       
@@ -257,17 +280,17 @@ namespace CarpetIOF5 {
       int const vindex = CCTK_VarIndex(varname);
       assert(vindex >= 0);
       string const basename = generate_basename(cctkGH, vindex);
-      int const myproc = CCTK_MyProc(cctkGH);
-      int const proc = myproc;
+      int const ioproc = myioproc / ioproc_every;
       string const name =
-        create_filename(cctkGH, basename, cctkGH->cctk_iteration, proc,
+        create_filename(cctkGH, basename, cctkGH->cctk_iteration, ioproc,
                         io_dir_output, first_time);
       
       indent_t indent;
-      cout << indent << "process=" << proc << "\n";
+      cout << indent << "I/O process=" << ioproc << "\n";
       
       enter_keep_file_open();
-      bool const truncate_file = first_time and IO_TruncateOutputFiles(cctkGH);
+      bool const truncate_file =
+        first_time and IO_TruncateOutputFiles(cctkGH) and myproc == myioproc;
       if (file < 0) {
         // Reuse file hid if file is already open
         file =
@@ -284,6 +307,16 @@ namespace CarpetIOF5 {
       
       // Close file
       leave_keep_file_open();
+      
+      
+      
+      // If I am not the last process in my I/O group, send a token to
+      // my successor
+      if (myproc < max(myioproc + ioproc_every, nprocs) - 1) {
+        MPI_Send(NULL, 0, MPI_INT, myproc+1-1, 0, dist::comm());
+      }
+      
+      
       
     } END_GLOBAL_MODE;
     
@@ -478,38 +511,48 @@ namespace CarpetIOF5 {
       // expect exactly that many files
       int const myproc = CCTK_MyProc(cctkGH);
       int const nprocs = CCTK_nProcs(cctkGH);
-      // Loop over all (possible) files
-      for (int proc=myproc; ; proc+=nprocs) {
-        string const name =
-          create_filename(cctkGH, basename, cctkGH->cctk_iteration, proc,
-                          in_recovery ? io_dir_recover : io_dir_input, false);
-        
-        bool file_exists;
-        H5E_BEGIN_TRY {
-          file_exists = H5Fis_hdf5(name.c_str()) > 0;
-        } H5E_END_TRY;
-        if (not file_exists) {
-          notfoundproc = proc;
-          break;
+      
+      int const ioproc_every =
+        max_nioprocs == 0 ? 1 : (nprocs + max_nioprocs - 1) / max_nioprocs;
+      assert(ioproc_every > 0);
+      int const nioprocs = nprocs / ioproc_every;
+      assert(nioprocs > 0 and nioprocs <= max_nioprocs);
+      int const myioproc = myproc / ioproc_every * ioproc_every;
+      
+      if (myproc == myioproc) {
+        // Loop over all (possible) files
+        for (int ioproc = myioproc / ioproc_every; ; ioproc += nioprocs) {
+          string const name =
+            create_filename(cctkGH, basename, cctkGH->cctk_iteration, ioproc,
+                            in_recovery ? io_dir_recover : io_dir_input, false);
+          
+          bool file_exists;
+          H5E_BEGIN_TRY {
+            file_exists = H5Fis_hdf5(name.c_str()) > 0;
+          } H5E_END_TRY;
+          if (not file_exists) {
+            notfoundproc = ioproc;
+            break;
+          }
+          foundproc = ioproc;
+          
+          indent_t indent;
+          cout << indent << "I/O process=" << ioproc << "\n";
+          
+          hid_t const file = H5Fopen(name.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+          assert(file >= 0);
+          
+          // Iterate over all time slices
+          bool const input_past_timelevels = in_recovery;
+          // TODO: read metadata when recoverying parameters
+          bool const input_metadata = false;
+          input(cctkGH, file, input_var, input_past_timelevels, input_metadata,
+                scatter);
+          
+          // Close file
+          herr = H5Fclose(file);
+          assert(not herr);
         }
-        foundproc = proc;
-        
-        indent_t indent;
-        cout << indent << "process=" << proc << "\n";
-        
-        hid_t const file = H5Fopen(name.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-        assert(file >= 0);
-        
-        // Iterate over all time slices
-        bool const input_past_timelevels = in_recovery;
-        // TODO: read metadata when recoverying parameters
-        bool const input_metadata = false;
-        input(cctkGH, file, input_var, input_past_timelevels, input_metadata,
-              scatter);
-        
-        // Close file
-        herr = H5Fclose(file);
-        assert(not herr);
       }
       
       {
@@ -526,12 +569,14 @@ namespace CarpetIOF5 {
                      "Could not read input file \"%s\"", name.c_str());
           return 1;
         }
-        if (notfoundproc <= maxfoundproc) {
+        if (notfoundproc > -1 and notfoundproc <= maxfoundproc) {
           CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                      "Could not read file of process %d (but could read file of process %d)",
                      notfoundproc, maxfoundproc);
         }
       }
+      
+      // The scatter object is implicitly destroyed here
       
     } END_GLOBAL_MODE;
     

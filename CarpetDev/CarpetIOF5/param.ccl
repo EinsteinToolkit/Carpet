@@ -91,6 +91,14 @@ BOOLEAN one_dir_per_file "Create one subdirectory per output file to reduce lock
 
 
 
+INT max_nioprocs "Maximum number of I/O processes" STEERABLE=always
+{
+  0   :: "unlimited"
+  1:* :: "that many processes"
+} 0
+
+
+
 BOOLEAN separate_single_component_tensors "Use a separated representation even for single-component tensors" STEERABLE=always
 {
 } "no"
