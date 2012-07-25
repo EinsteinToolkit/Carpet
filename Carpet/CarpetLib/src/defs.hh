@@ -32,13 +32,6 @@ using namespace std;
 
 
 
-// Define the restrict qualifier
-#ifdef CCTK_CXX_RESTRICT
-#  define restrict CCTK_CXX_RESTRICT
-#endif
-
-
-
 // Structure member offsets
 #undef offsetof
 #define offsetof(TYPE,MEMBER) ((size_t)&((TYPE*)0)->MEMBER)
