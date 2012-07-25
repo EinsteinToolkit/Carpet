@@ -14,12 +14,6 @@
 extern "C" {
 #endif
 
-#ifdef __cplusplus
-#  ifdef CCTK_CXX_RESTRICT
-#    define restrict CCTK_CXX_RESTRICT
-#  endif
-#endif
-
 
 
 /* A topology */
