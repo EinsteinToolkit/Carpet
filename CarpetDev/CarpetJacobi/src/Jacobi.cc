@@ -29,13 +29,6 @@ namespace Carpet {
 
 
 
-#undef restrict
-#ifdef CCTK_CXX_RESTRICT
-#  define restrict CCTK_CXX_RESTRICT
-#endif
-
-
-
 #define DEBUG 0                 // either 0 or 1
 
 
