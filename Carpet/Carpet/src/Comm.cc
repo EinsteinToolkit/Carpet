@@ -277,16 +277,48 @@ namespace Carpet {
 
     assert (groups.size() > 0);
     
-    if (CCTK_IsFunctionAliased("Accelerator_PreSync")) {
-      Accelerator_PreSync(cctkGH, &groups.front(), groups.size());
+    if (reflevel == 0) {
+      // This works only on the coarse grid
+      if (CCTK_IsFunctionAliased("Accelerator_PreSync")) {
+        Accelerator_PreSync(cctkGH, &groups.front(), groups.size());
+      }
+    } else {
+      if (CCTK_IsFunctionAliased("Accelerator_RequireValidData")) {
+        int const tl = 0;
+        vector<int> vis, rls, tls;
+        int const nvars = CCTK_NumVars();
+        vis.reserve(nvars);
+        rls.reserve(nvars);
+        tls.reserve(nvars);
+        for (int group = 0; group < (int)groups.size(); ++group) {
+          int const gi = groups.AT(group);
+          int const v0 = CCTK_FirstVarIndexI(gi);
+          int const nv = CCTK_NumVarsInGroupI(gi);
+          for (int vi=v0; vi<v0+nv; ++vi) {
+            vis.push_back(vi);
+            rls.push_back(reflevel);
+            tls.push_back(tl);
+          }
+        }
+        assert(maps == 1);
+        BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
+          int const nlcs = GetLocalComponents(cctkGH);
+          assert(nlcs == 1);
+          BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+            Accelerator_RequireValidData(cctkGH,
+                                         &vis.front(), &rls.front(), &tls.front(),
+                                         vis.size(), 0 /* on host */);
+          } END_LOCAL_COMPONENT_LOOP;
+        } END_LOCAL_MAP_LOOP;
+      }
     }
-
+    
     static Timer timer("MPI_sync");
     timer.start();
-
+    
     static comm_state state;
     state.init();
-
+    
     for (; not state.done(); state.step()) {
       for (int group = 0; group < (int)groups.size(); ++group) {
         const int g = groups.AT(group);
@@ -304,9 +336,11 @@ namespace Carpet {
         }
       }
     }
-
+    
     timer.stop();
-
+    
+    // This may copy too many points to the device, which is why we
+    // copied all grid points to the host above
     if (CCTK_IsFunctionAliased("Accelerator_PostSync")) {
       Accelerator_PostSync(cctkGH, &groups.front(), groups.size());
     }
