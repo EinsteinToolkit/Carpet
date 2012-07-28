@@ -931,7 +931,15 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
     IOUtil_AssembleFilename (cctkGH, NULL, ".tmp", ".h5",
                              called_from, ioproc, not parallel_io);
 
+  char *index_tempname =
+    IOUtil_AssembleFilename (cctkGH, NULL, ".tmp", ".idx.h5",
+                             called_from, ioproc, not parallel_io);
+  char *index_filename =
+    IOUtil_AssembleFilename (cctkGH, NULL, "", ".idx.h5",
+                             called_from, ioproc, not parallel_io);
+
   hid_t file = -1;
+  hid_t index_file = -1;
   if (dist::rank() == ioproc) {
     if (CCTK_Equals (verbose, "full")) {
       CCTK_VInfo (CCTK_THORNSTRING, "Creating temporary checkpoint file '%s'",
@@ -943,6 +951,15 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
 
     // write metadata information
     error_count += WriteMetadata (cctkGH, nioprocs, -1, -1, true, file);
+
+    if (output_index) {
+
+      HDF5_ERROR (index_file = H5Fcreate (index_tempname,
+                                          H5F_ACC_TRUNC, H5P_DEFAULT,
+                                          H5P_DEFAULT));
+      error_count +=
+        WriteMetadata (cctkGH, nioprocs, -1, -1, true, index_file);
+    }
   }
 
   // remember the current wall time
@@ -1045,8 +1062,8 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
 
             // write the var
             error_count += parallel_io ?
-              WriteVarChunkedParallel (cctkGH, file, io_bytes, request, true) :
-              WriteVarChunkedSequential (cctkGH, file, io_bytes, request, true);
+              WriteVarChunkedParallel (cctkGH, file, io_bytes, request, true, index_file) :
+              WriteVarChunkedSequential (cctkGH, file, io_bytes, request, true, index_file);
           }
           free (fullname);
 
@@ -1074,6 +1091,10 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
   if (file >= 0) {
     HDF5_ERROR (H5Fclose(file));
   }
+  if (index_file >= 0) {
+    HDF5_ERROR (H5Fclose(index_file));
+  }
+
 
   // get global error count
   int temp = error_count;
@@ -1129,6 +1150,13 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
         }
       }
     }
+    if (index_file >= 0) {
+      if (rename (index_tempname, index_filename)) {
+        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Could not rename temporary index file '%s' to '%s'",
+                    index_tempname, index_filename);
+      }
+    }
   } else {
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                 "Failed to create checkpoint at iteration %d",
@@ -1143,6 +1171,8 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
   }
 
   // free allocated resources
+  free (index_tempname);
+  free (index_filename);
   free (tempname);
   free (filename);
 
