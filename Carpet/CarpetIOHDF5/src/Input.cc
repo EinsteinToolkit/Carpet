@@ -42,8 +42,8 @@ typedef struct {
 
 // structure describing the contents of an HDF5 file to read from
 typedef struct {
-  char *filename;
-  hid_t file;
+  char *filename, *indexfilename;
+  hid_t file, indexfile;
   list<patch_t> patches;
 } file_t;
 
@@ -52,6 +52,7 @@ typedef struct {
   string setname;
   string basefilename;
   int first_ioproc;
+  bool has_index;
   vector<file_t> files;            // [nioprocs]
 
   int nioprocs;
@@ -309,17 +310,24 @@ void CarpetIOHDF5_CloseFiles (CCTK_ARGUMENTS)
   for (list<fileset_t>::const_iterator set = filesets.begin();
        set != filesets.end(); set++) {
     for (unsigned int i = 0; i < set->files.size(); i++) {
-      if (set->files[i].file >= 0) {
-
+      if (set->files[i].file >= 0 or set->files[i].indexfile >= 0) {
         if (CCTK_Equals (verbose, "full")) {
           CCTK_VInfo (CCTK_THORNSTRING, "closing file '%s' after recovery",
                       set->files[i].filename);
         }
 
-        HDF5_ERROR (H5Fclose (set->files[i].file));
+        if (set->files[i].file >= 0) {
+          HDF5_ERROR (H5Fclose (set->files[i].file));
+        }
+        if (set->files[i].indexfile >= 0) {
+          HDF5_ERROR (H5Fclose (set->files[i].indexfile));
+        }
       }
       if (set->files[i].filename != NULL) {
         free (set->files[i].filename);
+      }
+      if (set->files[i].indexfilename) {
+        free (set->files[i].indexfilename);
       }
     }
   }
@@ -540,23 +548,41 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     // open the file (if it hasn't been already) and read its metadata
     // if we already browsed this file once we defer opening it again until we have to
     if (not file.filename) {
+      assert(not file.indexfilename);
+      file.indexfilename = 
+        IOUtil_AssembleFilename (NULL, fileset->basefilename.c_str(),
+                                 "", ".idx.h5", called_from, file_idx, 0);
+      assert (file.indexfilename);
+
       file.filename =
         IOUtil_AssembleFilename (NULL, fileset->basefilename.c_str(),
                                  "", ".h5", called_from, file_idx, 0);
       assert (file.filename);
     }
     if (file.patches.size() == 0) {
-      HDF5_ERROR (file.file = H5Fopen (file.filename, H5F_ACC_RDONLY,
-                                       H5P_DEFAULT));
-
+      // we defer opening the actual data file until we have to
+      // and open only the index file if it exists
+      
       io_files += 1;
-
-      if (CCTK_Equals (verbose, "full")) {
-        CCTK_VInfo (CCTK_THORNSTRING, "opening %s file '%s'",
-                    in_recovery ? "checkpoint" : "input", file.filename);
+      if (file.indexfile < 0 and fileset->has_index) {
+        HDF5_ERROR (file.indexfile = H5Fopen (file.indexfilename, H5F_ACC_RDONLY,
+                                              H5P_DEFAULT));
+        if (CCTK_Equals (verbose, "full")) {
+          CCTK_VInfo (CCTK_THORNSTRING, "opening index file '%s'",
+                      file.indexfilename);
+        }
+      } else {
+        HDF5_ERROR (file.file = H5Fopen (file.filename, H5F_ACC_RDONLY,
+                                         H5P_DEFAULT));
+        if (CCTK_Equals (verbose, "full")) {
+          CCTK_VInfo (CCTK_THORNSTRING, "opening %s file '%s'",
+                      in_recovery ? "checkpoint" : "input", file.filename);
+        }
       }
 
-      HDF5_ERROR (H5Giterate (file.file, "/", NULL, BrowseDatasets, &file));
+      // browse through all datasets contained in this file
+      HDF5_ERROR (H5Giterate (file.indexfile >= 0 ? file.indexfile : file.file,
+                              "/", NULL, BrowseDatasets, &file));
     }
     assert (file.patches.size() > 0);
     if (myGH->recovery_filename_list and not myGH->recovery_filename_list[i]) {
@@ -669,6 +695,14 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       if (file.filename) {
         free(file.filename);
         file.filename = NULL;
+      }
+      if (file.indexfile >= 0) {
+        HDF5_ERROR (H5Fclose (file.indexfile));
+        file.indexfile = -1;
+      }
+      if (file.indexfilename) {
+        free(file.indexfilename);
+        file.indexfilename = NULL;
       }
     }
   }
@@ -822,6 +856,10 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   file.filename = IOUtil_AssembleFilename (NULL, basefilename, "", ".h5",
                                            called_from, fileset.first_ioproc, 0);
   assert (file.filename);
+  file.indexfilename = IOUtil_AssembleFilename (NULL, basefilename, "",
+                                                ".idx.h5", called_from,
+                                                fileset.first_ioproc, 0);
+  assert (file.indexfilename);
 
   // try to open the file (prevent HDF5 error messages if it fails)
   H5E_BEGIN_TRY {
@@ -832,11 +870,16 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   // if that failed, try a chunked file written on processor 0
   // (which always is an I/O proc)
   if (file.file < 0) {
+    free (file.indexfilename);
     free (file.filename);
     fileset.first_ioproc = 0;
     file.filename = IOUtil_AssembleFilename (NULL, basefilename, "", ".h5",
                                              called_from, fileset.first_ioproc, 0);
     assert (file.filename);
+    file.indexfilename = IOUtil_AssembleFilename (NULL, basefilename, "", 
+                                                  ".idx.h5", called_from,
+                                                  fileset.first_ioproc, 0);
+    assert (file.indexfilename);
     H5E_BEGIN_TRY {
       filenames.push_back (string (file.filename));
       file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -846,10 +889,15 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   // if that still failed, try an unchunked file
   // (which is always written on processor 0)
   if (file.file < 0) {
+    free (file.indexfilename);
     free (file.filename);
     file.filename = IOUtil_AssembleFilename (NULL, basefilename, "", ".h5",
                                              called_from, fileset.first_ioproc, 1);
     assert (file.filename);
+    file.indexfilename = IOUtil_AssembleFilename (NULL, basefilename, "",
+                                                  ".idx.h5", called_from,
+                                                  fileset.first_ioproc, 1);
+    assert (file.indexfilename);
     H5E_BEGIN_TRY {
       filenames.push_back (string (file.filename));
       file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -861,8 +909,12 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                 "No valid HDF5 file with basename \"%s\" found", basefilename);
     free (file.filename);
+    free (file.indexfilename);
     file.filename = NULL;
+    file.indexfilename = NULL;
     file.file = -1;
+    file.indexfile = -1; // to avoid trying to close it later
+ 
     for (list<string>::const_iterator
            lsi = filenames.begin(); lsi != filenames.end(); ++ lsi)
     {
@@ -871,6 +923,13 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     }
     return (filesets.end());
   }
+  
+  // open index file if it exists
+  H5E_BEGIN_TRY {
+    file.indexfile = H5Fopen (file.indexfilename, H5F_ACC_RDONLY,
+                              H5P_DEFAULT);
+  } H5E_END_TRY;
+  fileset.has_index = file.indexfile >= 0;
 
   if (CCTK_Equals (verbose, "full")) {
     CCTK_VInfo (CCTK_THORNSTRING, "opening %s file '%s'",
@@ -885,7 +944,10 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   // first try to open a chunked file written on this processor
   // browse through all datasets contained in this file
 
-  HDF5_ERROR (H5Giterate (file.file, "/", NULL, BrowseDatasets, &file));
+  // TODO: measure if it is actually beneficial to open the index file for this
+  // file where we always read the metadata group
+  HDF5_ERROR (H5Giterate (file.indexfile >= 0 ? file.indexfile : file.file,
+                          "/", NULL, BrowseDatasets, &file));
   assert (file.patches.size() > 0);
 
   // recover parameters
@@ -913,7 +975,9 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   fileset.files.resize (fileset.nioprocs);
   for (int i = 0; i < fileset.nioprocs; i++) {
     fileset.files[i].file = -1;
+    fileset.files[i].indexfile = -1;
     fileset.files[i].filename = NULL;
+    fileset.files[i].indexfilename = NULL;
   }
   fileset.files[fileset.first_ioproc] = file;
   fileset.setname = setname;
@@ -1094,7 +1158,13 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
   patch.rank = H5Sget_simple_extent_ndims (dataspace);
   assert (patch.rank > 0 and patch.rank <= ::dim);
   patch.shape.resize (patch.rank);
-  HDF5_ERROR (H5Sget_simple_extent_dims (dataspace, &patch.shape[0], NULL));
+  if (file->indexfile >= 0) { // index files store shape of master file in attr
+    HDF5_ERROR (attr = H5Aopen_name (dataset, "h5shape"));
+    HDF5_ERROR (H5Aread (attr, H5T_NATIVE_HSIZE, &patch.shape[0]));
+    HDF5_ERROR (H5Aclose (attr));
+  } else {
+    HDF5_ERROR (H5Sget_simple_extent_dims (dataspace, &patch.shape[0], NULL));
+  }
   HDF5_ERROR (H5Sclose (dataspace));
   HDF5_ERROR (attr = H5Aopen_name (dataset, "name"));
   HDF5_ERROR (attrtype = H5Aget_type (attr));
