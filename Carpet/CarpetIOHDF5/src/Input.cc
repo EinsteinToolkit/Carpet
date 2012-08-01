@@ -550,8 +550,10 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
                     in_recovery ? "checkpoint" : "input", file.filename);
       }
 
-      // browse through all datasets contained in this file
-      HDF5_ERROR (H5Giterate (file.file, "/", NULL, BrowseDatasets, &file));
+      if (file.patches.size() == 0) {
+        // browse through all datasets contained in this file
+        HDF5_ERROR (H5Giterate (file.file, "/", NULL, BrowseDatasets, &file));
+      }
     }
     assert (file.patches.size() > 0);
     if (myGH->recovery_filename_list and not myGH->recovery_filename_list[i]) {
@@ -659,7 +661,6 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     if (open_one_input_file_at_a_time) {
       HDF5_ERROR (H5Fclose (file.file));
       file.file = -1;
-      file.patches.clear();
       free(file.filename);
       file.filename = NULL;
     }
