@@ -406,11 +406,13 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   // create a bbox set for each active timelevel of all variables
   // to mark how much has been read already
   const int numvars = CCTK_NumVars ();
+  vector<vector<bool> > warned_about_multiple_files(numvars);
   vector<vector<bool> > read_completely(numvars);
   vector<vector<vector<ibset> > > bboxes_read (numvars);
   for (unsigned int vindex = 0; vindex < bboxes_read.size(); vindex++) {
     const int timelevels = CCTK_ActiveTimeLevelsVI (cctkGH, vindex);
     read_completely[vindex].resize (timelevels, false);
+    warned_about_multiple_files[vindex].resize (timelevels, false);
     bboxes_read[vindex].resize (timelevels);
     for (int tl = 0; tl < timelevels; tl++) {
       bboxes_read[vindex][tl].resize (maps);
@@ -635,12 +637,17 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 
       for (unsigned int tl = 0; tl < read_completely[vindex].size(); tl++) {
         all_done &= read_completely[vindex][tl];
-        if (not read_completely[vindex][tl]) {
+        if (not read_completely[vindex][tl] and not warned_about_multiple_files[vindex][tl]) {
+          static bool warned_once_already = false;
+          const int warnlevel = warned_once_already ?  CCTK_WARN_DEBUG : CCTK_WARN_COMPLAIN;
           char * const fullname = CCTK_FullName (vindex);
-	  CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "Variable %s on rl %d and tl %d not read completely.  Will have to look for it in other files",
-                      fullname, reflevel, tl);
+	  CCTK_VWarn (warnlevel, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Variable %s on rl %d and tl %d not read completely.  Will have to look for it in other files.%s",
+                      fullname, reflevel, tl,
+                      warned_once_already ? "" : " Further warnings will be level 4.");
           free (fullname);
+          warned_about_multiple_files[vindex][tl] = true;
+          warned_once_already = true;
 	}
       }
     }
