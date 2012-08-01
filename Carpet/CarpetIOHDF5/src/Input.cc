@@ -331,6 +331,7 @@ void CarpetIOHDF5_CloseFiles (CCTK_ARGUMENTS)
       }
     }
   }
+  HDF5_ERROR (H5garbage_collect());
 
   filesets.clear();
 }
@@ -564,21 +565,26 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       // and open only the index file if it exists
       
       io_files += 1;
+
+      hid_t fapl_id;
+      HDF5_ERROR (fapl_id = H5Pcreate (H5P_FILE_ACCESS));
+      HDF5_ERROR (H5Pset_fclose_degree (fapl_id, H5F_CLOSE_STRONG));
       if (file.indexfile < 0 and fileset->has_index) {
         HDF5_ERROR (file.indexfile = H5Fopen (file.indexfilename, H5F_ACC_RDONLY,
-                                              H5P_DEFAULT));
+                                              fapl_id));
         if (CCTK_Equals (verbose, "full")) {
           CCTK_VInfo (CCTK_THORNSTRING, "opening index file '%s'",
                       file.indexfilename);
         }
       } else {
         HDF5_ERROR (file.file = H5Fopen (file.filename, H5F_ACC_RDONLY,
-                                         H5P_DEFAULT));
+                                         fapl_id));
         if (CCTK_Equals (verbose, "full")) {
           CCTK_VInfo (CCTK_THORNSTRING, "opening %s file '%s'",
                       in_recovery ? "checkpoint" : "input", file.filename);
         }
       }
+      HDF5_ERROR (H5Pclose (fapl_id));
 
       // browse through all datasets contained in this file
       HDF5_ERROR (H5Giterate (file.indexfile >= 0 ? file.indexfile : file.file,
@@ -704,6 +710,8 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
         free(file.indexfilename);
         file.indexfilename = NULL;
       }
+
+      HDF5_ERROR (H5garbage_collect());
     }
   }
 
@@ -845,6 +853,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
                                               int called_from)
 {
   file_t file;
+  hid_t fapl_id;
   fileset_t fileset;
   int error_count = 0;
   list<string> filenames;
@@ -861,10 +870,14 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
                                                 fileset.first_ioproc, 0);
   assert (file.indexfilename);
 
+  // close all dangling HDF5 objects when file is closed
+  HDF5_ERROR (fapl_id = H5Pcreate (H5P_FILE_ACCESS));
+  HDF5_ERROR (H5Pset_fclose_degree (fapl_id, H5F_CLOSE_STRONG));
+
   // try to open the file (prevent HDF5 error messages if it fails)
   H5E_BEGIN_TRY {
     filenames.push_back (string (file.filename));
-    file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+    file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, fapl_id);
   } H5E_END_TRY;
 
   // if that failed, try a chunked file written on processor 0
@@ -882,7 +895,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     assert (file.indexfilename);
     H5E_BEGIN_TRY {
       filenames.push_back (string (file.filename));
-      file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+      file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, fapl_id);
     } H5E_END_TRY;
   }
 
@@ -900,7 +913,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     assert (file.indexfilename);
     H5E_BEGIN_TRY {
       filenames.push_back (string (file.filename));
-      file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+      file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, fapl_id);
     } H5E_END_TRY;
   }
 
@@ -914,6 +927,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     file.indexfilename = NULL;
     file.file = -1;
     file.indexfile = -1; // to avoid trying to close it later
+    HDF5_ERROR (H5Pclose (fapl_id));
  
     for (list<string>::const_iterator
            lsi = filenames.begin(); lsi != filenames.end(); ++ lsi)
@@ -927,9 +941,11 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   // open index file if it exists
   H5E_BEGIN_TRY {
     file.indexfile = H5Fopen (file.indexfilename, H5F_ACC_RDONLY,
-                              H5P_DEFAULT);
+                              fapl_id);
   } H5E_END_TRY;
   fileset.has_index = file.indexfile >= 0;
+
+  HDF5_ERROR (H5Pclose (fapl_id));
 
   if (CCTK_Equals (verbose, "full")) {
     CCTK_VInfo (CCTK_THORNSTRING, "opening %s file '%s'",
@@ -1386,8 +1402,12 @@ static int ReadVar (const cGH* const cctkGH,
 
       // open file if opening was defered due to presence of index file
       if (file.file < 0) {
+        hid_t fapl_id;
+        HDF5_ERROR (fapl_id = H5Pcreate (H5P_FILE_ACCESS));
+        HDF5_ERROR (H5Pset_fclose_degree (fapl_id, H5F_CLOSE_STRONG));
         HDF5_ERROR (file.file = H5Fopen (file.filename, H5F_ACC_RDONLY,
-                                         H5P_DEFAULT));
+                                         fapl_id));
+        HDF5_ERROR (H5Pclose (fapl_id));
         if (CCTK_Equals (verbose, "full")) {
           CCTK_VInfo (CCTK_THORNSTRING, "opening %s file '%s'",
                       in_recovery ? "checkpoint" : "input", file.filename);
