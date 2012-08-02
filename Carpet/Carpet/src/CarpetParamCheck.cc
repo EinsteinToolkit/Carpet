@@ -23,11 +23,11 @@ namespace Carpet {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    if (CCTK_ParameterQueryTimesSet ("periodic", "Carpet")
-	or CCTK_ParameterQueryTimesSet ("periodic_x", "Carpet")
-	or CCTK_ParameterQueryTimesSet ("periodic_y", "Carpet")
-	or CCTK_ParameterQueryTimesSet ("periodic_z", "Carpet")) {
-      CCTK_PARAMWARN ("Some of the parameters \"Carpet::periodic*\" have been set.  These parameters are there for compatibility reasons only and must not be used.");
+    if ((CCTK_ParameterQueryTimesSet ("periodic", "Carpet") and periodic)
+	or (CCTK_ParameterQueryTimesSet ("periodic_x", "Carpet") and periodic_x)
+	or (CCTK_ParameterQueryTimesSet ("periodic_y", "Carpet") and periodic_y)
+	or (CCTK_ParameterQueryTimesSet ("periodic_z", "Carpet") and periodic_z)) {
+      CCTK_PARAMWARN ("Some of the parameters \"Carpet::periodic*\" have been set to \"yes\".  These parameters are there for compatibility reasons only and must not be used.");
     }
     
     if (adaptive_stepsize and max_refinement_levels > 1) {

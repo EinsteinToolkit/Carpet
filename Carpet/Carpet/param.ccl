@@ -92,21 +92,23 @@ STRING ghost_sizes "Number of ghost zones for each refinement level"
 
 restricted:
 
+# Carpet ignores all periodic* parameters and aborts in ParamCheck if any is
+# changed to "yes"
 BOOLEAN periodic "do not use this parameter"
 {
 } "no"
 
 BOOLEAN periodic_x "do not use this parameter"
 {
-} "no"
+} "yes"
 
 BOOLEAN periodic_y "do not use this parameter"
 {
-} "no"
+} "yes"
 
 BOOLEAN periodic_z "do not use this parameter"
 {
-} "no"
+} "yes"
 
 
 
