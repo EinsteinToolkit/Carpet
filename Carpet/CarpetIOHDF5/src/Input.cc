@@ -659,6 +659,9 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     if (open_one_input_file_at_a_time) {
       HDF5_ERROR (H5Fclose (file.file));
       file.file = -1;
+      file.patches.clear();
+      free(file.filename);
+      file.filename = NULL;
     }
   }
 
@@ -810,6 +813,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   fileset.first_ioproc = CCTK_MyProc (cctkGH);
   file.filename = IOUtil_AssembleFilename (NULL, basefilename, "", ".h5",
                                            called_from, fileset.first_ioproc, 0);
+  assert (file.filename);
 
   // try to open the file (prevent HDF5 error messages if it fails)
   H5E_BEGIN_TRY {
@@ -824,6 +828,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     fileset.first_ioproc = 0;
     file.filename = IOUtil_AssembleFilename (NULL, basefilename, "", ".h5",
                                              called_from, fileset.first_ioproc, 0);
+    assert (file.filename);
     H5E_BEGIN_TRY {
       filenames.push_back (string (file.filename));
       file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -836,6 +841,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     free (file.filename);
     file.filename = IOUtil_AssembleFilename (NULL, basefilename, "", ".h5",
                                              called_from, fileset.first_ioproc, 1);
+    assert (file.filename);
     H5E_BEGIN_TRY {
       filenames.push_back (string (file.filename));
       file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -847,6 +853,8 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                 "No valid HDF5 file with basename \"%s\" found", basefilename);
     free (file.filename);
+    file.filename = NULL;
+    file.file = -1;
     for (list<string>::const_iterator
            lsi = filenames.begin(); lsi != filenames.end(); ++ lsi)
     {
@@ -897,6 +905,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   fileset.files.resize (fileset.nioprocs);
   for (int i = 0; i < fileset.nioprocs; i++) {
     fileset.files[i].file = -1;
+    fileset.files[i].filename = NULL;
   }
   fileset.files[fileset.first_ioproc] = file;
   fileset.setname = setname;
@@ -1342,6 +1351,7 @@ static int ReadVar (const cGH* const cctkGH,
   if (dataset >= 0) {
     HDF5_ERROR (H5Dclose (dataset));
     HDF5_ERROR (H5Sclose (filespace));
+    HDF5_ERROR (H5Pclose (xfer));
   }
 
   return error_count;
