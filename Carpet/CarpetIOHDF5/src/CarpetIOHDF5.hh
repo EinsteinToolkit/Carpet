@@ -119,7 +119,8 @@ namespace CarpetIOHDF5
                                  hid_t file,
                                  CCTK_REAL & io_bytes,
                                  const ioRequest* const request,
-                                 bool called_from_checkpoint);
+                                 bool called_from_checkpoint,
+                                 hid_t index = -1);
   int WriteVarChunkedParallel (const cGH* const cctkGH,
                                hid_t file,
                                CCTK_REAL & io_bytes,

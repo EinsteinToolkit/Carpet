@@ -307,7 +307,8 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
                                hid_t outfile,
                                CCTK_REAL & io_bytes,
                                const ioRequest* const request,
-                               bool called_from_checkpoint)
+                               bool called_from_checkpoint,
+                               hid_t indexfile)
 {
   DECLARE_CCTK_PARAMETERS;
 
@@ -353,11 +354,13 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
 
       // Get the shape of the HDF5 dataset (in Fortran index order)
       hsize_t shape[dim];
+      hsize_t index_shape[dim];
       hsize_t num_elems = 1;
       for (int d = 0; d < group.dim; ++d) {
         assert (group.dim-1-d>=0 and group.dim-1-d<dim);
         shape[group.dim-1-d] = (bbox.shape() / bbox.stride())[d];
         num_elems *= shape[group.dim-1-d];
+        index_shape[group.dim-1-d]  = 1;
       }
 
       // Don't create zero-sized components
@@ -426,6 +429,8 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           if (request->check_exist) {
             H5E_BEGIN_TRY {
               H5Gunlink (outfile, datasetname.str().c_str());
+              if (indexfile != -1)
+                H5Gunlink (indexfile, datasetname.str().c_str());
             } H5E_END_TRY;
           }
 
@@ -438,7 +443,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           }
 
           // Write the component as an individual dataset
-          hid_t plist, dataspace, dataset;
+          hid_t plist, dataspace, dataset, index_dataspace, index_dataset;
           HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
           // enable compression if requested
           const int compression_lvl = request->compression_level >= 0 ?
@@ -456,6 +461,14 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
           HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
                                            filedatatype, dataspace, plist));
+
+          if (indexfile != -1) {
+            HDF5_ERROR (index_dataspace = H5Screate_simple (group.dim,
+                                                            index_shape, NULL));
+            HDF5_ERROR (index_dataset = H5Dcreate (indexfile, datasetname.str().c_str(),
+                                                   filedatatype, index_dataspace, H5P_DEFAULT));
+          }
+
           io_bytes +=
             H5Sget_simple_extent_npoints (dataspace) *
             H5Tget_size (filedatatype);
@@ -466,6 +479,13 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           error_count += AddAttributes (cctkGH, fullname, group.dim,
                                         refinementlevel, request, bbox,dataset);
           HDF5_ERROR (H5Dclose (dataset));
+
+          if (indexfile != -1) {
+            HDF5_ERROR (H5Sclose (index_dataspace));
+            error_count += AddAttributes (cctkGH, fullname, group.dim,refinementlevel,
+                                          request, bbox, index_dataset, true);
+            HDF5_ERROR (H5Dclose (index_dataset));
+          }
         }
 
       } // if dist::rank() == 0

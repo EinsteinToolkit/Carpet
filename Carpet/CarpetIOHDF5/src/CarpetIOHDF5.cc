@@ -871,7 +871,7 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
         groupdata.disttype == CCTK_DISTRIB_CONSTANT) {
       error_count += WriteVarUnchunked (cctkGH, file, io_bytes, r, false);
     } else if (CCTK_EQUALS (out_mode, "onefile")) {
-      error_count += WriteVarChunkedSequential (cctkGH, file, io_bytes, r, false);
+      error_count += WriteVarChunkedSequential (cctkGH, file, io_bytes, r, false, index_file);
     } else {
       error_count += WriteVarChunkedParallel (cctkGH, file, io_bytes, r, false, index_file);
     }
