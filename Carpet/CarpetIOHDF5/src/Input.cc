@@ -88,7 +88,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
 static void ReadMetadata (fileset_t& fileset, hid_t file);
 static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg);
 static int ReadVar (const cGH* const cctkGH,
-                    hid_t file,
+                    file_t & file,
                     CCTK_REAL & io_bytes,
                     list<patch_t>::const_iterator patch,
                     vector<ibset> &bboxes_read,
@@ -316,8 +316,10 @@ void CarpetIOHDF5_CloseFiles (CCTK_ARGUMENTS)
                       set->files[i].filename);
         }
 
-        free (set->files[i].filename);
         HDF5_ERROR (H5Fclose (set->files[i].file));
+      }
+      if (set->files[i].filename != NULL) {
+        free (set->files[i].filename);
       }
     }
   }
@@ -536,13 +538,17 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     file_t& file = fileset->files[file_idx];
 
     // open the file (if it hasn't been already) and read its metadata
-    if (file.file < 0) {
+    // if we already browsed this file once we defer opening it again until we have to
+    if (not file.filename) {
       file.filename =
         IOUtil_AssembleFilename (NULL, fileset->basefilename.c_str(),
                                  "", ".h5", called_from, file_idx, 0);
       assert (file.filename);
+    }
+    if (file.patches.size() == 0) {
       HDF5_ERROR (file.file = H5Fopen (file.filename, H5F_ACC_RDONLY,
                                        H5P_DEFAULT));
+
       io_files += 1;
 
       if (CCTK_Equals (verbose, "full")) {
@@ -550,10 +556,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
                     in_recovery ? "checkpoint" : "input", file.filename);
       }
 
-      if (file.patches.size() == 0) {
-        // browse through all datasets contained in this file
-        HDF5_ERROR (H5Giterate (file.file, "/", NULL, BrowseDatasets, &file));
-      }
+      HDF5_ERROR (H5Giterate (file.file, "/", NULL, BrowseDatasets, &file));
     }
     assert (file.patches.size() > 0);
     if (myGH->recovery_filename_list and not myGH->recovery_filename_list[i]) {
@@ -615,7 +618,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       // actually read the patch
       if (not read_completely.at(patch->vindex).at(patch->timelevel)) {
         error_count +=
-          ReadVar (cctkGH, file.file, io_bytes, patch,
+          ReadVar (cctkGH, file, io_bytes, patch,
                    bboxes_read.at(patch->vindex).at(patch->timelevel),
                    in_recovery);
 
@@ -659,10 +662,14 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 
     // keep the file open if not requested otherwise by the user
     if (open_one_input_file_at_a_time) {
-      HDF5_ERROR (H5Fclose (file.file));
-      file.file = -1;
-      free(file.filename);
-      file.filename = NULL;
+      if (file.file >= 0) {
+        HDF5_ERROR (H5Fclose (file.file));
+        file.file = -1;
+      }
+      if (file.filename) {
+        free(file.filename);
+        file.filename = NULL;
+      }
     }
   }
 
@@ -1172,7 +1179,7 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
 // Reads a single grid variable from a checkpoint/data file
 //////////////////////////////////////////////////////////////////////////////
 static int ReadVar (const cGH* const cctkGH,
-                    hid_t file,
+                    file_t & file,
                     CCTK_REAL & io_bytes,
                     list<patch_t>::const_iterator patch,
                     vector<ibset> &bboxes_read,
@@ -1307,9 +1314,19 @@ static int ReadVar (const cGH* const cctkGH,
           0 : (overlap.lower() - lower)[i] / stride[i];
       }
 
+      // open file if opening was defered due to presence of index file
+      if (file.file < 0) {
+        HDF5_ERROR (file.file = H5Fopen (file.filename, H5F_ACC_RDONLY,
+                                         H5P_DEFAULT));
+        if (CCTK_Equals (verbose, "full")) {
+          CCTK_VInfo (CCTK_THORNSTRING, "opening %s file '%s'",
+                      in_recovery ? "checkpoint" : "input", file.filename);
+        }
+      }
+
       // open the dataset on the first time through
       if (dataset < 0) {
-        HDF5_ERROR (dataset = H5Dopen (file, patch->patchname.c_str()));
+        HDF5_ERROR (dataset = H5Dopen (file.file, patch->patchname.c_str()));
         HDF5_ERROR (filespace = H5Dget_space (dataset));
         xfer = H5Pcreate (H5P_DATASET_XFER);
         checksums = H5Pget_edc_check (xfer);
