@@ -33,9 +33,6 @@ class ggf {
   list<ggf*>::iterator allggfi;
 
   // Types
-  typedef list<ibbox>    iblist;
-  typedef vector<iblist> iblistvect;
-  
   typedef vector <pseudoregion_t> pvect;
   typedef vector <sendrecv_pseudoregion_t> srpvect;
   

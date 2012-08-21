@@ -34,9 +34,6 @@ class dh {
   
   // Types
 public:
-  typedef list<ibbox>    iblist;
-  typedef vector<iblist> iblistvect; // vector of lists
-  
   typedef vector <pseudoregion_t> pvect;
   typedef vector <sendrecv_pseudoregion_t> srpvect;
   
