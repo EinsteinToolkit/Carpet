@@ -27,9 +27,9 @@ CCTK_INT next_output_iteration TYPE=scalar
 CCTK_REAL next_output_time TYPE=scalar
 CCTK_INT this_iteration TYPE=scalar
 
-CCTK_INT last_output_iteration_slice[3] TYPE=scalar
-CCTK_REAL last_output_time_slice[3] TYPE=scalar
-CCTK_INT this_iteration_slice[3] TYPE=scalar
+CCTK_INT last_output_iteration_slice[4] TYPE=scalar
+CCTK_REAL last_output_time_slice[4] TYPE=scalar
+CCTK_INT this_iteration_slice[4] TYPE=scalar
 
 
 CCTK_INT FUNCTION Coord_GroupSystem    \

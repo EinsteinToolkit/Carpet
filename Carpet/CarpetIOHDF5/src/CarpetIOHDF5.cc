@@ -116,7 +116,7 @@ void CarpetIOHDF5_Init (CCTK_ARGUMENTS)
   *next_output_iteration = 0;
   *next_output_time = cctk_time;
 
-  for (int d=0; d<3; ++d) {
+  for (int d=0; d<4; ++d) {
     this_iteration_slice[d]        = 0;
     last_output_iteration_slice[d] = 0;
     last_output_time_slice[d]      = cctk_time;
