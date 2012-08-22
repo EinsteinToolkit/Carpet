@@ -1308,6 +1308,35 @@ namespace Carpet {
     } else {
       assert (0);
     }
+    
+    for (size_t m=0; m<superregss.size(); ++m) {
+      for (size_t r=0; r<superregss.AT(m).size(); ++r) {
+        bool const good_superregs = superregss.AT(m).AT(r).check_region(true);
+        if (not good_superregs) {
+          cout << "superregs[" << m << "][" << r << "]:\n"
+               << superregss.AT(m).AT(r) << "\n";
+          cout << "all superregions:\n" << superregss << "\n";
+          CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Superregions failed self-check for map %d superregion %d",
+                     int(m), int(r));
+        }
+      }
+    }
+    assert(regss.size() == superregss.size());
+    for (size_t m=0; m<regss.size(); ++m) {
+      for (size_t r=0; r<regss.AT(m).size(); ++r) {
+        bool const good_regs = regss.AT(m).AT(r).check_region(false);
+        if (not good_regs) {
+          cout << "regs[" << m << "][" << r << "]:\n"
+               << regss.AT(m).AT(r) << "\n";
+          cout << "all superregions:\n" << superregss << "\n";
+          cout << "all regions:\n" << regss << "\n";
+          CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Regions failed self-check for map %d superregion %d",
+                     int(m), int(r));
+        }
+      }
+    }
   }
   
   

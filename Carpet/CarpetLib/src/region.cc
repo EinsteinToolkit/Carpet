@@ -4,6 +4,7 @@
 
 #include "bboxset.hh"
 #include "defs.hh"
+#include "dist.hh"
 #include "mpi_string.hh"
 #include "region.hh"
 
@@ -276,6 +277,103 @@ operator>> (istream & is, region_t & reg)
   reg.processors = NULL;
   
   return is;
+}
+
+
+
+bool region_t::check_region(bool const is_superregion) const
+{
+  assert(invariant());
+  // TODO: empty regions need to be allowed (e.g. for empty grid
+  // arrays, or when the domain decomposition assigns no points to a
+  // particular process)
+  // if (extent.empty()) {
+  //   CCTK_WARN(CCTK_WARN_PICKY, "extent is empty");
+  //   return false;
+  // }
+  assert(map >= 0);
+  
+  if (is_superregion) {
+    // Checking a superregion: a tree without processor assignments
+    
+    if (processor != -1) {
+      CCTK_WARN(CCTK_WARN_PICKY, "processor number is defined");
+      return false;
+    }
+    if (not processors) {
+      CCTK_WARN(CCTK_WARN_PICKY, "processor tree not defined");
+      return false;
+    }
+    
+    // TODO: check outer_boundaries as well
+    ibset child_extents;
+    check_children(*processors, map, 0, child_extents);
+    if (child_extents != extent) {
+      CCTK_WARN(CCTK_WARN_PICKY, "child extents not equal to total extent");
+      return false;
+    }
+    
+  } else {
+    // Checking a regular region: no tree structure, but has a
+    // processor assignment
+    
+    if (processor < 0 or processor >= dist::size()) {
+      CCTK_WARN(CCTK_WARN_PICKY, "processor number not defined");
+      return false;
+    }
+    if (processors) {
+      CCTK_WARN(CCTK_WARN_PICKY, "processor tree is defined");
+      return false;
+    }
+    
+  }
+  
+  return true;
+}
+
+bool region_t::check_children(ipfulltree const& tree,
+                              int const parent_map,
+                              int const level,
+                              ibset& child_extents)
+  const
+{
+  if (tree.empty()) {
+    CCTK_VWarn(CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
+               "level %d: tree is empty", level);
+    return false;
+  } else if (tree.is_branch()) {
+    for (ipfulltree::const_iterator i(tree); not i.done(); ++i) {
+      bool const bres = check_children(*i, parent_map, level+1, child_extents);
+      if (not bres) {
+        CCTK_VWarn(CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "level %d: error in children", level);
+        return false;
+      }
+    }
+  } else if (tree.is_leaf()) {
+    ibbox const& ext = tree.payload().extent;
+    if (ext.empty()) {
+      CCTK_VWarn(CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
+                 "level %d: tree leaf extent is empty", level);
+      return false;
+    }
+    if (map != parent_map) {
+      CCTK_VWarn(CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
+                 "level %d: tree leaf map=%d, differs from parent map=%d",
+                 level, map, parent_map);
+      return false;
+    }
+    if (child_extents.intersects(ext)) {
+      CCTK_VWarn(CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
+                 "level %d: tree leaf extent overlaps other tree extents",
+                 level);
+      return false;
+    }
+    child_extents += ext;
+  } else {
+    assert(0);
+  }
+  return true;
 }
 
 

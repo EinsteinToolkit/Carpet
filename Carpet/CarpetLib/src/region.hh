@@ -31,6 +31,13 @@ struct region_t {
   CCTK_REAL load () const CCTK_MEMBER_ATTRIBUTE_PURE;
   region_t split (CCTK_REAL ratio_new_over_old);
   
+  // Check whether a region is defined consistently
+  bool check_region(bool is_superregion) const;
+private:
+  bool check_children(ipfulltree const& tree, int parent_map, int level,
+                      ibset& child_extents) const;
+public:
+  
   // Output processor decomposition? (Off by default.)
   static bool full_output;
 };
