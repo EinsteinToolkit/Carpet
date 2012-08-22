@@ -8,7 +8,7 @@ schedule CarpetIOHDF5_Startup at STARTUP after IOUtil_Startup
   LANG: C
 } "Startup routine"
 
-schedule CarpetIOHDF5_Init at BASEGRID
+schedule CarpetIOHDF5_Init at INITIAL
 {
   LANG: C
   OPTIONS: global
