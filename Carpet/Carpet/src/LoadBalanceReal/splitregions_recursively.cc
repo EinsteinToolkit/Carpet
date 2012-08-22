@@ -369,7 +369,7 @@ namespace Carpet {
     for (size_t m=0; m<superregss.size(); ++m) {
       for (size_t r=0; r<old_superregss.AT(m).size(); ++r) {
         region_t const& reg = old_superregss.AT(m).AT(r);
-        if (not (all_old_superregss.AT(reg.map) & reg.extent).empty()) {
+        if (all_old_superregss.AT(reg.map).intersects(reg.extent)) {
           has_error = true;
           cout << "SRMR: old_superregss:\n"
                << "m=" << m << " r=" << r << " reg=" << reg << "\n";
@@ -381,7 +381,7 @@ namespace Carpet {
     for (size_t m=0; m<superregss.size(); ++m) {
       for (size_t r=0; r<superregss.AT(m).size(); ++r) {
         region_t const& reg = superregss.AT(m).AT(r);
-        if (not (all_superregss.AT(reg.map) & reg.extent).empty()) {
+        if (all_superregss.AT(reg.map).intersects(reg.extent)) {
           has_error = true;
           cout << "SRMR: all_superregss:\n"
                << "m=" << m << " r=" << r << " reg=" << reg << "\n";
@@ -399,7 +399,7 @@ namespace Carpet {
     for (size_t m=0; m<regss.size(); ++m) {
       for (size_t r=0; r<regss.AT(m).size(); ++r) {
         region_t const& reg = regss.AT(m).AT(r);
-        if (not (all_regss.AT(reg.map) & reg.extent).empty()) {
+        if (all_regss.AT(reg.map).intersects(reg.extent)) {
           has_error = true;
           cout << "SRMR: all_regss:\n"
                << "m=" << m << " r=" << r << " reg=" << reg << "\n";

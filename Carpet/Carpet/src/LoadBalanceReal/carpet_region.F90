@@ -1,5 +1,7 @@
 module carpet_region 
   
+  implicit none
+
   integer, parameter :: wp = selected_real_kind(12,99)
   
   ! These empty arrays are used to initialize variables to either the

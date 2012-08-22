@@ -1,7 +1,8 @@
+#include "cctk.h"
+
 module carpet_boxtypes
 
   use carpet_region
-
   implicit none
 
   integer :: ghostsize
@@ -201,9 +202,12 @@ module carpet_boxtypes
     subroutine AssignProcs ( minproc, maxproc, frac1, frac2, sregion )
       integer, intent(in) :: minproc, maxproc
       real(wp ), intent(in) :: frac1, frac2
+      logical :: lower_is_outer, upper_is_outer
+      integer :: boundarysize, minsize
 !     The intent has been removed to make it compile with gfortran 4.1.
 !      type(superregion2), pointer, intent(inout) :: sregion
       type(superregion2), pointer :: sregion
+      character :: msg*200
 
 !     Initialize.
       if ( frac1 == 0 ) then
@@ -239,20 +243,54 @@ module carpet_boxtypes
               sreg%processor = procid
               procid = procid + 1
             else
-              if ( ( frac1 /= 0.0_wp ) .and. ( frac2 /= 0.0_wp ) ) then
-                call cost_box ( sreg%extent, cost )
-                maxcost = maxval(cost)
-                mydim = maxloc (cost)
-                np = nint(frac1/(frac1+frac2)*cost(mydim(1)))
+              call cost_box ( sreg%extent, cost )
+              maxcost = maxval(cost)
+              mydim = maxloc (cost)
+              lower_is_outer = sreg%outer_boundaries%obound(mydim(1),1)/=0
+              upper_is_outer = sreg%outer_boundaries%obound(mydim(1),2)/=0
+              if (frac1 == 0.0_wp) then
+                np = 0
+              else if (frac2 == 0.0_wp) then
+                np = maxcost
+              else
+                np = nint(frac1/(frac1+frac2)*maxcost)
+              end if
+              if (limit_size) then
+                boundarysize = ghostsize
+                minsize = boundarysize+ghostsize
+                if (lower_is_outer .and. np>0 .and. np<minsize) then
+                  if (np<minsize/2) then
+                    np = 0
+                  else
+                    np = minsize
+                  end if
+                end if
+                if (upper_is_outer .and. &
+                    np<maxcost .and. np>maxcost-minsize) then
+                  if (np>maxcost-minsize/2) then
+                    np = maxcost
+                  else
+                    np = maxcost-minsize
+                  end if
+                end if
+              end if
+              if ((lower_is_outer .and. np>0 .and. np<minsize) .or. &
+                  (upper_is_outer .and. &
+                   np<maxcost .and. np>maxcost-minsize)) then
+                write (msg, '("Not enough grid points: np=",i4," gs=",i4, "maxcost=",i4)') &
+                       np, boundarysize, maxcost
+                call CCTK_WARN(CCTK_WARN_ABORT, msg)
+              end if
+              if (np>0 .and. np<maxcost) then
                 call split_sregion ( sreg, mydim(1), (/ np /) )
                 sreg%processor = -1
                 sreg%children(1)%point%processor = minproc
                 sreg%children(1)%point%frac = frac1
                 sreg%children(2)%point%processor = maxproc
                 sreg%children(2)%point%frac = frac2
-              else if ( frac1 == 0.0_wp ) then
+              else if (np==0) then
                 sreg%processor = maxproc
-              else if ( frac2 == 0.0_wp ) then
+              else if (np==maxcost) then
                 sreg%processor = minproc
               end if
               
@@ -338,9 +376,12 @@ module carpet_boxtypes
       real(wp), dimension(maxchoices) :: ncr
       type(ptr), dimension(maxchoices) :: newregarr
       real(wp), dimension(maxchoices) :: imbalancearr
+      logical :: lower_is_outer, upper_is_outer
+      integer :: boundarysize, minsize
       type(bbox) :: reg1, reg2
       integer, dimension(1) :: minimbalanceloc
       integer :: nlocal
+      character :: msg*200
 
 !     Extract the bounding box information
       reg = newreg%extent
@@ -397,11 +438,32 @@ module carpet_boxtypes
 !       sure the chunks are not too small compared to the ghostsize if
 !       limit_size is true.
 !       Take also the granularity into account.
+!       At the outer boundary, take also the boundary size into account,
+!       assuming that the boundary size is equal to the ghost size.
+!       (Boundary points cannot be split, and near a boundary, the
+!        minimum number of interior points is the number of ghost points.)
         np1 = nint((real(maxcost,wp)*p1)/nprocs/granularity)*granularity
 !       TODO: Take granularity_boundary into account as well!
-        if ( limit_size ) then
-          np1 = max(ghostsize,np1)
-          np1 = min(maxcost-ghostsize,np1)
+!       TODO: Take granularity into account when limiting!
+        if (limit_size) then
+          lower_is_outer = &
+               newregarr(i)%point%outer_boundaries%obound(mydim(1),1)/=0
+          upper_is_outer = &
+               newregarr(i)%point%outer_boundaries%obound(mydim(1),2)/=0
+          boundarysize = ghostsize
+          minsize = boundarysize+ghostsize
+          if (lower_is_outer .and. np1>0 .and. np1<minsize) then
+            np1 = minsize
+          end if
+          if (upper_is_outer .and. np1<maxcost .and. np1>maxcost-minsize) then
+            np1 = maxcost-minsize
+          end if
+          if ((lower_is_outer .and. np1>0 .and. np1<minsize) .or. &
+              (upper_is_outer .and. np1<maxcost .and. np1>maxcost-minsize)) then
+            write (msg, '("Not enough grid points: np=",i4," gs=",i4, "maxcost=",i4)') &
+                   np1, boundarysize, maxcost
+            call CCTK_WARN(CCTK_WARN_ABORT, msg)
+          end if
         end if
 
 !       Split the region (reg) into two regions (reg1, reg2) taking the
@@ -578,6 +640,8 @@ module carpet_boxtypes
       integer, intent(in) :: nprocs
       integer :: i, nregs, totcost, &
                  clevel, ncount, maxcost, np
+      logical :: lower_is_outer, upper_is_outer
+      integer :: boundarysize, minsize
       integer, dimension(1) :: mydir
       integer, dimension(:), allocatable :: cost
       integer, dimension(3) :: mycost
@@ -587,6 +651,7 @@ module carpet_boxtypes
       real(wp) :: fract
       integer, dimension(:), allocatable :: accumcost, minmap, maxmap, &
                                             splitnum
+      character :: msg*200
 
 !     Set nregs to the number of super regions in the input list.
       nregs = size(sregion)
@@ -637,7 +702,7 @@ module carpet_boxtypes
       do i = 1, nregs
         nrprocs = nsplit(i)
 !       If the region begins and ends on the same processor, don't split
-!       but just assign the region to that proceesor.
+!       but just assign the region to that processor.
         if ( maxmap(i) == minmap(i) ) then
           sregion(i)%point%processor = minmap(i)
           sregion(i)%point%frac = nrprocs
@@ -668,6 +733,27 @@ module carpet_boxtypes
 !           Find the number of gridpoints in direction mydir of the first
 !           split region.
             np = nint(frac1(i)/fract*mycost(mydir(1)))
+            if (limit_size) then
+              lower_is_outer = &
+                   sregion(i)%point%outer_boundaries%obound(mydir(1),1)/=0
+              upper_is_outer = &
+                   sregion(i)%point%outer_boundaries%obound(mydir(1),2)/=0
+              boundarysize = ghostsize
+              minsize = boundarysize+ghostsize
+              if (lower_is_outer .and. np>0 .and. np<minsize) then
+                np = minsize
+              end if
+              if (upper_is_outer .and. np<maxcost .and. np>maxcost-minsize) then
+                np = maxcost-minsize
+              end if
+              if ((lower_is_outer .and. np>0 .and. np<minsize) .or. &
+                  (upper_is_outer .and. &
+                   np<maxcost .and. np>maxcost-minsize)) then
+                write (msg, '("Not enough grid points: np=",i4," gs=",i4, "maxcost=",i4)') &
+                       np, boundarysize, maxcost
+                call CCTK_WARN(CCTK_WARN_ABORT, msg)
+              end if
+            end if
 !           Split the region.
             call split_sregion ( sregion(i)%point, mydir(1), (/ np /) )
 !           Assign the processors to the resulting regions.

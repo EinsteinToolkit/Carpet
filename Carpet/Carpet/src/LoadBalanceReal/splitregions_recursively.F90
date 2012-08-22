@@ -87,14 +87,6 @@ subroutine splitregions_recursively ( &
   
   
   
-  ! Set global parameters
-  ghostsize  = ghostsize_ 
-  alpha      = alpha_
-  limit_size = limit_size_ /= 0
-  procid     = procid_
-  
-  
-  
   outbound%obound(:,:) = 1
   allocate (sregions(nsuperregs))
   do i=1, nsuperregs

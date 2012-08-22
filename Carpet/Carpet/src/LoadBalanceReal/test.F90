@@ -1,6 +1,7 @@
 program test
 
   use carpet_boxtypes
+  implicit none
 
   type(bbox), dimension(100) :: inboxes
   integer, dimension(3,2) :: obound_init =  reshape (source = (/ 1, 1, 1, 1, 1, 1 /), shape = (/ 3, 2 /))
