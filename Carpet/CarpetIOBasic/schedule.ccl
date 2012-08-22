@@ -8,7 +8,7 @@ schedule CarpetIOBasicStartup at STARTUP after IOUtil_Startup
   OPTIONS: global
 } "Startup routine"
 
-schedule CarpetIOBasicInit at BASEGRID
+schedule CarpetIOBasicInit at INITIAL
 {
   LANG: C
   OPTIONS: global

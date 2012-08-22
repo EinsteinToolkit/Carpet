@@ -8,7 +8,7 @@ SCHEDULE CarpetIOASCIIStartup AT startup AFTER IOUtil_Startup
   OPTIONS: global
 } "Startup routine"
 
-SCHEDULE CarpetIOASCIIInit AT basegrid
+SCHEDULE CarpetIOASCIIInit AT initial
 {
   LANG: C
   OPTIONS: global
