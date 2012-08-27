@@ -671,7 +671,8 @@ namespace CarpetInterp2 {
       assert (rl>=0 and c>=0);
       
       ibbox const & ext =
-        Carpet::vdd.AT(m)->light_boxes.AT(Carpet::mglevel).AT(rl).AT(c).exterior;
+        Carpet::vdd.AT(m)
+        ->light_boxes.AT(Carpet::mglevel).AT(rl).AT(c).exterior;
       rvect dpos = rpos - rvect(ipos);
       
       // Convert from Carpet indexing to grid point indexing
