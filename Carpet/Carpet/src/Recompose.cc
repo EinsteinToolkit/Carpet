@@ -730,8 +730,12 @@ namespace Carpet {
       assert (file.good());
     }
     
-    file << "iteration " << cctkGH->cctk_iteration << eol;
-    file << "maps " << maps << eol;
+    if (m == 0) {
+      // Output a separator
+      file << eol;
+      file << "iteration " << cctkGH->cctk_iteration << eol;
+      file << "maps " << maps << eol;
+    }
     file << m << " mglevels " << regsss.size() << eol;
     for (int ml=0; ml<(int)regsss.size(); ++ml) {
       file << m << " " << ml << " reflevels " << regsss.AT(ml).size() << eol;
@@ -745,7 +749,6 @@ namespace Carpet {
         }
       }
     }
-    file << eol;
     
     file.close();
     assert (file.good());
