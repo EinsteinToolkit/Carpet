@@ -76,7 +76,7 @@ namespace Carpet {
   struct f_bbox {
     f_range dim[3];
     
-    f_bbox () { }
+    f_bbox () {}
     f_bbox (ibbox const& box)
     {
       assert (::dim == 3);
@@ -102,6 +102,16 @@ namespace Carpet {
   struct f_boundary {
     int obound[2][3];
     
+    f_boundary () {}
+    f_boundary (b2vect const& ob)
+    {
+      assert (::dim == 3);
+      for (int d=0; d<3; ++d) {
+        for (int f=0; f<2; ++f) {
+          obound[f][d] = ob[f][d];
+        }
+      }
+    }
     /*explicit*/ operator b2vect () const
     {
       b2vect ob;
@@ -433,7 +443,8 @@ namespace Carpet {
                                  int const& i,
                                  CCTK_POINTER& cxx_superreg)
   {
-    vector<region_t>& superregs = *(vector<region_t>*)cxx_superregs;
+    vector<region_t>& superregs =
+      *static_cast<vector<region_t>*>(cxx_superregs);
     region_t& superreg = superregs.AT(i);
     cxx_superreg = &superreg;
   }
@@ -441,10 +452,11 @@ namespace Carpet {
   extern "C"
   CCTK_FCALL void
   CCTK_FNAME(carpet_get_bbox) (CCTK_POINTER& cxx_superreg,
-                               f_bbox& box)
+                               f_bbox& box, f_boundary& obound)
   {
-    region_t& superreg = *(region_t*)cxx_superreg;
+    region_t& superreg = *static_cast<region_t*>(cxx_superreg);
     box = f_bbox(superreg.extent);
+    obound = f_boundary(superreg.outer_boundaries);
   }
   
   extern "C"
@@ -452,8 +464,8 @@ namespace Carpet {
   CCTK_FNAME(carpet_insert_region) (CCTK_POINTER& cxx_regs,
                                     f_superregion2slim const& reg)
   {
-    vector<region_t>& regs = *(vector<region_t>*)cxx_regs;
-    regs.push_back (region_t (reg));
+    vector<region_t>& regs = *static_cast<vector<region_t>*>(cxx_regs);
+    regs.push_back(region_t(reg));
   }
   
   extern "C"
@@ -470,7 +482,7 @@ namespace Carpet {
       bounds.AT(i) = fbounds[i];
     }
     for (int i=0; i<nch; ++i) {
-      ipfulltree* const tree = (ipfulltree*)cxx_subtrees[i];
+      ipfulltree* const tree = static_cast<ipfulltree*>(cxx_subtrees[i]);
       assert (tree->invariant());
       subtrees.AT(i) = tree;
     }
@@ -482,7 +494,7 @@ namespace Carpet {
   CCTK_FNAME(carpet_create_tree_leaf) (f_superregion2slim const& sreg,
                                        CCTK_POINTER& cxx_tree)
   {
-    cxx_tree = new ipfulltree (pseudoregion_t (sreg));
+    cxx_tree = new ipfulltree(pseudoregion_t(sreg));
   }
   
   extern "C"
@@ -490,8 +502,8 @@ namespace Carpet {
   CCTK_FNAME(carpet_set_tree) (CCTK_POINTER& cxx_superreg,
                                CCTK_POINTER& cxx_tree)
   {
-    region_t& superreg = *(region_t*)cxx_superreg;
-    ipfulltree* tree = (ipfulltree*)cxx_tree;
+    region_t& superreg = *static_cast<region_t*>(cxx_superreg);
+    ipfulltree* tree = static_cast<ipfulltree*>(cxx_tree);
     assert (not superreg.processors);
     superreg.processors = tree;
   }

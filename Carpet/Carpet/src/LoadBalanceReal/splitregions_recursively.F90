@@ -41,11 +41,12 @@ subroutine splitregions_recursively ( &
        CCTK_POINTER, intent(out) :: cxx_superreg
      end subroutine carpet_get_region
      
-     subroutine carpet_get_bbox (cxx_superreg, box)
+     subroutine carpet_get_bbox (cxx_superreg, box, obound)
        use carpet_boxtypes
        implicit none
-       CCTK_POINTER, intent(in)  :: cxx_superreg
-       type(bbox),   intent(out) :: box
+       CCTK_POINTER,   intent(in)  :: cxx_superreg
+       type(bbox),     intent(out) :: box
+       type(boundary), intent(out) :: obound
      end subroutine carpet_get_bbox
      
      subroutine carpet_insert_region (cxx_regs, reg)
@@ -87,11 +88,10 @@ subroutine splitregions_recursively ( &
   
   
   
-  outbound%obound(:,:) = 1
   allocate (sregions(nsuperregs))
   do i=1, nsuperregs
      call carpet_get_region (cxx_superregs, i-1, cxx_superreg)
-     call carpet_get_bbox (cxx_superreg, box)
+     call carpet_get_bbox (cxx_superreg, box, outbound)
      call create_sregion (box, outbound, i-1, sregions(i)%point)
   end do
   
@@ -119,6 +119,7 @@ contains
     
     integer                   :: nch, ich
     integer                   :: dir
+    integer                   :: mydir
     integer,      allocatable :: bounds(:)
     CCTK_POINTER, allocatable :: cxx_subtrees(:)
     type(superregion2slim)    :: sregslim
@@ -133,31 +134,38 @@ contains
        if (nch /= 2) then
           call CCTK_WARN (CCTK_WARN_ABORT, "number of children is not 2")
        end if
+       mydir = -1
        do dir=1, 3
           if (sreg%children(1)%point%extent%dim(dir)%upper + &
                sreg%children(2)%point%extent%dim(dir)%stride == &
                sreg%children(2)%point%extent%dim(dir)%lower) then
-             goto 100
-          end if
-          if (sreg%children(1)%point%extent%dim(dir)%lower /= &
-               sreg%children(2)%point%extent%dim(dir)%lower .or. &
-               sreg%children(1)%point%extent%dim(dir)%upper /= &
-               sreg%children(2)%point%extent%dim(dir)%upper) then
-             call CCTK_WARN (CCTK_WARN_ABORT, "children differ in unexpected ways")
+             ! Found direction
+             if (mydir > 0) then
+                call CCTK_WARN (CCTK_WARN_ABORT, "could not determine direction")
+             end if
+             mydir = dir
+          else
+             if (sreg%children(1)%point%extent%dim(dir)%lower /= &
+                  sreg%children(2)%point%extent%dim(dir)%lower .or. &
+                  sreg%children(1)%point%extent%dim(dir)%upper /= &
+                  sreg%children(2)%point%extent%dim(dir)%upper) then
+                call CCTK_WARN (CCTK_WARN_ABORT, "children differ in unexpected ways")
+             end if
           end if
        end do
-       call CCTK_WARN (CCTK_WARN_ABORT, "could not determine direction")
-100    continue
-       bounds(1) = sreg%children(1)%point%extent%dim(dir)%lower
-       bounds(2) = sreg%children(2)%point%extent%dim(dir)%lower
-       bounds(3) = sreg%children(2)%point%extent%dim(dir)%upper + &
-            sreg%children(2)%point%extent%dim(dir)%stride
+       if (mydir < 0) then
+          call CCTK_WARN (CCTK_WARN_ABORT, "could not determine direction")
+       end if
+       bounds(1) = sreg%children(1)%point%extent%dim(mydir)%lower
+       bounds(2) = sreg%children(2)%point%extent%dim(mydir)%lower
+       bounds(3) = sreg%children(2)%point%extent%dim(mydir)%upper + &
+            sreg%children(2)%point%extent%dim(mydir)%stride
        do ich=1, nch
           call insert_region &
                (sreg%children(ich)%point, cxx_subtrees(ich), cxx_regs)
        end do
        call carpet_create_tree_branch &
-            (nch, dir-1, bounds, cxx_subtrees, cxx_tree)
+            (nch, mydir-1, bounds, cxx_subtrees, cxx_tree)
     else
        ! The region is a leaf: insert it
        sregslim%extent           = sreg%extent
