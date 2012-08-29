@@ -470,12 +470,12 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       int tagstable = CCTK_GroupTagsTableI (gindex);
       int const len = Util_TableGetString (tagstable, 0, NULL, "checkpoint");
       if (len > 0) {
-        char* value = new char[len + 1];
+        vector<char> value_buf(len+1);
+        char* value = &value_buf[0];
         Util_TableGetString (tagstable, len + 1, value, "checkpoint");
         if (len == sizeof ("no") - 1 and CCTK_Equals (value, "no")) {
           not_checkpointed[vindex] = true;
         }
-        delete[] value;
       }
     }
   }
@@ -972,15 +972,29 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
       CCTK_VInfo (CCTK_THORNSTRING, "Recovering parameters from checkpoint "
                   "file '%s'", file.filename);
     }
-    hid_t dataset;
+    hid_t dataset, datatype;
+    size_t len;
+    htri_t old_data;
+
     HDF5_ERROR (dataset = H5Dopen (file.file,
                                    METADATA_GROUP "/" ALL_PARAMETERS));
-    char *parameters = new char[H5Dget_storage_size (dataset) + 1];
-    HDF5_ERROR (H5Dread (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
+    HDF5_ERROR (datatype = H5Dget_type(dataset));
+    HDF5_ERROR (old_data = H5Tequal(datatype, H5T_NATIVE_CHAR));
+    if (old_data) {
+        /* old data that stored this as an array of chars */
+        CCTK_WARN (CCTK_WARN_ALERT, "Old-style checkpoint data found.");
+        HDF5_ERROR (len = H5Dget_storage_size(dataset) + 1);
+    } else {
+        HDF5_ERROR (len = H5Tget_size(datatype));
+    }
+    vector<char> parameter_buf(len);
+    char* parameters = &parameter_buf[0];
+
+    HDF5_ERROR (H5Dread (dataset, datatype, H5S_ALL, H5S_ALL,
                          H5P_DEFAULT, parameters));
     HDF5_ERROR (H5Dclose (dataset));
+    HDF5_ERROR (H5Tclose (datatype));
     IOUtil_SetAllParameters (parameters);
-    delete[] parameters;
 
     num_reflevels = fileset.num_reflevels;
   }
@@ -1062,11 +1076,28 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
     dataset = H5Dopen (metadata, GRID_STRUCTURE);
   } H5E_END_TRY;
   if (dataset >= 0) {
-    vector<char> gs_cstr (H5Dget_storage_size (dataset) + 1);
-    HDF5_ERROR (H5Dread (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
-                         H5P_DEFAULT, &gs_cstr.front()));
+    hid_t datatype;
+    htri_t old_data;
+    size_t len;
+
+    HDF5_ERROR (datatype = H5Dget_type(dataset));
+    HDF5_ERROR (datatype = H5Dget_type(dataset));
+    HDF5_ERROR (old_data = H5Tequal(datatype, H5T_NATIVE_CHAR));
+    if (old_data) {
+        /* old data that stored this as an array of chars */
+        CCTK_WARN (CCTK_WARN_ALERT, "Old-style checkpoint data found.");
+        HDF5_ERROR (len = H5Dget_storage_size(dataset) + 1);
+    } else {
+        HDF5_ERROR (len = H5Tget_size(datatype));
+    }
+    vector<char> gs_str_buf(len);
+    char* gs_str = &gs_str_buf[0];
+
+    HDF5_ERROR (H5Dread (dataset, datatype, H5S_ALL, H5S_ALL,
+                         H5P_DEFAULT, gs_str));
     HDF5_ERROR (H5Dclose (dataset));
-    istringstream gs_buf (&gs_cstr.front());
+    HDF5_ERROR (H5Tclose (datatype));
+    istringstream gs_buf (gs_str);
     
     skipws (gs_buf);
     consume (gs_buf, "grid_superstructure:");

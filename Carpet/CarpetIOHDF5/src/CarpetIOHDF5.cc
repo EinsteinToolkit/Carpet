@@ -1007,10 +1007,10 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
         int const len = Util_TableGetString (gdata.tagstable, 0, NULL,
                                              "checkpoint");
         if (len > 0) {
-          char* value = new char[len + 1];
+          vector<char> value_buf(len+1);
+          char* value = &value_buf[0];
           Util_TableGetString (gdata.tagstable, len + 1, value, "checkpoint");
           if (len == sizeof ("no") - 1 and CCTK_Equals (value, "no")) {
-            delete[] value;
             continue;
           } else if (not CCTK_Equals (value, "yes")) {
             char* groupname = CCTK_GroupName (group);
@@ -1019,7 +1019,6 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
                         value, groupname);
             free (groupname);
           }
-          delete[] value;
         }
 
         /* get the number of active timelevels */
@@ -1512,18 +1511,22 @@ static int WriteLargeAttribute (hid_t const group,
                                 char const * const name,
                                 char const * const svalue)
 {
-  hid_t dataspace, dataset;
+  hid_t dataspace, dataset, datatype;
   int error_count = 0;
   
   // Create a dataset, since the data may not fit into an attribute
   hsize_t const size = strlen (svalue) + 1;
-  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
-  HDF5_ERROR (dataset = H5Dcreate (group, name, H5T_NATIVE_CHAR,
-                                   dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Dwrite (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
+  HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
+  HDF5_ERROR (H5Tset_size (datatype, size));
+
+  HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
+  HDF5_ERROR (dataset   = H5Dcreate (group, name, datatype,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Dwrite (dataset, datatype, H5S_ALL, H5S_ALL,
                         H5P_DEFAULT, svalue));
   HDF5_ERROR (H5Dclose (dataset));
   HDF5_ERROR (H5Sclose (dataspace));
+  HDF5_ERROR (H5Tclose (datatype));
   
   return error_count;
 }
