@@ -1300,8 +1300,6 @@ namespace Carpet {
                        ibbox const& box, // this bbox
                        ivect& imin, ivect& imax)
   {
-    ivect const izero = ivect(0);
-    
     assert (all ((box.lower() - ext.lower()               ) >= 0));
     assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
     assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
