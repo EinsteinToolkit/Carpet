@@ -417,7 +417,7 @@ namespace Carpet {
     
     static int last_iteration = -1;
     static size_t num_samples = 0;
-    static CCTK_REAL last_physical_time;
+    // static CCTK_REAL last_physical_time;
     static CCTK_REAL last_time_evolution;
     assert (cctk_iteration > last_iteration); // expect progress
     
@@ -435,7 +435,7 @@ namespace Carpet {
     } else if (num_samples < 3 or
                * time_evolution < 0.01 * timing_average_window_minutes * 60.0)
     {
-      // Less than three previous samples are available, or less thatn
+      // Less than three previous samples are available, or less than
       // one percent of a window of past data are available
       * current_physical_time_per_hour = * physical_time_per_hour;
     } else {
@@ -451,7 +451,7 @@ namespace Carpet {
     // Remember last iteration
     last_iteration      = cctk_iteration;
     ++ num_samples;
-    last_physical_time  = physical_time;
+    // last_physical_time  = physical_time;
     last_time_evolution = * time_evolution;
   }
   
