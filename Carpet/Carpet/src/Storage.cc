@@ -14,6 +14,8 @@
 
 #include <carpet.hh>
 
+#include "Requirements.hh"
+
 
 
 namespace Carpet {
@@ -216,6 +218,26 @@ namespace Carpet {
     if (min_num_timelevels == INT_MAX) {
       min_num_timelevels = 0;
     }
+    
+    vector<int> vgroups(n_groups), vtimelevels(n_groups);
+    for (int i=0; i<n_groups; ++i) {
+      int const gi = groups[i];
+      int const ml = 0;
+      int const grouptype = CCTK_GroupTypeI(gi);
+      bool const is_array = grouptype != CCTK_GF;
+      bool const all_rl = is_meta_mode() or is_global_mode();
+      int const min_rl = is_array ? 0 : all_rl ? 0 : reflevel;
+      int const max_rl = is_array ? 1 : all_rl ? reflevels : reflevel+1;
+      int const ntls = groupdata.AT(gi).activetimelevels.AT(ml).AT(min_rl);
+      for (int rl=min_rl; rl<max_rl; ++rl) {
+        // TODO: We assume here that all refinement levels have the
+        // same number of active time levels -- this may not be true
+        assert (groupdata.AT(gi).activetimelevels.AT(ml).AT(rl) == ntls);
+      }
+      vgroups.AT(i) = gi;
+      vtimelevels.AT(i) = ntls;
+    }
+    Requirements::ChangeStorage(vgroups, vtimelevels, reflevel);
     
     return do_allow_past_timelevels ? 
       min_num_timelevels : min(1,min_num_timelevels);

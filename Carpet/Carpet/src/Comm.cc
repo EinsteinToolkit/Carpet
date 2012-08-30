@@ -14,6 +14,8 @@
 #include <carpet.hh>
 #include <Timers.hh>
 
+#include "Requirements.hh"
+
 
 
 namespace Carpet {
@@ -66,7 +68,8 @@ namespace Carpet {
   // synchronises ghostzones and prolongates boundaries of a set of groups
   //
   // returns 0 for success and -1 if the set contains a group with no storage
-  int SyncProlongateGroups (const cGH* cctkGH, const vector<int>& groups)
+  int SyncProlongateGroups (const cGH* cctkGH, const vector<int>& groups,
+                            cFunctionData const* function_data)
   {
     int retval = 0;
     DECLARE_CCTK_PARAMETERS;
@@ -161,9 +164,11 @@ namespace Carpet {
         SyncGroups (cctkGH, goodgroups);
         timer.stop();
       }
-
+      
+      Requirements::Sync(function_data, goodgroups, reflevel, timelevel);
+      
     }
-
+    
     return retval;
   }
 

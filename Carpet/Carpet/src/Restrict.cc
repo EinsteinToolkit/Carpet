@@ -11,6 +11,8 @@
 #include <carpet.hh>
 #include <Timers.hh>
 
+#include "Requirements.hh"
+
 
 
 namespace Carpet {
@@ -66,6 +68,8 @@ namespace Carpet {
       SyncGroups (cctkGH, groups);
       timer.stop();
     }
+    
+    Requirements::Restrict(groups, reflevel);
   }
   
 

@@ -596,6 +596,14 @@ BOOLEAN use_unusedpoints_mask "Turn on storage and usage of 'unusedpoints_mask'"
 
 
 
-BOOLEAN requirement_inconsistencies_are_fatal "Abort when encountering inconsistencies in requirements" STEERABLE=recover
+BOOLEAN check_requirements "Check schedule requirements" STEERABLE=always
+{
+} "no"
+
+BOOLEAN requirements_verbose "Output details when checking requirements" STEERABLE=always
+{
+} "no"
+
+BOOLEAN requirement_inconsistencies_are_fatal "Abort when encountering inconsistencies in requirements" STEERABLE=always
 {
 } "no"

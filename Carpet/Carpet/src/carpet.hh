@@ -6,6 +6,7 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
 #include <cctk_Functions.h>
+#include <cctk_Schedule.h>
 
 #include <gh.hh>
 
@@ -44,7 +45,8 @@ namespace Carpet {
   void FlipTimeLevels (cGH* cgh);
   void FillTimeLevels (const cGH* cgh);
   void SyncGroups (const cGH* cgh, const vector<int>& groups);
-  int  SyncProlongateGroups (const cGH* cgh, const vector<int>& groups);
+  int  SyncProlongateGroups (const cGH* cgh, const vector<int>& groups,
+                             cFunctionData const* function_data = NULL);
  
   // Sanity checks
   enum checktimes { currenttime,
@@ -73,11 +75,6 @@ namespace Carpet {
                          void * const function,
                          cFunctionData * const attribute,
                          void * const data);
-  
-  // Requirements
-  namespace Requirements {
-    void CheckRequirements (cGH const * cctkGH);
-  }
   
   // Debugging output
   void Output (const char* fmt, ...);

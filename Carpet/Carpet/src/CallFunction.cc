@@ -16,6 +16,7 @@
 #include <Timers.hh>
 
 #include "adler32.hh"
+#include "Requirements.hh"
 
 
 
@@ -357,6 +358,7 @@ namespace Carpet {
       CCTK_REAL const saved_cctk_delta_time = cctkGH->cctk_delta_time;
       
       user_timer.start();
+      Requirements::BeforeRoutine(attribute, reflevel, map, timelevel);
       timer.start();
       if (CCTK_IsFunctionAliased("Accelerator_PreCallFunction")) {
         Timer pre_timer("PreCall");
@@ -373,6 +375,7 @@ namespace Carpet {
         post_timer.stop();
       }
       timer.stop();
+      Requirements::AfterRoutine(attribute, reflevel, map, timelevel);
       user_timer.stop();
       
       // Manage the time step size. If the time step size changes
@@ -448,7 +451,7 @@ namespace Carpet {
     }
 
     sync_timer.start();
-    SyncProlongateGroups (cctkGH, sync_groups);
+    SyncProlongateGroups (cctkGH, sync_groups, attribute);
     sync_timer.stop();
   }
   

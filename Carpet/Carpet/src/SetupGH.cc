@@ -35,6 +35,7 @@
 #include <vect.hh>
 
 #include <carpet.hh>
+#include "Requirements.hh"
 #include "Timers.hh"
 
 
@@ -717,6 +718,7 @@ namespace Carpet {
       maps = num_maps;
     }
     carpetGH.maps = maps;
+    Requirements::Setup (maps);
   }
   
   

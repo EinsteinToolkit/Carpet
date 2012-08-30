@@ -8,7 +8,10 @@
 #include <gh.hh>
 
 #include <carpet.hh>
-#include "Timers.hh"
+#include <Timers.hh>
+
+#include "Requirements.hh"
+
 
 
 namespace Carpet {
@@ -104,6 +107,8 @@ namespace Carpet {
     if (CCTK_IsFunctionAliased("Accelerator_Cycle")) {
       Accelerator_Cycle(cctkGH);
     }
+    
+    Requirements::Cycle(reflevel);
     
     if (errors > 0) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,

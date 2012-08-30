@@ -21,7 +21,9 @@
 #include <carpet.hh>
 #include <Timers.hh>
 #include <TimerSet.hh>
-#include "TimerNode.hh"
+#include <TimerNode.hh>
+
+#include "Requirements.hh"
 
 
 
@@ -292,6 +294,7 @@ namespace Carpet {
     assert (not did_remove_level or did_regrid);
     
     if (did_regrid) {
+      Requirements::Regrid(reflevels);
       bool did_any_recompose = false;
       BEGIN_META_MODE (cctkGH) {
 
@@ -304,6 +307,10 @@ namespace Carpet {
           
           bool const did_recompose = Recompose (cctkGH, rl, true);
           did_any_recompose = did_any_recompose or did_recompose;
+          Requirements::Recompose(reflevel,
+                                  not did_recompose ?
+                                  Requirements::valid::everywhere :
+                                  Requirements::valid::interior);
           
           // Carpet assumes that a regridding operation always changes
           // "level N and all finer levels" so we should call
@@ -364,6 +371,7 @@ namespace Carpet {
         if (have_done_anything) assert (have_done_late_global_mode);
         
       } END_META_MODE;
+      Requirements::RegridFree();
     } // if did_regrid
     
     RegridFree (cctkGH, true);

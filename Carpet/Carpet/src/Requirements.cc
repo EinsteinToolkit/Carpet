@@ -1,64 +1,22 @@
-#include <algorithm>
-#include <set>
-#include <string>
+#include <Requirements.hh>
+
+#include <defs.hh>
 
 #include <cctk.h>
+#include <cctk_Parameters.h>
 #include <cctk_Schedule.h>
-
 #include <cctki_GHExtensions.h>
 #include <cctki_Schedule.h>
 
-#include <carpet.hh>
+#include <algorithm>
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <map>
+#include <string>
+#include <vector>
 
 using namespace std;
-
-
-
-#ifdef CACTUS_HAS_REQUIRES_CLAUSES
-
-// Illegally copied from ScheduleInterface.c:
-
-typedef enum {sched_none, sched_group, sched_function} iSchedType;
-typedef enum {schedpoint_misc, schedpoint_analysis} iSchedPoint;
-
-typedef struct t_timer
-{
-  struct t_timer *next;
-  int timer_handle;
-  char *schedule_bin;
-  int has_been_output;
-} t_timer;
-
-typedef struct
-{
-  /* Static data */
-  char *description;
-
-  /*char *thorn; MOVED TO FunctionData */
-  char *implementation;
-
-  iSchedType type;
-
-  cFunctionData FunctionData;
-
-  int n_mem_groups;
-  int *mem_groups;
-  int *timelevels;
-
-  int n_comm_groups;
-  int *comm_groups;
-
-  /* Timer data */
-  t_timer *timers;
-
-  /* Dynamic data */
-  int *CommOnEntry;
-  int *StorageOnEntry;
-
-  int done_entry;
-  int synchronised;
-
-} t_attribute;
 
 
 
@@ -73,281 +31,1057 @@ namespace Carpet {
     //    another routine which is scheduled earlier.
     //
     // 2. Things can be provided only once, not multiple times.
-    //    Except when they are also provided.
+    //    Except when they are also required.
+    
+    
+    
+    // Represent scheduled functions and their dependencies
+    
+    struct clause_t {
+      bool everywhere;          // all grid points (everywhere)
+      bool interior;            // all interior points
+      bool boundary;            // all boundary points, excluding
+                                // ghostzones
+      bool boundary_ghostzones; // all boundary ghost points
+      bool all_timelevels;      // all time levels
+      bool all_maps;            // all maps (i.e. level mode)
+      bool all_reflevels;       // all refinement levels (i.e. global mode)
+      vector<int> vars;
+      clause_t():
+        everywhere(false),
+        interior(false), boundary(false), boundary_ghostzones(false),
+        all_timelevels(false), all_maps(false), all_reflevels(false)
+      {}
+      void parse(char const* clause);
+    };
+    
+    void clause_t::parse(char const* const clause1)
+    {
+      char* const clause = strdup(clause1);
+      char* p = clause;
+      
+      // Remove trailing "(...)" modifier, if any
+      p = strchr(p, '(');
+      if (p) *p = '\0';
+      int const gi = CCTK_GroupIndex(clause);
+      if (gi >= 0) {
+        // A group
+        int const v0 = CCTK_FirstVarIndexI(gi); assert(v0 >= 0);
+        int const nv = CCTK_NumVarsInGroupI(gi); assert(nv >= 0);
+        for (int vi=v0; vi<v0+nv; ++vi) {
+          vars.push_back(vi);
+        }
+      } else {
+        // Not a group - should be a variable
+        int const vi = CCTK_VarIndex(clause);
+        assert(vi >= 0);
+        vars.push_back(vi);
+      }
+      
+      // Parse modifiers
+      if (p) {
+        ++p;
+        for (;;) {
+          size_t const len = strcspn(p, ",)");
+          char const c = p[len];
+          assert(c);
+          p[len] = '\0';
+          if (CCTK_EQUALS(p, "everywhere")) {
+            assert(not everywhere and
+                   not interior and not boundary and not boundary_ghostzones);
+            everywhere = true;
+          } else if (CCTK_EQUALS(p, "interior")) {
+            assert(not everywhere and not interior);
+            interior = true;
+          } else if (CCTK_EQUALS(p, "boundary")) {
+            assert(not everywhere and not boundary);
+            boundary = true;
+          } else if (CCTK_EQUALS(p, "boundary_ghostzones")) {
+            assert(not everywhere and not boundary_ghostzones);
+            boundary_ghostzones = true;
+          } else if (CCTK_EQUALS(p, "all_timelevels")) {
+            // TODO: look at OPTIONS instead
+            assert(not all_timelevels);
+            all_timelevels = true;
+          } else if (CCTK_EQUALS(p, "all_maps")) {
+            // TODO: look at OPTIONS instead
+            assert(not all_maps);
+            all_maps = true;
+          } else if (CCTK_EQUALS(p, "all_reflevels")) {
+            // TODO: look at OPTIONS instead
+            assert(not all_reflevels);
+            all_reflevels = true;
+          } else {
+            assert(0);
+          }
+          if (c == ')') break;
+          p += len+1;
+        }
+      }
+      
+      free(clause);
+    }
+    
+    
+    
+    struct clauses_t {
+      vector<clause_t> reads, writes;
+      clauses_t() {}
+      void parse(cFunctionData const* function_data);
+    private:
+      void parse1(cFunctionData const* function_data,
+                  vector<clause_t> clauses_t::* clauses,
+                  int cFunctionData::* n_Clauses,
+                  const char** cFunctionData::* Clauses);
+    };
+    
+    void clauses_t::parse(cFunctionData const* function_data)
+    {
+      parse1(function_data, &clauses_t::reads,
+             &cFunctionData::n_ReadsClauses, &cFunctionData::ReadsClauses);
+      parse1(function_data, &clauses_t::writes,
+             &cFunctionData::n_WritesClauses, &cFunctionData::WritesClauses);
+    }
+    
+    void clauses_t::parse1(cFunctionData const* const function_data,
+                           vector<clause_t> clauses_t::* const clauses,
+                           int cFunctionData::* const n_Clauses,
+                           const char** cFunctionData::* const Clauses)
+    {
+      assert((this->*clauses).empty());
+      (this->*clauses).reserve(function_data->*n_Clauses);
+      for (int n=0; n<function_data->*n_Clauses; ++n) {
+        clause_t clause;
+        clause.parse((function_data->*Clauses)[n]);
+        (this->*clauses).push_back(clause);
+      }
+    }
+    
+    
+    
+    class all_clauses_t {
+      // TODO: Represent I/O as well?
+      typedef std::map<cFunctionData const*, clauses_t const*> clauses_map_t;
+      clauses_map_t clauses_map;
+      // Singleton
+      all_clauses_t(all_clauses_t const&);
+      all_clauses_t& operator=(all_clauses_t const&);
+    public:
+      all_clauses_t() {}
+      clauses_t const& get_clauses(cFunctionData const* function_data);
+    };
+    
+    clauses_t const& all_clauses_t::
+    get_clauses(cFunctionData const* const function_data)
+    {
+      clauses_map_t::const_iterator const iclauses =
+        clauses_map.find(function_data);
+      if (iclauses != clauses_map.end()) return *iclauses->second;
+      clauses_t* const clauses = new clauses_t;
+      clauses->parse(function_data);
+      pair<clauses_map_t::const_iterator, bool> const ret =
+        clauses_map.insert(clauses_map_t::value_type(function_data, clauses));
+      assert(ret.second);
+      return *ret.first->second;
+    }
+    
+    all_clauses_t all_clauses;
+    
+    
     
     // Keep track of which time levels contain good data; modify this
-    // while time level cycling; routine specify how many time levels
-    // they require/provide
+    // while time level cycling; routines should specify how many time
+    // levels they require/provide
     
+    bool there_was_an_error = false;
     
+    struct gridpoint_t {
+      bool interior, boundary, ghostzones, boundary_ghostzones;
+      gridpoint_t():
+        interior(false), boundary(false), ghostzones(false),
+        boundary_ghostzones(false)
+      {}
+      gridpoint_t(clause_t const& clause):
+        interior(clause.everywhere or clause.interior),
+        boundary(clause.everywhere or clause.boundary),
+        ghostzones(clause.everywhere),
+        boundary_ghostzones(clause.everywhere or clause.boundary_ghostzones)
+      {}
+      void check_state(clause_t const& clause,
+                       cFunctionData const* function_data,
+                       int vi, int rl, int m, int tl) const;
+      static void report_error(cFunctionData const* function_data,
+                               int vi, int rl, int m, int tl,
+                               char const* what, char const* where);
+      void update_state(clause_t const& clause);
+    };
     
-    int CheckEntry (void * attribute, void * data);
-    int CheckExit  (void * attribute, void * data);
-    int CheckWhile (int n_whiles, char ** whiles, void * attribute, void * data, int first);
-    int CheckIf    (int n_ifs, char ** ifs, void * attribute, void * data);
-    int CheckCall  (void * function, void * attribute, void * data);
-    
-    void CheckOneGroup (cGH const * cctkGH, char const * where);
-    
-    
-    
-    int
-    CheckEntry (void * const attribute,
-                void * const data)
+    void gridpoint_t::check_state(clause_t const& clause,
+                                  cFunctionData const* const function_data,
+                                  int const vi,
+                                  int const rl, int const m, int const tl)
+      const
     {
-      DECLARE_CCTK_PARAMETERS;
-      
-      if (not attribute) {
-        // Nothing to check
-        return 1;
-      }
-      
-      int (*const warn) (char const *thorn, char const *format, ...) =
-        requirement_inconsistencies_are_fatal ? CCTK_VParamWarn : CCTK_VInfo;
-      
-      // Convert argument types
-      cFunctionData & function_data =
-        (static_cast <t_attribute *> (attribute))->FunctionData;
-      set <string> & active_provisions = * static_cast <set <string> *> (data);
-      
-      // Gather all required items
-      set <string> requires;
-      for (int n = 0; n < function_data.n_RequiresClauses; ++ n) {
-        requires.insert (string (function_data.RequiresClauses[n]));
-      }
-      
-      // Check whether all required items have already been provided
-      set <string> required_but_not_provided;
-      set_difference
-        (requires.begin(), requires.end(),
-         active_provisions.begin(), active_provisions.end(),
-         insert_iterator <set <string> >
-         (required_but_not_provided, required_but_not_provided.begin()));
-      
-      // Are there unmet requirements?
-      if (not required_but_not_provided.empty()) {
-        for (set<string>::const_iterator ri = required_but_not_provided.begin();
-             ri != required_but_not_provided.end(); ++ ri)
-        {
-          string const req = * ri;
-          warn (CCTK_THORNSTRING,
-                "Requirement inconsistency:\n"
-                "   Group %s, function %s::%s requires \"%s\" which has not been provided",
-                function_data.where,
-                function_data.thorn, function_data.routine,
-                req.c_str());
+      if (not interior) {
+        if (clause.everywhere or clause.interior) {
+          report_error(function_data, vi, rl, m, rl,
+                       "calling function", "interior");
         }
       }
-      
-      // Do traverse this schedule item
-      return 1;
-    }
-    
-    
-    
-    int
-    CheckExit (void * const attribute,
-               void * const data)
-    {
-      DECLARE_CCTK_PARAMETERS;
-      
-      if (not attribute) {
-        // Nothing to check
-        return 1;
-      }
-      
-      int (*const warn) (char const *thorn, char const *format, ...) =
-        requirement_inconsistencies_are_fatal ? CCTK_VParamWarn : CCTK_VInfo;
-      
-      // Convert argument types
-      cFunctionData & function_data =
-        (static_cast <t_attribute *> (attribute))->FunctionData;
-      set <string> & active_provisions = * static_cast <set <string> *> (data);
-      
-      // Gather all required and provided items
-      set <string> requires;
-      for (int n = 0; n < function_data.n_RequiresClauses; ++ n) {
-        requires.insert (string (function_data.RequiresClauses[n]));
-      }
-      set <string> provides;
-      for (int n = 0; n < function_data.n_ProvidesClauses; ++ n) {
-        provides.insert (string (function_data.ProvidesClauses[n]));
-      }
-      
-      // Check whether any of the providions have already been
-      // provided.  (We disallow this as well, so that a routine
-      // cannot overwrite what another routine has already set up.)
-      set <string> provided_twice;
-      set_intersection
-        (provides.begin(), provides.end(),
-         active_provisions.begin(), active_provisions.end(),
-         insert_iterator <set <string> >
-         (provided_twice, provided_twice.begin()));
-      // But we do allow to provide things which are also required
-      set <string> provided_too_often;
-      set_difference
-        (provided_twice.begin(), provided_twice.end(),
-         requires.begin(), requires.end(),
-         insert_iterator <set <string> >
-         (provided_too_often, provided_too_often.begin()));
-      
-      // Are there things provided twice?
-      if (not provided_too_often.empty()) {
-        for (set<string>::const_iterator pi = provided_too_often.begin();
-             pi != provided_too_often.end(); ++ pi)
-        {
-          string const prov = * pi;
-          warn (CCTK_THORNSTRING,
-                "Requirement inconsistency:\n"
-                "   Group %s, function %s::%s provides (and does not require) \"%s\" which has already been provided",
-                function_data.where,
-                function_data.thorn, function_data.routine,
-                prov.c_str());
+      if (not boundary) {
+        if (clause.everywhere or clause.boundary) {
+          report_error(function_data, vi, rl, m, rl,
+                       "calling function", "boundary");
         }
       }
-      
-      // Add the new provisions
-      for (set<string>::const_iterator pi =
-             provides.begin(); pi != provides.end(); ++ pi)
-      {
-        string const prov = * pi;
-        active_provisions.insert (prov);
+      if (not ghostzones) {
+        if (clause.everywhere) {
+          report_error(function_data, vi, rl, m, rl,
+                       "calling function", "ghostzones");
+        }
       }
-      
-      // ???
-      return 1;
-    }
-    
-    
-    
-    int
-    CheckWhile (int const n_whiles, char ** const whiles,
-                void * const attribute,
-                void * const data,
-                int const first)
-    {
-      // Execute item once
-      return first;
-    }
-    
-    
-    
-    int
-    CheckIf (int const n_ifs, char ** const ifs,
-             void * const attribute,
-             void * const data)
-    {
-      // Execute item
-      return 1;
-    }
-    
-    
-    
-    int CheckCall (void * const function,
-                   void * const attribute,
-                   void * const data)
-    {
-      // Do nothing
-      return 0;
-    }
-    
-    
-    
-    // Check one schedule bin
-    void
-    CheckOneGroup (cGH const * const cctkGH,
-                   char const * const where)
-    {
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "Checking requirements of schedule bin %s", where);
-      
-      // Set up initial provision (none at the moment)
-      set <string> active_provisions;
-      
-      // Output initial provisions
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "   Initial provisions:");
-      for (set<string>::const_iterator pi =
-             active_provisions.begin(); pi != active_provisions.end(); ++ pi)
-      {
-        string const prov = * pi;
-        CCTK_VInfo (CCTK_THORNSTRING,
-                    "      %s", prov.c_str());
+      if (not boundary_ghostzones) {
+        if (clause.everywhere or clause.boundary_ghostzones) {
+          report_error(function_data, vi, rl, m, rl,
+                       "calling", "boundary-ghostzones");
+        }
       }
-      
-      // Check the schedule bin
-      CCTKi_DoScheduleTraverse (where,
-                                CheckEntry, CheckExit,
-                                CheckWhile, CheckIf,
-                                CheckCall,
-                                & active_provisions);
-      
-      // Output the final provisions
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "   Final provisions:");
-      for (set<string>::const_iterator pi =
-             active_provisions.begin(); pi != active_provisions.end(); ++ pi)
-      {
-        string const prov = * pi;
-        CCTK_VInfo (CCTK_THORNSTRING,
-                    "      %s", prov.c_str());
+    }
+    
+    void gridpoint_t::report_error(cFunctionData const* const function_data,
+                                   int const vi,
+                                   int const rl, int const m, int const tl,
+                                   char const* const what,
+                                   char const* const where)
+    {
+      char* const fullname = CCTK_FullName(vi);
+      if (function_data) {
+        // The error is related to a scheduled function
+        CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Schedule READS clause not satisfied: "
+                   "Function %s::%s in %s: "
+                   "Variable %s reflevel=%d map=%d timelevel=%d: "
+                   "%s not valid for %s",
+                   function_data->thorn, function_data->routine,
+                   function_data->where,
+                   fullname, rl, m, tl,
+                   where, what);
+      } else {
+        // The error is not related to a scheduled function
+        CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Schedule READS clause not satisfied: "
+                   "Variable %s reflevel=%d map=%d timelevel=%d: "
+                   "%s not valid for %s",
+                   fullname, rl, m, tl,
+                   where, what);
+      }
+      free(fullname);
+      there_was_an_error = true;
+    }
+    
+    void gridpoint_t::update_state(clause_t const& clause)
+    {
+      if (clause.everywhere or clause.interior) {
+        interior = true;
+      }
+      if (clause.everywhere or clause.boundary) {
+        boundary = true;
+      }
+      if (clause.everywhere) {
+        ghostzones = true;
+      }
+      if (clause.everywhere or clause.boundary_ghostzones) {
+        boundary_ghostzones = true;
       }
     }
     
     
     
-    // Check everything
-    void
-    CheckRequirements (cGH const * const cctkGH)
+    class all_state_t {
+      typedef vector<gridpoint_t> timelevels_t;
+      typedef vector<timelevels_t> maps_t;
+      typedef vector<maps_t> reflevels_t;
+      typedef vector<reflevels_t> variables_t;
+      variables_t vars;
+      variables_t old_vars;     // for regridding
+    public:
+      void setup(int maps);
+      void change_storage(vector<int> const& groups,
+                          vector<int> const& timelevels,
+                          int reflevel);
+      void regrid(int reflevels);
+      void recompose(int reflevel, valid::valid_t where);
+      void regrid_free();
+      void cycle(int reflevel);
+      void before_routine(cFunctionData const* function_data,
+                          int reflevel, int map, int timelevel) const;
+      void after_routine(cFunctionData const* function_data,
+                         int reflevel, int map, int timelevel);
+      void sync(cFunctionData const* function_data,
+                vector<int> const& groups, int reflevel, int timelevel);
+      void restrict1(vector<int> const& groups, int reflevel);
+    };
+    
+    all_state_t all_state;
+    
+    
+    
+    void Setup(int const maps)
     {
-      Checkpoint ("Checking schedule requirements");
-      
-      // Check some bins
-      CheckOneGroup (cctkGH, "CCTK_WRAGH");
-      CheckOneGroup (cctkGH, "CCTK_BASEGRID");
-      
-      CheckOneGroup (cctkGH, "CCTK_RECOVER_VARIABLES");
-      CheckOneGroup (cctkGH, "CCTK_POST_RECOVER_VARIABLES");
-      
-      CheckOneGroup (cctkGH, "CCTK_PREREGRIDINITIAL");
-      CheckOneGroup (cctkGH, "CCTK_POSTREGRIDINITIAL");
-      CheckOneGroup (cctkGH, "CCTK_INITIAL");
-      CheckOneGroup (cctkGH, "CCTK_POSTRESTRICTINITIAL");
-      CheckOneGroup (cctkGH, "CCTK_POSTINITIAL");
-      CheckOneGroup (cctkGH, "CCTK_CPINITIAL");
-      
-      CheckOneGroup (cctkGH, "CCTK_PREREGRID");
-      CheckOneGroup (cctkGH, "CCTK_POSTREGRID");
-      CheckOneGroup (cctkGH, "CCTK_PRESTEP");
-      CheckOneGroup (cctkGH, "CCTK_EVOL");
-      CheckOneGroup (cctkGH, "CCTK_POSTSTEP");
-      CheckOneGroup (cctkGH, "CCTK_CHECKPOINT");
-      CheckOneGroup (cctkGH, "CCTK_ANALYSIS");
-      
-      CheckOneGroup (cctkGH, "CCTK_TERMINATE");
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        if (requirements_verbose) {
+          CCTK_VInfo(CCTK_THORNSTRING,
+                     "Requirements: Setup maps=%d", maps);
+        }
+        all_state.setup(maps);
+      }
+      if (requirement_inconsistencies_are_fatal and there_was_an_error) {
+        CCTK_WARN(CCTK_WARN_ABORT,
+                  "Aborting because schedule clauses were not satisfied");
+      }
     }
+    
+    void all_state_t::setup(int const maps)
+    {
+      DECLARE_CCTK_PARAMETERS;
+      assert(vars.empty());
+      vars.resize(CCTK_NumVars());
+      for (variables_t::iterator
+             ivar = vars.begin(); ivar != vars.end(); ++ivar)
+      {
+        reflevels_t& rls = *ivar;
+        int const vi = &*ivar - &*vars.begin();
+        assert(rls.empty());
+        // Allocate one refinement level initially
+        int const nrls = 1;
+        rls.resize(nrls);
+        for (reflevels_t::iterator irl = rls.begin(); irl != rls.end(); ++irl) {
+          maps_t& ms = *irl;
+          assert(ms.empty());
+          int const group_type = CCTK_GroupTypeFromVarI(vi);
+          int const nms = group_type==CCTK_GF ? maps : 1;
+          if (requirements_verbose) {
+            char* const fullname = CCTK_FullName(vi);
+            int const rl = &*irl - &*rls.begin();
+            CCTK_VInfo(CCTK_THORNSTRING,
+                       "Requirements: Setting up %d maps for variable %s(rl=%d)",
+                       nms, fullname, rl);
+            free(fullname);
+          }
+          ms.resize(nms);
+          for (maps_t::iterator im = ms.begin(); im != ms.end(); ++im) {
+            timelevels_t& tls = *im;
+            assert(tls.empty());
+            // Not allocating any time levels here
+          }
+        }
+      }
+    }
+    
+    
+    
+    void ChangeStorage(vector<int> const& groups,
+                       vector<int> const& timelevels,
+                       int const reflevel)
+    {
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        if (requirements_verbose) {
+          CCTK_VInfo(CCTK_THORNSTRING,
+                     "Requirements: ChangeStorage reflevel=%d", reflevel);
+        }
+        all_state.change_storage(groups, timelevels, reflevel);
+      }
+      if (requirement_inconsistencies_are_fatal and there_was_an_error) {
+        CCTK_WARN(CCTK_WARN_ABORT,
+                  "Aborting because schedule clauses were not satisfied");
+      }
+    }
+    
+    void all_state_t::change_storage(vector<int> const& groups,
+                                     vector<int> const& timelevels,
+                                     int const reflevel)
+    {
+      DECLARE_CCTK_PARAMETERS;
+      assert(groups.size() == timelevels.size());
+      for (vector<int>::const_iterator
+             igi = groups.begin(), itl = timelevels.begin();
+           igi != groups.end(); ++igi, ++itl)
+      {
+        int const gi = *igi;
+        int const tl = *itl;
+        bool const is_array = CCTK_GroupTypeI(gi) != CCTK_GF;
+        int const v0 = CCTK_FirstVarIndexI(gi);
+        int const nv = CCTK_NumVarsInGroupI(gi);
+        for (int vi=v0; vi<v0+nv; ++vi) {
+          reflevels_t& rls = vars.AT(vi);
+          int const reflevels = int(rls.size());
+          bool const all_rl = reflevel==-1;
+          int const min_rl = is_array ? 0 : all_rl ? 0 : reflevel;
+          int const max_rl = is_array ? 1 : all_rl ? reflevels : reflevel+1;
+          assert(min_rl>=0 and max_rl<=reflevels);
+          for (int rl=min_rl; rl<max_rl; ++rl) {
+            maps_t& ms = rls.AT(rl);
+            for (maps_t::iterator im = ms.begin(); im != ms.end(); ++im) {
+              timelevels_t& tls = *im;
+              int const ntls = int(tls.size());
+              if (tl < ntls) {
+                // Free some storage
+                if (requirements_verbose) {
+                  char* const fullname = CCTK_FullName(vi);
+                  int const m = &*im - &*ms.begin();
+                  CCTK_VInfo(CCTK_THORNSTRING,
+                             "Requirements: Decreasing storage to %d time levels for variable %s(rl=%d,m=%d)",
+                             tl, fullname, rl, m);
+                  free(fullname);
+                }
+                tls.resize(tl);
+              } else if (tl > ntls) {
+                // Allocate new storage
+                if (requirements_verbose) {
+                  char* const fullname = CCTK_FullName(vi);
+                  int const m = &*im - &*ms.begin();
+                  CCTK_VInfo(CCTK_THORNSTRING,
+                             "Requirements: Increasing storage to %d time levels for variable %s(rl=%d,m=%d)",
+                             tl, fullname, rl, m);
+                  free(fullname);
+                }
+                // The default constructor for gridpoint_t sets all
+                // data to "invalid"
+                tls.resize(tl);
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    
+    
+    void Regrid(int const reflevels)
+    {
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        if (requirements_verbose) {
+          CCTK_VInfo(CCTK_THORNSTRING,
+                     "Requirements: Regrid reflevels=%d", reflevels);
+        }
+        all_state.regrid(reflevels);
+      }
+      if (requirement_inconsistencies_are_fatal and there_was_an_error) {
+        CCTK_WARN(CCTK_WARN_ABORT,
+                  "Aborting because schedule clauses were not satisfied");
+      }
+    }
+    
+    void all_state_t::regrid(int const reflevels)
+    {
+      DECLARE_CCTK_PARAMETERS;
+      assert(old_vars.empty());
+      old_vars.resize(vars.size());
+      
+      int const ng = CCTK_NumGroups();
+      for (int gi=0; gi<ng; ++gi) {
+        int const group_type = CCTK_GroupTypeI(gi);
+        switch (group_type) {
+        case CCTK_SCALAR:
+        case CCTK_ARRAY:
+          // Grid arrays remain unchanged
+          break;
+        case CCTK_GF: {
+          // Only grid functions are regridded
+          int const v0 = CCTK_FirstVarIndexI(gi);
+          int const nv = CCTK_NumVarsInGroupI(gi);
+          for (int vi=v0; vi<v0+nv; ++vi) {
+            reflevels_t& rls = vars.AT(vi);
+            reflevels_t& old_rls = old_vars.AT(vi);
+            assert(old_rls.empty());
+            swap(rls, old_rls);
+            // Delete (unused) old refinement levels
+            int const old_reflevels = int(old_rls.size());
+            for (int rl=reflevels; rl<old_reflevels; ++rl) {
+              maps_t& old_ms = old_rls.AT(rl);
+              if (requirements_verbose) {
+                char* const fullname = CCTK_FullName(vi);
+                CCTK_VInfo(CCTK_THORNSTRING,
+                           "Requirements: Deleting unused refinement level %d of variable %s",
+                           rl, fullname);
+                free(fullname);
+              }
+              old_ms.clear();
+            }
+            // Allocate new refinement levels
+            rls.resize(reflevels);
+            maps_t const& old_ms = old_rls.AT(0);
+            int const old_maps = int(old_ms.size());
+            int const maps = old_maps;
+            for (int rl=old_reflevels; rl<reflevels; ++rl) {
+              maps_t& ms = rls.AT(rl);
+              if (requirements_verbose) {
+                char* const fullname = CCTK_FullName(vi);
+                CCTK_VInfo(CCTK_THORNSTRING,
+                           "Requirements: Allocating new refinement level %d for variable %s",
+                           rl, fullname);
+                free(fullname);
+              }
+              ms.resize(maps);
+              for (maps_t::iterator im = ms.begin(); im != ms.end(); ++im) {
+                int const crl = 0;
+                int const m = &*im - &*ms.begin();
+                timelevels_t& tls = *im;
+                assert(tls.empty());
+                int const ntls = int(old_rls.AT(crl).AT(m).size());
+                // Allocate undefined timelevels
+                tls.resize(ntls);
+              }
+            }
+          }
+          break;
+        }
+        default:
+          assert(0);
+        }
+      }
+    }
+    
+    
+    
+    void Recompose(int const reflevel, valid::valid_t const where)
+    {
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        if (requirements_verbose) {
+          CCTK_VInfo(CCTK_THORNSTRING,
+                     "Requirements: Recompose reflevel=%d where=%s",
+                     reflevel,
+                     where == valid::nowhere    ? "nowhere"    :
+                     where == valid::interior   ? "interior"   :
+                     where == valid::everywhere ? "everywhere" :
+                     NULL);
+        }
+        all_state.recompose(reflevel, where);
+      }
+      if (requirement_inconsistencies_are_fatal and there_was_an_error) {
+        CCTK_WARN(CCTK_WARN_ABORT,
+                  "Aborting because schedule clauses were not satisfied");
+      }
+    }
+    
+    void all_state_t::recompose(int const reflevel, valid::valid_t const where)
+    {
+      DECLARE_CCTK_PARAMETERS;
+      int const ng = CCTK_NumGroups();
+      for (int gi=0; gi<ng; ++gi) {
+        int const group_type = CCTK_GroupTypeI(gi);
+        switch (group_type) {
+        case CCTK_SCALAR:
+        case CCTK_ARRAY:
+          // Grid arrays remain unchanged
+          break;
+        case CCTK_GF: {
+          // Only grid functions are regridded
+          int const v0 = CCTK_FirstVarIndexI(gi);
+          int const nv = CCTK_NumVarsInGroupI(gi);
+          for (int vi=v0; vi<v0+nv; ++vi) {
+            reflevels_t& rls = vars.AT(vi);
+            maps_t& ms = rls.AT(reflevel);
+            reflevels_t& old_rls = old_vars.AT(vi);
+            int const old_reflevels = int(old_rls.size());
+            if (reflevel < old_reflevels) {
+              // This refinement level is regridded
+              maps_t& old_ms = old_rls.AT(reflevel);
+              assert(not old_ms.empty());
+              assert(ms.empty());
+              swap(ms, old_ms);
+              for (maps_t::iterator
+                     im = ms.begin(), old_im = old_ms.begin();
+                   im != ms.end(); ++im, ++old_im)
+              {
+                timelevels_t& tls = *im;
+                if (requirements_verbose) {
+                  char* const fullname = CCTK_FullName(vi);
+                  int const m = &*im - &*ms.begin();
+                  CCTK_VInfo(CCTK_THORNSTRING,
+                             "Requirements: Recomposing variable %s(rl=%d,m=%d)",
+                             fullname, reflevel, m);
+                  free(fullname);
+                }
+                for (timelevels_t::iterator
+                       itl = tls.begin(); itl != tls.end(); ++itl)
+                {
+                  gridpoint_t& gp = *itl;
+                  switch (where) {
+                  case valid::nowhere:
+                    gp.interior = false;
+                    // fall through
+                  case valid::interior:
+                    // Recomposing sets only the interior
+                    gp.boundary = false;
+                    gp.ghostzones = false;
+                    gp.boundary_ghostzones = false;
+                    // fall through
+                  case valid::everywhere:
+                    // do nothing
+                    break;
+                  default:
+                    assert(0);
+                  }
+                }
+              }
+              assert(old_ms.empty());
+            } else {
+              // This refinement level is new
+              assert(where == valid::nowhere);
+            }
+          }
+          break;
+        }
+        default:
+          assert(0);
+        }
+      }
+    }
+    
+    
+    
+    void RegridFree()
+    {
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        if (requirements_verbose) {
+          CCTK_VInfo(CCTK_THORNSTRING,
+                     "Requirements: RegridFree");
+        }
+        all_state.regrid_free();
+      }
+      if (requirement_inconsistencies_are_fatal and there_was_an_error) {
+        CCTK_WARN(CCTK_WARN_ABORT,
+                  "Aborting because schedule clauses were not satisfied");
+      }
+    }
+    
+    void all_state_t::regrid_free()
+    {
+      // Ensure all old maps have been recomposed
+      for (variables_t::const_iterator
+             ivar = old_vars.begin(); ivar != old_vars.end(); ++ivar)
+      {
+        reflevels_t const& old_rls = *ivar;
+        for (reflevels_t::const_iterator
+               irl = old_rls.begin(); irl != old_rls.end(); ++irl)
+        {
+          maps_t const& old_ms = *irl;
+          assert(old_ms.empty());
+        }
+      }
+      old_vars.clear();
+    }
+    
+    
+    
+    void Cycle(int const reflevel)
+    {
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        if (requirements_verbose) {
+          CCTK_VInfo(CCTK_THORNSTRING,
+                     "Requirements: Cycle reflevel=%d", reflevel);
+        }
+        all_state.cycle(reflevel);
+      }
+      if (requirement_inconsistencies_are_fatal and there_was_an_error) {
+        CCTK_WARN(CCTK_WARN_ABORT,
+                  "Aborting because schedule clauses were not satisfied");
+      }
+    }
+    
+    void all_state_t::cycle(int const reflevel)
+    {
+      int const ng = CCTK_NumGroups();
+      for (int gi=0; gi<ng; ++gi) {
+        int const group_type = CCTK_GroupTypeI(gi);
+        bool do_cycle;
+        switch (group_type) {
+        case CCTK_SCALAR:
+        case CCTK_ARRAY:
+          // Grid arrays are cycled in global mode
+          do_cycle = reflevel == -1;
+          break;
+        case CCTK_GF:
+          // Grid functions are cycled in level mode
+          do_cycle = reflevel >= 0;
+          break;
+        default:
+          assert(0);
+        }
+        if (do_cycle) {
+          // Translate global mode to refinement level 0
+          int const rl = reflevel >= 0 ? reflevel : 0;
+          int const v0 = CCTK_FirstVarIndexI(gi);
+          int const nv = CCTK_NumVarsInGroupI(gi);
+          for (int vi=v0; vi<v0+nv; ++vi) {
+            reflevels_t& rls = vars.AT(vi);
+            maps_t& ms = rls.AT(rl);
+            for (maps_t::iterator im = ms.begin(); im != ms.end(); ++im) {
+              timelevels_t& tls = *im;
+              int const ntl = int(tls.size());
+              if (ntl >= 1) {
+                // Only cycle variables with sufficient storage
+                for (int tl=ntl-1; tl>0; --tl) {
+                  tls.AT(tl) = tls.AT(tl-1);
+                }
+                // The new time level is uninitialised
+                // TODO: keep it valid to save time, since MoL will
+                // copy it anyway?
+                tls.AT(0) = gridpoint_t();
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    
+     
+    void BeforeRoutine(cFunctionData const* const function_data,
+                       int const reflevel, int const map, int const timelevel)
+    {
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        all_state.before_routine(function_data, reflevel, map, timelevel);
+      }
+      if (requirement_inconsistencies_are_fatal and there_was_an_error) {
+        CCTK_WARN(CCTK_WARN_ABORT,
+                  "Aborting because schedule clauses were not satisfied");
+      }
+    }
+    
+    void all_state_t::before_routine(cFunctionData const* const function_data,
+                                     int const reflevel, int const map,
+                                     int const timelevel)
+      const
+    {
+      // Loop over all clauses
+      clauses_t const& clauses = all_clauses.get_clauses(function_data);
+      for (vector<clause_t>::const_iterator iclause = clauses.reads.begin();
+           iclause != clauses.reads.end();
+           ++iclause)
+      {
+        clause_t const& clause = *iclause;
+        for (vector<int>::const_iterator ivar = clause.vars.begin();
+             ivar != clause.vars.end();
+             ++ivar)
+        {
+          int const vi = *ivar;
+          
+          // Loop over all (refinement levels, maps, time levels)
+          reflevels_t const& rls = vars.AT(vi);
+          int const reflevels = int(rls.size());
+          int min_rl, max_rl;
+          if (clause.all_reflevels or reflevel==-1) {
+            min_rl = 0; max_rl = reflevels;
+          } else {
+            min_rl = reflevel; max_rl = min_rl+1;
+          }
+          for (int rl=min_rl; rl<max_rl; ++rl) {
+            
+            maps_t const& ms = rls.AT(rl);
+            int const maps = int(ms.size());
+            int min_m, max_m;
+            if (clause.all_maps or map==-1) {
+              min_m = 0; max_m = maps;
+            } else {
+              min_m = map; max_m = min_m+1;
+            }
+            for (int m=min_m; m<max_m; ++m) {
+              
+              timelevels_t const& tls = ms.AT(m);
+              int const timelevels = int(tls.size());
+              int min_tl, max_tl;
+              assert(timelevel != -1);
+              if (clause.all_timelevels or timelevel==-1) {
+                min_tl = 0; max_tl = timelevels;
+              } else {
+                min_tl = timelevel; max_tl = min_tl+1;
+              }
+              for (int tl=min_tl; tl<max_tl; ++tl) {
+                
+                gridpoint_t const& gp = tls.AT(tl);
+                gp.check_state(clause, function_data, vi, rl, m, tl);
+                
+              }
+            }
+          }
+          
+        }
+      }
+    }
+    
+    
+    
+    void AfterRoutine(cFunctionData const* const function_data,
+                      int const reflevel, int const map, int const timelevel)
+    {
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        all_state.after_routine(function_data, reflevel, map, timelevel);
+      }
+      if (requirement_inconsistencies_are_fatal and there_was_an_error) {
+        CCTK_WARN(CCTK_WARN_ABORT,
+                  "Aborting because schedule clauses were not satisfied");
+      }
+    }
+    
+    void all_state_t::after_routine(cFunctionData const* const function_data,
+                                    int const reflevel, int const map,
+                                    int const timelevel)
+    {
+      // Loop over all clauses
+      clauses_t const& clauses = all_clauses.get_clauses(function_data);
+      for (vector<clause_t>::const_iterator iclause = clauses.reads.begin();
+           iclause != clauses.reads.end();
+           ++iclause)
+      {
+        clause_t const& clause = *iclause;
+        for (vector<int>::const_iterator ivar = clause.vars.begin();
+             ivar != clause.vars.end();
+             ++ivar)
+        {
+          int const vi = *ivar;
+          
+          // Loop over all (refinement levels, maps, time levels)
+          reflevels_t& rls = vars.AT(vi);
+          int const reflevels = int(rls.size());
+          int min_rl, max_rl;
+          if (clause.all_reflevels or reflevel==-1) {
+            min_rl = 0; max_rl = reflevels;
+          } else {
+            min_rl = reflevel; max_rl = min_rl+1;
+          }
+          for (int rl=min_rl; rl<max_rl; ++rl) {
+            
+            maps_t& ms = rls.AT(rl);
+            int const maps = int(ms.size());
+            int min_m, max_m;
+            if (clause.all_maps or map==-1) {
+              min_m = 0; max_m = maps;
+            } else {
+              min_m = map; max_m = min_m+1;
+            }
+            for (int m=min_m; m<max_m; ++m) {
+              
+              timelevels_t& tls = ms.AT(m);
+              int const timelevels = int(tls.size());
+              int min_tl, max_tl;
+              assert(timelevel != -1);
+              if (clause.all_timelevels or timelevel==-1) {
+                min_tl = 0; max_tl = timelevels;
+              } else {
+                min_tl = timelevel; max_tl = min_tl+1;
+              }
+              for (int tl=min_tl; tl<max_tl; ++tl) {
+                
+                gridpoint_t& gp = tls.AT(tl);
+                gp.update_state(clause);
+                
+              }
+            }
+          }
+          
+        }
+      }
+    }
+    
+    
+    
+    void Sync(cFunctionData const* const function_data,
+              vector<int> const& groups,
+              int const reflevel, int const timelevel)
+    {
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        if (requirements_verbose) {
+          CCTK_VInfo(CCTK_THORNSTRING,
+                     "Requirements: Sync reflevel=%d timelevel=%d",
+                     reflevel, timelevel);
+        }
+        all_state.sync(function_data, groups, reflevel, timelevel);
+      }
+      if (requirement_inconsistencies_are_fatal and there_was_an_error) {
+        CCTK_WARN(CCTK_WARN_ABORT,
+                  "Aborting because schedule clauses were not satisfied");
+      }
+    }
+    
+    void all_state_t::sync(cFunctionData const* const function_data,
+                           vector<int> const& groups,
+                           int const reflevel, int const timelevel)
+    {
+      // Loop over all variables
+      for (vector<int>::const_iterator
+             igi = groups.begin(); igi != groups.end(); ++igi)
+      {
+        int const gi = *igi;
+        bool do_sync;
+        int const group_type = CCTK_GroupTypeI(gi);
+        switch (group_type) {
+        case CCTK_SCALAR:
+        case CCTK_ARRAY:
+          // Grid arrays are synced in global mode
+          do_sync = reflevel == -1;
+          break;
+        case CCTK_GF:
+          // Grid functions are synced in level mode
+          do_sync = reflevel >= 0;
+          break;
+        default:
+          assert(0);
+        }
+        if (do_sync) {
+          // Translate global mode to refinement level 0
+          int const rl = reflevel >= 0 ? reflevel : 0;
+          int const v0 = CCTK_FirstVarIndexI(gi);
+          int const nv = CCTK_NumVarsInGroupI(gi);
+          for (int vi=v0; vi<v0+nv; ++vi) {
+            reflevels_t& rls = vars.AT(vi);
+            maps_t& ms = rls.AT(rl);
+            int const maps = int(ms.size());
+            for (int m=0; m<maps; ++m) {
+              timelevels_t& tls = ms.AT(m);
+              int const tl = timelevel;
+              gridpoint_t& gp = tls.AT(tl);
+              
+              // Synchronising requires a valid interior
+              if (not gp.interior) {
+                gridpoint_t::report_error
+                  (function_data, vi, rl, m, tl, "synchronising", "interior");
+              }
+              
+              // Synchronising (i.e. prolongating) requires valid data
+              // on all time levels of the same map of the next
+              // coarser refinement level
+              if (rl > 0) {
+                int const crl = rl-1;
+                maps_t const& cms = rls.AT(crl);
+                timelevels_t const& ctls = cms.AT(m);
+                // TODO: use prolongation_order_time instead?
+                int const ctimelevels = int(ctls.size());
+                for (int ctl=0; ctl<ctimelevels; ++ctl) {
+                  gridpoint_t const& cgp = ctls.AT(ctl);
+                  if (not (cgp.interior and cgp.boundary and cgp.ghostzones and
+                           cgp.boundary_ghostzones))
+                  {
+                    gridpoint_t::report_error
+                      (function_data, vi, crl, m, ctl,
+                       "prolongating", "everywhere");
+                  }
+                }
+              }
+              
+              // Synchronising sets all ghost zones, and sets boundary
+              // ghost zones if boundary zones are set
+              gp.ghostzones = true;
+              gp.boundary_ghostzones = gp.boundary;
+            }
+          }
+        }
+      }
+    }
+    
+    
+    
+    void Restrict(vector<int> const& groups, int const reflevel)
+    {
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        if (requirements_verbose) {
+          CCTK_VInfo(CCTK_THORNSTRING,
+                     "Requirements: Restrict reflevel=%d",
+                     reflevel);
+        }
+        all_state.restrict1(groups, reflevel);
+      }
+      if (requirement_inconsistencies_are_fatal and there_was_an_error) {
+        CCTK_WARN(CCTK_WARN_ABORT,
+                  "Aborting because schedule clauses were not satisfied");
+      }
+    }
+    
+    void all_state_t::restrict1(vector<int> const& groups, int const reflevel)
+    {
+      // Loop over all variables
+      for (vector<int>::const_iterator
+             igi = groups.begin(); igi != groups.end(); ++igi)
+      {
+        int const gi = *igi;
+        bool do_restrict;
+        int const group_type = CCTK_GroupTypeI(gi);
+        switch (group_type) {
+        case CCTK_SCALAR:
+        case CCTK_ARRAY:
+          // Grid arrays are synced in global mode
+          do_restrict = reflevel == -1;
+          break;
+        case CCTK_GF:
+          // Grid functions are synced in level mode
+          do_restrict = reflevel >= 0;
+          break;
+        default:
+          assert(0);
+        }
+        if (do_restrict) {
+          // Translate global mode to refinement level 0
+          int const rl = reflevel >= 0 ? reflevel : 0;
+          int const v0 = CCTK_FirstVarIndexI(gi);
+          int const nv = CCTK_NumVarsInGroupI(gi);
+          for (int vi=v0; vi<v0+nv; ++vi) {
+            reflevels_t& rls = vars.AT(vi);
+            int const reflevels = int(rls.size());
+            maps_t& ms = rls.AT(rl);
+            int const maps = int(ms.size());
+            for (int m=0; m<maps; ++m) {
+              timelevels_t& tls = ms.AT(m);
+              int const tl = 0;
+              gridpoint_t& gp = tls.AT(tl);
+              
+              // Restricting requires a valid interior (otherwise we
+              // cannot be sure that all of the interior is valid
+              // afterwards)
+              if (not gp.interior) {
+                gridpoint_t::report_error
+                  (NULL, vi, rl, m, tl, "restricting", "interior");
+              }
+              
+              // Restricting requires valid data on the current time
+              // level of the same map of the next finer refinement
+              // level
+              if (rl < reflevels-1) {
+                int const frl = rl+1;
+                maps_t const& fms = rls.AT(frl);
+                timelevels_t const& ftls = fms.AT(m);
+                int const ftl = 0;
+                gridpoint_t const& fgp = ftls.AT(ftl);
+                if (not (fgp.interior and fgp.boundary and fgp.ghostzones and
+                         fgp.boundary_ghostzones))
+                {
+                  gridpoint_t::report_error
+                    (NULL, vi, frl, m, ftl, "restricting", "everywhere");
+                }
+              }
+              
+              // Restricting fills (part of) the interior, but leaves
+              // ghost zones and boundary zones undefined
+              gp.boundary = false;
+              gp.ghostzones = false;
+              gp.boundary_ghostzones = false;
+            }
+          }
+        }
+      }
+    }
+    
+    
     
   } // namespace Carpet
 }   // namespace Requirements
-
-
-
-#else // #ifndef CACTUS_HAS_REQUIRES_CLAUSES
-
-
-
-namespace Carpet {
-  namespace Requirements {
-    // Check one schedule bin
-    void
-    CheckRequirements (cGH const * const cctkGH)
-    {
-      Checkpoint ("Skipping check of schedule requirements (no flesh support)");
-      // do nothing
-    }
-  } // namespace Carpet
-}   // namespace Requirements
-
-
-
-#endif // #ifdef CACTUS_HAS_REQUIRES_CLAUSES
