@@ -52,10 +52,31 @@ namespace Carpet {
         interior(false), boundary(false), boundary_ghostzones(false),
         all_timelevels(false), all_maps(false), all_reflevels(false)
       {}
-      void parse(char const* clause);
+      void interpret_options(cFunctionData const* function_data);
+      void parse_clause(char const* clause);
     };
     
-    void clause_t::parse(char const* const clause1)
+    void clause_t::interpret_options(cFunctionData const* const function_data)
+    {
+      if (function_data->meta or
+          function_data->meta_early or
+          function_data->meta_late or
+          function_data->global or
+          function_data->global_early or
+          function_data->global_late)
+      {
+        assert(not all_reflevels);
+        all_reflevels = true;
+      }
+      if (function_data->level) {
+        assert(not all_maps);
+        all_maps = true;
+      }
+      // Ignore singlemap and local options
+      // Ignore loop_* options
+    }
+    
+    void clause_t::parse_clause(char const* const clause1)
     {
       char* const clause = strdup(clause1);
       char* p = clause;
@@ -100,17 +121,9 @@ namespace Carpet {
             assert(not everywhere and not boundary_ghostzones);
             boundary_ghostzones = true;
           } else if (CCTK_EQUALS(p, "all_timelevels")) {
-            // TODO: look at OPTIONS instead
+            // TODO: look at schedule group instead
             assert(not all_timelevels);
             all_timelevels = true;
-          } else if (CCTK_EQUALS(p, "all_maps")) {
-            // TODO: look at OPTIONS instead
-            assert(not all_maps);
-            all_maps = true;
-          } else if (CCTK_EQUALS(p, "all_reflevels")) {
-            // TODO: look at OPTIONS instead
-            assert(not all_reflevels);
-            all_reflevels = true;
           } else {
             assert(0);
           }
@@ -127,33 +140,24 @@ namespace Carpet {
     struct clauses_t {
       vector<clause_t> reads, writes;
       clauses_t() {}
-      void parse(cFunctionData const* function_data);
-    private:
-      void parse1(cFunctionData const* function_data,
-                  vector<clause_t> clauses_t::* clauses,
-                  int cFunctionData::* n_Clauses,
-                  const char** cFunctionData::* Clauses);
+      void setup(cFunctionData const* function_data);
     };
     
-    void clauses_t::parse(cFunctionData const* function_data)
+    void clauses_t::setup(cFunctionData const* const function_data)
     {
-      parse1(function_data, &clauses_t::reads,
-             &cFunctionData::n_ReadsClauses, &cFunctionData::ReadsClauses);
-      parse1(function_data, &clauses_t::writes,
-             &cFunctionData::n_WritesClauses, &cFunctionData::WritesClauses);
-    }
-    
-    void clauses_t::parse1(cFunctionData const* const function_data,
-                           vector<clause_t> clauses_t::* const clauses,
-                           int cFunctionData::* const n_Clauses,
-                           const char** cFunctionData::* const Clauses)
-    {
-      assert((this->*clauses).empty());
-      (this->*clauses).reserve(function_data->*n_Clauses);
-      for (int n=0; n<function_data->*n_Clauses; ++n) {
-        clause_t clause;
-        clause.parse((function_data->*Clauses)[n]);
-        (this->*clauses).push_back(clause);
+      clause_t prototype;
+      prototype.interpret_options(function_data);
+      reads.reserve(function_data->n_ReadsClauses);
+      for (int n=0; n<function_data->n_ReadsClauses; ++n) {
+        clause_t clause(prototype);
+        clause.parse_clause(function_data->ReadsClauses[n]);
+        reads.push_back(clause);
+      }
+      writes.reserve(function_data->n_WritesClauses);
+      for (int n=0; n<function_data->n_WritesClauses; ++n) {
+        clause_t clause(prototype);
+        clause.parse_clause(function_data->WritesClauses[n]);
+        writes.push_back(clause);
       }
     }
     
@@ -178,7 +182,7 @@ namespace Carpet {
         clauses_map.find(function_data);
       if (iclauses != clauses_map.end()) return *iclauses->second;
       clauses_t* const clauses = new clauses_t;
-      clauses->parse(function_data);
+      clauses->setup(function_data);
       pair<clauses_map_t::const_iterator, bool> const ret =
         clauses_map.insert(clauses_map_t::value_type(function_data, clauses));
       assert(ret.second);
