@@ -28,6 +28,7 @@ namespace CarpetRegrid2 {
                                level_boundary const& bnd,
                                vector<ibset>& regions, int rl) = 0;
   public:
+    virtual ~property() {}
     bool test (gh const& hh, dh const& dd,
                level_boundary const& bnd,
                vector<ibset> const& regions, int rl);
