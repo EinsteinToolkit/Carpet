@@ -162,8 +162,6 @@ namespace Carpet {
                                         int const& ghostsize,
                                         CCTK_REAL const& alpha,
                                         int const& limit_size,
-                                        CCTK_INT const& granularity,
-                                        CCTK_INT const& granularity_boundary,
                                         int const& procid);
   
   void
@@ -230,6 +228,23 @@ namespace Carpet {
       superregs.AT(r).map = r;
     }
     
+    // Handle granularity: artificially reduce the size of the
+    // superregions
+    for (int r=0; r<nsuperregs; ++r) {
+      region_t& superreg = superregs.AT(r);
+      ibbox& ext = superregs.AT(r).extent;
+      ivect lo = ext.lower();
+      ivect hi = ext.upper() + ext.stride();
+      ivect str = ext.stride();
+      // cut off outer boundaries
+      lo += ivect(superreg.outer_boundaries[0]) * granularity_boundary * str;
+      hi -= ivect(superreg.outer_boundaries[1]) * granularity_boundary * str;
+      // multiply stride by granularity
+      str *= granularity;
+      assert(all((hi-lo)%str==0));
+      ext = ibbox(lo, hi-str, str);
+    }
+    
     int const real_nprocs = CCTK_nProcs (cctkGH);
     if (recompose_verbose) cout << "SRMR real_nprocs " << real_nprocs << endl;
     
@@ -268,8 +283,39 @@ namespace Carpet {
     int const procid = CCTK_MyProc(cctkGH);
     CCTK_FNAME(splitregions_recursively)
       (cxx_superregs, nsuperregs, cxx_regs, nprocs,
-       ghostsize, alpha, limit_size, granularity, granularity_boundary, procid);
+       ghostsize, alpha, limit_size, procid);
     int nregs = regs.size();
+    
+    // Handle granularity: increase the size of the superregions and
+    // regions again
+    for (int r=0; r<nsuperregs; ++r) {
+      region_t& superreg = superregs.AT(r);
+      ibbox& ext = superregs.AT(r).extent;
+      ivect lo = ext.lower();
+      ivect hi = ext.upper() + ext.stride();
+      ivect str = ext.stride();
+      // divide stride by granularity
+      assert(all(str%granularity==0));
+      str /= granularity;
+      // add outer boundaries again
+      lo -= ivect(superreg.outer_boundaries[0]) * granularity_boundary * str;
+      hi += ivect(superreg.outer_boundaries[1]) * granularity_boundary * str;
+      ext = ibbox(lo, hi-str, str);
+    }
+    for (int r=0; r<nregs; ++r) {
+      region_t& reg = regs.AT(r);
+      ibbox& ext = regs.AT(r).extent;
+      ivect lo = ext.lower();
+      ivect hi = ext.upper() + ext.stride();
+      ivect str = ext.stride();
+      // divide stride by granularity
+      assert(all(str%granularity==0));
+      str /= granularity;
+      // add outer boundaries again
+      lo -= ivect(reg.outer_boundaries[0]) * granularity_boundary * str;
+      hi += ivect(reg.outer_boundaries[1]) * granularity_boundary * str;
+      ext = ibbox(lo, hi-str, str);
+    }
     
     if (same_number_of_components_on_each_process) {
       // Ensure all processes have the same number of components

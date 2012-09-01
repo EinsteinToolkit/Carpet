@@ -8,8 +8,6 @@ module carpet_boxtypes
   integer :: ghostsize
   real(wp) :: alpha
   logical :: limit_size
-  integer :: granularity
-  integer :: granularity_boundary
   integer :: procid
 
   contains
@@ -437,14 +435,11 @@ module carpet_boxtypes
 !       Find the number of points in each of the 2 chunks while making
 !       sure the chunks are not too small compared to the ghostsize if
 !       limit_size is true.
-!       Take also the granularity into account.
 !       At the outer boundary, take also the boundary size into account,
 !       assuming that the boundary size is equal to the ghost size.
 !       (Boundary points cannot be split, and near a boundary, the
 !        minimum number of interior points is the number of ghost points.)
-        np1 = nint((real(maxcost,wp)*p1)/nprocs/granularity)*granularity
-!       TODO: Take granularity_boundary into account as well!
-!       TODO: Take granularity into account when limiting!
+        np1 = nint((real(maxcost,wp)*p1)/nprocs)
         if (limit_size) then
           lower_is_outer = &
                newregarr(i)%point%outer_boundaries%obound(mydim(1),1)/=0
