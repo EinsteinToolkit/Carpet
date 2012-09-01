@@ -322,10 +322,10 @@ namespace CarpetRegrid2 {
     vector<property*> once_properties;
     once_properties.push_back (new proper_nesting());
     once_properties.push_back (new add_buffers());
-    once_properties.push_back (new combine_regions());
     
     // Properties to be enforced "until all is well"
     vector<property*> properties;
+    properties.push_back (new combine_regions());
     properties.push_back (new snap_coarse());
     properties.push_back (new rotsym90());
     properties.push_back (new rotsym180());
