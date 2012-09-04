@@ -43,6 +43,7 @@ namespace Carpet {
       bool boundary;            // all boundary points, excluding
                                 // ghostzones
       bool boundary_ghostzones; // all boundary ghost points
+      bool timelevel0, timelevel1, timelevel2;
       bool all_timelevels;      // all time levels
       bool all_maps;            // all maps (i.e. level mode)
       bool all_reflevels;       // all refinement levels (i.e. global mode)
@@ -50,10 +51,13 @@ namespace Carpet {
       clause_t():
         everywhere(false),
         interior(false), boundary(false), boundary_ghostzones(false),
+        timelevel0(false), timelevel1(false), timelevel2(false),
         all_timelevels(false), all_maps(false), all_reflevels(false)
       {}
       void interpret_options(cFunctionData const* function_data);
       void parse_clause(char const* clause);
+      int min_num_timelevels() const;
+      bool active_on_timelevel(int tl) const;
     };
     
     void clause_t::interpret_options(cFunctionData const* const function_data)
@@ -100,6 +104,7 @@ namespace Carpet {
       }
       
       // Parse modifiers
+      // TODO: Use CarpetLib parser for this
       if (p) {
         ++p;
         for (;;) {
@@ -120,19 +125,49 @@ namespace Carpet {
           } else if (CCTK_EQUALS(p, "boundary_ghostzones")) {
             assert(not everywhere and not boundary_ghostzones);
             boundary_ghostzones = true;
+          } else if (CCTK_EQUALS(p, "timelevel0")) {
+            assert(not timelevel0 and not all_timelevels);
+            timelevel0 = true;
+          } else if (CCTK_EQUALS(p, "timelevel1")) {
+            assert(not timelevel1 and not all_timelevels);
+            timelevel1 = true;
+          } else if (CCTK_EQUALS(p, "timelevel2")) {
+            assert(not timelevel2 and not all_timelevels);
+            timelevel2 = true;
           } else if (CCTK_EQUALS(p, "all_timelevels")) {
             // TODO: look at schedule group instead
-            assert(not all_timelevels);
+            assert(not timelevel0 and not timelevel1 and not timelevel2 and
+                   not all_timelevels);
             all_timelevels = true;
           } else {
             assert(0);
           }
           if (c == ')') break;
+          assert(c==',');
           p += len+1;
         }
       }
       
       free(clause);
+    }
+    
+    int clause_t::min_num_timelevels() const
+    {
+      if (timelevel2) return 3;
+      if (timelevel1) return 2;
+      return 1;
+    }
+    
+    bool clause_t::active_on_timelevel(int const tl) const
+    {
+      if (all_timelevels) return true;
+      if (timelevel0 and tl==0) return true;
+      if (timelevel1 and tl==1) return true;
+      if (timelevel2 and tl==2) return true;
+      bool const no_timelevel_clause =
+        not timelevel0 and not timelevel1 and not timelevel2;
+      if (tl==0 and no_timelevel_clause) return true;
+      return false;
     }
     
     
@@ -802,19 +837,15 @@ namespace Carpet {
               
               timelevels_t const& tls = ms.AT(m);
               int const timelevels = int(tls.size());
-              int min_tl, max_tl;
               assert(timelevel != -1);
-              if (clause.all_timelevels or timelevel==-1) {
-                min_tl = 0; max_tl = timelevels;
-              } else {
-                min_tl = timelevel; max_tl = min_tl+1;
+              assert(timelevels >= clause.min_num_timelevels());
+              for (int tl=0; tl<timelevels; ++tl) {
+                if (timelevel==-1 or clause.active_on_timelevel(tl)) {
+                  gridpoint_t const& gp = tls.AT(tl);
+                  gp.check_state(clause, function_data, vi, rl, m, tl);
+                }
               }
-              for (int tl=min_tl; tl<max_tl; ++tl) {
-                
-                gridpoint_t const& gp = tls.AT(tl);
-                gp.check_state(clause, function_data, vi, rl, m, tl);
-                
-              }
+              
             }
           }
           
@@ -877,19 +908,15 @@ namespace Carpet {
               
               timelevels_t& tls = ms.AT(m);
               int const timelevels = int(tls.size());
-              int min_tl, max_tl;
               assert(timelevel != -1);
-              if (clause.all_timelevels or timelevel==-1) {
-                min_tl = 0; max_tl = timelevels;
-              } else {
-                min_tl = timelevel; max_tl = min_tl+1;
+              assert(timelevels >= clause.min_num_timelevels());
+              for (int tl=0; tl<timelevels; ++tl) {
+                if (timelevel==-1 or clause.active_on_timelevel(tl)) {
+                  gridpoint_t& gp = tls.AT(tl);
+                  gp.update_state(clause);
+                }
               }
-              for (int tl=min_tl; tl<max_tl; ++tl) {
-                
-                gridpoint_t& gp = tls.AT(tl);
-                gp.update_state(clause);
-                
-              }
+              
             }
           }
           
