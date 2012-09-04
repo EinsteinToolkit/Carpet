@@ -166,6 +166,18 @@ public:
     static
     void init_fast_ref_refl_sendrecv ();
     
+    // vect<vect<srpvect,2>,dim> fast_ref_refl_prol_sendrecv;
+    srpvect fast_ref_refl_prol_sendrecv_0_0;
+    srpvect fast_ref_refl_prol_sendrecv_0_1;
+    srpvect fast_ref_refl_prol_sendrecv_1_0;
+    srpvect fast_ref_refl_prol_sendrecv_1_1;
+    srpvect fast_ref_refl_prol_sendrecv_2_0;
+    srpvect fast_ref_refl_prol_sendrecv_2_1;
+    static
+    vect<vect<srpvect fast_dboxes::*,2>,dim> fast_ref_refl_prol_sendrecv;
+    static
+    void init_fast_ref_refl_prol_sendrecv ();
+    
     // Regridding schedule:
     
     bool do_init;               // the srpvects below are only defined

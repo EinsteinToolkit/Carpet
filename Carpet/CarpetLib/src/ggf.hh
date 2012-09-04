@@ -144,6 +144,10 @@ public:
   // Reflux a refinement level
   void ref_reflux_all (comm_state& state,
                        int tl, int rl, int ml, int dir, int face);
+
+  // Reflux a refinement level
+  void ref_reflux_prolongate_all (comm_state& state,
+                                  int tl, int rl, int ml, int dir, int face);
   
   
   

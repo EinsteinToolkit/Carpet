@@ -516,6 +516,32 @@ ref_reflux_all (comm_state & state,
 
 
 
+// Reflux-prolongate a refinement level
+void
+ggf::
+ref_reflux_prolongate_all (comm_state & state,
+                           int const tl, int const rl, int const ml,
+                           int const dir, int const face)
+{
+  static Timer timer ("ref_reflux_prolongate_all");
+  timer.start ();
+  // Require same times
+  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
+  assert (abs(t.get_time(ml,rl,tl) - t.get_time(ml,rl-1,tl)) <=
+          1.0e-8 * (1.0 + abs(t.get_time(ml,rl,tl))));
+  islab slabinfo;
+  slabinfo.is_centered = 1 - ivect::dir(dir);
+  transfer_from_all (state,
+                     tl,rl,ml,
+                     dh::fast_dboxes::fast_ref_refl_prol_sendrecv[dir][face],
+                     tl,rl-1,ml,
+                     false, false,
+                     &slabinfo);
+  timer.stop (0);
+}
+
+
+
 // Transfer regions of all components
 void
 ggf::

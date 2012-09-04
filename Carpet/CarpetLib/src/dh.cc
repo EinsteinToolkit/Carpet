@@ -66,6 +66,31 @@ init_fast_ref_refl_sendrecv ()
   fast_ref_refl_sendrecv[2][1] = & fast_dboxes::fast_ref_refl_sendrecv_2_1;
 }
 
+vect<vect<dh::srpvect dh::fast_dboxes::*,2>,dim>
+dh::fast_dboxes::
+fast_ref_refl_prol_sendrecv;
+
+void
+dh::fast_dboxes::
+init_fast_ref_refl_prol_sendrecv ()
+{
+  static bool initialised = false;
+  if (initialised) return;
+  initialised = true;
+  fast_ref_refl_prol_sendrecv[0][0] =
+    & fast_dboxes::fast_ref_refl_prol_sendrecv_0_0;
+  fast_ref_refl_prol_sendrecv[0][1] =
+    & fast_dboxes::fast_ref_refl_prol_sendrecv_0_1;
+  fast_ref_refl_prol_sendrecv[1][0] =
+    & fast_dboxes::fast_ref_refl_prol_sendrecv_1_0;
+  fast_ref_refl_prol_sendrecv[1][1] =
+    & fast_dboxes::fast_ref_refl_prol_sendrecv_1_1;
+  fast_ref_refl_prol_sendrecv[2][0] =
+    & fast_dboxes::fast_ref_refl_prol_sendrecv_2_0;
+  fast_ref_refl_prol_sendrecv[2][1] =
+    & fast_dboxes::fast_ref_refl_prol_sendrecv_2_1;
+}
+
 
 
 // Constructors
@@ -82,6 +107,7 @@ dh (gh & h_,
     prolongation_orders_space(prolongation_orders_space_)
 {
   fast_dboxes::init_fast_ref_refl_sendrecv();
+  fast_dboxes::init_fast_ref_refl_prol_sendrecv();
   size_t const maxreflevels = h.reffacts.size();
   assert (ghost_widths.size() >= maxreflevels);
   assert (buffer_widths.size() >= maxreflevels);
@@ -1263,6 +1289,8 @@ regrid (bool const do_init)
                 
                 srpvect fast_dboxes::* const fast_ref_refl_sendrecv =
                   fast_dboxes::fast_ref_refl_sendrecv[dir][face];
+                srpvect fast_dboxes::* const fast_ref_refl_prol_sendrecv =
+                  fast_dboxes::fast_ref_refl_prol_sendrecv[dir][face];
                 
                 // Refluxing must fill all coarse refluxing boundary
                 // points, and may use all fine points
@@ -1308,6 +1336,22 @@ regrid (bool const do_init)
                         fast_level_otherprocs.AT(this_proc(rl, c));
                       (fast_level_otherproc.*fast_ref_refl_sendrecv).
                         push_back (preg);
+                    }
+                    
+                    // reflux-prolongation
+                    sendrecv_pseudoregion_t const preg_prol
+                      (shifted_recv, oc, shifted_send, c);
+                    if (verbose) {
+                      cout << "REF ref_refL_prol ml=" << ml << " rl=" << rl << " olc=" << olc << " c=" << c << " oc=" << oc << " dir=" << dir << " face=" << face << "\n"
+                           << "   preg=" << preg_prol << "\n";
+                    }
+                    (fast_level.*fast_ref_refl_prol_sendrecv).push_back
+                      (preg_prol);
+                    if (not on_this_proc (orl, oc)) {
+                      fast_dboxes & fast_level_otherproc =
+                        fast_level_otherprocs.AT(this_proc(orl, oc));
+                      (fast_level_otherproc.*fast_ref_refl_prol_sendrecv).
+                        push_back (preg_prol);
                     }
                   }
                   
@@ -1881,13 +1925,25 @@ regrid (bool const do_init)
             for (int face = 0; face < 2; ++ face) {
               srpvect fast_dboxes::* const fast_ref_refl_sendrecv =
                 fast_dboxes::fast_ref_refl_sendrecv[dir][face];
-              
               broadcast_schedule (fast_level_otherprocs, fast_olevel,
                                   fast_ref_refl_sendrecv);
             }
           }
           timer_bcast_comm_ref_refl.stop();
         }
+        
+        static Carpet::Timer timer_bcast_comm_ref_refl_prol
+          ("ref_refl_prol");
+        timer_bcast_comm_ref_refl_prol.start();
+        for (int dir = 0; dir < dim; ++ dir) {
+          for (int face = 0; face < 2; ++ face) {
+            srpvect fast_dboxes::* const fast_ref_refl_prol_sendrecv =
+              fast_dboxes::fast_ref_refl_prol_sendrecv[dir][face];
+            broadcast_schedule (fast_level_otherprocs, fast_level,
+                                fast_ref_refl_prol_sendrecv);
+          }
+        }
+        timer_bcast_comm_ref_refl_prol.stop();
         
         // TODO: Maybe broadcast old2new schedule only if do_init is
         // set
@@ -2283,6 +2339,12 @@ mpi_datatype (dh::fast_dboxes const &)
       ENTRY (dh::srpvect, fast_ref_refl_sendrecv_1_1),
       ENTRY (dh::srpvect, fast_ref_refl_sendrecv_2_0),
       ENTRY (dh::srpvect, fast_ref_refl_sendrecv_2_1),
+      ENTRY (dh::srpvect, fast_ref_refl_prol_sendrecv_0_0),
+      ENTRY (dh::srpvect, fast_ref_refl_prol_sendrecv_0_1),
+      ENTRY (dh::srpvect, fast_ref_refl_prol_sendrecv_1_0),
+      ENTRY (dh::srpvect, fast_ref_refl_prol_sendrecv_1_1),
+      ENTRY (dh::srpvect, fast_ref_refl_prol_sendrecv_2_0),
+      ENTRY (dh::srpvect, fast_ref_refl_prol_sendrecv_2_1),
       {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}
     };
 #undef ENTRY
@@ -2405,6 +2467,12 @@ memory ()
     memoryof (fast_ref_refl_sendrecv_1_1) +
     memoryof (fast_ref_refl_sendrecv_2_0) +
     memoryof (fast_ref_refl_sendrecv_2_1) +
+    memoryof (fast_ref_refl_prol_sendrecv_0_0) +
+    memoryof (fast_ref_refl_prol_sendrecv_0_1) +
+    memoryof (fast_ref_refl_prol_sendrecv_1_0) +
+    memoryof (fast_ref_refl_prol_sendrecv_1_1) +
+    memoryof (fast_ref_refl_prol_sendrecv_2_0) +
+    memoryof (fast_ref_refl_prol_sendrecv_2_1) +
     memoryof (do_init) +
     memoryof (fast_old2new_sync_sendrecv) +
     memoryof (fast_old2new_ref_prol_sendrecv);
@@ -2491,6 +2559,7 @@ input (istream & is)
     consume (is, "fine_boundary:");
     is >> fine_boundary;
     skipws (is);
+    // TODO: read boundary sizes and boundary offsets
     consume (is, "}");
   } catch (input_error & err) {
     cout << "Input error while reading a dh::local_dboxes" << endl;
@@ -2710,6 +2779,12 @@ output (ostream & os)
      << "   fast_ref_refl_sendrecv_1_1: " << fast_ref_refl_sendrecv_1_1 << eol
      << "   fast_ref_refl_sendrecv_2_0: " << fast_ref_refl_sendrecv_2_0 << eol
      << "   fast_ref_refl_sendrecv_2_1: " << fast_ref_refl_sendrecv_2_1 << eol
+     << "   fast_ref_refl_prol_sendrecv_0_0: " << fast_ref_refl_prol_sendrecv_0_0 << eol
+     << "   fast_ref_refl_prol_sendrecv_0_1: " << fast_ref_refl_prol_sendrecv_0_1 << eol
+     << "   fast_ref_refl_prol_sendrecv_1_0: " << fast_ref_refl_prol_sendrecv_1_0 << eol
+     << "   fast_ref_refl_prol_sendrecv_1_1: " << fast_ref_refl_prol_sendrecv_1_1 << eol
+     << "   fast_ref_refl_prol_sendrecv_2_0: " << fast_ref_refl_prol_sendrecv_2_0 << eol
+     << "   fast_ref_refl_prol_sendrecv_2_1: " << fast_ref_refl_prol_sendrecv_2_1 << eol
      << "   do_init: " << do_init << eol
      << "   fast_old2new_sync_sendrecv: " << fast_old2new_sync_sendrecv << eol
      << "   fast_old2new_ref_prol_sendrecv: " << fast_old2new_ref_prol_sendrecv << eol
