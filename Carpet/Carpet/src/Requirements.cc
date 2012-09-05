@@ -99,16 +99,23 @@ namespace Carpet {
       } else {
         // Not a group - should be a variable
         int const vi = CCTK_VarIndex(clause);
+        if (vi < 0) {
+            CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                       "could not obtain variable/group index for '%s' in clause '%s': %d",
+                       clause, clause1, vi);
+        }
         assert(vi >= 0);
         vars.push_back(vi);
       }
       
       // Parse modifiers
       // TODO: Use CarpetLib parser for this
+      // TODO: add user friendly error messages
+      // TODO: teach the flesh about commas within the READS/WRITES block 
       if (p) {
         ++p;
         for (;;) {
-          size_t const len = strcspn(p, ",)");
+          size_t const len = strcspn(p, ";)");
           char const c = p[len];
           assert(c);
           p[len] = '\0';
@@ -140,10 +147,11 @@ namespace Carpet {
                    not all_timelevels);
             all_timelevels = true;
           } else {
-            assert(0);
+            CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                       "Unknown modifier '%s' in clause '%s'", p, clause1);
           }
           if (c == ')') break;
-          assert(c==',');
+          assert(c==';');
           p += len+1;
         }
       }
@@ -263,25 +271,25 @@ namespace Carpet {
     {
       if (not interior) {
         if (clause.everywhere or clause.interior) {
-          report_error(function_data, vi, rl, m, rl,
+          report_error(function_data, vi, rl, m, tl,
                        "calling function", "interior");
         }
       }
       if (not boundary) {
         if (clause.everywhere or clause.boundary) {
-          report_error(function_data, vi, rl, m, rl,
+          report_error(function_data, vi, rl, m, tl,
                        "calling function", "boundary");
         }
       }
       if (not ghostzones) {
         if (clause.everywhere) {
-          report_error(function_data, vi, rl, m, rl,
+          report_error(function_data, vi, rl, m, tl,
                        "calling function", "ghostzones");
         }
       }
       if (not boundary_ghostzones) {
         if (clause.everywhere or clause.boundary_ghostzones) {
-          report_error(function_data, vi, rl, m, rl,
+          report_error(function_data, vi, rl, m, tl,
                        "calling", "boundary-ghostzones");
         }
       }
@@ -874,8 +882,8 @@ namespace Carpet {
     {
       // Loop over all clauses
       clauses_t const& clauses = all_clauses.get_clauses(function_data);
-      for (vector<clause_t>::const_iterator iclause = clauses.reads.begin();
-           iclause != clauses.reads.end();
+      for (vector<clause_t>::const_iterator iclause = clauses.writes.begin();
+           iclause != clauses.writes.end();
            ++iclause)
       {
         clause_t const& clause = *iclause;
