@@ -354,13 +354,11 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
 
       // Get the shape of the HDF5 dataset (in Fortran index order)
       hsize_t shape[dim];
-      hsize_t index_shape[dim];
       hsize_t num_elems = 1;
       for (int d = 0; d < group.dim; ++d) {
         assert (group.dim-1-d>=0 and group.dim-1-d<dim);
         shape[group.dim-1-d] = (bbox.shape() / bbox.stride())[d];
         num_elems *= shape[group.dim-1-d];
-        index_shape[group.dim-1-d]  = 1;
       }
 
       // Don't create zero-sized components
@@ -443,7 +441,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           }
 
           // Write the component as an individual dataset
-          hid_t plist, dataspace, dataset, index_dataspace, index_dataset;
+          hid_t plist, dataspace, dataset, index_dataset;
           HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
           // enable compression if requested
           const int compression_lvl = request->compression_level >= 0 ?
@@ -463,10 +461,8 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
                                            filedatatype, dataspace, plist));
 
           if (indexfile != -1) {
-            HDF5_ERROR (index_dataspace = H5Screate_simple (group.dim,
-                                                            index_shape, NULL));
             HDF5_ERROR (index_dataset = H5Dcreate (indexfile, datasetname.str().c_str(),
-                                                   filedatatype, index_dataspace, H5P_DEFAULT));
+                                                   filedatatype, dataspace, H5P_DEFAULT));
           }
 
           io_bytes +=
@@ -481,7 +477,6 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           HDF5_ERROR (H5Dclose (dataset));
 
           if (indexfile != -1) {
-            HDF5_ERROR (H5Sclose (index_dataspace));
             error_count += AddAttributes (cctkGH, fullname, group.dim,refinementlevel,
                                           request, bbox, index_dataset, true);
             HDF5_ERROR (H5Dclose (index_dataset));
@@ -620,17 +615,15 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
 
       // Get the shape of the HDF5 dataset (in Fortran index order)
       hsize_t shape[dim];
-      hsize_t index_shape[dim];
       hssize_t origin[dim];
       for (int d = 0; d < group.dim; ++d) {
         assert (group.dim-1-d>=0 and group.dim-1-d<dim);
         origin[group.dim-1-d] = (bbox.lower() / bbox.stride())[d];
         shape[group.dim-1-d]  = (bbox.shape() / bbox.stride())[d];
-        index_shape[group.dim-1-d]  = 1;
       }
 
       // Write the component as an individual dataset
-      hid_t plist, dataspace, dataset, index_dataspace, index_dataset;
+      hid_t plist, dataspace, dataset, index_dataset;
       HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
       // enable compression if requested
       const int compression_lvl = request->compression_level >= 0 ?
@@ -650,10 +643,8 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
                                        filedatatype, dataspace, plist));
 
       if (indexfile != -1) {
-        HDF5_ERROR (index_dataspace = H5Screate_simple (group.dim,
-                                                        index_shape, NULL));
         HDF5_ERROR (index_dataset = H5Dcreate (indexfile, datasetname.str().c_str(),
-                                               filedatatype, index_dataspace, H5P_DEFAULT));
+                                               filedatatype, dataspace, H5P_DEFAULT));
       }
 
       io_bytes +=
@@ -667,7 +658,6 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       HDF5_ERROR (H5Dclose (dataset));
 
       if (indexfile != -1) {
-        HDF5_ERROR (H5Sclose (index_dataspace));
         error_count += AddAttributes (cctkGH, fullname, group.dim,refinementlevel,
                                       request, bbox, index_dataset, true);
         HDF5_ERROR (H5Dclose (index_dataset));
