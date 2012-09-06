@@ -307,7 +307,7 @@ namespace Carpet {
           
           bool const did_recompose = Recompose (cctkGH, rl, true);
           did_any_recompose = did_any_recompose or did_recompose;
-          Requirements::Recompose(reflevel,
+          Requirements::Recompose(rl,
                                   not did_recompose ?
                                   Requirements::valid::everywhere :
                                   Requirements::valid::interior);
