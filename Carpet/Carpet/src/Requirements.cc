@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -234,6 +235,11 @@ namespace Carpet {
     
     all_clauses_t all_clauses;
     
+
+    // ignore requirements in these variables. Used for internally updated
+    // variables. Putting a variable in this set asserts that it is always
+    // valid.
+    std::set<int> ignore_these_varindices;
     
     
     // Keep track of which time levels contain good data; modify this
@@ -372,6 +378,13 @@ namespace Carpet {
     all_state_t all_state;
     
     
+    static void add_ignored_variable(int id, const char * opstring, void * callback_arg)
+    {
+      std::set<int>& ignore_these_variables = 
+          *static_cast<std::set<int>*>(callback_arg);
+
+      ignore_these_variables.insert(id);
+    }
     
     void Setup(int const maps)
     {
@@ -382,6 +395,9 @@ namespace Carpet {
                      "Requirements: Setup maps=%d", maps);
         }
         all_state.setup(maps);
+        CCTK_TraverseString(ignore_these_variables, add_ignored_variable,
+                            (void*)&ignore_these_varindices,
+                            CCTK_GROUP_OR_VAR);
       }
       if (requirement_inconsistencies_are_fatal and there_was_an_error) {
         CCTK_WARN(CCTK_WARN_ABORT,
@@ -821,6 +837,9 @@ namespace Carpet {
              ++ivar)
         {
           int const vi = *ivar;
+
+          if (ignore_these_varindices.count(vi))
+              continue;
           
           // Loop over all (refinement levels, maps, time levels)
           reflevels_t const& rls = vars.AT(vi);
@@ -983,6 +1002,9 @@ namespace Carpet {
           int const v0 = CCTK_FirstVarIndexI(gi);
           int const nv = CCTK_NumVarsInGroupI(gi);
           for (int vi=v0; vi<v0+nv; ++vi) {
+            if (ignore_these_varindices.count(vi))
+              continue;
+          
             reflevels_t& rls = vars.AT(vi);
             maps_t& ms = rls.AT(rl);
             int const maps = int(ms.size());
@@ -1075,6 +1097,9 @@ namespace Carpet {
           int const v0 = CCTK_FirstVarIndexI(gi);
           int const nv = CCTK_NumVarsInGroupI(gi);
           for (int vi=v0; vi<v0+nv; ++vi) {
+            if (ignore_these_varindices.count(vi))
+              continue;
+
             reflevels_t& rls = vars.AT(vi);
             int const reflevels = int(rls.size());
             maps_t& ms = rls.AT(rl);
