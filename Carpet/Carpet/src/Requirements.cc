@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <map>
 #include <set>
 #include <string>
@@ -362,9 +363,9 @@ namespace Carpet {
       void check_state(clause_t const& clause,
                        cFunctionData const* function_data,
                        int vi, int rl, int m, int tl) const;
-      static void report_error(cFunctionData const* function_data,
-                               int vi, int rl, int m, int tl,
-                               char const* what, char const* where);
+      void report_error(cFunctionData const* function_data,
+                        int vi, int rl, int m, int tl,
+                        char const* what, char const* where) const;
       void update_state(clause_t const& clause);
 
       // Input/Output helpers
@@ -413,28 +414,30 @@ namespace Carpet {
                                    int const vi,
                                    int const rl, int const m, int const tl,
                                    char const* const what,
-                                   char const* const where)
+                                   char const* const where) const
     {
       char* const fullname = CCTK_FullName(vi);
+      ostringstream state;
+      state << "current state: " << *this << std::endl;
       if (function_data) {
         // The error is related to a scheduled function
         CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                    "Schedule READS clause not satisfied: "
                    "Function %s::%s in %s: "
                    "Variable %s reflevel=%d map=%d timelevel=%d: "
-                   "%s not valid for %s",
+                   "%s not valid for %s. %s",
                    function_data->thorn, function_data->routine,
                    function_data->where,
                    fullname, rl, m, tl,
-                   where, what);
+                   where, what, state.str().c_str());
       } else {
         // The error is not related to a scheduled function
         CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                    "Schedule READS clause not satisfied: "
                    "Variable %s reflevel=%d map=%d timelevel=%d: "
-                   "%s not valid for %s",
+                   "%s not valid for %s. %s",
                    fullname, rl, m, tl,
-                   where, what);
+                   where, what, state.str().c_str());
       }
       free(fullname);
       there_was_an_error = true;
@@ -1145,7 +1148,7 @@ namespace Carpet {
               
               // Synchronising requires a valid interior
               if (not gp.interior) {
-                gridpoint_t::report_error
+                gp.report_error
                   (function_data, vi, rl, m, tl, "synchronising", "interior");
               }
               
@@ -1163,7 +1166,7 @@ namespace Carpet {
                   if (not (cgp.interior and cgp.boundary and cgp.ghostzones and
                            cgp.boundary_ghostzones))
                   {
-                    gridpoint_t::report_error
+                    cgp.report_error
                       (function_data, vi, crl, m, ctl,
                        "prolongating", "everywhere");
                   }
@@ -1243,7 +1246,7 @@ namespace Carpet {
               // cannot be sure that all of the interior is valid
               // afterwards)
               if (not gp.interior) {
-                gridpoint_t::report_error
+                gp.report_error
                   (NULL, vi, rl, m, tl, "restricting", "interior");
               }
               
@@ -1259,7 +1262,7 @@ namespace Carpet {
                 if (not (fgp.interior and fgp.boundary and fgp.ghostzones and
                          fgp.boundary_ghostzones))
                 {
-                  gridpoint_t::report_error
+                  fgp.report_error
                     (NULL, vi, frl, m, ftl, "restricting", "everywhere");
                 }
               }
