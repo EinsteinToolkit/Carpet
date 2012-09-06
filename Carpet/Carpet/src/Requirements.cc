@@ -866,8 +866,12 @@ namespace Carpet {
               int const timelevels = int(tls.size());
               assert(timelevel != -1);
               assert(timelevels >= clause.min_num_timelevels());
-              for (int tl=0; tl<timelevels; ++tl) {
-                if (timelevel==-1 or clause.active_on_timelevel(tl)) {
+              // TODO: properly handle timelevels the way enter_local_mode() does
+              const int mintl = timelevel == 0 || timelevels == 1 ? 0 : timelevel;
+              const int maxtl = timelevel == 0 || timelevels == 1 ? timelevels-1 : timelevel;
+              const int tl_of = timelevels > 1 ? timelevel : 0;
+              for (int tl=mintl; tl<=maxtl; ++tl) {
+                if (timelevel==-1 or clause.active_on_timelevel(tl-tl_of)) {
                   gridpoint_t const& gp = tls.AT(tl);
                   gp.check_state(clause, function_data, vi, rl, m, tl);
                 }
@@ -937,8 +941,12 @@ namespace Carpet {
               int const timelevels = int(tls.size());
               assert(timelevel != -1);
               assert(timelevels >= clause.min_num_timelevels());
-              for (int tl=0; tl<timelevels; ++tl) {
-                if (timelevel==-1 or clause.active_on_timelevel(tl)) {
+              // TODO: properly handle timelevels the way enter_local_mode() does
+              const int mintl = timelevel == 0 || timelevels == 1 ? 0 : timelevel;
+              const int maxtl = timelevel == 0 || timelevels == 1 ? timelevels-1 : timelevel;
+              const int tl_of = timelevels > 1 ? timelevel : 0;
+              for (int tl=mintl; tl<=maxtl; ++tl) {
+                if (timelevel==-1 or clause.active_on_timelevel(tl-tl_of)) {
                   gridpoint_t& gp = tls.AT(tl);
                   gp.update_state(clause);
                 }
