@@ -12,6 +12,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <map>
 #include <set>
 #include <string>
@@ -35,7 +36,29 @@ namespace Carpet {
     //    Except when they are also required.
     
     
-    
+    // taken from defs.cc and defs.hh
+    // Vector output
+    template<class T>
+    ostream& output (ostream& os, const vector<T>& v) {
+      os << "[";
+      // Do not number the elements, as this would lead to a format that
+      // cannot be read back in.
+    //   int cnt=0;
+      for (typename vector<T>::const_iterator ti=v.begin(); ti!=v.end(); ++ti) {
+        if (ti!=v.begin()) os << ",";
+    //     os << cnt++ << ":";
+        os << *ti;
+      }
+      os << "]";
+      return os;
+    }
+
+    template<class T>
+    inline ostream& operator<< (ostream& os, const vector<T>& v) {
+      return Carpet::Requirements::output(os,v);
+    }
+
+
     // Represent scheduled functions and their dependencies
     
     struct clause_t {
@@ -59,6 +82,10 @@ namespace Carpet {
       void parse_clause(char const* clause);
       int min_num_timelevels() const;
       bool active_on_timelevel(int tl) const;
+
+      // Input/Output helpers
+      void input (istream& is);
+      void output (ostream& os) const;
     };
     
     void clause_t::interpret_options(cFunctionData const* const function_data)
@@ -179,12 +206,51 @@ namespace Carpet {
       return false;
     }
     
+    inline ostream& operator<< (ostream& os, const clause_t& a) {
+      a.output(os);
+      return os;
+    }
+
+    void clause_t::output(ostream& os) const
+    {
+      char* const groupname = CCTK_GroupNameFromVarI(vars.at(0));
+      os << groupname;
+      free(groupname);
+      os << "{";
+      for (vector<int>::const_iterator ivi = vars.begin();
+           ivi != vars.end();
+           ++ivi)
+      {
+        if (ivi != vars.begin())
+          os << ",";
+        char* const fullname = CCTK_FullName(*ivi);
+        os << fullname;
+        free(fullname);
+      }
+      os << "}(";
+      if(everywhere) os << "everywhere;";
+      if(interior) os << "interior;";
+      if(boundary) os << "boundary;";
+      if(boundary_ghostzones) os << "boundary_ghostzones;";
+      if(timelevel0) os << "timelevel0;";
+      if(timelevel1) os << "timelevel1;";
+      if(timelevel2) os << "timelevel2;";
+      if(all_timelevels) os << "all_timelevels;";
+      if(all_maps) os << "all_maps;";
+      if(all_reflevels) os << "all_reflevels;";
+      os << ")";
+    }
+    
     
     
     struct clauses_t {
       vector<clause_t> reads, writes;
       clauses_t() {}
       void setup(cFunctionData const* function_data);
+
+      // Input/Output helpers
+      void input (istream& is);
+      void output (ostream& os) const;
     };
     
     void clauses_t::setup(cFunctionData const* const function_data)
@@ -204,6 +270,16 @@ namespace Carpet {
         writes.push_back(clause);
       }
     }
+
+    inline ostream& operator<< (ostream& os, const clauses_t& a) {
+      a.output(os);
+      return os;
+    }
+
+    void clauses_t::output(ostream& os) const
+    {
+      os << "reads = " << reads << ", writes = " << writes;
+    }
     
     
     
@@ -217,6 +293,10 @@ namespace Carpet {
     public:
       all_clauses_t() {}
       clauses_t const& get_clauses(cFunctionData const* function_data);
+
+      // Input/Output helpers
+      void input (istream& is);
+      void output (ostream& os) const;
     };
     
     clauses_t const& all_clauses_t::
@@ -233,8 +313,27 @@ namespace Carpet {
       return *ret.first->second;
     }
     
-    all_clauses_t all_clauses;
+    inline ostream& operator<< (ostream& os, const all_clauses_t& a) {
+      a.output(os);
+      return os;
+    }
+        
+    void all_clauses_t::output(ostream& os) const
+    {
+      os << "all_clauses: {" << std::endl;
+      for (std::map<cFunctionData const*, clauses_t const*>::const_iterator ti=clauses_map.begin();
+           ti!=clauses_map.end();
+           ++ti)
+      {
+        if (ti!=clauses_map.begin()) os << ",";
+        os << ti->first->thorn << "::" 
+           << ti->first->routine << " in " 
+           << ti->first->where << ": " << *ti->second << std::endl;
+      }
+      os << "}";
+    }
     
+    all_clauses_t all_clauses;
 
     // ignore requirements in these variables. Used for internally updated
     // variables. Putting a variable in this set asserts that it is always
@@ -267,8 +366,17 @@ namespace Carpet {
                                int vi, int rl, int m, int tl,
                                char const* what, char const* where);
       void update_state(clause_t const& clause);
+
+      // Input/Output helpers
+      void input (istream& is);
+      void output (ostream& os) const;
     };
     
+    inline ostream& operator<< (ostream& os, const gridpoint_t& a) {
+      a.output(os);
+      return os;
+    }
+
     void gridpoint_t::check_state(clause_t const& clause,
                                   cFunctionData const* const function_data,
                                   int const vi,
@@ -348,6 +456,16 @@ namespace Carpet {
       }
     }
     
+    void gridpoint_t::output(ostream& os) const
+    {
+      os << "(";
+      if(interior) os << "interior;";
+      if(boundary) os << "boundary;";
+      if(ghostzones) os << "ghostzones;";
+      if(boundary_ghostzones) os << "boundary_ghostzones;";
+      os << ")";
+    }
+    
     
     
     class all_state_t {
@@ -373,6 +491,10 @@ namespace Carpet {
       void sync(cFunctionData const* function_data,
                 vector<int> const& groups, int reflevel, int timelevel);
       void restrict1(vector<int> const& groups, int reflevel);
+
+      // Input/Output helpers
+      void input (istream& is);
+      void output (ostream& os) const;
     };
     
     all_state_t all_state;
@@ -1153,7 +1275,26 @@ namespace Carpet {
       }
     }
     
+    inline ostream& operator<< (ostream& os, const all_state_t& a) {
+      a.output(os);
+      return os;
+    }
+
+    void all_state_t::output(ostream& os) const
+    {
+      os << "all_state:" << std::endl;
+      os << "vars:" << std::endl;
+      os << vars << std::endl;
+      os << "old_vars:" << std::endl;
+      os << old_vars << std::endl;
+    }
     
     
+    
+    template ostream& output (ostream& os, const vector<clause_t>& v);
+    template ostream& output (ostream& os, const vector<all_state_t::timelevels_t>& v);
+    template ostream& output (ostream& os, const vector<all_state_t::maps_t>& v);
+    template ostream& output (ostream& os, const vector<all_state_t::reflevels_t>& v);
+    template ostream& output (ostream& os, const vector<all_state_t::variables_t>& v);
   } // namespace Carpet
 }   // namespace Requirements
