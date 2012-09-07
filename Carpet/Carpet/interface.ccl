@@ -319,6 +319,28 @@ PROVIDES FUNCTION VarDataPtrI \
     LANGUAGE C
 
 
+# programmatically check a reads clause
+void FUNCTION                             \
+    Requirements_CheckReads               \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN numvars,             \
+         CCTK_INT ARRAY IN varidx,        \
+         CCTK_STRING IN reads)
+PROVIDES FUNCTION Requirements_CheckReads \
+    WITH Carpet_Requirements_CheckReads   \
+    LANGUAGE C
+
+# programmatically record a writes clause
+void FUNCTION                             \
+    Requirements_NotifyWrites             \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN numvars,             \
+         CCTK_INT ARRAY IN varidx,        \
+         CCTK_STRING IN reads)
+PROVIDES FUNCTION Requirements_NotifyWrites \
+    WITH Carpet_Requirements_NotifyWrites   \
+    LANGUAGE C
+
 
 # The true prototype of the routine below:
 #   int Carpet_Regrid (const cGH * cctkGH,
