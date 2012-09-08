@@ -282,6 +282,27 @@ PROVIDES FUNCTION GetLocalComponents \
     WITH Carpet_GetLocalComponents   \
     LANGUAGE C
 
+CCTK_INT FUNCTION                         \
+    GetMap                    \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+PROVIDES FUNCTION GetMap \
+    WITH Carpet_GetMap   \
+    LANGUAGE C
+
+CCTK_INT FUNCTION                         \
+    GetMaps                   \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+PROVIDES FUNCTION GetMaps \
+    WITH Carpet_GetMaps   \
+    LANGUAGE C
+
+CCTK_INT FUNCTION                         \
+    GetTimeLevel               \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+PROVIDES FUNCTION GetTimeLevel \
+    WITH Carpet_GetTimeLevel   \
+    LANGUAGE C
+
 
 
 # Get pointer to grid variable for a specific map and refinement level

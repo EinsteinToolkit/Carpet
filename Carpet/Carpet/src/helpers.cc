@@ -66,6 +66,27 @@ namespace Carpet {
     return vhh.AT(map)->local_components(reflevel);
   }
 
+  // Get current map level
+  extern "C"
+  CCTK_INT Carpet_GetMap (CCTK_POINTER_TO_CONST const cctkGH)
+  {
+    return map;
+  }
+
+  // Get number of maps
+  extern "C"
+  CCTK_INT Carpet_GetMaps (CCTK_POINTER_TO_CONST const cctkGH)
+  {
+    return maps;
+  }
+
+  // Get current map level
+  extern "C"
+  CCTK_INT Carpet_GetTimeLevel (CCTK_POINTER_TO_CONST const cctkGH)
+  {
+    return timelevel;
+  }
+
 
 
   // Enable or disable prolongating
