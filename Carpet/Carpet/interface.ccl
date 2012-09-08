@@ -372,6 +372,11 @@ CCTK_INT FUNCTION IO_TruncateOutputFiles \
 
 REQUIRES FUNCTION IO_TruncateOutputFiles
 
+CCTK_INT FUNCTION Boundary_SelectedGVs(CCTK_POINTER_TO_CONST IN GH, \
+  CCTK_INT IN array_size, CCTK_INT ARRAY OUT var_indicies, \
+  CCTK_INT ARRAY OUT faces, CCTK_INT ARRAY OUT boundary_widths, \
+  CCTK_INT ARRAY OUT table_handles, CCTK_STRING IN bc_name)
+USES FUNCTION Boundary_SelectedGVs
 
 
 # TODO: make this somehow public, e.g. by moving it into its own thorn

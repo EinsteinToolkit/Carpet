@@ -1374,6 +1374,72 @@ namespace Carpet {
       os << old_vars << std::endl;
     }
     
+    // scheduled routines to handle boundary and symmetry conditions
+    extern "C"
+    void CarpetCheckReadsBeforeBoundary(CCTK_ARGUMENTS)
+    {
+      DECLARE_CCTK_ARGUMENTS;
+      int num_vars, err;
+      vector<CCTK_INT> vars, faces, widths, tables;
+
+      num_vars = Boundary_SelectedGVs(cctkGH, 0, NULL, NULL, NULL, NULL, NULL);
+      if (num_vars < 0) {
+        CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Error retrieving number of selected GVs: %d", num_vars);
+      }
+      vars.resize(num_vars);
+      faces.resize(num_vars);
+      widths.resize(num_vars);
+      tables.resize(num_vars);
+
+      /* get selected vars for all bc */
+      err = Boundary_SelectedGVs(cctkGH, num_vars, &vars[0], &faces[0], &widths[0], &tables[0],
+                                      NULL);
+      if (err<0) {
+        CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Error in Boundary_SelectedGVs for all boundary conditions");
+      } else if (err != num_vars) {
+        CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Boundary_SelectedGVs returned %d selected variables for "
+                   "all boundary conditions, but %d expected\n", err,
+                   num_vars);
+      }
+
+      Requirements_CheckReads(cctkGH, num_vars, &vars[0], "interior");
+    }
+
+    extern "C"
+    void CarpetNotifyWritesAfterBoundary(CCTK_ARGUMENTS)
+    {
+      DECLARE_CCTK_ARGUMENTS;
+      int num_vars, err;
+      vector<CCTK_INT> vars, faces, widths, tables;
+
+      num_vars = Boundary_SelectedGVs(cctkGH, 0, NULL, NULL, NULL, NULL, NULL);
+      if (num_vars < 0) {
+        CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Error retrieving number of selected GVs: %d", num_vars);
+      }
+      vars.resize(num_vars);
+      faces.resize(num_vars);
+      widths.resize(num_vars);
+      tables.resize(num_vars);
+
+      /* get selected vars for all bc */
+      err = Boundary_SelectedGVs(cctkGH, num_vars, &vars[0], &faces[0], &widths[0], &tables[0],
+                                      NULL);
+      if (err<0) {
+        CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Error in Boundary_SelectedGVs for all boundary conditions");
+      } else if (err != num_vars) {
+        CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Boundary_SelectedGVs returned %d selected variables for "
+                   "all boundary conditions, but %d expected\n", err,
+                   num_vars);
+      }
+
+      Requirements_NotifyWrites(cctkGH, num_vars, &vars[0], "boundary;boundary_ghostzones");
+    }
     
     
     template ostream& output (ostream& os, const vector<clause_t>& v);
