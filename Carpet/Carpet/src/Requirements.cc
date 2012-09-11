@@ -960,10 +960,12 @@ namespace Carpet {
     }
     
     extern "C" 
-    void Carpet_Requirements_CheckReads(const cGH *cctkGH, CCTK_INT nvars,
-                                        CCTK_INT const * varidx,
-                                        char const * clause)
+    void Carpet_Requirements_CheckReads(CCTK_POINTER_TO_CONST const cctkGH_,
+                                        CCTK_INT const nvars,
+                                        CCTK_INT const* const varidx,
+                                        char const* const clause)
     {
+      cGH const* const cctkGH = static_cast<cGH const*>(cctkGH_);
       DECLARE_CCTK_PARAMETERS;
       if (check_requirements) {
         // TODO: come up with a scheme to avoid constructing and destroying clauses
@@ -1073,10 +1075,12 @@ namespace Carpet {
     }
 
     extern "C" 
-    void Carpet_Requirements_NotifyWrites(const cGH *cctkGH, CCTK_INT nvars,
-                                          CCTK_INT const * varidx,
-                                          char const * clause)
+    void Carpet_Requirements_NotifyWrites(CCTK_POINTER_TO_CONST const cctkGH_,
+                                          CCTK_INT const nvars,
+                                          CCTK_INT const* const varidx,
+                                          char const* const clause)
     {
+      cGH const* const cctkGH = static_cast<cGH const*>(cctkGH_);
       DECLARE_CCTK_PARAMETERS;
       if (check_requirements) {
         // TODO: come up with a scheme to avoid constructing and destroying clauses
