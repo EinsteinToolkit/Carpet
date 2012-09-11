@@ -132,6 +132,8 @@ region_t::split (CCTK_REAL const ratio_new_over_old)
   outer_boundaries[idir][1] = false;
   newreg.outer_boundaries[idir][0] = false;
   
+  assert (not processors);
+  
   return newreg;
 }
 
@@ -161,6 +163,7 @@ combine_regions (vector<region_t> const & oldregs,
   {
     region_t const & reg = * ri;
     assert (reg.map == m);
+    assert (not reg.processors);
     comps += reg.extent;
     for (int f = 0; f < 2; ++ f) {
       for (int d = 0; d < dim; ++ d) {
