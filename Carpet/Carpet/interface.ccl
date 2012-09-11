@@ -15,7 +15,10 @@ uses include header: mpi_string.hh
 
 uses include header: defs.hh
 uses include header: dist.hh
+uses include header: typecase.hh
+uses include header: typeprops.hh
 
+uses include header: balance.hh
 uses include header: bbox.hh
 uses include header: bboxset.hh
 uses include header: fulltree.hh
@@ -30,8 +33,6 @@ uses include header: gf.hh
 uses include header: ggf.hh
 uses include header: gh.hh
 uses include header: th.hh
-uses include header: typecase.hh
-uses include header: typeprops.hh
 
 uses include header: operators.hh
 

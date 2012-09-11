@@ -27,6 +27,7 @@
 
 #include <loopcontrol.h>
 
+#include <balance.hh>
 #include <bbox.hh>
 #include <bboxset.hh>
 #include <defs.hh>
@@ -1305,6 +1306,8 @@ namespace Carpet {
       SplitRegionsMaps_Automatic (cctkGH, superregss, regss);
     } else if (CCTK_EQUALS (processor_topology, "recursive")) {
       SplitRegionsMaps_Recursively (cctkGH, superregss, regss);
+    } else if (CCTK_EQUALS (processor_topology, "balanced")) {
+      SplitRegionsMaps_Balanced (cctkGH, superregss, regss);
     } else if (CCTK_EQUALS (processor_topology, "manual")) {
       assert (0);
 //       SplitRegionsMaps_AsSpecified (cctkGH, superregss, regss);
@@ -1841,6 +1844,91 @@ namespace Carpet {
     }
     
     if (recompose_verbose) cout << "SRMA exit" << endl;
+  }
+  
+  
+  
+  void
+  SplitRegionsMaps_Balanced (cGH const *const cctkGH,
+                             vector<vector<region_t> >& superregss,
+                             vector<vector<region_t> >& regss)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+     // Find map numbers
+    int const nmaps = superregss.size();
+    vector<int> map_index(maps, -1);
+    for (int m=0; m<nmaps; ++m) {
+      assert(not superregss.AT(m).empty());
+      if (not superregss.AT(m).empty()) {
+        assert(map_index.AT(superregss.AT(m).AT(0).map) == -1);
+        map_index.AT(superregss.AT(m).AT(0).map) = m;
+      }
+    }
+    
+    // Combine regions from all maps
+    vector<region_t> regs;
+    for (int m=0; m<nmaps; ++m) {
+      combine_regions(superregss.AT(m), regs);
+    }
+
+    // Create superregion tree structure
+    {
+      int const ncomps = regs.size();
+      for (int c=0; c<ncomps; ++c) {
+        assert(regs.AT(c).processor == -1);
+        assert(not regs.AT(c).processors);
+        pseudoregion_t const preg(regs.AT(c).extent, -1);
+        regs.AT(c).processors = new ipfulltree(preg);
+      }
+    }
+    
+    // Set up new superregions
+    // Note: The tree structure is now reachable from both the
+    // superregions and the regions
+    for (int m=0; m<nmaps; ++m) {
+      superregss.AT(m).clear();
+    }
+    {
+      int const ncomps = regs.size();
+      for (int c=0; c<ncomps; ++c) {
+        int const m = map_index.AT(regs.AT(c).map);
+        superregss.AT(m).push_back(regs.AT(c));
+      }
+    }
+    
+    // Split onto processes
+    vector<vector<region_t> > split_regss;
+    int const nprocs = CCTK_nProcs(cctkGH);
+    int const nworkers = nprocs;
+    balance(regs, split_regss, nworkers,
+            maximum_imbalance, same_number_of_components_on_each_process);
+    
+    // Assign process numbers, and make the tree structure
+    // inaccessible from the regions
+    for (int p=0; p<nprocs; ++p) {
+      int const ncomps = split_regss.AT(p).size();
+      for (int c=0; c<ncomps; ++c) {
+        // Set process number in tree structure
+        assert(split_regss.AT(p).AT(c).processors);
+        assert(split_regss.AT(p).AT(c).processors->is_leaf());
+        assert(split_regss.AT(p).AT(c).processors->payload().component == -1);
+        split_regss.AT(p).AT(c).processors->payload().component = p;
+        // Set process number in region
+        split_regss.AT(p).AT(c).processors = NULL;
+        assert(split_regss.AT(p).AT(c).processor == -1);
+        split_regss.AT(p).AT(c).processor = p;
+      }
+    }
+    
+    // Distribute by map, implicitly assigning component numbers
+    for (int p=0; p<nprocs; ++p) {
+      int const ncomps = split_regss.AT(p).size();
+      for (int c=0; c<ncomps; ++c) {
+        int const m = map_index.AT(split_regss.AT(p).AT(c).map);
+        regss.AT(m).push_back(split_regss.AT(p).AT(c));
+      }
+    }
   }
   
   

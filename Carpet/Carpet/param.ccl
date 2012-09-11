@@ -443,6 +443,7 @@ KEYWORD processor_topology "How to determine the processor topology" STEERABLE=r
   "along-dir" :: "Split the region along one direction only"
   "automatic" :: "Choose the topology automatically"
   "recursive" :: "Choose the topology automatically, using a different algorithm that may lead to better load balancing"
+  "balanced"  :: "Choose the topology automatically, ensuring a maximum load imbalance"
 } "automatic"
 
 CCTK_INT processor_topology_3d_x "Number of processors in x-direction" STEERABLE=recover
@@ -513,6 +514,11 @@ CCTK_REAL ghost_zone_cost "Relative cost of ghost zones for 'recursive' load bal
 {
   0:* :: ""
 } 0.025
+
+CCTK_REAL maximum_imbalance "Maximum load imbalance" STEERABLE=always
+{
+  (0.0:*) :: ""
+} 0.1
 
 BOOLEAN same_number_of_components_on_each_process "Ensure that each process has the same number of components, adding empty dummy components if necessary" STEERABLE=always
 {

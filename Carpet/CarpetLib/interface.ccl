@@ -9,6 +9,7 @@ includes header: dist.hh in dist.hh
 includes header: typecase.hh in typecase.hh
 includes header: typeprops.hh in typeprops.hh
 
+includes header: balance.hh in balance.hh
 includes header: bbox.hh in bbox.hh
 includes header: bboxset.hh in bboxset.hh
 includes header: fulltree.hh in fulltree.hh
