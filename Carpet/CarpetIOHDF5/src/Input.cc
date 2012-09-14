@@ -522,7 +522,18 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     }
   }
 
+  // in filereader mode, mark all variables that are not requested as being
+  // read completely, mark all timelevels > 0 as being read completely
   const ioGH* ioUtilGH = (const ioGH*) CCTK_GHExtension (cctkGH, "IO");
+  if (not in_recovery and ioUtilGH->do_inVars) {
+    for (unsigned int vindex = 0; vindex < read_completely.size(); vindex++) {
+      const int timestep = ioUtilGH->do_inVars[vindex];
+      for (unsigned int tl = 0 ; tl < read_completely[vindex].size() ; ++tl) {
+        read_completely[vindex][tl] = tl > 0 or not timestep;
+      }
+    }
+  }
+
   CarpetIOHDF5GH* myGH =
                   (CarpetIOHDF5GH*) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
   // allocate list of recovery filenames
@@ -724,15 +735,6 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     }
 
     for (unsigned int tl = 0; tl < read_completely[vindex].size(); tl++) {
-      if (called_from == FILEREADER_DATA and not
-          (ioUtilGH->do_inVars and ioUtilGH->do_inVars[vindex])) {
-        continue;
-      }
-      if (called_from == FILEREADER_DATA and tl > 0) {
-        // file reader reads only timelevel 0
-        continue;
-      }
-
       if (not read_completely[vindex][tl]) {
         // check if the variable has been read partially
         size_t size = 0;
@@ -798,8 +800,10 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     for (size_t vindex = 0; vindex < read_completely.size(); vindex++) {
       if (CCTK_GroupTypeFromVarI (vindex) == CCTK_GF or reflevel == 0) {
         for (size_t tl = 0; tl < read_completely[vindex].size(); tl++) {
-          if (called_from != FILEREADER_DATA or
-              (ioUtilGH->do_inVars and ioUtilGH->do_inVars[vindex]))
+          // Do not synchronize variables that the user request not to be
+          // read (only possible in FILEREADER mode)
+          if (not (called_from == FILEREADER_DATA and
+                   (ioUtilGH->do_inVars and not ioUtilGH->do_inVars[vindex])))
           {
             if (read_completely[vindex][tl]) {
               int const gindex = CCTK_GroupIndexFromVarI (vindex);
