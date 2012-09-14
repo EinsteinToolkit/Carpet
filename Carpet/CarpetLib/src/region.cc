@@ -36,9 +36,7 @@ region_t::region_t (region_t const & a)
 region_t &
 region_t::operator= (region_t const & a)
 {
-  assert(&a != this); // was not correctly handled before, see if it was actually used
   if (&a == this) return *this; // nothing to do
-
   assert (invariant());
   if (processors != NULL) {
     delete processors;
