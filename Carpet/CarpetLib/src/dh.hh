@@ -100,6 +100,9 @@ public:
     ibset active;
     // ibset bndref;
     
+    size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
+    istream & input (istream & is);
+    ostream & output (ostream & os) const;
   };
   
   struct full_dboxes {
@@ -238,6 +241,7 @@ public:                         // should be readonly
   
   light_mboxes light_boxes;     // grid hierarchy [ml][rl][c]
   local_mboxes local_boxes;     // grid hierarchy [ml][rl][lc]
+  level_mboxes level_boxes;     // grid hierarchy [ml][rl]
   fast_mboxes fast_boxes;       // grid hierarchy [ml][rl][p]
   
   typedef list<ggf*>::iterator ggf_handle;
@@ -308,6 +312,11 @@ inline size_t memoryof (dh::local_dboxes const & b)
   return b.memory ();
 }
 
+inline size_t memoryof (dh::level_dboxes const & b)
+{
+  return b.memory ();
+}
+
 inline size_t memoryof (dh::full_dboxes const & b)
 {
   return b.memory ();
@@ -333,6 +342,11 @@ inline istream & operator>> (istream & is, dh::local_dboxes & b)
   return b.input (is);
 }
 
+inline istream & operator>> (istream & is, dh::level_dboxes & b)
+{
+  return b.input (is);
+}
+
 inline istream & operator>> (istream & is, dh::full_dboxes & b)
 {
   return b.input (is);
@@ -349,6 +363,11 @@ inline ostream & operator<< (ostream & os, dh::light_dboxes const & b)
 }
 
 inline ostream & operator<< (ostream & os, dh::local_dboxes const & b)
+{
+  return b.output (os);
+}
+
+inline ostream & operator<< (ostream & os, dh::level_dboxes const & b)
 {
   return b.output (os);
 }

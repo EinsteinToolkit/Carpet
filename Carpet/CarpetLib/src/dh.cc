@@ -281,7 +281,6 @@ regrid (bool const do_init)
   light_mboxes old_light_boxes;
   swap (light_boxes, old_light_boxes);
   
-  level_mboxes level_boxes;
   full_mboxes full_boxes;
   
   fast_boxes.clear();
@@ -2067,6 +2066,13 @@ regrid (bool const do_init)
           cout << box;
         } // for lc
         
+        {
+          level_dboxes const & box = level_boxes.AT(ml).AT(rl);
+          cout << eol;
+          cout << "ml=" << ml << " rl=" << rl << eol;
+          cout << box;
+        }
+        
         fast_dboxes const & fast_box = fast_boxes.AT(ml).AT(rl);
         cout << eol;
         cout << "ml=" << ml << " rl=" << rl << eol;
@@ -2080,6 +2086,7 @@ regrid (bool const do_init)
     cout << "memoryof(dh)=" << memoryof(*this) << eol;
     cout << "memoryof(dh.light_boxes)=" << memoryof(light_boxes) << eol;
     cout << "memoryof(dh.local_boxes)=" << memoryof(local_boxes) << eol;
+    cout << "memoryof(dh.level_boxes)=" << memoryof(level_boxes) << eol;
     cout << "memoryof(dh.fast_boxes)=" << memoryof(fast_boxes) << eol;
     int gfcount = 0;
     size_t gfmemory = 0;
@@ -2374,6 +2381,8 @@ memory ()
     memoryof (overlap_widths) +
     memoryof (prolongation_orders_space) +
     memoryof (light_boxes) +
+    memoryof (local_boxes) +
+    memoryof (level_boxes) +
     memoryof (fast_boxes) +
     memoryof (gfs);
 }
@@ -2426,6 +2435,15 @@ memory ()
     memoryof (unused_region) +
     memoryof (coarse_boundary) +
     memoryof (fine_boundary);
+}
+
+size_t
+dh::level_dboxes::
+memory ()
+  const
+{
+  return
+    memoryof (active);
 }
 
 size_t
@@ -2569,6 +2587,26 @@ input (istream & is)
 }
 
 istream &
+dh::level_dboxes::
+input (istream & is)
+{
+  // Regions:
+  try {
+    skipws (is);
+    consume (is, "dh::level_dboxes:{");
+    skipws (is);
+    consume (is, "active:");
+    is >> active;
+    skipws (is);
+    consume (is, "}");
+  } catch (input_error & err) {
+    cout << "Input error while reading a dh::level_dboxes" << endl;
+    throw err;
+  }
+  return is;
+}
+
+istream &
 dh::full_dboxes::
 input (istream & is)
 {
@@ -2680,6 +2718,8 @@ output (ostream & os)
      << "overlap_widths=" << overlap_widths << ","
      << "prolongation_orders_space=" << prolongation_orders_space << ","
      << "light_boxes=" << light_boxes << ","
+     << "local_boxes=" << local_boxes << ","
+     << "level_boxes=" << level_boxes << ","
      << "fast_boxes=" << fast_boxes << ","
      << "gfs={";
   {
@@ -2732,6 +2772,18 @@ output (ostream & os)
      << "   unused_region: " << unused_region << eol
      << "   coarse_boundary: " << coarse_boundary << eol
      << "   fine_boundary: " << fine_boundary << eol
+     << "}" << eol;
+  return os;
+}
+
+ostream &
+dh::level_dboxes::
+output (ostream & os)
+  const
+{
+  // Regions:
+  os << "dh::level_dboxes:{" << eol
+     << "   active: " << active << eol
      << "}" << eol;
   return os;
 }
