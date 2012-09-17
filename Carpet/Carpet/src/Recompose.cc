@@ -2065,11 +2065,13 @@ namespace Carpet {
           BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
             BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
               DECLARE_CCTK_ARGUMENTS;
+              if (point_class) {
 #pragma omp parallel
-              CCTK_LOOP3_ALL(CarpetClassifyPoints, cctkGH, i,j,k) {
-                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                point_class[ind] = 1;
-              } CCTK_ENDLOOP3_ALL(CarpetClassifyPoints);
+                CCTK_LOOP3_ALL(CarpetClassifyPoints, cctkGH, i,j,k) {
+                  int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                  point_class[ind] = 1;
+                } CCTK_ENDLOOP3_ALL(CarpetClassifyPoints);
+              }
             } END_LOCAL_COMPONENT_LOOP;
           } END_LOCAL_MAP_LOOP;
         } LEAVE_LEVEL_MODE;
