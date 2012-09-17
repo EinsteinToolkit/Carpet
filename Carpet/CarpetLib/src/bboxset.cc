@@ -283,8 +283,18 @@ typename bboxset<T,D>::size_type bboxset<T,D>::size () const
 
 
 
-
 // Queries
+
+// Containment
+// cost: O(n)
+template<typename T, int D>
+bool bboxset<T,D>::contains (const vect<T,D>& x) const
+{
+  for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {
+    if ((*bi).contains(x)) return true;
+  }
+  return false;
+}
 
 // Intersection
 // cost: O(n)

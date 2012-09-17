@@ -122,6 +122,10 @@ public:
   size_type size () const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n)
   int setsize () const { return bs.size(); } // cost: O(1)
   
+  // Find out whether the bbox contains the point x
+  bool contains (const vect<T,D>& x)
+    const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n)
+  
   // Find out whether this bboxset intersects the bbox b
   bool intersects (const box& b) const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n)
   
