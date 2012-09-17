@@ -33,6 +33,12 @@ BOOLEAN use_dgfe "Use DGFE operators instead of Lagrange operators"
 
 
 
+BOOLEAN interpolate_from_buffer_zones "Use buffer points for interpolation" STEERABLE=always
+{
+} "yes"
+
+
+
 restricted:
 
 BOOLEAN use_higher_order_restriction "Use third order cell centered restriction operators instead of first order"

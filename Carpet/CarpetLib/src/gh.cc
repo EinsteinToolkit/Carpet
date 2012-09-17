@@ -443,6 +443,8 @@ locate_position (rvect const & rpos,
                  int const minrl, int const maxrl,
                  int & rl, int & c, ivect & aligned_ipos) const
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (ml>=0 and ml<mglevels());
   assert (minrl>=0 and minrl<=maxrl and maxrl<=reflevels());
   
@@ -452,6 +454,10 @@ locate_position (rvect const & rpos,
     return;
   }
   
+  // Find associated dh
+  assert (dhs.size() == 1);
+  dh const& dd = *dhs.front();
+  
   // Try finer levels first
   for (rl = maxrl-1; rl >= minrl; --rl) {
     
@@ -460,14 +466,17 @@ locate_position (rvect const & rpos,
     ivect const str = baseextent(ml,rl).stride();
     aligned_ipos = ivect(floor(rpos / rvect(str) + rvect(0.5))) * str;
     
+    // Ignore this level if this point is not in the active region
+    // (i.e. if it is a buffer point or similar)
+    if (not interpolate_from_buffer_zones and 
+        not dd.level_boxes.AT(ml).AT(rl).active.contains(aligned_ipos))
+    {
+      continue;
+    }
+    
     gh::cregs const & regs = superregions.AT(rl);
     
-    // TODO: Ignore this level if this point is not in the active
-    // region (i.e. if it is a buffer point or similar)
-    // TODO: check the level_bbox
-    // TODO: (assume this gh has only one dh)
-    
-    // Search all superregions linearly.  Each superregion corresponds
+    // Search all superregions linearly. Each superregion corresponds
     // to a "refined region", and the number of superregions is thus
     // presumably independent of the number of processors.
     for (size_t r = 0; r < regs.size(); ++r) {
@@ -501,8 +510,14 @@ locate_position (ivect const & ipos,
                  int const minrl, int const maxrl,
                  int & rl, int & c, ivect & aligned_ipos) const
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (ml>=0 and ml<mglevels());
   assert (minrl>=0 and minrl<=maxrl and maxrl<=reflevels());
+  
+  // Find associated dh
+  assert (dhs.size() == 1);
+  dh const& dd = *dhs.front();
   
   // Try finer levels first
   for (rl = maxrl-1; rl >= minrl; --rl) {
@@ -512,9 +527,17 @@ locate_position (ivect const & ipos,
     ivect const str = baseextent(ml, rl).stride();
     aligned_ipos = ivect(floor(rvect(ipos) / rvect(str) + rvect(0.5))) * str;
     
+    // Ignore this level if this point is not in the active region
+    // (i.e. if it is a buffer point or similar)
+    if (not interpolate_from_buffer_zones and 
+        not dd.level_boxes.AT(ml).AT(rl).active.contains(aligned_ipos))
+    {
+      continue;
+    }
+    
     gh::cregs const & regs = superregions.AT(rl);
     
-    // Search all superregions linearly.  Each superregion corresponds
+    // Search all superregions linearly. Each superregion corresponds
     // to a "refined region", and the number of superregions is thus
     // presumably independent of the number of processors.
     for (size_t r = 0; r < regs.size(); ++r) {
