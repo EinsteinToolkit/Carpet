@@ -47,9 +47,6 @@ namespace Carpet {
   static void Initialise3tl (cGH * cctkGH);
   
   static void print_internal_data ();
-  static void signal_handler(int signum);
-  static void write_backtrace_file(void);
-  static void generate_backtrace(ostream &stacktrace);
   
   static void ScheduleTraverse
   (char const * where, char const * name, cGH * cctkGH);
