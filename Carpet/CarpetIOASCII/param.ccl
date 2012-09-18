@@ -77,6 +77,12 @@ BOOLEAN compact_format "Use a more compact output format with fewer columns and 
 
 
 
+BOOLEAN use_grid_coordinates "Use grid coordinate grid functions to obtain coordinate locations"
+{
+} "no"
+
+
+
 INT out_precision "How many digits to output floating-point numbers with" STEERABLE = ALWAYS
 {
   0:* :: "Number of precision digits"

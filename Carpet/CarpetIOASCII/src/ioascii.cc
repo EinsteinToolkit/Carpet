@@ -536,6 +536,8 @@ namespace CarpetIOASCII {
     const int num_tl = CCTK_ActiveTimeLevelsVI (cctkGH, vindex);
     assert (num_tl >= 1);
     
+    int const coord_group = CCTK_GroupIndex("grid::coordinates");
+    
     
     
     // Loop over all maps
@@ -611,7 +613,22 @@ namespace CarpetIOASCII {
               }
             }
             
+            vector<const gdata*> coords;
+            if (use_grid_coordinates and groupdata.grouptype == CCTK_GF) {
+              coords.resize(dim);
+              for (int d=0; d<dim; ++d) {
+                if (dist::rank() == proc) {
+                  const ggf* const ff =
+                    arrdata.at(coord_group).at(m).data.at(d);
+                  coords.at(d) = ff->data_pointer(0, rl, lc, ml);
+                } else {
+                  coords.at(d) = NULL;
+                }
+              }
+            }
+            
             vector<gdata*> tmpdatas(datas.size());
+            vector<gdata*> tmpcoords(coords.size());
             
             if (proc != ioproc) {
               
@@ -624,11 +641,25 @@ namespace CarpetIOASCII {
                 void * const memptr = pool.alloc (memsize);
                 tmpdatas.at(n)->allocate(data_ext, ioproc, memptr, memsize);
               } // for n
+              for (size_t n = 0; n < coords.size(); ++ n) {
+                const ggf* const ff =
+                  arrdata.at(coord_group).at(m).data.at(n);
+                tmpcoords.at(n) = ff->new_typed_data ();
+                size_t const memsize =
+                  tmpcoords.at(n)->allocsize (data_ext, ioproc);
+                void * const memptr = pool.alloc (memsize);
+                tmpcoords.at(n)->allocate(data_ext, ioproc, memptr, memsize);
+              } // for n
               
               for (comm_state state; not state.done(); state.step()) {
                 for (size_t n=0; n<datas.size(); ++n) {
                   tmpdatas.at(n)->copy_from
                     (state, datas.at(n), data_ext, data_ext, NULL,
+                     ioproc, proc);
+                }
+                for (size_t n=0; n<coords.size(); ++n) {
+                  tmpcoords.at(n)->copy_from
+                    (state, coords.at(n), data_ext, data_ext, NULL,
                      ioproc, proc);
                 }
               }
@@ -638,6 +669,9 @@ namespace CarpetIOASCII {
               for (size_t n=0; n<datas.size(); ++n) {
                 tmpdatas.at(n) = const_cast<gdata*> (datas.at(n));
               }
+              for (size_t n=0; n<coords.size(); ++n) {
+                tmpcoords.at(n) = const_cast<gdata*> (coords.at(n));
+              }
               
             }
             
@@ -645,12 +679,15 @@ namespace CarpetIOASCII {
               WriteASCII (file, tmpdatas, ext, vindex, cctkGH->cctk_iteration,
                           offset1, dirs,
                           rl, ml, m, c, tl,
-                          coord_time, coord_lower, coord_upper);
+                          coord_time, coord_lower, coord_upper, tmpcoords);
             }
             
             if (proc != ioproc) {
               for (size_t n=0; n<tmpdatas.size(); ++n) {
                 delete tmpdatas.at(n);
+              }
+              for (size_t n=0; n<tmpcoords.size(); ++n) {
+                delete tmpcoords.at(n);
               }
             }
             
@@ -1285,7 +1322,8 @@ namespace CarpetIOASCII {
 		   const int tl,
 		   const CCTK_REAL coord_time,
 		   const vect<CCTK_REAL,dim>& coord_lower,
-		   const vect<CCTK_REAL,dim>& coord_upper)
+		   const vect<CCTK_REAL,dim>& coord_upper,
+                   vector<gdata*> const& gfcoords)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -1412,15 +1450,22 @@ namespace CarpetIOASCII {
             for (int d=0; d<dim; ++d) {
               os << (d==0 ? "\t" : " ");
               assert (gfext.upper()[d] - gfext.lower()[d] >= 0);
-              if (gfext.upper()[d] - gfext.lower()[d] == 0) {
-                os << coord_lower[d];
+              if (gfcoords.empty()) {
+                // Calculate coordinates
+                if (gfext.upper()[d] - gfext.lower()[d] == 0) {
+                  os << coord_lower[d];
+                } else {
+                  CCTK_REAL const dx
+                    = ((coord_upper[d] - coord_lower[d])
+                       / (gfext.upper()[d] - gfext.lower()[d]));
+                  os << (nicelooking
+                         (coord_lower[d] + (index[d] - gfext.lower()[d]) * dx,
+                          dx * 1.0e-8));
+                }
               } else {
-                CCTK_REAL const dx
-                  = ((coord_upper[d] - coord_lower[d])
-                     / (gfext.upper()[d] - gfext.lower()[d]));
-                os << (nicelooking
-                       (coord_lower[d] + (index[d] - gfext.lower()[d]) * dx,
-                        dx * 1.0e-8));
+                // Use coordinate grid functions
+                const gdata* gfcoord = gfcoords.at(d);
+                os << (*(const data<CCTK_REAL>*)gfcoord)[index];
               }
             }
           }
@@ -1569,7 +1614,8 @@ namespace CarpetIOASCII {
 		   const int tl,
 		   const CCTK_REAL coord_time,
 		   const vect<CCTK_REAL,dim>& coord_lower,
-		   const vect<CCTK_REAL,dim>& coord_upper);
+		   const vect<CCTK_REAL,dim>& coord_upper,
+                   vector<gdata*> const& gfcoords);
 
   template
   void WriteASCII (ostream& os,
@@ -1586,7 +1632,8 @@ namespace CarpetIOASCII {
 		   const int tl,
 		   const CCTK_REAL coord_time,
 		   const vect<CCTK_REAL,dim>& coord_lower,
-		   const vect<CCTK_REAL,dim>& coord_upper);
+		   const vect<CCTK_REAL,dim>& coord_upper,
+                   vector<gdata*> const& gfcoords);
 
   template
   void WriteASCII (ostream& os,
@@ -1603,7 +1650,8 @@ namespace CarpetIOASCII {
 		   const int tl,
 		   const CCTK_REAL coord_time,
 		   const vect<CCTK_REAL,dim>& coord_lower,
-		   const vect<CCTK_REAL,dim>& coord_upper);
+		   const vect<CCTK_REAL,dim>& coord_upper,
+                   vector<gdata*> const& gfcoords);
 
   template
   void WriteASCII (ostream& os,
@@ -1620,6 +1668,7 @@ namespace CarpetIOASCII {
 		   const int tl,
 		   const CCTK_REAL coord_time,
 		   const vect<CCTK_REAL,dim>& coord_lower,
-		   const vect<CCTK_REAL,dim>& coord_upper);
+		   const vect<CCTK_REAL,dim>& coord_upper,
+                   vector<gdata*> const& gfcoords);
 
 } // namespace CarpetIOASCII

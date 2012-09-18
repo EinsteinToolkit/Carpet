@@ -121,7 +121,8 @@ namespace CarpetIOASCII {
 		   const int tl,
 		   const CCTK_REAL coord_time,
 		   const vect<CCTK_REAL,dim>& coord_lower,
-		   const vect<CCTK_REAL,dim>& coord_upper);
+		   const vect<CCTK_REAL,dim>& coord_upper,
+                   vector<gdata*> const& gfcoords);
   
 } // namespace CarpetIOASCII
 
