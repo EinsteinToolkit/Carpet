@@ -1,0 +1,10 @@
+ActiveThorns = "
+    Carpet
+    CarpetLib
+    CoordBase
+    IOUtil
+"
+
+CarpetLib::test_backtrace = yes
+
+IO::out_dir = $parfile

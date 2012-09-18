@@ -8,4 +8,4 @@ namespace CarpetLib {
 } // namespace CarpetLib
 
 
-#endif //#ifndef BACKTRACE_HH
+#endif  // #ifndef BACKTRACE_HH

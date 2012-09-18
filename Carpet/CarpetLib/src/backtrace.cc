@@ -1,5 +1,7 @@
 #include "backtrace.hh"
 
+//#include <cctk.h>
+
 #ifdef HAVE_BACKTRACE
 
 // http://cairo.sourcearchive.com/documentation/1.9.4/backtrace-symbols_8c-source.html
@@ -248,7 +250,8 @@ namespace CarpetLib {
         }
         if (state == Print) {
           /* set buf just past the end of string */
-          buf = buf + total + 1;
+          //TODO buf = buf + total + 1;
+          buf = buf + strlen(buf) + 1;
         }
         naddr--;
       }
@@ -395,14 +398,16 @@ namespace CarpetLib {
   
   
   
-  //////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
   
   
-  
-#include <cctk_Parameters.h>
   
 #include "dist.hh"
+  
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
+#include <cstring>
 #include <fstream>
 #include <ostream>
   
@@ -472,7 +477,7 @@ namespace CarpetLib {
           if (loc != NULL) *loc = '\0';
 #endif
           
-          stacktrace << i - 1 << ". " << demangled << "(" << names[i] << ")" << '\n';
+          stacktrace << i - 1 << ". " << demangled << "   [" << names[i] << "]" << '\n';
           free(demangled);
         } else { // Just output the raw symbol
           stacktrace << i - 1 << ". " << names[i] << '\n';
@@ -503,7 +508,7 @@ namespace CarpetLib {
     myfile << "\n"
            << "The hexadecimal addresses in this backtrace can also be interpreted\n"
            << "with a debugger (e.g. gdb), or with the 'addr2line' (or 'gaddr2line')\n"
-           << "command line tool.\n";
+           << "command line tool: 'addr2line -e cactus_sim <address>'.\n";
     myfile.close();
   }
   
@@ -524,7 +529,7 @@ namespace CarpetLib {
     pid_t const pid = getpid();
     
     cerr << "Rank " << dist::rank() << " with PID " << pid << " "
-         << "received signal" << signum << endl;
+         << "received signal " << signum << endl;
     // Restore the default signal handler
     signal(signum, SIG_DFL);
     
@@ -536,8 +541,27 @@ namespace CarpetLib {
   
   void request_backtraces()
   {
-    signal(6, signal_handler);
-    signal(11, signal_handler);
+    signal(SIGQUIT, signal_handler);
+    signal(SIGILL , signal_handler);
+    signal(SIGABRT, signal_handler);
+    signal(SIGFPE , signal_handler);
+    signal(SIGBUS , signal_handler);
   }
   
 } // namespace CarpetLib
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+#include <cctk.h>
+#include <cctk_Arguments.h>
+
+extern "C" void CarpetLib_BacktraceTest(CCTK_ARGUMENTS)
+{
+  CCTK_INFO("Generating backtrace...");
+  kill(0, SIGABRT);
+  CCTK_WARN(CCTK_WARN_ABORT, "Backtrace test failed");
+}

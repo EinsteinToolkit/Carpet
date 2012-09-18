@@ -104,6 +104,12 @@ INT max_memory_size_MB "Maximum amount of memory per MPI process, set via setrli
 
 
 
+BOOLEAN test_backtrace "Kill yourself to test the backtrace mechanism"
+{
+} "no"
+
+
+
 # Statistics
 
 INT print_timestats_every "Print timing statistics periodically" STEERABLE=always
