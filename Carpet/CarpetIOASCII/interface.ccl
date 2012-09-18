@@ -24,9 +24,8 @@ CCTK_INT this_iteration[4] TYPE=scalar
 
 
 # Check whether existing output files should be truncated or not
-CCTK_INT FUNCTION IO_TruncateOutputFiles \
-  (CCTK_POINTER_TO_CONST IN GH)
-
+CCTK_INT FUNCTION \
+    IO_TruncateOutputFiles (CCTK_POINTER_TO_CONST IN cctkGH)
 REQUIRES FUNCTION IO_TruncateOutputFiles
 
 
@@ -46,17 +45,17 @@ REQUIRES FUNCTION SymmetryTableHandleForGI
 # Return a pointer to an unmodifiable C string
 # which contains a unique ID for this build
 CCTK_POINTER_TO_CONST \
-FUNCTION UniqueBuildID (CCTK_POINTER_TO_CONST IN  cctkGH)
+FUNCTION UniqueBuildID (CCTK_POINTER_TO_CONST IN cctkGH)
 USES FUNCTION UniqueBuildID
 
 # Return a pointer to an unmodifiable C string
 # which contains a unique ID for this simulation
 CCTK_POINTER_TO_CONST \
-FUNCTION UniqueSimulationID (CCTK_POINTER_TO_CONST IN  cctkGH)
+FUNCTION UniqueSimulationID (CCTK_POINTER_TO_CONST IN cctkGH)
 USES FUNCTION UniqueSimulationID
 
 # Return a pointer to an unmodifiable C string
 # which contains a unique ID for this run
 CCTK_POINTER_TO_CONST \
-FUNCTION UniqueRunID (CCTK_POINTER_TO_CONST IN  cctkGH)
+FUNCTION UniqueRunID (CCTK_POINTER_TO_CONST IN cctkGH)
 USES FUNCTION UniqueRunID
