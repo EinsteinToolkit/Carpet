@@ -547,10 +547,10 @@ namespace CarpetIOHDF5 {
     const int m_max = groupdata.grouptype == CCTK_GF ? Carpet::maps : 1;
     for (int m = m_min; m < m_max; ++ m) {
 
-      hid_t file = -1;
+      hid_t file = -1, index_file = -1;
       int error_count = 0;
       error_count += OpenFile (cctkGH, m, vindex, numvars, alias, basefilename,
-                               dirs, is_new_file, truncate_file, file);
+                               dirs, is_new_file, truncate_file, file, index_file);
 
       // Find the output offset
       const ivect offset =
@@ -667,7 +667,7 @@ namespace CarpetIOHDF5 {
                    ext != exts.end(); 
                    ++ ext, ++ c_offset) {
                 error_count +=
-                  WriteHDF5 (cctkGH, file, tmpdatas, *ext, vindex,
+                  WriteHDF5 (cctkGH, file, index_file, tmpdatas, *ext, vindex,
                              offsets1[c_offset], dirs,
                              rl, ml, m, c, c_base + c_offset, tl,
                              coord_time, coord_lower[c_offset], 
@@ -688,7 +688,7 @@ namespace CarpetIOHDF5 {
         c_base += exts.setsize();
       } // for c
 
-      error_count += CloseFile (cctkGH, file);
+      error_count += CloseFile (cctkGH, file, index_file);
       if (error_count > 0 and abort_on_io_errors) {
         CCTK_WARN (0, "Aborting simulation due to previous I/O errors");
       }
@@ -769,7 +769,8 @@ namespace CarpetIOHDF5 {
                                 const vect<int,outdim>& dirs,
                                 const bool is_new_file,
                                 const bool truncate_file,
-                                hid_t& file)
+                                hid_t& file,
+                                hid_t& index_file)
   {
     DECLARE_CCTK_PARAMETERS;
 
@@ -800,7 +801,9 @@ namespace CarpetIOHDF5 {
       if (nioprocs > 1) {
         filenamebuf << ".file_" << dist::rank();
       }
-      filenamebuf << ".h5";
+      string index_filename(filenamebuf.str() + ".idx" + out_extension);
+      filenamebuf << out_extension;
+      
       // we need a persistent temporary here
       const string filenamestr = filenamebuf.str();
       const char* const filename = filenamestr.c_str();
@@ -816,11 +819,23 @@ namespace CarpetIOHDF5 {
       if (truncate_file or not file_exists) {
         HDF5_ERROR(file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT,
                                     H5P_DEFAULT));
+        if (output_index) {
+          HDF5_ERROR (index_file = H5Fcreate (index_filename.c_str(),
+                                              H5F_ACC_TRUNC, H5P_DEFAULT,
+                                              H5P_DEFAULT));
+        }
         // write metadata information
         error_count +=
           WriteMetadata(cctkGH, nioprocs, vindex, numvars, false, file);
+
+        if (output_index) {
+          error_count +=
+            WriteMetadata (cctkGH, nioprocs, vindex, numvars, false, index_file);
+        }
       } else {
         HDF5_ERROR (file = H5Fopen(filename, H5F_ACC_RDWR, H5P_DEFAULT));
+        if (output_index)
+          HDF5_ERROR (index_file = H5Fopen (index_filename.c_str(), H5F_ACC_RDWR, H5P_DEFAULT));
       }
       io_files += 1;
 
@@ -831,7 +846,7 @@ namespace CarpetIOHDF5 {
 
   template<int outdim>
   int IOHDF5<outdim>::CloseFile (const cGH* const cctkGH,
-                                 hid_t& file)
+                                 hid_t& file, hid_t& index_file)
   {
     DECLARE_CCTK_PARAMETERS;
 
@@ -840,6 +855,9 @@ namespace CarpetIOHDF5 {
     if (dist::rank() == ioproc) {
       if (file >= 0) {
         HDF5_ERROR(H5Fclose(file));
+      }
+      if (output_index and index_file >= 0) {
+        HDF5_ERROR (H5Fclose (index_file));
       }
     }
     if (nioprocs > 1) {
@@ -1242,6 +1260,7 @@ namespace CarpetIOHDF5 {
   template<int outdim>
   int IOHDF5<outdim>::WriteHDF5 (const cGH* cctkGH,
                                  hid_t& file,
+                                 hid_t& indexfile,
                                  vector<gdata*> const gfdatas,
                                  const bbox<int,dim>& gfext,
                                  const int vi,
@@ -1457,6 +1476,8 @@ namespace CarpetIOHDF5 {
         if (request->check_exist) {
           H5E_BEGIN_TRY {
             H5Gunlink(file, datasetname.c_str());
+            if (indexfile != -1)
+              H5Gunlink (indexfile, datasetname.c_str());
           } H5E_END_TRY;
         }
         // free I/O request structure
@@ -1465,16 +1486,30 @@ namespace CarpetIOHDF5 {
         }
 
         // write the dataset
-        hid_t dataset;
+        hid_t dataset, index_dataset;
         HDF5_ERROR(dataset =
                    H5Dcreate (file, datasetname.c_str(),
                               slice_type, slice_space, plist));
+        if (indexfile != -1) {
+          HDF5_ERROR (index_dataset = H5Dcreate (indexfile, datasetname.c_str(),
+                                                 slice_type, slice_space, plist));
+        }
+
         HDF5_ERROR(H5Dwrite (dataset, mem_type, mem_space, H5S_ALL,
                              H5P_DEFAULT, gfdatas[n]->storage()));
         error_count +=
           AddSliceAttributes (cctkGH, fullname, rl, ml, m, tl, origin, delta, 
-                              iorigin, ioffset, ioffsetdenom, bbox, nghostzones, dataset);
+                              iorigin, ioffset, ioffsetdenom, bbox, nghostzones,
+                              dataset, slice_shape, false);
         HDF5_ERROR(H5Dclose (dataset));
+
+        if (indexfile != -1) {
+          error_count += 
+            AddSliceAttributes (cctkGH, fullname, rl, ml, m, tl, origin, delta, 
+                                iorigin, ioffset, ioffsetdenom, bbox, nghostzones,
+                                index_dataset, slice_shape, true);
+          HDF5_ERROR (H5Dclose (index_dataset));
+        }
         free (fullname);
 
         io_bytes +=

@@ -145,7 +145,9 @@ namespace CarpetIOHDF5
                          const vector<int>& ioffsetdenom,
                          const vector<int>& bbox,
                          const vector<int>& nghostzones,
-                         hid_t& dataset);
+                         hid_t& dataset,
+                         const vector<hsize_t>& shape,
+                         const bool is_index);
 
   // returns an HDF5 datatype corresponding to the given CCTK datatype
   hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
@@ -220,10 +222,12 @@ namespace CarpetIOHDF5
                          const vect<int,outdim>& dirs,
                          bool is_new_file,
                          bool truncate_file,
-                         hid_t& file);
+                         hid_t& file,
+                         hid_t& index_file);
 
      static int WriteHDF5 (const cGH* cctkGH,
                            hid_t& file,
+                           hid_t& index_file,
                            vector<gdata*> const gfdatas,
                            const bbox<int,dim>& gfext,
                            const int vi,
@@ -240,7 +244,8 @@ namespace CarpetIOHDF5
                            const vect<CCTK_REAL,dim>& coord_upper);
 
     static int CloseFile (const cGH* cctkGH,
-                          hid_t& file);
+                          hid_t& file,
+                          hid_t& index_file);
 
     static ivect GetOutputOffset (const cGH* cctkGH, int m,
                                   const vect<int,outdim>& dirs);

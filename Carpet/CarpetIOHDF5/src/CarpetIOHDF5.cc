@@ -82,6 +82,10 @@ static int WriteAttribute (hid_t const group,
                            char const * const name,
                            char const * const * const svalues,
                            int const nvalues);
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           hsize_t const * const svalues,
+                           int const nvalues);
 static int WriteLargeAttribute (hid_t const group,
                                 char const * const name,
                                 char const * const svalue);
@@ -333,7 +337,9 @@ int AddSliceAttributes(const cGH* const cctkGH,
                        const vector<int>& ioffsetdenom,
                        const vector<int>& bbox,
                        const vector<int>& nghostzones,
-                       hid_t& dataset)
+                       hid_t& dataset,
+                       const vector<hsize_t>& shape,
+                       const bool is_index)
 {
   int error_count = 0;
 
@@ -360,6 +366,10 @@ int AddSliceAttributes(const cGH* const cctkGH,
     int const map_is_cartesian = MultiPatch_MapIsCartesian (map);
     error_count += WriteAttribute(dataset, "MapIsCartesian", map_is_cartesian);
   }
+  if (is_index) {
+    error_count += WriteAttribute(dataset, "h5shape", &shape[0], shape.size());
+  }
+
 
   return error_count;
 }
@@ -1466,6 +1476,27 @@ static int WriteAttribute (hid_t const group,
   HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_DOUBLE,
                                      dataspace, H5P_DEFAULT));
   HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_DOUBLE, dvalues));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
+}
+
+
+// Write an array of hsize_t attributes
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           hsize_t const * const svalues,
+                           int const nvalues)
+{
+  hid_t dataspace, attribute;
+  int error_count = 0;
+  
+  hsize_t const size = nvalues;
+  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
+  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_HSIZE,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_HSIZE, svalues));
   HDF5_ERROR (H5Aclose (attribute));
   HDF5_ERROR (H5Sclose (dataspace));
   
