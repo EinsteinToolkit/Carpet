@@ -108,7 +108,7 @@ namespace CarpetIOASCII {
   
   template<int outdim>
   void WriteASCII (ostream& os,
-		   vector<gdata*> const gfdatas,
+		   vector<gdata*> const& gfdatas,
 		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
