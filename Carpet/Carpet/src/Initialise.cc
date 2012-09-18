@@ -74,7 +74,7 @@ namespace Carpet {
     do_late_meta_mode = true;
     global_time = cctk_initial_time;
     delta_time = 1.0;
-    for (int ml = 0; ml < mglevel; ++ ml) {
+    for (int ml = 0; ml < mglevels; ++ ml) {
       // assert (leveltimes.AT(ml).size() == 1);
       // leveltimes.AT(ml).AT(0) = global_time;
       for (int rl = 0; rl < reflevels; ++ rl) {
