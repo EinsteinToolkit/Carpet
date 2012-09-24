@@ -900,6 +900,55 @@ transfer_prolongate (data const * const src,
     timer.stop (0);
   }
   break;
+    
+  case op_ENOVOL: {
+    static Timer timer ("prolongate_ENOVOL");
+    timer.start ();
+    // enum centering { vertex_centered, cell_centered };
+    switch (cent) {
+      case vertex_centered: {
+        CCTK_WARN (CCTK_WARN_ABORT,
+	           "There is no there is no vertex-centred stencil for op=\"ENOVOL\".");
+      }
+      break;
+      case cell_centered: {
+	 static
+	 void (* the_operators[]) (T const * restrict const src,
+                                   ivect3 const & restrict srcext,
+                                   T * restrict const dst,
+                                   ivect3 const & restrict dstext,
+                                   ibbox3 const & restrict srcbbox,
+                                   ibbox3 const & restrict dstbbox,
+                                   ibbox3 const & restrict srcregbbox,
+                                   ibbox3 const & restrict dstregbbox,
+                                   void * const extraargs) =
+	 {
+	    & prolongate_3d_cc_enovol_rf2<T,2>,
+	    & prolongate_3d_cc_enovol_rf2<T,2>,  // note that we cheat here: order is still 2 even though 3 was requested!
+	    & prolongate_3d_cc_enovol_rf2<T,2>,  // note that we cheat here: order is 2 even though 4 was requested!
+	    & prolongate_3d_cc_enovol_rf2<T,2>   // note that we cheat here: order is 3 even though 5 was requested!
+	    // have cheated here for two reasons: first, the ENO prolongation operator stencil radius is larger than Lagrange (and dh.cc assumes that the stencil goes as order_space/2!),
+	    // and second, we want to allow spacetime interpolation to be of higher order while keeping the implemeneted ENO order!
+	 };
+	 if (order_space < 2 or order_space > 5) {
+	 CCTK_WARN (CCTK_WARN_ABORT,
+		     "There is no cell-centred stencil for op=\"ENOVOL\" with order_space not in {2,3,4,5}");
+	 }
+	 
+	 call_operator<T> (the_operators[order_space-2],
+			   static_cast <T const *> (src->storage()),
+			   src->shape(),
+			   static_cast <T *> (this->storage()),
+			   this->shape(),
+			   src->extent(),
+			   this->extent(),
+			   srcbox, dstbox, NULL);
+      }
+      break;
+    }
+    timer.stop (0);
+  }
+  break;
   case op_WENO: {
     static Timer timer ("prolongate_WENO");
     timer.start ();

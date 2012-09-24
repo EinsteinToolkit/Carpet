@@ -2261,6 +2261,8 @@ namespace Carpet {
                           int const group,
                           cGroup const & gdata)
   {
+    DECLARE_CCTK_PARAMETERS
+
     assert (group>=0 and group<CCTK_NumGroups());
     
     if (gdata.grouptype != CCTK_GF) {
@@ -2415,8 +2417,12 @@ namespace Carpet {
       return op_copy;
     } else if (CCTK_Equals(prolong_string, "Lagrange")) {
       return op_Lagrange;
-    } else if (CCTK_Equals(prolong_string, "ENO")) {
+    } else if (CCTK_Equals(prolong_string, "ENO") and
+               CCTK_Equals(eno_interpolation_type, "samples")) {
       return op_ENO;
+    } else if (CCTK_Equals(prolong_string, "ENO") and
+               CCTK_Equals(eno_interpolation_type, "averages")) {
+      return op_ENOVOL;
     } else if (CCTK_Equals(prolong_string, "WENO")) {
       return op_WENO;
     } else if (CCTK_Equals(prolong_string, "TVD")) {

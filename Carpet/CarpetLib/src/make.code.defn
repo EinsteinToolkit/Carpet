@@ -43,6 +43,7 @@ SRCS =	backtrace.cc				\
 	prolongate_3d_rf2.cc			\
 	prolongate_3d_cc_rf2.cc			\
 	prolongate_3d_cc_eno_rf2.cc		\
+	prolongate_3d_cc_enovol_rf2.cc		\
 	prolongate_3d_o5_monotone_rf2.cc	\
 	prolongate_3d_real8_eno.F90		\
 	prolongate_3d_real8_tvd.F90		\

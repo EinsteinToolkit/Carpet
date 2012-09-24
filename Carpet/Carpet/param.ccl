@@ -120,6 +120,12 @@ KEYWORD refinement_centering "Centering"
   "cell"   :: "use a cell centred grid structure"
 } "vertex"
 
+KEYWORD eno_interpolation_type "What is represented by values in cells"
+{
+  "samples"  :: "grid values a sample values of the solution"
+  "averages" :: "grid values are cell averages of the solution"
+} "samples"
+
 CCTK_INT max_refinement_levels "Maximum number of refinement levels (including the base level)"
 {
   1:* :: "must be positive"
