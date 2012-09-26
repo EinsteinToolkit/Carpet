@@ -889,10 +889,10 @@ namespace Carpet {
         rl == 0 ?
         i2vect (0) :
         (use_overlap_zones ?
-         hh.reffacts.AT(rl) / hh.reffacts.AT(rl-1) * ghosts.AT(rl) :
+         hh.reffacts.AT(rl) / hh.reffacts.AT(rl-1) * (ghosts.AT(rl) + int (additional_overlap_zones)) :
          i2vect (0));
-      cout << "   [" << rl << "]: " << buffers.AT(rl) << "\n";
-      assert (all (all (buffers.AT(rl) >= 0)));
+      cout << "   [" << rl << "]: " << overlaps.AT(rl) << "\n";
+      assert (all (all (overlaps.AT(rl) >= 0)));
     }
     cout.precision (oldprecision);
     cout.setf (oldflags);
