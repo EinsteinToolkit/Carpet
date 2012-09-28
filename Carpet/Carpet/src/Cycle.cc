@@ -32,7 +32,9 @@ namespace Carpet {
     
     assert (timelevel == 0);
     tt->advance_time (mglevel, reflevel);
-    cctkGH->cctk_time = tt->get_time (mglevel, reflevel, timelevel);
+    if (not adaptive_stepsize) {
+      cctkGH->cctk_time = tt->get_time (mglevel, reflevel, timelevel);
+    }
     
     int errors = 0;
     

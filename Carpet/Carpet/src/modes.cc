@@ -78,6 +78,8 @@ namespace Carpet {
   
   void enter_global_mode (cGH * const cctkGH, int const ml)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     assert (is_meta_mode());
     assert (ml>=0 and ml<mglevels);
     Checkpoint ("Entering global mode");
@@ -93,7 +95,9 @@ namespace Carpet {
 #endif
     
     // Set time delta
-    cctkGH->cctk_delta_time = delta_time * mglevelfact;
+    if (not adaptive_stepsize) {
+      cctkGH->cctk_delta_time = delta_time * mglevelfact;
+    }
     if (maps == 1) {
       // Set space delta
       for (int d=0; d<dim; ++d) {
@@ -202,7 +206,9 @@ namespace Carpet {
     Checkpoint ("Leaving global mode");
 
     // Unset time delta
-    cctkGH->cctk_delta_time = 0.0;
+    if (not adaptive_stepsize) {
+      cctkGH->cctk_delta_time = 0.0;
+    }
     if (maps == 1) {
       // Save and unset space delta
       for (int d=0; d<dim; ++d) {
