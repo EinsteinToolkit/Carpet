@@ -1377,12 +1377,8 @@ namespace CarpetIOASCII {
           }
         }
         os << "\t" << col++ << ":time";
-        if (not compact_format) {
+        if (not compact_format or grouptype == CCTK_GF) {
           for (int d=0; d<dim; ++d) {
-            os << (d==0 ? "\t" : " ") << col++ << ":" << coords[d];
-          }
-        } else {
-          for (int d=0; d<min(dim,groupdim); ++d) {
             os << (d==0 ? "\t" : " ") << col++ << ":" << coords[d];
           }
         }
