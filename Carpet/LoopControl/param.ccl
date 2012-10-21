@@ -5,7 +5,7 @@
 
 BOOLEAN printstats "Output timing statistics" STEERABLE=recover
 {
-} "yes"
+} "no"
 
 CCTK_REAL printstats_every_minutes "Output timing statistics every so many minutes" STEERABLE=always
 {
