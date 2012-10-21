@@ -172,6 +172,9 @@ namespace CarpetInterp2 {
     int ind3d;                  // destination grid point index
   };
   
+  /**
+     This setup is tailored for standard Lagrange interpolation.
+  */
   class fasterp_src_loc_t {
     CCTK_REAL coeffs[dim][max_order+1]; // interpolation coefficients
     bvect exact;
@@ -227,6 +230,65 @@ namespace CarpetInterp2 {
   { sloc.output(os); return os; }
   
   
+  /**
+     This setup is tailored for eno2 interpolation.
+  */
+  class fasterp_eno2_src_loc_t {
+    CCTK_REAL coeffs[dim][2];    // interpolation coefficients for first-order stencil
+    CCTK_REAL coeffsLeft[dim][3]; // interpolation coefficients for left stencil
+    CCTK_REAL coeffsRight[dim][3]; // interpolation coefficients for right stencil
+    bvect exact;
+    
+#ifdef CARPETINTERP2_CHECK
+  public:
+    pn_t pn;                    // origin of this point
+    mrc_t mrc;                  // map, refinement level, component
+    ivect ipos;                 // closest grid point (Carpet indexing)
+    ivect ind;                  // source grid point offset
+  private:
+#endif
+    int ind3d;                  // source grid point offset (computed from left stencil)
+    
+#ifdef CARPETINTERP2_CHECK
+  public:
+    ivect saved_lsh;            // copy of lsh
+  private:
+#endif
+    
+  public:
+    int
+    calc_stencil (fasterp_iloc_t const & iloc,
+                  ivect const & lsh,
+                  int unused_order);
+    void
+    interpolate (ivect const & lsh,
+                 int order,
+                 vector<CCTK_REAL const *> const & varptrs,
+                 CCTK_REAL * restrict vals)
+      const;
+    
+  private:
+    template <int O>
+    void
+    interpolate (ivect const & lsh,
+                 vector<CCTK_REAL const *> const & varptrs,
+                 CCTK_REAL * restrict vals)
+      const;
+    template <int O0, int O1, int O2>
+    void
+    interpolate (ivect const & lsh,
+                 vector<CCTK_REAL const *> const & varptrs,
+                 CCTK_REAL * restrict vals)
+      const;
+    
+  public:
+    void output (ostream& os) const;
+  };
+  
+  inline
+  ostream& operator<< (ostream& os, fasterp_eno2_src_loc_t const & sloc)
+  { sloc.output(os); return os; }
+  
   
   // A receive descriptor, describing what is received from other
   // processors
@@ -246,12 +308,13 @@ namespace CarpetInterp2 {
   };
   
   // A send descriptor; describing what to send to other processors
+  template <typename FASTERP>
   struct send_comp_t {
     // This structure does not exist for all components -- components
     // which are not accessed are not described, making this a sparse
     // data structure.  The fields m, rl, and c identify the
     // component.
-    vector<fasterp_src_loc_t> locs;
+    vector<FASTERP> locs;
     
     mrc_t mrc;                  // source map, refinement level, component
     ivect lsh;
@@ -259,12 +322,13 @@ namespace CarpetInterp2 {
     int npoints;
   };
   
+  template <typename FASTERP>
   struct send_proc_t {
     // This structure does not exist for all processors -- processors
     // with which there is no communication are not described, making
     // this a sparse data structure.  The field p contains the
     // processor number.
-    vector<send_comp_t> comps;
+    vector<send_comp_t<FASTERP> > comps;
     
     int p;                      // receiving processor
     int offset;
@@ -274,17 +338,18 @@ namespace CarpetInterp2 {
     vector<int> index;
   };
   
+  template <typename FASTERP>
   struct send_descr_t {
-    vector<send_proc_t> procs;
+    vector<send_proc_t<FASTERP> > procs;
     // vector<int> procinds;
     int npoints;                // total number of sent points
   };
   
   
-  
-  class fasterp_setup_t {
-    recv_descr_t recv_descr;
-    send_descr_t send_descr;
+  template <typename FASTERP>
+  class fasterp_setup_gen_t {
+    recv_descr_t          recv_descr;
+    send_descr_t<FASTERP> send_descr;
     int order;
     
     int reflevel;
@@ -295,15 +360,15 @@ namespace CarpetInterp2 {
            fasterp_llocs_t const & locations);
     
   public:
-    fasterp_setup_t (cGH const * restrict cctkGH,
+    fasterp_setup_gen_t (cGH const * restrict cctkGH,
                      fasterp_glocs_t const & locations,
                      int order);
     
-    fasterp_setup_t (cGH const * restrict cctkGH,
+    fasterp_setup_gen_t (cGH const * restrict cctkGH,
                      fasterp_llocs_t const & locations,
                      int order);
     
-    ~ fasterp_setup_t ();
+    ~ fasterp_setup_gen_t ();
     
     void 
     interpolate (cGH const * restrict cctkGH,
@@ -329,6 +394,9 @@ namespace CarpetInterp2 {
     }
   };
   
+  typedef fasterp_setup_gen_t<fasterp_src_loc_t> fasterp_setup_t;
+  
+  typedef fasterp_setup_gen_t<fasterp_eno2_src_loc_t> fasterp_eno2_setup_t;
   
   
 } // namespace CarpetInterp2

@@ -348,6 +348,7 @@ namespace CarpetInterp2 {
           
           for (size_t v=0; v<varptrs.size(); ++v) {
             vals[v] += coeff_ijk * varptrs.AT(v)[ind3d + i*di + j*dj + k*dk];
+            
           } // for v
           
         }
@@ -488,10 +489,493 @@ namespace CarpetInterp2 {
   //////////////////////////////////////////////////////////////////////////////
   
   
+  // Calculate the coefficients for one interpolation stencil
+  // TODO: Could templatify this function on the order to improve
+  // efficiency
+  int
+  fasterp_eno2_src_loc_t::
+  calc_stencil (fasterp_iloc_t const & iloc,
+                ivect const & lsh,
+                int const unused_order)
+  {
+    //assert (order <= max_order);
+    CCTK_REAL const eps = 1.0e-12;
+    
+#ifdef CARPETINTERP2_CHECK
+    mrc  = iloc.mrc;
+    pn   = iloc.pn;
+    ipos = iloc.ipos;
+    
+    // Save lsh
+    saved_lsh = lsh;
+#endif
+    
+    // first we setup 1st order stencil!
+    {
+    const int order = 1;
+    
+#ifndef NDEBUG
+    // Poison all coefficients
+    for (int d=0; d<dim; ++d) {
+      for (int n=0; n<=order; ++n) {
+        coeffs[d][n] = poison;
+      }
+    }
+#endif
+    
+    // Choose stencil anchor (first stencil point)
+    ivect iorigin;
+    
+    // Potentially shift the stencil anchor for odd interpolation
+    // orders (i.e., for even numbers of stencil points)
+    ivect const ioffset (iloc.offset < CCTK_REAL(0.0));
+    iorigin = - ivect((order-1)/2) - ioffset;
+    rvect const offset = iloc.offset - rvect(iorigin);
+    // Ensure that the stencil is centred
+    assert (all (offset >= CCTK_REAL(0.5)*(order-1) and
+                 offset < CCTK_REAL(0.5)*(order+1)));
+    
+    for (int d=0; d<dim; ++d) {
+      // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
+      CCTK_REAL const x = offset[d];
+      // round is not available with PGI compilers
+      // CCTK_REAL const rx = round(x);
+      CCTK_REAL const rx = floor(x+0.5);
+      if (abs(x - rx) < eps * (1.0 + abs(x))) {
+        // The interpolation point coincides with a grid point; no
+        // interpolation is necessary (this is a special case)
+        iorigin[d] += int(rx);
+        exact[d] = true;
+      } else {
+        for (int n=0; n<=order; ++n) {
+          CCTK_REAL const xn = n;
+          CCTK_REAL c = 1.0;
+          for (int m=0; m<=order; ++m) {
+            if (m != n) {
+              CCTK_REAL const xm = m;
+              c *= (x - xm) / (xn - xm);
+            }
+          }
+          coeffs[d][n] = c;
+        }
+        exact[d] = false;
+        // The sum of the coefficients must be one
+        CCTK_REAL s = 0.0;
+        for (int n=0; n<=order; ++n) {
+          s += coeffs[d][n];
+        }
+        assert (abs(s - 1.0) <= eps);
+      }
+    }
+    
+    }
+
+    // second, we setup left 2nd order stencil!
+    {
+    int order = 2;
+    
+#ifndef NDEBUG
+    // Poison all coefficients
+    for (int d=0; d<dim; ++d) {
+      for (int n=0; n<=order; ++n) {
+        coeffsLeft[d][n] = poison;
+      }
+    }
+#endif
+    
+    // Choose stencil anchor (first stencil point)
+    ivect iorigin;
+    iorigin = - ivect(order/2)  - ivect((iloc.offset < CCTK_REAL(0.0)));
+    rvect const offset = iloc.offset - rvect(iorigin);
+    //cout << "Left " << iorigin << " " << iloc.offset << " " << offset << endl;
+    // Ensure that interpolation point is between second and third point
+    assert (all (offset >= 1.0 and
+                 offset <= 2.0));
+    
+    for (int d=0; d<dim; ++d) {
+      // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
+      CCTK_REAL const x = offset[d];
+      // round is not available with PGI compilers
+      // CCTK_REAL const rx = round(x);
+      CCTK_REAL const rx = floor(x+0.5);
+      if (abs(x - rx) < eps * (1.0 + abs(x))) {
+        // The interpolation point coincides with a grid point; no
+        // interpolation is necessary (this is a special case)
+        iorigin[d] += int(rx);
+        exact[d] = true;
+      } else {
+        for (int n=0; n<=order; ++n) {
+          CCTK_REAL const xn = n;
+          CCTK_REAL c = 1.0;
+          for (int m=0; m<=order; ++m) {
+            if (m != n) {
+              CCTK_REAL const xm = m;
+              c *= (x - xm) / (xn - xm);
+            }
+          }
+          coeffsLeft[d][n] = c;
+        }
+        exact[d] = false;
+        // The sum of the coefficients must be one
+        CCTK_REAL s = 0.0;
+        for (int n=0; n<=order; ++n) {
+          s += coeffsLeft[d][n];
+        }
+        assert (abs(s - 1.0) <= eps);
+      }
+    }
+    
+    // Set 3D location of stencil anchor.
+    // Since left stencil extends farthest to the left, we use
+    // this to compute stencil anchor
+#ifdef CARPETINTERP2_CHECK
+    ind = iloc.ind + iorigin;
+    if (not (all (ind>=0 and ind+either(exact,0,order)<lsh))) {
+      stringstream buf;
+      buf << "*this=" << *this << " iloc=" << iloc << " "
+          << "lsh=" << lsh << " order=" << order;
+      CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Array access out of bounds: %s. Most likely, the interpolation point is too close to an outer or to a symmetry/inter-patch boundary. More information follows...",
+                  buf.str().c_str());
+      return -1;
+    }
+#endif
+    ind3d = iloc.ind3d + index(lsh, iorigin);
+#ifdef CARPETINTERP2_CHECK
+    assert (index(lsh,ind) == ind3d);
+#endif
+    }
+    
+    // third, we setup right 2nd order stencil!
+    {
+    int order = 2;
+    
+#ifndef NDEBUG
+    // Poison all coefficients
+    for (int d=0; d<dim; ++d) {
+      for (int n=0; n<=order; ++n) {
+        coeffsLeft[d][n] = poison;
+      }
+    }
+#endif
+    
+    // Choose stencil anchor (first stencil point)
+    ivect iorigin;
+    iorigin = - ivect(order/2) + ivect(1.0) - ivect((iloc.offset < CCTK_REAL(0.0)));
+    rvect const offset = iloc.offset - rvect(iorigin);
+    //cout << "Right " << iorigin << " " << iloc.offset << " " << offset << endl;
+    // Ensure that the interpolation point is between first and second point
+    assert (all (offset >= 0.0 and
+                 offset <= 1.0));
+    
+    for (int d=0; d<dim; ++d) {
+      // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
+      CCTK_REAL const x = offset[d];
+      // round is not available with PGI compilers
+      // CCTK_REAL const rx = round(x);
+      CCTK_REAL const rx = floor(x+0.5);
+      if (abs(x - rx) < eps * (1.0 + abs(x))) {
+        // The interpolation point coincides with a grid point; no
+        // interpolation is necessary (this is a special case)
+        iorigin[d] += int(rx);
+        exact[d] = true;
+      } else {
+        for (int n=0; n<=order; ++n) {
+          CCTK_REAL const xn = n;
+          CCTK_REAL c = 1.0;
+          for (int m=0; m<=order; ++m) {
+            if (m != n) {
+              CCTK_REAL const xm = m;
+              c *= (x - xm) / (xn - xm);
+            }
+          }
+          coeffsRight[d][n] = c;
+        }
+        exact[d] = false;
+        // The sum of the coefficients must be one
+        CCTK_REAL s = 0.0;
+        for (int n=0; n<=order; ++n) {
+          s += coeffsRight[d][n];
+        }
+        assert (abs(s - 1.0) <= eps);
+      }
+    }
+    
+    }
+
+    return 0;
+  }
+  
+  
+  
+  // Interpolate a set of variables at the same location, with a given
+  // set of interpolation coefficients.  The template mechanism allows
+  // the order in each direction to be different; in particular, the
+  // order can be 0 if the interpolation location coincides with a
+  // source grid point.  For interpolation to order O, this function
+  // should be instantiated eight times, with On=O and On=0, for
+  // n=[0,1,2].  We hope that the compiler optimises the for loops
+  // away if On=0.
+  template <int O0, int O1, int O2>
+  void
+  fasterp_eno2_src_loc_t::
+  interpolate (ivect const & lsh,
+               vector<CCTK_REAL const *> const & varptrs,
+               CCTK_REAL * restrict const vals)
+    const
+  {
+#ifdef CARPETINTERP2_CHECK
+    assert (all (lsh == saved_lsh));
+#endif
+    assert (O0 == 0 or not exact[0]);
+    assert (O1 == 0 or not exact[1]);
+    assert (O2 == 0 or not exact[2]);
+    
+    size_t const di = 1;
+    size_t const dj = di * lsh[0];
+    size_t const dk = dj * lsh[1];
+    
+#ifdef CARPETINTERP2_CHECK
+    assert (all (ind>=0 and ind+ivect(O0,O1,O2)<lsh));
+    assert (ind3d == index(lsh,ind));
+    assert (int(di*ind[0] + dj*ind[1] + dk*ind[2]) == index(lsh,ind));
+#endif
+    
+    for (size_t v=0; v<varptrs.size(); ++v) {
+      vals[v] = 0.0;
+    }
+    
+    // Must construct interpolation stencils for each variable
+    // independently!
+    for (size_t v=0; v<varptrs.size(); ++v) {
+    
+    vector<CCTK_REAL> qz(4);
+    for (size_t k=0; k<=3; ++k) {
+      
+      vector<CCTK_REAL> qy(4);
+      for (size_t j=0; j<=3; ++j) {
+        
+        vector<CCTK_REAL> qx(4);
+        for (size_t i=0; i<=3; ++i) {
+        
+            qx[i] = varptrs.AT(v)[ind3d + i*di + j*dj + k*dk];
+        }
+        
+        switch (O0)
+        {
+	    case 0: 
+	       qy[j] = qx[0];
+	       break;
+	    
+	    default:
+	    {
+	       const CCTK_REAL diffleft  = qx[0] + qx[2] - 2.0*qx[1];
+	       const CCTK_REAL diffright = qx[1] + qx[3] - 2.0*qx[2];
+	       
+	       CCTK_REAL res;
+	       if (fabs(diffleft) < fabs(diffright))
+		  res = coeffsLeft[0][0]*qx[0] + coeffsLeft[0][1]*qx[1] + coeffsLeft[0][2]*qx[2];
+	       else
+		  res = coeffsRight[0][0]*qx[1] + coeffsRight[0][1]*qx[2] + coeffsRight[0][2]*qx[3];
+	       
+	       if (diffleft * diffright <= 0.0 || (res-qx[1])*(qx[2]-res) < 0.0)
+	       {
+		  res = coeffs[0][0]*qx[1] + coeffs[0][1]*qx[2];
+	       }
+	       
+	       qy[j] = res;
+	       break;
+	    }
+        }
+        
+      }
+      
+      switch (O1)
+      {
+	 case 0:
+	    qz[k] = qy[0];
+	    break;
+	 default:
+	 {
+	    const CCTK_REAL diffleft  = qy[0] + qy[2] - 2.0*qy[1];
+	    const CCTK_REAL diffright = qy[1] + qy[3] - 2.0*qy[2];
+	    
+	    CCTK_REAL res;
+	    if (fabs(diffleft) < fabs(diffright))
+	       res = coeffsLeft[1][0]*qy[0] + coeffsLeft[1][1]*qy[1] + coeffsLeft[1][2]*qy[2];
+	    else
+	       res = coeffsRight[1][0]*qy[1] + coeffsRight[1][1]*qy[2] + coeffsRight[1][2]*qy[3];
+	    
+	    if (diffleft * diffright <= 0.0 || (res-qy[1])*(qy[2]-res) < 0.0)
+	    {
+	       res = coeffs[1][0]*qy[1] + coeffs[1][1]*qy[2];
+	    }
+	    
+	    qz[k] = res;
+	    break;
+	 }
+      }
+      
+    }
+    
+    switch (O2)
+    {
+      case 0:
+	 vals[v] = qz[0];
+	 break;
+      default:
+      {
+	 const CCTK_REAL diffleft  = qz[0] + qz[2] - 2.0*qz[1];
+	 const CCTK_REAL diffright = qz[1] + qz[3] - 2.0*qz[2];
+	    
+	 CCTK_REAL res;
+	 if (fabs(diffleft) < fabs(diffright))
+	    res = coeffsLeft[2][0]*qz[0] + coeffsLeft[2][1]*qz[1] + coeffsLeft[2][2]*qz[2];
+	 else
+	    res = coeffsRight[2][0]*qz[1] + coeffsRight[2][1]*qz[2] + coeffsRight[2][2]*qz[3];
+	    
+	 if (diffleft * diffright <= 0.0 || (res-qz[1])*(qz[2]-res) < 0.0)
+	 {
+	    res = coeffs[2][0]*qz[1] + coeffs[2][1]*qz[2];
+	 }
+	 
+	 vals[v] = res;
+	 break;
+      }
+    }
+    
+    } // for v
+
+#ifdef CARPETINTERP2_CHECK
+#  if 0
+    for (size_t v=0; v<varptrs.size(); ++v) {
+      vals[v] = ind[0] + 1000 * (ind[1] + 1000 * ind[2]);
+    } // for v
+#  endif
+#  if 0
+    for (size_t v=0; v<varptrs.size(); ++v) {
+      vals[v] = pn.p * 1000000 + pn.n;
+    } // for v
+#  endif
+#endif
+  }
+  
+  
+  
+  // Interpolate a set of variables at the same location, with a given
+  // set of interpolation coefficients.  This calls the specialised
+  // interpolation function, depending on whether interpolation is
+  // exact in each of the directions.
+  template <int O>
+  void
+  fasterp_eno2_src_loc_t::
+  interpolate (ivect const & lsh,
+               vector<CCTK_REAL const *> const & varptrs,
+               CCTK_REAL * restrict const vals)
+    const
+  {
+    int const Z = 0;
+    if (exact[2]) {
+      if (exact[1]) {
+        if (exact[0]) {
+          interpolate<Z,Z,Z> (lsh, varptrs, vals);
+        } else {
+          interpolate<O,Z,Z> (lsh, varptrs, vals);
+        }
+      } else {
+        if (exact[0]) {
+          interpolate<Z,O,Z> (lsh, varptrs, vals);
+        } else {
+          interpolate<O,O,Z> (lsh, varptrs, vals);
+        }
+      }
+    } else {
+      if (exact[1]) {
+        if (exact[0]) {
+          interpolate<Z,Z,O> (lsh, varptrs, vals);
+        } else {
+          interpolate<O,Z,O> (lsh, varptrs, vals);
+        }
+      } else {
+        if (exact[0]) {
+          interpolate<Z,O,O> (lsh, varptrs, vals);
+        } else {
+          interpolate<O,O,O> (lsh, varptrs, vals);
+        }
+      }
+    }
+  }
+  
+  
+  
+  // Interpolate a set of variables at the same location, with a given
+  // set of interpolation coefficients.  This calls a specialised
+  // interpolation function, depending on whether interpolation is
+  // exact in each of the directions.
+  void
+  fasterp_eno2_src_loc_t::
+  interpolate (ivect const & lsh,
+               int const order,
+               vector<CCTK_REAL const *> const & varptrs,
+               CCTK_REAL * restrict const vals)
+    const
+  {
+    switch (order) {
+    case  2: interpolate< 2> (lsh, varptrs, vals); break;
+    default:
+      // Add higher orders here as desired
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "Interpolation orders other than 2 don't make sense for eno2");
+      assert (0);
+    }
+  }
+  
+  
+  
+  void
+  fasterp_eno2_src_loc_t::
+  output (ostream& os)
+    const
+  {
+    os << "fasterp_src_loc_t{";
+    os << "coeffs=[";
+    for (int d=0; d<dim; ++d) {
+      if (d>0) os << ",";
+      os << "[";
+      for (int n=0; n<=max_order; ++n) {
+        if (n>0) os << ",";
+        os << coeffs[d][n];
+      }
+      os << "]";
+    }
+    os << "],";
+    os << "exact=" << exact << ",";
+#ifdef CARPETINTERP2_CHECK
+    os << "pn=" << pn << ",";
+    os << "mrc=" << mrc << ",";
+    os << "ipos=" << ipos << ",";
+    os << "ind=" << ind << ",";
+#endif
+    os << "ind3d=" << ind3d;
+#ifdef CARPETINTERP2_CHECK
+    os << "," << "saved_lsh=" << saved_lsh;
+#endif
+    os << "}";
+  }
+  
+  
+  
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  
+  
+  
   
   // Set up an interpolation starting from global coordinates
-  fasterp_setup_t::
-  fasterp_setup_t (cGH const * restrict const cctkGH,
+  template <typename FASTERP>
+  fasterp_setup_gen_t<FASTERP>::
+  fasterp_setup_gen_t (cGH const * restrict const cctkGH,
                    fasterp_glocs_t const & locations,
                    int const order_)
     : order (order_),
@@ -546,8 +1030,9 @@ namespace CarpetInterp2 {
   
   
   // Set up an interpolation starting from local coordinates
-  fasterp_setup_t::
-  fasterp_setup_t (cGH const * restrict const cctkGH,
+  template <typename FASTERP>
+  fasterp_setup_gen_t<FASTERP>::
+  fasterp_setup_gen_t (cGH const * restrict const cctkGH,
                    fasterp_llocs_t const & locations,
                    int const order_)
     : order (order_)
@@ -558,8 +1043,9 @@ namespace CarpetInterp2 {
   
   
   // Helper for setting up an interpolation
+  template <typename FASTERP>
   void
-  fasterp_setup_t::
+  fasterp_setup_gen_t<FASTERP>::
   setup (cGH const * restrict const cctkGH,
          fasterp_llocs_t const & locations)
   {
@@ -886,7 +1372,7 @@ namespace CarpetInterp2 {
       int pp = 0;
       for (int p=0; p<nprocs; ++p) {
         if (send_npoints.AT(p) > 0) {
-          send_proc_t & send_proc = send_descr.procs.AT(pp);
+          send_proc_t<FASTERP> & send_proc = send_descr.procs.AT(pp);
           send_proc.p       = p;
           send_proc.offset  = send_offsets.AT(p);
           send_proc.npoints = send_npoints.AT(p);
@@ -902,7 +1388,7 @@ namespace CarpetInterp2 {
     if (verbose) CCTK_INFO ("Calculate stencil coefficients");
     
     for (size_t pp=0; pp<send_descr.procs.size(); ++pp) {
-      send_proc_t & send_proc = send_descr.procs.AT(pp);
+      send_proc_t<FASTERP> & send_proc = send_descr.procs.AT(pp);
       
       vector<int> mrc2comp (maxmrc, -1);
       vector<int> comp2mrc (maxmrc);
@@ -928,7 +1414,7 @@ namespace CarpetInterp2 {
       
       int offset = 0;
       for (int comp=0; comp<ncomps; ++comp) {
-        send_comp_t & send_comp = send_proc.comps.AT(comp);
+        send_comp_t<FASTERP> & send_comp = send_proc.comps.AT(comp);
         int const mrc = comp2mrc.AT(comp);
         send_comp.mrc = mrc;
         send_comp.locs.reserve (npoints_comp.AT(mrc));
@@ -956,11 +1442,12 @@ namespace CarpetInterp2 {
         fasterp_iloc_t const & iloc = gathered_ilocs.AT(send_proc.offset + n);
         int const mrc = iloc.mrc.get_ind();
         int const comp = mrc2comp.AT(mrc);
-        send_comp_t & send_comp = send_proc.comps.AT(comp);
+        send_comp_t<FASTERP> & send_comp = send_proc.comps.AT(comp);
         
         send_proc.index.AT(n) = send_comp.offset + send_comp.locs.size();
         
-        fasterp_src_loc_t sloc;
+        //fasterp_src_loc_t sloc;
+        FASTERP sloc;
         int const ierr = sloc.calc_stencil (iloc, send_comp.lsh, order);
         if (ierr) {
           CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -971,7 +1458,7 @@ namespace CarpetInterp2 {
       }
       
       for (int comp=0; comp<ncomps; ++comp) {
-        send_comp_t & send_comp = send_proc.comps.AT(comp);
+        send_comp_t<FASTERP> & send_comp = send_proc.comps.AT(comp);
         assert (int(send_comp.locs.size()) == send_comp.npoints);
       }
       
@@ -990,10 +1477,10 @@ namespace CarpetInterp2 {
       
 #ifdef CARPETINTERP2_CHECK
       for (int comp=0; comp<ncomps; ++comp) {
-        send_comp_t const & send_comp = send_proc.comps.at(comp);
+        send_comp_t<FASTERP> const & send_comp = send_proc.comps.at(comp);
         assert (int(send_comp.locs.size()) == send_comp.npoints);
         for (int n=0; n<send_comp.npoints; ++n) {
-          fasterp_src_loc_t const & sloc = send_comp.locs.at(n);
+          FASTERP const & sloc = send_comp.locs.at(n);
           assert (sloc.mrc == send_comp.mrc);
           assert (all (sloc.saved_lsh == send_comp.lsh));
         }
@@ -1018,7 +1505,7 @@ namespace CarpetInterp2 {
       vector<int> send_count (dist::size());
       fill (send_count, 0);
       for (size_t pp=0; pp<send_descr.procs.size(); ++pp) {
-        send_proc_t const & send_proc = send_descr.procs.AT(pp);
+        send_proc_t<FASTERP> const & send_proc = send_descr.procs.AT(pp);
         assert (send_count.AT(send_proc.p) == 0);
         assert (send_proc.npoints > 0);
         send_count.AT(send_proc.p) = send_proc.npoints;
@@ -1054,8 +1541,9 @@ namespace CarpetInterp2 {
   
   
   // Free the setup for one interpolation
-  fasterp_setup_t::
-  ~fasterp_setup_t ()
+  template <typename FASTERP>
+  fasterp_setup_gen_t<FASTERP>::
+  ~fasterp_setup_gen_t ()
   {
     // do nothing -- C++ calls destructors automatically
   }
@@ -1063,8 +1551,9 @@ namespace CarpetInterp2 {
   
   
   // Interpolate
+  template <typename FASTERP>
   void 
-  fasterp_setup_t::
+  fasterp_setup_gen_t<FASTERP>::
   interpolate (cGH const * restrict const cctkGH,
                vector<int> const & varinds,
                vector<CCTK_REAL *> & values)
@@ -1155,7 +1644,7 @@ namespace CarpetInterp2 {
     vector<MPI_Request> send_reqs_pn (send_descr.procs.size());
 #endif
     for (size_t pp=0; pp<send_descr.procs.size(); ++pp) {
-      send_proc_t const & send_proc = send_descr.procs.AT(pp);
+      send_proc_t<FASTERP> const & send_proc = send_descr.procs.AT(pp);
       
       vector<CCTK_REAL> computed_points (send_proc.npoints * nvars);
       fill_with_poison (computed_points);
@@ -1163,7 +1652,7 @@ namespace CarpetInterp2 {
       vector<pn_t> computed_pn (send_descr.npoints);
 #endif
       for (size_t comp=0; comp<send_proc.comps.size(); ++comp) {
-        send_comp_t const & send_comp = send_proc.comps.AT(comp);
+        send_comp_t<FASTERP> const & send_comp = send_proc.comps.AT(comp);
         
         int const m  = send_comp.mrc.m;
         int const rl = send_comp.mrc.rl;
@@ -1272,5 +1761,9 @@ namespace CarpetInterp2 {
   }
   
   
+  // instantiate template
+  template class fasterp_setup_gen_t<fasterp_src_loc_t>;
+  
+  template class fasterp_setup_gen_t<fasterp_eno2_src_loc_t>;
   
 } // namespace CarpetInterp2
