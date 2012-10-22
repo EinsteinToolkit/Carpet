@@ -71,7 +71,7 @@ namespace CarpetLib {
       
       // Do not test integer operators (they should be disabled
       // anyway)
-      if (good::abs (RT(0.5) - 0.5) > 1.0e-5) return;
+      if (abs (RT(0.5) - 0.5) > 1.0e-5) return;
       
       // Test all orders
       bool error = false;
@@ -86,7 +86,7 @@ namespace CarpetLib {
         RT const y0 = ipow (x0, n);
         // Allow losing 3 digits:
         CCTK_REAL const eps = RT(1.0e+3) * numeric_limits<RT>::epsilon();
-        if (not (good::abs (res - y0) < eps)) {
+        if (not (abs (res - y0) < eps)) {
           RT rt;
           ostringstream buf;
           buf << "Error in prolongate_3d_rf2::coeffs_3d_rf2\n"

@@ -42,13 +42,6 @@ namespace CarpetReduce {
   
   // Helper functions and types
   
-  // Whether a value is nan
-  template<typename T> static inline int
-  myisnan (const T x)
-  {
-    return isnan(x);
-  }
-  
   // The minimum of two values
   template<typename T> static inline T
   mymin (const T x, const T y)
@@ -127,11 +120,6 @@ namespace CarpetReduce {
   // The C++ compiler should supply these, but some old ones do not,
   // e.g. our beloved workhorse Intel 7.1.  Self is the man.
 #ifdef HAVE_CCTK_BYTE
-//   template<> static inline int myisnan (CCTK_BYTE const x)
-//   {
-//     return 0;
-//   }
-  
   template<> inline CCTK_BYTE mysqr (CCTK_BYTE const x)
   {
     // prevent overflow
@@ -152,11 +140,6 @@ namespace CarpetReduce {
 #endif
   
 #ifdef HAVE_CCTK_INT1
-//   template<> static inline int myisnan (CCTK_INT1 const x)
-//   {
-//     return 0;
-//   }
-  
   template<> inline CCTK_INT1 mysqr (CCTK_INT1 const x)
   {
     // prevent overflow
@@ -177,11 +160,6 @@ namespace CarpetReduce {
 #endif
   
 #ifdef HAVE_CCTK_INT2
-//   template<> static inline int myisnan (CCTK_INT2 const x)
-//   {
-//     return 0;
-//   }
-  
   template<> inline CCTK_INT2 mysqr (CCTK_INT2 const x)
   {
     // prevent overflow
@@ -202,11 +180,6 @@ namespace CarpetReduce {
 #endif
   
 #ifdef HAVE_CCTK_INT4
-//   template<> inline int myisnan (CCTK_INT4 const x)
-//   {
-//     return 0;
-//   }
-  
   template<> inline CCTK_INT4 mysqr (CCTK_INT4 const x)
   {
     // prevent overflow
@@ -227,11 +200,6 @@ namespace CarpetReduce {
 #endif
   
 #ifdef HAVE_CCTK_INT8
-//   template<> inline int myisnan (CCTK_INT8 const x)
-//   {
-//     return 0;
-//   }
-  
   template<> inline CCTK_INT8 mysqr (CCTK_INT8 const x)
   {
     // prevent overflow
@@ -256,11 +224,6 @@ namespace CarpetReduce {
   // Overload the above helper functions and types for complex values
   
 #ifdef HAVE_CCTK_REAL4
-  
-  // template<> inline int myisnan (complex<CCTK_REAL4> const x)
-  // {
-  //   return isnan (x.real()) or isnan (x.imag());
-  // }
   
   template<> inline complex<CCTK_REAL4>
   mymin (const complex<CCTK_REAL4> x, const complex<CCTK_REAL4> y)
@@ -306,11 +269,6 @@ namespace CarpetReduce {
   
 #ifdef HAVE_CCTK_REAL8
   
-  // template<> inline int myisnan (complex<CCTK_REAL8> const x)
-  // {
-  //   return isnan (x.real()) or isnan (x.imag());
-  // }
-  
   template<> inline complex<CCTK_REAL8>
   mymin (const complex<CCTK_REAL8> x, const complex<CCTK_REAL8> y)
   {
@@ -354,11 +312,6 @@ namespace CarpetReduce {
 #endif
   
 #ifdef HAVE_CCTK_REAL16
-  
-  // template<> inline int myisnan (complex<CCTK_REAL16> const x)
-  // {
-  //   return isnan (x.real()) or isnan (x.imag());
-  // }
   
   template<> inline complex<CCTK_REAL16>
   mymin (const complex<CCTK_REAL16> x, const complex<CCTK_REAL16> y)

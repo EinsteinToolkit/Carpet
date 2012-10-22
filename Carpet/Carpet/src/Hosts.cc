@@ -23,6 +23,7 @@ namespace Carpet
 {
   
   using namespace std;
+  using namespace CarpetLib;
   
   
   

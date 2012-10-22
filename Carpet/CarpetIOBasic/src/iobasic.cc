@@ -65,7 +65,34 @@ namespace CarpetIOBasic {
   void
   ExamineVariable (int vindex, bool & isint, int & numcomps, bool & isscalar);
   vector<string> ParseReductions (char const * credlist);
-  template <typename T> bool UseScientificNotation (T const & x);
+  
+  
+  
+  template <typename T>
+  bool
+  UseScientificNotation (T const & x)
+  {
+    return false;               // default
+  }
+  
+  template <>
+  bool
+  UseScientificNotation (CCTK_REAL const & x)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    static_assert (abs(0.1) > 0, "Function abs has wrong signature");
+    
+    CCTK_REAL const xa = abs (x);
+    return xa != 0 and (xa < real_min or xa >= real_max);
+  }
+  
+  template <>
+  bool
+  UseScientificNotation (CCTK_COMPLEX const & x)
+  {
+    return UseScientificNotation(x.real()) or UseScientificNotation(x.imag());
+  }
 
 
 
@@ -728,20 +755,6 @@ namespace CarpetIOBasic {
     default:
       assert (0);
     }
-  }
-  
-  
-  
-  template <typename T>
-  bool
-  UseScientificNotation (T const & x)
-  {
-    DECLARE_CCTK_PARAMETERS;
-    
-    static_assert (good::abs(0.1) > 0, "Function abs has wrong signature");
-    
-    CCTK_REAL const xa = good::abs (x);
-    return xa != 0 and (xa < real_min or xa >= real_max);
   }
   
 } // namespace CarpetIOBasic

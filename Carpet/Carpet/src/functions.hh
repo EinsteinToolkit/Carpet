@@ -24,7 +24,6 @@
 namespace Carpet {
   
   using namespace std;
-  using namespace CarpetLib;
   
   int SyncGroupsByDirI (const cGH* cctkGH, int num_groups,
                         const int* groups, const int* directions);

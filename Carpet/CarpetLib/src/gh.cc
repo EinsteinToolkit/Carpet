@@ -17,8 +17,6 @@
 
 using namespace std;
 
-using namespace CarpetLib;
-
 
 
 list<gh*> gh::allgh;

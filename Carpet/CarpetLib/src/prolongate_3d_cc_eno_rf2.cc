@@ -142,7 +142,7 @@ namespace CarpetLib {
         RT const x0 = RT(0.25) + di * RT(0.5);
         //cout << "x0=" << x0 << endl;
         RT const y0 = ipow (x0, n);
-        if (not (good::abs (res - y0) < 1.0e-12)) {
+        if (not (abs (res - y0) < 1.0e-12)) {
           RT rt;
           ostringstream buf;
           buf << "Error in prolongate_3d_cc_rf2::coeffs_3d_cc_rf2\n"

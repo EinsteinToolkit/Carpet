@@ -375,13 +375,13 @@ DECLARE_FUNCTION_1 (abs)
 DECLARE_FUNCTION_1 (ceil)
 DECLARE_FUNCTION_1 (floor)
 DECLARE_FUNCTION_1 (sqrt)
-namespace CarpetLib {
-  namespace good {
-    // DECLARE_FUNCTION_1_RET (fpclassify, int)
-    DECLARE_FUNCTION_1_RET (isfinite_, int)
-    DECLARE_FUNCTION_1_RET (isinf_, int)
-    DECLARE_FUNCTION_1_RET (isnan_, int)
-    DECLARE_FUNCTION_1_RET (isnormal_, int)
+namespace std {
+  namespace Cactus {
+    DECLARE_FUNCTION_1_RET (good_fpclassify, int)
+    DECLARE_FUNCTION_1_RET (good_isfinite, int)
+    DECLARE_FUNCTION_1_RET (good_isinf, int)
+    DECLARE_FUNCTION_1_RET (good_isnan, int)
+    DECLARE_FUNCTION_1_RET (good_isnormal, int)
   }
 }
 
