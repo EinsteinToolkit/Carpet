@@ -379,23 +379,15 @@ namespace Carpet {
   int CarpetSimpleMPIDatatypeLength (const int vartype)
   {
     switch (vartype) {
-#ifdef CARPET_COMPLEX
     case CCTK_VARIABLE_COMPLEX:
-#endif
-#ifdef CARPET_COMPLEX8
-#  ifdef HAVE_CCTK_COMPLEX8
+#ifdef HAVE_CCTK_COMPLEX8
     case CCTK_VARIABLE_COMPLEX8:
-#  endif
 #endif
-#ifdef CARPET_COMPLEX16
-#  ifdef HAVE_CCTK_COMPLEX16
+#ifdef HAVE_CCTK_COMPLEX16
     case CCTK_VARIABLE_COMPLEX16:
-#  endif
 #endif
-#ifdef CARPET_COMPLEX32
-#  ifdef HAVE_CCTK_COMPLEX32
+#ifdef HAVE_CCTK_COMPLEX32
     case CCTK_VARIABLE_COMPLEX32:
-#  endif
 #endif
       return 2;
     default:
