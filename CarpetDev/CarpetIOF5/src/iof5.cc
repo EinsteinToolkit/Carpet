@@ -22,6 +22,8 @@
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
+#include <CarpetTimers.hh>
+
 #include "iof5.hh"
 
 
@@ -174,7 +176,7 @@ namespace CarpetIOF5 {
     }
     leave_keep_file_open();
     
-    timer.stop(0);
+    timer.stop();
     
     return 0;
   }
