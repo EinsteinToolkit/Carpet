@@ -544,7 +544,7 @@ namespace CarpetLib {
   void cycleclock_set (int const timernum, void * const data_,
                        cTimerVal * const vals)
   {
-    t_cycleclock & data = * static_cast<t_cycleclock * restrict> (data_);
+    t_cycleclock & data = * static_cast<t_cycleclock *> (data_);
     
     data.reset();               // punt
     data.total = vals[0].val.d;
