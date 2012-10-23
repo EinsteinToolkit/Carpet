@@ -361,6 +361,7 @@ namespace Carpet {
     // levels they require/provide
     
     bool there_was_an_error = false;
+    bool there_was_a_warning = false;
     
     struct gridpoint_t {
       bool interior, boundary, ghostzones, boundary_ghostzones;
@@ -380,6 +381,9 @@ namespace Carpet {
       void report_error(cFunctionData const* function_data,
                         int vi, int rl, int m, int tl,
                         char const* what, char const* where) const;
+      void report_warning(cFunctionData const* function_data,
+                          int vi, int rl, int m, int tl,
+                          char const* what, char const* where) const;
       void update_state(clause_t const& clause);
 
       // Input/Output helpers
@@ -455,6 +459,39 @@ namespace Carpet {
       }
       free(fullname);
       there_was_an_error = true;
+    }
+    
+    void gridpoint_t::report_warning(cFunctionData const* const function_data,
+                                     int const vi,
+                                     int const rl, int const m, int const tl,
+                                     char const* const what,
+                                     char const* const where) const
+    {
+      char* const fullname = CCTK_FullName(vi);
+      ostringstream state;
+      state << "current state: " << *this << std::endl;
+      if (function_data) {
+        // The error is related to a scheduled function
+        CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Schedule WRITES clause is superfluous: "
+                   "Function %s::%s in %s: "
+                   "Variable %s reflevel=%d map=%d timelevel=%d: "
+                   "%s already valid for %s. %s",
+                   function_data->thorn, function_data->routine,
+                   function_data->where,
+                   fullname, rl, m, tl,
+                   where, what, state.str().c_str());
+      } else {
+        // The error is not related to a scheduled function
+        CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Schedule WRITES clause already satisfied: "
+                   "Variable %s reflevel=%d map=%d timelevel=%d: "
+                   "%s already valid for %s. %s",
+                   fullname, rl, m, tl,
+                   where, what, state.str().c_str());
+      }
+      free(fullname);
+      there_was_a_warning = true;
     }
     
     void gridpoint_t::update_state(clause_t const& clause)
@@ -1191,6 +1228,19 @@ namespace Carpet {
               
               // Synchronising sets all ghost zones, and sets boundary
               // ghost zones if boundary zones are set
+              if (gp.boundary ) {
+                if (gp.ghostzones and gp.boundary_ghostzones) {
+                  gp.report_warning
+                    (function_data, vi, rl, m, tl,
+                     "synchronising", "ghostzones+boundary_ghostzones");
+                }
+              } else {
+                if (gp.ghostzones) {
+                  gp.report_warning
+                    (function_data, vi, rl, m, tl,
+                     "synchronising", "ghostzones");
+                }
+              }
               gp.ghostzones = true;
               gp.boundary_ghostzones = gp.boundary;
             }
