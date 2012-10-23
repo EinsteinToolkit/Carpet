@@ -97,6 +97,8 @@ namespace Carpet {
     // Set time delta
     if (not adaptive_stepsize) {
       cctkGH->cctk_delta_time = delta_time * mglevelfact;
+    } else {
+      delta_time = cctkGH->cctk_delta_time;
     }
     if (maps == 1) {
       // Set space delta

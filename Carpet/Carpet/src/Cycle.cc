@@ -130,6 +130,7 @@ namespace Carpet {
     
     assert (timelevel == 0);
     tt->retreat_time (mglevel, reflevel);
+    assert (not adaptive_stepsize);
     cctkGH->cctk_time = tt->get_time (mglevel, reflevel, timelevel);
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -188,6 +189,7 @@ namespace Carpet {
     
     assert (timelevel == 0);
     tt->flip_timelevels (mglevel, reflevel);
+    assert (not adaptive_stepsize);
     cctkGH->cctk_time = tt->get_time (mglevel, reflevel, timelevel);
     cctkGH->cctk_delta_time *= -1;
     

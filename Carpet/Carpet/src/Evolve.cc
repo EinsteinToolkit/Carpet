@@ -239,7 +239,8 @@ namespace Carpet {
       cctkGH->cctk_time = global_time;
     } else {
       // Take varying step sizes into account
-      cctkGH->cctk_time += delta_time;
+      cctkGH->cctk_time += cctkGH->cctk_delta_time;
+      delta_time = cctkGH->cctk_delta_time;
       global_time = cctkGH->cctk_time;
     }
     
@@ -436,8 +437,8 @@ namespace Carpet {
                   = (global_time
                      - delta_time / maxtimereflevelfact
                      + delta_time * mglevelfact / timereflevelfact);
-                tt->set_time (mglevel, reflevel, timelevel, cctkGH->cctk_time);
               }
+              tt->set_time (mglevel, reflevel, timelevel, cctkGH->cctk_time);
               
               Waypoint ("Evolution I at iteration %d time %g%s%s%s",
                         cctkGH->cctk_iteration, (double)cctkGH->cctk_time,

@@ -254,6 +254,7 @@ namespace Carpet {
     assert (do_allow_past_timelevels);                                  \
     do_allow_past_timelevels = false;                                   \
     assert (timelevel == 0);                                            \
+    assert (not adaptive_stepsize);                                     \
     for (timelevel = timelevels - 1; timelevel >= 0; -- timelevel) {    \
       cctkGH->cctk_time = tt->get_time (mglevel, reflevel, timelevel);  \
       {
