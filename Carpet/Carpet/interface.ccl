@@ -343,6 +343,16 @@ PROVIDES FUNCTION Requirements_NotifyWrites \
     WITH Carpet_Requirements_NotifyWrites   \
     LANGUAGE C
 
+# Programmatically invalidate a variable
+void FUNCTION                             \
+    Requirements_Invalidate               \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN numvars,             \
+         CCTK_INT ARRAY IN varinds)
+PROVIDES FUNCTION Requirements_Invalidate \
+    WITH Carpet_Requirements_Invalidate   \
+    LANGUAGE C
+
 
 
 # The true prototype of the routine below:

@@ -508,7 +508,9 @@ namespace Carpet {
       void sync(cFunctionData const* function_data,
                 vector<int> const& groups, int reflevel, int timelevel);
       void restrict1(vector<int> const& groups, int reflevel);
-
+      void invalidate(vector<int> const& vars,
+                      int reflevel, int map, int timelevel);
+      
       // Input/Output helpers
       void input (istream& is);
       void output (ostream& os) const;
@@ -959,42 +961,6 @@ namespace Carpet {
       }
     }
     
-    extern "C" 
-    void Carpet_Requirements_CheckReads(CCTK_POINTER_TO_CONST const cctkGH_,
-                                        CCTK_INT const nvars,
-                                        CCTK_INT const* const varidx,
-                                        char const* const clause)
-    {
-      cGH const* const cctkGH = static_cast<cGH const*>(cctkGH_);
-      DECLARE_CCTK_PARAMETERS;
-      if (check_requirements) {
-        // TODO: come up with a scheme to avoid constructing and destroying clauses
-        cFunctionData const* const function_data = 
-            CCTK_ScheduleQueryCurrentFunction(cctkGH);
-        int const reflevel = GetRefinementLevel(cctkGH);
-        int const map = GetMap(cctkGH);
-        int const timelevel = GetTimeLevel(cctkGH);
-        // TODO: design an interface to all_state.before_routine that operates
-        //       on indices and claues directly
-        for (int v = 0; v<nvars; ++v) { 
-          cFunctionData temp_function_data = *function_data;
-          char const * const fullname = CCTK_FullName(varidx[v]);
-          char * reads;
-          const int len_written = Util_asprintf(&reads, "%s(%s)", fullname, clause);
-          assert(len_written > 0);
-          temp_function_data.n_WritesClauses = 0;
-          temp_function_data.WritesClauses = NULL;
-          temp_function_data.n_ReadsClauses = 1;
-          temp_function_data.ReadsClauses = (const char**)&reads;
-          all_clauses.get_clauses(&temp_function_data);
-          BeforeRoutine(&temp_function_data, reflevel, map, timelevel);
-          all_clauses.remove_clauses(&temp_function_data);
-          free((void*)fullname);
-          free(reads);
-        }
-      }
-    }
-    
     void all_state_t::before_routine(cFunctionData const* const function_data,
                                      int const reflevel, int const map,
                                      int const timelevel)
@@ -1071,42 +1037,6 @@ namespace Carpet {
       if (requirement_inconsistencies_are_fatal and there_was_an_error) {
         CCTK_WARN(CCTK_WARN_ABORT,
                   "Aborting because schedule clauses were not satisfied");
-      }
-    }
-
-    extern "C" 
-    void Carpet_Requirements_NotifyWrites(CCTK_POINTER_TO_CONST const cctkGH_,
-                                          CCTK_INT const nvars,
-                                          CCTK_INT const* const varidx,
-                                          char const* const clause)
-    {
-      cGH const* const cctkGH = static_cast<cGH const*>(cctkGH_);
-      DECLARE_CCTK_PARAMETERS;
-      if (check_requirements) {
-        // TODO: come up with a scheme to avoid constructing and destroying clauses
-        cFunctionData const* const function_data = 
-            CCTK_ScheduleQueryCurrentFunction(cctkGH);
-        int const reflevel = GetRefinementLevel(cctkGH);
-        int const map = GetMap(cctkGH);
-        int const timelevel = GetTimeLevel(cctkGH);
-        // TODO: design an interface to all_state.before_routine that operates
-        //       on indices and claues directly
-        for (int v = 0; v<nvars; ++v) { 
-          cFunctionData temp_function_data = *function_data;
-          char const * const fullname = CCTK_FullName(varidx[v]);
-          char * writes;
-          const int len_written = Util_asprintf(&writes, "%s(%s)", fullname, clause);
-          assert(len_written > 0);
-          temp_function_data.n_WritesClauses = 1;
-          temp_function_data.WritesClauses = (const char**)&writes;
-          temp_function_data.n_ReadsClauses = 0;
-          temp_function_data.ReadsClauses = NULL;
-          all_clauses.get_clauses(&temp_function_data);
-          AfterRoutine(&temp_function_data, reflevel, map, timelevel);
-          all_clauses.remove_clauses(&temp_function_data);
-          free((void*)fullname);
-          free(writes);
-        }
       }
     }
     
@@ -1318,7 +1248,7 @@ namespace Carpet {
           for (int vi=v0; vi<v0+nv; ++vi) {
             if (ignore_these_varindices.count(vi))
               continue;
-
+            
             reflevels_t& rls = vars.AT(vi);
             int const reflevels = int(rls.size());
             maps_t& ms = rls.AT(rl);
@@ -1377,6 +1307,134 @@ namespace Carpet {
       os << "old_vars:" << std::endl;
       os << old_vars << std::endl;
     }
+    
+    template ostream& output (ostream& os, const vector<clause_t>& v);
+    template ostream& output (ostream& os, const vector<all_state_t::timelevels_t>& v);
+    template ostream& output (ostream& os, const vector<all_state_t::maps_t>& v);
+    template ostream& output (ostream& os, const vector<all_state_t::reflevels_t>& v);
+    template ostream& output (ostream& os, const vector<all_state_t::variables_t>& v);
+    
+    
+    
+    ////////////////////////////////////////////////////////////////////////////
+    
+    
+    
+    extern "C" 
+    void Carpet_Requirements_CheckReads(CCTK_POINTER_TO_CONST const cctkGH_,
+                                        CCTK_INT const nvars,
+                                        CCTK_INT const* const varinds,
+                                        char const* const clause)
+    {
+      cGH const* const cctkGH = static_cast<cGH const*>(cctkGH_);
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        // TODO: come up with a scheme to avoid constructing and destroying clauses
+        cFunctionData const* const function_data = 
+            CCTK_ScheduleQueryCurrentFunction(cctkGH);
+        int const reflevel = GetRefinementLevel(cctkGH);
+        int const map = GetMap(cctkGH);
+        int const timelevel = GetTimeLevel(cctkGH);
+        // TODO: design an interface to all_state.before_routine that operates
+        //       on indices and claues directly
+        for (int v=0; v<nvars; ++v) { 
+          cFunctionData temp_function_data = *function_data;
+          char* const fullname = CCTK_FullName(varinds[v]);
+          char* reads;
+          int const len_written =
+            Util_asprintf(&reads, "%s(%s)", fullname, clause);
+          assert(len_written > 0);
+          temp_function_data.n_WritesClauses = 0;
+          temp_function_data.WritesClauses = NULL;
+          temp_function_data.n_ReadsClauses = 1;
+          temp_function_data.ReadsClauses = (char const**)&reads;
+          all_clauses.get_clauses(&temp_function_data);
+          BeforeRoutine(&temp_function_data, reflevel, map, timelevel);
+          all_clauses.remove_clauses(&temp_function_data);
+          free(fullname);
+          free(reads);
+        }
+      }
+    }
+    
+    extern "C" 
+    void Carpet_Requirements_NotifyWrites(CCTK_POINTER_TO_CONST const cctkGH_,
+                                          CCTK_INT const nvars,
+                                          CCTK_INT const* const varinds,
+                                          char const* const clause)
+    {
+      cGH const* const cctkGH = static_cast<cGH const*>(cctkGH_);
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        // TODO: come up with a scheme to avoid constructing and destroying clauses
+        cFunctionData const* const function_data = 
+            CCTK_ScheduleQueryCurrentFunction(cctkGH);
+        int const reflevel = GetRefinementLevel(cctkGH);
+        int const map = GetMap(cctkGH);
+        int const timelevel = GetTimeLevel(cctkGH);
+        // TODO: design an interface to all_state.before_routine that operates
+        //       on indices and claues directly
+        for (int v=0; v<nvars; ++v) { 
+          cFunctionData temp_function_data = *function_data;
+          char* const fullname = CCTK_FullName(varinds[v]);
+          char* writes;
+          int const len_written =
+            Util_asprintf(&writes, "%s(%s)", fullname, clause);
+          assert(len_written > 0);
+          temp_function_data.n_WritesClauses = 1;
+          temp_function_data.WritesClauses = (char const**)&writes;
+          temp_function_data.n_ReadsClauses = 0;
+          temp_function_data.ReadsClauses = NULL;
+          all_clauses.get_clauses(&temp_function_data);
+          AfterRoutine(&temp_function_data, reflevel, map, timelevel);
+          all_clauses.remove_clauses(&temp_function_data);
+          free(fullname);
+          free(writes);
+        }
+      }
+    }
+    
+    extern "C"
+    void Carpet_Requirements_Invalidate(CCTK_POINTER_TO_CONST const cctkGH_,
+                                        CCTK_INT const nvars,
+                                        CCTK_INT const* const varinds)
+    {
+      cGH const* const cctkGH = static_cast<cGH const*>(cctkGH_);
+      DECLARE_CCTK_PARAMETERS;
+      if (check_requirements) {
+        vector<int> vars(nvars);
+        for (int v=0; v<nvars; ++v) {
+          vars.AT(v) = varinds[v];
+        }
+        int const reflevel = GetRefinementLevel(cctkGH);
+        int const map = GetMap(cctkGH);
+        int const timelevel = GetTimeLevel(cctkGH);
+        all_state.invalidate(vars, reflevel, map, timelevel);
+      }
+    }
+    
+    void all_state_t::invalidate(vector<int> const& vars1,
+                                 int const reflevel, int const map,
+                                 int const timelevel)
+    {
+      // Loop over all variables
+      for (vector<int>::const_iterator
+             ivi = vars1.begin(); ivi != vars1.end(); ++ivi)
+      {
+        int const vi = *ivi;
+        reflevels_t& rls = vars.AT(vi);
+        maps_t& ms = rls.AT(reflevel);
+        timelevels_t& tls = ms.AT(map);
+        // This time level is uninitialised
+        tls.AT(timelevel) = gridpoint_t();
+      }
+    }
+    
+    
+    
+    ////////////////////////////////////////////////////////////////////////////
+    
+    
     
     // scheduled routines to handle boundary and symmetry conditions
     extern "C"
@@ -1446,10 +1504,6 @@ namespace Carpet {
     }
     
     
-    template ostream& output (ostream& os, const vector<clause_t>& v);
-    template ostream& output (ostream& os, const vector<all_state_t::timelevels_t>& v);
-    template ostream& output (ostream& os, const vector<all_state_t::maps_t>& v);
-    template ostream& output (ostream& os, const vector<all_state_t::reflevels_t>& v);
-    template ostream& output (ostream& os, const vector<all_state_t::variables_t>& v);
+    
   } // namespace Carpet
 }   // namespace Requirements
