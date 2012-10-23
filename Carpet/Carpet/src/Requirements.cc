@@ -199,6 +199,7 @@ namespace Carpet {
     
     bool clause_t::active_on_timelevel(int const tl) const
     {
+      assert(tl>=0);
       if (all_timelevels) return true;
       if (timelevel0 and tl==0) return true;
       if (timelevel1 and tl==1) return true;
