@@ -65,18 +65,17 @@ Timer objects can be allocated as "static" or not - it does not matter.
   };
 
   // Macros for using timers in a convenient manner
-
-#define TIMING_BEGIN(name)                                \
-  {                                                       \
-    static Carpet::Timer timer (name);                    \
-    timer.start();                                        \
+  
+#define TIMING_BEGIN(name)                      \
+  do {                                          \
+    static Carpet::Timer timer (name);          \
+    timer.start();                              \
     {
-
 #define TIMING_END                              \
-  }                                             \
+    }                                           \
     timer.stop();                               \
-} while (0)
-
+  } while (0)
+  
 } // namespace Carpet
 
 #endif // TIMERS_HH
