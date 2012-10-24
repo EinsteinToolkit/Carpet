@@ -183,14 +183,7 @@ namespace CarpetRegrid2 {
                     level_boundary const& bnd,
                     vector<ibset> const& regions, int const rl)
   {
-    ibbox single;
-    for (ibset::const_iterator
-           ibb = regions.at(rl).begin(); ibb != regions.at(rl).end(); ++ ibb)
-    {
-      ibbox const& bb = *ibb;
-      single = single.expanded_containing (bb);
-    }
-    return single;
+    return regions.at(rl).container();
   }
   
   bool combine_regions::
@@ -198,9 +191,20 @@ namespace CarpetRegrid2 {
              level_boundary const& bnd,
              vector<ibset> const& regions, int const rl)
   {
-    // This should not be tested because it has to be applied
-    // unconditionally and only once
-    return true;
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (min_fraction == 1.0) return true;
+    
+    ibbox const combined = combined_regions (hh, dd, bnd, regions, rl);
+    
+    CCTK_REAL const regions_size =
+      static_cast <CCTK_REAL> (regions.at(rl).size());
+    CCTK_REAL const combined_size =
+      static_cast <CCTK_REAL> (combined.size());
+    
+    // Would a single bbox be efficient enough?
+    // TODO: Check this also for pairs of regions
+    return min_fraction * combined_size <= regions_size;
   }
   
   void combine_regions::
@@ -214,18 +218,7 @@ namespace CarpetRegrid2 {
       cout << "Refinement level " << rl << ": combining regions...\n";
     }
     
-    ibbox const combined = combined_regions (hh, dd, bnd, regions, rl);
-    
-    CCTK_REAL const regions_size =
-      static_cast <CCTK_REAL> (regions.at(rl).size());
-    CCTK_REAL const combined_size =
-      static_cast <CCTK_REAL> (combined.size());
-    
-    // Would a single bbox be efficient enough?
-    // TODO: Check this also for pairs of regions
-    if (min_fraction * combined_size <= regions_size) {
-      regions.at(rl) = combined;
-    }
+    regions.at(rl) = combined_regions (hh, dd, bnd, regions, rl);
     
     if (veryverbose) {
       cout << "   New regions are " << regions.at(rl) << "\n";
@@ -252,8 +245,9 @@ namespace CarpetRegrid2 {
     
     ibset snapped;
     
-    for (ibset::const_iterator
-           ibb = regions.at(rl).begin(); ibb != regions.at(rl).end(); ++ ibb)
+    for (ibset::const_iterator ibb = regions.at(rl).begin();
+         ibb != regions.at(rl).end();
+         ++ ibb)
     {
       ibbox const& bb = *ibb;
       
@@ -262,23 +256,45 @@ namespace CarpetRegrid2 {
       // subtract the buffer zones, align, and add the buffer zones
       // again.
       
-      // In detail, we first expand by reffact-1-N points, then expand
-      // (contract???) to the next coarser grid, then expand back to
-      // the current grid, and expand by N points again. This sequence
-      // is correct for both vertex and cell centred grids, and N is
-      // determined by the number of buffer zones.
+      // In detail, we first expand by reffact + reffact-1 - N points,
+      // then contract to the next coarser grid, then expand back to
+      // the current grid, and expand by N - reffact points again.
+      // This sequence is correct for both vertex and cell centred
+      // grids, and N is determined by the number of buffer zones.
       
       // N is the number of buffer zones modulo the refinement factor.
       // We cannot shrink the domain (since we cannot shrink
       // bboxsets). For alignment, only operations modulo the
       // refinement factor are relevant.
       
-      snapped |= bb.
-        expand(reffact-1 - buffers % reffact).
-        contracted_for(cbase).
-        expanded_for(base).
-        expand(buffers % reffact);
+      // The additional constant reffact is necessary to ensure that
+      // the coarsened boxes, which may be smaller than the fine
+      // boxes, cannot become empty.
+      
+      ibbox aa = bb;
+      assert(not aa.empty());
+      aa = aa.expand(reffact + reffact-1 - buffers % reffact);
+      assert(not aa.empty());
+      aa = aa.contracted_for(cbase);
+      assert(not aa.empty());
+      aa = aa.expanded_for(base);
+      assert(not aa.empty());
+      aa = aa.expand(buffers % reffact - reffact);
+      assert(not aa.empty());
+      
+      snapped |= aa;
+      
     }
+    
+    // We don't want to remove any points
+    ibset const& original = regions.at(rl);
+    // return snapped | original;
+    if (not (snapped >= original)) {
+      cout << "snapped=" << snapped << "\n"
+           << "original=" << original << "\n"
+           << "original-snapped=" << (original - snapped) << "\n";
+    }
+    assert(snapped >= original);
     
     return snapped;
   }
@@ -336,6 +352,8 @@ namespace CarpetRegrid2 {
   symmetrised_regions (gh const& hh, dh const& dd, level_boundary const& bnd,
                        vector<ibset> const& regions, int const rl)
   {
+    // ibbox const& baseextent = hh.baseextent(0,rl);
+    
     ibset symmetrised = regions.at(rl);
     for (ibset::const_iterator
            ibb = regions.at(rl).begin(); ibb != regions.at(rl).end(); ++ ibb)
@@ -390,6 +408,7 @@ namespace CarpetRegrid2 {
           // Will be clipped later
           // assert (new_bb.is_contained_in (baseextent));
           
+          // symmetrised |= new_bb & baseextent;
           symmetrised |= new_bb;
         }
       }
@@ -507,6 +526,7 @@ namespace CarpetRegrid2 {
         // Will be clipped later
         // assert (new_bb.is_contained_in (baseextent));
         
+        // symmetrised |= new_bb & baseextent;
         symmetrised |= new_bb;
       }
     }
