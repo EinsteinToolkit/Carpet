@@ -42,7 +42,7 @@ namespace Carpet {
   static void CallInitial (cGH * cctkGH);
   static void CallRestrict (cGH * cctkGH);
   static void CallPostInitial (cGH * cctkGH);
-  static void CallAnalysis (cGH * cctkGH);
+  static void CallAnalysis (cGH * cctkGH, bool did_recover);
   
   static void Initialise3tl (cGH * cctkGH);
   
@@ -131,7 +131,7 @@ namespace Carpet {
     }
     
     // Analyse initial data
-    CallAnalysis (cctkGH);
+    CallAnalysis (cctkGH, fc->recovered);
     print_internal_data ();
     
     timer.stop();
@@ -581,7 +581,7 @@ namespace Carpet {
   
   
   void
-  CallAnalysis (cGH * const cctkGH)
+  CallAnalysis (cGH * const cctkGH, bool const did_recover)
   {
     char const * const where = "CallAnalysis";
     static Timer timer (where);
@@ -606,10 +606,12 @@ namespace Carpet {
           
           int const do_every =
             ipow(mgfact, mglevel) * (maxtimereflevelfact / timereffacts.AT(rl));
-          if (cctkGH->cctk_iteration % do_every == 0)
-          {
-            // Checkpoint
-            ScheduleTraverse (where, "CCTK_CPINITIAL", cctkGH);
+          if (cctkGH->cctk_iteration % do_every == 0) {
+            
+            if (not did_recover) {
+              // Checkpoint, but only if we did not recover
+              ScheduleTraverse (where, "CCTK_CPINITIAL", cctkGH);
+            }
             
             // Analysis
             in_analysis_bin = true;
