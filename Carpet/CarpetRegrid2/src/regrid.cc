@@ -812,6 +812,12 @@ namespace CarpetRegrid2 {
       vector <gh::mregs> & regssss =
         * static_cast <vector <gh::mregs>  *> (regssss_);
       
+      vector <gh::rregs> old_superregsss;
+      vector <gh::mregs> old_regssss;
+      old_superregsss.swap(superregsss);
+      old_regssss.swap(regssss);
+      
+      superregsss = old_superregsss; // only needed for output
       BEGIN_MAP_LOOP (cctkGH, CCTK_GF) {
         Regrid (cctkGH, superregsss.at(Carpet::map));
       } END_MAP_LOOP;
@@ -834,18 +840,41 @@ namespace CarpetRegrid2 {
       }
       
       // Make multiprocessor aware
+      bool any_level_did_change = false;
       for (int rl = 0; rl < maxrl; ++ rl) {
-        vector <vector <region_t> > superregss (maps);
+        bool level_did_change = false;
         for (int m = 0; m < maps; ++ m) {
-          superregss.at(m) = superregsss.at(m).at(rl);
+          level_did_change = level_did_change or
+            superregsss.at(m).at(rl) != old_superregsss.at(m).at(rl);
         }
-        vector <vector <region_t> > regss (maps);
-        SplitRegionsMaps (cctkGH, superregss, regss);
+        any_level_did_change = any_level_did_change or level_did_change;
         
-        for (int m = 0; m < maps; ++ m) {
-          superregsss.at(m).at(rl) = superregss.at(m);
-          regsss.at(m).at(rl) = regss.at(m);
-        }
+        if (level_did_change) {
+          // The level changed: perform domain decomposition
+          
+          vector <vector <region_t> > superregss (maps);
+          for (int m = 0; m < maps; ++ m) {
+            superregss.at(m) = superregsss.at(m).at(rl);
+          }
+          vector <vector <region_t> > regss (maps);
+          SplitRegionsMaps (cctkGH, superregss, regss);
+          
+          for (int m = 0; m < maps; ++ m) {
+            superregsss.at(m).at(rl) = superregss.at(m);
+            regsss.at(m).at(rl) = regss.at(m);
+          }
+          
+        } else {
+          // The level did not actually change: re-use the old domain
+          // decomposition
+          
+          for (int m = 0; m < maps; ++ m) {
+            superregsss.at(m).at(rl).swap(old_superregsss.at(m).at(rl));
+            int const ml = 0;
+            regsss.at(m).at(rl).swap(old_regssss.at(m).at(ml).at(rl));
+          }
+          
+        }// if level did change
       } // for rl
       
       // Make multigrid aware
@@ -871,6 +900,8 @@ namespace CarpetRegrid2 {
 	  old_radius_z[ind] = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
 	}
       }
+      
+      do_recompose = do_recompose and any_level_did_change;
       
     } // if do_recompose
     
