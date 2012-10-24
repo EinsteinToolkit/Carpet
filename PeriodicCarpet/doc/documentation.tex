@@ -106,37 +106,47 @@
 % Remove them or add your own.
 
 \section{Introduction}
+{\tt PeriodicCarpet} applies periodic boundary conditions to Carpet
+grids. In particular, it provides correct behaviour for the case
+where a refinement level overlaps the periodic boundaries, and 
+may therefore be made up of more than one component on the same
+process. Thorn {\tt Periodic}, by constrast, will not handle this case
+properly. 
 
-\section{Physical System}
-
-\section{Numerical Implementation}
+%\section{Numerical Implementation}
 
 \section{Using This Thorn}
+The usage is rather simple and resembles that of {\tt Periodic}, 
+with boolean parameters {\tt periodic}, {\tt periodic\_x}, {\tt 
+periodic\_y} and {\tt periodic\_z}. An important point to notice is 
+that if {\tt CarpetRegrid2} is used, its parameters {\tt symmetry\_periodic\_x}, 
+{\tt  symmetry\_periodic\_y} and {\tt symmetry\_periodic\_z} have to be
+set accordingly.
 
-\subsection{Obtaining This Thorn}
+%\subsection{Obtaining This Thorn}
 
-\subsection{Basic Usage}
+%\subsection{Basic Usage}
 
-\subsection{Special Behaviour}
+%\subsection{Special Behaviour}
 
-\subsection{Interaction With Other Thorns}
+%\subsection{Interaction With Other Thorns}
 
-\subsection{Examples}
+%\subsection{Examples}
 
-\subsection{Support and Feedback}
+%\subsection{Support and Feedback}
 
-\section{History}
+%\section{History}
 
-\subsection{Thorn Source Code}
+%\subsection{Thorn Source Code}
 
-\subsection{Thorn Documentation}
+%\subsection{Thorn Documentation}
 
-\subsection{Acknowledgements}
+%\subsection{Acknowledgements}
 
 
-\begin{thebibliography}{9}
+%\begin{thebibliography}{9}
 
-\end{thebibliography}
+%\end{thebibliography}
 
 % Do not delete next line
 % END CACTUS THORNGUIDE
