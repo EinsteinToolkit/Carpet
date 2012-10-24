@@ -2038,6 +2038,7 @@ namespace Carpet {
                           vector<vector<vector<region_t> > > const & regsss,
                           vector<vector<vector<vector<region_t> > > > & regssss)
   {
+    regssss.resize(maps);
     for (int m = 0; m < maps; ++m) {
       MakeMultigridBoxes (cctkGH, m, regsss.AT(m), regssss.AT(m));
     } // for m

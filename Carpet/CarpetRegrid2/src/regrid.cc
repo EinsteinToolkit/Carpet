@@ -845,6 +845,7 @@ namespace CarpetRegrid2 {
         bool level_did_change = false;
         for (int m = 0; m < maps; ++ m) {
           level_did_change = level_did_change or
+            int(old_superregsss.at(m).size()) <= rl or
             superregsss.at(m).at(rl) != old_superregsss.at(m).at(rl);
         }
         any_level_did_change = any_level_did_change or level_did_change;
@@ -874,7 +875,7 @@ namespace CarpetRegrid2 {
             regsss.at(m).at(rl).swap(old_regssss.at(m).at(ml).at(rl));
           }
           
-        }// if level did change
+        } // if level did change
       } // for rl
       
       // Make multigrid aware
