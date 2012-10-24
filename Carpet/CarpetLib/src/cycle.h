@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2007 Matteo Frigo
- * Copyright (c) 2003, 2007 Massachusetts Institute of Technology
+ * Copyright (c) 2003, 2007-8 Matteo Frigo
+ * Copyright (c) 2003, 2007-8 Massachusetts Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -511,21 +511,3 @@ INLINE_ELAPSED(inline)
 #define HAVE_TICK_COUNTER
 #endif
 #endif /* HAVE_MIPS_ZBUS_TIMER */
-
-/*----------------------------------------------------------------*/
-/* Fallback -- this must be the last entry in this file */
-#if !defined(HAVE_TICK_COUNTER)
-
-typedef double ticks;
-
-static inline ticks getticks(void)
-{
-  static ticks counter = 0;
-
-  return ++ counter;
-}
-
-INLINE_ELAPSED(inline)
-
-#define HAVE_TICK_COUNTER
-#endif
