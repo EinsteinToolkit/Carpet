@@ -839,13 +839,17 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     }
 
     if (is_new_file) {
+      hid_t fapl_id;
+      HDF5_ERROR (fapl_id = H5Pcreate (H5P_FILE_ACCESS));
+      HDF5_ERROR (H5Pset_fclose_degree (fapl_id, H5F_CLOSE_STRONG));
       HDF5_ERROR (file = H5Fcreate (c_filename, H5F_ACC_TRUNC, H5P_DEFAULT,
-                                    H5P_DEFAULT));
+                                    fapl_id));
       if (output_index) {
         HDF5_ERROR (index_file = H5Fcreate (index_filename.c_str(),
                                             H5F_ACC_TRUNC, H5P_DEFAULT,
-                                            H5P_DEFAULT));
+                                            fapl_id));
       }
+      HDF5_ERROR (H5Pclose (fapl_id));
       // write metadata information
       error_count +=
         WriteMetadata (cctkGH, nioprocs, firstvar, numvars, false, file);
@@ -855,9 +859,13 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
           WriteMetadata (cctkGH, nioprocs, firstvar, numvars, false, index_file);
       }
     } else {
-      HDF5_ERROR (file = H5Fopen (c_filename, H5F_ACC_RDWR, H5P_DEFAULT));
+      hid_t fapl_id;
+      HDF5_ERROR (fapl_id = H5Pcreate (H5P_FILE_ACCESS));
+      HDF5_ERROR (H5Pset_fclose_degree (fapl_id, H5F_CLOSE_STRONG));
+      HDF5_ERROR (file = H5Fopen (c_filename, H5F_ACC_RDWR, fapl_id));
       if (output_index)
-        HDF5_ERROR (index_file = H5Fopen (index_filename.c_str(), H5F_ACC_RDWR, H5P_DEFAULT));
+        HDF5_ERROR (index_file = H5Fopen (index_filename.c_str(), H5F_ACC_RDWR, fapl_id));
+      HDF5_ERROR (H5Pclose (fapl_id));
     }
     io_files += 1;
   }
@@ -902,6 +910,7 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     if (output_index)
       HDF5_ERROR (H5Fclose (index_file));
   }
+  HDF5_ERROR (H5garbage_collect());
   {
     CCTK_REAL local[2], global[2];
     local[0] = io_files;
@@ -956,8 +965,11 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
                   tempname);
     }
 
+    hid_t fapl_id;
+    HDF5_ERROR (fapl_id = H5Pcreate (H5P_FILE_ACCESS));
+    HDF5_ERROR (H5Pset_fclose_degree (fapl_id, H5F_CLOSE_STRONG));
     HDF5_ERROR (file = H5Fcreate (tempname, H5F_ACC_TRUNC, H5P_DEFAULT,
-                                  H5P_DEFAULT));
+                                  fapl_id));
 
     // write metadata information
     error_count += WriteMetadata (cctkGH, nioprocs, -1, -1, true, file);
@@ -966,10 +978,11 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
 
       HDF5_ERROR (index_file = H5Fcreate (index_tempname,
                                           H5F_ACC_TRUNC, H5P_DEFAULT,
-                                          H5P_DEFAULT));
+                                          fapl_id));
       error_count +=
         WriteMetadata (cctkGH, nioprocs, -1, -1, true, index_file);
     }
+    HDF5_ERROR (H5Pclose (fapl_id));
   }
 
   // remember the current wall time
@@ -1103,6 +1116,7 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
   if (index_file >= 0) {
     HDF5_ERROR (H5Fclose(index_file));
   }
+  HDF5_ERROR (H5garbage_collect());
 
 
   // get global error count

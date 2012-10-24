@@ -817,13 +817,17 @@ namespace CarpetIOHDF5 {
       }
 
       if (truncate_file or not file_exists) {
+        hid_t fapl_id;
+        HDF5_ERROR (fapl_id = H5Pcreate (H5P_FILE_ACCESS));
+        HDF5_ERROR (H5Pset_fclose_degree (fapl_id, H5F_CLOSE_STRONG));
         HDF5_ERROR(file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT,
-                                    H5P_DEFAULT));
+                                    fapl_id));
         if (output_index) {
           HDF5_ERROR (index_file = H5Fcreate (index_filename.c_str(),
                                               H5F_ACC_TRUNC, H5P_DEFAULT,
-                                              H5P_DEFAULT));
+                                              fapl_id));
         }
+        HDF5_ERROR (H5Pclose (fapl_id));
         // write metadata information
         error_count +=
           WriteMetadata(cctkGH, nioprocs, vindex, numvars, false, file);
@@ -833,9 +837,13 @@ namespace CarpetIOHDF5 {
             WriteMetadata (cctkGH, nioprocs, vindex, numvars, false, index_file);
         }
       } else {
-        HDF5_ERROR (file = H5Fopen(filename, H5F_ACC_RDWR, H5P_DEFAULT));
+        hid_t fapl_id;
+        HDF5_ERROR (fapl_id = H5Pcreate (H5P_FILE_ACCESS));
+        HDF5_ERROR (H5Pset_fclose_degree (fapl_id, H5F_CLOSE_STRONG));
+        HDF5_ERROR (file = H5Fopen(filename, H5F_ACC_RDWR, fapl_id));
+        HDF5_ERROR (H5Pclose (fapl_id));
         if (output_index)
-          HDF5_ERROR (index_file = H5Fopen (index_filename.c_str(), H5F_ACC_RDWR, H5P_DEFAULT));
+          HDF5_ERROR (index_file = H5Fopen (index_filename.c_str(), H5F_ACC_RDWR,fapl_id));
       }
       io_files += 1;
 
@@ -859,6 +867,7 @@ namespace CarpetIOHDF5 {
       if (output_index and index_file >= 0) {
         HDF5_ERROR (H5Fclose (index_file));
       }
+      HDF5_ERROR (H5garbage_collect());
     }
     if (nioprocs > 1) {
       CCTK_REAL local[2], global[2];

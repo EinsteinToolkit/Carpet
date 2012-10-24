@@ -68,6 +68,7 @@ int WriteVarUnchunked (const cGH* const cctkGH,
   hid_t plist;
   HDF5_ERROR (plist = H5Pcreate (H5P_FILE_ACCESS));
   HDF5_ERROR (H5Pset_fapl_core (plist, 0, 0));
+  HDF5_ERROR (H5Pset_fclose_degree (plist, H5F_CLOSE_STRONG));
 
   // Traverse all maps
   BEGIN_MAP_LOOP (cctkGH, group.grouptype) {
@@ -135,6 +136,7 @@ int WriteVarUnchunked (const cGH* const cctkGH,
         // than recombining an HDF5 dataset on a disk file.
         HDF5_ERROR (memfile = H5Fcreate ("tempfile", H5F_ACC_EXCL, H5P_DEFAULT,
                                          plist));
+        HDF5_ERROR (H5Pclose (plist));
         HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
         HDF5_ERROR (memdataset = H5Dcreate (memfile, datasetname.str().c_str(),
                                          filedatatype, dataspace, H5P_DEFAULT));
