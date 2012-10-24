@@ -1,3 +1,6 @@
+// needed for dladdr, best at the top to avoid inconsistent includes
+#define _GNU_SOURCE 1
+
 #include "backtrace.hh"
 
 //#include <cctk.h>

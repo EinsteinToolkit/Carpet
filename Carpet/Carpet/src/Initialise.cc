@@ -1,5 +1,3 @@
-#define _GNU_SOURCE 1 // needed for dladdr, best at the top to avoid inconsistent includes
-
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
