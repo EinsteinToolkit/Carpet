@@ -100,6 +100,7 @@ namespace CarpetIOF5 {
       herr_t const herr = H5Fclose(file);
       assert(not herr);
       file = H5I_INVALID_HID;
+      H5garbage_collect();
     }
   }
   
@@ -295,11 +296,14 @@ namespace CarpetIOF5 {
         first_time and IO_TruncateOutputFiles(cctkGH) and myproc == myioproc;
       if (file < 0) {
         // Reuse file hid if file is already open
+        hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
+        H5Pset_fclose_degree(fapl, H5F_CLOSE_STRONG);
         file =
           truncate_file ?
-          H5Fcreate(name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT) :
-          H5Fopen  (name.c_str(), H5F_ACC_RDWR , H5P_DEFAULT);
+          H5Fcreate(name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, fapl) :
+          H5Fopen  (name.c_str(), H5F_ACC_RDWR , fapl);
         assert(file >= 0);
+        H5Pclose(fapl);
       }
       first_time = false;
       
@@ -359,9 +363,12 @@ namespace CarpetIOF5 {
       create_filename(cctkGH, "checkpoint.tmp", cctkGH->cctk_iteration, proc,
                       io_dir_checkpoint, true);
     
+    hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
+    H5Pset_fclose_degree(fapl, H5F_CLOSE_STRONG);
     hid_t const file =
-      H5Fcreate(tempname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+      H5Fcreate(tempname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
     assert(file >= 0);
+    H5Pclose(fapl);
     
     vector<bool> output_var(CCTK_NumVars(), false);
     for (int gindex=0; gindex<CCTK_NumGroups(); ++gindex) {
@@ -398,6 +405,7 @@ namespace CarpetIOF5 {
     // Close file
     herr_t const herr = H5Fclose(file);
     assert(not herr);
+    H5garbage_collect();
     
     // Wait until all files have been written, then rename the
     // checkpoint files
@@ -541,8 +549,11 @@ namespace CarpetIOF5 {
           indent_t indent;
           cout << indent << "I/O process=" << ioproc << "\n";
           
-          hid_t const file = H5Fopen(name.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+          hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
+          H5Pset_fclose_degree(fapl, H5F_CLOSE_STRONG);
+          hid_t const file = H5Fopen(name.c_str(), H5F_ACC_RDONLY, fapl);
           assert(file >= 0);
+          H5Pclose(fapl);
           
           // Iterate over all time slices
           bool const input_past_timelevels = in_recovery;
@@ -554,6 +565,7 @@ namespace CarpetIOF5 {
           // Close file
           herr = H5Fclose(file);
           assert(not herr);
+          H5garbage_collect();
         }
       }
       
