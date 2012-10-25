@@ -27,6 +27,7 @@ namespace Carpet {
   int maxtimereflevelfact;
   vect<int,dim> maxspacereflevelfact;
   
+  TimerTree main_timer_tree;
   // Base multigrid level
   int basemglevel;
   

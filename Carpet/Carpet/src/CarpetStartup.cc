@@ -66,7 +66,9 @@ namespace Carpet {
     CCTK_OverloadGroupDynamicData (GroupDynamicData);
     
     // This must happen before any Timer objects are created
-    TimerNode::getRootTimer()->start();
+    main_timer_tree.root = new TimerNode(&main_timer_tree,"main");
+    main_timer_tree.current = 0; // No timer has been started yet
+    main_timer_tree.root->start();
 
     return 0;
   }

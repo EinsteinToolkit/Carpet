@@ -139,8 +139,7 @@ namespace Carpet {
 
     if (output_initialise_timer_tree)
     {
-      TimerNode *rt = TimerNode::getRootTimer();
-      TimerNode *it = rt->getChildTimer("Initialise");
+      TimerNode *it = main_timer_tree.root->getChildTimer("Initialise");
       it->print(cout, it->getTime(), 0, timer_tree_threshold_percentage, timer_tree_output_precision);
     }
 

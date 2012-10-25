@@ -45,12 +45,14 @@ started timer.  Doing so will generate an error.
 Timer objects can be allocated as "static" or not - it does not matter.
 
 */
+  class TimerTree;
 
   class Timer {
 
   public:
 
     Timer (const string &name);
+    Timer (const string &name, TimerTree *tree);
     ~Timer ();
 
     void instantiate ();
@@ -62,6 +64,7 @@ Timer objects can be allocated as "static" or not - it does not matter.
   private:
 
     string d_name;
+    TimerTree *d_tree;
   };
 
   // Macros for using timers in a convenient manner

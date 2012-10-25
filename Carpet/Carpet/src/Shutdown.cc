@@ -80,11 +80,10 @@ namespace Carpet {
     } END_REVERSE_MGLEVEL_LOOP;
     
 
-    TimerNode *rt = TimerNode::getRootTimer();
-    rt->stop();
+    main_timer_tree.root->stop();
 
     if (output_xml_timer_tree)
-      rt->outputXML(out_dir,CCTK_MyProc (cctkGH));
+      main_timer_tree.root->outputXML(out_dir,CCTK_MyProc (cctkGH));
 
     // earlier checkpoint before finalising MPI
     Waypoint ("Done with shutdown");

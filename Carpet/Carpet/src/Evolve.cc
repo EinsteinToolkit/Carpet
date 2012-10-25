@@ -97,8 +97,7 @@ namespace Carpet {
             cctkGH->cctk_iteration % output_timer_tree_every == 0 and
             cctkGH->cctk_iteration % do_every == 0)
         {
-          TimerNode *rt = TimerNode::getRootTimer();
-          TimerNode *et = rt->getChildTimer("Evolve");
+          TimerNode *et = main_timer_tree.root->getChildTimer("Evolve");
           et->print(cout, et->getTime(), 0, timer_tree_threshold_percentage, timer_tree_output_precision);
         }
         timer.stop();

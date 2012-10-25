@@ -46,6 +46,20 @@ namespace Carpet {
 
 using namespace std;
 
+class TimerNode;
+
+class TimerTree
+{
+public:
+  TimerTree()
+  {
+    root = 0;
+    current = 0;
+  }
+  TimerNode *root;
+  TimerNode *current;
+};
+
 /**
 
 The TimerNode class implements a tree structure where each node
@@ -65,7 +79,7 @@ already.  This ensures that the names of the child timers are unique.
 class TimerNode
 {
 public:
-  TimerNode(string name);
+  TimerNode(TimerTree *root, string name);
   ~TimerNode();
 
   void instantiate();
@@ -75,14 +89,12 @@ public:
   string getName() const;
   string pathName() const;
 
-  static TimerNode* getCurrentTimer();
-
   // Finds the child timer that matches the name provided.  If it is
   // not found then that timer is allocated.
   TimerNode* getChildTimer(string name);
-  static TimerNode* getRootTimer();
 
   double getTime();
+  bool isRunning() const;
 
   void print(ostream& out, double total, int level=0, double threshold=0.0, int precision=1);
   void printXML(ostream& out, int level=0);
@@ -93,9 +105,8 @@ private:
 
   string d_name;
   std::map<string,TimerNode*> d_children;
-  static TimerNode* d_current;
-  static TimerNode* root_timer;
   TimerNode *d_parent;
+  TimerTree *d_tree;
   bool d_running;
   CactusTimer *timer;
 };

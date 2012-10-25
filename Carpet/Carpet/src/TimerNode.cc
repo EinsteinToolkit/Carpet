@@ -42,11 +42,8 @@ namespace Carpet {
 
   using namespace std;
 
-  TimerNode *TimerNode::d_current = 0;
-  TimerNode *TimerNode::root_timer = 0;
-
-  TimerNode::TimerNode(string name): d_name(name), d_parent(0),
-                                     d_running(false), timer(0)
+  TimerNode::TimerNode(TimerTree *tree, string name): d_name(name), d_parent(0),
+                                                      timer(0), d_tree(tree), d_running(0)
   {
   }
 
@@ -63,6 +60,7 @@ namespace Carpet {
 
   string TimerNode::pathName() const
   {
+    assert(d_parent != this);
     if (d_parent)
       return d_parent->pathName() + string("/") + getName();
     else
@@ -72,29 +70,24 @@ namespace Carpet {
   void TimerNode::instantiate()
   {
     assert(!d_running);
-    d_parent = d_current;
-    d_current = this;
+    d_parent = d_tree->current;
+    d_tree->current = this;
     if (timer == 0)
       timer = new CactusTimer(pathName());
-    d_current = d_parent;
+    d_tree->current = d_parent;
   }
 
   void TimerNode::start()
   {
-    if (!d_running)
-    {
-      d_running = true;
-      d_parent = d_current;
-      d_current = this;
-      if (timer == 0)
-        timer = new CactusTimer(pathName());
-      assert(timer);
-      timer->start();
-    }
-    else
-    {
-      assert(0); // Timer is already running
-    }
+    assert(!d_running);
+
+    d_running = true;
+    d_parent = d_tree->current;
+    d_tree->current = this;
+    if (timer == 0)
+      timer = new CactusTimer(pathName());
+    assert(timer);
+    timer->start();
   }
 
   void TimerNode::stop()
@@ -102,14 +95,14 @@ namespace Carpet {
     if (d_running)
     {
       // A timer can only be stopped if it is the current timer
-      if(this != d_current)
+      if(this != d_tree->current)
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Tried to stop non-current timer '%s'", getName().c_str());
 
       timer->stop();
 
       d_running = false;
-      d_current = d_parent;
+      d_tree->current = d_parent;
     }
     else
     {
@@ -124,18 +117,10 @@ namespace Carpet {
     return d_name;
   }
 
-  /// Get the current timer
-  TimerNode* TimerNode::getCurrentTimer()
+  /// Determine if the timer is running
+  bool TimerNode::isRunning() const
   {
-    return d_current;
-  }
-
-  /// Get the root of the timer tree
-  TimerNode* TimerNode::getRootTimer()
-  {
-    if (root_timer == 0)
-      root_timer = new TimerNode("main");
-    return root_timer;
+    return d_running;
   }
 
   /// Find the child timer that matches the name provided.  If it is
@@ -147,7 +132,7 @@ namespace Carpet {
 
     // If the pointer is null then allocate it
     if(child == 0)
-      d_children[name] = child = new TimerNode(name);
+      d_children[name] = child = new TimerNode(d_tree, name);
 
     return child;
   }
