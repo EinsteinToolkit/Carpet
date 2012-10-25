@@ -70,6 +70,10 @@ namespace Carpet {
     main_timer_tree.current = 0; // No timer has been started yet
     main_timer_tree.root->start();
 
+    mode_timer_tree.root = new TimerNode(&mode_timer_tree,"meta mode");
+    mode_timer_tree.current = 0; // No timer has been started yet
+    mode_timer_tree.root->start();
+
     return 0;
   }
   

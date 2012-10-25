@@ -95,6 +95,8 @@ namespace Carpet {
   extern vect<int,dim> spacereflevelfact;
   
   extern TimerTree main_timer_tree;
+  extern TimerTree mode_timer_tree;
+
   // Current multigrid factor
   extern int mglevelfact;
   

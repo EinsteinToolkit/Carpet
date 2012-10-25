@@ -99,6 +99,7 @@ namespace Carpet {
         {
           TimerNode *et = main_timer_tree.root->getChildTimer("Evolve");
           et->print(cout, et->getTime(), 0, timer_tree_threshold_percentage, timer_tree_output_precision);
+          mode_timer_tree.root->print(cout, mode_timer_tree.root->getTime(), 0, timer_tree_threshold_percentage, timer_tree_output_precision);
         }
         timer.stop();
       }

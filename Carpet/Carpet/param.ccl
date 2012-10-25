@@ -426,6 +426,14 @@ BOOLEAN output_xml_timer_tree "Output timing information in tree form as XML" ST
 {
 } "no"
 
+BOOLEAN include_maps_in_mode_timer_tree  "Include a breakdown of time spent on different multipatch maps in the mode timer tree" STEERABLE=always
+{
+} "no"
+
+BOOLEAN include_local_mode_in_mode_timer_tree  "Include a node for the time spent in local mode in the mode timer tree" STEERABLE=always
+{
+} "no"
+
 CCTK_REAL timer_tree_threshold_percentage "The percentage of the root timer below which timers are omitted" STEERABLE=always
 {
   0:* :: ""

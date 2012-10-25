@@ -14,7 +14,7 @@
 
 #include <carpet.hh>
 
-
+#include "Timers.hh"
 
 namespace Carpet {
   
@@ -84,6 +84,9 @@ namespace Carpet {
     assert (ml>=0 and ml<mglevels);
     Checkpoint ("Entering global mode");
     
+    Timer ftimer("enter_global_mode", &mode_timer_tree);
+    ftimer.start();
+
     mglevel = ml;
     mglevelfact = ipow(mgfact, mglevel);
     // TODO: this could also just be "mglevel" instead
@@ -193,6 +196,13 @@ namespace Carpet {
         
       } // if grouptype
     } // for group
+
+    ftimer.stop();
+
+    ostringstream mode_s;
+    mode_s << "global mode";
+    Timer timer(mode_s.str(), &mode_timer_tree);
+    timer.start();
     
     assert (is_global_mode());
   }
@@ -206,6 +216,17 @@ namespace Carpet {
     if (mglevel == -1) return;  // early return
     
     Checkpoint ("Leaving global mode");
+
+    if (mode_timer_tree.current != mode_timer_tree.root)
+    {
+      ostringstream mode_s;
+      mode_s << "global mode";
+      Timer timer(mode_s.str(), &mode_timer_tree);
+      timer.stop();
+    }
+
+    Timer ftimer("leave_global_mode", &mode_timer_tree);
+    ftimer.start();
 
     // Unset time delta
     if (not adaptive_stepsize) {
@@ -272,6 +293,8 @@ namespace Carpet {
     mglevel = -1;
     mglevelfact = -deadbeef;
     cctkGH->cctk_convlevel = -deadbeef;
+
+    ftimer.stop();
     
     assert (is_meta_mode());
   }
@@ -288,6 +311,9 @@ namespace Carpet {
     assert (rl>=0 and rl<reflevels);
     Checkpoint ("Entering level mode");
     
+    Timer ftimer("enter_level_mode", &mode_timer_tree);
+    ftimer.start();
+
     // Set mode
 #ifdef HAVE_CGH_CCTK_MODE
     cctkGH->cctk_mode = CCTK_MODE_LEVEL;
@@ -321,6 +347,13 @@ namespace Carpet {
     } else {
       tt->set_time (mglevel, reflevel, timelevel, cctkGH->cctk_time);
     }
+
+    ftimer.stop();
+
+    ostringstream mode_s;
+    mode_s << "level(" << rl << ")";
+    Timer timer(mode_s.str(), &mode_timer_tree);
+    timer.start();
     
     assert (is_level_mode());
   }
@@ -334,7 +367,18 @@ namespace Carpet {
     if (reflevel == -1) return; // early return
     
     Checkpoint ("Leaving level mode");
-    
+
+    if (mode_timer_tree.current != mode_timer_tree.root)
+    {
+      ostringstream mode_s;
+      mode_s << "level(" << reflevel << ")";
+      Timer timer(mode_s.str(), &mode_timer_tree);
+      timer.stop();
+    }
+
+    Timer ftimer("leave_level_mode", &mode_timer_tree);
+    ftimer.start();
+
     CCTK_INT const deadbeef = get_deadbeef();
     
     // Save and unset current time
@@ -373,6 +417,8 @@ namespace Carpet {
     ivect_ref(cctkGH->cctk_levfac) = spacereflevelfact;
     cctkGH->cctk_timefac = timereflevelfact;
     
+    ftimer.stop();
+
     assert (is_global_mode());
   }
   
@@ -383,6 +429,8 @@ namespace Carpet {
   void enter_singlemap_mode (cGH * const cctkGH,
                              int const m, int const grouptype)
   {
+    DECLARE_CCTK_PARAMETERS
+
     assert (is_level_mode());
     assert (mc_grouptype == -1);
     assert (m>=0 and m<maps);
@@ -390,6 +438,9 @@ namespace Carpet {
             or grouptype == CCTK_GF);
     Checkpoint ("Entering singlemap mode");
     
+    Timer ftimer("enter_singlemap_mode", &mode_timer_tree);
+    ftimer.start();
+
     // Set mode
 #ifdef HAVE_CGH_CCTK_MODE
     cctkGH->cctk_mode = CCTK_MODE_SINGLEMAP;
@@ -432,6 +483,16 @@ namespace Carpet {
       
     } // if mc_grouptype
     
+    ftimer.stop();
+
+    if (include_maps_in_mode_timer_tree)
+    {
+      ostringstream mode_s;
+      mode_s << "map(" << map << ")";
+      Timer timer(mode_s.str(), &mode_timer_tree);
+      timer.start();
+    }
+
     assert (is_singlemap_mode());
   }
   
@@ -444,6 +505,17 @@ namespace Carpet {
     if (map == -1) return;      // early return
     
     Checkpoint ("Leaving singlemap mode");
+
+    if (mode_timer_tree.current != mode_timer_tree.root && include_maps_in_mode_timer_tree)
+    {
+      ostringstream mode_s;
+      mode_s << "map(" << map << ")";
+      Timer timer(mode_s.str(), &mode_timer_tree);
+      timer.stop();
+    }
+
+    Timer ftimer("leave_singlemap_mode", &mode_timer_tree);
+    ftimer.start();
 
     assert (mc_grouptype == CCTK_SCALAR or mc_grouptype == CCTK_ARRAY
             or mc_grouptype == CCTK_GF);
@@ -491,6 +563,8 @@ namespace Carpet {
     mc_grouptype = -1;
     carpetGH.map = map = -1;
     
+    ftimer.stop();
+
     assert (is_level_mode());
   }
   
@@ -501,6 +575,8 @@ namespace Carpet {
   void enter_local_mode (cGH * const cctkGH,
                          int const c, int const lc, int const grouptype)
   {
+    DECLARE_CCTK_PARAMETERS
+
     assert (is_singlemap_mode());
     if (mc_grouptype == CCTK_GF) {
       assert (c>=0 and c<vhh.AT(map)->components(reflevel));
@@ -511,6 +587,9 @@ namespace Carpet {
     }
     Checkpoint ("Entering local mode");
     
+    Timer ftimer("enter_local_mode", &mode_timer_tree);
+    ftimer.start();
+
     // Set mode
 #ifdef HAVE_CGH_CCTK_MODE
     cctkGH->cctk_mode = CCTK_MODE_LOCAL;
@@ -631,6 +710,16 @@ namespace Carpet {
       
     } // if mc_grouptype
     
+    ftimer.stop();
+
+    if (include_local_mode_in_mode_timer_tree)
+    {
+      ostringstream mode_s;
+      mode_s << "local";
+      Timer timer(mode_s.str(), &mode_timer_tree);
+      timer.start();
+    }
+
     assert (is_local_mode());
   }
   
@@ -644,6 +733,17 @@ namespace Carpet {
 
     Checkpoint ("Leaving local mode");
     
+    if (mode_timer_tree.current != mode_timer_tree.root && include_local_mode_in_mode_timer_tree)
+    {
+      ostringstream mode_s;
+      mode_s << "local";
+      Timer timer(mode_s.str(), &mode_timer_tree);
+      timer.stop();
+    }
+
+    Timer ftimer("leave_local_mode", &mode_timer_tree);
+    ftimer.start();
+
     if (mc_grouptype == CCTK_GF) {
       
       CCTK_INT const deadbeef = get_deadbeef();
@@ -707,6 +807,8 @@ namespace Carpet {
     component = -1;
     local_component = -1;
     
+    ftimer.stop();
+
     assert (is_singlemap_mode());
   }
   
