@@ -1,3 +1,13 @@
+TEST kasner
+{
+  NPROCS 2
+}
+
+TEST kasner_amr
+{
+  NPROCS 2
+}
+
 TEST no-overlap
 {
   NPROCS 2
