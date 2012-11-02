@@ -87,7 +87,7 @@ namespace Carpet {
   std::map <string, int> const & HostMap ();
   int HostId (string name);
   
-  // Processor to host id
+  // Process to host id
   vector <int> const & HostIds ();
   int HostId (int proc);
   
