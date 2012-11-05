@@ -139,7 +139,7 @@ namespace CarpetRegrid2 {
                     for (int j=bimin[1]; j<bimax[1]; ++j) {
                       for (int i=bimin[0]; i<bimax[0]; ++i) {
                         int const ind3d = CCTK_GFINDEX3D(cctkGH, i,j,k);
-                        if (not isnan(level_mask[ind3d])) {
+                        if (isfinite(level_mask[ind3d])) {
                           refine = refine or level_mask[ind3d] >= rl;
                         } else {
                           have_nan = true;
