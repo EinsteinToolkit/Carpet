@@ -62,7 +62,8 @@ namespace CarpetMask {
         
         bool const exterior = exclude_exterior[n];
         
-#pragma omp parallel
+        CCTK_REAL local_excised = 0.0;
+#pragma omp parallel reduction (+: local_excised)
         CCTK_LOOP3_ALL(CarpetExcludedSetup, cctkGH, i,j,k) {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
           
@@ -75,11 +76,12 @@ namespace CarpetMask {
               dx2 + dy2 + dz2 <= r2)
           {
             // Tally up the weight we are removing
-            * excised_cells += cell_volume * factor * BCNT(iweight[ind]);
+            local_excised += cell_volume * factor * BCNT(iweight[ind]);
             iweight[ind] = 0;
           }
           
         } CCTK_ENDLOOP3_ALL(CarpetExcludedSetup);
+        * excised_cells += local_excised;
         
       } // if r>=0
     }   // for n

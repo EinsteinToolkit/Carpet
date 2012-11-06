@@ -129,7 +129,8 @@ namespace CarpetMask {
             }
           }
           
-#pragma omp parallel
+        CCTK_REAL local_excised = 0.0;
+#pragma omp parallel reduction (+: local_excised)
           CCTK_LOOP3_ALL(CarpetSurfaceSetup, cctkGH, i,j,k) {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             
@@ -142,7 +143,7 @@ namespace CarpetMask {
             if (rho < 1.0e-12) {
               // Always excise the surface origin
               // Tally up the weight we are removing
-              * excised_cells += cell_volume * factor * BCNT(iweight[ind]);
+              local_excised += cell_volume * factor * BCNT(iweight[ind]);
               iweight[ind] = 0;
             } else {
               CCTK_REAL theta =
@@ -188,11 +189,12 @@ namespace CarpetMask {
                 sf_radius[a + maxntheta * (b + maxnphi * sn)];
               if (rho <= dr * shrink_factor) {
                 // Tally up the weight we are removing
-                * excised_cells += cell_volume * factor * BCNT(iweight[ind]);
+                local_excised += cell_volume * factor * BCNT(iweight[ind]);
                 iweight[ind] = 0;
               }
             }
           } CCTK_ENDLOOP3_ALL(CarpetSurfaceSetup);
+          * excised_cells += local_excised;
           
         } else {
           
