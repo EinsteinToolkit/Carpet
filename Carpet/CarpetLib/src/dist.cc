@@ -1,6 +1,7 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <algorithm>
 #include <cassert>
 #include <complex>
 #include <typeinfo>
@@ -48,34 +49,37 @@ namespace dist {
                int *restrict const len_,
                MPI_Datatype *const datatype_)
   {
+    bool done = false;
     int const len = *len_;
     MPI_Datatype const datatype = *datatype_;
 #define TYPECASE(N,T)                                   \
     if (datatype == mpi_datatype<T>()) {                \
+      assert(not done);                                 \
+      done = true;                                      \
       T *restrict const invec = (T*)invec_;             \
       T *restrict const inoutvec = (T*)inoutvec_;       \
       for (int n=0; n<len; ++n) {                       \
         inoutvec[n] = max(inoutvec[n], invec[n]);       \
       }                                                 \
-    } else
+    }
 #define CARPET_NO_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
 #define TYPECASE(N,T)                                           \
     if (datatype == mpi_datatype<T>()) {                        \
+      assert(not done);                                         \
+      done = true;                                              \
       T *restrict const invec = (T*)invec_;                     \
       T *restrict const inoutvec = (T*)inoutvec_;               \
       for (int n=0; n<len; ++n) {                               \
         inoutvec[n].Re = max(inoutvec[n].Re, invec[n].Re);      \
         inoutvec[n].Im = max(inoutvec[n].Im, invec[n].Im);      \
       }                                                         \
-    } else
+    }
 #define CARPET_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
-    {
-      assert (0);
-    }
+    assert(done);
   }
   
   void op_min (void *restrict const invec_,
@@ -83,34 +87,37 @@ namespace dist {
                int *restrict const len_,
                MPI_Datatype *const datatype_)
   {
+    bool done = false;
     int const len = *len_;
     MPI_Datatype const datatype = *datatype_;
 #define TYPECASE(N,T)                                   \
     if (datatype == mpi_datatype<T>()) {                \
+      assert(not done);                                 \
+      done = true;                                      \
       T *restrict const invec = (T*)invec_;             \
       T *restrict const inoutvec = (T*)inoutvec_;       \
       for (int n=0; n<len; ++n) {                       \
         inoutvec[n] = min(inoutvec[n], invec[n]);       \
       }                                                 \
-    } else
+    }
 #define CARPET_NO_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
 #define TYPECASE(N,T)                                           \
     if (datatype == mpi_datatype<T>()) {                        \
+      assert(not done);                                         \
+      done = true;                                              \
       T *restrict const invec = (T*)invec_;                     \
       T *restrict const inoutvec = (T*)inoutvec_;               \
       for (int n=0; n<len; ++n) {                               \
         inoutvec[n].Re = min(inoutvec[n].Re, invec[n].Re);      \
         inoutvec[n].Im = min(inoutvec[n].Im, invec[n].Im);      \
       }                                                         \
-    } else
+    }
 #define CARPET_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
-    {
-      assert (0);
-    }
+    assert(done);
   }
   
   void op_prod (void *restrict const invec_,
@@ -118,21 +125,26 @@ namespace dist {
                 int *restrict const len_,
                 MPI_Datatype *const datatype_)
   {
+    bool done = false;
     int const len = *len_;
     MPI_Datatype const datatype = *datatype_;
 #define TYPECASE(N,T)                                   \
     if (datatype == mpi_datatype<T>()) {                \
+      assert(not done);                                 \
+      done = true;                                      \
       T *restrict const invec = (T*)invec_;             \
       T *restrict const inoutvec = (T*)inoutvec_;       \
       for (int n=0; n<len; ++n) {                       \
         inoutvec[n] *= invec[n];                        \
       }                                                 \
-    } else
+    }
 #define CARPET_NO_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
 #define TYPECASE(N,T)                                   \
     if (datatype == mpi_datatype<T>()) {                \
+      assert(not done);                                 \
+      done = true;                                      \
       T *restrict const invec = (T*)invec_;             \
       T *restrict const inoutvec = (T*)inoutvec_;       \
       for (int n=0; n<len; ++n) {                       \
@@ -140,13 +152,11 @@ namespace dist {
         complex<T>& in    = *(complex<T>*)&invec[n];    \
         inout *= in;                                    \
       }                                                 \
-    } else
+    }
 #define CARPET_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
-    {
-      assert (0);
-    }
+    assert(done);
   }
   
   void op_sum (void *restrict const invec_,
@@ -154,34 +164,37 @@ namespace dist {
                int *restrict const len_,
                MPI_Datatype *const datatype_)
   {
+    bool done = false;
     int const len = *len_;
     MPI_Datatype const datatype = *datatype_;
 #define TYPECASE(N,T)                                   \
     if (datatype == mpi_datatype<T>()) {                \
+      assert(not done);                                 \
+      done = true;                                      \
       T *restrict const invec = (T*)invec_;             \
       T *restrict const inoutvec = (T*)inoutvec_;       \
       for (int n=0; n<len; ++n) {                       \
         inoutvec[n] += invec[n];                        \
       }                                                 \
-    } else
+    }
 #define CARPET_NO_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
 #define TYPECASE(N,T)                                   \
     if (datatype == mpi_datatype<T>()) {                \
+      assert(not done);                                 \
+      done = true;                                      \
       T *restrict const invec = (T*)invec_;             \
       T *restrict const inoutvec = (T*)inoutvec_;       \
       for (int n=0; n<len; ++n) {                       \
         inoutvec[n].Re += invec[n].Re;                  \
         inoutvec[n].Im += invec[n].Im;                  \
       }                                                 \
-    } else
+    }
 #define CARPET_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
-    {
-      assert (0);
-    }
+    assert(done);
   }
   
   
