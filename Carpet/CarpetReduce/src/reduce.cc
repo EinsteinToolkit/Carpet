@@ -976,8 +976,11 @@ namespace CarpetReduce {
 #define FINALISE(OP,S)                                                  \
 	case do_##OP: {                                                 \
           typedef typeconv<S>::goodtype T;                              \
-	  finalise<T,OP::op<T> > (&((char*)outvals)[vartypesize*n],     \
-                                  &        counts  [vartypesize*n]);    \
+          void *const outval = &((char*)outvals)[vartypesize*n];        \
+          T dummy;                                                      \
+          void *const cnt =                                             \
+            red->uses_cnt() ? (void*)&counts[vartypesize*n] : (void*)&dummy; \
+	  finalise<T,OP::op<T> > (outval, cnt);                         \
 	  break;                                                        \
         }
 #define TYPECASE(N,T)				\
