@@ -925,11 +925,10 @@ namespace CarpetReduce {
     
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
-    const int mpilength = CarpetSimpleMPIDatatypeLength(outtype);
     
     char* const sendbuf = static_cast<char*>(const_cast<void*>(myoutvals));
     const int bufsize = num_outvals * vartypesize;
-    const int mpicount = num_outvals * mpilength * (red->uses_cnt() ? 2 : 1);
+    const int mpicount = num_outvals * (1 + red->uses_cnt());
     if (red->uses_cnt()) {
       if (not (sendbuf + bufsize == static_cast<const char*>(mycounts))) {
         cerr << "sendbuf=" << (void*)sendbuf << endl
@@ -938,7 +937,6 @@ namespace CarpetReduce {
              << "num_outvals=" << num_outvals << endl
              << "outtype=" << outtype << endl
              << "vartypesize=" << vartypesize << endl
-             << "mpilength=" << mpilength << endl
              << "mpicount=" << mpicount << endl;
       }
       assert (sendbuf + bufsize == static_cast<const char*>(mycounts));
@@ -954,7 +952,7 @@ namespace CarpetReduce {
       }
     }
     
-    const MPI_Datatype mpitype = CarpetSimpleMPIDatatype(outtype);
+    const MPI_Datatype mpitype = CarpetMPIDatatype(outtype);
     if (proc == -1) {
       MPI_Allreduce (sendbuf, recvbuf, mpicount,
                      mpitype, red->mpi_op(), CarpetMPIComm());
