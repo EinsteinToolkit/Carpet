@@ -336,10 +336,9 @@ namespace Carpet {
     }
 #include "typecase.hh"
 #undef TYPECASE
-    default:
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "Carpet does not support the variable type %d.", vartype);
     }
+    CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Carpet does not support the variable type %d.", vartype);
     // notreached
     return MPI_CHAR;
   }
@@ -347,33 +346,23 @@ namespace Carpet {
   MPI_Datatype CarpetSimpleMPIDatatype (const int vartype)
   {
     switch (vartype) {
-#ifdef CARPET_COMPLEX
     case CCTK_VARIABLE_COMPLEX:
       return CarpetMPIDatatype (CCTK_VARIABLE_REAL);
-#endif
-#ifdef CARPET_COMPLEX8
-#  ifdef HAVE_CCTK_COMPLEX8
+#ifdef HAVE_CCTK_COMPLEX8
     case CCTK_VARIABLE_COMPLEX8:
       return CarpetMPIDatatype (CCTK_VARIABLE_REAL4);
-#  endif
 #endif
-#ifdef CARPET_COMPLEX16
-#  ifdef HAVE_CCTK_COMPLEX16
+#ifdef HAVE_CCTK_COMPLEX16
     case CCTK_VARIABLE_COMPLEX16:
       return CarpetMPIDatatype (CCTK_VARIABLE_REAL8);
-#  endif
 #endif
-#ifdef CARPET_COMPLEX32
-#  ifdef HAVE_CCTK_COMPLEX32
+#ifdef HAVE_CCTK_COMPLEX32
     case CCTK_VARIABLE_COMPLEX32:
       return CarpetMPIDatatype (CCTK_VARIABLE_REAL16);
-#  endif
 #endif
-    default:
-      return CarpetMPIDatatype (vartype);
     }
-    // notreached
-    return MPI_CHAR;
+    // default
+    return CarpetMPIDatatype (vartype);
   }
 
   int CarpetSimpleMPIDatatypeLength (const int vartype)
@@ -390,11 +379,9 @@ namespace Carpet {
     case CCTK_VARIABLE_COMPLEX32:
 #endif
       return 2;
-    default:
-      return 1;
     }
-    // notreached
-    return 0;
+    // default
+    return 1;
   }
 
 
