@@ -221,7 +221,7 @@ namespace dist {
 #endif
     MPI_Op_create (op_max, 1, &mpi_max);
     MPI_Op_create (op_min, 1, &mpi_min);
-    MPI_Op_create (op_sum, 1, &mpi_prod);
+    MPI_Op_create (op_prod, 1, &mpi_prod);
     MPI_Op_create (op_sum, 1, &mpi_sum);
     
     
