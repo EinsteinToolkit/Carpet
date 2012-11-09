@@ -2,6 +2,10 @@
 
 STORAGE: evolution_mask
 
+if (provide_buffer_mask) {
+  STORAGE: buffer_mask
+}
+
 
 SCHEDULE GROUP EvolutionMaskBase_SetupEvolutionMask AT basegrid
 {

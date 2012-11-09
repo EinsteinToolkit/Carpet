@@ -104,6 +104,11 @@ namespace CarpetEvolutionMask {
       ibset antishrunk
         (antirefined.expand(antishrinkby).
          expanded_for(coarsebase));
+      // TODO: look up how this is done in regrid.cc
+      ibset buffers
+        (antirefined.expand(antishrinkby) & base);
+      buffers -= antirefined;
+      buffers &= base;
       
       //      cout << "antishrunk1: " << antishrunk << endl;
 
@@ -211,6 +216,57 @@ namespace CarpetEvolutionMask {
         leave_level_mode (cctkGH);
         enter_level_mode (cctkGH, oldreflevel);
         enter_singlemap_mode (cctkGH, oldmap, oldgrouptype);
+      }
+
+      // Indicate which points are in the buffer region on current level
+      if (provide_buffer_mask) {
+        BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+          
+          DECLARE_CCTK_ARGUMENTS;
+          
+          ibbox const & ext
+            = dd.light_boxes.at(mglevel).at(reflevel).at(component).exterior;
+          
+          for (ibset::const_iterator bi = buffers.begin();
+               bi != buffers.end();
+               ++bi)
+          {
+            
+            ibbox const & box = (*bi) & ext;
+            if (! box.empty()) {
+              
+              assert (all ((box.lower() - ext.lower()               ) >= 0));
+              assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
+              assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
+              assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
+              ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
+              ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
+              assert (all (izero <= imin));
+              assert (box.empty() || all (imin <= imax));
+              assert (all (imax <= ivect::ref(cctk_lsh)));
+              
+              if (verbose) {
+                ostringstream buf;
+                buf << "Setting buffer region on level " << reflevel << ": " << imin << ":" << imax-ione;
+                CCTK_INFO (buf.str().c_str());
+              }
+              
+              // Set mask in the buffer region to 1
+              assert (dim == 3);
+              for (int k=imin[2]; k<imax[2]; ++k) {
+                for (int j=imin[1]; j<imax[1]; ++j) {
+                  for (int i=imin[0]; i<imax[0]; ++i) {
+                    int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                    buffer_mask[ind] = 1;
+                  }
+                }
+              }
+              
+            } // if box not empty
+              
+          } // for box
+          
+        } END_LOCAL_COMPONENT_LOOP;
       }
       
     } // if reflevel>0

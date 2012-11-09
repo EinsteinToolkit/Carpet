@@ -26,3 +26,7 @@ INT enlarge_evolved_region_by "enlarge or shrink evolved region" STEERABLE=alway
  0:*  :: "positive values enlarge the evolved region"
  *:0) :: "negative values shrink the evolved region. Up to buffer_width + nghostzones points can be removed"
 } 0
+
+BOOLEAN provide_buffer_mask "Compute mask indicating which points need only be computed for some MoL substeps"
+{
+} "no"

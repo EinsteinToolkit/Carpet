@@ -27,6 +27,9 @@ EvolutionMaskBase_InitEvolutionMask (CCTK_ARGUMENTS)
         
         int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
         evolution_mask[ind] = 1.0;
+        if (provide_buffer_mask) {
+          buffer_mask[ind] = 0;
+        }
         
       }
     }

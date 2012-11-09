@@ -1,0 +1,81 @@
+!DESC "Carpet mesh refined, test buffer mask computation"
+ActiveThorns = "time MoL coordbase symbase cartgrid3d ioutil boundary Carpet CarpetLib CarpetInterp CarpetReduce CarpetIOScalar CarpetIOBasic LoopControl InitBase CarpetRegrid2 ReflectionSymmetry CarpetIOASCII CarpetEvolutionMask"
+
+time::dtfac = 0.375
+
+boundary::radpower        = 2
+
+CartGrid3D::type         = "coordbase"
+CartGrid3D::domain       = "full"
+CartGrid3D::avoid_origin = "no"
+CoordBase::domainsize = minmax
+
+Carpet::domain_from_coordbase = "yes"
+CoordBase::spacing = "numcells"
+CoordBase::xmin =  -15.0
+CoordBase::ymin =    0.0
+CoordBase::zmin =    0.0
+CoordBase::xmax =   15.0
+CoordBase::ymax =   15.0
+CoordBase::zmax =   15.0
+CoordBase::ncells_x = 24
+CoordBase::ncells_y = 12
+CoordBase::ncells_z = 12
+
+CoordBase::boundary_size_x_lower        = 2
+CoordBase::boundary_size_y_lower        = 2
+CoordBase::boundary_size_z_lower        = 2
+CoordBase::boundary_shiftout_x_lower    = 0
+CoordBase::boundary_shiftout_y_lower    = 1
+CoordBase::boundary_shiftout_z_lower    = 1
+CoordBase::boundary_size_x_upper        = 2
+CoordBase::boundary_size_y_upper        = 2
+CoordBase::boundary_size_z_upper        = 2
+CoordBase::boundary_shiftout_x_upper    = 0
+CoordBase::boundary_shiftout_y_upper    = 0
+CoordBase::boundary_shiftout_z_upper    = 0
+
+Carpet::max_refinement_levels = 3
+Carpet::use_buffer_zones      = "yes"
+CarpetRegrid2::num_centres  = 1
+CarpetRegrid2::num_levels_1 = 3
+CarpetRegrid2::radius_1[1]  = 10
+CarpetRegrid2::radius_1[2]  = 5
+
+Carpet::poison_new_timelevels           = "yes"
+Carpet::init_fill_timelevels            = "yes"
+CarpetLib::poison_new_memory            = "yes"
+
+ReflectionSymmetry::reflection_x        = "no"
+ReflectionSymmetry::reflection_y        = "yes"
+ReflectionSymmetry::reflection_z        = "yes"
+ReflectionSymmetry::avoid_origin_x      = "no"
+ReflectionSymmetry::avoid_origin_y      = "no"
+ReflectionSymmetry::avoid_origin_z      = "no"
+ReflectionSymmetry::verbose = "no"
+
+driver::ghost_size   = 2
+
+carpetevolutionmask::provide_buffer_mask = "yes"
+
+cactus::cctk_itlast   =       0
+
+methodoflines::ode_method        = "rk2"
+methodoflines::mol_intermediate_steps = 2
+methodoflines::mol_num_scratch_levels = 0
+
+Carpet::prolongation_order_space  = 3
+Carpet::prolongation_order_time   = 2
+
+IO::out_dir			= $parfile
+IO::out_fileinfo                = "none"
+
+ioascii::compact_format = no
+ioascii::output_ghost_points = yes
+ioascii::output_symmetry_points = yes
+
+IOBasic::outInfo_every = -1
+
+IOASCII::out1D_every = 1
+IOASCII::out1D_d     = "no"
+IOASCII::out1D_vars  = "carpetevolutionmask::buffer_mask"
