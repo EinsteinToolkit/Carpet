@@ -80,6 +80,10 @@ public:
     // Refluxing
     vect<vect<ibset,2>,dim> coarse_boundary;
     vect<vect<ibset,2>,dim> fine_boundary;
+    vect<vect<vector<int>,2>,dim> coarse_boundary_offsets;
+    vect<vect<vector<int>,2>,dim> fine_boundary_offsets;
+    vect<vect<int,2>,dim> coarse_boundary_size;
+    vect<vect<int,2>,dim> fine_boundary_size;
     
     size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
     istream & input (istream & is);

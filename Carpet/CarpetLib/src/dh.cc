@@ -1205,6 +1205,21 @@ regrid (bool const do_init)
                        << "   local.fine_boundary=" << local_box.fine_boundary[dir][face] << "\n";
                 }
                 
+                ibset const& boxes =
+                  local_box.fine_boundary[dir][face];
+                vector<int>& offsets =
+                  local_box.fine_boundary_offsets[dir][face];
+                assert(offsets.empty());
+                offsets.reserve(boxes.setsize());
+                int offset = 0;
+                for (ibset::const_iterator
+                       bi=boxes.begin(); bi!=boxes.end(); ++bi)
+                {
+                  offsets.push_back(offset);
+                  offset += (*bi).size();
+                }
+                local_box.fine_boundary_size[dir][face] = offset;
+                
               } // for face
             }   // for dir
             
@@ -1247,6 +1262,21 @@ regrid (bool const do_init)
                        << "   local.coarse_boundary=" << local_obox.coarse_boundary[dir][face] << "\n";
                 }
                 assert ((obox.buffers.shift(-idir,2) & all_coarse_boundary[dir][face]).empty());
+                
+                ibset const& boxes =
+                  local_obox.coarse_boundary[dir][face];
+                vector<int>& offsets =
+                  local_obox.coarse_boundary_offsets[dir][face];
+                assert(offsets.empty());
+                offsets.reserve(boxes.setsize());
+                int offset = 0;
+                for (ibset::const_iterator
+                       bi=boxes.begin(); bi!=boxes.end(); ++bi)
+                {
+                  offsets.push_back(offset);
+                  offset += (*bi).size();
+                }
+                local_obox.coarse_boundary_size[dir][face] = offset;
                 
               } // for face
             }   // for dir
@@ -2434,7 +2464,11 @@ memory ()
     memoryof (restricted_region) +
     memoryof (unused_region) +
     memoryof (coarse_boundary) +
-    memoryof (fine_boundary);
+    memoryof (fine_boundary) +
+    memoryof (coarse_boundary_offsets) +
+    memoryof (fine_boundary_offsets) +
+    memoryof (coarse_boundary_size) +
+    memoryof (fine_boundary_size);
 }
 
 size_t
@@ -2772,6 +2806,10 @@ output (ostream & os)
      << "   unused_region: " << unused_region << eol
      << "   coarse_boundary: " << coarse_boundary << eol
      << "   fine_boundary: " << fine_boundary << eol
+     << "   coarse_boundary_offsets: " << coarse_boundary_offsets << eol
+     << "   fine_boundary_offsets: " << fine_boundary_offsets << eol
+     << "   coarse_boundary_size: " << coarse_boundary_size << eol
+     << "   fine_boundary_size: " << fine_boundary_size << eol
      << "}" << eol;
   return os;
 }
