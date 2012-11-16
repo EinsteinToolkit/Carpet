@@ -8,6 +8,7 @@ INCLUDE HEADER: fasterp.hh IN carpetinterp2.hh
 
 USES INCLUDE HEADER: nompi.h
 
+USES INCLUDE HEADER: cacheinfo.hh
 USES INCLUDE HEADER: defs.hh
 USES INCLUDE HEADER: typeprops.hh
 USES INCLUDE HEADER: vect.hh

@@ -8,7 +8,6 @@
 
 #include <loopcontrol.h>
 
-#include "gdata.hh"
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
@@ -22,9 +21,11 @@ namespace CarpetLib {
   
 #define SRCIND3(i,j,k)                                  \
   index3 (srcioff + (i), srcjoff + (j), srckoff + (k),  \
+          srcipadext, srcjpadext, srckpadext,           \
           srciext, srcjext, srckext)
 #define DSTIND3(i,j,k)                                  \
   index3 (dstioff + (i), dstjoff + (j), dstkoff + (k),  \
+          dstipadext, dstjpadext, dstkpadext,           \
           dstiext, dstjext, dstkext)
   
   
@@ -55,9 +56,11 @@ namespace CarpetLib {
                           CCTK_REAL const t2,
                           T const * restrict const src3,
                           CCTK_REAL const t3,
+                          ivect3 const & restrict srcpadext,
                           ivect3 const & restrict srcext,
                           T * restrict const dst,
                           CCTK_REAL const t,
+                          ivect3 const & restrict dstpadext,
                           ivect3 const & restrict dstext,
                           ibbox3 const & restrict srcbbox,
                           ibbox3 const & restrict dstbbox,
@@ -93,12 +96,6 @@ namespace CarpetLib {
       CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
     }
     
-    if (any (srcext != gdata::allocated_memory_shape(srcbbox.shape() / srcbbox.stride()) or
-             dstext != gdata::allocated_memory_shape(dstbbox.shape() / dstbbox.stride())))
-    {
-      CCTK_WARN (0, "Internal error: array sizes don't agree with bounding boxes");
-    }
-    
     
     
     ivect3 const regext = regbbox.shape() / regbbox.stride();
@@ -108,6 +105,14 @@ namespace CarpetLib {
     ivect3 const dstoff = (regbbox.lower() - dstbbox.lower()) / dstbbox.stride();
     
     
+    
+    ptrdiff_t const srcipadext = srcpadext[0];
+    ptrdiff_t const srcjpadext = srcpadext[1];
+    ptrdiff_t const srckpadext = srcpadext[2];
+    
+    ptrdiff_t const dstipadext = dstpadext[0];
+    ptrdiff_t const dstjpadext = dstpadext[1];
+    ptrdiff_t const dstkpadext = dstpadext[2];
     
     ptrdiff_t const srciext = srcext[0];
     ptrdiff_t const srcjext = srcext[1];
@@ -172,7 +177,8 @@ namespace CarpetLib {
     // Loop over region
 #pragma omp parallel
     CCTK_LOOP3 (interpolate_end_3d_3tl,
-                i,j,k, 0,0,0, regiext,regjext,regkext, srciext,srcjext,srckext)
+                i,j,k, 0,0,0, regiext,regjext,regkext,
+                srcipadext,srcjpadext,srckpadext)
     {
       
       T const s1 = src1 [SRCIND3(i, j, k)];
@@ -209,9 +215,11 @@ namespace CarpetLib {
                           CCTK_REAL const t2,
                           CCTK_COMPLEX8 const * restrict const src3,
                           CCTK_REAL const t3,
+                          ivect3 const & restrict srcpadext,
                           ivect3 const & restrict srcext,
                           CCTK_COMPLEX8 * restrict const dst,
                           CCTK_REAL const t,
+                          ivect3 const & restrict dstpadext,
                           ivect3 const & restrict dstext,
                           ibbox3 const & restrict srcbbox,
                           ibbox3 const & restrict dstbbox,
@@ -234,9 +242,11 @@ namespace CarpetLib {
                           CCTK_REAL const t2,
                           CCTK_COMPLEX16 const * restrict const src3,
                           CCTK_REAL const t3,
+                          ivect3 const & restrict srcpadext,
                           ivect3 const & restrict srcext,
                           CCTK_COMPLEX16 * restrict const dst,
                           CCTK_REAL const t,
+                          ivect3 const & restrict dstpadext,
                           ivect3 const & restrict dstext,
                           ibbox3 const & restrict srcbbox,
                           ibbox3 const & restrict dstbbox,
@@ -257,9 +267,11 @@ namespace CarpetLib {
                           CCTK_REAL const t2,
                           CCTK_COMPLEX32 const * restrict const src3,
                           CCTK_REAL const t3,
+                          ivect3 const & restrict srcpadext,
                           ivect3 const & restrict srcext,
                           CCTK_COMPLEX32 * restrict const dst,
                           CCTK_REAL const t,
+                          ivect3 const & restrict dstpadext,
                           ivect3 const & restrict dstext,
                           ibbox3 const & restrict srcbbox,
                           ibbox3 const & restrict dstbbox,
@@ -282,9 +294,11 @@ namespace CarpetLib {
                           CCTK_REAL const t2,                   \
                           T const * restrict const src3,        \
                           CCTK_REAL const t3,                   \
+                          ivect3 const & restrict srcpadext,    \
                           ivect3 const & restrict srcext,       \
                           T * restrict const dst,               \
                           CCTK_REAL const t,                    \
+                          ivect3 const & restrict dstpadext,    \
                           ivect3 const & restrict dstext,       \
                           ibbox3 const & restrict srcbbox,      \
                           ibbox3 const & restrict dstbbox,      \

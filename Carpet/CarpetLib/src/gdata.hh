@@ -71,7 +71,8 @@ protected:
 
   int _proc;			// stored on processor
   
-  ivect _shape, _stride;      	// shape and index order
+  ivect _shape;                 // shape
+  ivect _padded_shape, _stride; // allocated shape and index order
   
   ibbox _extent;		// bbox for all data
   
@@ -105,10 +106,6 @@ public:
     0;
   virtual void free () = 0;
   virtual size_t allocsize (const ibbox& extent, const int proc) const = 0;
-  template<int D>
-  static vect<int,D> allocated_memory_shape (bbox<int,D> const& extent);
-  template<int D>
-  static vect<int,D> allocated_memory_shape (vect<int,D> shape);
   
   // Accessors
   bool has_storage () const {
@@ -145,6 +142,11 @@ public:
     return _shape;
   }
 
+  const ivect& padded_shape () const {
+    assert (_has_storage);
+    return _padded_shape;
+  }
+
   const ivect& stride () const {
     assert (_has_storage);
     return _stride;
@@ -164,8 +166,10 @@ public:
     assert (_has_storage);
     assert (all((index-extent().lower()) % extent().stride() == 0));
     ivect const ind = (index-extent().lower()) / extent().stride();
-    assert (all(ind>=0 and ind<=shape()));
-    return dot(ind, stride());
+    assert (all(ind>=0 and ind<shape()));
+    int const off = dot(ind, stride());
+    assert (off>=0 and off<size());
+    return off;
   }
   
 private:

@@ -15,6 +15,7 @@
 #  include "nompi.h"
 #endif
 
+#include <cacheinfo.hh>
 #include <carpet.hh>
 #include <vect.hh>
 
@@ -192,7 +193,10 @@ namespace CarpetInterp2 {
   int
   fasterp_src_loc_t::
   calc_stencil (fasterp_iloc_t const & iloc,
+                ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
                 ivect const & lsh,
+#endif
                 int const order)
   {
     assert (order <= max_order);
@@ -203,8 +207,8 @@ namespace CarpetInterp2 {
     pn   = iloc.pn;
     ipos = iloc.ipos;
     
-    // Save lsh
-    saved_lsh = lsh;
+    // Save ash
+    saved_ash = ash;
 #endif
     
 #ifndef NDEBUG
@@ -290,9 +294,9 @@ namespace CarpetInterp2 {
       return -1;
     }
 #endif
-    ind3d = iloc.ind3d + index(lsh, iorigin);
+    ind3d = iloc.ind3d + index(ash, iorigin);
 #ifdef CARPETINTERP2_CHECK
-    assert (index(lsh,ind) == ind3d);
+    assert (index(ash,ind) == ind3d);
 #endif
     return 0;
   }
@@ -310,26 +314,29 @@ namespace CarpetInterp2 {
   template <int O0, int O1, int O2>
   void
   fasterp_src_loc_t::
-  interpolate (ivect const & lsh,
+  interpolate (ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
+               ivect const & lsh,
+#endif
                vector<CCTK_REAL const *> const & varptrs,
                CCTK_REAL * restrict const vals)
     const
   {
 #ifdef CARPETINTERP2_CHECK
-    assert (all (lsh == saved_lsh));
+    assert (all (ash == saved_ash));
 #endif
     assert (O0 == 0 or not exact[0]);
     assert (O1 == 0 or not exact[1]);
     assert (O2 == 0 or not exact[2]);
     
     size_t const di = 1;
-    size_t const dj = di * lsh[0];
-    size_t const dk = dj * lsh[1];
+    size_t const dj = di * ash[0];
+    size_t const dk = dj * ash[1];
     
 #ifdef CARPETINTERP2_CHECK
     assert (all (ind>=0 and ind+ivect(O0,O1,O2)<lsh));
-    assert (ind3d == index(lsh,ind));
-    assert (int(di*ind[0] + dj*ind[1] + dk*ind[2]) == index(lsh,ind));
+    assert (ind3d == index(ash,ind));
+    assert (int(di*ind[0] + dj*ind[1] + dk*ind[2]) == index(ash,ind));
 #endif
     
     for (size_t v=0; v<varptrs.size(); ++v) {
@@ -377,7 +384,10 @@ namespace CarpetInterp2 {
   template <int O>
   void
   fasterp_src_loc_t::
-  interpolate (ivect const & lsh,
+  interpolate (ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
+               ivect const & lsh,
+#endif
                vector<CCTK_REAL const *> const & varptrs,
                CCTK_REAL * restrict const vals)
     const
@@ -386,29 +396,29 @@ namespace CarpetInterp2 {
     if (exact[2]) {
       if (exact[1]) {
         if (exact[0]) {
-          interpolate<Z,Z,Z> (lsh, varptrs, vals);
+          interpolate<Z,Z,Z> (ash, lsh, varptrs, vals);
         } else {
-          interpolate<O,Z,Z> (lsh, varptrs, vals);
+          interpolate<O,Z,Z> (ash, lsh, varptrs, vals);
         }
       } else {
         if (exact[0]) {
-          interpolate<Z,O,Z> (lsh, varptrs, vals);
+          interpolate<Z,O,Z> (ash, lsh, varptrs, vals);
         } else {
-          interpolate<O,O,Z> (lsh, varptrs, vals);
+          interpolate<O,O,Z> (ash, lsh, varptrs, vals);
         }
       }
     } else {
       if (exact[1]) {
         if (exact[0]) {
-          interpolate<Z,Z,O> (lsh, varptrs, vals);
+          interpolate<Z,Z,O> (ash, lsh, varptrs, vals);
         } else {
-          interpolate<O,Z,O> (lsh, varptrs, vals);
+          interpolate<O,Z,O> (ash, lsh, varptrs, vals);
         }
       } else {
         if (exact[0]) {
-          interpolate<Z,O,O> (lsh, varptrs, vals);
+          interpolate<Z,O,O> (ash, lsh, varptrs, vals);
         } else {
-          interpolate<O,O,O> (lsh, varptrs, vals);
+          interpolate<O,O,O> (ash, lsh, varptrs, vals);
         }
       }
     }
@@ -422,25 +432,28 @@ namespace CarpetInterp2 {
   // exact in each of the directions.
   void
   fasterp_src_loc_t::
-  interpolate (ivect const & lsh,
+  interpolate (ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
+               ivect const & lsh,
+#endif
                int const order,
                vector<CCTK_REAL const *> const & varptrs,
                CCTK_REAL * restrict const vals)
     const
   {
     switch (order) {
-    case  0: interpolate< 0> (lsh, varptrs, vals); break;
-    case  1: interpolate< 1> (lsh, varptrs, vals); break;
-    case  2: interpolate< 2> (lsh, varptrs, vals); break;
-    case  3: interpolate< 3> (lsh, varptrs, vals); break;
-    case  4: interpolate< 4> (lsh, varptrs, vals); break;
-    case  5: interpolate< 5> (lsh, varptrs, vals); break;
-    case  6: interpolate< 6> (lsh, varptrs, vals); break;
-    case  7: interpolate< 7> (lsh, varptrs, vals); break;
-    case  8: interpolate< 8> (lsh, varptrs, vals); break;
-    case  9: interpolate< 9> (lsh, varptrs, vals); break;
-    case 10: interpolate<10> (lsh, varptrs, vals); break;
-    case 11: interpolate<11> (lsh, varptrs, vals); break;
+    case  0: interpolate< 0> (ash, lsh, varptrs, vals); break;
+    case  1: interpolate< 1> (ash, lsh, varptrs, vals); break;
+    case  2: interpolate< 2> (ash, lsh, varptrs, vals); break;
+    case  3: interpolate< 3> (ash, lsh, varptrs, vals); break;
+    case  4: interpolate< 4> (ash, lsh, varptrs, vals); break;
+    case  5: interpolate< 5> (ash, lsh, varptrs, vals); break;
+    case  6: interpolate< 6> (ash, lsh, varptrs, vals); break;
+    case  7: interpolate< 7> (ash, lsh, varptrs, vals); break;
+    case  8: interpolate< 8> (ash, lsh, varptrs, vals); break;
+    case  9: interpolate< 9> (ash, lsh, varptrs, vals); break;
+    case 10: interpolate<10> (ash, lsh, varptrs, vals); break;
+    case 11: interpolate<11> (ash, lsh, varptrs, vals); break;
     default:
       // Add higher orders here as desired
       CCTK_WARN (CCTK_WARN_ABORT,
@@ -477,7 +490,7 @@ namespace CarpetInterp2 {
 #endif
     os << "ind3d=" << ind3d;
 #ifdef CARPETINTERP2_CHECK
-    os << "," << "saved_lsh=" << saved_lsh;
+    os << "," << "saved_ash=" << saved_ash;
 #endif
     os << "}";
   }
@@ -495,8 +508,11 @@ namespace CarpetInterp2 {
   int
   fasterp_eno2_src_loc_t::
   calc_stencil (fasterp_iloc_t const & iloc,
+                ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
                 ivect const & lsh,
-                int const unused_order)
+#endif
+                int /*order*/)
   {
     //assert (order <= max_order);
     CCTK_REAL const eps = 1.0e-12;
@@ -506,8 +522,8 @@ namespace CarpetInterp2 {
     pn   = iloc.pn;
     ipos = iloc.ipos;
     
-    // Save lsh
-    saved_lsh = lsh;
+    // Save ash
+    saved_ash = ash;
 #endif
     
     // first we setup 1st order stencil!
@@ -640,9 +656,9 @@ namespace CarpetInterp2 {
       return -1;
     }
 #endif
-    ind3d = iloc.ind3d + index(lsh, iorigin);
+    ind3d = iloc.ind3d + index(ash, iorigin);
 #ifdef CARPETINTERP2_CHECK
-    assert (index(lsh,ind) == ind3d);
+    assert (index(ash,ind) == ind3d);
 #endif
     }
     
@@ -719,26 +735,29 @@ namespace CarpetInterp2 {
   template <int O0, int O1, int O2>
   void
   fasterp_eno2_src_loc_t::
-  interpolate (ivect const & lsh,
+  interpolate (ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
+               ivect const & lsh,
+#endif
                vector<CCTK_REAL const *> const & varptrs,
                CCTK_REAL * restrict const vals)
     const
   {
 #ifdef CARPETINTERP2_CHECK
-    assert (all (lsh == saved_lsh));
+    assert (all (ash == saved_ash));
 #endif
     assert (O0 == 0 or not exact[0]);
     assert (O1 == 0 or not exact[1]);
     assert (O2 == 0 or not exact[2]);
     
     size_t const di = 1;
-    size_t const dj = di * lsh[0];
-    size_t const dk = dj * lsh[1];
+    size_t const dj = di * ash[0];
+    size_t const dk = dj * ash[1];
     
 #ifdef CARPETINTERP2_CHECK
     assert (all (ind>=0 and ind+ivect(O0,O1,O2)<lsh));
-    assert (ind3d == index(lsh,ind));
-    assert (int(di*ind[0] + dj*ind[1] + dk*ind[2]) == index(lsh,ind));
+    assert (ind3d == index(ash,ind));
+    assert (int(di*ind[0] + dj*ind[1] + dk*ind[2]) == index(ash,ind));
 #endif
     
     for (size_t v=0; v<varptrs.size(); ++v) {
@@ -869,7 +888,10 @@ namespace CarpetInterp2 {
   template <int O>
   void
   fasterp_eno2_src_loc_t::
-  interpolate (ivect const & lsh,
+  interpolate (ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
+               ivect const & lsh,
+#endif
                vector<CCTK_REAL const *> const & varptrs,
                CCTK_REAL * restrict const vals)
     const
@@ -878,29 +900,29 @@ namespace CarpetInterp2 {
     if (exact[2]) {
       if (exact[1]) {
         if (exact[0]) {
-          interpolate<Z,Z,Z> (lsh, varptrs, vals);
+          interpolate<Z,Z,Z> (ash, lsh, varptrs, vals);
         } else {
-          interpolate<O,Z,Z> (lsh, varptrs, vals);
+          interpolate<O,Z,Z> (ash, lsh, varptrs, vals);
         }
       } else {
         if (exact[0]) {
-          interpolate<Z,O,Z> (lsh, varptrs, vals);
+          interpolate<Z,O,Z> (ash, lsh, varptrs, vals);
         } else {
-          interpolate<O,O,Z> (lsh, varptrs, vals);
+          interpolate<O,O,Z> (ash, lsh, varptrs, vals);
         }
       }
     } else {
       if (exact[1]) {
         if (exact[0]) {
-          interpolate<Z,Z,O> (lsh, varptrs, vals);
+          interpolate<Z,Z,O> (ash, lsh, varptrs, vals);
         } else {
-          interpolate<O,Z,O> (lsh, varptrs, vals);
+          interpolate<O,Z,O> (ash, lsh, varptrs, vals);
         }
       } else {
         if (exact[0]) {
-          interpolate<Z,O,O> (lsh, varptrs, vals);
+          interpolate<Z,O,O> (ash, lsh, varptrs, vals);
         } else {
-          interpolate<O,O,O> (lsh, varptrs, vals);
+          interpolate<O,O,O> (ash, lsh, varptrs, vals);
         }
       }
     }
@@ -914,14 +936,17 @@ namespace CarpetInterp2 {
   // exact in each of the directions.
   void
   fasterp_eno2_src_loc_t::
-  interpolate (ivect const & lsh,
+  interpolate (ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
+               ivect const & lsh,
+#endif
                int const order,
                vector<CCTK_REAL const *> const & varptrs,
                CCTK_REAL * restrict const vals)
     const
   {
     switch (order) {
-    case  2: interpolate< 2> (lsh, varptrs, vals); break;
+    case  2: interpolate< 2> (ash, lsh, varptrs, vals); break;
     default:
       // Add higher orders here as desired
       CCTK_WARN (CCTK_WARN_ABORT,
@@ -958,7 +983,7 @@ namespace CarpetInterp2 {
 #endif
     os << "ind3d=" << ind3d;
 #ifdef CARPETINTERP2_CHECK
-    os << "," << "saved_lsh=" << saved_lsh;
+    os << "," << "saved_ash=" << saved_ash;
 #endif
     os << "}";
   }
@@ -1173,8 +1198,8 @@ namespace CarpetInterp2 {
       assert (all (abs(dpos) <= rvect(0.5)));
       
       ivect const ind = ipos - ext.lower() / ext.stride();
-      ivect const lsh = ext.shape() / ext.stride();
-      int const ind3d = index(lsh, ind);
+      ivect const ash = pad_shape(ext);
+      int const ind3d = index(ash, ind);
 #if 0
       ENTER_SINGLEMAP_MODE (cctkGH, m, CCTK_GF) {
         ENTER_LOCAL_MODE (cctkGH, c, CCTK_GF) {
@@ -1426,6 +1451,7 @@ namespace CarpetInterp2 {
         assert (Carpet::vhh.AT(m)->is_local(rl,c));
         ibbox const & ext =
           Carpet::vdd.AT(m)->light_boxes.AT(Carpet::mglevel).AT(rl).AT(c).exterior;
+        send_comp.ash = pad_shape(ext);
         send_comp.lsh = ext.shape() / ext.stride();
         
         send_comp.offset = offset;
@@ -1448,7 +1474,8 @@ namespace CarpetInterp2 {
         
         //fasterp_src_loc_t sloc;
         FASTERP sloc;
-        int const ierr = sloc.calc_stencil (iloc, send_comp.lsh, order);
+        int const ierr =
+          sloc.calc_stencil (iloc, send_comp.ash, send_comp.lsh, order);
         if (ierr) {
           CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "Could not determine valid interpolation stencil for point %d on map %d, refinement level %d, component %d",
@@ -1482,7 +1509,7 @@ namespace CarpetInterp2 {
         for (int n=0; n<send_comp.npoints; ++n) {
           FASTERP const & sloc = send_comp.locs.at(n);
           assert (sloc.mrc == send_comp.mrc);
-          assert (all (sloc.saved_lsh == send_comp.lsh));
+          assert (all (sloc.saved_ash == send_comp.ash));
         }
       }
 #endif
@@ -1680,7 +1707,8 @@ namespace CarpetInterp2 {
         for (int n=0; n<int(send_comp.locs.size()); ++n) {
           size_t const ind = (send_comp.offset + n) * nvars;
           send_comp.locs.AT(n).interpolate
-            (send_comp.lsh, order, varptrs, &computed_points.AT(ind));
+            (send_comp.ash, send_comp.lsh,
+             order, varptrs, &computed_points.AT(ind));
 #ifdef CARPETINTERP2_CHECK
           computed_pn.AT(send_comp.offset + n) = send_comp.locs.AT(n).pn;
 #endif

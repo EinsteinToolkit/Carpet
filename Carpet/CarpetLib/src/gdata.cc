@@ -19,6 +19,7 @@
 #endif
 
 #include "bbox.hh"
+#include "cacheinfo.hh"
 #include "commstate.hh"
 #include "defs.hh"
 #include "dist.hh"
@@ -115,6 +116,7 @@ gdata::~gdata ()
 
 
 
+#if 0
 // Storage management
 
 template<int D>
@@ -181,6 +183,7 @@ allocated_memory_shape (vect<int,D> shape)
  done:;
   return shape;
 }
+#endif
 
 
 
@@ -262,8 +265,8 @@ transfer_from (comm_state & state,
   find_source_timelevel
     (times, time, order_time, my_transport_operator, timelevel0, ntimelevels);
   if (is_src) assert (int (srcs.size()) >= ntimelevels);
-  int const dstpoints = prod(allocated_memory_shape(dstbox));
-  int const srcpoints = prod(allocated_memory_shape(srcbox)) * ntimelevels;
+  int const dstpoints = prod(pad_shape(dstbox));
+  int const srcpoints = prod(pad_shape(srcbox)) * ntimelevels;
   bool const interp_on_src = dstpoints <= srcpoints;
   int const npoints = interp_on_src ? dstpoints : srcpoints;
   
@@ -289,10 +292,10 @@ transfer_from (comm_state & state,
         // copy the data into the send buffer
         if (interp_on_src) {
           size_t const sendbufsize =
-            src->c_datatype_size() * prod(allocated_memory_shape(dstbox));
+            src->c_datatype_size() * prod(pad_shape(dstbox));
           void * const sendbuf =
             state.send_buffer (src->c_datatype(), dstproc,
-                               prod(allocated_memory_shape(dstbox)));
+                               prod(pad_shape(dstbox)));
           gdata * const buf =
             src->make_typed (src->varindex, src->cent, src->transport_operator);
           buf->allocate (dstbox, srcproc, sendbuf, sendbufsize);
@@ -301,14 +304,14 @@ transfer_from (comm_state & state,
              time, order_space, order_time);
           delete buf;
           state.commit_send_space
-            (src->c_datatype(), dstproc, prod(allocated_memory_shape(dstbox)));
+            (src->c_datatype(), dstproc, prod(pad_shape(dstbox)));
         } else {
           for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
             size_t const sendbufsize =
-              src->c_datatype_size() * prod(allocated_memory_shape(srcbox));
+              src->c_datatype_size() * prod(pad_shape(srcbox));
             void * const sendbuf =
               state.send_buffer (src->c_datatype(), dstproc,
-                                 prod(allocated_memory_shape(srcbox)));
+                                 prod(pad_shape(srcbox)));
             gdata * const buf =
               src->make_typed (src->varindex, src->cent,
                                src->transport_operator);
@@ -316,7 +319,7 @@ transfer_from (comm_state & state,
             buf->copy_from_innerloop (srcs.AT(tl), srcbox, srcbox, NULL);
             delete buf;
             state.commit_send_space (src->c_datatype(), dstproc,
-                                     prod(allocated_memory_shape(srcbox)));
+                                     prod(pad_shape(srcbox)));
           }
         }
       }
@@ -337,14 +340,13 @@ transfer_from (comm_state & state,
         // copy from the recv buffer
         if (interp_on_src) {
           size_t const recvbufsize =
-            c_datatype_size() * prod(allocated_memory_shape(dstbox));
+            c_datatype_size() * prod(pad_shape(dstbox));
           void * const recvbuf =
-            state.recv_buffer (c_datatype(), srcproc,
-                               prod(allocated_memory_shape(dstbox)));
+            state.recv_buffer (c_datatype(), srcproc, prod(pad_shape(dstbox)));
           gdata * const buf = make_typed (varindex, cent, transport_operator);
           buf->allocate (dstbox, dstproc, recvbuf, recvbufsize);
           state.commit_recv_space (c_datatype(), srcproc,
-                                   prod(allocated_memory_shape(dstbox)));
+                                   prod(pad_shape(dstbox)));
           copy_from_innerloop (buf, dstbox, dstbox, NULL);
           delete buf;
         } else {
@@ -353,14 +355,14 @@ transfer_from (comm_state & state,
           vector <CCTK_REAL> timebuf (ntimelevels);
           for (int tl = 0; tl < ntimelevels; ++ tl) {
             size_t const recvbufsize =
-              c_datatype_size() * prod(allocated_memory_shape(srcbox));
+              c_datatype_size() * prod(pad_shape(srcbox));
             void * const recvbuf =
               state.recv_buffer (c_datatype(), srcproc,
-                                 prod(allocated_memory_shape(srcbox)));
+                                 prod(pad_shape(srcbox)));
             gdata * const buf = make_typed (varindex, cent, transport_operator);
             buf->allocate (srcbox, dstproc, recvbuf, recvbufsize);
             state.commit_recv_space
-              (c_datatype(), srcproc, prod(allocated_memory_shape(srcbox)));
+              (c_datatype(), srcproc, prod(pad_shape(srcbox)));
             bufs.AT(tl) = buf;
             timebuf.AT(tl) = times.AT(timelevel0 + tl);
           }
@@ -469,11 +471,3 @@ allmemory ()
   }
   return mem;
 }
-
-
-
-template vect<int,3> gdata::allocated_memory_shape (bbox<int,3> const& extent);
-template vect<int,3> gdata::allocated_memory_shape (vect<int,3> shape);
-
-template vect<int,4> gdata::allocated_memory_shape (bbox<int,4> const& extent);
-template vect<int,4> gdata::allocated_memory_shape (vect<int,4> shape);

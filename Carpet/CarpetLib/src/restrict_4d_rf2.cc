@@ -7,7 +7,6 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "gdata.hh"
 #include "operator_prototypes_4d.hh"
 #include "typeprops.hh"
 
@@ -21,9 +20,11 @@ namespace CarpetLib {
   
 #define SRCIND4(i,j,k,l)                                                \
   index4 (srcioff + (i), srcjoff + (j), srckoff + (k), srcloff + (l),   \
+          srcipadext, srcjpadext, srckpadext, srclpadext,               \
           srciext, srcjext, srckext, srclext)
 #define DSTIND4(i,j,k,l)                                                \
   index4 (dstioff + (i), dstjoff + (j), dstkoff + (k), dstloff + (l),   \
+          dstipadext, dstjpadext, dstkpadext, dstlpadext,               \
           dstiext, dstjext, dstkext, dstlext)
   
   
@@ -31,8 +32,10 @@ namespace CarpetLib {
   template <typename T>
   void
   restrict_4d_rf2 (T const * restrict const src,
+                   ivect4 const & restrict srcpadext,
                    ivect4 const & restrict srcext,
                    T * restrict const dst,
+                   ivect4 const & restrict dstpadext,
                    ivect4 const & restrict dstext,
                    ibbox4 const & restrict srcbbox,
                    ibbox4 const & restrict dstbbox,
@@ -67,12 +70,6 @@ namespace CarpetLib {
       CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
     }
     
-    if (any (srcext != gdata::allocated_memory_shape(srcbbox.shape() / srcbbox.stride()) or
-             dstext != gdata::allocated_memory_shape(dstbbox.shape() / dstbbox.stride())))
-    {
-      CCTK_WARN (0, "Internal error: array sizes don't agree with bounding boxes");
-    }
-    
     
     
     ivect4 const regext = regbbox.shape() / regbbox.stride();
@@ -82,6 +79,16 @@ namespace CarpetLib {
     ivect4 const dstoff = (regbbox.lower() - dstbbox.lower()) / dstbbox.stride();
     
     
+    
+    ptrdiff_t const srcipadext = srcpadext[0];
+    ptrdiff_t const srcjpadext = srcpadext[1];
+    ptrdiff_t const srckpadext = srcpadext[2];
+    ptrdiff_t const srclpadext = srcpadext[3];
+    
+    ptrdiff_t const dstipadext = dstpadext[0];
+    ptrdiff_t const dstjpadext = dstpadext[1];
+    ptrdiff_t const dstkpadext = dstpadext[2];
+    ptrdiff_t const dstlpadext = dstpadext[3];
     
     ptrdiff_t const srciext = srcext[0];
     ptrdiff_t const srcjext = srcext[1];
@@ -132,8 +139,10 @@ namespace CarpetLib {
   template                                              \
   void                                                  \
   restrict_4d_rf2 (T const * restrict const src,        \
+                   ivect4 const & restrict srcpadext,   \
                    ivect4 const & restrict srcext,      \
                    T * restrict const dst,              \
+                   ivect4 const & restrict dstpadext,   \
                    ivect4 const & restrict dstext,      \
                    ibbox4 const & restrict srcbbox,     \
                    ibbox4 const & restrict dstbbox,     \

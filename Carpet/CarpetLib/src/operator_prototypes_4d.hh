@@ -22,6 +22,7 @@ namespace CarpetLib {
   static inline
   size_t
   index4 (size_t const i, size_t const j, size_t const k, size_t const l,
+          size_t const padexti, size_t const padextj, size_t const padextk, size_t const padextl,
           size_t const exti, size_t const extj, size_t const extk, size_t const extl)
   {
 #ifdef CARPET_DEBUG
@@ -31,7 +32,7 @@ namespace CarpetLib {
     assert (static_cast <ptrdiff_t> (l) >= 0 and l < extl);
 #endif
     
-    return i + exti * (j + extj * (k + extk * l));
+    return i + padexti * (j + padextj * (k + padextk * l));
   }
   
   
@@ -47,8 +48,10 @@ namespace CarpetLib {
   template <typename T>
   void
   copy_4d (T const * restrict const src,
+           ivect4 const & restrict srcpadext,
            ivect4 const & restrict srcext,
            T * restrict const dst,
+           ivect4 const & restrict dstpadext,
            ivect4 const & restrict dstext,
            ibbox4 const & restrict srcbbox,
            ibbox4 const & restrict dstbbox,
@@ -61,8 +64,10 @@ namespace CarpetLib {
   template <typename T>
   void
   prolongate_4d_o1_rf2 (T const * restrict const src,
+                        ivect4 const & restrict srcpadext,
                         ivect4 const & restrict srcext,
                         T * restrict const dst,
+                        ivect4 const & restrict dstpadext,
                         ivect4 const & restrict dstext,
                         ibbox4 const & restrict srcbbox,
                         ibbox4 const & restrict dstbbox,
@@ -75,8 +80,10 @@ namespace CarpetLib {
   template <typename T>
   void
   restrict_4d_rf2 (T const * restrict const src,
+                   ivect4 const & restrict srcpadext,
                    ivect4 const & restrict srcext,
                    T * restrict const dst,
+                   ivect4 const & restrict dstpadext,
                    ivect4 const & restrict dstext,
                    ibbox4 const & restrict srcbbox,
                    ibbox4 const & restrict dstbbox,

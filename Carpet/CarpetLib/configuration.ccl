@@ -8,7 +8,7 @@ PROVIDES CarpetLib
 
 REQUIRES MPI Vectors
 
-OPTIONAL LoopControl
+OPTIONAL LoopControl MPI
 {
 }
 

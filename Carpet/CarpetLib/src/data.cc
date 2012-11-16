@@ -18,6 +18,7 @@
 
 #include "bbox.hh"
 #include "bboxset.hh"
+#include "cacheinfo.hh"
 #include "defs.hh"
 #include "dist.hh"
 #include "timestat.hh"
@@ -37,8 +38,10 @@ static
 void
 call_operator (void
                (* the_operator) (T const * restrict const src,
+                                 ivect3 const & restrict srcpadext,
                                  ivect3 const & restrict srcext,
                                  T * restrict const dst,
+                                 ivect3 const & restrict dstpadext,
                                  ivect3 const & restrict dstext,
                                  ibbox3 const & restrict srcbbox,
                                  ibbox3 const & restrict dstbbox,
@@ -46,8 +49,10 @@ call_operator (void
                                  ibbox3 const & restrict dstregbbox,
                                  void * const extraargs),
                T const * restrict const src,
+               ivect3 const & restrict srcpadext,
                ivect3 const & restrict srcext,
                T * restrict const dst,
+               ivect3 const & restrict dstpadext,
                ivect3 const & restrict dstext,
                ibbox3 const & restrict srcbbox,
                ibbox3 const & restrict dstbbox,
@@ -90,7 +95,7 @@ call_operator (void
        dstregbbox.stride());
     if (not mydstregbbox.empty()) {
       (* the_operator)
-        (src, srcext, dst, dstext, srcbbox, dstbbox,
+        (src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox, dstbbox,
          srcregbbox, mydstregbbox, extraargs);
 #  ifdef CARPET_DEBUG
 #pragma omp critical
@@ -113,8 +118,10 @@ static
 void
 call_operator (void
                (* the_operator) (T const * restrict const src,
+                                 ivect4 const & restrict srcpadext,
                                  ivect4 const & restrict srcext,
                                  T * restrict const dst,
+                                 ivect4 const & restrict dstpadext,
                                  ivect4 const & restrict dstext,
                                  ibbox4 const & restrict srcbbox,
                                  ibbox4 const & restrict dstbbox,
@@ -122,8 +129,10 @@ call_operator (void
                                  ibbox4 const & restrict dstregbbox,
                                  void * const extraargs),
                T const * restrict const src,
+               ivect4 const & restrict srcpadext,
                ivect4 const & restrict srcext,
                T * restrict const dst,
+               ivect4 const & restrict dstpadext,
                ivect4 const & restrict dstext,
                ibbox4 const & restrict srcbbox,
                ibbox4 const & restrict dstbbox,
@@ -133,7 +142,7 @@ call_operator (void
 {
 #ifndef _OPENMP
   (* the_operator)
-    (src, srcext, dst, dstext, srcbbox, dstbbox,
+    (src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox, dstbbox,
      srcregbbox, dstregbbox, extraargs);
 #else
 #  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
@@ -166,7 +175,7 @@ call_operator (void
        dstregbbox.stride());
     if (not mydstregbbox.empty()) {
       (* the_operator)
-        (src, srcext, dst, dstext, srcbbox, dstbbox,
+        (src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox, dstbbox,
          srcregbbox, mydstregbbox, extraargs);
 #  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
 #pragma omp critical
@@ -191,8 +200,10 @@ call_operator (void
 template <typename T>
 void
 prolongate_3d_eno (T const * restrict const /*src*/,
+                   ivect3 const & /*srcpadext*/,
                    ivect3 const & /*srcext*/,
                    T * restrict const /*dst*/,
+                   ivect3 const & /*dstpadext*/,
                    ivect3 const & /*dstext*/,
                    ibbox3 const & /*srcbbox*/,
                    ibbox3 const & /*dstbbox*/,
@@ -207,8 +218,10 @@ extern "C"
 void
 CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_eno)
   (const CCTK_REAL8* src,
+   const int& srcipadext, const int& srcjpadext, const int& srckpadext,
    const int& srciext, const int& srcjext, const int& srckext,
    CCTK_REAL8* dst,
+   const int& dstipadext, const int& dstjpadext, const int& dstkpadext,
    const int& dstiext, const int& dstjext, const int& dstkext,
    const int srcbbox[3][3],
    const int dstbbox[3][3],
@@ -217,8 +230,10 @@ CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_eno)
 template <>
 void
 prolongate_3d_eno (CCTK_REAL8 const * restrict const src,
+                   ivect3 const & srcpadext,
                    ivect3 const & srcext,
                    CCTK_REAL8 * restrict const dst,
+                   ivect3 const & dstpadext,
                    ivect3 const & dstext,
                    ibbox3 const & srcbbox,
                    ibbox3 const & dstbbox,
@@ -229,8 +244,10 @@ prolongate_3d_eno (CCTK_REAL8 const * restrict const src,
   assert (not extraargs);
   CCTK_FNAME(prolongate_3d_real8_eno)
     (src,
+     srcpadext[0], srcpadext[1], srcpadext[2],
      srcext[0], srcext[1], srcext[2],
      dst,
+     dstpadext[0], dstpadext[1], dstpadext[2],
      dstext[0], dstext[1], dstext[2],
      reinterpret_cast <int const (*) [3]> (& srcbbox),
      reinterpret_cast <int const (*) [3]> (& dstbbox),
@@ -242,8 +259,10 @@ prolongate_3d_eno (CCTK_REAL8 const * restrict const src,
 template <typename T>
 void
 prolongate_3d_weno (T const * restrict const /*src*/,
+                    ivect3 const & /*srcpadext*/,
                     ivect3 const & /*srcext*/,
                     T * restrict const /*dst*/,
+                    ivect3 const & /*dstpadext*/,
                     ivect3 const & /*dstext*/,
                     ibbox3 const & /*srcbbox*/,
                     ibbox3 const & /*dstbbox*/,
@@ -258,8 +277,10 @@ extern "C"
 void
 CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_weno)
   (const CCTK_REAL8* src,
+   const int& srcipadext, const int& srcjpadext, const int& srckpadext,
    const int& srciext, const int& srcjext, const int& srckext,
    CCTK_REAL8* dst,
+   const int& dstipadext, const int& dstjpadext, const int& dstkpadext,
    const int& dstiext, const int& dstjext, const int& dstkext,
    const int srcbbox[3][3],
    const int dstbbox[3][3],
@@ -268,8 +289,10 @@ CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_weno)
 template <>
 void
 prolongate_3d_weno (CCTK_REAL8 const * restrict const src,
+                    ivect3 const & srcpadext,
                     ivect3 const & srcext,
                     CCTK_REAL8 * restrict const dst,
+                    ivect3 const & dstpadext,
                     ivect3 const & dstext,
                     ibbox3 const & srcbbox,
                     ibbox3 const & dstbbox,
@@ -279,8 +302,10 @@ prolongate_3d_weno (CCTK_REAL8 const * restrict const src,
 {
   CCTK_FNAME(prolongate_3d_real8_weno)
     (src,
+     srcpadext[0], srcpadext[1], srcpadext[2],
      srcext[0], srcext[1], srcext[2],
      dst,
+     dstpadext[0], dstpadext[1], dstpadext[2],
      dstext[0], dstext[1], dstext[2],
      reinterpret_cast <int const (*) [3]> (& srcbbox),
      reinterpret_cast <int const (*) [3]> (& dstbbox),
@@ -292,8 +317,10 @@ prolongate_3d_weno (CCTK_REAL8 const * restrict const src,
 template <typename T>
 void
 prolongate_3d_tvd (T const * restrict const /*src*/,
+                   ivect3 const & /*srcpadext*/,
                    ivect3 const & /*srcext*/,
                    T * restrict const /*dst*/,
+                   ivect3 const & /*dstpadext*/,
                    ivect3 const & /*dstext*/,
                    ibbox3 const & /*srcbbox*/,
                    ibbox3 const & /*dstbbox*/,
@@ -309,8 +336,10 @@ extern "C"
 void
 CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_tvd)
   (const CCTK_REAL8* src,
+   const int& srcipadext, const int& srcjpadext, const int& srckpadext,
    const int& srciext, const int& srcjext, const int& srckext,
    CCTK_REAL8* dst,
+   const int& dstipadext, const int& dstjpadext, const int& dstkpadext,
    const int& dstiext, const int& dstjext, const int& dstkext,
    const int srcbbox[3][3],
    const int dstbbox[3][3],
@@ -319,8 +348,10 @@ CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_tvd)
 template <>
 void
 prolongate_3d_tvd (CCTK_REAL8 const * restrict const src,
+                   ivect3 const & srcpadext,
                    ivect3 const & srcext,
                    CCTK_REAL8 * restrict const dst,
+                   ivect3 const & dstpadext,
                    ivect3 const & dstext,
                    ibbox3 const & srcbbox,
                    ibbox3 const & dstbbox,
@@ -331,8 +362,10 @@ prolongate_3d_tvd (CCTK_REAL8 const * restrict const src,
   assert (not extraargs);
   CCTK_FNAME(prolongate_3d_real8_tvd)
     (src,
+     srcpadext[0], srcpadext[1], srcpadext[2],
      srcext[0], srcext[1], srcext[2],
      dst,
+     dstpadext[0], dstpadext[1], dstpadext[2],
      dstext[0], dstext[1], dstext[2],
      reinterpret_cast <int const (*) [3]> (& srcbbox),
      reinterpret_cast <int const (*) [3]> (& dstbbox),
@@ -345,8 +378,10 @@ prolongate_3d_tvd (CCTK_REAL8 const * restrict const src,
 template <typename T>
 void
 prolongate_3d_cc_tvd (T const * restrict const /*src*/,
+                      ivect3 const & /*srcpadext*/,
                       ivect3 const & /*srcext*/,
                       T * restrict const /*dst*/,
+                      ivect3 const & /*dstpadext*/,
                       ivect3 const & /*dstext*/,
                       ibbox3 const & /*srcbbox*/,
                       ibbox3 const & /*dstbbox*/,
@@ -362,8 +397,10 @@ extern "C"
 void
 CCTK_FCALL CCTK_FNAME(prolongate_3d_cc_real8_tvd)
   (const CCTK_REAL8* src,
+   const int& srcipadext, const int& srcjpadext, const int& srckpadext,
    const int& srciext, const int& srcjext, const int& srckext,
    CCTK_REAL8* dst,
+   const int& dstipadext, const int& dstjpadext, const int& dstkpadext,
    const int& dstiext, const int& dstjext, const int& dstkext,
    const int srcbbox[3][3],
    const int dstbbox[3][3],
@@ -372,8 +409,10 @@ CCTK_FCALL CCTK_FNAME(prolongate_3d_cc_real8_tvd)
 template <>
 void
 prolongate_3d_cc_tvd (CCTK_REAL8 const * restrict const src,
+                      ivect3 const & srcpadext,
                       ivect3 const & srcext,
                       CCTK_REAL8 * restrict const dst,
+                      ivect3 const & dstpadext,
                       ivect3 const & dstext,
                       ibbox3 const & srcbbox,
                       ibbox3 const & dstbbox,
@@ -384,8 +423,10 @@ prolongate_3d_cc_tvd (CCTK_REAL8 const * restrict const src,
   assert (not extraargs);
   CCTK_FNAME(prolongate_3d_cc_real8_tvd)
     (src,
+     srcpadext[0], srcpadext[1], srcpadext[2],
      srcext[0], srcext[1], srcext[2],
      dst,
+     dstpadext[0], dstpadext[1], dstpadext[2],
      dstext[0], dstext[1], dstext[2],
      reinterpret_cast <int const (*) [3]> (& srcbbox),
      reinterpret_cast <int const (*) [3]> (& dstbbox),
@@ -466,16 +507,13 @@ void data<T>::allocate (const ibbox& extent_,
   
   // data
   _extent = extent_;
-  //_shape = max (ivect(0), _extent.shape() / _extent.stride());
-  _shape = allocated_memory_shape (_extent);
-  assert (all (_shape >= max (ivect(0), _extent.shape() / _extent.stride())));
-  
-  _size = 1;
-  for (int d=0; d<dim; ++d) {
-    _stride[d] = _size;
-    assert (_shape[d]==0 or _size <= numeric_limits<int>::max() / _shape[d]);
-    _size *= _shape[d];
+  _shape = max (ivect(0), _extent.shape() / _extent.stride());
+  _padded_shape = pad_shape(_shape);
+  _stride[0] = 1;
+  for (int d=1; d<dim; ++d) {
+    _stride[d] = _stride[d-1] * _padded_shape[d-1];
   }
+  _size = _stride[dim-1] * _padded_shape[dim-1];
   
   _proc = proc_;
   if (dist::rank() == _proc) {
@@ -512,9 +550,7 @@ size_t data<T>::allocsize (const ibbox & extent_, const int proc_) const
   if (dist::rank() != proc_) return 0;
   if (vectorindex != 0) return 0;
   assert (not vectorleader);
-  ivect const shape_ = allocated_memory_shape (extent_);
-  //return vectorlength * extent_.size() * sizeof (T);
-  return vectorlength * prod(shape_) * sizeof (T);
+  return vectorlength * prod (pad_shape (extent_)) * sizeof (T);
 }
 
 
@@ -541,17 +577,17 @@ copy_from_innerloop (gdata const * const gsrc,
 #if CARPET_DIM == 3
   // Don't use call_operator, because we parallelise ourselves
   copy_3d(static_cast <T const *> (src->storage()),
-          src->shape(),
+          src->padded_shape(), src->shape(),
           static_cast <T *> (this->storage()),
-          this->shape(),
+          this->padded_shape(), this->shape(),
           srcbox, dstbox,
           srcregbox, dstregbox, (void*)slabinfo);
 #elif CARPET_DIM == 4
   // Don't use call_operator, because we parallelise ourselves
   copy_4d(static_cast <T const *> (src->storage()),
-          src->shape(),
+          src->padded_shape(), src->shape(),
           static_cast <T *> (this->storage()),
-          this->shape(),
+          this->padded_shape(), this->shape(),
           srcbox, dstbox,
           srcregbox, dstregbox, (void*)slabinfo);
 #else
@@ -725,8 +761,10 @@ transfer_prolongate (data const * const src,
     case vertex_centered: {
       static
         void (* the_operators[]) (T const * restrict const src,
+                                  ivect3 const & restrict srcpadext,
                                   ivect3 const & restrict srcext,
                                   T * restrict const dst,
+                                  ivect3 const & restrict dstpadext,
                                   ivect3 const & restrict dstext,
                                   ibbox3 const & restrict srcbbox,
                                   ibbox3 const & restrict dstbbox,
@@ -762,9 +800,9 @@ transfer_prolongate (data const * const src,
       }
       call_operator<T> (the_operators[order_space],
                         static_cast <T const *> (src->storage()),
-                        src->shape(),
+                        src->padded_shape(), src->shape(),
                         static_cast <T *> (this->storage()),
-                        this->shape(),
+                        this->padded_shape(), this->shape(),
                         src->extent(),
                         this->extent(),
                         srcbox, dstbox, NULL);
@@ -774,9 +812,9 @@ transfer_prolongate (data const * const src,
       if (use_dgfe) {
         // Don't use call_operator, because we parallelise ourselves
         prolongate_3d_dgfe_rf2<T,5>(static_cast<T const *>(src->storage()),
-                                    src->shape(),
+                                    src->padded_shape(), src->shape(),
                                     static_cast<T *>(this->storage()),
-                                    this->shape(),
+                                    this->padded_shape(), this->shape(),
                                     src->extent(),
                                     this->extent(),
                                     srcbox, dstbox, NULL);
@@ -784,8 +822,10 @@ transfer_prolongate (data const * const src,
       }
       static
         void (* the_operators[]) (T const * restrict const src,
+                                  ivect3 const & restrict srcpadext,
                                   ivect3 const & restrict srcext,
                                   T * restrict const dst,
+                                  ivect3 const & restrict dstpadext,
                                   ivect3 const & restrict dstext,
                                   ibbox3 const & restrict srcbbox,
                                   ibbox3 const & restrict dstbbox,
@@ -806,9 +846,9 @@ transfer_prolongate (data const * const src,
       }
       call_operator<T> (the_operators[order_space],
                         static_cast <T const *> (src->storage()),
-                        src->shape(),
+                        src->padded_shape(), src->shape(),
                         static_cast <T *> (this->storage()),
-                        this->shape(),
+                        this->padded_shape(), this->shape(),
                         src->extent(),
                         this->extent(),
                         srcbox, dstbox, NULL);
@@ -835,9 +875,9 @@ transfer_prolongate (data const * const src,
 	    case 3:
 	    call_operator<T> (& prolongate_3d_eno,
 			      static_cast <T const *> (src->storage()),
-			      src->shape(),
+			      src->padded_shape(), src->shape(),
 			      static_cast <T *> (this->storage()),
-			      this->shape(),
+			      this->padded_shape(), this->shape(),
 			      src->extent(),
 			      this->extent(),
 			      srcbox, dstbox, NULL);
@@ -848,9 +888,9 @@ transfer_prolongate (data const * const src,
 	    // hydro, so we cheat here.
 	    call_operator<T> (& prolongate_3d_eno,
 			      static_cast <T const *> (src->storage()),
-			      src->shape(),
+			      src->padded_shape(), src->shape(),
 			      static_cast <T *> (this->storage()),
-			      this->shape(),
+			      this->padded_shape(), this->shape(),
 			      src->extent(),
 			      this->extent(),
 			      srcbox, dstbox, NULL);
@@ -860,13 +900,15 @@ transfer_prolongate (data const * const src,
 			"There is no stencil for op=\"ENO\" with order_space!=3");
 	    break;
 	 }
+         break;
       }
-      break;
       case cell_centered: {
 	 static
 	 void (* the_operators[]) (T const * restrict const src,
+                                   ivect3 const & restrict srcpadext,
                                    ivect3 const & restrict srcext,
                                    T * restrict const dst,
+                                   ivect3 const & restrict dstpadext,
                                    ivect3 const & restrict dstext,
                                    ibbox3 const & restrict srcbbox,
                                    ibbox3 const & restrict dstbbox,
@@ -937,18 +979,20 @@ transfer_prolongate (data const * const src,
 	 
 	 call_operator<T> (the_operators[order_space-2],
 			   static_cast <T const *> (src->storage()),
-			   src->shape(),
+			   src->padded_shape(), src->shape(),
 			   static_cast <T *> (this->storage()),
-			   this->shape(),
+			   this->padded_shape(), this->shape(),
 			   src->extent(),
 			   this->extent(),
 			   srcbox, dstbox, NULL);
+        break;
       }
-      break;
+    default:
+      assert(0);
     }
     timer.stop (0);
+    break;
   }
-  break;
   case op_WENO: {
     static Timer timer ("prolongate_WENO");
     timer.start ();
@@ -967,9 +1011,9 @@ transfer_prolongate (data const * const src,
 	 case 5:
 	    call_operator<T> (& prolongate_3d_eno,
 			      static_cast <T const *> (src->storage()),
-			      src->shape(),
+			      src->padded_shape(), src->shape(),
 			      static_cast <T *> (this->storage()),
-			      this->shape(),
+			      this->padded_shape(), this->shape(),
 			      src->extent(),
 			      this->extent(),
 			      srcbox, dstbox, NULL);
@@ -979,15 +1023,15 @@ transfer_prolongate (data const * const src,
 		     "There is no stencil for op=\"WENO\" with order_space!=5");
 	    break;
 	 }
-	 
+         break;
       }
-      break;
       case cell_centered: {
 	 CCTK_WARN (CCTK_WARN_ABORT,
                  "There are currently no cell-centred stencils for op=\"WENO\"");
        break;
       }
-      break;
+    default:
+      assert(0);
     }
     timer.stop (0);
   }
@@ -1002,9 +1046,9 @@ transfer_prolongate (data const * const src,
       case 1:
         call_operator<T> (& prolongate_3d_tvd,
                           static_cast <T const *> (src->storage()),
-                          src->shape(),
+                          src->padded_shape(), src->shape(),
                           static_cast <T *> (this->storage()),
-                          this->shape(),
+                          this->padded_shape(), this->shape(),
                           src->extent(),
                           this->extent(),
                           srcbox, dstbox, NULL);
@@ -1021,9 +1065,9 @@ transfer_prolongate (data const * const src,
       case 1:
         call_operator<T> (& prolongate_3d_cc_tvd,
                           static_cast <T const *> (src->storage()),
-                          src->shape(),
+                          src->padded_shape(), src->shape(),
                           static_cast <T *> (this->storage()),
-                          this->shape(),
+                          this->padded_shape(), this->shape(),
                           src->extent(),
                           this->extent(),
                           srcbox, dstbox, NULL);
@@ -1035,6 +1079,8 @@ transfer_prolongate (data const * const src,
       }
       break;
     }
+    default:
+      assert(0);
     }
     timer.stop (0);
     break;
@@ -1055,9 +1101,9 @@ transfer_prolongate (data const * const src,
     case 5:
       call_operator<T> (& prolongate_3d_o5_monotone_rf2,
                         static_cast <T const *> (src->storage()),
-                        src->shape(),
+                        src->padded_shape(), src->shape(),
                         static_cast <T *> (this->storage()),
-                        this->shape(),
+                        this->padded_shape(), this->shape(),
                         src->extent(),
                         this->extent(),
                         srcbox, dstbox, NULL);
@@ -1090,9 +1136,9 @@ transfer_prolongate (data const * const src,
       case 1:
         call_operator<T> (& prolongate_4d_o1_rf2,
                           static_cast <T const *> (src->storage()),
-                          src->shape(),
+                          src->padded_shape(), src->shape(),
                           static_cast <T *> (this->storage()),
-                          this->shape(),
+                          this->padded_shape(), this->shape(),
                           src->extent(),
                           this->extent(),
                           srcbox, dstbox, NULL);
@@ -1164,9 +1210,9 @@ transfer_restrict (data const * const src,
       assert (not slabinfo);
       call_operator<T> (& restrict_3d_rf2,
                         static_cast <T const *> (src->storage()),
-                        src->shape(),
+                        src->padded_shape(), src->shape(),
                         static_cast <T *> (this->storage()),
-                        this->shape(),
+                        this->padded_shape(), this->shape(),
                         src->extent(),
                         this->extent(),
                         srcregbox, dstregbox, NULL);
@@ -1182,9 +1228,9 @@ transfer_restrict (data const * const src,
         if (use_dgfe) {
           // Don't use call_operator, because we parallelise ourselves
           restrict_3d_dgfe_rf2<T,5>(static_cast<T const *>(src->storage()),
-                                    src->shape(),
+                                    src->padded_shape(), src->shape(),
                                     static_cast<T *>(this->storage()),
-                                    this->shape(),
+                                    this->padded_shape(), this->shape(),
                                     srcbox,
                                     dstbox,
                                     srcregbox, dstregbox, NULL);
@@ -1194,37 +1240,37 @@ transfer_restrict (data const * const src,
             transport_operator != op_WENO and 
             transport_operator != op_ENO) { // HACK
 	  switch (restriction_order_space) {
-	    case 1:
+          case 1:
             // Don't use call_operator, because we parallelise ourselves
             restrict_3d_cc_rf2(static_cast <T const *> (src->storage()),
-                               src->shape(),
+                               src->padded_shape(), src->shape(),
                                static_cast <T *> (this->storage()),
-                               this->shape(),
+                               this->padded_shape(), this->shape(),
                                srcbox,
                                dstbox,
                                srcregbox, dstregbox, NULL);
 	    break;
-	    case 3:
+          case 3:
             // Don't use call_operator, because we parallelise ourselves
             restrict_3d_cc_o3_rf2(static_cast <T const *> (src->storage()),
-                               src->shape(),
-                               static_cast <T *> (this->storage()),
-                               this->shape(),
-                               srcbox,
-                               dstbox,
-                               srcregbox, dstregbox, NULL);
+                                  src->padded_shape(), src->shape(),
+                                  static_cast <T *> (this->storage()),
+                                  this->padded_shape(), this->shape(),
+                                  srcbox,
+                                  dstbox,
+                                  srcregbox, dstregbox, NULL);
 	    break;
-	    case 5:
+          case 5:
             // Don't use call_operator, because we parallelise ourselves
             restrict_3d_cc_o5_rf2(static_cast <T const *> (src->storage()),
-                               src->shape(),
-                               static_cast <T *> (this->storage()),
-                               this->shape(),
-                               srcbox,
-                               dstbox,
-                               srcregbox, dstregbox, NULL);
+                                  src->padded_shape(), src->shape(),
+                                  static_cast <T *> (this->storage()),
+                                  this->padded_shape(), this->shape(),
+                                  srcbox,
+                                  dstbox,
+                                  srcregbox, dstregbox, NULL);
 	    break;
-	    default:
+          default:
 	    CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
 			"There is no restriction stencil with restriction_order_space==%d", restriction_order_space);
 	    break;
@@ -1233,36 +1279,36 @@ transfer_restrict (data const * const src,
         }
         // Don't use call_operator, because we parallelise ourselves
         restrict_3d_cc_rf2(static_cast <T const *> (src->storage()),
-                           src->shape(),
+                           src->padded_shape(), src->shape(),
                            static_cast <T *> (this->storage()),
-                           this->shape(),
+                           this->padded_shape(), this->shape(),
                            srcbox,
                            dstbox,
                            srcregbox, dstregbox, NULL);
       } else if (all(is_centered == ivect(0,1,1))) {
         // Don't use call_operator, because we parallelise ourselves
         restrict_3d_vc_rf2<T,0,1,1>(static_cast <T const *> (src->storage()),
-                                    src->shape(),
+                                    src->padded_shape(), src->shape(),
                                     static_cast <T *> (this->storage()),
-                                    this->shape(),
+                                    this->padded_shape(), this->shape(),
                                     srcbox,
                                     dstbox,
                                     srcregbox, dstregbox, NULL);
       } else if (all(is_centered == ivect(1,0,1))) {
         // Don't use call_operator, because we parallelise ourselves
         restrict_3d_vc_rf2<T,1,0,1>(static_cast <T const *> (src->storage()),
-                                    src->shape(),
+                                    src->padded_shape(), src->shape(),
                                     static_cast <T *> (this->storage()),
-                                    this->shape(),
+                                    this->padded_shape(), this->shape(),
                                     srcbox,
                                     dstbox,
                                     srcregbox, dstregbox, NULL);
       } else if (all(is_centered == ivect(1,1,0))) {
         // Don't use call_operator, because we parallelise ourselves
         restrict_3d_vc_rf2<T,1,1,0>(static_cast <T const *> (src->storage()),
-                                    src->shape(),
+                                    src->padded_shape(), src->shape(),
                                     static_cast <T *> (this->storage()),
-                                    this->shape(),
+                                    this->padded_shape(), this->shape(),
                                     srcbox,
                                     dstbox,
                                     srcregbox, dstregbox, NULL);
@@ -1291,9 +1337,9 @@ transfer_restrict (data const * const src,
     case vertex_centered:
       // Don't use call_operator, because we parallelise ourselves
       restrict_4d_rf2(static_cast <T const *> (src->storage()),
-                      src->shape(),
+                      src->padded_shape(), src->shape(),
                       static_cast <T *> (this->storage()),
-                      this->shape(),
+                      this->padded_shape(), this->shape(),
                       src->extent(),
                       this->extent(),
                       srcregbox, dstregbox, NULL);
@@ -1357,10 +1403,10 @@ time_interpolate (vector <data *> const & srcs,
                           times.AT(0),
                           static_cast <T const *> (srcs.AT(1)->storage()),
                           times.AT(1),
-                          srcs.AT(0)->shape(),
+                          srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
                           static_cast <T *> (this->storage()),
                           time,
-                          this->shape(),
+                          this->padded_shape(), this->shape(),
                           srcs.AT(0)->extent(),
                           this->extent(),
                           srcbox, dstbox, NULL);
@@ -1374,10 +1420,10 @@ time_interpolate (vector <data *> const & srcs,
                           times.AT(1),
                           static_cast <T const *> (srcs.AT(2)->storage()),
                           times.AT(2),
-                          srcs.AT(0)->shape(),
+                          srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
                           static_cast <T *> (this->storage()),
                           time,
-                          this->shape(),
+                          this->padded_shape(), this->shape(),
                           srcs.AT(0)->extent(),
                           this->extent(),
                           srcbox, dstbox, NULL);
@@ -1393,10 +1439,10 @@ time_interpolate (vector <data *> const & srcs,
                           times.AT(2),
                           static_cast <T const *> (srcs.AT(3)->storage()),
                           times.AT(3),
-                          srcs.AT(0)->shape(),
+                          srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
                           static_cast <T *> (this->storage()),
                           time,
-                          this->shape(),
+                          this->padded_shape(), this->shape(),
                           srcs.AT(0)->extent(),
                           this->extent(),
                           srcbox, dstbox, NULL);
@@ -1414,10 +1460,10 @@ time_interpolate (vector <data *> const & srcs,
                           times.AT(3),
                           static_cast <T const *> (srcs.AT(4)->storage()),
                           times.AT(4),
-                          srcs.AT(0)->shape(),
+                          srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
                           static_cast <T *> (this->storage()),
                           time,
-                          this->shape(),
+                          this->padded_shape(), this->shape(),
                           srcs.AT(0)->extent(),
                           this->extent(),
                           srcbox, dstbox, NULL);
@@ -1446,10 +1492,10 @@ time_interpolate (vector <data *> const & srcs,
                           times.AT(0),
                           static_cast <T const *> (srcs.AT(1)->storage()),
                           times.AT(1),
-                          srcs.AT(0)->shape(),
+                          srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
                           static_cast <T *> (this->storage()),
                           time,
-                          this->shape(),
+                          this->padded_shape(), this->shape(),
                           srcs.AT(0)->extent(),
                           this->extent(),
                           srcbox, dstbox, NULL);
@@ -1463,10 +1509,10 @@ time_interpolate (vector <data *> const & srcs,
                               times.AT(1),
                               static_cast <T const *> (srcs.AT(2)->storage()),
                               times.AT(2),
-                              srcs.AT(0)->shape(),
+                              srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
                               static_cast <T *> (this->storage()),
                               time,
-                              this->shape(),
+                              this->padded_shape(), this->shape(),
                               srcs.AT(0)->extent(),
                               this->extent(),
                               srcbox, dstbox, NULL);
@@ -1535,6 +1581,8 @@ output (ostream & os)
   T Tdummy;
   os << "data<" << typestring(Tdummy) << ">:"
      << "extent=" << extent() << ","
+     << "shape=" << shape() << ","
+     << "padded_shape=" << padded_shape() << ","
      << "stride=" << stride() << ",size=" << size();
   return os;
 }

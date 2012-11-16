@@ -1391,6 +1391,13 @@ static int ReadVar (const cGH* const cctkGH,
 #endif
       const ibbox& exterior_membox =
         data.dd->light_boxes.at(mglevel).at(reflevel).at(component).exterior;
+      int const var0 = CCTK_FirstVarIndexI(gindex);
+      assert (var0>=0 and var0<CCTK_NumVars());
+      int const var = patch->vindex - var0;
+      assert (var>=0 and var<CCTK_NumVarsInGroupI(gindex));
+      const ggf* const ff = data.data.AT(var);
+      const gdata* const processor_component = ff->data_pointer
+        (timelevel, reflevel, local_component, mglevel);
 
       // skip this dataset if it doesn't overlap with this component's
       // exterior, or if it only reads what has already been read
@@ -1424,8 +1431,9 @@ static int ReadVar (const cGH* const cctkGH,
       slice_start_size_t memorigin[dim], fileorigin[dim];
       hsize_t memdims[dim], count[dim];
       for (int i = 0; i < patch->rank; i++) {
-        memdims[patch->rank-i-1] =
-          (membox.upper() - membox.lower())[i] / stride[i] + 1;
+        assert (processor_component->shape()[i] ==
+                (membox.upper() - membox.lower())[i] / stride[i] + 1);
+        memdims[patch->rank-i-1] = processor_component->padded_shape()[i];
         count[patch->rank-i-1] =
           (overlap.upper() - overlap.lower())[i] / stride[i] + 1;
         memorigin[patch->rank-i-1] =

@@ -19,7 +19,12 @@ class gmem
 {
 public:
   
+  static double const KILO;
   static double const MEGA;
+  static double const GIGA;
+  static double const TERA;
+  static double const PETA;
+  static double const EXA ;
   
   // Total number of currently allocated bytes and objects
   static double total_allocated_bytes;
@@ -35,6 +40,7 @@ public:
 template<typename T>
 class mem: public gmem
 {
+  T * storage_base_;
   T * storage_;
   size_t nelems_;
   size_t vectorlength_;

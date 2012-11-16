@@ -22,9 +22,11 @@ namespace CarpetLib {
   
 #define SRCIND3(i,j,k)                                  \
   index3 (srcioff + (i), srcjoff + (j), srckoff + (k),  \
+          srcipadext, srcjpadext, srckpadext,           \
           srciext, srcjext, srckext)
 #define DSTIND3(i,j,k)                                  \
   index3 (dstioff + (i), dstjoff + (j), dstkoff + (k),  \
+          dstipadext, dstjpadext, dstkpadext,           \
           dstiext, dstjext, dstkext)
   
   
@@ -32,8 +34,10 @@ namespace CarpetLib {
   template <typename T>
   void
   copy_3d (T const * restrict const src,
+           ivect3 const & restrict srcpadext,
            ivect3 const & restrict srcext,
            T * restrict const dst,
+           ivect3 const & restrict dstpadext,
            ivect3 const & restrict dstext,
            ibbox3 const & restrict srcbbox,
            ibbox3 const & restrict dstbbox,
@@ -48,7 +52,6 @@ namespace CarpetLib {
              dstbbox.stride() != dstregbbox.stride() or
              srcregbbox1.stride() != dstregbbox.stride()))
     {
-#pragma omp critical
       {
         cout << "copy_3d.cc:" << endl
              << "srcbbox=" << srcbbox << endl
@@ -66,7 +69,6 @@ namespace CarpetLib {
     // This could be handled, but is likely to point to an error
     // elsewhere
     if (dstregbbox.empty()) {
-#pragma omp critical
       CCTK_WARN (0, "Internal error: region extent is empty");
     }
     
@@ -79,7 +81,6 @@ namespace CarpetLib {
     if (not srcregbbox.is_contained_in(srcbbox) or
         not dstregbbox.is_contained_in(dstbbox))
     {
-#pragma omp critical
       {
         cout << "copy_3d.cc:" << endl
              << "srcbbox=" << srcbbox << endl
@@ -93,13 +94,6 @@ namespace CarpetLib {
       }
     }
     
-    if (any (srcext != gdata::allocated_memory_shape(srcbbox.shape() / srcbbox.stride()) or
-             dstext != gdata::allocated_memory_shape(dstbbox.shape() / dstbbox.stride())))
-    {
-#pragma omp critical
-      CCTK_WARN (0, "Internal error: array sizes don't agree with bounding boxes");
-    }
-    
     
     
     ivect3 const regext = dstregbbox.shape() / dstregbbox.stride();
@@ -109,6 +103,14 @@ namespace CarpetLib {
     ivect3 const dstoff = (dstregbbox.lower() - dstbbox.lower()) / dstbbox.stride();
     
     
+    
+    ptrdiff_t const srcipadext = srcpadext[0];
+    ptrdiff_t const srcjpadext = srcpadext[1];
+    ptrdiff_t const srckpadext = srcpadext[2];
+    
+    ptrdiff_t const dstipadext = dstpadext[0];
+    ptrdiff_t const dstjpadext = dstpadext[1];
+    ptrdiff_t const dstkpadext = dstpadext[2];
     
     ptrdiff_t const srciext = srcext[0];
     ptrdiff_t const srcjext = srcext[1];
@@ -152,8 +154,10 @@ namespace CarpetLib {
   template                                      \
   void                                          \
   copy_3d (T const * restrict const src,        \
+           ivect3 const & restrict srcpadext,   \
            ivect3 const & restrict srcext,      \
            T * restrict const dst,              \
+           ivect3 const & restrict dstpadext,   \
            ivect3 const & restrict dstext,      \
            ibbox3 const & restrict srcbbox,     \
            ibbox3 const & restrict dstbbox,     \

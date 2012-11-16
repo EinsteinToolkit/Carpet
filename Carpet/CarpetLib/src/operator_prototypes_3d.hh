@@ -22,6 +22,7 @@ namespace CarpetLib {
   static inline
   size_t
   index3 (size_t const i, size_t const j, size_t const k,
+          size_t const padexti, size_t const padextj, size_t const padextk,
           size_t const exti, size_t const extj, size_t const extk)
   {
 #ifdef CARPET_DEBUG
@@ -30,7 +31,7 @@ namespace CarpetLib {
     assert (static_cast <ptrdiff_t> (k) >= 0 and k < extk);
 #endif
     
-    return i + exti * (j + extj * k);
+    return i + padexti * (j + padextj * k);
   }
   
   
@@ -56,8 +57,10 @@ namespace CarpetLib {
   template <typename T>
   void
   copy_3d (T const * restrict const src,
+           ivect3 const & restrict srcpadext,
            ivect3 const & restrict srcext,
            T * restrict const dst,
+           ivect3 const & restrict dstpadext,
            ivect3 const & restrict dstext,
            ibbox3 const & restrict srcbbox,
            ibbox3 const & restrict dstbbox,
@@ -70,8 +73,10 @@ namespace CarpetLib {
   template <typename T, int ORDER>
   void
   prolongate_3d_rf2 (T const * restrict const src,
+                     ivect3 const & restrict srcpadext,
                      ivect3 const & restrict srcext,
                      T * restrict const dst,
+                     ivect3 const & restrict dstpadext,
                      ivect3 const & restrict dstext,
                      ibbox3 const & restrict srcbbox,
                      ibbox3 const & restrict dstbbox,
@@ -79,87 +84,15 @@ namespace CarpetLib {
                      ibbox3 const & restrict dstregbbox,
                      void * extraargs);
   
-#if 0
-  template <typename T>
-  void
-  prolongate_3d_o1_rf2 (T const * restrict const src,
-                        ivect3 const & restrict srcext,
-                        T * restrict const dst,
-                        ivect3 const & restrict dstext,
-                        ibbox3 const & restrict srcbbox,
-                        ibbox3 const & restrict dstbbox,
-                        ibbox3 const & restrict srcregbbox,
-                        ibbox3 const & restrict dstregbbox,
-                        void * extraargs);
-  
-  template <typename T>
-  void
-  prolongate_3d_o3_rf2 (T const * restrict const src,
-                        ivect3 const & restrict srcext,
-                        T * restrict const dst,
-                        ivect3 const & restrict dstext,
-                        ibbox3 const & restrict srcbbox,
-                        ibbox3 const & restrict dstbbox,
-                        ibbox3 const & restrict srcregbbox,
-                        ibbox3 const & restrict dstregbbox,
-                        void * extraargs);
-  
-  template <typename T>
-  void
-  prolongate_3d_o5_rf2 (T const * restrict const src,
-                        ivect3 const & restrict srcext,
-                        T * restrict const dst,
-                        ivect3 const & restrict dstext,
-                        ibbox3 const & restrict srcbbox,
-                        ibbox3 const & restrict dstbbox,
-                        ibbox3 const & restrict srcregbbox,
-                        ibbox3 const & restrict dstregbbox,
-                        void * extraargs);
-  
-  template <typename T>
-  void
-  prolongate_3d_o7_rf2 (T const * restrict const src,
-                        ivect3 const & restrict srcext,
-                        T * restrict const dst,
-                        ivect3 const & restrict dstext,
-                        ibbox3 const & restrict srcbbox,
-                        ibbox3 const & restrict dstbbox,
-                        ibbox3 const & restrict srcregbbox,
-                        ibbox3 const & restrict dstregbbox,
-                        void * extraargs);
-  
-  template <typename T>
-  void
-  prolongate_3d_o9_rf2 (T const * restrict const src,
-                        ivect3 const & restrict srcext,
-                        T * restrict const dst,
-                        ivect3 const & restrict dstext,
-                        ibbox3 const & restrict srcbbox,
-                        ibbox3 const & restrict dstbbox,
-                        ibbox3 const & restrict srcregbbox,
-                        ibbox3 const & restrict dstregbbox,
-                        void * extraargs);
-  
-  template <typename T>
-  void
-  prolongate_3d_o11_rf2 (T const * restrict const src,
-                         ivect3 const & restrict srcext,
-                         T * restrict const dst,
-                         ivect3 const & restrict dstext,
-                         ibbox3 const & restrict srcbbox,
-                         ibbox3 const & restrict dstbbox,
-                         ibbox3 const & restrict srcregbbox,
-                         ibbox3 const & restrict dstregbbox,
-                         void * extraargs);
-#endif
-  
   
   
   template <typename T>
   void
   prolongate_3d_o5_monotone_rf2 (T const * restrict const src,
+                                 ivect3 const & restrict srcpadext,
                                  ivect3 const & restrict srcext,
                                  T * restrict const dst,
+                                 ivect3 const & restrict dstpadext,
                                  ivect3 const & restrict dstext,
                                  ibbox3 const & restrict srcbbox,
                                  ibbox3 const & restrict dstbbox,
@@ -172,8 +105,10 @@ namespace CarpetLib {
   template <typename T, int ORDER>
   void
   prolongate_3d_cc_rf2 (T const * restrict const src,
+                        ivect3 const & restrict srcpadext,
                         ivect3 const & restrict srcext,
                         T * restrict const dst,
+                        ivect3 const & restrict dstpadext,
                         ivect3 const & restrict dstext,
                         ibbox3 const & restrict srcbbox,
                         ibbox3 const & restrict dstbbox,
@@ -181,49 +116,13 @@ namespace CarpetLib {
                         ibbox3 const & restrict dstregbbox,
                         void * extraargs);
   
-#if 0
-  template <typename T>
-  void
-  prolongate_3d_cc_o0_rf2 (T const * restrict const src,
-                           ivect3 const & restrict srcext,
-                           T * restrict const dst,
-                           ivect3 const & restrict dstext,
-                           ibbox3 const & restrict srcbbox,
-                           ibbox3 const & restrict dstbbox,
-                           ibbox3 const & restrict srcregbbox,
-                           ibbox3 const & restrict dstregbbox,
-                           void * extraargs);
-  
-  template <typename T>
-  void
-  prolongate_3d_cc_o1_rf2 (T const * restrict const src,
-                           ivect3 const & restrict srcext,
-                           T * restrict const dst,
-                           ivect3 const & restrict dstext,
-                           ibbox3 const & restrict srcbbox,
-                           ibbox3 const & restrict dstbbox,
-                           ibbox3 const & restrict srcregbbox,
-                           ibbox3 const & restrict dstregbbox,
-                           void * extraargs);
-  
-  template <typename T>
-  void
-  prolongate_3d_cc_o2_rf2 (T const * restrict const src,
-                           ivect3 const & restrict srcext,
-                           T * restrict const dst,
-                           ivect3 const & restrict dstext,
-                           ibbox3 const & restrict srcbbox,
-                           ibbox3 const & restrict dstbbox,
-                           ibbox3 const & restrict srcregbbox,
-                           ibbox3 const & restrict dstregbbox,
-                           void * extraargs);
-#endif
-  
   template <typename T, int ORDER>
   void
   prolongate_3d_cc_eno_rf2 (T const * restrict const src,
+                            ivect3 const & restrict srcpadext,
                             ivect3 const & restrict srcext,
                             T * restrict const dst,
+                            ivect3 const & restrict dstpadext,
                             ivect3 const & restrict dstext,
                             ibbox3 const & restrict srcbbox,
                             ibbox3 const & restrict dstbbox,
@@ -235,8 +134,10 @@ namespace CarpetLib {
   template <typename T, int ORDER>
   void
   prolongate_3d_cc_eno_rf2 (T const * restrict const src,
+                            ivect3 const & restrict srcpadext,
                             ivect3 const & restrict srcext,
                             T * restrict const dst,
+                            ivect3 const & restrict dstpadext,
                             ivect3 const & restrict dstext,
                             ibbox3 const & restrict srcbbox,
                             ibbox3 const & restrict dstbbox,
@@ -260,8 +161,10 @@ namespace CarpetLib {
   template <typename T, int ORDER>
   void
   prolongate_3d_dgfe_rf2 (T const * restrict const src,
+                          ivect3 const & restrict srcpadext,
                           ivect3 const & restrict srcext,
                           T * restrict const dst,
+                          ivect3 const & restrict dstpadext,
                           ivect3 const & restrict dstext,
                           ibbox3 const & restrict srcbbox,
                           ibbox3 const & restrict dstbbox,
@@ -274,8 +177,10 @@ namespace CarpetLib {
   template <typename T>
   void
   restrict_3d_rf2 (T const * restrict const src,
+                   ivect3 const & restrict srcpadext,
                    ivect3 const & restrict srcext,
                    T * restrict const dst,
+                   ivect3 const & restrict dstpadext,
                    ivect3 const & restrict dstext,
                    ibbox3 const & restrict srcbbox,
                    ibbox3 const & restrict dstbbox,
@@ -291,9 +196,11 @@ namespace CarpetLib {
                       CCTK_REAL const t1,
                       T const * restrict const src2,
                       CCTK_REAL const t2,
+                      ivect3 const & restrict srcpadext,
                       ivect3 const & restrict srcext,
                       T * restrict const dst,
                       CCTK_REAL const t,
+                      ivect3 const & restrict dstpadext,
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
@@ -309,9 +216,11 @@ namespace CarpetLib {
                       CCTK_REAL const t2,
                       T const * restrict const src3,
                       CCTK_REAL const t3,
+                      ivect3 const & restrict srcpadext,
                       ivect3 const & restrict srcext,
                       T * restrict const dst,
                       CCTK_REAL const t,
+                      ivect3 const & restrict dstpadext,
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
@@ -329,9 +238,11 @@ namespace CarpetLib {
                       CCTK_REAL const t3,
                       T const * restrict const src4,
                       CCTK_REAL const t4,
+                      ivect3 const & restrict srcpadext,
                       ivect3 const & restrict srcext,
                       T * restrict const dst,
                       CCTK_REAL const t,
+                      ivect3 const & restrict dstpadext,
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
@@ -351,9 +262,11 @@ namespace CarpetLib {
                       CCTK_REAL const t4,
                       T const * restrict const src5,
                       CCTK_REAL const t5,
+                      ivect3 const & restrict srcpadext,
                       ivect3 const & restrict srcext,
                       T * restrict const dst,
                       CCTK_REAL const t,
+                      ivect3 const & restrict dstpadext,
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
@@ -369,9 +282,11 @@ namespace CarpetLib {
                           CCTK_REAL const t2,
                           T const * restrict const src3,
                           CCTK_REAL const t3,
+                          ivect3 const & restrict srcpadext,
                           ivect3 const & restrict srcext,
                           T * restrict const dst,
                           CCTK_REAL const t,
+                          ivect3 const & restrict dstpadext,
                           ivect3 const & restrict dstext,
                           ibbox3 const & restrict srcbbox,
                           ibbox3 const & restrict dstbbox,
@@ -384,8 +299,10 @@ namespace CarpetLib {
   template <typename T>
   void
   restrict_3d_cc_rf2 (T const * restrict const src,
+                      ivect3 const & restrict srcpadext,
                       ivect3 const & restrict srcext,
                       T * restrict const dst,
+                      ivect3 const & restrict dstpadext,
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
@@ -398,8 +315,10 @@ namespace CarpetLib {
   template <typename T>
   void
   restrict_3d_cc_o3_rf2 (T const * restrict const src,
+                         ivect3 const & restrict srcpadext,
                          ivect3 const & restrict srcext,
                          T * restrict const dst,
+                         ivect3 const & restrict dstpadext,
                          ivect3 const & restrict dstext,
                          ibbox3 const & restrict srcbbox,
                          ibbox3 const & restrict dstbbox,
@@ -412,8 +331,10 @@ namespace CarpetLib {
   template <typename T>
   void
   restrict_3d_cc_o5_rf2 (T const * restrict const src,
+                         ivect3 const & restrict srcpadext,
                          ivect3 const & restrict srcext,
                          T * restrict const dst,
+                         ivect3 const & restrict dstpadext,
                          ivect3 const & restrict dstext,
                          ibbox3 const & restrict srcbbox,
                          ibbox3 const & restrict dstbbox,
@@ -426,8 +347,10 @@ namespace CarpetLib {
   template <typename T, int centi, int centj, int centk>
   void
   restrict_3d_vc_rf2 (T const * restrict const src,
+                      ivect3 const & restrict srcpadext,
                       ivect3 const & restrict srcext,
                       T * restrict const dst,
+                      ivect3 const & restrict dstpadext,
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
@@ -440,8 +363,10 @@ namespace CarpetLib {
   template <typename T, int ORDER>
   void
   restrict_3d_dgfe_rf2 (T const * restrict const src,
+                        ivect3 const & restrict srcpadext,
                         ivect3 const & restrict srcext,
                         T * restrict const dst,
+                        ivect3 const & restrict dstpadext,
                         ivect3 const & restrict dstext,
                         ibbox3 const & restrict srcbbox,
                         ibbox3 const & restrict dstbbox,

@@ -4,10 +4,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <cacheinfo.hh>
 #include <defs.hh>
 #include <gdata.hh>
 #include <ggf.hh>
@@ -138,7 +140,7 @@ namespace Carpet {
         ivect_ref(info.ubnd)
           = (ext.upper() - baseext.lower()) / ext.stride();
         ivect_ref(info.lsh) = ext.shape() / ext.stride();
-        ivect_ref(info.ash) = gdata::allocated_memory_shape (ext);
+        ivect_ref(info.ash) = pad_shape(ext);
         if (gp.disttype == CCTK_DISTRIB_CONSTANT) {
           int const dir = gp.dim==0 ? 0 : gp.dim-1;
           ivect & gsh = ivect_ref(info.gsh);
@@ -611,7 +613,7 @@ namespace Carpet {
       ivect_ref(cctkGH->cctk_ubnd) =
         (ext.upper() - baseext.lower()) / ext.stride();
       ivect_ref(cctkGH->cctk_lsh) = ext.shape() / ext.stride();
-      ivect_ref(cctkGH->cctk_ash) = gdata::allocated_memory_shape (ext);
+      ivect_ref(cctkGH->cctk_ash) = pad_shape(ext);
       
       for (int d=0; d<dim; ++d) {
         cctkGH->cctk_bbox[2*d  ] = obnds[0][d];

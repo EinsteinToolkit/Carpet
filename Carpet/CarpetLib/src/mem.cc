@@ -20,7 +20,12 @@ using namespace std;
 
 
 
-double const gmem::MEGA = 1000*1000;
+double const gmem::KILO = 1000.0;
+double const gmem::MEGA = 1000.0*1000.0;
+double const gmem::GIGA = 1000.0*1000.0*1000.0;
+double const gmem::TERA = 1000.0*1000.0*1000.0*1000.0;
+double const gmem::PETA = 1000.0*1000.0*1000.0*1000.0*1000.0;
+double const gmem::EXA  = 1000.0*1000.0*1000.0*1000.0*1000.0*1000.0;
 
 // Total number of currently allocated bytes and objects
 double gmem::total_allocated_bytes   = 0;
@@ -38,7 +43,8 @@ template<typename T>
 mem<T>::
 mem (size_t const vectorlength, size_t const nelems,
      T * const memptr, size_t const memsize)
-  : storage_ (memptr),
+  : storage_base_ (memptr),
+    storage_ (memptr),
     nelems_ (nelems),
     vectorlength_ (vectorlength),
     owns_storage_ (false),
@@ -62,7 +68,10 @@ mem (size_t const vectorlength, size_t const nelems,
                   int(max_allowed_memory_MB));
     }
     try {
-      storage_ = new T [vectorlength * nelems];
+      // TODO: align and pad storage
+      size_t const padding = 0;
+      storage_base_ = new T [vectorlength * nelems + padding];
+      storage_ = storage_base_ + padding;
       owns_storage_ = true;
     } catch (...) {
       T Tdummy;
@@ -77,7 +86,9 @@ mem (size_t const vectorlength, size_t const nelems,
     total_allocated_bytes += nbytes;
     max_allocated_bytes = max (max_allocated_bytes, total_allocated_bytes);
     if (poison_new_memory) {
-      memset (storage_, poison_value, vectorlength * nelems * sizeof (T));
+      memset (storage_base_,
+              poison_value, (vectorlength * nelems +
+                             storage_ - storage_base_) * sizeof (T));
     }
   } else {
     assert (memsize >= vectorlength * nelems * sizeof (T));
@@ -96,7 +107,7 @@ mem<T>::
 {
   assert (not has_clients());
   if (owns_storage_) {
-    delete [] storage_;
+    delete [] storage_base_;
     const double nbytes = vectorlength_ * nelems_ * sizeof (T);
     total_allocated_bytes -= nbytes;
   }
@@ -144,13 +155,15 @@ memory ()
   const
 {
   return
+    memoryof (storage_base_) +
     memoryof (storage_) +
     memoryof (nelems_) +
     memoryof (vectorlength_) +
     memoryof (owns_storage_) +
     memoryof (clients_) +
     memoryof (num_clients_) +
-    (owns_storage_ ? sizeof (T) * vectorlength_ * nelems_ : 0);
+    (owns_storage_ ? (vectorlength_ * nelems_ +
+                      storage_ - storage_base_) : 0) * sizeof (T);
 }
 
 

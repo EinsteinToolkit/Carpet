@@ -191,17 +191,23 @@ namespace CarpetInterp2 {
     
 #ifdef CARPETINTERP2_CHECK
   public:
-    ivect saved_lsh;            // copy of lsh
+    ivect saved_ash;            // copy of ash
   private:
 #endif
     
   public:
     int
     calc_stencil (fasterp_iloc_t const & iloc,
+                  ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
                   ivect const & lsh,
+#endif
                   int order);
     void
-    interpolate (ivect const & lsh,
+    interpolate (ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
+                 ivect const & lsh,
+#endif
                  int order,
                  vector<CCTK_REAL const *> const & varptrs,
                  CCTK_REAL * restrict vals)
@@ -210,13 +216,19 @@ namespace CarpetInterp2 {
   private:
     template <int O>
     void
-    interpolate (ivect const & lsh,
+    interpolate (ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
+                 ivect const & lsh,
+#endif
                  vector<CCTK_REAL const *> const & varptrs,
                  CCTK_REAL * restrict vals)
       const;
     template <int O0, int O1, int O2>
     void
-    interpolate (ivect const & lsh,
+    interpolate (ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
+                 ivect const & lsh,
+#endif
                  vector<CCTK_REAL const *> const & varptrs,
                  CCTK_REAL * restrict vals)
       const;
@@ -251,17 +263,23 @@ namespace CarpetInterp2 {
     
 #ifdef CARPETINTERP2_CHECK
   public:
-    ivect saved_lsh;            // copy of lsh
+    ivect saved_ash;            // copy of ash
   private:
 #endif
     
   public:
     int
     calc_stencil (fasterp_iloc_t const & iloc,
+                  ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
                   ivect const & lsh,
-                  int unused_order);
+#endif
+                  int /*order*/);
     void
-    interpolate (ivect const & lsh,
+    interpolate (ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
+                 ivect const & lsh,
+#endif
                  int order,
                  vector<CCTK_REAL const *> const & varptrs,
                  CCTK_REAL * restrict vals)
@@ -270,13 +288,19 @@ namespace CarpetInterp2 {
   private:
     template <int O>
     void
-    interpolate (ivect const & lsh,
+    interpolate (ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
+                 ivect const & lsh,
+#endif
                  vector<CCTK_REAL const *> const & varptrs,
                  CCTK_REAL * restrict vals)
       const;
     template <int O0, int O1, int O2>
     void
-    interpolate (ivect const & lsh,
+    interpolate (ivect const & ash,
+#ifdef CARPETINTERP2_CHECK
+                 ivect const & lsh,
+#endif
                  vector<CCTK_REAL const *> const & varptrs,
                  CCTK_REAL * restrict vals)
       const;
@@ -317,7 +341,10 @@ namespace CarpetInterp2 {
     vector<FASTERP> locs;
     
     mrc_t mrc;                  // source map, refinement level, component
+    ivect ash;
+#ifdef CARPETINTERP2_CHECK
     ivect lsh;
+#endif
     int offset;
     int npoints;
   };

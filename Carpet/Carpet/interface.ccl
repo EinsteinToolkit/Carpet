@@ -13,6 +13,7 @@ uses include header: loopcontrol.h
 
 uses include header: mpi_string.hh
 
+uses include header: cacheinfo.hh
 uses include header: defs.hh
 uses include header: dist.hh
 uses include header: typecase.hh

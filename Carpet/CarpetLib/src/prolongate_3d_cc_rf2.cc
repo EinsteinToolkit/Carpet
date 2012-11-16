@@ -6,7 +6,6 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "gdata.hh"
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
@@ -43,13 +42,22 @@ using namespace std;
 
 namespace CarpetLib {
   
-
   
-#define SRCIND3(i,j,k) index3 (i, j, k, srciext, srcjext, srckext)
-#define DSTIND3(i,j,k) index3 (i, j, k, dstiext, dstjext, dstkext)
-#define SRCOFF3(i,j,k) offset3 (i, j, k, srciext, srcjext, srckext)
-#define DSTOFF3(i,j,k) offset3 (i, j, k, dstiext, dstjext, dstkext)
   
+#define SRCIND3(i,j,k)                          \
+  index3 (i, j, k,                              \
+          srcipadext, srcjpadext, srckpadext,   \
+          srciext, srcjext, srckext)
+#define DSTIND3(i,j,k)                          \
+  index3 (i, j, k,                              \
+          dstipadext, dstjpadext, dstkpadext,   \
+          dstiext, dstjext, dstkext)
+#define SRCOFF3(i,j,k)                          \
+  offset3 (i, j, k,                             \
+           srciext, srcjext, srckext)
+#define DSTOFF3(i,j,k)                          \
+  offset3 (i, j, k,                             \
+           dstiext, dstjext, dstkext)
   
   
     
@@ -320,8 +328,10 @@ namespace CarpetLib {
   template <typename T, int ORDER>
   void
   prolongate_3d_cc_rf2 (T const * restrict const src,
+                        ivect3 const & restrict srcpadext,
                         ivect3 const & restrict srcext,
                         T * restrict const dst,
+                        ivect3 const & restrict dstpadext,
                         ivect3 const & restrict dstext,
                         ibbox3 const & restrict srcbbox,
                         ibbox3 const & restrict dstbbox,
@@ -406,13 +416,15 @@ namespace CarpetLib {
       CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
     }
     
-    if (any (srcext != gdata::allocated_memory_shape(srcbbox.shape() / srcbbox.stride()) or
-             dstext != gdata::allocated_memory_shape(dstbbox.shape() / dstbbox.stride())))
-    {
-      CCTK_WARN (0, "Internal error: array sizes don't agree with bounding boxes");
-    }
     
     
+    size_t const srcipadext = srcpadext[0];
+    size_t const srcjpadext = srcpadext[1];
+    size_t const srckpadext = srcpadext[2];
+    
+    size_t const dstipadext = dstpadext[0];
+    size_t const dstjpadext = dstpadext[1];
+    size_t const dstkpadext = dstpadext[2];
     
     size_t const srciext = srcext[0];
     size_t const srcjext = srcext[1];
@@ -656,8 +668,10 @@ namespace CarpetLib {
   template                                                      \
   void                                                          \
   prolongate_3d_cc_rf2<T,0> (T const * restrict const src,      \
+                             ivect3 const & restrict srcpadext, \
                              ivect3 const & restrict srcext,    \
                              T * restrict const dst,            \
+                             ivect3 const & restrict dstpadext, \
                              ivect3 const & restrict dstext,    \
                              ibbox3 const & restrict srcbbox,   \
                              ibbox3 const & restrict dstbbox,   \
@@ -668,8 +682,10 @@ namespace CarpetLib {
   template                                                      \
   void                                                          \
   prolongate_3d_cc_rf2<T,1> (T const * restrict const src,      \
+                             ivect3 const & restrict srcpadext, \
                              ivect3 const & restrict srcext,    \
                              T * restrict const dst,            \
+                             ivect3 const & restrict dstpadext, \
                              ivect3 const & restrict dstext,    \
                              ibbox3 const & restrict srcbbox,   \
                              ibbox3 const & restrict dstbbox,   \
@@ -680,8 +696,10 @@ namespace CarpetLib {
   template                                                      \
   void                                                          \
   prolongate_3d_cc_rf2<T,2> (T const * restrict const src,      \
+                             ivect3 const & restrict srcpadext, \
                              ivect3 const & restrict srcext,    \
                              T * restrict const dst,            \
+                             ivect3 const & restrict dstpadext, \
                              ivect3 const & restrict dstext,    \
                              ibbox3 const & restrict srcbbox,   \
                              ibbox3 const & restrict dstbbox,   \
@@ -692,20 +710,24 @@ namespace CarpetLib {
   template                                                      \
   void                                                          \
   prolongate_3d_cc_rf2<T,3> (T const * restrict const src,      \
+                             ivect3 const & restrict srcpadext, \
                              ivect3 const & restrict srcext,    \
                              T * restrict const dst,            \
+                             ivect3 const & restrict dstpadext, \
                              ivect3 const & restrict dstext,    \
                              ibbox3 const & restrict srcbbox,   \
                              ibbox3 const & restrict dstbbox,   \
-                             ibbox3 const & restrict,                   \
-                             ibbox3 const & restrict regbbox,           \
+                             ibbox3 const & restrict,           \
+                             ibbox3 const & restrict regbbox,   \
                              void * extraargs);                 \
                                                                 \
   template                                                      \
   void                                                          \
   prolongate_3d_cc_rf2<T,4> (T const * restrict const src,      \
+                             ivect3 const & restrict srcpadext, \
                              ivect3 const & restrict srcext,    \
                              T * restrict const dst,            \
+                             ivect3 const & restrict dstpadext, \
                              ivect3 const & restrict dstext,    \
                              ibbox3 const & restrict srcbbox,   \
                              ibbox3 const & restrict dstbbox,   \
@@ -716,8 +738,10 @@ namespace CarpetLib {
   template                                                      \
   void                                                          \
   prolongate_3d_cc_rf2<T,5> (T const * restrict const src,      \
+                             ivect3 const & restrict srcpadext, \
                              ivect3 const & restrict srcext,    \
                              T * restrict const dst,            \
+                             ivect3 const & restrict dstpadext, \
                              ivect3 const & restrict dstext,    \
                              ibbox3 const & restrict srcbbox,   \
                              ibbox3 const & restrict dstbbox,   \

@@ -20,18 +20,30 @@ using namespace hrscc;
 
 namespace CarpetLib {
   
-#define SRCIND3(i,j,k) ptrdiff_t(index3(i, j, k, srciext, srcjext, srckext))
-#define DSTIND3(i,j,k) ptrdiff_t(index3(i, j, k, dstiext, dstjext, dstkext))
-#define SRCOFF3(i,j,k) ptrdiff_t(offset3(i, j, k, srciext, srcjext, srckext))
-#define DSTOFF3(i,j,k) ptrdiff_t(offset3(i, j, k, dstiext, dstjext, dstkext))
+#define SRCIND3(i,j,k)                          \
+  index3 (i, j, k,                              \
+          srcipadext, srcjpadext, srckpadext,   \
+          srciext, srcjext, srckext)
+#define DSTIND3(i,j,k)                          \
+  index3 (i, j, k,                              \
+          dstipadext, dstjpadext, dstkpadext,   \
+          dstiext, dstjext, dstkext)
+#define SRCOFF3(i,j,k)                          \
+  offset3 (i, j, k,                             \
+           srciext, srcjext, srckext)
+#define DSTOFF3(i,j,k)                          \
+  offset3 (i, j, k,                             \
+           dstiext, dstjext, dstkext)
   
   
   
   template<typename T, int ORDER>
   void
   restrict_3d_dgfe_rf2(T const *restrict const src,
+                       ivect3 const& restrict srcpadext,
                        ivect3 const& restrict srcext,
                        T *restrict const dst,
+                       ivect3 const& restrict dstpadext,
                        ivect3 const& restrict dstext,
                        ibbox3 const& restrict srcbbox,
                        ibbox3 const& restrict dstbbox,
@@ -82,6 +94,14 @@ namespace CarpetLib {
     
     
     
+    ptrdiff_t const srcipadext = srcpadext[0];
+    ptrdiff_t const srcjpadext = srcpadext[1];
+    ptrdiff_t const srckpadext = srcpadext[2];
+    
+    ptrdiff_t const dstipadext = dstpadext[0];
+    ptrdiff_t const dstjpadext = dstpadext[1];
+    ptrdiff_t const dstkpadext = dstpadext[2];
+    
     ptrdiff_t const srciext = srcext[0];
     ptrdiff_t const srcjext = srcext[1];
     ptrdiff_t const srckext = srcext[2];
@@ -127,9 +147,10 @@ namespace CarpetLib {
     // Loop over coarse region
 #ifdef HRSCC_HH
 #pragma omp parallel for //collapse(3)
-    for (ptrdiff_t k=0; k<regkext; k+=ORDER+1) {
-      for (ptrdiff_t j=0; j<regjext; j+=ORDER+1) {
-        for (ptrdiff_t i=0; i<regiext; i+=ORDER+1) {
+    // Zwicky's Intel compiler ices on ptrdiff_t
+    for (int k=0; k<regkext; k+=ORDER+1) {
+      for (int j=0; j<regjext; j+=ORDER+1) {
+        for (int i=0; i<regiext; i+=ORDER+1) {
           GLLElement<ORDER>::restrict_full
             (&src[SRCIND3(srcioff+2*i, srcjoff+2*j, srckoff+2*k)], srcstr,
              &dst[DSTIND3(dstioff+i, dstjoff+j, dstkoff+k)], dststr);
@@ -149,8 +170,10 @@ namespace CarpetLib {
   template                                                     \
   void                                                         \
   restrict_3d_dgfe_rf2<T,5>(T const *restrict const src,       \
+                            ivect3 const& restrict srcpadext,  \
                             ivect3 const& restrict srcext,     \
                             T *restrict const dst,             \
+                            ivect3 const& restrict dstpadext,  \
                             ivect3 const& restrict dstext,     \
                             ibbox3 const& restrict srcbbox,    \
                             ibbox3 const& restrict dstbbox,    \
@@ -168,8 +191,10 @@ namespace CarpetLib {
   template<>
   void
   restrict_3d_dgfe_rf2<CCTK_COMPLEX,5>(CCTK_COMPLEX const *restrict const src,
+                                       ivect3 const& restrict srcpadext,
                                        ivect3 const& restrict srcext,
                                        CCTK_COMPLEX *restrict const dst,
+                                       ivect3 const& restrict dstpadext,
                                        ivect3 const& restrict dstext,
                                        ibbox3 const& restrict srcbbox,
                                        ibbox3 const& restrict dstbbox,

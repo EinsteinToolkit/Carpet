@@ -5,7 +5,6 @@
 #include <cassert>
 #include <cmath>
 
-#include "gdata.hh"
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
@@ -19,9 +18,11 @@ namespace CarpetLib {
   
 #define SRCIND3(i,j,k)                                  \
   index3 (srcioff + (i), srcjoff + (j), srckoff + (k),  \
+          srcipadext, srcjpadext, srckpadext,           \
           srciext, srcjext, srckext)
 #define DSTIND3(i,j,k)                                  \
   index3 (dstioff + (i), dstjoff + (j), dstkoff + (k),  \
+          dstipadext, dstjpadext, dstkpadext,           \
           dstiext, dstjext, dstkext)
 #define SRCOFF3(i,j,k)                                  \
   offset3 (srcioff + (i), srcjoff + (j), srckoff + (k), \
@@ -136,8 +137,10 @@ namespace CarpetLib {
   template <typename T, int centi, int centj, int centk>
   void
   restrict_3d_vc_rf2 (T const * restrict const src,
+                      ivect3 const & restrict srcpadext,
                       ivect3 const & restrict srcext,
                       T * restrict const dst,
+                      ivect3 const & restrict dstpadext,
                       ivect3 const & restrict dstext,
                       ibbox3 const & restrict srcbbox,
                       ibbox3 const & restrict dstbbox,
@@ -188,12 +191,6 @@ namespace CarpetLib {
       CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
     }
     
-    if (any (srcext != gdata::allocated_memory_shape(srcbbox.shape() / srcbbox.stride()) or
-             dstext != gdata::allocated_memory_shape(dstbbox.shape() / dstbbox.stride())))
-    {
-      CCTK_WARN (0, "Internal error: array sizes don't agree with bounding boxes");
-    }
-    
     
     
     ivect3 const regext = regbbox.shape() / regbbox.stride();
@@ -216,6 +213,14 @@ namespace CarpetLib {
       (regbbox.lower() - dstbbox.lower()) / dstbbox.stride();
     
     
+    
+    int const srcipadext = srcpadext[0];
+    int const srcjpadext = srcpadext[1];
+    int const srckpadext = srcpadext[2];
+    
+    int const dstipadext = dstpadext[0];
+    int const dstjpadext = dstpadext[1];
+    int const dstkpadext = dstpadext[2];
     
     int const srciext = srcext[0];
     int const srcjext = srcext[1];
@@ -284,8 +289,10 @@ namespace CarpetLib {
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,0,0,0> (T const * restrict const src,            \
+                               ivect3 const & restrict srcpadext,       \
                                ivect3 const & restrict srcext,          \
                                T * restrict const dst,                  \
+                               ivect3 const & restrict dstpadext,       \
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
@@ -295,8 +302,10 @@ namespace CarpetLib {
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,0,0,1> (T const * restrict const src,            \
+                               ivect3 const & restrict srcpadext,       \
                                ivect3 const & restrict srcext,          \
                                T * restrict const dst,                  \
+                               ivect3 const & restrict dstpadext,       \
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
@@ -306,8 +315,10 @@ namespace CarpetLib {
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,0,1,0> (T const * restrict const src,            \
+                               ivect3 const & restrict srcpadext,       \
                                ivect3 const & restrict srcext,          \
                                T * restrict const dst,                  \
+                               ivect3 const & restrict dstpadext,       \
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
@@ -317,8 +328,10 @@ namespace CarpetLib {
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,0,1,1> (T const * restrict const src,            \
+                               ivect3 const & restrict srcpadext,       \
                                ivect3 const & restrict srcext,          \
                                T * restrict const dst,                  \
+                               ivect3 const & restrict dstpadext,       \
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
@@ -328,8 +341,10 @@ namespace CarpetLib {
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,1,0,0> (T const * restrict const src,            \
+                               ivect3 const & restrict srcpadext,       \
                                ivect3 const & restrict srcext,          \
                                T * restrict const dst,                  \
+                               ivect3 const & restrict dstpadext,       \
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
@@ -339,8 +354,10 @@ namespace CarpetLib {
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,1,0,1> (T const * restrict const src,            \
+                               ivect3 const & restrict srcpadext,       \
                                ivect3 const & restrict srcext,          \
                                T * restrict const dst,                  \
+                               ivect3 const & restrict dstpadext,       \
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
@@ -350,8 +367,10 @@ namespace CarpetLib {
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,1,1,0> (T const * restrict const src,            \
+                               ivect3 const & restrict srcpadext,       \
                                ivect3 const & restrict srcext,          \
                                T * restrict const dst,                  \
+                               ivect3 const & restrict dstpadext,       \
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \
@@ -361,8 +380,10 @@ namespace CarpetLib {
   template                                                              \
   void                                                                  \
   restrict_3d_vc_rf2<T,1,1,1> (T const * restrict const src,            \
+                               ivect3 const & restrict srcpadext,       \
                                ivect3 const & restrict srcext,          \
                                T * restrict const dst,                  \
+                               ivect3 const & restrict dstpadext,       \
                                ivect3 const & restrict dstext,          \
                                ibbox3 const & restrict srcbbox,         \
                                ibbox3 const & restrict dstbbox,         \

@@ -75,19 +75,22 @@ function eno1d(q)
   
 end function eno1d
 
-subroutine prolongate_3d_real8_eno (src, srciext, srcjext, &
-     srckext, dst, dstiext, dstjext, dstkext, srcbbox, &
-     dstbbox, regbbox)
+subroutine prolongate_3d_real8_eno ( &
+     src, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext, &
+     dst, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext, &
+     srcbbox, dstbbox, regbbox)
 
   implicit none
 
   CCTK_REAL8 one
   parameter (one = 1)
 
+  integer srcipadext, srcjpadext, srckpadext
   integer srciext, srcjext, srckext
-  CCTK_REAL8 src(srciext,srcjext,srckext)
+  CCTK_REAL8 src(srcipadext,srcjpadext,srckpadext)
+  integer dstipadext, dstjpadext, dstkpadext
   integer dstiext, dstjext, dstkext
-  CCTK_REAL8 dst(dstiext,dstjext,dstkext)
+  CCTK_REAL8 dst(dstipadext,dstjpadext,dstkpadext)
 !!$     bbox(:,1) is lower boundary (inclusive)
 !!$     bbox(:,2) is upper boundary (inclusive)
 !!$     bbox(:,3) is stride

@@ -4,6 +4,7 @@ IMPLEMENTS: CarpetLib
 
 includes header: mpi_string.hh in mpi_string.hh
 
+includes header: cacheinfo.hh in cacheinfo.hh
 includes header: defs.hh in defs.hh
 includes header: dist.hh in dist.hh
 includes header: typecase.hh in typecase.hh

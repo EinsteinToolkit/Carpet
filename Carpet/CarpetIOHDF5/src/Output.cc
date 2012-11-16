@@ -237,12 +237,17 @@ int WriteVarUnchunked (const cGH* const cctkGH,
             // before HDF5-1.6.4 the H5Sselect_hyperslab() function expected
             // the 'start' argument to be of type 'hssize_t'
             slice_start_size_t overlaporigin[dim];
+            hsize_t hyperslab_start[dim], hyperslab_count[dim];
             for (int d = 0; d < group.dim; ++d) {
               assert (group.dim-1-d>=0 and group.dim-1-d<dim);
               overlaporigin[group.dim-1-d] =
                 ((overlap.lower() - bbox->lower()) / overlap.stride())[d];
               overlapshape[group.dim-1-d]  =
-                (overlap.shape() / overlap.stride())[d];
+                processor_component->padded_shape()[d];
+              assert (all (processor_component->shape() ==
+                           overlap.shape() / overlap.stride()));
+              hyperslab_start[group.dim-1-d] = 0;
+              hyperslab_count[group.dim-1-d] = processor_component->shape()[d];
             }
 
             // Write the processor component as a hyperslab into the recombined
@@ -250,6 +255,9 @@ int WriteVarUnchunked (const cGH* const cctkGH,
             hid_t overlap_dataspace;
             HDF5_ERROR (overlap_dataspace =
                         H5Screate_simple (group.dim, overlapshape, NULL));
+            HDF5_ERROR (H5Sselect_hyperslab (overlap_dataspace, H5S_SELECT_SET,
+                                             hyperslab_start, NULL,
+                                             hyperslab_count, NULL));
             HDF5_ERROR (H5Sselect_hyperslab (dataspace, H5S_SELECT_SET,
                                              overlaporigin, NULL,
                                              overlapshape, NULL));
@@ -436,10 +444,15 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
 
           hsize_t shape[dim];
           hssize_t origin[dim];
+          hsize_t hyperslab_start[dim], hyperslab_count[dim];
           for (int d = 0; d < group.dim; ++d) {
             assert (group.dim-1-d>=0 and group.dim-1-d<dim);
             origin[group.dim-1-d] = (bbox.lower() / bbox.stride())[d];
-            shape[group.dim-1-d]  = (bbox.shape() / bbox.stride())[d];
+            shape[group.dim-1-d]  = processor_component->padded_shape()[d];
+            assert (all (processor_component->shape() ==
+                         bbox.shape() / bbox.stride()));
+            hyperslab_start[group.dim-1-d] = 0;
+            hyperslab_count[group.dim-1-d] = processor_component->shape()[d];
           }
 
           // Write the component as an individual dataset
@@ -459,6 +472,9 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
             HDF5_ERROR (H5Pset_filter (plist, H5Z_FILTER_FLETCHER32, 0, 0, NULL));
           }
           HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
+          HDF5_ERROR (H5Sselect_hyperslab (dataspace, H5S_SELECT_SET,
+                                           hyperslab_start, NULL,
+                                           hyperslab_count, NULL));
           HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
                                            filedatatype, dataspace, plist));
 
@@ -545,10 +561,15 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       // const ibbox& bbox = (*ff) (request->timelevel, refinementlevel,
       //                            group.disttype == CCTK_DISTRIB_CONSTANT ?
       //                            0 : component, mglevel)->extent();
-      const dh* dd = arrdata.at(gindex).at(Carpet::map).dd;
+      const dh* const dd = arrdata.AT(gindex).AT(Carpet::map).dd;
       const ibbox& bbox =
         dd->light_boxes.AT(mglevel).AT(refinementlevel)
         .AT(group.disttype == CCTK_DISTRIB_CONSTANT ? 0 : component).exterior;
+      const ggf* const ff = arrdata.AT(gindex).AT(Carpet::map).data.AT(var);
+      const gdata* const processor_component = ff->data_pointer
+        (request->timelevel, refinementlevel,
+         group.disttype == CCTK_DISTRIB_CONSTANT ? 0 : local_component,
+         mglevel);
 
       // Don't create zero-sized components
       if (bbox.empty()) continue;
@@ -618,10 +639,15 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       // Get the shape of the HDF5 dataset (in Fortran index order)
       hsize_t shape[dim];
       hssize_t origin[dim];
+      hsize_t hyperslab_start[dim], hyperslab_count[dim];
       for (int d = 0; d < group.dim; ++d) {
         assert (group.dim-1-d>=0 and group.dim-1-d<dim);
         origin[group.dim-1-d] = (bbox.lower() / bbox.stride())[d];
-        shape[group.dim-1-d]  = (bbox.shape() / bbox.stride())[d];
+        shape[group.dim-1-d]  = processor_component->padded_shape()[d];
+        assert (all (processor_component->shape() ==
+                     bbox.shape() / bbox.stride()));
+        hyperslab_start[group.dim-1-d] = 0;
+        hyperslab_count[group.dim-1-d] = processor_component->shape()[d];
       }
 
       // Write the component as an individual dataset
@@ -641,6 +667,9 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
         HDF5_ERROR (H5Pset_filter (plist, H5Z_FILTER_FLETCHER32, 0, 0, NULL));
       }
       HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
+      HDF5_ERROR (H5Sselect_hyperslab (dataspace, H5S_SELECT_SET,
+                                       hyperslab_start, NULL,
+                                       hyperslab_count, NULL));
       HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
                                        filedatatype, dataspace, plist));
 
@@ -827,7 +856,8 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
                                 dataspace, H5P_DEFAULT));
   HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ioffsetdenom[0]));
   HDF5_ERROR (H5Aclose (attr));
-  ivect const ioffset = ((bbox.lower() % bbox.stride()) + bbox.stride()) % bbox.stride();
+  ivect const ioffset =
+    ((bbox.lower() % bbox.stride()) + bbox.stride()) % bbox.stride();
   HDF5_ERROR (attr = H5Acreate (dataset, "ioffset", H5T_NATIVE_INT,
                                 dataspace, H5P_DEFAULT));
   HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ioffset[0]));

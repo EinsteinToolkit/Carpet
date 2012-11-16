@@ -159,13 +159,13 @@ BOOLEAN combine_recompose "Recompose all grid functions of one refinement levels
 
 
 
-# Memory allocation parameters
-
-INT avoid_arraysize_bytes "Avoid array sizes that are multiples of this" STEERABLE=recover
-{
-  0   :: "don't avoid anything"
-  2:* :: ""
-} 0
+# # Memory allocation parameters
+# 
+# INT avoid_arraysize_bytes "Avoid array sizes that are multiples of this" STEERABLE=recover
+# {
+#   0   :: "don't avoid anything"
+#   2:* :: ""
+# } 0
 
 
 
@@ -208,6 +208,103 @@ BOOLEAN use_mpi_send "Use MPI_Send instead of MPI_Isend" STEERABLE=always
 BOOLEAN use_mpi_ssend "Use MPI_Ssend instead of MPI_Isend" STEERABLE=always
 {
 } "no"
+
+
+
+# Memory and cache information -- this is machine dependent and should
+# be determined at run time or set via simfactory
+
+CCTK_INT vector_size "vector size" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+
+CCTK_INT D1size "level 1 data cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+CCTK_INT D1linesize "level 1 data cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+CCTK_INT D1assoc "level 1 data cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+
+CCTK_INT L2size "level 2 unified cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+CCTK_INT L2linesize "level 2 unified cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+CCTK_INT L2assoc "level 2 unified cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+
+CCTK_INT L3size "level 3 unified cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+CCTK_INT L3linesize "level 3 unified cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+CCTK_INT L3assoc "level 3 unified cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+
+CCTK_INT TLB_D1entries "level 1 TLB cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+CCTK_INT TLB_D1pagesize "level 1 TLB cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+CCTK_INT TLB_D1assoc "level 1 TLB cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+
+CCTK_INT TLB_L2entries "level 2 TLB cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+CCTK_INT TLB_L2pagesize "level 2 TLB cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+CCTK_INT TLB_L2assoc "level 2 TLB cache" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
+
+CCTK_INT pagesize "size of a memory page" STEERABLE=recover
+{
+  0 :: "unknown"
+  1:* :: ""
+} 0
 
 
 
