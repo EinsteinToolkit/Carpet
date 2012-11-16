@@ -2,4 +2,6 @@
 
 REQUIRES Carpet CarpetLib IOUtil HDF5 Nirvana
 
-REQUIRES THORNS: Carpet CarpetLib IOUtil
+OPTIONAL MPI
+{
+}
