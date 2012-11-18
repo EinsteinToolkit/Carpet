@@ -37,13 +37,13 @@ public:				// should be readonly
   gh& h;                        // hierarchy
   gh::th_handle gh_handle;
   
+  bool const time_interpolation_during_regridding;
+  
   int timelevels;               // const
   
 private:
   
   vector<int> reffacts;         // const
-  
-  bool const time_interpolation_during_regridding;
   
   vector<vector<vector<CCTK_REAL> > > times; // current times [ml][rl][tl]
   vector<vector<CCTK_REAL> > deltas;         // time steps [ml][rl]
@@ -51,6 +51,8 @@ private:
 public:
   
   // Constructors
+  th (gh& h, bool time_interpolation_during_regridding);
+  
   th (gh& h, int timelevels, vector<int> const& reffacts,
       bool time_interpolation_during_regridding);
   

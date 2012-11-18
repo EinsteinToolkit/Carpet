@@ -19,10 +19,24 @@ list<th*> th::allth;
 
 
 // Constructors
+th::th (gh& h_,
+        bool const time_interpolation_during_regridding_)
+  : h(h_),
+    time_interpolation_during_regridding
+    (time_interpolation_during_regridding_),
+    timelevels(0)
+{
+  reffacts.resize(1, 1);
+  allthi = allth.insert(allth.end(), this);
+  gh_handle = h.add(this);
+}
+
 th::th (gh& h_, int const timelevels_, vector<int> const& reffacts_,
         bool const time_interpolation_during_regridding_)
-  : h(h_), timelevels(timelevels_), reffacts(reffacts_),
-    time_interpolation_during_regridding (time_interpolation_during_regridding_)
+  : h(h_),
+    time_interpolation_during_regridding
+    (time_interpolation_during_regridding_),
+    timelevels(timelevels_), reffacts(reffacts_)
 {
   assert (reffacts.size() >= 1);
   assert (reffacts.front() == 1);
