@@ -162,10 +162,10 @@ namespace CarpetLib {
       // Loop over fine region
 #ifdef HRSCC_HH
       ptrdiff_t const i=0;
-#pragma omp parallel for //collapse(2)
-      // Zwicky's Intel compiler ices on ptrdiff_t
-      for (int k=0; k<regkext; k+=2*(ORDER+1)) {
-        for (int j=0; j<regjext; j+=2*(ORDER+1)) {
+#pragma omp parallel for collapse(2)
+      // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
+      for (/*ptrdiff_t*/int k=0; k<regkext; k+=2*(ORDER+1)) {
+        for (/*ptrdiff_t*/int j=0; j<regjext; j+=2*(ORDER+1)) {
           GLLElement<ORDER>::prolongate_2D
             (&src[SRCIND3(srcioff+i, srcjoff+j, srckoff+k)], srcstr2d,
              &dst[DSTIND3(dstioff+2*i, dstjoff+2*j, dstkoff+2*k)], dststr2d);
@@ -202,10 +202,10 @@ namespace CarpetLib {
       // Loop over fine region
 #ifdef HRSCC_HH
       ptrdiff_t const j=0;
-#pragma omp parallel for //collapse(2)
-      // Zwicky's Intel compiler ices on ptrdiff_t
-      for (int k=0; k<regkext; k+=2*(ORDER+1)) {
-        for (int i=0; i<regiext; i+=2*(ORDER+1)) {
+#pragma omp parallel for collapse(2)
+      // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
+      for (/*ptrdiff_t*/int k=0; k<regkext; k+=2*(ORDER+1)) {
+        for (/*ptrdiff_t*/int i=0; i<regiext; i+=2*(ORDER+1)) {
           GLLElement<ORDER>::prolongate_2D
             (&src[SRCIND3(srcioff+i, srcjoff+j, srckoff+k)], srcstr2d,
              &dst[DSTIND3(dstioff+2*i, dstjoff+2*j, dstkoff+2*k)], dststr2d);
@@ -242,10 +242,10 @@ namespace CarpetLib {
       // Loop over fine region
 #ifdef HRSCC_HH
       ptrdiff_t const k=0;
-#pragma omp parallel for //collapse(2)
-      // Zwicky's Intel compiler ices on ptrdiff_t
-      for (int j=0; j<regjext; j+=2*(ORDER+1)) {
-        for (int i=0; i<regiext; i+=2*(ORDER+1)) {
+#pragma omp parallel for collapse(2)
+      // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
+      for (/*ptrdiff_t*/int j=0; j<regjext; j+=2*(ORDER+1)) {
+        for (/*ptrdiff_t*/int i=0; i<regiext; i+=2*(ORDER+1)) {
           GLLElement<ORDER>::prolongate_2D
             (&src[SRCIND3(srcioff+i, srcjoff+j, srckoff+k)], srcstr2d,
              &dst[DSTIND3(dstioff+2*i, dstjoff+2*j, dstkoff+2*k)], dststr2d);
@@ -279,11 +279,11 @@ namespace CarpetLib {
       
       // Loop over fine region
 #ifdef HRSCC_HH
-#pragma omp parallel for //collapse(3)
-      // Zwicky's Intel compiler ices on ptrdiff_t
-      for (int k=0; k<regkext; k+=2*(ORDER+1)) {
-        for (int j=0; j<regjext; j+=2*(ORDER+1)) {
-          for (int i=0; i<regiext; i+=2*(ORDER+1)) {
+#pragma omp parallel for collapse(3)
+      // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
+      for (/*ptrdiff_t*/int k=0; k<regkext; k+=2*(ORDER+1)) {
+        for (/*ptrdiff_t*/int j=0; j<regjext; j+=2*(ORDER+1)) {
+          for (/*ptrdiff_t*/int i=0; i<regiext; i+=2*(ORDER+1)) {
             GLLElement<ORDER>::prolongate_full
               (&src[SRCIND3(srcioff+i, srcjoff+j, srckoff+k)], srcstr,
                &dst[DSTIND3(dstioff+2*i, dstjoff+2*j, dstkoff+2*k)], dststr);

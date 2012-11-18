@@ -534,7 +534,7 @@ namespace CarpetIOF5 {
         assert(ind0s < nps);
         char const *const src = &((char const*)data)[ind0s];
         
-#pragma omp parallel for //collapse(2)
+#pragma omp parallel for collapse(2)
         for (ptrdiff_t k=0; k<nk; ++k) {
           for (ptrdiff_t j=0; j<nj; ++j) {
             ptrdiff_t const ind = j*dj + k*dk;
@@ -612,7 +612,7 @@ namespace CarpetIOF5 {
     assert(data.has_storage());
     char *const dst = &((char*)data.storage())[ind0d];
     
-#pragma omp parallel for //collapse(2)
+#pragma omp parallel for collapse(2)
     for (ptrdiff_t k=0; k<nk; ++k) {
       for (ptrdiff_t j=0; j<nj; ++j) {
         ptrdiff_t const indd = j*djd + k*dkd;

@@ -146,11 +146,11 @@ namespace CarpetLib {
     
     // Loop over coarse region
 #ifdef HRSCC_HH
-#pragma omp parallel for //collapse(3)
-    // Zwicky's Intel compiler ices on ptrdiff_t
-    for (int k=0; k<regkext; k+=ORDER+1) {
-      for (int j=0; j<regjext; j+=ORDER+1) {
-        for (int i=0; i<regiext; i+=ORDER+1) {
+#pragma omp parallel for collapse(3)
+    // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
+    for (/*ptrdiff_t*/int k=0; k<regkext; k+=ORDER+1) {
+      for (/*ptrdiff_t*/int j=0; j<regjext; j+=ORDER+1) {
+        for (/*ptrdiff_t*/int i=0; i<regiext; i+=ORDER+1) {
           GLLElement<ORDER>::restrict_full
             (&src[SRCIND3(srcioff+2*i, srcjoff+2*j, srckoff+2*k)], srcstr,
              &dst[DSTIND3(dstioff+i, dstjoff+j, dstkoff+k)], dststr);

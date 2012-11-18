@@ -250,7 +250,7 @@ namespace CarpetLib {
     
     
     // Loop over coarse region
-#pragma omp parallel for //collapse(3)
+#pragma omp parallel for collapse(3)
     for (int k=0; k<regkext; ++k) {
       for (int j=0; j<regjext; ++j) {
         for (int i=0; i<regiext; ++i) {
