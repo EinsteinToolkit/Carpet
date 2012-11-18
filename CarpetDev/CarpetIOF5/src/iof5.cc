@@ -86,7 +86,7 @@ namespace CarpetIOF5 {
   
   // A mechanism to keep the HDF5 output file open across multiple
   // write operations:
-  hid_t file = H5I_INVALID_HID;
+  hid_t open_file = H5I_INVALID_HID;
   int keep_file_open = 0;
   void enter_keep_file_open()
   {
@@ -96,10 +96,10 @@ namespace CarpetIOF5 {
   {
     assert(keep_file_open > 0);
     --keep_file_open;
-    if (keep_file_open==0 and file>=0) {
-      herr_t const herr = H5Fclose(file);
+    if (keep_file_open==0 and open_file>=0) {
+      herr_t const herr = H5Fclose(open_file);
       assert(not herr);
-      file = H5I_INVALID_HID;
+      open_file = H5I_INVALID_HID;
       H5garbage_collect();
     }
   }
@@ -294,22 +294,22 @@ namespace CarpetIOF5 {
       enter_keep_file_open();
       bool const truncate_file =
         first_time and IO_TruncateOutputFiles(cctkGH) and myproc == myioproc;
-      if (file < 0) {
+      if (open_file < 0) {
         // Reuse file hid if file is already open
         hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
         H5Pset_fclose_degree(fapl, H5F_CLOSE_STRONG);
-        file =
+        open_file =
           truncate_file ?
           H5Fcreate(name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, fapl) :
           H5Fopen  (name.c_str(), H5F_ACC_RDWR , fapl);
-        assert(file >= 0);
+        assert(open_file >= 0);
         H5Pclose(fapl);
       }
       first_time = false;
       
       vector<bool> output_var(CCTK_NumVars());
       output_var.at(vindex) = true;
-      output(cctkGH, file, output_var, false, true);
+      output(cctkGH, open_file, output_var, false, true);
       
       // Close file
       leave_keep_file_open();
@@ -471,15 +471,21 @@ namespace CarpetIOF5 {
     
     
     
+    assert(called_from == CP_RECOVER_PARAMETERS or
+           called_from == CP_RECOVER_DATA or
+           called_from == FILEREADER_DATA);
+    bool const in_recovery =
+      called_from == CP_RECOVER_PARAMETERS or
+      called_from == CP_RECOVER_DATA;
+    if (not in_recovery) {
+      assert(is_level_mode());
+      if (reflevel > 0) return 0; // no error
+    }
+    
+    
+    
     BEGIN_GLOBAL_MODE(cctkGH) {
       DECLARE_CCTK_ARGUMENTS;
-      
-      assert(called_from == CP_RECOVER_PARAMETERS or
-             called_from == CP_RECOVER_DATA or
-             called_from == FILEREADER_DATA);
-      bool const in_recovery =
-        called_from == CP_RECOVER_PARAMETERS or
-        called_from == CP_RECOVER_DATA;
       
       if (in_recovery) {
         CCTK_VInfo(CCTK_THORNSTRING, "F5::Input: recovering iteration %d",
@@ -505,35 +511,28 @@ namespace CarpetIOF5 {
       
       
       
-      scatter_t scatter(cctkGH);
+      // Keep track of which files could be read, and which could not
+      int foundproc = -1, notfoundproc = -1;
       
-      // Open file
       // string const basename =
       //   in_recovery
       //   ? "checkpoint"
       //   : generate_basename(cctkGH, CCTK_VarIndex("grid::r"));
       string const basename = basefilename;
       
-      // Keep track of which files could be read, and which could not
-      int foundproc = -1, notfoundproc = -1;
-      
-      // TODO: Store how many processes contributed to the output, and
-      // expect exactly that many files
-      int const myproc = CCTK_MyProc(cctkGH);
-      int const nprocs = CCTK_nProcs(cctkGH);
-      
-      int const ioproc_every =
-        max_nioprocs == 0 ? 1 : (nprocs + max_nioprocs - 1) / max_nioprocs;
-      assert(ioproc_every > 0);
-      int const nioprocs = nprocs / ioproc_every;
-      assert(nioprocs > 0 and nioprocs <= max_nioprocs);
-      int const myioproc = myproc / ioproc_every * ioproc_every;
-      
-      if (myproc == myioproc) {
+      {
+        scatter_t scatter(cctkGH);
+        
+        // Iterate over files
+        
+        // TODO: Store how many processes contributed to the output,
+        // and expect exactly that many files
+        int const myproc = CCTK_MyProc(cctkGH);
+        int const nprocs = CCTK_nProcs(cctkGH);
         // Loop over all (possible) files
-        for (int ioproc = myioproc / ioproc_every; ; ioproc += nioprocs) {
+        for (int proc=myproc; ; proc+=nprocs) {
           string const name =
-            create_filename(cctkGH, basename, cctkGH->cctk_iteration, ioproc,
+            create_filename(cctkGH, basename, cctkGH->cctk_iteration, proc,
                             in_recovery ? io_dir_recover : io_dir_input, false);
           
           bool file_exists;
@@ -541,24 +540,21 @@ namespace CarpetIOF5 {
             file_exists = H5Fis_hdf5(name.c_str()) > 0;
           } H5E_END_TRY;
           if (not file_exists) {
-            notfoundproc = ioproc;
+            notfoundproc = proc;
             break;
           }
-          foundproc = ioproc;
+          foundproc = proc;
           
           indent_t indent;
-          cout << indent << "I/O process=" << ioproc << "\n";
+          cout << indent << "process=" << proc << "\n";
           
-          hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
-          H5Pset_fclose_degree(fapl, H5F_CLOSE_STRONG);
-          hid_t const file = H5Fopen(name.c_str(), H5F_ACC_RDONLY, fapl);
+          hid_t const file = H5Fopen(name.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
           assert(file >= 0);
-          H5Pclose(fapl);
           
           // Iterate over all time slices
           bool const input_past_timelevels = in_recovery;
-          // TODO: read metadata when recoverying parameters
-          bool const input_metadata = false;
+          // Read metadata when recoverying parameters
+          bool const input_metadata = called_from == CP_RECOVER_PARAMETERS;
           input(cctkGH, file, input_var, input_past_timelevels, input_metadata,
                 scatter);
           
@@ -567,6 +563,8 @@ namespace CarpetIOF5 {
           assert(not herr);
           H5garbage_collect();
         }
+        
+        // Destroy scatter object
       }
       
       {
@@ -644,10 +642,10 @@ namespace CarpetIOF5 {
       int const iter = strtol(p, &p, 10);
       if (!*p) continue;
       
-      // Read the process number
+      // Read (and ignore) the process number
       if (infix.compare(0, infix.length(), p, infix.length()) != 0) continue;
       p += infix.length();
-      int const proc = strtol(p, &p, 10);
+      /* int const proc = */ strtol(p, &p, 10);
       if (!*p) continue;
       
       // Finally check the file extension

@@ -150,6 +150,8 @@ CarpetIOASCII::out1D_vars         = "
 
 
 
+CarpetIOF5::verbose = yes
+
 CarpetIOF5::out_every = 1024
 CarpetIOF5::out_vars  = "
         ADMBase::metric

@@ -104,8 +104,7 @@ namespace CarpetIOF5 {
     
     struct component_indices_t: map_indices_t {
       // elements >=dim remain undefined
-      ivect ash;
-      ivect lbnd, lsh, lghosts, ughosts;
+      ivect lbnd, lsh, ash, lghosts, ughosts;
       ivect imin, imax, ioff, ilen;
       rvect clower, cupper;
       
@@ -758,14 +757,37 @@ namespace CarpetIOF5 {
       // Dataset properties
       hid_t const prop = H5Pcreate(H5P_DATASET_CREATE);
       assert(prop >= 0);
+      // Use chunked I/O if requested or needed
+      bool const set_chunks =
+        use_chunks or compression_level >= 0 or use_checksums;
+      if (set_chunks) {
+        assert(ci.dim > 0);
+        int const chunksize = max_chunksize / H5Tget_size(type);
+        assert(chunksize > 0);
+        int cs = 1, csd = 1;
+        while (csd < chunksize) {
+          cs <<= 1; csd <<= ci.dim;
+          assert(ci.dim > 0);
+        }
+        ivect chunkshape = cs;
+        chunkshape[ci.dim-1] = cs / (csd / chunksize);
+        chunkshape = max(chunkshape, 1);
+        chunkshape = min(chunkshape, ci.ilen);
+        FAILWARN(H5Pset_chunk(prop, ci.dim,
+                              &v2h(chunkshape).reverse()[dim-ci.dim]));
+      }
       // Enable compression if requested
       if (compression_level >= 0) {
-        FAILWARN(H5Pset_chunk(prop, ci.dim, &v2h(ci.ilen).reverse()[0]));
+        assert(set_chunks);
+        indent_t indent2;
+        cout << indent2
+             << "using chunk size " << ci.ilen << " "
+             << "(" << prod(ci.ilen) << ")\n";
         FAILWARN(H5Pset_deflate(prop, compression_level));
       }
       // Enable checksums if requested
       if (use_checksums) {
-        FAILWARN(H5Pset_chunk(prop, ci.dim, &v2h(ci.ilen).reverse()[0]));
+        assert(set_chunks);
         FAILWARN(H5Pset_fletcher32(prop));
       }
       
@@ -773,7 +795,8 @@ namespace CarpetIOF5 {
         // Write single-component tensors into non-separated fractions
         // for convenience (could also use a separated compound
         // instead)
-        // TODO: Extent F5 API to allow writing non-fragmented datasets
+        // TODO: Extend F5 API to allow writing non-fragmented datasets
+        // TODO: Extend F5 API to accept hyperslab descriptors
         FAILWARN
           (F5Fwrite_fraction(path, name.c_str(),
                              ci.dim,
@@ -798,6 +821,7 @@ namespace CarpetIOF5 {
                     "This does not seem to be supported by F5ls "
                     "(or is implemented wrong in the F5 library).");
         }
+        // TODO: Extend F5 API to accept hyperslab descriptors
         FAILWARN
           (F5FSwrite_fraction(path, name.c_str(),
                               ci.dim,

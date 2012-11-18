@@ -28,6 +28,7 @@ namespace CarpetIOF5 {
     
     // destination
     int component, process;
+    int tag;
     
     // meta-messages
     enum state_t { state_normal, state_sent_all, state_all_sent_all };
@@ -46,15 +47,32 @@ namespace CarpetIOF5 {
   // Scatter (distribute) Cactus variables
   class scatter_t {
     
-    enum tags { tag_desc, tag_data };
+    cGH const *const cctkGH;
+    
+    static int const max_concurrent_sends = 100;
+    enum tags_t {
+      tag_desc,
+      tag_data_min,
+      tag_data_max = tag_data_min + max_concurrent_sends
+    };
+    
+    class busy_tags_t {
+      vector<bool> tags;
+    public:
+      busy_tags_t();
+      ~busy_tags_t();
+      int allocate_tag();
+      void free_tag(int tag);
+    };
+    vector<busy_tags_t> busy_tags;
     
     struct transmission_t {
       fragdesc_t fragdesc;
       vector<char> data;
       MPI_Request request;
+      transmission_t(): request(MPI_REQUEST_NULL) {}
+      ~transmission_t() { assert(request==MPI_REQUEST_NULL); }
     };
-    
-    cGH const *const cctkGH;
     
     // Desired number of public receives to keep posted at all times
     static int const num_public_recvs = 10;
@@ -68,7 +86,7 @@ namespace CarpetIOF5 {
     fragdesc_t to_parent, to_children;
     
   public:
-    scatter_t(cGH const *const cctkGH_);
+    scatter_t(cGH const *cctkGH_);
     ~scatter_t();
     
     void send(fragdesc_t const& fd, void const *data);

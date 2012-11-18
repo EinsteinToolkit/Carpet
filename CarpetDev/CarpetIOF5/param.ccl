@@ -154,10 +154,19 @@ STRING checkpoint_dir "Checkpoint directory (overrides IO::checkpoint_dir)" STEE
 
 
 
+BOOLEAN use_chunks "Always use chunked layout" STEERABLE=always
+{
+} "yes"
+
+INT max_chunksize "Maximum chunk size (in bytes)" STEERABLE=always
+{
+  1:* :: ""
+} 131072                        # 128 kB
+
 INT compression_level "Compression level" STEERABLE=always
 {
   -1  :: "no compression"
-  0:9 :: "higher numbers compress better"
+  0:9 :: "smaller numbers compress faster, larger numbers compress better"
 } 1
 
 BOOLEAN use_checksums "Include a checksum for the data" STEERABLE=always

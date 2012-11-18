@@ -119,14 +119,40 @@ namespace CarpetIOF5 {
       
       // TODO: synchronise all read grid functions
     }
-  
+    
+    
+    
     void read_grid(F5Path *const path)
     {
       indent_t indent;
       cout << indent << "grid=" << gridname << "\n";
+      
+      
+      
+      if (input_metadata) {
+        if (reflevel == 0) {
+          indent_t indent2;
+          cout << indent2 << "reading metadata\n";
+          // hid_t const metadata_group = path->Grid_hid;
+          ostringstream pathname;
+          pathname << FIBER_CONTENT_GRIDS << "/" << gridname;
+          hid_t group;
+          group = H5Gopen(path->ContentsGroup_hid, pathname.str().c_str(),
+                          H5P_DEFAULT);
+          assert(group >= 0);
+          read_metadata(cctkGH, group);
+          herr_t const herr = H5Gclose(group);
+          assert(not herr);
+        }
+      }
+      
+      
+      
       // F5iterate_vertex_fields(path, NULL, field_iterator, this, NULL, NULL);
       F5iterate_topologies(path, NULL, topology_iterator, this);
     }
+    
+    
     
     void read_topology(F5Path *const path)
     {
@@ -151,9 +177,9 @@ namespace CarpetIOF5 {
         herr = H5Gget_linkval
           (path->Grid_hid, topologyname, sizeof linkval, linkval);
         assert(not herr);
-        indent_t indent;
-        cout << indent << "alias for topology \"" << linkval << "\"\n"
-             << indent << "ignoring this topology\n";
+        indent_t indent2;
+        cout << indent2 << "alias for topology \"" << linkval << "\"\n"
+             << indent2 << "ignoring this topology\n";
         return;
       }
       
@@ -184,6 +210,8 @@ namespace CarpetIOF5 {
       //   (path, NULL, field_iterator, this, chartname.c_str(), NULL); 
       F5iterate_topology_fields(path, NULL, field_iterator, this, NULL, NULL); 
     }
+    
+    
     
     void read_field(F5Path *const path)
     {
@@ -220,14 +248,16 @@ namespace CarpetIOF5 {
         F5Fclose(path);
         
       } else {
-        indent_t indent;
-        cout << indent << "ignoring this field\n";
+        indent_t indent2;
+        cout << indent2 << "ignoring this field\n";
       }
       // TODO: keep track of which fields have been read, and complain
       // about unread ones
       // TODO: keep track of which part of a field has been read, and
       // complain about unread parts
     }
+    
+    
     
     void read_fragment(F5Path *const path)
     {
@@ -293,6 +323,8 @@ namespace CarpetIOF5 {
       }
     }
     
+    
+    
     void read_variable(F5Path *const path, char const *const name,
                        int const var)
     {
@@ -340,6 +372,10 @@ namespace CarpetIOF5 {
       // fragment, and (b) there exists a group with this name. (We
       // probably could examine F5's internal state as well, but
       // looking for an HDF5 group is the most robust approach.)
+      
+      // Note: F5 has a function F5Fis_group(path) that returns
+      // whether the field is a group or a dataset.
+      
       bool fragment_is_group = false;
       if (fragmentname) {
         H5O_info_t info;
@@ -432,8 +468,8 @@ namespace CarpetIOF5 {
       
       ibbox const fbox(foff, foff+flen-1, 1);
       {
-        indent_t indent;
-        cout << indent
+        indent_t indent2;
+        cout << indent2
              << "dataset bbox is " << foff << ":" << foff+flen-1 << "\n";
       }
       
@@ -603,7 +639,7 @@ namespace CarpetIOF5 {
     // Grid structure
     string gs;
     ReadLargeAttribute(group, grid_structure, gs);
-    // TODO: set grid structure
+    deserialise_grid_structure(cctkGH, gs);
     
     herr = H5Gclose(group);
     assert(not herr);

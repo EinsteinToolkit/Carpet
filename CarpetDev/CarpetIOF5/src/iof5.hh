@@ -264,13 +264,19 @@ namespace CarpetIOF5 {
   
   
   
+  // Write/read Cactus metadata to a particular location in an HDF5
+  // file
   void
-  write_metadata(cGH const *const cctkGH, hid_t const file);
+  write_metadata(cGH const *const cctkGH, hid_t const group);
+  void
+  read_metadata(cGH const *const cctkGH, hid_t const group);
   
   // Handle Carpet's grid structure (this should move to Carpet and/or
   // CarpetLib)
   string
   serialise_grid_structure(cGH const *const cctkGH);
+  void
+  deserialise_grid_structure(cGH const *const cctkGH, string const buf);
   
   
   

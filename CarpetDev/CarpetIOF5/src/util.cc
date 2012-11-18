@@ -381,7 +381,7 @@ namespace CarpetIOF5 {
   
   
   
-  char const *const grid_structure = "Grid Structure v5";
+  char const *const grid_structure = "Grid Structure v6";
   
   string
   serialise_grid_structure(cGH const *const cctkGH)
@@ -398,14 +398,233 @@ namespace CarpetIOF5 {
       buf << "regions:" << vhh.AT(m)->regions.AT(0) << ",";
       buf << "ghost_widths:" << vdd.AT(m)->ghost_widths << ",";
       buf << "buffer_widths:" << vdd.AT(m)->buffer_widths << ",";
+      buf << "overlap_widths:" << vdd.AT(m)->overlap_widths << ",";
       buf << "prolongation_orders_space:"
           << vdd.AT(m)->prolongation_orders_space << ",";
       buf << "},";
     }
     buf << "],";
+    buf << "global_time:" << global_time << ",";
+    buf << "delta_time:" << delta_time << ",";
     buf << "times:" << *tt << ",";
     buf << "}.";
     return buf.str();
+  }
+  
+  void
+  deserialise_grid_structure(cGH const *const cctkGH, string const str)
+  {
+    // Define variables for the metadata that will be read in
+    int const my_maps = maps;
+    vector<gh::rregs> my_superregions(my_maps);
+    vector<gh::rregs> my_regions(my_maps);
+    vector<vector<i2vect> > my_ghost_widths(my_maps);
+    vector<vector<i2vect> > my_buffer_widths(my_maps);
+    vector<vector<i2vect> > my_overlap_widths(my_maps);
+    vector<int> my_prolongation_orders_space(my_maps);
+    CCTK_REAL my_global_time, my_delta_time;
+    th my_tt(tt->h, tt->time_interpolation_during_regridding);
+    
+    // Read in the metadata
+    istringstream is(str);
+    skipws(is);
+    consume(is, grid_structure);
+    skipws(is);
+    consume(is, "{");
+    skipws(is);
+    consume(is, "maps");
+    skipws(is);
+    consume(is, '=');
+    skipws(is);
+    consume(is, '[');
+    for (int m=0; m<my_maps; ++m) {
+      skipws(is);
+      consume(is, "[");
+      int my_m;
+      is >> my_m;
+      assert(my_m == m);
+      skipws(is);
+      consume(is, ']');
+      skipws(is);
+      consume(is, '=');
+      skipws(is);
+      consume(is, '{');
+      skipws(is);
+      consume(is, "superregions:");
+      skipws(is);
+      is >> my_superregions.AT(m);
+      skipws(is);
+      consume(is, ',');
+      skipws(is);
+      consume(is, "regions:");
+      skipws(is);
+      // ignore region specification
+      // is >> my_regions.AT(m);
+      gh::rregs tmp_regions;
+      is >> tmp_regions;
+      skipws(is);
+      consume(is, ',');
+      skipws(is);
+      consume(is, "ghost_widths:");
+      skipws(is);
+      is >> my_ghost_widths.AT(m);
+      skipws(is);
+      consume(is, ',');
+      skipws(is);
+      consume(is, "buffer_widths:");
+      skipws(is);
+      is >> my_buffer_widths.AT(m);
+      skipws(is);
+      consume(is, ',');
+      skipws(is);
+      consume(is, "overlap_widths:");
+      skipws(is);
+      is >> my_overlap_widths.AT(m);
+      skipws(is);
+      consume(is, ',');
+      skipws(is);
+      consume(is, "prolongation_orders_space:");
+      skipws(is);
+      is >> my_prolongation_orders_space.AT(m);
+      skipws(is);
+      consume(is, ',');
+      skipws(is);
+      consume(is, '}');
+      skipws(is);
+      consume(is, ',');
+    }
+    skipws(is);
+    consume(is, ']');
+    skipws(is);
+    consume(is, ',');
+    skipws(is);
+    consume(is, "global_time:");
+    is >> my_global_time;
+    skipws(is);
+    consume(is, ',');
+    skipws(is);
+    consume(is, "delta_time:");
+    is >> my_delta_time;
+    skipws(is);
+    consume(is, ',');
+    skipws(is);
+    consume(is, "times:");
+    is >> my_tt;
+    skipws(is);
+    consume(is, ',');
+    skipws(is);
+    consume(is, '}');
+    skipws(is);
+    consume(is, '.');
+    
+    // Change Carpet's grid structure according to what has just been
+    // read
+    {
+      int type;
+      void const *const ptr =
+        CCTK_ParameterGet("regrid_in_level_mode", "Carpet", & type);
+      assert(ptr);
+      assert(type == PARAMETER_BOOLEAN);
+      CCTK_INT const regrid_in_level_mode = *static_cast<CCTK_INT const*>(ptr);
+      assert(regrid_in_level_mode);
+    }
+    
+    // Count refinement levels
+    vector<int> rls(maps);
+    for (int m=0; m<maps; ++m) {
+      rls.AT(m) = my_superregions.AT(m).size();
+    }
+    int maxrl = 0;
+    for (int m=0; m<maps; ++m) {
+      maxrl = max(maxrl, rls.AT(m));
+    }
+    // All maps must have the same number of refinement levels
+    for (int m=0; m<maps; ++m) {
+      my_superregions.AT(m).resize(maxrl);
+      my_regions.AT(m).resize(maxrl);
+    }
+    
+    // Make multiprocessor aware
+    for (int rl=0; rl<maxrl; ++rl) {
+      vector<gh::cregs> superregss(maps);
+      for (int m=0; m<maps; ++m) {
+        superregss.AT(m) = my_superregions.AT(m).AT(rl);
+      }
+      vector<gh::cregs> regss(maps);
+      Carpet::SplitRegionsMaps(cctkGH, superregss, regss);
+      for (int m=0; m<maps; ++m) {
+        my_superregions.AT(m).AT(rl) = superregss.AT(m);
+        my_regions.AT(m).AT(rl) = regss.AT(m);
+      }
+    } // for rl
+    
+    // Make multigrid aware
+    vector<gh::mregs> my_multigrid_regions(maps);
+    Carpet::MakeMultigridBoxesMaps(cctkGH, my_regions, my_multigrid_regions);
+    
+    // Regrid (ignoring the previous content of the grid hierarchy)
+    for (int m=0; m<maps; ++m) {
+      RegridMap
+        (cctkGH, m, my_superregions.AT(m), my_multigrid_regions.AT(m), false);
+    } // for m
+    
+    // Set up time hierarchy after RegridMap created it
+    for (int ml=0; ml<vhh.AT(0)->mglevels(); ++ ml) {
+      for (int rl=0; rl<vhh.AT(0)->reflevels(); ++ rl) {
+        for (int tl=0; tl<tt->timelevels; ++ tl) {
+          tt->set_time(ml, rl, tl, my_tt.get_time(ml, rl, tl));
+        }
+        tt->set_delta(ml, rl, my_tt.get_delta(ml, rl));
+      }
+    }
+    
+    PostRegrid(cctkGH);
+    
+    // Ensure we are in global mode
+    assert(is_global_mode());
+    global_time = my_global_time;
+    (const_cast<cGH*>(cctkGH))->cctk_time = global_time;
+    delta_time = my_delta_time;
+    timereflevelfact = timereffacts.AT(reflevels - 1);
+    spacereflevelfact = ivect(-get_deadbeef());
+    ivect::ref(cctkGH->cctk_levfac) = spacereflevelfact;
+    (const_cast<cGH*>(cctkGH))->cctk_timefac = timereflevelfact;
+    
+    // Recompose the grid structure (ignoring the previous content of
+    // the grid hierarchy)
+    for (int rl=0; rl<reflevels; ++rl) {
+      Recompose(cctkGH, rl, false);
+    }
+    
+    // Free old grid structure
+    RegridFree(cctkGH, false);
+    
+    // Check ghost and buffer widths and prolongation orders
+    // TODO: Instead of only checking them, set them during
+    // regridding; this requires setting them during regridding
+    // instead of during setup.
+    for (int m=0; m<maps; ++m) {
+      assert(vdd.AT(m)->ghost_widths.size() == my_ghost_widths.AT(m).size());
+      for (int rl=0; rl<int(my_ghost_widths.AT(m).size()); ++rl) {
+        assert(all(all(vdd.AT(m)->ghost_widths.AT(rl) ==
+                       my_ghost_widths.AT(m).AT(rl))));
+      }
+      assert(vdd.AT(m)->buffer_widths.size() == my_buffer_widths.AT(m).size());
+      for (int rl=0; rl<int(my_buffer_widths.AT(m).size()); ++rl) {
+        assert(all(all(vdd.AT(m)->buffer_widths.AT(rl) ==
+                       my_buffer_widths.AT(m).AT(rl))));
+      }
+      assert(vdd.AT(m)->overlap_widths.size() ==
+             my_overlap_widths.AT(m).size());
+      for (int rl=0; rl<int(my_overlap_widths.AT(m).size()); ++rl) {
+        assert(all(all(vdd.AT(m)->overlap_widths.AT(rl) ==
+                       my_overlap_widths.AT(m).AT(rl))));
+      }
+      for (int rl=0; rl<int(my_prolongation_orders_space.size()); ++rl) {
+        assert(vdd.AT(m)->prolongation_orders_space.AT(rl) ==
+               my_prolongation_orders_space.AT(rl));
+      }
+    }
   }
   
 } // end namespace CarpetIOF5
