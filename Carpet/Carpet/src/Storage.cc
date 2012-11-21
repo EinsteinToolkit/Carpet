@@ -413,7 +413,7 @@ namespace Carpet {
             // Warn only once per group
             didwarn.AT(group) = true;
             char * const groupname = CCTK_GroupName (group);
-            CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+            CCTK_VInfo (CCTK_THORNSTRING,
                         "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
                         groupname,
                         (int)prolongation_order_time,
