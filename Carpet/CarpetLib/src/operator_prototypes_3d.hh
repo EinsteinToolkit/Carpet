@@ -130,7 +130,6 @@ namespace CarpetLib {
                             ibbox3 const & restrict dstregbbox,
                             void * extraargs);
   
-  
   template <typename T, int ORDER>
   void
   prolongate_3d_cc_eno_rf2 (T const * restrict const src,
@@ -143,20 +142,19 @@ namespace CarpetLib {
                             ibbox3 const & restrict dstbbox,
                             ibbox3 const & restrict regbbox);
   
-  
-  
   template <typename T, int ORDER>
   void
   prolongate_3d_cc_enovol_rf2 (T const * restrict const src,
-                            ivect3 const & restrict srcext,
-                            T * restrict const dst,
-                            ivect3 const & restrict dstext,
-                            ibbox3 const & restrict srcbbox,
-                            ibbox3 const & restrict dstbbox,
-                            ibbox3 const & restrict srcregbbox,
-                            ibbox3 const & restrict dstregbbox,
-                            void * extraargs);
-  
+                               ivect3 const & restrict srcpadext,
+                               ivect3 const & restrict srcext,
+                               T * restrict const dst,
+                               ivect3 const & restrict dstpadext,
+                               ivect3 const & restrict dstext,
+                               ibbox3 const & restrict srcbbox,
+                               ibbox3 const & restrict dstbbox,
+                               ibbox3 const & restrict srcregbbox,
+                               ibbox3 const & restrict dstregbbox,
+                               void * extraargs);
   
   template <typename T, int ORDER>
   void

@@ -867,44 +867,44 @@ transfer_prolongate (data const * const src,
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
       case vertex_centered: {
-	 switch (order_space) {
-	    case 1:
-	    CCTK_WARN (CCTK_WARN_ABORT,
-			"There is no stencil for op=\"ENO\" with order_space=1");
-	    break;
-	    case 3:
-	    call_operator<T> (& prolongate_3d_eno,
-			      static_cast <T const *> (src->storage()),
-			      src->padded_shape(), src->shape(),
-			      static_cast <T *> (this->storage()),
-			      this->padded_shape(), this->shape(),
-			      src->extent(),
-			      this->extent(),
-			      srcbox, dstbox, NULL);
-	    break;
-	    case 5:
-	    // There is only one parameter for the prolongation order, but
-	    // Whisky may want 5th order for spacetime and 3rd order for
-	    // hydro, so we cheat here.
-	    call_operator<T> (& prolongate_3d_eno,
-			      static_cast <T const *> (src->storage()),
-			      src->padded_shape(), src->shape(),
-			      static_cast <T *> (this->storage()),
-			      this->padded_shape(), this->shape(),
-			      src->extent(),
-			      this->extent(),
-			      srcbox, dstbox, NULL);
-	    break;
-	    default:
-	    CCTK_WARN (CCTK_WARN_ABORT,
-			"There is no stencil for op=\"ENO\" with order_space!=3");
-	    break;
-	 }
+         switch (order_space) {
+            case 1:
+            CCTK_WARN (CCTK_WARN_ABORT,
+                        "There is no stencil for op=\"ENO\" with order_space=1");
+            break;
+            case 3:
+            call_operator<T> (& prolongate_3d_eno,
+                              static_cast <T const *> (src->storage()),
+                              src->padded_shape(), src->shape(),
+                              static_cast <T *> (this->storage()),
+                              this->padded_shape(), this->shape(),
+                              src->extent(),
+                              this->extent(),
+                              srcbox, dstbox, NULL);
+            break;
+            case 5:
+            // There is only one parameter for the prolongation order, but
+            // Whisky may want 5th order for spacetime and 3rd order for
+            // hydro, so we cheat here.
+            call_operator<T> (& prolongate_3d_eno,
+                              static_cast <T const *> (src->storage()),
+                              src->padded_shape(), src->shape(),
+                              static_cast <T *> (this->storage()),
+                              this->padded_shape(), this->shape(),
+                              src->extent(),
+                              this->extent(),
+                              srcbox, dstbox, NULL);
+            break;
+            default:
+            CCTK_WARN (CCTK_WARN_ABORT,
+                        "There is no stencil for op=\"ENO\" with order_space!=3");
+            break;
+         }
          break;
       }
       case cell_centered: {
-	 static
-	 void (* the_operators[]) (T const * restrict const src,
+         static
+         void (* the_operators[]) (T const * restrict const src,
                                    ivect3 const & restrict srcpadext,
                                    ivect3 const & restrict srcext,
                                    T * restrict const dst,
@@ -915,27 +915,27 @@ transfer_prolongate (data const * const src,
                                    ibbox3 const & restrict srcregbbox,
                                    ibbox3 const & restrict dstregbbox,
                                    void * const extraargs) =
-	 {
-	    & prolongate_3d_cc_eno_rf2<T,2>,
-	    & prolongate_3d_cc_eno_rf2<T,2>,  // note that we cheat here: order is still 2 even though 3 was requested!
-	    & prolongate_3d_cc_eno_rf2<T,2>,  // note that we cheat here: order is 2 even though 4 was requested!
-	    & prolongate_3d_cc_eno_rf2<T,3>   // note that we cheat here: order is 3 even though 5 was requested!
-	    // have cheated here for two reasons: first, the ENO prolongation operator stencil radius is larger than Lagrange (and dh.cc assumes that the stencil goes as order_space/2!),
-	    // and second, we want to allow spacetime interpolation to be of higher order while keeping the implemeneted ENO order!
-	 };
-	 if (order_space < 2 or order_space > 5) {
-	 CCTK_WARN (CCTK_WARN_ABORT,
-		     "There is no cell-centred stencil for op=\"ENO\" with order_space not in {2,3,4,5}");
-	 }
-	 
-	 call_operator<T> (the_operators[order_space-2],
-			   static_cast <T const *> (src->storage()),
-			   src->shape(),
-			   static_cast <T *> (this->storage()),
-			   this->shape(),
-			   src->extent(),
-			   this->extent(),
-			   srcbox, dstbox, NULL);
+         {
+            & prolongate_3d_cc_eno_rf2<T,2>,
+            & prolongate_3d_cc_eno_rf2<T,2>,  // note that we cheat here: order is still 2 even though 3 was requested!
+            & prolongate_3d_cc_eno_rf2<T,2>,  // note that we cheat here: order is 2 even though 4 was requested!
+            & prolongate_3d_cc_eno_rf2<T,3>   // note that we cheat here: order is 3 even though 5 was requested!
+            // have cheated here for two reasons: first, the ENO prolongation operator stencil radius is larger than Lagrange (and dh.cc assumes that the stencil goes as order_space/2!),
+            // and second, we want to allow spacetime interpolation to be of higher order while keeping the implemeneted ENO order!
+         };
+         if (order_space < 2 or order_space > 5) {
+         CCTK_WARN (CCTK_WARN_ABORT,
+                     "There is no cell-centred stencil for op=\"ENO\" with order_space not in {2,3,4,5}");
+         }
+         
+         call_operator<T> (the_operators[order_space-2],
+                           static_cast <T const *> (src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast <T *> (this->storage()),
+                           this->padded_shape(), this->shape(),
+                           src->extent(),
+                           this->extent(),
+                           srcbox, dstbox, NULL);
       }
       break;
     }
@@ -950,41 +950,43 @@ transfer_prolongate (data const * const src,
     switch (cent) {
       case vertex_centered: {
         CCTK_WARN (CCTK_WARN_ABORT,
-	           "There is no there is no vertex-centred stencil for op=\"ENOVOL\".");
+                   "There is no there is no vertex-centred stencil for op=\"ENOVOL\".");
       }
       break;
       case cell_centered: {
-	 static
-	 void (* the_operators[]) (T const * restrict const src,
+         static
+         void (* the_operators[]) (T const * restrict const src,
+                                   ivect3 const & restrict srcpadext,
                                    ivect3 const & restrict srcext,
                                    T * restrict const dst,
+                                   ivect3 const & restrict dstpadext,
                                    ivect3 const & restrict dstext,
                                    ibbox3 const & restrict srcbbox,
                                    ibbox3 const & restrict dstbbox,
                                    ibbox3 const & restrict srcregbbox,
                                    ibbox3 const & restrict dstregbbox,
                                    void * const extraargs) =
-	 {
-	    & prolongate_3d_cc_enovol_rf2<T,2>,
-	    & prolongate_3d_cc_enovol_rf2<T,2>,  // note that we cheat here: order is still 2 even though 3 was requested!
-	    & prolongate_3d_cc_enovol_rf2<T,2>,  // note that we cheat here: order is 2 even though 4 was requested!
-	    & prolongate_3d_cc_enovol_rf2<T,2>   // note that we cheat here: order is 3 even though 5 was requested!
-	    // have cheated here for two reasons: first, the ENO prolongation operator stencil radius is larger than Lagrange (and dh.cc assumes that the stencil goes as order_space/2!),
-	    // and second, we want to allow spacetime interpolation to be of higher order while keeping the implemeneted ENO order!
-	 };
-	 if (order_space < 2 or order_space > 5) {
-	 CCTK_WARN (CCTK_WARN_ABORT,
-		     "There is no cell-centred stencil for op=\"ENOVOL\" with order_space not in {2,3,4,5}");
-	 }
-	 
-	 call_operator<T> (the_operators[order_space-2],
-			   static_cast <T const *> (src->storage()),
-			   src->padded_shape(), src->shape(),
-			   static_cast <T *> (this->storage()),
-			   this->padded_shape(), this->shape(),
-			   src->extent(),
-			   this->extent(),
-			   srcbox, dstbox, NULL);
+         {
+            & prolongate_3d_cc_enovol_rf2<T,2>,
+            & prolongate_3d_cc_enovol_rf2<T,2>,  // note that we cheat here: order is still 2 even though 3 was requested!
+            & prolongate_3d_cc_enovol_rf2<T,2>,  // note that we cheat here: order is 2 even though 4 was requested!
+            & prolongate_3d_cc_enovol_rf2<T,2>   // note that we cheat here: order is 3 even though 5 was requested!
+            // have cheated here for two reasons: first, the ENO prolongation operator stencil radius is larger than Lagrange (and dh.cc assumes that the stencil goes as order_space/2!),
+            // and second, we want to allow spacetime interpolation to be of higher order while keeping the implemeneted ENO order!
+         };
+         if (order_space < 2 or order_space > 5) {
+         CCTK_WARN (CCTK_WARN_ABORT,
+                     "There is no cell-centred stencil for op=\"ENOVOL\" with order_space not in {2,3,4,5}");
+         }
+         
+         call_operator<T> (the_operators[order_space-2],
+                           static_cast <T const *> (src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast <T *> (this->storage()),
+                           this->padded_shape(), this->shape(),
+                           src->extent(),
+                           this->extent(),
+                           srcbox, dstbox, NULL);
         break;
       }
     default:
@@ -999,34 +1001,34 @@ transfer_prolongate (data const * const src,
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
       case vertex_centered: {
-	 switch (order_space) {
-	 case 1:
-	    CCTK_WARN (CCTK_WARN_ABORT,
-		     "There is no stencil for op=\"WENO\" with order_space=1");
-	    break;
-	 case 3:
-	    CCTK_WARN (CCTK_WARN_ABORT,
-		     "There is no stencil for op=\"WENO\" with order_space=3");
-	    break;
-	 case 5:
-	    call_operator<T> (& prolongate_3d_eno,
-			      static_cast <T const *> (src->storage()),
-			      src->padded_shape(), src->shape(),
-			      static_cast <T *> (this->storage()),
-			      this->padded_shape(), this->shape(),
-			      src->extent(),
-			      this->extent(),
-			      srcbox, dstbox, NULL);
-	    break;
-	 default:
-	    CCTK_WARN (CCTK_WARN_ABORT,
-		     "There is no stencil for op=\"WENO\" with order_space!=5");
-	    break;
-	 }
+         switch (order_space) {
+         case 1:
+            CCTK_WARN (CCTK_WARN_ABORT,
+                     "There is no stencil for op=\"WENO\" with order_space=1");
+            break;
+         case 3:
+            CCTK_WARN (CCTK_WARN_ABORT,
+                     "There is no stencil for op=\"WENO\" with order_space=3");
+            break;
+         case 5:
+            call_operator<T> (& prolongate_3d_eno,
+                              static_cast <T const *> (src->storage()),
+                              src->padded_shape(), src->shape(),
+                              static_cast <T *> (this->storage()),
+                              this->padded_shape(), this->shape(),
+                              src->extent(),
+                              this->extent(),
+                              srcbox, dstbox, NULL);
+            break;
+         default:
+            CCTK_WARN (CCTK_WARN_ABORT,
+                     "There is no stencil for op=\"WENO\" with order_space!=5");
+            break;
+         }
          break;
       }
       case cell_centered: {
-	 CCTK_WARN (CCTK_WARN_ABORT,
+         CCTK_WARN (CCTK_WARN_ABORT,
                  "There are currently no cell-centred stencils for op=\"WENO\"");
        break;
       }
@@ -1239,7 +1241,7 @@ transfer_restrict (data const * const src,
         if (use_higher_order_restriction and
             transport_operator != op_WENO and 
             transport_operator != op_ENO) { // HACK
-	  switch (restriction_order_space) {
+          switch (restriction_order_space) {
           case 1:
             // Don't use call_operator, because we parallelise ourselves
             restrict_3d_cc_rf2(static_cast <T const *> (src->storage()),
@@ -1249,7 +1251,7 @@ transfer_restrict (data const * const src,
                                srcbox,
                                dstbox,
                                srcregbox, dstregbox, NULL);
-	    break;
+            break;
           case 3:
             // Don't use call_operator, because we parallelise ourselves
             restrict_3d_cc_o3_rf2(static_cast <T const *> (src->storage()),
@@ -1259,7 +1261,7 @@ transfer_restrict (data const * const src,
                                   srcbox,
                                   dstbox,
                                   srcregbox, dstregbox, NULL);
-	    break;
+            break;
           case 5:
             // Don't use call_operator, because we parallelise ourselves
             restrict_3d_cc_o5_rf2(static_cast <T const *> (src->storage()),
@@ -1269,12 +1271,12 @@ transfer_restrict (data const * const src,
                                   srcbox,
                                   dstbox,
                                   srcregbox, dstregbox, NULL);
-	    break;
+            break;
           default:
-	    CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-			"There is no restriction stencil with restriction_order_space==%d", restriction_order_space);
-	    break;
-	  }
+            CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "There is no restriction stencil with restriction_order_space==%d", restriction_order_space);
+            break;
+          }
           break;
         }
         // Don't use call_operator, because we parallelise ourselves
