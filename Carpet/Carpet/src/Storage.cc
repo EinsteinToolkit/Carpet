@@ -399,20 +399,16 @@ namespace Carpet {
     check (not CCTK_GroupData (group, & gp));
     
     if (gp.grouptype == CCTK_GF) {
-      if (groupdata.AT(group).transport_operator != op_none and
-          groupdata.AT(group).transport_operator != op_sync and
-          groupdata.AT(group).transport_operator != op_restrict and
-          groupdata.AT(group).transport_operator != op_copy)
+      operator_type const op = groupdata.AT(group).transport_operator;
+      if (op != op_none and
+          op != op_sync and
+          op != op_restrict and
+          op != op_copy)
       {
-        if (groupdata.AT(group).activetimelevels.AT(ml).AT(rl) != 0 and
-            (groupdata.AT(group).activetimelevels.AT(ml).AT(rl) <
-             prolongation_order_time+1))
-        {
+        int const tls = groupdata.AT(group).activetimelevels.AT(ml).AT(rl);
+        if (tls != 0 and tls < prolongation_order_time+1) {
           static vector<bool> didwarn;
-          int const numgroups = CCTK_NumGroups();
-          if ((int)didwarn.size() < numgroups) {
-            didwarn.resize (numgroups, false);
-          }
+          didwarn.resize (CCTK_NumGroups(), false);
           if (not didwarn.AT(group)) {
             // Warn only once per group
             didwarn.AT(group) = true;
