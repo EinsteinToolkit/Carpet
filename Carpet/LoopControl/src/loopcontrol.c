@@ -1004,7 +1004,7 @@ lc_control_finish (lc_control_t * restrict const lc)
   
   int ignore_iteration;
   int first_iteration;
-#pragma omp single copyprivate (ignore_iteration)
+#pragma omp single copyprivate (ignore_iteration, first_iteration)
   {
     ignore_iteration = ignore_initial_overhead && lt->time_count == 0.0;
     first_iteration = lt->time_count_init == 0.0;
