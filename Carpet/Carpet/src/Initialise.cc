@@ -462,6 +462,8 @@ namespace Carpet {
   void
   CallRestrict (cGH * const cctkGH)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     char const * const where = "Initialise::CallRestrict";
     static Timer timer ("CallRestrict");
     timer.start();
@@ -514,7 +516,11 @@ namespace Carpet {
                       cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
                 
             ScheduleTraverse (where, "CCTK_POSTRESTRICTINITIAL", cctkGH);
-          
+            
+            if (init_fill_timelevels) {
+              FillTimeLevels (cctkGH);
+            }
+            
             EndTimingLevel (cctkGH);
           } LEAVE_LEVEL_MODE;
         } LEAVE_GLOBAL_MODE;
@@ -1141,7 +1147,7 @@ namespace Carpet {
           
           // Carpet assumes that a regridding operation always changes
           // "level N and all finer levels" so we should call
-          // POSTREGRID on all finer levels
+          // POSTREGRIDINITIAL on all finer levels
           if (did_any_recompose or
               (did_remove_level and rl == reflevels - 1))
           {
@@ -1175,7 +1181,7 @@ namespace Carpet {
                   
                   BEGIN_TIMELEVEL_LOOP(cctkGH) {
                     
-                    // Postregrid
+                    // Postregridinitial
                     ScheduleTraverse (where, "CCTK_POSTREGRIDINITIAL", cctkGH);
                     
                   } END_TIMELEVEL_LOOP;
@@ -1185,10 +1191,14 @@ namespace Carpet {
                   assert (do_allow_past_timelevels);
                   do_allow_past_timelevels = false;
                   
-                  // Postregrid
+                  // Postregridinitial
                   ScheduleTraverse (where, "CCTK_POSTREGRIDINITIAL", cctkGH);
                   
                   do_allow_past_timelevels = true;
+                  
+                  if (init_fill_timelevels) {
+                    FillTimeLevels (cctkGH);
+                  }
                   
                 } // not init_each_timelevel
                 
