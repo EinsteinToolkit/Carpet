@@ -331,7 +331,7 @@ namespace Carpet {
     timer.start();
     
     // Calculate new number of levels
-    int const oldreflevels = reflevels;
+    // int const oldreflevels = reflevels;
     reflevels = vhh.AT(0)->reflevels();
     for (int m=0; m<maps; ++m) {
       assert (vhh.AT(m)->reflevels() == reflevels);
@@ -677,6 +677,7 @@ namespace Carpet {
           // TODO: processor distribution, average load, std deviation
           
           coarsevolume = totalvolume * prod (rvect (spacereflevelfact));
+          // TODO: output coarsevolume
         }
       }
       cout.precision (oldprecision);

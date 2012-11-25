@@ -347,7 +347,9 @@ namespace Carpet {
         }
         // Number of MPI processes on this host
         int const myproc = CCTK_MyProc(cctkGH);
+#if 0
         int const nprocs = CCTK_nProcs(cctkGH);
+#endif
         int const host_id = HostId(myproc);
         vector<int> const host_procs = HostProcs(host_id);
         int const num_host_procs = host_procs.size();

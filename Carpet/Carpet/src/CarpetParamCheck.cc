@@ -41,12 +41,13 @@ namespace Carpet {
       // InitBase
       
       enum setup_method_t {
+        init_error,
         init_some_levels,
         init_single_level,
         init_two_levels,
         init_all_levels,
       };
-      setup_method_t setup_method;
+      setup_method_t setup_method = init_error;
       
       if (CCTK_EQUALS (initial_data_setup_method, "init_some_levels")) {
         setup_method = init_some_levels;
@@ -68,12 +69,13 @@ namespace Carpet {
       // Carpet
       
       enum init_method_t {
+        error_timelevel,
         each_timelevel,           // Initialise each time level
         fill_timelevels,          // Copy the current to all past timelevels
         three_timelevels,         // Carpet's 3 timelevel scheme
         all_timelevels,           // Initial data thorn initialises all timelevels
       };
-      init_method_t init_method;
+      init_method_t init_method = error_timelevel;
       
       if (init_each_timelevel) {
         if (init_fill_timelevels) {
