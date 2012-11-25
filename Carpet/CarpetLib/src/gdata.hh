@@ -66,10 +66,10 @@ protected:
   centering cent;
   operator_type transport_operator;
   
-  bool _has_storage;		// has storage associated (on some processor)
+  bool _has_storage;		// has storage associated (on some process)
   int _size;			// size
 
-  int _proc;			// stored on processor
+  int _proc;			// stored on process
   
   ivect _shape;                 // shape
   ivect _padded_shape, _stride; // allocated shape and index order

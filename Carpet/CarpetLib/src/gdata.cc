@@ -259,7 +259,7 @@ transfer_from (comm_state & state,
   assert (my_transport_operator != op_none); // why should we be here?
   if (my_transport_operator == op_none) return;
   
-  // Interpolate either on the source or on the destination processor,
+  // Interpolate either on the source or on the destination process,
   // depending on whether this increases or reduces the amount of data
   int timelevel0, ntimelevels;
   find_source_timelevel
@@ -273,7 +273,7 @@ transfer_from (comm_state & state,
   switch (state.thestate) {
     
   case state_get_buffer_sizes:
-    // don't count processor-local copies
+    // don't count process-local copies
     if (not (is_dst and is_src)) {
       if (is_dst) {
         // increment the recv buffer size
@@ -327,7 +327,7 @@ transfer_from (comm_state & state,
     break;
     
   case state_do_some_work:
-    // handle the processor-local case
+    // handle the process-local case
     if (is_dst and is_src) {
       transfer_from_innerloop
         (srcs, times, dstbox, srcbox, slabinfo, time, order_space, order_time);

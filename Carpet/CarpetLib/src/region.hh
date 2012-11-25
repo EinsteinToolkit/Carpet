@@ -17,8 +17,8 @@ struct region_t {
   ibbox        extent;           // extent
   b2vect       outer_boundaries; // outer boundaries
   int          map;              // map to which this region belongs
-  int          processor;        // processor number
-  ipfulltree * processors;       // processor decomposition
+  int          processor;        // process number
+  ipfulltree * processors;       // process decomposition
   
   region_t ();
   region_t (region_t const & a);
@@ -38,7 +38,7 @@ private:
                       ibset& child_extents) const;
 public:
   
-  // Output processor decomposition? (Off by default.)
+  // Output process decomposition? (Off by default.)
   static bool full_output;
 };
 

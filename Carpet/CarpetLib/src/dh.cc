@@ -157,7 +157,7 @@ prolongation_stencil_size (int const rl)
 
 // Modifiers
 
-// Calculate this quantity on this processor?  It does not need to be
+// Calculate this quantity on this process? It does not need to be
 // calculated if it won't be used later on.
 inline
 int

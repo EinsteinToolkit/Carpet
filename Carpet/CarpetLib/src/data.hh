@@ -26,7 +26,7 @@ class data: public gdata
 {
   
   // Fields
-  mem<T> * _memory;             // the data (if located on this processor)
+  mem<T> * _memory;             // the data (if located on this process)
   
   // For vector groups with contiguous storage
   int vectorlength;             // number of vector elements

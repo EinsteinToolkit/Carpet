@@ -439,7 +439,7 @@ namespace dist {
     if (verbose) {
       int rank;
       MPI_Comm_rank (comm(), &rank);
-      printf ("CHECKPOINT: processor %d, file %s, line %d\n",
+      printf ("CHECKPOINT: process %d, file %s, line %d\n",
 	      rank, file, line);
     }
     if (barriers) {

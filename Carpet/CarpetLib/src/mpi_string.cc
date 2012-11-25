@@ -36,7 +36,7 @@ namespace CarpetLib
     
     if (rank == root) {
       
-      // Get the total number of processors
+      // Get the total number of processes
       int num_procs;
       MPI_Comm_size (comm, & num_procs);
       
@@ -104,7 +104,7 @@ namespace CarpetLib
   allgather_string (MPI_Comm const comm,
                     string const & data)
   {
-    // Get the total number of processors
+    // Get the total number of processes
     int num_procs;
     MPI_Comm_size (comm, & num_procs);
     
@@ -151,7 +151,7 @@ namespace CarpetLib
   alltoallv_string (MPI_Comm const comm,
                     vector<string> const & data)
   {
-    // Get the total number of processors
+    // Get the total number of processes
     int num_procs;
     MPI_Comm_size (comm, & num_procs);
     

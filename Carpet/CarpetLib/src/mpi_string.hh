@@ -79,7 +79,7 @@ namespace CarpetLib
               vector <T> const & data)
   {
     // cerr << "QQQ: allgatherv[0]" << endl;
-    // Get the total number of processors
+    // Get the total number of processes
     int num_procs;
     MPI_Comm_size (comm, & num_procs);
     
@@ -162,7 +162,7 @@ namespace CarpetLib
                vector <T> const & data)
   {
     // cerr << "QQQ: allgatherv[0]" << endl;
-    // Get the total number of processors
+    // Get the total number of processes
     int num_procs;
     MPI_Comm_size (comm, & num_procs);
     
@@ -231,7 +231,7 @@ namespace CarpetLib
   alltoall (MPI_Comm const comm,
             vector <T> const & data)
   {
-    // Get the total number of processors
+    // Get the total number of processes
     int num_procs;
     MPI_Comm_size (comm, & num_procs);
     
@@ -255,7 +255,7 @@ namespace CarpetLib
   alltoallv (MPI_Comm const comm,
              vector <vector <T> > const & data)
   {
-    // Get the total number of processors
+    // Get the total number of processes
     int num_procs;
     MPI_Comm_size (comm, & num_procs);
     
@@ -327,7 +327,7 @@ namespace CarpetLib
   alltoallv1 (MPI_Comm const comm,
               vector <vector <T> > const & data)
   {
-    // Get the total number of processors
+    // Get the total number of processes
     int num_procs;
     MPI_Comm_size (comm, & num_procs);
     

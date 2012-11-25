@@ -164,7 +164,7 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
               = static_cast<char const *> (UniqueSimulationID (cctkGH));
             file << "# Simulation ID: " << job_id << eol;
           }
-          file << "# Running on " << dist::size() << " processors" << eol;
+          file << "# Running on " << dist::size() << " processes" << eol;
           file << "#" << eol;
           file << "# iteration   maxtotalbytes avgtotalbytes   maxmaxbytes avgm avgfreebytes" << eol;
         } else {
@@ -181,7 +181,7 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
         
         file.close ();
         
-      } // if on root processor
+      } // if on root process
     } // if output to file
     
   }

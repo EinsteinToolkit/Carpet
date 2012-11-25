@@ -161,7 +161,7 @@ void comm_state::step ()
             int const tag = type;
             if (commstate_verbose) {
               CCTK_VInfo (CCTK_THORNSTRING,
-                          "About to MPI_Irecv from processor %d for type %s",
+                          "About to MPI_Irecv from process %d for type %s",
                           proc, dist::c_datatype_name(type));
             }
             MPI_Irecv (&procbuf.recvbufbase.front(),
@@ -233,7 +233,7 @@ void comm_state::step ()
                 timer.start ();
                 if (commstate_verbose) {
                   CCTK_VInfo (CCTK_THORNSTRING,
-                              "About to MPI_Send to processor %d for type %s",
+                              "About to MPI_Send to process %d for type %s",
                               proc, dist::c_datatype_name(type));
                 }
                 MPI_Send (const_cast<char*>(&procbuf.sendbufbase.front()),
@@ -252,7 +252,7 @@ void comm_state::step ()
                 timer.start ();
                 if (commstate_verbose) {
                   CCTK_VInfo (CCTK_THORNSTRING,
-                              "About to MPI_Ssend to processor %d for type %s",
+                              "About to MPI_Ssend to process %d for type %s",
                               proc, dist::c_datatype_name(type));
                 }
                 MPI_Ssend (const_cast<char*>(&procbuf.sendbufbase.front()),
@@ -271,7 +271,7 @@ void comm_state::step ()
                 timer.start ();
                 if (commstate_verbose) {
                   CCTK_VInfo (CCTK_THORNSTRING,
-                              "About to MPI_Isend to processor %d for type %s",
+                              "About to MPI_Isend to process %d for type %s",
                               proc, dist::c_datatype_name(type));
                 }
                 MPI_Isend (const_cast<char*>(&procbuf.sendbufbase.front()),
@@ -366,7 +366,7 @@ void comm_state::step ()
               int const tag = type;
               if (commstate_verbose) {
                 CCTK_VInfo (CCTK_THORNSTRING,
-                            "About to MPI_Irecv from processor %d for type %s",
+                            "About to MPI_Irecv from process %d for type %s",
                             proc, dist::c_datatype_name(type));
               }
               MPI_Irecv (&procbuf.recvbufbase.front(),
@@ -404,7 +404,7 @@ void comm_state::step ()
               timer.start ();
               if (commstate_verbose) {
                 CCTK_VInfo (CCTK_THORNSTRING,
-                            "About to MPI_Isend to processor %d for type %s",
+                            "About to MPI_Isend to process %d for type %s",
                             proc, dist::c_datatype_name(type));
               }
               MPI_Isend (const_cast<char*>(&procbuf.sendbufbase.front()),
@@ -609,7 +609,7 @@ commit_send_space (unsigned const type,
       timer.start ();
       if (commstate_verbose) {
         CCTK_VInfo (CCTK_THORNSTRING,
-                    "About to MPI_Isend to processor %d for type %s",
+                    "About to MPI_Isend to process %d for type %s",
                     proc, dist::c_datatype_name(type));
       }
       int const tag = type;

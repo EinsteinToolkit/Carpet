@@ -58,7 +58,7 @@ private:
   
   
   
-  // structure describing a per-processor buffer
+  // structure describing a per-process buffer
   struct procbufdesc {
     // allocated communication buffers
     vector<char> sendbufbase;
@@ -98,7 +98,7 @@ private:
     // the size of this datatype (in bytes)
     int datatypesize;
     
-    // per-processor buffers
+    // per-process buffers
     vector<procbufdesc> procbufs; // [dist::size()]
     
     // constructor for an instance of this structure

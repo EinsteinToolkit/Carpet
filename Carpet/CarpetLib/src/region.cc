@@ -137,9 +137,9 @@ region_t::split (CCTK_REAL const ratio_new_over_old)
 
 
 
-// Combine a collection of regions.  Regions can be combined if they
+// Combine a collection of regions. Regions can be combined if they
 // abutt on boundaries which are not outer boundaries, ignoring the
-// processor distribution.  This should lead to a canonical
+// process distribution. This should lead to a canonical
 // representations of collections of regions.
 //
 // We use vectors to represent the collection, but we could also use
@@ -294,14 +294,14 @@ bool region_t::check_region(bool const is_superregion) const
   assert(map >= 0);
   
   if (is_superregion) {
-    // Checking a superregion: a tree without processor assignments
+    // Checking a superregion: a tree without process assignments
     
     if (processor != -1) {
-      CCTK_WARN(CCTK_WARN_PICKY, "processor number is defined");
+      CCTK_WARN(CCTK_WARN_PICKY, "process number is defined");
       return false;
     }
     if (not processors) {
-      CCTK_WARN(CCTK_WARN_PICKY, "processor tree not defined");
+      CCTK_WARN(CCTK_WARN_PICKY, "process tree not defined");
       return false;
     }
     
@@ -314,15 +314,15 @@ bool region_t::check_region(bool const is_superregion) const
     }
     
   } else {
-    // Checking a regular region: no tree structure, but has a
-    // processor assignment
+    // Checking a regular region: no tree structure, but has a process
+    // assignment
     
     if (processor < 0 or processor >= dist::size()) {
-      CCTK_WARN(CCTK_WARN_PICKY, "processor number not defined");
+      CCTK_WARN(CCTK_WARN_PICKY, "process number not defined");
       return false;
     }
     if (processors) {
-      CCTK_WARN(CCTK_WARN_PICKY, "processor tree is defined");
+      CCTK_WARN(CCTK_WARN_PICKY, "process tree is defined");
       return false;
     }
     

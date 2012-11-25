@@ -58,7 +58,7 @@ private:
 public:
   
   // Extents of the regions before distributing them over the
-  // processors
+  // processes
   rregs superregions;
   
   mregs regions;                // extents and properties of all grids

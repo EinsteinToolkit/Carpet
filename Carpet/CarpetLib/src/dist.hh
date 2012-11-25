@@ -158,7 +158,7 @@ namespace dist {
     return comm_ != MPI_COMM_NULL ? comm_ : MPI_COMM_WORLD;
   }
   
-  // Rank in the communicator (this processor's number, 0 .. size-1)
+  // Rank in the communicator (this process's number, 0 .. size-1)
   inline int rank ()
   {
     static int rank_ = -1;

@@ -476,7 +476,7 @@ locate_position (rvect const & rpos,
     
     // Search all superregions linearly. Each superregion corresponds
     // to a "refined region", and the number of superregions is thus
-    // presumably independent of the number of processors.
+    // presumably independent of the number of processes.
     for (size_t r = 0; r < regs.size(); ++r) {
       region_t const & reg = regs.AT(r);
       if (reg.extent.contains(aligned_ipos)) {
@@ -537,7 +537,7 @@ locate_position (ivect const & ipos,
     
     // Search all superregions linearly. Each superregion corresponds
     // to a "refined region", and the number of superregions is thus
-    // presumably independent of the number of processors.
+    // presumably independent of the number of processes.
     for (size_t r = 0; r < regs.size(); ++r) {
       region_t const & reg = regs.AT(r);
       if (reg.extent.contains(aligned_ipos)) {
