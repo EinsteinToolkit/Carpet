@@ -42,8 +42,8 @@ namespace Carpet {
 
   using namespace std;
 
-  TimerNode::TimerNode(TimerTree *tree, string name): d_name(name), d_parent(0),
-                                                      timer(0), d_tree(tree), d_running(0)
+  TimerNode::TimerNode(TimerTree *tree, string name):
+    d_name(name), d_parent(0), d_tree(tree), d_running(0), timer(0)
   {
   }
 
