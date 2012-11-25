@@ -28,7 +28,7 @@ namespace CarpetRegrid2 {
       ENTER_LEVEL_MODE (cctkGH, rl-1) {
         ENTER_SINGLEMAP_MODE (cctkGH, m, CCTK_GF) {
           if (verbose or veryverbose) {
-            cout << "Refinement level " << rl << ":\n";
+            cout << "Refinement level " << reflevel << ":\n";
           }
           
           gh const& hh = *vhh.AT(Carpet::map);
