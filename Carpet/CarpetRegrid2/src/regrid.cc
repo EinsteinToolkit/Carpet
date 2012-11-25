@@ -134,7 +134,12 @@ namespace CarpetRegrid2 {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    if (verbose or veryverbose) CCTK_INFO ("Regridding");
+    if (verbose or veryverbose) {
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Regridding level %d map %d at iteration %d time %g",
+                  reflevel, Carpet::map,
+                  cctkGH->cctk_iteration, cctkGH->cctk_time);
+    }
     
     assert (is_singlemap_mode());
     gh const & hh = * vhh.at (Carpet::map);
