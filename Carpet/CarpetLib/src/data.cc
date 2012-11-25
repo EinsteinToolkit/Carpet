@@ -938,6 +938,8 @@ transfer_prolongate (data const * const src,
                            srcbox, dstbox, NULL);
       }
       break;
+    default:
+      assert(0);
     }
     timer.stop (0);
   }
