@@ -1998,7 +1998,7 @@ regrid (bool const do_init)
           cout << "ml=" << ml << " rl=" << rl << " c=" << c << eol;
           cout << "extent=" << h.extent(ml,rl,c) << eol;
           cout << "outer_boundaries=" << h.outer_boundaries(rl,c) << eol;
-          cout << "processor=" << h.outer_boundaries(rl,c) << eol;
+          cout << "processor=" << h.processor(rl,c) << eol;
         } // for c
         
         for (int c = 0; c < h.components(rl); ++ c) {
@@ -2066,7 +2066,7 @@ regrid (bool const do_init)
           cout << "ml=" << ml << " rl=" << rl << " c=" << c << eol;
           cout << "extent=" << h.extent(ml,rl,c) << eol;
           cout << "outer_boundaries=" << h.outer_boundaries(rl,c) << eol;
-          cout << "processor=" << h.outer_boundaries(rl,c) << eol;
+          cout << "processor=" << h.processor(rl,c) << eol;
         } // for c
         
         // full boxes have already been output (and deallocated)
