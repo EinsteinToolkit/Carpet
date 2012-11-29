@@ -1032,7 +1032,7 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
   DECLARE_CCTK_PARAMETERS;
 
   fileset.nioprocs = 1;
-  hid_t metadata, attr, dataspace;
+  hid_t metadata, attr; //, dataspace;
   H5E_BEGIN_TRY {
     metadata = H5Gopen (file, METADATA_GROUP);
   } H5E_END_TRY;
