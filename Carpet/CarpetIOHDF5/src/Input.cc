@@ -546,7 +546,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       assert (myGH->cp_filename_index == 0);
 
       // add a dummy entry in the checkpoint filename ring buffer
-      myGH->cp_filename_list[myGH->cp_filename_index] = "bla";
+      myGH->cp_filename_list[myGH->cp_filename_index] = (char*)"bla";
       myGH->cp_filename_index = (myGH->cp_filename_index+1) % checkpoint_keep;
     }
   }
