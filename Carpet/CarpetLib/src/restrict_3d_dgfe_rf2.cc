@@ -12,7 +12,7 @@
 #include "typeprops.hh"
 
 using namespace std;
-#ifdef HRSCC_HH
+#ifdef HRSCC_GLL_ELEMENT_HH
 using namespace hrscc;
 #endif
 
@@ -145,7 +145,7 @@ namespace CarpetLib {
     assert(all(regext % (ORDER+1) == 0));
     
     // Loop over coarse region
-#ifdef HRSCC_HH
+#ifdef HRSCC_GLL_ELEMENT_HH
 #pragma omp parallel for collapse(3)
     // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
     for (/*ptrdiff_t*/int k=0; k<regkext; k+=ORDER+1) {

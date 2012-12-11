@@ -12,7 +12,7 @@
 #include "typeprops.hh"
 
 using namespace std;
-#ifdef HRSCC_HH
+#ifdef HRSCC_GLL_ELEMENT_HH
 using namespace hrscc;
 #endif
 
@@ -160,7 +160,7 @@ namespace CarpetLib {
       int const dststr2d[2] = {dstdj, dstdk};
       
       // Loop over fine region
-#ifdef HRSCC_HH
+#ifdef HRSCC_GLL_ELEMENT_HH
       ptrdiff_t const i=0;
 #pragma omp parallel for collapse(2)
       // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
@@ -200,7 +200,7 @@ namespace CarpetLib {
       int const dststr2d[2]= {dstdi, dstdk};
       
       // Loop over fine region
-#ifdef HRSCC_HH
+#ifdef HRSCC_GLL_ELEMENT_HH
       ptrdiff_t const j=0;
 #pragma omp parallel for collapse(2)
       // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
@@ -240,7 +240,7 @@ namespace CarpetLib {
       int const dststr2d[2]= {dstdi, dstdj};
       
       // Loop over fine region
-#ifdef HRSCC_HH
+#ifdef HRSCC_GLL_ELEMENT_HH
       ptrdiff_t const k=0;
 #pragma omp parallel for collapse(2)
       // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
@@ -278,7 +278,7 @@ namespace CarpetLib {
       int const dststr[3] = {dstdi, dstdj, dstdk};
       
       // Loop over fine region
-#ifdef HRSCC_HH
+#ifdef HRSCC_GLL_ELEMENT_HH
 #pragma omp parallel for collapse(3)
       // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
       for (/*ptrdiff_t*/int k=0; k<regkext; k+=2*(ORDER+1)) {
