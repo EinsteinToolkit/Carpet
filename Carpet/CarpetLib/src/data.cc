@@ -62,7 +62,7 @@ call_operator (void
 {
 #ifndef _OPENMP
   (* the_operator)
-    (src, srcext, dst, dstext, srcbbox, dstbbox,
+    (src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox, dstbbox,
      srcregbbox, dstregbbox, extraargs);
 #else
 #  ifdef CARPET_DEBUG
