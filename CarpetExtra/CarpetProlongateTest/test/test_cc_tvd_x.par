@@ -83,7 +83,7 @@ CarpetRegrid2::verbose        = yes
 CarpetRegrid2::num_centres = 1
 
 CarpetRegrid2::num_levels_1 = 2
-CarpetRegrid2::radius_1[1]  = 0.2
+CarpetRegrid2::radius_1[1]  = 0.18
 
 
 
