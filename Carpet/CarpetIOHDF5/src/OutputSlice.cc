@@ -841,9 +841,9 @@ namespace CarpetIOHDF5 {
         HDF5_ERROR (fapl_id = H5Pcreate (H5P_FILE_ACCESS));
         HDF5_ERROR (H5Pset_fclose_degree (fapl_id, H5F_CLOSE_STRONG));
         HDF5_ERROR (file = H5Fopen(filename, H5F_ACC_RDWR, fapl_id));
-        HDF5_ERROR (H5Pclose (fapl_id));
         if (output_index)
           HDF5_ERROR (index_file = H5Fopen (index_filename.c_str(), H5F_ACC_RDWR,fapl_id));
+        HDF5_ERROR (H5Pclose (fapl_id));
       }
       io_files += 1;
 
