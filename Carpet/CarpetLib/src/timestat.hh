@@ -7,9 +7,7 @@
 
 #include <cctk.h>
 
-extern "C" {
-#include "cycle.h"
-}
+#include <cycleclock.h>
 
 
 

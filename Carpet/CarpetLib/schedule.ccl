@@ -1,11 +1,5 @@
 # Schedule definitions for thorn CarpetLib
 
-SCHEDULE CarpetLib_registercycleclock AT startup BEFORE Driver_Startup
-{
-  LANG: C
-  OPTIONS: global
-} "Register cycle based timer"
-
 SCHEDULE CarpetLib_test_prolongate_3d_rf2 AT paramcheck
 {
   LANG: C

@@ -222,9 +222,9 @@ typedef unsigned long long ticks;
 
 static __inline__ ticks getticks(void)
 {
-     unsigned a, d; 
+     ticks a, d;
      asm volatile("rdtsc" : "=a" (a), "=d" (d)); 
-     return ((ticks)a) | (((ticks)d) << 32); 
+     return a | (d << 32); 
 }
 
 INLINE_ELAPSED(__inline__)
