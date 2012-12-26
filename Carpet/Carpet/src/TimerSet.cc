@@ -123,8 +123,9 @@ namespace Carpet {
       close (oldfd);
       return -1;
     }
-    close (1);
-    int const fd = dup (fdfile); // dup to 1, i.e., stdout again
+    // close (1);
+    // int const fd = dup (fdfile); // dup to 1, i.e., stdout again
+    int const fd = dup2 (fdfile, 1); // dup to 1, i.e., stdout again
     assert (fd == 1);
     close (fdfile);
     return oldfd;
@@ -139,8 +140,12 @@ namespace Carpet {
 
 #ifdef HAVE_UNISTD_H
     fflush (stdout);
-    close (1);
-    int const fd = dup (oldfd);
+    // close (1);
+    // int const fd = dup (oldfd);
+    int const fd = dup2 (oldfd, 1);
+    if (not (fd == 1)) {
+      fprintf(stderr, "oldfd=%d fd=%d\n", oldfd, fd);
+    }
     assert (fd == 1);
     close (oldfd);
 #endif
