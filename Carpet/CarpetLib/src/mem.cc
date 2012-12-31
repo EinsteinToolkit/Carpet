@@ -11,6 +11,8 @@
 #include <sstream>
 #include <string>
 
+#include <vectors.h>
+
 #include "defs.hh"
 #include "mem.hh"
 
@@ -68,10 +70,42 @@ mem (size_t const vectorlength, size_t const nelems,
                   int(max_allowed_memory_MB));
     }
     try {
-      // TODO: align and pad storage
-      size_t const padding = 0;
-      storage_base_ = new T [vectorlength * nelems + padding];
-      storage_ = storage_base_ + padding;
+      // TODO: use posix_memalign instead, if available
+      size_t const alignment = CCTK_REAL_VEC_SIZE * sizeof(T);
+      // Assume optimistically that operator new returns well-aligned
+      // pointers
+      static bool need_alignment = false;
+      if (not need_alignment) {
+        // Operator new works fine; just call it
+        storage_base_ = new T [vectorlength * nelems];
+        need_alignment = size_t (storage_base_) & (alignment-1);
+        if (need_alignment) {
+          // This pointer is no good; try again with manual alignment
+          delete [] storage_base_;
+          CCTK_INFO("Switching memory allocation to manual alignment");
+          goto allocate_with_alignment;
+        }
+        storage_ = storage_base_;
+      } else {
+      allocate_with_alignment:
+        // Operator new needs manual alignment
+        size_t const max_padding = CCTK_REAL_VEC_SIZE - 1;
+        storage_base_ = new T [vectorlength * nelems + max_padding];
+        storage_ = (T*) (size_t (storage_base_ + max_padding) & -alignment);
+#warning "TODO"
+        if (not (storage_ >= storage_base_ and
+                 storage_ <= storage_base_ + max_padding)) {
+          cerr << "alignment=" << alignment << "\n"
+               << "max_padding=" << max_padding << "\n"
+               << "vectorlength=" << vectorlength << "\n"
+               << "nelems=" << nelems << "\n"
+               << "storage_base_=" << storage_base_ << "\n"
+               << "storage_=" << storage_ << "\n";
+        }
+        assert(storage_ >= storage_base_ and
+               storage_ <= storage_base_ + max_padding);
+      }
+      assert (not (size_t (storage_) & (alignment-1)));
       owns_storage_ = true;
     } catch (...) {
       T Tdummy;
