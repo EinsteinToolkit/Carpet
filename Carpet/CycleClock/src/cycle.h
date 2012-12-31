@@ -89,9 +89,10 @@
 # endif
 #endif
 
-#define INLINE_ELAPSED(INL) static INL double elapsed(ticks t1, ticks t0) \
-{									  \
-     return (double)t1 - (double)t0;					  \
+#define INLINE_ELAPSED(INL)                     \
+static INL double elapsed(ticks t1, ticks t0)   \
+{                                               \
+    return (double)(t1 - t0);                   \
 }
 
 /*----------------------------------------------------------------*/
