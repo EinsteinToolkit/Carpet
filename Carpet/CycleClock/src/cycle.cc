@@ -45,7 +45,7 @@ void measure_tick()
     CCTK_INFO("Measuring CycleClock tick via OpenMP...");
     ticks const rstart = getticks();
     double const wstart = omp_get_wtime();
-    while (omp_get_wtime() < wstart + 1.0) {
+    while (omp_get_wtime() < wstart + 0.1) {
       // do nothing, just wait
     }
     ticks const rend = getticks();
@@ -60,7 +60,7 @@ void measure_tick()
     CCTK_INFO("Measuring CycleClock tick via MPI...");
     ticks const rstart = getticks();
     double const wstart = MPI_Wtime();
-    while (MPI_Wtime() < wstart + 1.0) {
+    while (MPI_Wtime() < wstart + 0.1) {
         // do nothing, just wait
     }
     ticks const rend = getticks();
@@ -75,7 +75,7 @@ void measure_tick()
     CCTK_INFO("Measuring CycleClock tick via gettimeofday...");
     ticks const rstart = getticks();
     double const wstart = get_sys_time();
-    while (get_sys_time() < wstart + 1.0) {
+    while (get_sys_time() < wstart + 0.1) {
       // do nothing, just wait
     }
     ticks const rend = getticks();
