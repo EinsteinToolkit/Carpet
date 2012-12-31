@@ -240,7 +240,7 @@ INLINE_ELAPSED(__inline__)
 typedef unsigned long long ticks;
 static ticks getticks(void)
 {
-    asm(" rdtsc; shl    $0x20,%rdx; mov    %eax,%eax; or     %rdx,%rax;    ");
+    asm(" rdtsc; shl    $0x20,%rdx; or     %rdx,%rax;    ");
 }
 INLINE_ELAPSED(__inline__)
 #define HAVE_TICK_COUNTER
