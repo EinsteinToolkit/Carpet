@@ -512,3 +512,19 @@ INLINE_ELAPSED(inline)
 #define HAVE_TICK_COUNTER
 #endif
 #endif /* HAVE_MIPS_ZBUS_TIMER */
+
+/*----------------------------------------------------------------*/
+/* Blue Gene/Q */
+#if defined(__bgq__) && !defined(HAVE_TICK_COUNTER)
+#include <hwi/include/bqc/A2_inlines.h>
+typedef uint64_t ticks;
+
+static __inline__ ticks getticks(void)
+{
+  return GetTimeBase();
+}
+
+INLINE_ELAPSED(__inline__)
+
+#define HAVE_TICK_COUNTER
+#endif
