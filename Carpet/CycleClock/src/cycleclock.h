@@ -14,7 +14,7 @@
  *    double elapsed_seconds = seconds_per_tick() * elapsed_ticks;
 */
 
-//#include <cctk.h>
+#include <cctk.h>
 
 #ifdef __cplusplus
 extern "C" {
