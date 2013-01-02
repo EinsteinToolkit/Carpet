@@ -284,6 +284,7 @@ regrid (bool const do_init)
   full_mboxes full_boxes;
   
   fast_boxes.clear();
+  local_boxes.clear();
   
   
   
