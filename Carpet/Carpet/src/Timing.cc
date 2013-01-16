@@ -171,10 +171,14 @@ namespace Carpet {
     
     * evolution_steps_count = 0.0;
     
-    * local_grid_points_per_second   = 0.0;
-    * total_grid_points_per_second   = 0.0;
-    * local_grid_point_updates_count = 0.0;
-    * total_grid_point_updates_count = 0.0;
+    * local_grid_points_per_second       = 0.0;
+    * total_grid_points_per_second       = 0.0;
+    * local_grid_point_updates_count     = 0.0;
+    * total_grid_point_updates_count     = 0.0;
+    * local_interior_points_per_second   = 0.0;
+    * total_interior_points_per_second   = 0.0;
+    * local_interior_point_updates_count = 0.0;
+    * total_interior_point_updates_count = 0.0;
     
     * io_per_second              = 0.0;
     * io_bytes_per_second        = 0.0;
