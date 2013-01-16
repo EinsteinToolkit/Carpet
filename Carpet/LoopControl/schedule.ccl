@@ -1,23 +1,18 @@
 # Schedule definitions for thorn LoopControl
 
-if (check_type_sizes) {
-  SCHEDULE lc_check_type_sizes AT startup
-  {
-    LANG: C
-    OPTIONS: meta
-  } "Check that sizes of control structures are identical in C and Fortran"
-}
+SCHEDULE lc_setup AT startup BEFORE Driver_Startup
+{
+  LANG: C
+} "Set up LoopControl"
 
-if (printstats) {
-  SCHEDULE lc_printstats_analysis AT analysis
-  {
-    LANG: C
-    OPTIONS: meta
-  } "Output loop control statistics"
-  
-  SCHEDULE lc_printstats_terminate AT terminate
-  {
-    LANG: C
-    OPTIONS: meta
-  } "Output loop control statistics"
-}
+SCHEDULE lc_statistics_maybe AT analysis
+{
+  LANG: C
+  OPTIONS: meta
+} "Output LoopControl statistics"
+
+SCHEDULE lc_statistics AT terminate
+{
+  LANG: C
+  OPTIONS: meta
+} "Output LoopControl statistics"

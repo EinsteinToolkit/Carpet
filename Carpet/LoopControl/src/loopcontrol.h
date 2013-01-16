@@ -1,392 +1,287 @@
-#ifndef LC_LOOPCONTROL_H
-#define LC_LOOPCONTROL_H
+#ifndef LOOPCONTROL_H
+#define LOOPCONTROL_H
 
 /* This file uses the namespace LC_* for macros and lc_* for C
    identifiers. */
 
-#include <cctk.h>
-
+#define LC_DIM 3
+  
 
 
 #ifdef CCODE
 
+#include <stddef.h>
+#include <stdlib.h>
+
+#include <cctk.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-
-/* A topology */
-typedef struct lc_topology_t {
-  int nthreads[2][3];           /* [0:outer|1:inner][ijk] */
-} lc_topology_t;
-
-/* A tiling specification */
-typedef struct lc_tiling_t {
-  int npoints;
-} lc_tiling_t;
-
-
-
-typedef struct lc_state_t {
-  int topology;
-  int tiling[3];
-} lc_state_t;
-
-
-
-/* For simulated annealing */
-typedef struct lc_auto_state_t lc_auto_state_t;
-
-/* For hill climbing */
-typedef struct lc_hill_state_t lc_hill_state_t;
-
-
-
-/* Statistics for one control parameter set (thread topology and
-   tiling specification) of one user parameter set of one loop */
-typedef struct lc_stattime_t {
-  struct lc_stattime_t * next;
   
-  /* Keys */
   
-  lc_state_t state;
-  int inthreads, jnthreads, knthreads;
-  int inithreads, jnithreads, knithreads;
-  int inpoints, jnpoints, knpoints;
   
-  /* Data */
-  
-  /* Statistics */
-  /* number of calls and threads */
-  double time_count, time_count_init;
-  /* time spent setting up loops */
-  double time_setup_sum, time_setup_sum2;
-  /* time spent iterating */
-  double time_calc_sum, time_calc_sum2; 
-  double time_calc_init;        /* time for first calculation */
-  
-  /* wall time tag */
-  double last_updated;
-} lc_stattime_t;
-
-
-
-/* Statistics for one user parameter set (number of threads and number
-   of iterations) of one loop */
-typedef struct lc_statset_t {
-  struct lc_statset_t * next;
-  
-  /* Keys */
-  
-  int num_threads;
-  int npoints[3];               /* [dim] */
-  
-  /* Data */
-  
-  /* Thread topologies */
-  lc_topology_t * restrict topologies; /* [topology] */
-  int ntopologies;
-  
-  /* Tiling specifications */
-  lc_tiling_t * restrict tilings[3]; /* [dim] */
-  int ntilings[3];                   /* [dim] */
-  int * restrict topology_ntilings[3]; /* [dim][topology] */
-  
-  /* Simulated annealing state */
-  lc_auto_state_t * auto_state;
-  
-  /* Hill climbing state */
-  lc_hill_state_t * hill_state;
-  
-  lc_stattime_t * stattime_list;
-  
-  /* Statistics */
-  /* number of calls and threads */
-  double time_count, time_count_init;
-  /* time spent setting up loops */
-  double time_setup_sum, time_setup_sum2;
-  /* time spent iterating */
-  double time_calc_sum, time_calc_sum2; 
-  double time_calc_init;        /* time for first calculation */
-} lc_statset_t;
-
-
-
-/* Statistics for one loop (one source code location) */
-typedef struct lc_statmap_t {
-  struct lc_statmap_t * next;   /* for linked list */
-  
-  /* Name */
-  char const * restrict name;
-  
-  lc_statset_t * statset_list;
-} lc_statmap_t;
-
-
-
-/* Linked list of all loop statistics structures */
-extern lc_statmap_t * lc_statmap_list;
-
-
-
-static inline
-int
-lc_state_valid (lc_statset_t const * restrict const ls,
-                lc_state_t const * restrict const state)
-{
-  if (state->topology >= 0 && state->topology < ls->ntopologies) {
-    int const * restrict const ntilings =
-      ls->topology_ntilings[state->topology];
-    return (state->tiling[0] >= 0 && state->tiling[0] < ntilings[0] &&
-            state->tiling[1] >= 0 && state->tiling[1] < ntilings[1] &&
-            state->tiling[2] >= 0 && state->tiling[2] < ntilings[2]);
+  static inline ptrdiff_t lc_min(ptrdiff_t const i, ptrdiff_t const j)
+  {
+    return i < j ? i : j;
   }
-  return 0;
-}
-
-static inline
-int
-lc_state_equal (lc_state_t const * restrict const state1,
-                lc_state_t const * restrict const state2)
-{
-  return (state1->topology == state2->topology &&
-          state1->tiling[0] == state2->tiling[0] &&
-          state1->tiling[1] == state2->tiling[1] &&
-          state1->tiling[2] == state2->tiling[2]);
-}
-
-
-
-void
-lc_stattime_init (lc_stattime_t * restrict const lt,
-                  lc_statset_t * restrict const ls,
-                  lc_state_t const * restrict const state);
-
-lc_stattime_t *
-lc_stattime_find (lc_statset_t const * restrict const ls,
-                  lc_state_t const * restrict const state)
-  CCTK_ATTRIBUTE_PURE;
-
-lc_stattime_t *
-lc_stattime_find_create (lc_statset_t * restrict const ls,
-                         lc_state_t const * restrict const state);
-
-
-
-/* TODO: introduce type for num_threads and npoints[3] */
-void
-lc_statset_init (lc_statset_t * restrict const ls,
-                 lc_statmap_t * restrict const lm,
-                 int const num_threads,
-                 int const npoints[3]);
-
-lc_statset_t *
-lc_statset_find (lc_statmap_t const * restrict const lm,
-                 int const num_threads,
-                 int const npoints[3])
-  CCTK_ATTRIBUTE_PURE;
-
-lc_statset_t *
-lc_statset_find_create (lc_statmap_t * restrict const lm,
-                        int const num_threads,
-                        int const npoints[3]);
-
-
-
-typedef struct lc_control_t {
-  lc_statmap_t * restrict statmap;
-  lc_statset_t * restrict statset;
-  lc_stattime_t * restrict stattime;
   
-  /* Copy of arguments (useful for debugging) */
-  /* Full domain */
-  int imin, jmin, kmin;
-  int imax, jmax, kmax;
-  int ilsh, jlsh, klsh;
-  int di;
+  static inline ptrdiff_t lc_max(ptrdiff_t const i, ptrdiff_t const j)
+  {
+    return i > j ? i : j;
+  }
   
-  /* Control settings for thread parallelism (useful for debugging) */
-  /* Outer thread decomposition of full domain */
-  int iiimin, jjjmin, kkkmin;
-  int iiimax, jjjmax, kkkmax;
-  int iiistep, jjjstep, kkkstep;
   
-  /* Control settings for current thread (useful for debugging) */
-  int thread_num;
-  /* Location of this thread in full domain */
-  int iii, jjj, kkk;
-  /* Index (not location!) of this thread in loop tile */
-  int iiii, jjjj, kkkk;
   
-  /* Control settings for tiling loop */
-  /* Loop tiling decomposition in this thread's domain */
-  int iimin, jjmin, kkmin;
-  int iimax, jjmax, kkmax;
-  int iistep, jjstep, kkstep;
+  struct lc_thread_info_t;
+  struct lc_fine_thread_comm_t;
   
-  /* Control settings for inner thread parallelism */
-  /* Inner thread decomposition, as offsets (!) to loop tiling */
-  int iiiimin, jjjjmin, kkkkmin;
-  int iiiimax, jjjjmax, kkkkmax;
-  int iiiistep, jjjjstep, kkkkstep;
+  struct lc_stats_t;
   
-  /* Timing statistics */
-  double time_setup_begin, time_calc_begin;
+  typedef struct {
+    ptrdiff_t v[LC_DIM];
+  } lc_vec_t;
   
-  /* Self check */
-  char * restrict selftest_count;
-} lc_control_t;
+  typedef struct {
+    int v[LC_DIM];
+  } lc_ivec_t;
+  
+  typedef struct {
+    /* Traverse pos from min (inclusive) to max (exclusive) with a
+       stride of step. Equivalently, traverse idx from 0 (inclusive)
+       to count (exclusive). */
+    lc_vec_t min, max, step, pos;
+    lc_ivec_t count, idx;
+  } lc_space_t;
+  
+  typedef struct {
+    lc_vec_t ash;
+    lc_space_t loop;
+    lc_space_t thread;
+    struct lc_thread_info_t* thread_info_ptr; /* shared between all
+                                                 threads */
+    int thread_done;
+    lc_space_t coarse;          /* count, idx, pos are undefined */
+    lc_space_t fine;            /* count, idx, pos are undefined */
+    lc_space_t fine_thread;     /* min, max, pos are undefined */
+    struct lc_fine_thread_comm_t* fine_thread_comm_ptr; /* shared
+                                                           between SMT
+                                                           threads */
+    unsigned char* restrict selftest_array;
+  } lc_control_t;
+  
+  
+  
+  void lc_stats_init(struct lc_stats_t** stats,
+                     char const* name, char const* file, int line);
+  void lc_control_init(lc_control_t* restrict control,
+                       struct lc_stats_t *restrict stats,
+                       ptrdiff_t imin, ptrdiff_t jmin, ptrdiff_t kmin,
+                       ptrdiff_t imax, ptrdiff_t jmax, ptrdiff_t kmax,
+                       ptrdiff_t iash, ptrdiff_t jash, ptrdiff_t kash,
+                       ptrdiff_t di, ptrdiff_t dj, ptrdiff_t dk);
+  void lc_control_finish(lc_control_t* restrict control,
+                         struct lc_stats_t *restrict stats);
+  
+  void lc_thread_init(lc_control_t* restrict control);
+  int lc_thread_done(lc_control_t const* restrict control);
+  void lc_thread_step(lc_control_t* restrict control);
+  
+  void lc_selftest_set(lc_control_t const* restrict control,
+                       ptrdiff_t lmin, ptrdiff_t lmax,
+                       ptrdiff_t imin, ptrdiff_t imax, ptrdiff_t di,
+                       ptrdiff_t i, ptrdiff_t j, ptrdiff_t k);
+  
+  
+  
+#define LC_COARSE_SETUP(D)                                              \
+  lc_control.coarse.min.v[D] = lc_control.thread.pos.v[D];              \
+  lc_control.coarse.max.v[D] =                                          \
+    lc_min(lc_control.thread.max.v[D],                                  \
+           lc_control.coarse.min.v[D] + lc_control.thread.step.v[D]);   \
+  ptrdiff_t const lc_cmin##D = lc_control.coarse.min.v[D];              \
+  ptrdiff_t const lc_cmax##D = lc_control.coarse.max.v[D];              \
+  ptrdiff_t const lc_cstep##D = lc_control.coarse.step.v[D];
+#define LC_COARSE_LOOP(D)                       \
+  for (ptrdiff_t lc_cpos##D = lc_cmin##D;       \
+       lc_cpos##D < lc_cmax##D;                 \
+       lc_cpos##D += lc_cstep##D)
+  
+#define LC_FINE_SETUP(D)                                                \
+  lc_control.fine.min.v[D] = lc_cpos##D;                                \
+  lc_control.fine.max.v[D] =                                            \
+    lc_min(lc_control.coarse.max.v[D],                                  \
+           lc_control.fine.min.v[D] + lc_control.coarse.step.v[D]);     \
+  ptrdiff_t /*const*/ lc_fmin##D = lc_control.fine.min.v[D];            \
+  ptrdiff_t /*const*/ lc_fmax##D = lc_control.fine.max.v[D];            \
+  ptrdiff_t const lc_fstep##D = lc_control.fine.step.v[D];              \
+  ptrdiff_t const lc_ftoff##D =                                         \
+    lc_control.fine_thread.idx.v[D] * lc_control.fine_thread.step.v[D];
+#define LC_FINE_LOOP(I, NI, D)                          \
+  for (ptrdiff_t I = lc_fmin##D + lc_ftoff##D;          \
+       I < lc_fmax##D;                                  \
+       I += lc_fstep##D)                                \
+  {                                                     \
+    ptrdiff_t const NI CCTK_ATTRIBUTE_UNUSED =          \
+      CCTK_BUILTIN_EXPECT(lc_dir##D==0, 1) ? 0 :        \
+       lc_dir##D<0 ? I+1 : lc_control.loop.max.v[D]-I;
+  
+#if VECTORISE_ALIGNED_ARRAYS
+  /* Arrays are aligned: fmin0 is the aligned loop boundary; keep it,
+     and set up imin to be the intended loop boundary */
+#  define LC_ALIGN(i,j,k)                                               \
+  ptrdiff_t const lc_imin = lc_max(lc_control.loop.min.v[0], lc_fmin0); \
+  ptrdiff_t const lc_imax = lc_fmax0;
+#else
+  /* Arrays are not aligned: fine.min[0] and fine.max[0] are the
+     intended loop boundaries; override fmin0 and fmax0 to be aligned,
+     and set imin and imax; this may move the fine loop boundaries
+     except at outer boundaries to avoid partial stores */
+#  define LC_ALIGN(i,j,k)                                               \
+  lc_fmin0 = lc_control.fine.min.v[0];                                  \
+  lc_fmax0 = lc_control.fine.max.v[0];                                  \
+  ptrdiff_t lc_imin = lc_fmin0;                                         \
+  ptrdiff_t lc_imax = lc_fmax0;                                         \
+  int const lc_fmin0_is_outer = lc_fmin0 == lc_control.loop.min.v[0];   \
+  int const lc_fmax0_is_outer = lc_fmax0 == lc_control.loop.max.v[0];   \
+  ptrdiff_t const lc_ipos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);     \
+  ptrdiff_t const lc_ioffset = lc_ipos % lc_align0;                     \
+  lc_fmin0 -= lc_ioffset;                                               \
+  if (!lc_fmax0_is_outer) lc_fmax0 -= lc_ioffset;                       \
+  if (!lc_fmin0_is_outer) lc_imin = lc_fmin0;                           \
+  if (!lc_fmax0_is_outer) lc_imax = lc_fmax0;
+#endif
+  
+#define LC_SELFTEST(i,j,k)                                              \
+  if (CCTK_BUILTIN_EXPECT(lc_control.selftest_array != NULL, 0)) {      \
+    lc_selftest_set(&lc_control,                                        \
+                    lc_control.loop.min.v[0], lc_control.loop.max.v[0], \
+                    lc_imin, lc_imax, lc_align0, i, j, k);              \
+  }
+  
+  
+  
+#define LC_LOOP3STR_NORMAL(name, i,j,k, ni,nj,nk,               \
+                           idir_, jdir_, kdir_,                 \
+                           imin_,jmin_,kmin_,                   \
+                           imax_,jmax_,kmax_,                   \
+                           iash_,jash_,kash_,                   \
+                           imin,imax, di_)                      \
+  do {                                                          \
+    typedef int lc_loop3vec_##name;                             \
+                                                                \
+    ptrdiff_t const lc_dir0 CCTK_ATTRIBUTE_UNUSED = (idir_);    \
+    ptrdiff_t const lc_dir1 CCTK_ATTRIBUTE_UNUSED = (jdir_);    \
+    ptrdiff_t const lc_dir2 CCTK_ATTRIBUTE_UNUSED = (kdir_);    \
+                                                                \
+    ptrdiff_t const lc_ash0 CCTK_ATTRIBUTE_UNUSED = (iash_);    \
+    ptrdiff_t const lc_ash1 CCTK_ATTRIBUTE_UNUSED = (jash_);    \
+    ptrdiff_t const lc_ash2 CCTK_ATTRIBUTE_UNUSED = (kash_);    \
+                                                                \
+    ptrdiff_t const lc_align0 CCTK_ATTRIBUTE_UNUSED = (di_);    \
+    ptrdiff_t const lc_align1 CCTK_ATTRIBUTE_UNUSED = 1;        \
+    ptrdiff_t const lc_align2 CCTK_ATTRIBUTE_UNUSED = 1;        \
+                                                                \
+    static struct lc_stats_t* lc_stats = NULL;                  \
+    lc_stats_init(&lc_stats, #name, __FILE__, __LINE__);        \
+                                                                \
+    lc_control_t lc_control;                                    \
+    lc_control_init(&lc_control, lc_stats,                      \
+                    (imin_), (jmin_), (kmin_),                  \
+                    (imax_), (jmax_), (kmax_),                  \
+                    lc_ash0, lc_ash1, lc_ash2,                  \
+                    lc_align0, lc_align1, lc_align2);           \
+                                                                \
+    /* Multithreading */                                        \
+    for (lc_thread_init(&lc_control);                           \
+         !lc_thread_done(&lc_control);                          \
+         lc_thread_step(&lc_control))                           \
+    {                                                           \
+                                                                \
+      /* Coarse loops */                                        \
+      LC_COARSE_SETUP(2)                                        \
+      LC_COARSE_SETUP(1)                                        \
+      LC_COARSE_SETUP(0)                                        \
+      LC_COARSE_LOOP(2) {                                       \
+      LC_COARSE_LOOP(1) {                                       \
+      LC_COARSE_LOOP(0) {                                       \
+                                                                \
+        /* Fine loops */                                        \
+        LC_FINE_SETUP(2)                                        \
+        LC_FINE_SETUP(1)                                        \
+        LC_FINE_SETUP(0)                                        \
+        LC_FINE_LOOP(k, nk, 2) {                                \
+        LC_FINE_LOOP(j, nj, 1) {                                \
+        LC_ALIGN(i,j,k)                                         \
+        LC_FINE_LOOP(i, ni, 0) {                                \
+          LC_SELFTEST(i,j,k)                                    \
+          {
+        
+#define LC_ENDLOOP3STR_NORMAL(name)                             \
+          }                     /* body */                      \
+        }}}}}}                  /* fine */                      \
+      }}}                       /* coarse */                    \
+    }                           /* multithreading */            \
+    lc_control_finish(&lc_control, lc_stats);                   \
+    typedef lc_loop3vec_##name lc_ensure_proper_nesting;        \
+  } while(0)
+    
+    
+    
+/* Definitions to ensure compatibility with earlier versions of
+   LoopControl */
+#define LC_LOOP3VEC(name, i,j,k,                        \
+                    imin_,jmin,kmin, imax_,jmax,kmax,   \
+                    iash,jash,kash, imin,imax, di)      \
+  LC_LOOP3STR_NORMAL(name, i,j,k, lc_ni,lc_nj,lc_nk,    \
+                     0,0,0,                             \
+                     imin_,jmin,kmin, imax_,jmax,kmax,  \
+                     iash,jash,kash, imin,imax, di)
+#define LC_ENDLOOP3VEC(name)                    \
+  LC_ENDLOOP3STR_NORMAL(name)
 
-
-
-static inline
-int
-lc_min (int const i, int const j)
-{
-  return i < j ? i : j;
-}
-
-static inline
-int
-lc_max (int const i, int const j)
-{
-  return i > j ? i : j;
-}
-
-/* Align by shifting to the right if necessary */
-static inline
-int
-lc_align (int const i, int const di)
-{
-  return (i + di - 1) / di * di;
-}
-
-
-
-void
-lc_statmap_init (int * restrict initialised,
-                 lc_statmap_t * restrict ls,
-                 char const * restrict name);
-
-void
-lc_control_init (lc_control_t * restrict lc,
-                 lc_statmap_t * restrict lm,
-                 int imin, int jmin, int kmin,
-                 int imax, int jmax, int kmax,
-                 int ilsh, int jlsh, int klsh,
-                 int di);
-
-void
-lc_control_selftest (lc_control_t * restrict lc,
-                     int imin, int imax, int j, int k);
-
-void
-lc_control_finish (lc_control_t * restrict lc);
-
-
-
-#define LC_LOOP3(name, i,j,k, imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh) \
-  LC_LOOP3VEC(name, i,j,k, imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh, 1)
+#define LC_LOOP3(name, i,j,k,                           \
+                 imin,jmin,kmin, imax,jmax,kmax,        \
+                 iash,jash,kash)                        \
+  LC_LOOP3VEC(name, i,j,k,                              \
+              imin,jmin,kmin, imax,jmax,kmax,           \
+              iash,jash,kash, lc_imin_,lc_imax_, 1)
 #define LC_ENDLOOP3(name)                       \
   LC_ENDLOOP3VEC(name)
-
-#define LC_LOOP3VEC(name, i,j,k, imin_,jmin_,kmin_, imax_,jmax_,kmax_, ilsh_,jlsh_,klsh_, di_) \
-  do {                                                                  \
-    typedef int lc_loop3vec_##name;                                     \
-    static int lc_initialised = 0;                                      \
-    static lc_statmap_t lc_lm;                                          \
-    if (! lc_initialised) {                                             \
-      lc_statmap_init (& lc_initialised, & lc_lm, #name);               \
-    }                                                                   \
-    int const lc_di = (di_);                                            \
-    lc_control_t lc_lc;                                                 \
-    lc_control_init (& lc_lc, & lc_lm,                                  \
-                     (imin_), (jmin_), (kmin_),                         \
-                     (imax_), (jmax_), (kmax_),                         \
-                     (ilsh_), (jlsh_), (klsh_),                         \
-                     lc_di);                                            \
-    int const lc_do_selftest = lc_lc.selftest_count != 0;               \
-                                                                        \
-    /* Coarse loop */                                                   \
-    for (int lc_kk = lc_lc.kkmin;                                       \
-         lc_kk < lc_lc.kkmax;                                           \
-         lc_kk += lc_lc.kkstep)                                         \
-    {                                                                   \
-      int const lc_kmin = lc_kk + lc_lc.kkkkmin;                        \
-      int const lc_kmax =                                               \
-        lc_min (lc_kk + lc_min (lc_lc.kkkkmax, lc_lc.kkstep),           \
-                lc_lc.kkmax);                                           \
-                                                                        \
-      for (int lc_jj = lc_lc.jjmin;                                     \
-           lc_jj < lc_lc.jjmax;                                         \
-           lc_jj += lc_lc.jjstep)                                       \
-      {                                                                 \
-        int const lc_jmin = lc_jj + lc_lc.jjjjmin;                      \
-        int const lc_jmax =                                             \
-          lc_min (lc_jj + lc_min (lc_lc.jjjjmax, lc_lc.jjstep),         \
-                  lc_lc.jjmax);                                         \
-                                                                        \
-        for (int lc_ii = lc_lc.iimin;                                   \
-             lc_ii < lc_lc.iimax;                                       \
-             lc_ii += lc_lc.iistep)                                     \
-        {                                                               \
-          int const lc_imin = lc_ii + lc_lc.iiiimin;                    \
-          int const lc_imax =                                           \
-            lc_min (lc_ii + lc_min (lc_lc.iiiimax, lc_lc.iistep),       \
-                    lc_lc.iimax);                                       \
-                                                                        \
-          /* Fine loop */                                               \
-          for (int k = lc_kmin; k < lc_kmax; ++k) {                     \
-            for (int j = lc_jmin; j < lc_jmax; ++j) {                   \
-              LC_PRELOOP_STATEMENTS                                     \
-              {                                                         \
-                if (CCTK_BUILTIN_EXPECT(lc_do_selftest, 0)) {           \
-                  lc_control_selftest (& lc_lc, lc_imin, lc_imax, j, k); \
-                }                                                       \
-                int const lc_ipos =                                     \
-                  lc_imin + lc_lc.ilsh * (j + lc_lc.jlsh * k);          \
-                int const lc_ioffset = (lc_ipos & - lc_di) - lc_ipos;   \
-                for (int i = lc_imin + lc_ioffset; i < lc_imax; i += lc_di) { 
-
-#define LC_ENDLOOP3VEC(name)                                    \
-                }                                               \
-              }                                                 \
-              LC_POSTLOOP_STATEMENTS                            \
-            }                                                   \
-          }                                                     \
-        }                                                       \
-      }                                                         \
-    }                                                           \
-    lc_control_finish (& lc_lc);                                \
-    typedef lc_loop3vec_##name lc_ensure_proper_nesting;        \
-  } while (0)
-
-/* Pre- and post loop statements are inserted around the innermost
-   loop, which is executed serially. By default these are empty. */
-#define LC_PRELOOP_STATEMENTS
-#define LC_POSTLOOP_STATEMENTS
-
-
-
+  
+  
+  
 /* Replace CCTK_LOOP macros */
-#undef CCTK_LOOP3
-#undef CCTK_ENDLOOP3
-#define CCTK_LOOP3    LC_LOOP3
-#define CCTK_ENDLOOP3 LC_ENDLOOP3
-
-
-
-#ifdef __cplusplus
-}
+#if !defined CCTK_LOOP3STR_NORMAL || !defined CCTK_ENDLOOP3STR_NORMAL
+#  error "internal error"
+#endif
+#undef CCTK_LOOP3STR_NORMAL
+#undef CCTK_ENDLOOP3STR_NORMAL
+#define CCTK_LOOP3STR_NORMAL(name, i,j,k, ni,nj,nk,     \
+                             idir, jdir, kdir,          \
+                             imin_,jmin,kmin,           \
+                             imax_,jmax,kmax,           \
+                             iash,jash,kash,            \
+                             imin,imax, di)             \
+  LC_LOOP3STR_NORMAL(name, i,j,k, ni,nj,nk,             \
+                     idir, jdir, kdir,                  \
+                     imin_,jmin,kmin,                   \
+                     imax_,jmax,kmax,                   \
+                     iash,jash,kash,                    \
+                     imin,imax, di)
+#define CCTK_ENDLOOP3STR_NORMAL(name)           \
+  LC_ENDLOOP3STR_NORMAL(name)
+  
+  
+  
+#ifdef __cplusplus 
+    }
 #endif
 
-#endif
-
-
+#endif /* #ifdef CCODE */
 
 #ifdef FCODE
 #  include "loopcontrol_fortran.h"
 #endif
 
-#endif  /* ifndef LC_LOOPCONTROL_H */
+#endif  /* #ifndef LOOPCONTROL_H */

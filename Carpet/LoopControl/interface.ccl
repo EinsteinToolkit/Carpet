@@ -2,6 +2,19 @@
 
 IMPLEMENTS: LoopControl
 
+INHERITS: CycleClock
+
 INCLUDE HEADER: loopcontrol.h IN loopcontrol.h
 
+USES INCLUDE HEADER: cycleclock.h
 USES INCLUDE HEADER: vectors.h
+
+
+
+CCTK_INT FUNCTION GetNumSMTThreads()
+USES FUNCTION GetNumSMTThreads
+
+CCTK_INT FUNCTION GetCacheInfo1(CCTK_INT ARRAY OUT linesizes,           \
+                                CCTK_INT ARRAY OUT strides,             \
+                                CCTK_INT IN max_num_cache_levels)
+USES FUNCTION GetCacheInfo1

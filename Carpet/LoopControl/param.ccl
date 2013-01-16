@@ -1,203 +1,68 @@
 # Parameter definitions for thorn LoopControl
 
-#################
-# General options
-
-BOOLEAN printstats "Output timing statistics" STEERABLE=recover
+BOOLEAN verbose "Output some loop information at run time" STEERABLE=always
 {
 } "no"
 
-CCTK_REAL printstats_every_minutes "Output timing statistics every so many minutes" STEERABLE=always
-{
-  0.0:* :: ""
-} 60.0
-
-CCTK_REAL printstats_threshold "Output timing statistics for loops costing at least this many percent" STEERABLE=always
-{
-  0.0:100.0 :: ""
-} 2.0
-
-CCTK_INT printstats_verbosity "Level of detail for statistics" STEERABLE=always
-{
-  0 :: "Output only a global summary"
-  1 :: "Output summary for every loop"
-  2 :: "Output summary for every loop parameter set"
-  3 :: "Output everything"
-} 1
-
-BOOLEAN verbose "Verbosity" STEERABLE=always
+BOOLEAN veryverbose "Output detailed debug information at run time" STEERABLE=always
 {
 } "no"
 
-BOOLEAN debug "Output debug information" STEERABLE=always
+BOOLEAN selftest "Run a self test with every loop (expensive)" STEERABLE=always
 {
 } "no"
 
-BOOLEAN check_type_sizes "Check that Fortran and C types match"
+
+
+KEYWORD initial_setup "Initial configuration" STEERABLE=always
+{
+  "legacy" :: "Like a non-LoopControl loop"
+  "tiled"  :: "Basic LoopControl setup"
+} "tiled"
+
+
+
+# NOTE:
+# - Intel chips divide the D1 cache into two, one for each hyperthread.
+#   The cache is thus not shared!
+BOOLEAN use_smt_threads "Place SMT threads close together" STEERABLE=always
 {
 } "yes"
 
-BOOLEAN do_selftest "Perform (expensive) self-tests in every loop"
-{
-} "no"
-
-
-
-#################
-# Thread topology
-
-CCTK_INT lc_inthreads "Number of threads in the i-direction" STEERABLE=recover
-{
-  -1  :: "choose automatically"
-  1:* :: "user-specified value"
-} -1
-
-CCTK_INT lc_jnthreads "Number of threads in the j-direction" STEERABLE=recover
-{
-  -1  :: "choose automatically"
-  1:* :: "user-specified value"
-} -1
-
-CCTK_INT lc_knthreads "Number of threads in the k-direction" STEERABLE=recover
-{
-  -1  :: "choose automatically"
-  1:* :: "user-specified value"
-} -1
-
-
-
-######################
-# Tiling specification
-
-CCTK_INT lc_inpoints "Number of grid points in the i-direction" STEERABLE=recover
-{
-  -1  :: "choose automatically"
-  1:* :: "user-specified value"
-} -1
-
-CCTK_INT lc_jnpoints "Number of grid points in the j-direction" STEERABLE=recover
-{
-  -1  :: "choose automatically"
-  1:* :: "user-specified value"
-} -1
-
-CCTK_INT lc_knpoints "Number of grid points in the k-direction" STEERABLE=recover
-{
-  -1  :: "choose automatically"
-  1:* :: "user-specified value"
-} -1
-
-
-
-##########################
-# Use legacy configuration
-
-BOOLEAN legacy_init "Initialise with legacy configuration (usually slower)" STEERABLE=recover
+BOOLEAN align_with_cachelines "Align innermost loops with cache line size" STEERABLE=always
 {
 } "yes"
 
 
 
-###########################
-# Automatic: simple cycling
-
-BOOLEAN cycle_j_tilings "Cycle through all available tilings in the j-direction" STEERABLE=recover
-{
-} "no"
-
-
-
-################################
-# Automatic: simulated annealing
-
-BOOLEAN use_simulated_annealing "Find a good loop configuration through simulated annealing" STEERABLE=recover
-{
-} "no"
-
-CCTK_INT siman_iters_fixed_T "" STEERABLE=recover
+INT tilesize_i "Tile size in i direction (in grid points) for loop tiling" STEERABLE=always
 {
   1:* :: ""
-} 1
+} 4
 
-CCTK_REAL siman_probability_change_topology "" STEERABLE=recover
+INT tilesize_j "Tile size in j direction (in grid points) for loop tiling" STEERABLE=always
 {
-  0:1 :: ""
-} 0.1
+  1:* :: ""
+} 4
 
-CCTK_REAL siman_step_size "" STEERABLE=recover
+INT tilesize_k "Tile size in k direction (in grid points) for loop tiling" STEERABLE=always
 {
-  (1.0:* :: ""
-} 3.0
+  1:* :: ""
+} 4
 
-CCTK_REAL siman_k "energy scale" STEERABLE=recover
+
+
+INT loopsize_i "Size of each thread's loop in i direction (in grid points) for multithreading" STEERABLE=always
 {
-  (0:* :: ""
-} 1.0e-9
+  1:* :: ""
+} 8
 
-CCTK_REAL siman_T_initial "initial variability" STEERABLE=recover
+INT loopsize_j "Size of each thread's loop in j direction (in grid points) for multithreading" STEERABLE=always
 {
-  (0:* :: ""
-} 1.0
+  1:* :: ""
+} 8
 
-CCTK_REAL siman_mu_T "speed" STEERABLE=recover
+INT loopsize_k "Size of each thread's loop in k direction (in grid points) for multithreading" STEERABLE=always
 {
-  (0:* :: ""
-} 1.005
-
-CCTK_REAL siman_T_min "stopping criterion" STEERABLE=recover
-{
-  (0:* :: ""
-} 0.01
-
-
-
-#########################################
-# Automatic: random restart hill climbing
-
-BOOLEAN use_random_restart_hill_climbing "http://en.wikipedia.org/wiki/Hill_climbing http://en.wikipedia.org/wiki/Tabu_search" STEERABLE=always
-{
-} "no"
-
-CCTK_REAL maximum_setup_overhead "Maximum allowable administrative overhead" STEERABLE=always
-{
-  0.0:* :: ""
-} 0.01
-
-BOOLEAN ignore_initial_overhead "Ignore the overhead from the initial setup" STEERABLE=recover
-{
-} "yes"
-
-CCTK_REAL probability_small_jump "Probability for a small jump once a local minimum has been reached" STEERABLE=always
-{
-  0.0:1.0 :: ""
-} 0.1
-
-CCTK_INT small_jump_distance "Maximum distance for a small jump" STEERABLE=always
-{
-  0:* :: ""
-} 3
-
-CCTK_REAL probability_random_jump "Probability for a random jump once a local minimum has been reached" STEERABLE=always
-{
-  0.0:1.0 :: ""
-} 0.01
-
-CCTK_INT max_jump_attempts "Maximum number of attempts to find a random unknown location" STEERABLE=always
-{
-  0:* :: ""
-} 10
-
-CCTK_REAL immediate_overhead_threshold "The maximum overhead (ratio of current to best known time) allowed during an excursion" STEERABLE=always
-{
-  0.0:* :: ""
-} 1.0
-
-CCTK_REAL delayed_overhead_threshold "The maximum overhead (ratio of current to best known time) allowed during an excursion" STEERABLE=always
-{
-  0.0:* :: ""
-} 0.1
-
-CCTK_INT overhead_threshold_delay "Number of steps in an excursion before the delayed overhead criterion is applied" STEERABLE=always
-{
-  0:* :: ""
-} 20
+  1:* :: ""
+} 8

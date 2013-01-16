@@ -1,0 +1,5 @@
+# Running on 2 processes
+#
+# iteration   maxtotalbytes avgtotalbytes   maxmaxbytes avgm avgfreebytes
+0	 4.09547e+07 3.99796e+07	 4.12634e+07 4.02809e+07	 188960 188960	 0 0	 0 0
+10	 4.09547e+07 3.99796e+07	 4.12634e+07 4.02809e+07	 188960 188960	 0 0	 0 0

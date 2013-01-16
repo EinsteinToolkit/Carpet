@@ -1,41 +1,69 @@
+#include "cctk.h"
+
+#include "loopcontrol.h"
+
+
+
 module loopcontrol
-  
   use loopcontrol_types
+  implicit none
   
   interface
      
-     subroutine lc_statmap_init (initialised, lc_lm, name)
+     subroutine lc_stats_init(stats, name)
        use loopcontrol_types
        implicit none
-       integer, intent(out) :: initialised
-       type (lc_statmap_t) :: lc_lm
-       character(*)        :: name
-     end subroutine lc_statmap_init
+       CCTK_POINTER :: stats
+       character(*) :: name
+     end subroutine lc_stats_init
      
-     subroutine lc_control_init (lc_lc, lc_lm, &
-          imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh,di)
+     subroutine lc_control_init( &
+          control, stats, &
+          imin, jmin, kmin, &
+          imax, jmax, kmax, &
+          iash, jash, kash, &
+          di, dj, dk)
        use loopcontrol_types
        implicit none
-       type (lc_control_t) :: lc_lc
-       type (lc_statmap_t) :: lc_lm
-       integer, intent(in) :: imin, jmin, kmin
-       integer, intent(in) :: imax, jmax, kmax
-       integer, intent(in) :: ilsh, jlsh, klsh
-       integer, intent(in) :: di
+       type(lc_control_t) :: control
+       CCTK_POINTER       :: stats
+       CCTK_POINTER       :: imin, jmin, kmin
+       CCTK_POINTER       :: imax, jmax, kmax
+       CCTK_POINTER       :: iash, jash, kash
+       CCTK_POINTER       :: di, dj, dk
      end subroutine lc_control_init
-     
-     subroutine lc_control_finish (lc_lc)
+
+     subroutine lc_control_finish(control, stats)
        use loopcontrol_types
        implicit none
-       type (lc_control_t) :: lc_lc
+       type(lc_control_t) :: control
+       CCTK_POINTER       :: stats
      end subroutine lc_control_finish
-
-     subroutine lc_get_fortran_type_sizes (sum_of_type_sizes)
+     
+     subroutine lc_thread_init(control)
        use loopcontrol_types
        implicit none
-       integer, intent(out) :: sum_of_type_sizes
+       type(lc_control_t) :: control
+     end subroutine lc_thread_init
+     
+     logical function lc_thread_done(control)
+       use loopcontrol_types
+       implicit none
+       type(lc_control_t) :: control
+     end function lc_thread_done
+     
+     subroutine lc_thread_step(control)
+       use loopcontrol_types
+       implicit none
+       type(lc_control_t) :: control
+     end subroutine lc_thread_step
+     
+     subroutine lc_get_fortran_type_sizes(type_sizes)
+       use loopcontrol_types
+       implicit none
+       CCTK_POINTER :: type_sizes(4)
      end subroutine lc_get_fortran_type_sizes
-
+     
   end interface
   
 end module loopcontrol

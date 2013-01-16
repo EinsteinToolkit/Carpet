@@ -1,30 +1,31 @@
 Cactus::cctk_run_title    = "Benchmark of McLachlan using Carpet with one refinement level"
 Cactus::cctk_timer_output = "full"
 
-Cactus::cctk_itlast = @ITERATIONS@
+Cactus::cctk_itlast = 100
 
 
 
-ActiveThorns = "Fortran"
-
-
-
-ActiveThorns = "LoopControl"
-
-#LoopControl::printstats = yes
-
-LoopControl::legacy_init                      = @LEGACY_INIT@
-LoopControl::use_random_restart_hill_climbing = @HILL_CLIMBING@
+ActiveThorns = "CycleClock Fortran hwloc MPI"
 
 
 
 ActiveThorns = "IOUtil"
 
-#IO::print_timing_info = yes
+IO::out_dir = $parfile
 
 
 
 ActiveThorns = "InitBase"
+
+
+
+ActiveThorns = "LoopControl"
+
+LoopControl::verbose     = no
+LoopControl::veryverbose = no
+LoopControl::selftest    = no
+
+LoopControl::initial_setup = "tiled"
 
 
 
@@ -36,10 +37,8 @@ driver::ghost_size = 3
 
 Carpet::init_fill_timelevels = yes
 
-CarpetLib::combine_recompose = yes
-
 #CarpetLib::print_timestats_every = 1
-CarpetLib::print_memstats_every  = @ITERATIONS@
+CarpetLib::print_memstats_every  = 100
 
 
 
@@ -54,12 +53,11 @@ CoordBase::ymax       = 1.0
 CoordBase::zmax       = 1.0
 
 CoordBase::spacing  = "numcells"
-CoordBase::ncells_x = @NCELLSI@
-CoordBase::ncells_y = @NCELLSJ@
-CoordBase::ncells_z = @NCELLSK@
+CoordBase::ncells_x = 30
+CoordBase::ncells_y = 30
+CoordBase::ncells_z = 30
 
 CartGrid3D::type           = "coordbase"
-CartGrid3D::domain         = "octant"
 CartGrid3D::avoid_originx  = no
 CartGrid3D::avoid_originy  = no
 CartGrid3D::avoid_originz  = no
@@ -67,10 +65,6 @@ CartGrid3D::avoid_originz  = no
 CoordBase::boundary_size_x_lower = 3
 CoordBase::boundary_size_y_lower = 3
 CoordBase::boundary_size_z_lower = 3
-CoordBase::boundary_shiftout_x_lower = 1
-CoordBase::boundary_shiftout_y_lower = 1
-CoordBase::boundary_shiftout_z_lower = 1
-
 CoordBase::boundary_size_x_upper = 3
 CoordBase::boundary_size_y_upper = 3
 CoordBase::boundary_size_z_upper = 3
@@ -114,14 +108,14 @@ ML_BSSN::BetaDriver      = 0.5
 
 ActiveThorns = "CarpetIOBasic"
 
-IOBasic::outInfo_every = @ITERATIONS@
-#IOBasic::outInfo_vars  = "ADMBase::alp"
+IOBasic::outInfo_every = 100
+IOBasic::outInfo_vars  = "ADMBase::alp"
 
 
 
 #ActiveThorns = "CarpetIOASCII"
 #
-#IOASCII::out0D_every = @ITERATIONS@
+#IOASCII::out0D_every = 100
 #IOASCII::out0D_vars  = "Carpet::timing"
 
 

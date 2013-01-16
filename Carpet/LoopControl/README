@@ -1,86 +1,10 @@
 Cactus Code Thorn LoopControl
-Author(s)    : Erik Schnetter <schnetter@cct.lsu.edu>
-Maintainer(s): Erik Schnetter <schnetter@cct.lsu.edu>
+Author(s)    : Erik Schnetter <schnetter@gmail.com>
+Maintainer(s): Erik Schnetter <schnetter@gmail.com>
 Licence      : GPLv2+
 --------------------------------------------------------------------------
 
 1. Purpose
 
 Iterate over multi-dimensional arrays in an efficient manner, using
-OpenMP (if available) and cach-aware loop tiling.
-
-
-
-Comments and Ideas:
-
-Simulated annealing: Does not seem to work reliably.  Needs many
-iterations, gets stuck in local minima.  Does not handle topology
-changes well.  Doesn't take past performance into account.
-
-
-
-Rewrite in C++?  This would simplify the data types.
-
-
-
-Try loop skewing (see John Shalf's paper).
-
-
-
-Assumption: Each iteration is cheap, so that gradual tuning works.
-
-Design choice: No explicit tuning, works as black box.
-
-Assumpton: There are so many configurations (which change at run time)
-and so many parameter choices (which would need to be tested for each
-configuration) that it is not feasible to test all possibilities.
-
-
-
-
-Idea for a better algorithm:
-
-Combine several strategies:
-
-1.a. Robust default setting:
-     - Topology: split in z direction
-     - Tiling: [N,1,] (test this more)
-
-2.a. Local 1D tiling optimisation (based on line searches):
-     - Globally define some maximum step size
-     - Choose a direction (i, j, or k)
-     - Determine a search interval in that direction
-     - Use exponential search to find interval boundaries
-     - Use arithmetic search to find minimum
-
-2.b. Local full tiling optimisation:
-     - Perform a series of 1D optimisations, until a local minimum in
-       for all directions has been found
-
-2.c. Change topology:
-     - Choose a new, "nearby" tiling
-     - Start with a good tiling from the previous topology
-     - Then perform a full tiling optimisation
-
-2.d. Choose a random new tiling
-     - Then perform a full tiling optimisation
-
-2.e. Choose a random new topology
-     - Then choose a random new tiling
-
-3.a. Whenever a test is done, repeat it a few times to avoid random
-     events
-     - Maybe don't repeat it right away, but wait some time
-
-3.b. If a value is old, forget it with a certain probability
-     - Need to remember a "last updated" field with statistics
-
-4.a. Offer an option to sample a wide range of configurations to give
-     the user an overview
-     - Note that a full sampling is too expensive.
-     - Use a hierarchical strategy for this?
-     - Use random sampling for this?
-
-5. Offer the parallelisation mechanism, or the tiling mechanism
-   separately, without actually looping over the array or over the
-   tiles.
+OpenMP (if available) and cache-aware loop tiling.

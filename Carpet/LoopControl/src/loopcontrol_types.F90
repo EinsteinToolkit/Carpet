@@ -1,60 +1,40 @@
-#include <cctk.h>
+#include "cctk.h"
+
+#include "loopcontrol.h"
+
+
 
 module loopcontrol_types
   
-  ! Note: this type must correspond to the corresponding C type
-  ! declared in loopcontrol.h
-  type lc_statmap_t
-     sequence
-     
-     CCTK_POINTER next
-     
-     ! Name
-     CCTK_POINTER_TO_CONST name
-     
-     CCTK_POINTER statset_list
-  end type lc_statmap_t
+  implicit none
   
-  ! Note: this type must correspond to the corresponding C type
+  ! Note: These types must correspond to the corresponding C types
   ! declared in loopcontrol.h
-  type lc_control_t
-     sequence
-     
-     CCTK_POINTER statmap
-     CCTK_POINTER statset
-     CCTK_POINTER stattime
-     
-     ! Copy of arguments (useful for debugging)
-     integer imin, jmin, kmin
-     integer imax, jmax, kmax
-     integer ilsh, jlsh, klsh
-     integer di
-     
-     ! Control settings for thread parallelism (useful for debugging)
-     integer iiimin, jjjmin, kkkmin
-     integer iiimax, jjjmax, kkkmax
-     integer iiistep, jjjstep, kkkstep
-     
-     ! Control settings for current thread (useful for debugging)
-     integer thread_num
-     integer iii, jjj, kkk
-     integer iiii, jjjj, kkkk
-     
-     ! Control settings for tiling loop
-     integer iimin, jjmin, kkmin
-     integer iimax, jjmax, kkmax
-     integer iistep, jjstep, kkstep
-     
-     ! Control settings for inner thread parallelism
-     integer iiiimin, jjjjmin, kkkkmin
-     integer iiiimax, jjjjmax, kkkkmax
-     integer iiiistep, jjjjstep, kkkkstep
-     
-     ! Timing statistics
-     double precision time_setup_begin, time_calc_begin
-     
-     ! Self check
-     CCTK_POINTER selftest_count
+  
+  type, bind(C) :: lc_vec_t
+     CCTK_POINTER :: v(LC_DIM)
+  end type lc_vec_t
+  
+  type, bind(C) :: lc_ivec_t
+     integer :: v(LC_DIM)
+  end type lc_ivec_t
+  
+  type, bind(C) :: lc_space_t
+     type(lc_vec_t)  :: min, max, step, pos
+     type(lc_ivec_t) :: count, idx
+  end type lc_space_t
+  
+  type, bind(C) :: lc_control_t
+     type(lc_vec_t)   :: ash
+     type(lc_space_t) :: loop
+     type(lc_space_t) :: thread
+     CCTK_POINTER     :: thread_idx_ptr
+     integer          :: thread_done
+     type(lc_space_t) :: coarse
+     type(lc_space_t) :: fine
+     type(lc_space_t) :: fine_thread
+     CCTK_POINTER     :: fine_thread_info_ptr
+     CCTK_POINTER     :: selftest_array
   end type lc_control_t
   
 end module loopcontrol_types

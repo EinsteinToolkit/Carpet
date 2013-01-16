@@ -1,19 +1,11 @@
-Cactus::cctk_run_title = "Benchmark of McLachlan using Carpet with one refinement level"
+Cactus::cctk_run_title    = "Benchmark of McLachlan using Carpet with one refinement level"
+Cactus::cctk_timer_output = "full"
 
-Cactus::cctk_itlast = @ITERATIONS@
-
-
-
-ActiveThorns = "Fortran"
+Cactus::cctk_itlast = 10
 
 
 
-ActiveThorns = "LoopControl"
-
-LoopControl::printstats = yes
-
-LoopControl::legacy_init                      = yes
-LoopControl::use_random_restart_hill_climbing = no
+ActiveThorns = "CycleClock Fortran hwloc MPI"
 
 
 
@@ -27,6 +19,18 @@ ActiveThorns = "InitBase"
 
 
 
+ActiveThorns = "LoopControl"
+
+LoopControl::verbose     = no
+LoopControl::veryverbose = no
+LoopControl::selftest    = yes
+
+LoopControl::initial_setup = "tiled"
+
+#Carpet::pad_to_cachelines = yes
+
+
+
 ActiveThorns = "Carpet CarpetLib CarpetReduce"
 
 Carpet::domain_from_coordbase = yes
@@ -35,10 +39,8 @@ driver::ghost_size = 3
 
 Carpet::init_fill_timelevels = yes
 
-CarpetLib::avoid_arraysize_bytes = 0
-
-CarpetLib::print_timestats_every = @ITERATIONS@
-CarpetLib::print_memstats_every  = @ITERATIONS@
+#CarpetLib::print_timestats_every = 1
+CarpetLib::print_memstats_every  = 10
 
 
 
@@ -53,12 +55,11 @@ CoordBase::ymax       = 1.0
 CoordBase::zmax       = 1.0
 
 CoordBase::spacing  = "numcells"
-CoordBase::ncells_x = @NCELLSI@
-CoordBase::ncells_y = @NCELLSJ@
-CoordBase::ncells_z = @NCELLSK@
+CoordBase::ncells_x = 30
+CoordBase::ncells_y = 30
+CoordBase::ncells_z = 30
 
 CartGrid3D::type           = "coordbase"
-CartGrid3D::domain         = "octant"
 CartGrid3D::avoid_originx  = no
 CartGrid3D::avoid_originy  = no
 CartGrid3D::avoid_originz  = no
@@ -66,10 +67,6 @@ CartGrid3D::avoid_originz  = no
 CoordBase::boundary_size_x_lower = 3
 CoordBase::boundary_size_y_lower = 3
 CoordBase::boundary_size_z_lower = 3
-CoordBase::boundary_shiftout_x_lower = 1
-CoordBase::boundary_shiftout_y_lower = 1
-CoordBase::boundary_shiftout_z_lower = 1
-
 CoordBase::boundary_size_x_upper = 3
 CoordBase::boundary_size_y_upper = 3
 CoordBase::boundary_size_z_upper = 3
@@ -113,24 +110,15 @@ ML_BSSN::BetaDriver      = 0.5
 
 ActiveThorns = "CarpetIOBasic"
 
-IOBasic::outInfo_every = @ITERATIONS@
-#IOBasic::outInfo_vars  = "ADMBase::alp"
+IOBasic::outInfo_every = 10
+IOBasic::outInfo_vars  = "ADMBase::alp"
 
 
 
-#ActiveThorns = "CarpetIOASCII"
-#
-#IOASCII::out0D_every = @ITERATIONS@
-#IOASCII::out0D_vars  = "Carpet::timing"
+ActiveThorns = "CarpetIOASCII"
 
+IOASCII::out0D_every = 0 # 10
+IOASCII::out0D_vars  = "Carpet::timing"
 
-
-ActiveThorns = "TimerReport"
-
-TimerReport::output_all_timers          = yes
-TimerReport::all_timers_clock           = "cycle"
-TimerReport::out_every                  = @ITERATIONS@
-TimerReport::out_filename               = "TimerReport"
-TimerReport::output_all_timers_together = yes
-TimerReport::output_all_timers_readable = yes
-TimerReport::n_top_timers               = 20
+IOASCII::out1D_every = 10
+IOASCII::out1D_vars  = "ADMBase::alp"

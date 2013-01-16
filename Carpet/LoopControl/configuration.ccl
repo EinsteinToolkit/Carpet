@@ -1,11 +1,13 @@
 # Configuration definition for thorn LoopControl
 
-REQUIRES GSL
-
-PROVIDES LoopControl
+OPTIONAL CycleClock
 {
 }
 
 OPTIONAL Vectors
+{
+}
+
+PROVIDES LoopControl
 {
 }
