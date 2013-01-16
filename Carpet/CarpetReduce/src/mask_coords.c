@@ -124,7 +124,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
         CCTK_LOOP3(CoordBase_SetupMask_boundary,
                    i,j,k,
                    bmin[0],bmin[1],bmin[2], bmax[0],bmax[1],bmax[2],
-                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+                   cctk_ash[0],cctk_ash[1],cctk_ash[2])
         {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
           iweight[ind] = 0;
@@ -220,7 +220,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
         CCTK_LOOP3(CoordBase_SetupMask_ghost,
                    i,j,k,
                    bmin[0],bmin[1],bmin[2], bmax[0],bmax[1],bmax[2],
-                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+                   cctk_ash[0],cctk_ash[1],cctk_ash[2])
         {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
           iweight[ind] = 0;

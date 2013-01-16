@@ -551,8 +551,8 @@ namespace CarpetReduce {
   }
   
   template<class T,class OP>
-  void reduce (const int* const lsh, const int* const bbox,
-               const int* const nghostzones,
+  void reduce (const int* const lsh, const int* const ash,
+               const int* const bbox, const int* const nghostzones,
 	       vector<const void*> const& inarrays,
                vector<CCTK_REAL> const& tfacs,
                void* const outval, void* const cnt,
@@ -583,7 +583,7 @@ namespace CarpetReduce {
       for (int k=imin[2]; k<imax[2]; ++k) {
         for (int j=imin[1]; j<imax[1]; ++j) {
           for (int i=imin[0]; i<imax[0]; ++i) {
-            const int index = i + lsh[0] * (j + lsh[1] * k);
+            const int index = i + ash[0] * (j + ash[1] * k);
             CCTK_REAL const w = weight ? weight[index] * levfac : levfac;
             T myinval = T(0);
             for (size_t tl=0; tl<inarrays.size(); ++tl) {
@@ -599,7 +599,7 @@ namespace CarpetReduce {
         for (int k=imin[2]; k<imax[2]; ++k) {
           for (int j=imin[1]; j<imax[1]; ++j) {
             for (int i=imin[0]; i<imax[0]; ++i) {
-              const int index = i + lsh[0] * (j + lsh[1] * (k + lsh[2] * l));
+              const int index = i + ash[0] * (j + ash[1] * (k + ash[2] * l));
               CCTK_REAL const w = weight ? weight[index] * levfac : levfac;
               T myinval = T(0);
               for (size_t tl=0; tl<inarrays.size(); ++tl) {
@@ -641,7 +641,7 @@ namespace CarpetReduce {
       T& mycnt_local    = mycnt_locals   [n];
       for (int j=imin[1]; j<imax[1]; ++j) {
         for (int i=imin[0]; i<imax[0]; ++i) {
-          const int index = i + lsh[0] * (j + lsh[1] * k);
+          const int index = i + ash[0] * (j + ash[1] * k);
           CCTK_REAL const w = weight ? weight[index] * levfac : levfac;
           T myinval = T(0);
           for (size_t tl=0; tl<inarrays.size(); ++tl) {
@@ -661,7 +661,7 @@ namespace CarpetReduce {
       for (int k=imin[2]; k<imax[2]; ++k) {
         for (int j=imin[1]; j<imax[1]; ++j) {
           for (int i=imin[0]; i<imax[0]; ++i) {
-            const int index = i + lsh[0] * (j + lsh[1] * (k + lsh[2] * l));
+            const int index = i + ash[0] * (j + ash[1] * (k + ash[2] * l));
             CCTK_REAL const w = weight ? weight[index] * levfac : levfac;
             T myinval = T(0);
             for (size_t tl=0; tl<inarrays.size(); ++tl) {
@@ -813,8 +813,8 @@ namespace CarpetReduce {
   
   
   void Reduce (const cGH* const cgh, const int proc,
-	       const int* const mylsh, const int* const mybbox,
-               const int* const mynghostzones,
+	       const int* const mylsh, const int* const myash,
+               const int* const mybbox, const int* const mynghostzones,
 	       const int num_inarrays,
 	       vector<const void* const*> const& inarrays,
                vector<CCTK_REAL> const& tfacs, const int intype,
@@ -842,6 +842,7 @@ namespace CarpetReduce {
     
     for (int d=0; d<dim; ++d) {
       assert (mylsh[d]>=0);
+      assert (myash[d]>=mylsh[d]);
       assert (mynghostzones[d]>=0);
       int const nb = !mybbox[2*d] + !mybbox[2*d+1];
       assert (nb*mynghostzones[d]<=mylsh[d]);
@@ -867,7 +868,7 @@ namespace CarpetReduce {
 #define REDUCE(OP,S)                                                    \
       case do_##OP: {                                                   \
         typedef typeconv<S>::goodtype T;                                \
-        reduce<T,OP::op<T> > (mylsh, mybbox, mynghostzones,             \
+        reduce<T,OP::op<T> > (mylsh, myash, mybbox, mynghostzones,      \
                               myinarrays, tfacs,                        \
                               &((char*)myoutvals)[vartypesize*n],       \
                               &((char*)mycounts )[vartypesize*n],       \
@@ -1063,16 +1064,18 @@ namespace CarpetReduce {
       assert (num_outvals == lsize);
     }
     
-    vect<int,dim> mylsh, mynghostzones;
+    vect<int,dim> mylsh, myash, mynghostzones;
     vect<vect<int,2>,dim> mybbox;
     for (int d=0; d<num_dims; ++d) {
       mylsh[d] = dims[d];
+      myash[d] = dims[d];       // could also be passed in
       mybbox[d][0] = 0;
       mybbox[d][1] = 0;
       mynghostzones[d] = 0;
     }
     for (int d=num_dims; d<dim; ++d) {
       mylsh[d] = 1;
+      myash[d] = 1;
       mybbox[d][0] = 0;
       mybbox[d][1] = 0;
       mynghostzones[d] = 0;
@@ -1157,7 +1160,8 @@ namespace CarpetReduce {
     Initialise (cgh, proc, num_inarrays * num_outvals, myoutvals, outtype,
                 mycounts, red);
     if (do_local_reduction) {
-      Reduce   (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
+      Reduce   (cgh, proc,
+                &mylsh[0], &myash[0], &mybbox[0][0], &mynghostzones[0],
                 num_inarrays, myinarrays, tfacs, intype,
                 num_inarrays * num_outvals, myoutvals, outtype,
                 mycounts, red,
@@ -1480,8 +1484,10 @@ namespace CarpetReduce {
                   
                   
                   assert (grpdim<=dim);
-                  int lsh[dim], bbox[2*dim], nghostzones[dim];
+                  int lsh[dim], ash[dim], bbox[2*dim], nghostzones[dim];
                   ierr = CCTK_GrouplshVI(cgh, grpdim, lsh, vi);
+                  assert (not ierr);
+                  ierr = CCTK_GroupashVI(cgh, grpdim, ash, vi);
                   assert (not ierr);
                   ierr = CCTK_GroupbboxVI(cgh, 2*grpdim, bbox, vi);
                   assert (not ierr);
@@ -1489,21 +1495,24 @@ namespace CarpetReduce {
                   assert (not ierr);
                   for (int d=0; d<grpdim; ++d) {
                     assert (lsh[d]>=0);
+                    assert (ash[d]>=lsh[d]);
                     assert (nghostzones[d]>=0);
                     int const nb = !bbox[2*d] + !bbox[2*d+1];
                     assert (nb*nghostzones[d]<=lsh[d]);
                   }
                   
-                  vect<int,dim> mylsh, mynghostzones;
+                  vect<int,dim> mylsh, myash, mynghostzones;
                   vect<vect<int,2>,dim> mybbox;
                   for (int d=0; d<grpdim; ++d) {
                     mylsh[d] = lsh[d];
+                    myash[d] = ash[d];
                     mybbox[d][0] = bbox[2*d  ];
                     mybbox[d][1] = bbox[2*d+1];
                     mynghostzones[d] = nghostzones[d];
                   }
                   for (int d=grpdim; d<dim; ++d) {
                     mylsh[d] = 1;
+                    myash[d] = 1;
                     mybbox[d][0] = 0;
                     mybbox[d][1] = 0;
                     mynghostzones[d] = 0;
@@ -1558,7 +1567,8 @@ namespace CarpetReduce {
                   
                   
                   Reduce (cgh, proc,
-                          &mylsh[0], &mybbox[0][0], &mynghostzones[0],
+                          &mylsh[0], &myash[0],
+                          &mybbox[0][0], &mynghostzones[0],
                           num_invars, inarrays, tfacs, intype,
                           num_invars * num_outvals, myoutvals, outtype,
                           mycounts, red,

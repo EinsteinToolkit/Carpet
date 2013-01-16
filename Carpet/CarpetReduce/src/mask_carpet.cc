@@ -115,7 +115,7 @@ namespace CarpetMask {
           CCTK_LOOP3(CarpetMaskSetup_prolongation,
                      i,j,k,
                      imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+                     cctk_ash[0],cctk_ash[1],cctk_ash[2])
           {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             iweight[ind] &= bmask;
@@ -133,7 +133,7 @@ namespace CarpetMask {
           CCTK_LOOP3(CarpetMaskSetup_restriction,
                      i,j,k,
                      imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+                     cctk_ash[0],cctk_ash[1],cctk_ash[2])
           {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             iweight[ind] &= bmask;
