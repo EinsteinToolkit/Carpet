@@ -164,26 +164,26 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
             }
             
             /* Loop over the points next to boundary */
-            if (verbose) {
-              CCTK_VInfo (CCTK_THORNSTRING,
-                          "Setting non-staggered boundary points in direction %d face %d to weight 1/2 on level %d", d, f, reflevel);
-            }
             unsigned const bits = BMSK(cctk_dim);
             unsigned bmask = 0;
             for (unsigned b=0; b<bits; ++b) {
-              if (BGET(b,d) == f) {
+              if (BGET(b,d) == !f) {
                 bmask = BSET(bmask, b);
               }
             }
             assert (BCNT(bmask) == bits/2);
+            if (verbose) {
+              CCTK_VInfo (CCTK_THORNSTRING,
+                          "Setting non-staggered boundary points on level %d in direction %d face %d to bmask 0x%x", reflevel, d, f, bmask);
+            }
 #pragma omp parallel
             CCTK_LOOP3(CoordBase_SetupMask_boundary2,
                        i,j,k,
                        bmin[0],bmin[1],bmin[2], bmax[0],bmax[1],bmax[2],
-                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+                       cctk_ash[0],cctk_ash[1],cctk_ash[2])
             {
               int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-              iweight[ind] &= ~bmask;
+              iweight[ind] &= bmask;
             } CCTK_ENDLOOP3(CoordBase_SetupMask_boundary2);
             
           } /* if the domain is not empty */
