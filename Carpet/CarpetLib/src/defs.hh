@@ -113,6 +113,40 @@ enum centering { error_centered, vertex_centered, cell_centered };
 
 
 
+template<typename T>
+inline T div_down(T const x, T const align)
+{
+  assert(x >= 0);
+  assert(align > 0);
+  return x / align;
+}
+
+template<typename T>
+inline T div_up(T const x, T const align)
+{
+  assert(x >= 0);
+  assert(align > 0);
+  return (x + align - 1) / align;
+}
+
+template<typename T>
+inline T align_down(T const x, T const align)
+{
+  assert(x >= 0);
+  assert(align > 0);
+  return div_down(x, align) * align;
+}
+
+template<typename T>
+inline T align_up(T const x, T const align)
+{
+  assert(x >= 0);
+  assert(align > 0);
+  return div_up(x, align) * align;
+}
+
+
+
 // Useful helper
 template<class T>
 inline T square (const T x) { return x*x; }

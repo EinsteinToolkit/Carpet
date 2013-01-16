@@ -39,6 +39,37 @@ double gmem::max_allocated_objects = 0;
 
 
 
+namespace {
+  size_t get_max_cache_linesize()
+  {
+    static size_t max_cache_linesize = 0;
+    if (CCTK_BUILTIN_EXPECT(max_cache_linesize==0, false)) {
+#pragma omp barrier
+#pragma omp master
+      {
+        max_cache_linesize = 1;
+        if (CCTK_IsFunctionAliased("GetCacheInfo1")) {
+          int const num_levels = GetCacheInfo1(NULL, NULL, 0);
+          vector<int> linesizes(num_levels);
+          vector<int> strides  (num_levels);
+          GetCacheInfo1(&linesizes[0], &strides[0], num_levels);
+          for (int level=0; level<num_levels; ++level) {
+            max_cache_linesize =
+              max(max_cache_linesize, size_t(linesizes[level]));
+          }
+        }
+      }
+#pragma omp barrier
+    }
+    assert(max_cache_linesize>0);
+    return max_cache_linesize;
+  }
+  
+  bool need_alignment = false;
+}
+
+
+
 // TODO: Make this a plain class instead of a template
 
 template<typename T>
@@ -71,14 +102,17 @@ mem (size_t const vectorlength, size_t const nelems,
     }
     try {
       // TODO: use posix_memalign instead, if available
-      size_t const alignment = CCTK_REAL_VEC_SIZE * sizeof(T);
+      size_t const max_cache_linesize = get_max_cache_linesize();
+      size_t const vector_size = CCTK_REAL_VEC_SIZE * sizeof(T);
+      size_t const alignment = align_up(max_cache_linesize, vector_size);
+      // Safety check
+      assert(alignment <= 1024);
       // Assume optimistically that operator new returns well-aligned
       // pointers
-      static bool need_alignment = false;
       if (not need_alignment) {
         // Operator new works fine; just call it
         storage_base_ = new T [vectorlength * nelems];
-        need_alignment = size_t (storage_base_) & (alignment-1);
+        need_alignment = size_t(storage_base_) & (alignment-1);
         if (need_alignment) {
           // This pointer is no good; try again with manual alignment
           delete [] storage_base_;
@@ -89,23 +123,13 @@ mem (size_t const vectorlength, size_t const nelems,
       } else {
       allocate_with_alignment:
         // Operator new needs manual alignment
-        size_t const max_padding = CCTK_REAL_VEC_SIZE - 1;
+        size_t const max_padding = alignment / sizeof(T) - 1;
         storage_base_ = new T [vectorlength * nelems + max_padding];
-        storage_ = (T*) (size_t (storage_base_ + max_padding) & -alignment);
-#warning "TODO"
-        if (not (storage_ >= storage_base_ and
-                 storage_ <= storage_base_ + max_padding)) {
-          cerr << "alignment=" << alignment << "\n"
-               << "max_padding=" << max_padding << "\n"
-               << "vectorlength=" << vectorlength << "\n"
-               << "nelems=" << nelems << "\n"
-               << "storage_base_=" << storage_base_ << "\n"
-               << "storage_=" << storage_ << "\n";
-        }
-        assert(storage_ >= storage_base_ and
-               storage_ <= storage_base_ + max_padding);
+        storage_ = (T*) (size_t(storage_base_ + max_padding) & ~(alignment-1));
+        assert(size_t(storage_) >= size_t(storage_base_              ) and
+               size_t(storage_) <= size_t(storage_base_ + max_padding));
       }
-      assert (not (size_t (storage_) & (alignment-1)));
+      assert(not (size_t(storage_) & (alignment-1)));
       owns_storage_ = true;
     } catch (...) {
       T Tdummy;

@@ -8,146 +8,130 @@
 
 template<int D>
 vect<int,D>
-pad_shape (bbox<int,D> const& extent)
+pad_shape(bbox<int,D> const& extent)
 {
-  assert (all (extent.shape() >= 0));
+  assert(all(extent.shape() >= 0));
   return pad_shape(extent.shape() / extent.stride());
 }
 
 
 
+namespace {
+  struct cache_info_t {
+    int linesize;
+    int stride;
+  };
+  bool have_cache_info = false;
+  vector<cache_info_t> cache_info;
+}
+
 template<int D>
 vect<int,D>
-pad_shape (vect<int,D> const& shape)
+pad_shape(vect<int,D> const& shape)
 {
   DECLARE_CCTK_PARAMETERS;
   
-  assert (all(shape>=0));
+  assert(all(shape>=0));
   
-  static bool have_cacheinfo = false;
-  static vector<cacheinfo_t> cacheinfo;
-  if (not have_cacheinfo) {
-    // Ignore L1 caches that are probably too small to be useful (e.g.
-    // on Intel or AMD processors)
-    // TODO: make this a parameter
-    if (D1size >= 128*1024) {
-      cacheinfo.push_back(cacheinfo_t(D1size, D1linesize, D1assoc));
-    }
-#if 0
-    // TODO: this is too simplistic:
-    // Add page size as a cache
-    if (pagesize>0) {
-      cacheinfo.push_back(cacheinfo_t(pagesize));
-    }
-#endif
-    if (L2size>0) {
-      cacheinfo.push_back(cacheinfo_t(L2size, L2linesize, L2assoc));
-    }
-    if (L3size>0) {
-      cacheinfo.push_back(cacheinfo_t(L3size, L3linesize, L3assoc));
-    }
-    if (TLB_D1entries>0) {
-      ptrdiff_t const TLB_D1size = TLB_D1entries * TLB_D1pagesize * TLB_D1assoc;
-      cacheinfo.push_back(cacheinfo_t(TLB_D1size, TLB_D1pagesize, TLB_D1assoc));
-    }
-    if (TLB_L2entries>0) {
-      ptrdiff_t const TLB_L2size = TLB_L2entries * TLB_L2pagesize * TLB_L2assoc;
-      cacheinfo.push_back(cacheinfo_t(TLB_L2size, TLB_L2pagesize, TLB_L2assoc));
-    }
-    
-    // TODO: sort caches by their sizes
-    for (size_t n=0; n<cacheinfo.size(); ++n) {
-      cacheinfo_t const& ci = cacheinfo.at(n);
-      if (n>0) {
-        // Ensure that the cache size is larger than the next lower
-        // cache size
-        assert (ci.size() > cacheinfo.at(n-1).size());
-        // Ensure that the cache line size is evenly divided by the
-        // next lower cache line size
-        assert (ci.linesize() % cacheinfo.at(n-1).linesize() == 0);
-        assert (ci.stride() > cacheinfo.at(n-1).stride());
+  // Don't pad empty arrays; we don't want to handle all the special
+  // cases for this below
+  if (any(shape==0)) return shape;
+  
+  if (CCTK_BUILTIN_EXPECT(not have_cache_info, false)) {
+#pragma omp barrier
+#pragma omp master
+    {
+      if (CCTK_IsFunctionAliased("GetCacheInfo1")) {
+        int const num_levels = GetCacheInfo1(NULL, NULL, 0);
+        vector<int> linesizes(num_levels);
+        vector<int> strides  (num_levels);
+        GetCacheInfo1(&linesizes[0], &strides[0], num_levels);
+        cache_info.resize(num_levels);
+        for (int level=0; level<num_levels; ++level) {
+          cache_info[level].linesize = linesizes[level];
+          cache_info[level].stride   = strides  [level];
+        }
       }
-    } // for cacheinfo
-    
-    have_cacheinfo = true;
-  } // if not have_cacheinfo
+      have_cache_info = true;
+    }
+#pragma omp barrier
+  }
   
   vect<int,D> padded_shape;
   int accumulated_npoints = 1;
   for (int d=0; d<D; ++d) {
     int npoints = shape[d];
     
-    if (d == 0) {
 #if VECTORISE && VECTORISE_ALIGNED_ARRAYS
+    if (d == 0) {
       // Pad array to a multiple of the vector size. Note that this is
       // a hard requirement, so that we can emit aligned load/store
       // operations.
-      npoints = align_up (npoints, CCTK_REAL_VEC_SIZE);
-#endif
-      if (vector_size > 0) {
-        npoints = align_up (npoints, vector_size);
-      }
+      npoints = align_up(npoints, CCTK_REAL_VEC_SIZE);
     }
     
-    for (size_t n=0; n<cacheinfo.size(); ++n) {
-      cacheinfo_t const& ci = cacheinfo.at(n);
-      
-      // Pad array in this direction to a multiple of this cache line
-      // size
-      assert (ci.linesize() % sizeof(CCTK_REAL) == 0);
-      int const linesize = ci.linesize() / sizeof(CCTK_REAL);
-      assert (is_power_of_2(linesize));
-      if (npoints * accumulated_npoints >= linesize) {
-        // The extent is at least one cache line long: round up to the
-        // next full cache line
-        npoints = align_up (npoints, linesize);
-      } else {
-#if 0
-        // The extent is less than one cache line long: Ensure that
-        // the array size divides the cache line size evenly by
-        // rounding to the next power of 2
-        // NOTE: This is disabled, since this would align everything
-        // to powers of 2.
-        npoints = next_power_of_2(npoints);
+    if (pad_to_cachelines) {
+      for (size_t cache_level=0; cache_level<cache_info.size(); ++cache_level) {
+        // Pad array in this direction to a multiple of this cache
+        // line size
+        int const cache_linesize = cache_info[cache_level].linesize;
+        int const cache_stride   = cache_info[cache_level].stride;
+        
+        assert(cache_linesize % sizeof(CCTK_REAL) == 0);
+        int const linesize = cache_linesize / sizeof(CCTK_REAL);
+        assert(is_power_of_2(linesize));
+        if (npoints * accumulated_npoints < linesize) {
+          // The extent is less than one cache line long: Ensure that
+          // the array size divides the cache line size evenly by
+          // rounding to the next power of 2
+          npoints = next_power_of_2(npoints);
+        } else {
+          // The extent is at least one cache line long: round up to
+          // the next full cache line
+          int total_npoints = npoints * accumulated_npoints;
+          total_npoints = align_up(total_npoints, linesize);
+          assert(total_npoints % accumulated_npoints == 0);
+          npoints = total_npoints / accumulated_npoints;
+        }
+        
+        // Avoid multiples of the cache stride
+        if (cache_stride > 0) {
+          assert(cache_stride % sizeof(CCTK_REAL) == 0);
+          int const stride = cache_stride / sizeof(CCTK_REAL);
+          if (npoints * accumulated_npoints % stride == 0) {
+            assert(stride > linesize);
+            int total_npoints = npoints * accumulated_npoints;
+            total_npoints += max(linesize, accumulated_npoints);
+            assert(total_npoints % accumulated_npoints == 0);
+            npoints = total_npoints / accumulated_npoints;
+          }
+        }
+      } // for cache_level
+    }   // if pad_to_cachelines
 #endif
-      }
-      
-      // Avoid multiples of the cache stride
-      assert (ci.stride() % sizeof(CCTK_REAL) == 0);
-      int const stride = ci.stride() / sizeof(CCTK_REAL);
-      if (npoints * accumulated_npoints % stride == 0) {
-        assert (linesize < stride);
-        npoints += linesize;
-      }
-      
-    } // for cacheinfo
     
     padded_shape[d] = npoints;
     accumulated_npoints *= npoints;
   }
-  assert (prod (padded_shape) == accumulated_npoints);
+  assert(prod(padded_shape) == accumulated_npoints);
   
   // self-check
   for (int d=0; d<D; ++d) {
-    assert (padded_shape[d] >= shape[d]);
+    assert(padded_shape[d] >= shape[d]);
 #if VECTORISE && VECTORISE_ALIGNED_ARRAYS
     if (d == 0) {
-      assert (padded_shape[d] % CCTK_REAL_VEC_SIZE == 0);
+      assert(padded_shape[d] % CCTK_REAL_VEC_SIZE == 0);
     }
 #endif
-    if (vector_size > 0) {
-      if (d == 0) {
-        assert (padded_shape[d] % vector_size == 0);
-      }
-    }
-    
-    // TODO: add self-checks for the other requirements as well
   }
+  
+  // Safety check
+  assert(prod(padded_shape) <= 2 * prod(shape) + 1000);
   
   if (verbose) {
     ostringstream buf;
     buf << "padding " << shape << " to " << padded_shape;
-    CCTK_INFO (buf.str().c_str());
+    CCTK_INFO(buf.str().c_str());
   }
   
   return padded_shape;
@@ -155,8 +139,8 @@ pad_shape (vect<int,D> const& shape)
 
 
 
-template vect<int,3> pad_shape (bbox<int,3> const& extent);
-template vect<int,3> pad_shape (vect<int,3> const& shape);
+template vect<int,3> pad_shape(bbox<int,3> const& extent);
+template vect<int,3> pad_shape(vect<int,3> const& shape);
 
-template vect<int,4> pad_shape (bbox<int,4> const& extent);
-template vect<int,4> pad_shape (vect<int,4> const& shape);
+template vect<int,4> pad_shape(bbox<int,4> const& extent);
+template vect<int,4> pad_shape(vect<int,4> const& shape);

@@ -77,3 +77,10 @@ CCTK_INT FUNCTION GetBoundarySpecification \
    CCTK_INT OUT ARRAY is_staggered, \
    CCTK_INT OUT ARRAY shiftout)
 USES FUNCTION GetBoundarySpecification
+
+
+
+CCTK_INT FUNCTION GetCacheInfo1(CCTK_INT ARRAY OUT linesizes,           \
+                                CCTK_INT ARRAY OUT strides,             \
+                                CCTK_INT IN max_num_cache_levels)
+USES FUNCTION GetCacheInfo1

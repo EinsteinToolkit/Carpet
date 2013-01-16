@@ -80,10 +80,10 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
 #endif
     
     cout << "Memory statistics from CarpetLib:" << eol
-         << "   Current number of objects: " << gmem::total_allocated_objects << eol
+         << "   Current number of objects: " << size_t(gmem::total_allocated_objects) << eol
          << "   Current allocated memory:  "
          << setprecision(3) << gmem::total_allocated_bytes / gmem::MEGA << " MB" << eol
-         << "   Maximum number of objects: " << gmem::max_allocated_objects << eol
+         << "   Maximum number of objects: " << size_t(gmem::max_allocated_objects) << eol
          << "   Maximum allocated memory:  "
          << setprecision(3) << gmem::max_allocated_bytes / gmem::MEGA << " MB" << eol
          << "   Current administrative memory: "
