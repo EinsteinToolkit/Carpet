@@ -765,8 +765,14 @@ void lc_selftest_set(lc_control_t const* restrict control,
       assert(i>=control->loop.min.v[0] and i<control->loop.max.v[0]);
       ptrdiff_t const ipos = ind(control->ash, i,j,k);
       unsigned char& elt = control->selftest_array[ipos];
+#ifdef _CRAYC
+      // Cray C++ compiler 8.1.2 segfaults on atomic
+#pragma omp critical(lc_selftest_set)
+      ++elt;
+#else
 #pragma omp atomic
       ++elt;
+#endif
       if (elt!=1) {
 #pragma omp critical
         {
