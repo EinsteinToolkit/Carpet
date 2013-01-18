@@ -256,7 +256,7 @@ namespace CarpetLib {
         typedef typename VP::vector_t VT;
         ptrdiff_t i = coeffs::imin;
         T res = typ::fromreal (0);
-        if (coeffs::ncoeffs >= VP::size()) {
+        if (coeffs::ncoeffs >= ptrdiff_t(VP::size())) {
           VT vres =
             VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
                     VP::loadu(interp0<T,ORDER> (p + i)));
@@ -324,17 +324,18 @@ namespace CarpetLib {
             i += VP::size();
           }
 #else
-          for (; i + VP::size() <= coeffs::imax; i += VP::size()) {
+          for (; i + VP::size() <= ptrdiff_t(coeffs::imax); i += VP::size()) {
             vres = VP::add(vres,
                            VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
                                    VP::loadu(interp0<T,ORDER> (p + i))));
           }
 #endif
-          for (int d=0; d<VP::size(); ++d) {
+          for (int d=0; d<ptrdiff_t(VP::size()); ++d) {
             res += VP::elt(vres,d);
           }
         }
-        assert (i == coeffs::imax - coeffs::ncoeffs % VP::size());
+        assert (i == (ptrdiff_t(coeffs::imax) -
+                      ptrdiff_t(coeffs::ncoeffs % VP::size())));
         for (i = coeffs::imax - coeffs::ncoeffs % VP::size();
              i < coeffs::imax;
              ++ i)
