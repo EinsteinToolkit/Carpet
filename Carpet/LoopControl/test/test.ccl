@@ -1,0 +1,4 @@
+TEST test-minkowski-carpet-1lev
+{
+  NPROCS 2
+}
