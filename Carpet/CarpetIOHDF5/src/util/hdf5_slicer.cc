@@ -408,7 +408,7 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
   hsize_t outslabcount[3];
   double slice_origin[3], slice_delta[3];
   int slice_iorigin[3], slice_cctk_nghostzones[3];
-  int j = 0;
+  hsize_t j = 0;
   for (int i = 0; i < 3; i++) {
     if (slab_coord[i] != PARAMETER_UNSET) {
       slabstart[2-i] = (h5size_t) ((slab_coord[i] - origin[i]) / delta[i] + 0.5);
