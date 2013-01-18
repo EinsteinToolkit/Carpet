@@ -443,11 +443,9 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           }
 
           hsize_t shape[dim];
-          hssize_t origin[dim];
           hsize_t hyperslab_start[dim], hyperslab_count[dim];
           for (int d = 0; d < group.dim; ++d) {
             assert (group.dim-1-d>=0 and group.dim-1-d<dim);
-            origin[group.dim-1-d] = (bbox.lower() / bbox.stride())[d];
             shape[group.dim-1-d]  = processor_component->padded_shape()[d];
             assert (all (processor_component->shape() ==
                          bbox.shape() / bbox.stride()));
@@ -456,7 +454,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           }
 
           // Write the component as an individual dataset
-          hid_t plist, dataspace, dataset, index_dataset;
+          hid_t plist, dataspace, dataset, index_dataset = -1;
           HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
           // enable compression if requested
           const int compression_lvl = request->compression_level >= 0 ?
@@ -638,11 +636,9 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
 
       // Get the shape of the HDF5 dataset (in Fortran index order)
       hsize_t shape[dim];
-      hssize_t origin[dim];
       hsize_t hyperslab_start[dim], hyperslab_count[dim];
       for (int d = 0; d < group.dim; ++d) {
         assert (group.dim-1-d>=0 and group.dim-1-d<dim);
-        origin[group.dim-1-d] = (bbox.lower() / bbox.stride())[d];
         shape[group.dim-1-d]  = processor_component->padded_shape()[d];
         assert (all (processor_component->shape() ==
                      bbox.shape() / bbox.stride()));
@@ -651,7 +647,7 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       }
 
       // Write the component as an individual dataset
-      hid_t plist, dataspace, dataset, index_dataset;
+      hid_t plist, dataspace, dataset, index_dataset = -1;
       HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
       // enable compression if requested
       const int compression_lvl = request->compression_level >= 0 ?
