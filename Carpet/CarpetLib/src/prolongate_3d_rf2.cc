@@ -268,66 +268,66 @@ namespace CarpetLib {
           switch (coeffs::ncoeffs / VP::size()) {
             // Note that all case statements fall through
           case 12:
-            vres = VP::add(vres,
-                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
+                            VP::loadu(interp0<T,ORDER> (p + i)),
+                            vres);
             i += VP::size();
           case 11:
-            vres = VP::add(vres,
-                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
+                            VP::loadu(interp0<T,ORDER> (p + i)),
+                            vres);
             i += VP::size();
           case 10:
-            vres = VP::add(vres,
-                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
+                            VP::loadu(interp0<T,ORDER> (p + i)),
+                            vres);
             i += VP::size();
           case 9:
-            vres = VP::add(vres,
-                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
+                            VP::loadu(interp0<T,ORDER> (p + i)),
+                            vres);
             i += VP::size();
           case 8:
-            vres = VP::add(vres,
-                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
+                            VP::loadu(interp0<T,ORDER> (p + i)),
+                            vres);
             i += VP::size();
           case 7:
-            vres = VP::add(vres,
-                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
+                            VP::loadu(interp0<T,ORDER> (p + i)),
+                            vres);
             i += VP::size();
           case 6:
-            vres = VP::add(vres,
-                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
+                            VP::loadu(interp0<T,ORDER> (p + i)),
+                            vres);
             i += VP::size();
           case 5:
-            vres = VP::add(vres,
-                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
+                            VP::loadu(interp0<T,ORDER> (p + i)),
+                            vres);
             i += VP::size();
           case 4:
-            vres = VP::add(vres,
-                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
+                            VP::loadu(interp0<T,ORDER> (p + i)),
+                            vres);
             i += VP::size();
           case 3:
-            vres = VP::add(vres,
-                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
+                            VP::loadu(interp0<T,ORDER> (p + i)),
+                            vres);
             i += VP::size();
           case 2:
-            vres = VP::add(vres,
-                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
+                            VP::loadu(interp0<T,ORDER> (p + i)),
+                            vres);
             i += VP::size();
           }
 #else
           for (; i + VP::size() <= ptrdiff_t(coeffs::imax); i += VP::size()) {
-            vres = VP::add(vres,
-                           VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
-                                   VP::loadu(interp0<T,ORDER> (p + i))));
+            vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
+                            VP::loadu(interp0<T,ORDER> (p + i)),
+                            vres);
           }
 #endif
           for (int d=0; d<ptrdiff_t(VP::size()); ++d) {
