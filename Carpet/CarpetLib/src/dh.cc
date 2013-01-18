@@ -962,7 +962,6 @@ regrid (bool const do_init)
                     "Refinement factors must be integer multiples of each other");
           i2vect const reffact =
             i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
-          ivect const reffact1 = h.reffacts.at(rl) / h.reffacts.at(orl);
           
           for (int cc = 0; cc < h.components(orl); ++ cc) {
             full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
@@ -1132,11 +1131,7 @@ regrid (bool const do_init)
           // Fine grids
           ibset const& fine_level = allactive;
           
-          ivect const izero = ivect (0);
-          ivect const ione  = ivect (1);
-          
           assert (all (h.reffacts.AT(rl) % h.reffacts.AT(orl) == 0));
-          ivect const reffact = h.reffacts.AT(rl) / h.reffacts.AT(orl);
           
           vect<vect<ibset,2>,dim> all_fine_boundary;
           
@@ -1312,7 +1307,6 @@ regrid (bool const do_init)
               // Unit vector
               ivect const idir = ivect::dir(dir);
               ibbox const coarse_faces = coarse_ext.shift(-idir,2);
-              ibbox const fine_faces = h.baseextent(ml, rl).shift(-idir,2);
               for (int face = 0; face < 2; ++ face) {
                 
                 srpvect fast_dboxes::* const fast_ref_refl_sendrecv =
