@@ -188,12 +188,8 @@ namespace CarpetIOBasic {
     
     if (TimeToOutput (cctkGH)) {
       
-      int oldprec;
-      ios_base::fmtflags oldflags;
-      if (CCTK_MyProc(cctkGH) == 0) {
-        oldprec = cout.precision();
-        oldflags = cout.flags();
-      }
+      int const oldprec = cout.precision();
+      ios_base::fmtflags const oldflags = cout.flags();
       
       if (output_count ++ % outHeader_every == 0 && outHeader_every != -1) {
         // Print the header
@@ -225,10 +221,8 @@ namespace CarpetIOBasic {
       
       last_output = cctk_iteration;
       
-      if (CCTK_MyProc(cctkGH) == 0) {
-        cout.precision (oldprec);
-        cout.setf (oldflags);
-      }
+      cout.precision (oldprec);
+      cout.setf (oldflags);
       
     } // if time to output
     
