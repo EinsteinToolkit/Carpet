@@ -51,6 +51,7 @@ namespace CarpetLib {
                        ibbox3 const& restrict regbbox,
                        void *const extraargs)
   {
+#ifdef HRSCC_GLL_ELEMENT_HH
     assert(not extraargs);
     
     static_assert(ORDER>=0, "ORDER must be non-negative");
@@ -145,7 +146,6 @@ namespace CarpetLib {
     assert(all(regext % (ORDER+1) == 0));
     
     // Loop over coarse region
-#ifdef HRSCC_GLL_ELEMENT_HH
 #pragma omp parallel for collapse(3)
     // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
     for (/*ptrdiff_t*/int k=0; k<regkext; k+=ORDER+1) {
@@ -157,11 +157,11 @@ namespace CarpetLib {
         }
       }
     }
+
 #else
     // HRSCCore is not available
     assert(0);
 #endif
-    
   }
   
   

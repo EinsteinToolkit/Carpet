@@ -51,6 +51,7 @@ namespace CarpetLib {
                          ibbox3 const& restrict regbbox,
                          void* const extraargs)
   {
+#ifdef HRSCC_GLL_ELEMENT_HH
     assert(not extraargs);
     
     static_assert(ORDER>=0, "ORDER must be non-negative");
@@ -160,7 +161,6 @@ namespace CarpetLib {
       int const dststr2d[2] = {dstdj, dstdk};
       
       // Loop over fine region
-#ifdef HRSCC_GLL_ELEMENT_HH
       ptrdiff_t const i=0;
 #pragma omp parallel for collapse(2)
       // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
@@ -171,10 +171,6 @@ namespace CarpetLib {
              &dst[DSTIND3(dstioff+2*i, dstjoff+2*j, dstkoff+2*k)], dststr2d);
         }
       }
-#else
-      // HRSCCore is not available
-      assert(0);
-#endif
       
     } else if (regext[1] == 1) {
       // 2D prolongation on y face
@@ -200,7 +196,6 @@ namespace CarpetLib {
       int const dststr2d[2]= {dstdi, dstdk};
       
       // Loop over fine region
-#ifdef HRSCC_GLL_ELEMENT_HH
       ptrdiff_t const j=0;
 #pragma omp parallel for collapse(2)
       // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
@@ -211,10 +206,6 @@ namespace CarpetLib {
              &dst[DSTIND3(dstioff+2*i, dstjoff+2*j, dstkoff+2*k)], dststr2d);
         }
       }
-#else
-      // HRSCCore is not available
-      assert(0);
-#endif
       
     } else if (regext[2] == 1) {
       // 2D prolongation on z face
@@ -240,7 +231,6 @@ namespace CarpetLib {
       int const dststr2d[2]= {dstdi, dstdj};
       
       // Loop over fine region
-#ifdef HRSCC_GLL_ELEMENT_HH
       ptrdiff_t const k=0;
 #pragma omp parallel for collapse(2)
       // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
@@ -251,10 +241,6 @@ namespace CarpetLib {
              &dst[DSTIND3(dstioff+2*i, dstjoff+2*j, dstkoff+2*k)], dststr2d);
         }
       }
-#else
-      // HRSCCore is not available
-      assert(0);
-#endif
       
     } else {
       // 3D prolongation
@@ -278,7 +264,6 @@ namespace CarpetLib {
       int const dststr[3] = {dstdi, dstdj, dstdk};
       
       // Loop over fine region
-#ifdef HRSCC_GLL_ELEMENT_HH
 #pragma omp parallel for collapse(3)
       // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
       for (/*ptrdiff_t*/int k=0; k<regkext; k+=2*(ORDER+1)) {
@@ -290,12 +275,13 @@ namespace CarpetLib {
           }
         }
       }
-#else
-      // HRSCCore is not available
-      assert(0);
-#endif
       
     }
+    
+#else
+    // HRSCCore is not available
+    assert(0);
+#endif
   }
   
   
