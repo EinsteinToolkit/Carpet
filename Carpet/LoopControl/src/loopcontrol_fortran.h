@@ -73,13 +73,13 @@
 
 
 #define LC_LOOP3STR(name, i,j,k, imin_,jmin_,kmin_, imax_,jmax_,kmax_,  \
-                    iash_,jash_,kash_, di_)                             \
+                    iash_,jash_,kash_, imin,imax, di_)                  \
    name/**/_ash1 = (iash_)                                              && \
    name/**/_ash2 = (jash_)                                              && \
    name/**/_ash3 = (kash_)                                              && \
-   name/**/_aligh1 = (di_)                                              && \
-   name/**/_aligh2 = 1                                                  && \
-   name/**/_aligh3 = 1                                                  && \
+   name/**/_align1 = (di_)                                              && \
+   name/**/_align2 = 1                                                  && \
+   name/**/_align3 = 1                                                  && \
                                                                         && \
    call lc_stats_init(name/**/stats, #name)                             && \
    call lc_control_init(name/**/control, name/**/stats,                 \
@@ -129,14 +129,20 @@
 
 
 /* Replace CCTK_LOOP macros */
-#undef CCTK_LOOP3_DECLARE
-#undef CCTK_LOOP3_OMP_PRIVATE
-#undef CCTK_LOOP3
-#undef CCTK_ENDLOOP3
-#define CCTK_LOOP3_DECLARE     LC_LOOP3_DECLARE
-#define CCTK_LOOP3_OMP_PRIVATE LC_LOOP3_OMP_PRIVATE
-#define CCTK_LOOP3             LC_LOOP3
-#define CCTK_ENDLOOP3          LC_ENDLOOP3
+#if (!defined CCTK_LOOP3STR_NORMAL_DECLARE ||           \
+     !defined CCTK_ENDLOOP3STR_NORMAL_OMP_PRIVATE ||    \
+     !defined CCTK_LOOP3STR_NORMAL ||                   \
+     !defined CCTK_ENDLOOP3STR_NORMAL)
+#  error "internal error"
+#endif
+#undef CCTK_LOOP3STR_NORMAL_DECLARE
+#undef CCTK_LOOP3STR_NORMAL_OMP_PRIVATE
+#undef CCTK_LOOP3STR_NORMAL
+#undef CCTK_ENDLOOP3STR_NORMAL
+#define CCTK_LOOP3STR_NORMAL_DECLARE     LC_LOOP3_DECLARE
+#define CCTK_LOOP3STR_NORMAL_OMP_PRIVATE LC_LOOP3_OMP_PRIVATE
+#define CCTK_LOOP3STR_NORMAL             LC_LOOP3
+#define CCTK_ENDLOOP3STR_NORMAL          LC_ENDLOOP3
 
 
 
