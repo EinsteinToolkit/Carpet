@@ -1452,11 +1452,13 @@ namespace Carpet {
       int alldims = 0;
       CCTK_REAL mycost = 0;
       CCTK_REAL totalcost = 1;
-      // Prefer to split in the z direction
-      for (int d=dim-1; d>=0; --d) {
+      for (int d=0; d<dim; ++d) {
         if (not dims[d]) {
           ++ alldims;
           CCTK_REAL const thiscost = rcost[d];
+          // Prefer to split in the z direction
+          // (Choose this dimension even if it is slightly worse than
+          // a previous dimension)
           if (thiscost >= 0.999999 * mycost) {
             mydim = d;
             mycost = thiscost;
@@ -1472,7 +1474,9 @@ namespace Carpet {
       // Choose a number of slices for this direction
       CCTK_REAL const mycost1 =
         mycost * pow(nprocs / totalcost, CCTK_REAL(1) / alldims);
-      nslices = min (nprocs, int (floor (mycost1 + CCTK_REAL(0.5))));
+      // Round up, so that we use more slices in this direction than
+      // in the left-over directions
+      nslices = min (nprocs, int (lrint (ceil (mycost1))));
     }
     assert (nslices <= nprocs);
     if (recompose_verbose) cout << "SRMAR " << mydim << " nprocs " << nprocs << endl;
