@@ -510,15 +510,15 @@ inline int minloc1 (const vect<T,D>& a)
 
 /** Return the n-dimensional linear array index.  */
 template<typename T,int D>
-inline T index (const vect<T,D>& lsh, const vect<T,D>& ind)
+inline T index (const vect<T,D>& ash, const vect<T,D>& ind)
 {
   T r(0);
   for (int d=D-1; d>=0; --d) {
-    ASSERT_VECT (lsh[d]>=0);
+    ASSERT_VECT (ash[d]>=0);
     // Be generous, and allow relative indices which may be negtive
-    // ASSERT_VECT (ind[d]>=0 and ind[d]<lsh[d]);
-    ASSERT_VECT (abs(ind[d])<=lsh[d]);
-    r = r * lsh[d] + ind[d];
+    // ASSERT_VECT (ind[d]>=0 and ind[d]<ash[d]);
+    ASSERT_VECT (abs(ind[d])<=ash[d]);
+    r = r * ash[d] + ind[d];
   }
   return r;
 }
