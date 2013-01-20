@@ -353,7 +353,7 @@ namespace Carpet {
     
     if (CCTK_QueryGroupStorageI(cctkGH, group)) {
       
-      return &groupdata.AT(group).info.lsh[dir];
+      return &groupdata.AT(group).info.ash[dir];
       
     } else {
       
