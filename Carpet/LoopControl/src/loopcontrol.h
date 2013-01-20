@@ -129,34 +129,34 @@ extern "C" {
 #if VECTORISE_ALIGNED_ARRAYS
   /* Arrays are aligned: fmin0 is the aligned loop boundary; keep it,
      and set up imin to be the intended loop boundary */
-#  define LC_ALIGN(i,j,k)                                               \
-  ptrdiff_t const lc_imin = lc_max(lc_control.loop.min.v[0], lc_fmin0); \
-  ptrdiff_t const lc_imax = lc_fmax0;
+#  define LC_ALIGN(i,j,k, imin,imax)                                    \
+  ptrdiff_t const imin = lc_max(lc_control.loop.min.v[0], lc_fmin0);    \
+  ptrdiff_t const imax = lc_fmax0;
 #else
   /* Arrays are not aligned: fine.min[0] and fine.max[0] are the
      intended loop boundaries; override fmin0 and fmax0 to be aligned,
      and set imin and imax; this may move the fine loop boundaries
      except at outer boundaries to avoid partial stores */
-#  define LC_ALIGN(i,j,k)                                               \
+#  define LC_ALIGN(i,j,k, imin,imax)                                    \
   lc_fmin0 = lc_control.fine.min.v[0];                                  \
   lc_fmax0 = lc_control.fine.max.v[0];                                  \
-  ptrdiff_t lc_imin = lc_fmin0;                                         \
-  ptrdiff_t lc_imax = lc_fmax0;                                         \
+  ptrdiff_t imin = lc_fmin0;                                            \
+  ptrdiff_t imax = lc_fmax0;                                            \
   int const lc_fmin0_is_outer = lc_fmin0 == lc_control.loop.min.v[0];   \
   int const lc_fmax0_is_outer = lc_fmax0 == lc_control.loop.max.v[0];   \
   ptrdiff_t const lc_ipos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);     \
   ptrdiff_t const lc_ioffset = lc_ipos % lc_align0;                     \
   lc_fmin0 -= lc_ioffset;                                               \
   if (!lc_fmax0_is_outer) lc_fmax0 -= lc_ioffset;                       \
-  if (!lc_fmin0_is_outer) lc_imin = lc_fmin0;                           \
-  if (!lc_fmax0_is_outer) lc_imax = lc_fmax0;
+  if (!lc_fmin0_is_outer) imin = lc_fmin0;                              \
+  if (!lc_fmax0_is_outer) imax = lc_fmax0;
 #endif
   
-#define LC_SELFTEST(i,j,k)                                              \
+#define LC_SELFTEST(i,j,k, imin,imax)                                   \
   if (CCTK_BUILTIN_EXPECT(lc_control.selftest_array != NULL, 0)) {      \
     lc_selftest_set(&lc_control,                                        \
                     lc_control.loop.min.v[0], lc_control.loop.max.v[0], \
-                    lc_imin, lc_imax, lc_align0, i, j, k);              \
+                    imin, imax, lc_align0, i, j, k);                    \
   }
   
   
@@ -212,9 +212,9 @@ extern "C" {
         LC_FINE_SETUP(0)                                        \
         LC_FINE_LOOP(k, nk, 2) {                                \
         LC_FINE_LOOP(j, nj, 1) {                                \
-        LC_ALIGN(i,j,k)                                         \
+        LC_ALIGN(i,j,k, imin,imax)                              \
         LC_FINE_LOOP(i, ni, 0) {                                \
-          LC_SELFTEST(i,j,k)                                    \
+          LC_SELFTEST(i,j,k, imin,imax)                         \
           {
         
 #define LC_ENDLOOP3STR_NORMAL(name)                             \
