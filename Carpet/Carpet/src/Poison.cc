@@ -122,7 +122,7 @@ namespace Carpet {
           ivect size(1);
           int const gpdim = groupdata.AT(group).info.dim;
           for (int d=0; d<gpdim; ++d) {
-            size[d] = groupdata.AT(group).info.lsh[d];
+            size[d] = groupdata.AT(group).info.ash[d];
           }
           int const np = prod(size);
           
@@ -193,9 +193,10 @@ namespace Carpet {
         BEGIN_LOCAL_MAP_LOOP(cctkGH, grouptype) {
           BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, grouptype) {
             
-            ivect size(1);
+            ivect size(1), asize(1);
             for (int d=0; d<gpdim; ++d) {
               size[d] = groupdata.AT(group).info.lsh[d];
+              asize[d] = groupdata.AT(group).info.ash[d];
             }
             int const np = prod(size);
             
@@ -209,7 +210,7 @@ namespace Carpet {
                 for (int k=0; k<size[2]; ++k) {
                   for (int j=0; j<size[1]; ++j) {
                     for (int i=0; i<size[0]; ++i) {
-                      int const idx = i + size[0] * (j + size[1] * k);
+                      int const idx = i + asize[0] * (j + asize[1] * k);
                       bool poisoned=false;
                       switch (specific_cactus_type(tp)) {
 #define TYPECASE(N,T)                                                   \

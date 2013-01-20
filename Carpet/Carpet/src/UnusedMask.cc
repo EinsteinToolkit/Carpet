@@ -26,7 +26,7 @@ namespace Carpet {
 #pragma omp parallel
       CCTK_LOOP3(unused_mask_zero, i, j, k,
                  imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+                 cctk_ash[0],cctk_ash[1],cctk_ash[2])
       {
         CCTK_INT i3D = CCTK_GFINDEX3D(cctkGH, i, j, k);
         carpet_unusedpoints_mask[i3D] = 0;
@@ -38,7 +38,7 @@ namespace Carpet {
 #pragma omp parallel
       CCTK_LOOP3(unused_mask_set, i, j, k,
                  imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+                 cctk_ash[0],cctk_ash[1],cctk_ash[2])
       {
         CCTK_INT i3D = CCTK_GFINDEX3D(cctkGH, i, j, k);
         carpet_unusedpoints_mask[i3D] = 1;
