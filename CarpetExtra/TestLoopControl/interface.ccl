@@ -1,0 +1,33 @@
+# Interface definition for thorn TestLoopControl
+
+IMPLEMENTS: TestLoopControl
+
+INHERITS: grid
+
+USES INCLUDE HEADER: loopcontrol.h
+
+
+
+# Convenient way to determine boundary sizes
+CCTK_INT FUNCTION GetBoundarySizesAndTypes \
+  (CCTK_POINTER_TO_CONST IN cctkGH, \
+   CCTK_INT IN size, \
+   CCTK_INT OUT ARRAY bndsize, \
+   CCTK_INT OUT ARRAY is_ghostbnd, \
+   CCTK_INT OUT ARRAY is_symbnd, \
+   CCTK_INT OUT ARRAY is_physbnd)
+REQUIRES FUNCTION GetBoundarySizesAndTypes
+
+
+
+CCTK_REAL csums TYPE=scalar
+{
+  csum_all csum_int csum_bnd csum_intbnd
+} "Result values for C test cases"
+
+CCTK_REAL fsums TYPE=scalar
+{
+  fsum_all fsum_int fsum_bnd fsum_intbnd
+} "Result values for Fortran test cases"
+
+CCTK_INT pointtypes TYPE=GF "Grid function point types"

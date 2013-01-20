@@ -1,0 +1,10 @@
+ActiveThorns = "Boundary CartGrid3D CoordBase CycleClock hwloc IOBasic IOUtil LoopControl PUGH SymBase TestLoopControl"
+
+Cactus::cctk_itlast = 0
+
+IO::out_every     = 1
+IO::out_dir       = $parfile
+IO::out_fileinfo  = "none"
+IO::parfile_write = "no"
+
+IOBasic::outScalar_vars = "TestLoopControl::csums TestLoopControl::fsums"

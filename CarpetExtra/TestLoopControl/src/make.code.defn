@@ -1,0 +1,7 @@
+# Main make.code.defn file for thorn TestLoopControl
+
+# Source files in this directory
+SRCS = TestLoopPointwise.c TestLoopC.c TestLoopFortran.F90
+
+# Subdirectories containing source files
+SUBDIRS = 
