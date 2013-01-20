@@ -10,10 +10,15 @@
 
 #ifdef CCODE
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 
 #include <cctk.h>
+
+#define lc_assert(x) assert(x)
+
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -142,6 +147,9 @@ extern "C" {
   lc_fmax0 = lc_control.fine.max.v[0];                                  \
   ptrdiff_t imin = lc_fmin0;                                            \
   ptrdiff_t imax = lc_fmax0;                                            \
+  lc_assert(lc_fmin0 < lc_fmax0);                                       \
+  lc_assert(lc_fmin0 >= lc_control.loop.min.v[0]);                      \
+  lc_assert(lc_fmax0 <= lc_control.loop.max.v[0]);                      \
   int const lc_fmin0_is_outer = lc_fmin0 == lc_control.loop.min.v[0];   \
   int const lc_fmax0_is_outer = lc_fmax0 == lc_control.loop.max.v[0];   \
   ptrdiff_t const lc_iminpos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);  \
@@ -150,8 +158,12 @@ extern "C" {
   ptrdiff_t const lc_imaxoffset = lc_imaxpos % lc_align0;               \
   lc_fmin0 -= lc_iminoffset;                                            \
   if (!lc_fmax0_is_outer) lc_fmax0 -= lc_imaxoffset;                    \
+  lc_assert(lc_fmin0 < lc_fmax0);                                       \
   if (!lc_fmin0_is_outer) imin = lc_fmin0;                              \
-  if (!lc_fmax0_is_outer) imax = lc_fmax0;
+  if (!lc_fmax0_is_outer) imax = lc_fmax0;                              \
+  lc_assert(imin >= lc_control.loop.min.v[0]);                          \
+  lc_assert(imax <= lc_control.loop.max.v[0]);                          \
+  lc_assert(imin < imax);
 #endif
   
 #define LC_SELFTEST(i,j,k, imin,imax)                                   \
