@@ -144,10 +144,12 @@ extern "C" {
   ptrdiff_t imax = lc_fmax0;                                            \
   int const lc_fmin0_is_outer = lc_fmin0 == lc_control.loop.min.v[0];   \
   int const lc_fmax0_is_outer = lc_fmax0 == lc_control.loop.max.v[0];   \
-  ptrdiff_t const lc_ipos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);     \
-  ptrdiff_t const lc_ioffset = lc_ipos % lc_align0;                     \
-  lc_fmin0 -= lc_ioffset;                                               \
-  if (!lc_fmax0_is_outer) lc_fmax0 -= lc_ioffset;                       \
+  ptrdiff_t const lc_iminpos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);  \
+  ptrdiff_t const lc_iminoffset = lc_iminpos % lc_align0;               \
+  ptrdiff_t const lc_imaxpos = lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);  \
+  ptrdiff_t const lc_imaxoffset = lc_imaxpos % lc_align0;               \
+  lc_fmin0 -= lc_iminoffset;                                            \
+  if (!lc_fmax0_is_outer) lc_fmax0 -= lc_imaxoffset;                    \
   if (!lc_fmin0_is_outer) imin = lc_fmin0;                              \
   if (!lc_fmax0_is_outer) imax = lc_fmax0;
 #endif
