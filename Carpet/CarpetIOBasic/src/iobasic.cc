@@ -430,13 +430,9 @@ namespace CarpetIOBasic {
     BEGIN_GLOBAL_MODE(cctkGH) {
       
       // Remember cout state
-      int oldprec;
-      ios_base::fmtflags oldflags;
-      if (CCTK_MyProc(cctkGH) == 0) {
-        oldprec = cout.precision();
-        oldflags = cout.flags();
-      }
-
+      int const oldprec = cout.precision();
+      ios_base::fmtflags const oldflags = cout.flags();
+      
       // Print vertical separator
       if (CCTK_MyProc(cctkGH) == 0) {
         cout << " |";
@@ -528,10 +524,8 @@ namespace CarpetIOBasic {
       } // not isscalar
       
       // Restore cout state
-      if (CCTK_MyProc(cctkGH) == 0) {
-        cout.precision (oldprec);
-        cout.setf (oldflags);
-      }
+      cout.precision (oldprec);
+      cout.setf (oldflags);
       
     } END_GLOBAL_MODE;
   }
