@@ -8,13 +8,14 @@
 
 
 subroutine TestLoopControlFortran_all(CCTK_ARGUMENTS)
+  use loopcontrol
   implicit none
   DECLARE_CCTK_ARGUMENTS
   DECLARE_CCTK_FUNCTIONS
   DECLARE_CCTK_PARAMETERS
   
   CCTK_LOOP3_ALL_DECLARE(all3)
-  integer   :: i,j,k
+  integer :: i,j,k
   
   call CCTK_INFO("TestLoopControlFortran_all")
   fsum_all = 0
@@ -26,13 +27,14 @@ end subroutine TestLoopControlFortran_all
 
 
 subroutine TestLoopControlFortran_int(CCTK_ARGUMENTS)
+  use loopcontrol
   implicit none
   DECLARE_CCTK_ARGUMENTS
   DECLARE_CCTK_FUNCTIONS
   DECLARE_CCTK_PARAMETERS
   
   CCTK_LOOP3_INT_DECLARE(int3)
-  integer   :: i,j,k
+  integer :: i,j,k
   
   call CCTK_INFO("TestLoopControlFortran_int")
   fsum_int = 0
@@ -44,14 +46,15 @@ end subroutine TestLoopControlFortran_int
 
 
 subroutine TestLoopControlFortran_bnd(CCTK_ARGUMENTS)
+  use loopcontrol
   implicit none
   DECLARE_CCTK_ARGUMENTS
   DECLARE_CCTK_FUNCTIONS
   DECLARE_CCTK_PARAMETERS
   
   CCTK_LOOP3_BND_DECLARE(bnd3)
-  integer   :: i,j,k
-  integer   :: ni,nj,nk
+  integer :: i,j,k
+  integer :: ni,nj,nk
   
   call CCTK_INFO("TestLoopControlFortran_bnd")
   fsum_bnd = 0
@@ -63,14 +66,15 @@ end subroutine TestLoopControlFortran_bnd
 
 
 subroutine TestLoopControlFortran_intbnd(CCTK_ARGUMENTS)
+  use loopcontrol
   implicit none
   DECLARE_CCTK_ARGUMENTS
   DECLARE_CCTK_FUNCTIONS
   DECLARE_CCTK_PARAMETERS
   
   CCTK_LOOP3_INTBND_DECLARE(intbnd3)
-  integer   :: i,j,k
-  integer   :: ni,nj,nk
+  integer :: i,j,k
+  integer :: ni,nj,nk
   
   call CCTK_INFO("TestLoopControlFortran_intbnd")
   fsum_intbnd = 0
@@ -82,6 +86,7 @@ end subroutine TestLoopControlFortran_intbnd
 
 
 subroutine TestLoopControlFortran(CCTK_ARGUMENTS)
+  use loopcontrol
   implicit none
   DECLARE_CCTK_ARGUMENTS
   DECLARE_CCTK_FUNCTIONS
