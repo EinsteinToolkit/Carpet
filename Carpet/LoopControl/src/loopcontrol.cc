@@ -831,3 +831,56 @@ void lc_statistics_maybe(CCTK_ARGUMENTS)
   
   lc_statistics(CCTK_PASS_CTOC);
 }
+
+
+
+extern "C" CCTK_FCALL
+void CCTK_FNAME(lc_stats_init)(CCTK_POINTER& stats,
+                               int& line,
+                               TWO_FORTSTRINGS_ARGS)
+{
+  TWO_FORTSTRINGS_CREATE(file, name);
+  lc_stats_init((lc_stats_t**)&stats, name, file, line);
+  free(name);
+  free(file);
+}
+
+extern "C" CCTK_FCALL
+void CCTK_FNAME(lc_control_init)(lc_control_t& restrict control,
+                                 CCTK_POINTER& stats,
+                                 int const& imin, int const& jmin, int const& kmin,
+                                 int const& imax, int const& jmax, int const& kmax,
+                                 int const& iash, int const& jash, int const& kash,
+                                 int const& di, int const& dj, int const& dk)
+{
+  lc_control_init(&control, (lc_stats_t*)stats,
+                  imin, jmin, kmin,
+                  imax, jmax, kmax,
+                  iash, jash, kash,
+                  di, dj, dk);
+}
+
+extern "C" CCTK_FCALL
+void CCTK_FNAME(lc_control_finish)(lc_control_t& restrict control,
+                                   CCTK_POINTER& stats)
+{
+  lc_control_finish(&control, (lc_stats_t*)stats);
+}
+
+extern "C"
+CCTK_FCALL void CCTK_FNAME(lc_thread_init)(lc_control_t& control)
+{
+  lc_thread_init(&control);
+}
+
+extern "C"
+CCTK_FCALL int CCTK_FNAME(lc_thread_done)(lc_control_t const& control)
+{
+  return lc_thread_done(&control);
+}
+
+extern "C"
+CCTK_FCALL void CCTK_FNAME(lc_thread_step)(lc_control_t& control)
+{
+  lc_thread_step(&control);
+}

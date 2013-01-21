@@ -10,10 +10,12 @@ module loopcontrol
   
   interface
      
-     subroutine lc_stats_init(stats, name)
+     subroutine lc_stats_init(stats, line, file, name)
        use loopcontrol_types
        implicit none
        CCTK_POINTER :: stats
+       integer      :: line
+       character(*) :: file
        character(*) :: name
      end subroutine lc_stats_init
      
@@ -27,10 +29,10 @@ module loopcontrol
        implicit none
        type(lc_control_t) :: control
        CCTK_POINTER       :: stats
-       CCTK_POINTER       :: imin, jmin, kmin
-       CCTK_POINTER       :: imax, jmax, kmax
-       CCTK_POINTER       :: iash, jash, kash
-       CCTK_POINTER       :: di, dj, dk
+       integer            :: imin, jmin, kmin
+       integer            :: imax, jmax, kmax
+       integer            :: iash, jash, kash
+       integer            :: di, dj, dk
      end subroutine lc_control_init
 
      subroutine lc_control_finish(control, stats)
@@ -46,7 +48,7 @@ module loopcontrol
        type(lc_control_t) :: control
      end subroutine lc_thread_init
      
-     logical function lc_thread_done(control)
+     integer function lc_thread_done(control)
        use loopcontrol_types
        implicit none
        type(lc_control_t) :: control
