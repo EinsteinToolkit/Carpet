@@ -163,6 +163,8 @@ extern "C" {
   if (!lc_fmax0_is_outer) imax = lc_fmax0;                              \
   lc_assert(imin >= lc_control.loop.min.v[0]);                          \
   lc_assert(imax <= lc_control.loop.max.v[0]);                          \
+  lc_assert(imin >= lc_fmin0);                                          \
+  lc_assert(imax <= lc_fmax0);                                          \
   lc_assert(imin < imax);
 #endif
   
