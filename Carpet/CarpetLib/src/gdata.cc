@@ -158,7 +158,7 @@ allocated_memory_shape (vect<int,D> shape)
         }
       }
     }
-#if VECTORISE_ALIGNED_ARRAYS
+#if VECTORISE && VECTORISE_ALIGNED_ARRAYS
     // Enlarge shape in the x direction to ensure it is a multiple of
     // the vector size
     // TODO: Support other datatypes as well, don't target only

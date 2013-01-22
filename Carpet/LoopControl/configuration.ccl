@@ -1,10 +1,6 @@
 # Configuration definition for thorn LoopControl
 
-OPTIONAL CycleClock
-{
-}
-
-OPTIONAL Vectors
+OPTIONAL CycleClock hwloc Vectors
 {
 }
 

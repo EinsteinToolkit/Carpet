@@ -6,9 +6,9 @@ PROVIDES CarpetLib
   LANG
 }
 
-REQUIRES CycleClock MPI Vectors
+REQUIRES CycleClock MPI
 
-OPTIONAL LoopControl MPI
+OPTIONAL hwloc LoopControl Vectors
 {
 }
 
