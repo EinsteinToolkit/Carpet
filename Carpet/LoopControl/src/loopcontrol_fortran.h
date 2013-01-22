@@ -71,9 +71,12 @@
 
 
 
-#define LC_LOOP3STR_NORMAL(name, i,j,k, ni,nj,nk, idir_,jdir_,kdir_,    \
-                           imin_,jmin_,kmin_, imax_,jmax_,kmax_,        \
-                           iash_,jash_,kash_, imin,imax, di_)           \
+#define LC_LOOP3STR_NORMAL(name, i,j,k, ni,nj,nk,                       \
+                           idir_,jdir_,kdir_,                           \
+                           imin_,jmin_,kmin_,                           \
+                           imax_,jmax_,kmax_,                           \
+                           iash_,jash_,kash_,                           \
+                           vec_imin,vec_imax, di_)                      \
    name/**/_dir1 = (idir_)                                              && \
    name/**/_dir2 = (jdir_)                                              && \
    name/**/_dir3 = (kdir_)                                              && \

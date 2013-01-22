@@ -134,19 +134,19 @@ extern "C" {
 #if VECTORISE_ALIGNED_ARRAYS
   /* Arrays are aligned: fmin0 is the aligned loop boundary; keep it,
      and set up imin to be the intended loop boundary */
-#  define LC_ALIGN(i,j,k, imin,imax)                                    \
-  ptrdiff_t const imin = lc_max(lc_control.loop.min.v[0], lc_fmin0);    \
-  ptrdiff_t const imax = lc_fmax0;
+#  define LC_ALIGN(i,j,k, vec_imin,vec_imax)                            \
+  ptrdiff_t const vec_imin = lc_max(lc_control.loop.min.v[0], lc_fmin0); \
+  ptrdiff_t const vec_imax = lc_fmax0;
 #else
   /* Arrays are not aligned: fine.min[0] and fine.max[0] are the
      intended loop boundaries; override fmin0 and fmax0 to be aligned,
      and set imin and imax; this may move the fine loop boundaries
      except at outer boundaries to avoid partial stores */
-#  define LC_ALIGN(i,j,k, imin,imax)                                    \
+#  define LC_ALIGN(i,j,k, vec_imin,vec_imax)                            \
   lc_fmin0 = lc_control.fine.min.v[0];                                  \
   lc_fmax0 = lc_control.fine.max.v[0];                                  \
-  ptrdiff_t imin = lc_fmin0;                                            \
-  ptrdiff_t imax = lc_fmax0;                                            \
+  ptrdiff_t vec_imin = lc_fmin0;                                        \
+  ptrdiff_t vec_imax = lc_fmax0;                                        \
   lc_assert(lc_fmin0 < lc_fmax0);                                       \
   lc_assert(lc_fmin0 >= lc_control.loop.min.v[0]);                      \
   lc_assert(lc_fmax0 <= lc_control.loop.max.v[0]);                      \
@@ -159,30 +159,30 @@ extern "C" {
   lc_fmin0 -= lc_iminoffset;                                            \
   if (!lc_fmax0_is_outer) lc_fmax0 -= lc_imaxoffset;                    \
   lc_assert(lc_fmin0 < lc_fmax0);                                       \
-  if (!lc_fmin0_is_outer) imin = lc_fmin0;                              \
-  if (!lc_fmax0_is_outer) imax = lc_fmax0;                              \
-  lc_assert(imin >= lc_control.loop.min.v[0]);                          \
-  lc_assert(imax <= lc_control.loop.max.v[0]);                          \
-  lc_assert(imin >= lc_fmin0);                                          \
-  lc_assert(imax <= lc_fmax0);                                          \
-  lc_assert(imin < imax);
+  if (!lc_fmin0_is_outer) vec_imin = lc_fmin0;                          \
+  if (!lc_fmax0_is_outer) vec_imax = lc_fmax0;                          \
+  lc_assert(vec_imin >= lc_control.loop.min.v[0]);                      \
+  lc_assert(vec_imax <= lc_control.loop.max.v[0]);                      \
+  lc_assert(vec_imin >= lc_fmin0);                                      \
+  lc_assert(vec_imax <= lc_fmax0);                                      \
+  lc_assert(vec_imin < vec_imax);
 #endif
   
-#define LC_SELFTEST(i,j,k, imin,imax)                                   \
+#define LC_SELFTEST(i,j,k, vec_imin,vec_imax)                           \
   if (CCTK_BUILTIN_EXPECT(lc_control.selftest_array != NULL, 0)) {      \
     lc_selftest_set(&lc_control,                                        \
                     lc_control.loop.min.v[0], lc_control.loop.max.v[0], \
-                    imin, imax, lc_align0, i, j, k);                    \
+                    vec_imin,vec_imax, lc_align0, i,j,k);               \
   }
   
   
   
 #define LC_LOOP3STR_NORMAL(name, i,j,k, ni,nj,nk,               \
-                           idir_, jdir_, kdir_,                 \
+                           idir_,jdir_,kdir_,                   \
                            imin_,jmin_,kmin_,                   \
                            imax_,jmax_,kmax_,                   \
                            iash_,jash_,kash_,                   \
-                           imin,imax, di_)                      \
+                           vec_imin,vec_imax, di_)              \
   do {                                                          \
     typedef int lc_loop3vec_##name;                             \
                                                                 \
@@ -228,9 +228,9 @@ extern "C" {
         LC_FINE_SETUP(0)                                        \
         LC_FINE_LOOP(k, nk, 2) {                                \
         LC_FINE_LOOP(j, nj, 1) {                                \
-        LC_ALIGN(i,j,k, imin,imax)                              \
+        LC_ALIGN(i,j,k, vec_imin,vec_imax)                      \
         LC_FINE_LOOP(i, ni, 0) {                                \
-          LC_SELFTEST(i,j,k, imin,imax)                         \
+          LC_SELFTEST(i,j,k, vec_imin,vec_imax)                 \
           {
         
 #define LC_ENDLOOP3STR_NORMAL(name)                             \
@@ -247,21 +247,28 @@ extern "C" {
 /* Definitions to ensure compatibility with earlier versions of
    LoopControl */
 #define LC_LOOP3VEC(name, i,j,k,                        \
-                    imin_,jmin,kmin, imax_,jmax,kmax,   \
-                    iash,jash,kash, imin,imax, di)      \
+                    imin,jmin,kmin,                     \
+                    imax,jmax,kmax,                     \
+                    iash,jash,kash,                     \
+                    vec_imin,vec_imax, di)              \
   LC_LOOP3STR_NORMAL(name, i,j,k, lc_ni,lc_nj,lc_nk,    \
                      0,0,0,                             \
-                     imin_,jmin,kmin, imax_,jmax,kmax,  \
-                     iash,jash,kash, imin,imax, di)
+                     imin,jmin,kmin,                    \
+                     imax,jmax,kmax,                    \
+                     iash,jash,kash,                    \
+                     vec_imin,vec_imax, di)
 #define LC_ENDLOOP3VEC(name)                    \
   LC_ENDLOOP3STR_NORMAL(name)
 
-#define LC_LOOP3(name, i,j,k,                           \
-                 imin,jmin,kmin, imax,jmax,kmax,        \
-                 iash,jash,kash)                        \
-  LC_LOOP3VEC(name, i,j,k,                              \
-              imin,jmin,kmin, imax,jmax,kmax,           \
-              iash,jash,kash, lc_imin_,lc_imax_, 1)
+#define LC_LOOP3(name, i,j,k,                   \
+                 imin,jmin,kmin,                \
+                 imax,jmax,kmax,                \
+                 iash,jash,kash)                \
+  LC_LOOP3VEC(name, i,j,k,                      \
+              imin,jmin,kmin,                   \
+              imax,jmax,kmax,                   \
+              iash,jash,kash,                   \
+              lc_vec_imin,lc_vec_imax, 1)
 #define LC_ENDLOOP3(name)                       \
   LC_ENDLOOP3VEC(name)
   
@@ -274,17 +281,17 @@ extern "C" {
 #undef CCTK_LOOP3STR_NORMAL
 #undef CCTK_ENDLOOP3STR_NORMAL
 #define CCTK_LOOP3STR_NORMAL(name, i,j,k, ni,nj,nk,     \
-                             idir, jdir, kdir,          \
-                             imin_,jmin,kmin,           \
-                             imax_,jmax,kmax,           \
+                             idir,jdir,kdir,            \
+                             imin,jmin,kmin,            \
+                             imax,jmax,kmax,            \
                              iash,jash,kash,            \
-                             imin,imax, di)             \
+                             vec_imin,vec_imax, di)     \
   LC_LOOP3STR_NORMAL(name, i,j,k, ni,nj,nk,             \
-                     idir, jdir, kdir,                  \
-                     imin_,jmin,kmin,                   \
-                     imax_,jmax,kmax,                   \
+                     idir,jdir,kdir,                    \
+                     imin,jmin,kmin,                    \
+                     imax,jmax,kmax,                    \
                      iash,jash,kash,                    \
-                     imin,imax, di)
+                     vec_imin,vec_imax, di)
 #define CCTK_ENDLOOP3STR_NORMAL(name)           \
   LC_ENDLOOP3STR_NORMAL(name)
   
