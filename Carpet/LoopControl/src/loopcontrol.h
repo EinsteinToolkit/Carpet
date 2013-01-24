@@ -16,6 +16,7 @@
 
 #include <cctk.h>
 
+/* #define lc_assert(x) ((void)0) */
 #define lc_assert(x) assert(x)
 
 
@@ -136,7 +137,21 @@ extern "C" {
      and set up imin to be the intended loop boundary */
 #  define LC_ALIGN(i,j,k, vec_imin,vec_imax)                            \
   ptrdiff_t const vec_imin = lc_max(lc_control.loop.min.v[0], lc_fmin0); \
-  ptrdiff_t const vec_imax = lc_fmax0;
+  ptrdiff_t const vec_imax = lc_fmax0;                                  \
+  lc_assert(lc_fmin0 < lc_fmax0);                                       \
+  lc_assert(lc_fmax0 <= lc_control.loop.max.v[0]);                      \
+  ptrdiff_t const lc_iminpos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);  \
+  ptrdiff_t const lc_iminoffset = lc_iminpos % lc_align0;               \
+  int const lc_fmax0_is_outer = lc_fmax0 == lc_control.loop.max.v[0];   \
+  ptrdiff_t const lc_imaxpos = lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);  \
+  ptrdiff_t const lc_imaxoffset = lc_imaxpos % lc_align0;               \
+  lc_assert(lc_iminoffset == 0);                                        \
+  if (!lc_fmax0_is_outer) lc_assert(lc_imaxoffset == 0);                \
+  lc_assert(vec_imin >= lc_control.loop.min.v[0]);                      \
+  lc_assert(vec_imax <= lc_control.loop.max.v[0]);                      \
+  lc_assert(vec_imin >= lc_fmin0);                                      \
+  lc_assert(vec_imax <= lc_fmax0);                                      \
+  lc_assert(vec_imin < vec_imax);
 #else
   /* Arrays are not aligned: fine.min[0] and fine.max[0] are the
      intended loop boundaries; override fmin0 and fmax0 to be aligned,
