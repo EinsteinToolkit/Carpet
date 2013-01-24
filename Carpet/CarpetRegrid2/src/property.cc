@@ -202,9 +202,10 @@ namespace CarpetRegrid2 {
     CCTK_REAL const combined_size =
       static_cast <CCTK_REAL> (combined.size());
     
-    // Would a single bbox be efficient enough?
+    // Is the current setup simple enough? (It is "simple enough" if
+    // using a single bbox would be too inefficient.)
     // TODO: Check this also for pairs of regions
-    return min_fraction * combined_size <= regions_size;
+    return min_fraction * combined_size > regions_size;
   }
   
   void combine_regions::
