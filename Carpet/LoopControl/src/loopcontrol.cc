@@ -44,7 +44,7 @@ static inline double seconds_per_tick() { return 1.0; }
 #  else
 // We use gettimeofday as fallback
 
-#    include <sys/time.h>
+#include <sys/time.h>
 typedef timeval ticks;
 static inline ticks getticks()
 {
@@ -276,7 +276,7 @@ namespace {
     static int num_smt_threads = -1;
     if (CCTK_BUILTIN_EXPECT(num_smt_threads<0, false)) {
 #pragma omp barrier
-      0;                        // PGI compiler needs this
+      (void)0;                  // PGI compiler needs this
 #pragma omp master
       if (CCTK_IsFunctionAliased("GetNumSMTThreads")) {
         num_smt_threads = GetNumSMTThreads();
@@ -318,7 +318,7 @@ namespace {
   {
     while (*ptr == old_value) {
 #pragma omp flush
-      0;                        // PGI compiler needs this
+      (void)0;                  // PGI compiler needs this
     }
   }
   
@@ -366,7 +366,7 @@ namespace {
       // read value
       value = comm->value;
 #pragma omp flush
-      0;                        // PGI compiler needs this
+      (void)0;                  // PGI compiler needs this
       // acknowledge the value
 #pragma omp atomic
       comm->state |= thread_mask;
@@ -430,6 +430,9 @@ void lc_control_init(lc_control_t* restrict const control,
     stats->start_time = getticks();
   }
   
+  // Initialize everything with a large, bogus value
+  memset(control, 123, sizeof *control);
+  
   // Ensure thread counts are consistent
   assert(get_num_coarse_threads() * get_num_fine_threads() ==
          omp_get_num_threads());
@@ -439,24 +442,21 @@ void lc_control_init(lc_control_t* restrict const control,
   if (CCTK_BUILTIN_EXPECT(max_cache_linesize<0, false)) {
 #pragma omp barrier
 #pragma omp master
-    if (CCTK_IsFunctionAliased("GetCacheInfo1")) {
-      int const num_levels = GetCacheInfo1(NULL, NULL, 0);
-      vector<int> linesizes(num_levels);
-      vector<int> strides  (num_levels);
-      GetCacheInfo1(&linesizes[0], &strides[0], num_levels);
+    {
       max_cache_linesize = 1;
-      for (int level=0; level<num_levels; ++level) {
-        max_cache_linesize =
-          max(max_cache_linesize, ptrdiff_t(linesizes[level]));
+      if (CCTK_IsFunctionAliased("GetCacheInfo1")) {
+        int const num_levels = GetCacheInfo1(NULL, NULL, 0);
+        vector<int> linesizes(num_levels);
+        vector<int> strides  (num_levels);
+        GetCacheInfo1(&linesizes[0], &strides[0], num_levels);
+        for (int level=0; level<num_levels; ++level) {
+          max_cache_linesize =
+            max(max_cache_linesize, ptrdiff_t(linesizes[level]));
+        }
       }
-    } else {
-      max_cache_linesize = 1;
     }
 #pragma omp barrier
   }
-  
-  // Initialize everything with a large, bogus value
-  memset(control, 123, sizeof *control);
   
   ptrdiff_t tilesize_alignment = 1;
   if (align_with_cachelines) {
@@ -466,7 +466,6 @@ void lc_control_init(lc_control_t* restrict const control,
   }
   
   // Parameters (all in units of grid points)
-  // ptrdiff_t const smt_size[LC_DIM] = { smtsize_i, smtsize_j, smtsize_k };
   // TODO: put fine threads into i direction, so that they share cache
   // lines
   ptrdiff_t smt_size[LC_DIM] = { 1, 1, 1 };
@@ -514,8 +513,8 @@ void lc_control_init(lc_control_t* restrict const control,
         new lc_fine_thread_comm_t*[get_num_coarse_threads()];
     }
     if (get_fine_thread_num() == 0) {
-      lc_fine_thread_comm_t* fine_thread_comm_ptr;
-      fine_thread_comm_ptr = new lc_fine_thread_comm_t;
+      lc_fine_thread_comm_t* const
+        fine_thread_comm_ptr = new lc_fine_thread_comm_t;
       fine_thread_comm_ptr->state = 0;
       fine_thread_comm_ptrs[get_coarse_thread_num()] = fine_thread_comm_ptr;
     }
@@ -721,7 +720,7 @@ int lc_thread_done(lc_control_t const* restrict const control)
 void lc_thread_step(lc_control_t* restrict const control)
 {
   // Get next thread block
-  int new_global_idx;
+  int new_global_idx = -1;
   if (get_fine_thread_num() == 0) {
 #pragma omp critical(LoopControl_lc_thread_step)
     {
