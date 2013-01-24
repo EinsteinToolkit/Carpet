@@ -456,16 +456,34 @@ inline int size (const vect<T,D>& a)
 
 /** Return the first element.  */
 template<typename T,int D>
-inline int first (const vect<T,D>& a)
+inline T head (const vect<T,D>& a)
 {
   return a[0];
 }
 
+/** Return all but the first element.  */
+template<typename T,int D>
+inline vect<T,D-1> tail (const vect<T,D>& a)
+{
+  vect<T,D-1> r;
+  for (int d=0; d<D-1; ++d) r[d]=a[d+1];
+  return r;
+}
+
 /** Return the last element.  */
 template<typename T,int D>
-inline int last (const vect<T,D>& a)
+inline T last (const vect<T,D>& a)
 {
   return a[D-1];
+}
+
+/** Return all but the last element.  */
+template<typename T,int D>
+inline vect<T,D-1> init (const vect<T,D>& a)
+{
+  vect<T,D-1> r;
+  for (int d=0; d<D-1; ++d) r[d]=a[d];
+  return r;
 }
 
 /** Return the index of the first maximum element.  */
