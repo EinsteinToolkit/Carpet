@@ -73,7 +73,7 @@ extern "C" {
     struct lc_fine_thread_comm_t* fine_thread_comm_ptr; /* shared
                                                            between SMT
                                                            threads */
-    unsigned char* restrict selftest_array;
+    unsigned char* selftest_array; /* shared between all threads */
   } lc_control_t;
   
   
@@ -81,13 +81,13 @@ extern "C" {
   void lc_stats_init(struct lc_stats_t** stats,
                      char const* name, char const* file, int line);
   void lc_control_init(lc_control_t* restrict control,
-                       struct lc_stats_t *restrict stats,
+                       struct lc_stats_t *stats,
                        ptrdiff_t imin, ptrdiff_t jmin, ptrdiff_t kmin,
                        ptrdiff_t imax, ptrdiff_t jmax, ptrdiff_t kmax,
                        ptrdiff_t iash, ptrdiff_t jash, ptrdiff_t kash,
                        ptrdiff_t di, ptrdiff_t dj, ptrdiff_t dk);
   void lc_control_finish(lc_control_t* restrict control,
-                         struct lc_stats_t *restrict stats);
+                         struct lc_stats_t* stats);
   
   void lc_thread_init(lc_control_t* restrict control);
   int lc_thread_done(lc_control_t const* restrict control);

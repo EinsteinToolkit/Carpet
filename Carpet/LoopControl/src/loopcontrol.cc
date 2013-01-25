@@ -600,7 +600,7 @@ void lc_control_init(lc_control_t* restrict const control,
   
   // Initialise selftest
   if (selftest) {
-    unsigned char* restrict selftest_array;
+    unsigned char* selftest_array;
 #pragma omp single copyprivate(selftest_array)
     {
       ptrdiff_t const npoints = prod(control->ash);
@@ -614,7 +614,7 @@ void lc_control_init(lc_control_t* restrict const control,
 }
 
 void lc_control_finish(lc_control_t* restrict const control,
-                       lc_stats_t* restrict const stats)
+                       lc_stats_t* const stats)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -807,7 +807,7 @@ void lc_statistics(CCTK_ARGUMENTS)
   for (list<lc_stats_t*>::const_iterator
          istats = all_stats.begin(); istats != all_stats.end(); ++istats)
   {
-    lc_stats_t const* restrict const stats = *istats;
+    lc_stats_t const* const stats = *istats;
     if (stats->count == 0.0) {
       printf("   Loop %s (%s:%d):\n",
              stats->name, stats->file, stats->line);
