@@ -586,10 +586,12 @@ void lc_control_init(lc_control_t* restrict const control,
 #pragma omp master
     CCTK_VInfo(CCTK_THORNSTRING,
                "Loop %s (%s:%d): imin=[%td,%td,%td] imax=[%td,%td,%td]\n"
-               "   smt.step=[%td,%td,%td] fine.step=[%td,%td,%td] coarse.step=[%td,%td,%td] thread.step=[%td,%td,%td]",
+               "   threads=%d coarse_threads=%d fine_threads=%d\n"
+               "   fine_thread.step=[%td,%td,%td] fine_loop.step=[%td,%td,%td] coarse_loop.step=[%td,%td,%td] coarse_thread.step=[%td,%td,%td]",
                stats->name, stats->file, stats->line,
                control->loop.min.v[0], control->loop.min.v[1], control->loop.min.v[2],
                control->loop.max.v[0], control->loop.max.v[1], control->loop.max.v[2],
+               omp_get_num_threads(), get_num_coarse_threads(), get_num_fine_threads(),
                control->fine_thread.step.v[0], control->fine_thread.step.v[1], control->fine_thread.step.v[2],
                control->fine.step.v[0], control->fine.step.v[1], control->fine.step.v[2],
                control->coarse.step.v[0], control->coarse.step.v[1], control->coarse.step.v[2],
@@ -736,7 +738,6 @@ void lc_thread_step(lc_control_t* restrict const control)
 
 
 void lc_selftest_set(lc_control_t const* restrict control,
-                     ptrdiff_t const lmin, ptrdiff_t const lmax,
                      ptrdiff_t const imin, ptrdiff_t const imax,
                      ptrdiff_t const di,
                      ptrdiff_t const i0, ptrdiff_t const j, ptrdiff_t const k)
@@ -748,11 +749,11 @@ void lc_selftest_set(lc_control_t const* restrict control,
   assert(j>=0 and j<control->ash.v[1]);
   assert(k>=0 and k<control->ash.v[2]);
   assert(i0+di-1>=control->loop.min.v[0] and i0<control->loop.max.v[0]);
-  if (imin>lmin) {
+  if (imin>control->loop.min.v[0]) {
     ptrdiff_t const ipos_imin = ind(control->ash, imin,j,k);
     assert(ipos_imin % di == 0);
   }
-  if (imax<lmax) {
+  if (imax<control->loop.max.v[0]) {
     ptrdiff_t const ipos_imax = ind(control->ash, imax,j,k);
     assert(ipos_imax % di == 0);
   }
@@ -826,9 +827,9 @@ void lc_statistics_maybe(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  if (not verbose) return;
-  
-  lc_statistics(CCTK_PASS_CTOC);
+  if (verbose or veryverbose) {
+    lc_statistics(CCTK_PASS_CTOC);
+  }
 }
 
 

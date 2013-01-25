@@ -94,7 +94,6 @@ extern "C" {
   void lc_thread_step(lc_control_t* restrict control);
   
   void lc_selftest_set(lc_control_t const* restrict control,
-                       ptrdiff_t lmin, ptrdiff_t lmax,
                        ptrdiff_t imin, ptrdiff_t imax, ptrdiff_t di,
                        ptrdiff_t i, ptrdiff_t j, ptrdiff_t k);
   
@@ -185,9 +184,7 @@ extern "C" {
   
 #define LC_SELFTEST(i,j,k, vec_imin,vec_imax)                           \
   if (CCTK_BUILTIN_EXPECT(lc_control.selftest_array != NULL, 0)) {      \
-    lc_selftest_set(&lc_control,                                        \
-                    lc_control.loop.min.v[0], lc_control.loop.max.v[0], \
-                    vec_imin,vec_imax, lc_align0, i,j,k);               \
+    lc_selftest_set(&lc_control, vec_imin,vec_imax, lc_align0, i,j,k);  \
   }
   
   
