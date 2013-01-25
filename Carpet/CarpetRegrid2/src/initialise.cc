@@ -69,7 +69,7 @@ namespace CarpetRegrid2 {
     
 #undef INIT_CENTRE
     
-    if (verbose) {
+    if (verbose or veryverbose) {
       for (int n = 0; n < num_centres; ++ n) {
         CCTK_VInfo (CCTK_THORNSTRING,
                     "Initialising position of centre %d to [%g,%g,%g]",
