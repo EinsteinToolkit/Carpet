@@ -1,0 +1,5 @@
+TEST regrid2_2D
+{
+  NPROCS 1
+}
+
