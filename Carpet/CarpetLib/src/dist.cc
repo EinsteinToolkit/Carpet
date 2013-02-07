@@ -38,9 +38,7 @@ namespace dist {
   MPI_Op mpi_prod = MPI_OP_NULL;
   MPI_Op mpi_sum  = MPI_OP_NULL;
   
-  int num_threads_ = -1;
   int total_num_threads_ = -1;
-  int thread_num_ = -1;
   
   
   
@@ -471,30 +469,26 @@ namespace dist {
   // Global number of threads
   void collect_total_num_threads ()
   {
+    int num_threads = 1;
 #ifdef _OPENMP
 #  pragma omp parallel
     {
-#  pragma omp single
+#  pragma omp master
       {
-        num_threads_ = omp_get_num_threads();
+        num_threads = omp_get_num_threads();
       }
-      thread_num_ = omp_get_thread_num();
     }
     int const max_threads = omp_get_max_threads();
-    if (max_threads != num_threads_) {
+    if (max_threads != num_threads) {
       CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Unexpected OpenMP setup: omp_get_max_threads=%d, omp_get_num_threads=%d",
-                  max_threads, num_threads_);
+                  max_threads, num_threads);
     }
-#else
-    num_threads_ = 1;
-    thread_num_ = 0;
 #endif
-    assert (num_threads_ >= 1);
-    assert (thread_num_ >= 0 and thread_num_ < num_threads_);
+    assert (num_threads >= 1);
     
     MPI_Allreduce
-      (const_cast <int *> (& num_threads_), & total_num_threads_, 1, MPI_INT,
+      (const_cast <int *> (& num_threads), & total_num_threads_, 1, MPI_INT,
        MPI_SUM, comm());
     assert (total_num_threads_ >= size());
   }

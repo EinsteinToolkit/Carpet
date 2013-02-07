@@ -15,6 +15,9 @@
 #endif
 #ifdef _OPENMP
 #  include <omp.h>
+#else
+static inline int omp_get_max_threads() { return 1; }
+static inline int omp_get_thread_num() { return 0; }
 #endif
 
 #include "defs.hh"
@@ -35,10 +38,7 @@ namespace dist {
   extern MPI_Op mpi_prod;
   extern MPI_Op mpi_sum;
   
-  extern int num_threads_;
   extern int total_num_threads_;
-  extern int thread_num_;
-#pragma omp threadprivate(thread_num_)
   
   void init (int& argc, char**& argv);
   void pseudoinit (MPI_Comm const c);
@@ -180,13 +180,13 @@ namespace dist {
   // Local number of threads
   inline int num_threads ()
   {
-    return num_threads_;
+    return omp_get_max_threads();
   }
 
   // My own thread number
   inline int thread_num ()
   {
-    return thread_num_;
+    return omp_get_thread_num();
   }
   
   // Global number of threads
