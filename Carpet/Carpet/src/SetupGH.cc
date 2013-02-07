@@ -242,7 +242,7 @@ namespace Carpet {
                   "OpenMP is enabled");
       if (not OMP_NUM_THREADS and num_threads == -1) {
         CCTK_VWarn (CCTK_WARN_COMPLAIN, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Although OpenMP is enabled, neither the environment variable OMP_NUM_THREADS nor the parameter Carpet::num_threads are set.  A system-specific default value is used instead.");
+                    "Although OpenMP is enabled, neither the environment variable OMP_NUM_THREADS nor the parameter Carpet::num_threads are set. A system-specific default value is used instead.");
       }
       CCTK_VInfo (CCTK_THORNSTRING,
                   "This process contains %d threads, this is thread %d", mynthreads, dist::thread_num());
@@ -252,7 +252,7 @@ namespace Carpet {
       } else {
         if (cactus_num_threads != mynthreads) {
           CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "The environment variable CACTUS_NUM_THREADS is set to %d, but there are %d threads on this processes. This may indicate a severe problem with the OpenMP startup mechanism.",
+                      "The environment variable CACTUS_NUM_THREADS is set to %d, but there are %d threads on this process. This may indicate a severe problem with the OpenMP startup mechanism.",
                       cactus_num_threads, mynthreads);
         } 
       }
@@ -269,11 +269,11 @@ namespace Carpet {
       int const omp_num_threads = OMP_NUM_THREADS ? atoi (OMP_NUM_THREADS) : 0;
       if (omp_num_threads > 0) {
         CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Although OpenMP is disabled, the environment variable OMP_NUM_THREADS is set to %d.  It will be ignored.", omp_num_threads);
+                    "Although OpenMP is disabled, the environment variable OMP_NUM_THREADS is set to %d. It will be ignored.", omp_num_threads);
       }
       if (num_threads > 0) {
         CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Although OpenMP is disabled, the parameter Carpet::num_threads is set to %d.  It will be ignored.", num_threads);
+                    "Although OpenMP is disabled, the parameter Carpet::num_threads is set to %d. It will be ignored.", num_threads);
       }
       if (CACTUS_NUM_THREADS and cactus_num_threads != mynthreads) {
         CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
