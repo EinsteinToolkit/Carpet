@@ -114,7 +114,7 @@ ActiveThorns = "CarpetIOScalar"
 
 IOScalar::one_file_per_group = yes
 
-IOScalar::outScalar_every      = 1
+IOScalar::outScalar_every      = 0 # disabled
 IOScalar::outScalar_reductions = "sum"
 IOScalar::outScalar_vars       = "
         CarpetProlongateTest::scaled

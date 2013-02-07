@@ -8,13 +8,15 @@ IO::out_dir = $parfile
 
 
 
+ActiveThorns = "AEILocalInterp"
+
 ActiveThorns = "InitBase"
 
 ActiveThorns = "LoopControl"
 
 
 
-ActiveThorns = "Carpet CarpetLib CarpetReduce"
+ActiveThorns = "Carpet CarpetLib CarpetInterp CarpetReduce"
 
 Carpet::domain_from_coordbase = yes
 Carpet::max_refinement_levels = 10
@@ -98,12 +100,12 @@ ActiveThorns = "CarpetIOASCII"
 
 IOASCII::one_file_per_group = yes
 
-IOASCII::out0D_every = 0
+IOASCII::out0D_every = 1
 IOASCII::out0D_vars  = "
         CarpetProlongateTest::errornorm
 "
 
-IOASCII::out1D_every = 0
+IOASCII::out1D_every = 1
 IOASCII::out1D_vars  = "
         CarpetProlongateTest::scalar
         CarpetProlongateTest::difference
@@ -121,7 +123,7 @@ ActiveThorns = "CarpetIOScalar"
 
 IOScalar::one_file_per_group = yes
 
-IOScalar::outScalar_every      = 1
+IOScalar::outScalar_every      = 0
 IOScalar::outScalar_reductions = "sum"
 IOScalar::outScalar_vars       = "
         CarpetProlongateTest::scaled

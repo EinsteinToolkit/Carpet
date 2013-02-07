@@ -1,0 +1,31 @@
+NPROCS 2
+
+TEST test_interp
+{
+NPROCS 1
+}
+
+TEST test_cc_tvd
+{
+NPROCS 1
+}
+
+TEST test_cc_tvd_hi
+{
+NPROCS 1
+}
+
+TEST test_cc_tvd_x
+{
+NPROCS 1
+}
+
+TEST test_cc_tvd_y
+{
+NPROCS 1
+}
+
+TEST test_cc_tvd_z
+{
+NPROCS 1
+}
