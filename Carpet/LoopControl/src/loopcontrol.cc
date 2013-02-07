@@ -387,12 +387,12 @@ void lc_stats_init(lc_stats_t** const stats_ptr,
                    char const* const file,
                    int const line)
 {
-  if (*stats_ptr) return;
+  if (CCTK_BUILTIN_EXPECT(*stats_ptr != 0, true)) return;
   
-  lc_stats_t* stats;
-#pragma omp single copyprivate(stats)
+#pragma omp barrier
+#pragma omp master
   {
-    stats = new lc_stats_t;
+    lc_stats_t* const stats = new lc_stats_t;
     
     stats->name = name;
     stats->file = file;
@@ -407,11 +407,9 @@ void lc_stats_init(lc_stats_t** const stats_ptr,
     stats->max = 0.0;
     
     all_stats.push_back(stats);
-  }
-#pragma omp single
-  {
     *stats_ptr = stats;
   }
+#pragma omp barrier
 }
 
 
