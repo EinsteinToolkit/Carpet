@@ -712,11 +712,17 @@ namespace CarpetRegrid2 {
       bvect const lower_is_almost_outside_upper =
         bb.lower() >
         bnd.level_physical_iupper - bnd.min_bnd_dist_incl[1] * bb.stride();
+
+      // Don't assert for trivial dimensions ( e.g., 2D: (x,y,1) )
+      bvect const domain_is_trivial =
+        bnd.level_physical_ilower == bnd.level_physical_iupper;
       
       assert (not any (lower_is_almost_outside_upper and
-                       lower_is_outside_lower));
+                       lower_is_outside_lower and
+                       not domain_is_trivial) );
       assert (not any (upper_is_almost_outside_lower and
-                       upper_is_outside_upper));
+                       upper_is_outside_upper and
+                       not domain_is_trivial) );
       
       if (any (upper_is_outside_lower or lower_is_outside_upper)) {
         // The box is completely outside. Ignore it.
