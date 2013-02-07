@@ -53,7 +53,7 @@
 #define LC_LOOP3STR_NORMAL_DECLARE(name)                                \
    && integer :: name/**/_dir1, name/**/_dir2, name/**/_dir3            \
    && integer :: name/**/_ash1, name/**/_ash2, name/**/_ash3            \
-   && integer :: name/**/_align1, name/**/_align2, name/**/_align3      \
+   && integer :: name/**/_str1                                          \
    && CCTK_POINTER, save :: name/**/_stats = 0                          \
    && type(lc_control_t) :: name/**/_control                            \
       LC_COARSE_DECLARE(name,1)                                         \
@@ -79,23 +79,21 @@
                            imin_,jmin_,kmin_,                           \
                            imax_,jmax_,kmax_,                           \
                            iash_,jash_,kash_,                           \
-                           vec_imin,vec_imax, di_)                      \
+                           vec_imin,vec_imax, istr_)                    \
    && name/**/_dir1 = (idir_)                                           \
    && name/**/_dir2 = (jdir_)                                           \
    && name/**/_dir3 = (kdir_)                                           \
    && name/**/_ash1 = (iash_)                                           \
    && name/**/_ash2 = (jash_)                                           \
    && name/**/_ash3 = (kash_)                                           \
-   && name/**/_align1 = (di_)                                           \
-   && name/**/_align2 = 1                                               \
-   && name/**/_align3 = 1                                               \
+   && name/**/_str1 = (istr_)                                           \
                                                                         \
    && call lc_stats_init(name/**/_stats, __LINE__, __FILE__, "name")    \
    && call lc_control_init(name/**/_control, name/**/_stats,            \
                            (imin_), (jmin_), (kmin_),                   \
                            (imax_), (jmax_), (kmax_),                   \
                            name/**/_ash1, name/**/_ash2, name/**/_ash3, \
-                           name/**/_align1, name/**/_align2, name/**/_align3) \
+                           name/**/_str1)                               \
                                                                         \
       /* Multithreading */                                              \
    && call lc_thread_init(name/**/_control)                             \

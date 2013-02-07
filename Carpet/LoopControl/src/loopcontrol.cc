@@ -420,7 +420,7 @@ void lc_control_init(lc_control_t* restrict const control,
                      ptrdiff_t imin, ptrdiff_t jmin, ptrdiff_t kmin,
                      ptrdiff_t imax, ptrdiff_t jmax, ptrdiff_t kmax,
                      ptrdiff_t iash, ptrdiff_t jash, ptrdiff_t kash,
-                     ptrdiff_t di, ptrdiff_t dj, ptrdiff_t dk)
+                     ptrdiff_t istr)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -462,7 +462,7 @@ void lc_control_init(lc_control_t* restrict const control,
   if (align_with_cachelines) {
     tilesize_alignment =
       divup(max_cache_linesize, ptrdiff_t(sizeof(CCTK_REAL)));
-    tilesize_alignment = alignup(tilesize_alignment, di);
+    tilesize_alignment = alignup(tilesize_alignment, istr);
   }
   
   // Parameters (all in units of grid points)
@@ -490,7 +490,7 @@ void lc_control_init(lc_control_t* restrict const control,
   ptrdiff_t const loop_min[LC_DIM] = { imin, jmin, kmin };
   ptrdiff_t const loop_max[LC_DIM] = { imax, jmax, kmax };
   ptrdiff_t const ash[LC_DIM] = { iash, jash, kash };
-  ptrdiff_t const vect_size[LC_DIM] = { di, dj, dk };
+  ptrdiff_t const vect_size[LC_DIM] = { istr, 1, 1 };
   
   // Copy ash arguments
   for (int d=0; d<LC_DIM; ++d) {
@@ -739,27 +739,27 @@ void lc_thread_step(lc_control_t* restrict const control)
 
 void lc_selftest_set(lc_control_t const* restrict control,
                      ptrdiff_t const imin, ptrdiff_t const imax,
-                     ptrdiff_t const di,
+                     ptrdiff_t const istr,
                      ptrdiff_t const i0, ptrdiff_t const j, ptrdiff_t const k)
 {
   DECLARE_CCTK_PARAMETERS;
   assert(selftest);
   assert(imin>=0 and imin<imax and imax<=control->ash.v[0]);
-  assert(di>0);
+  assert(istr>0);
   assert(j>=0 and j<control->ash.v[1]);
   assert(k>=0 and k<control->ash.v[2]);
-  assert(i0+di-1>=control->loop.min.v[0] and i0<control->loop.max.v[0]);
+  assert(i0+istr-1>=control->loop.min.v[0] and i0<control->loop.max.v[0]);
   if (imin>control->loop.min.v[0]) {
     ptrdiff_t const ipos_imin = ind(control->ash, imin,j,k);
-    assert(ipos_imin % di == 0);
+    assert(ipos_imin % istr == 0);
   }
   if (imax<control->loop.max.v[0]) {
     ptrdiff_t const ipos_imax = ind(control->ash, imax,j,k);
-    assert(ipos_imax % di == 0);
+    assert(ipos_imax % istr == 0);
   }
   assert(j>=control->loop.min.v[1] and j<control->loop.max.v[1]);
   assert(k>=control->loop.min.v[2] and k<control->loop.max.v[2]);
-  for (ptrdiff_t i=i0; i<i0+di; ++i) {
+  for (ptrdiff_t i=i0; i<i0+istr; ++i) {
     if (i>=imin and i<imax) {
       assert(i>=0 and i<control->ash.v[0]);
       assert(i>=control->loop.min.v[0] and i<control->loop.max.v[0]);
@@ -851,13 +851,13 @@ void CCTK_FNAME(lc_control_init)(lc_control_t& restrict control,
                                  int const& imin, int const& jmin, int const& kmin,
                                  int const& imax, int const& jmax, int const& kmax,
                                  int const& iash, int const& jash, int const& kash,
-                                 int const& di, int const& dj, int const& dk)
+                                 int const& istr)
 {
   lc_control_init(&control, (lc_stats_t*)stats,
                   imin, jmin, kmin,
                   imax, jmax, kmax,
                   iash, jash, kash,
-                  di, dj, dk);
+                  istr);
 }
 
 extern "C" CCTK_FCALL
