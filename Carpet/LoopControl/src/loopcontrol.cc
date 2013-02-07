@@ -12,8 +12,8 @@
 #include <cstring>
 #include <iostream>
 #include <limits>
-#include <list>
 #include <ostream>
+#include <string>
 #include <vector>
 
 #ifdef _OPENMP
@@ -81,8 +81,8 @@ struct lc_fine_thread_comm_t {
 
 
 struct lc_stats_t {
-  char const* name;
-  char const* file;
+  string name;
+  string file;
   int line;
   int init_count;
   double points, threads;
@@ -99,7 +99,8 @@ void CCTK_FNAME(lc_get_fortran_type_sizes) (ptrdiff_t* type_sizes);
 
 namespace {
   
-  list<lc_stats_t*> all_stats;
+  typedef vector<lc_stats_t*> all_stats_t;
+  all_stats_t all_stats;
   
   
   
@@ -393,8 +394,8 @@ void lc_stats_init(lc_stats_t** const stats_ptr,
   {
     stats = new lc_stats_t;
     
-    stats->name = strdup(name);
-    stats->file = strdup(file);
+    stats->name = name;
+    stats->file = file;
     stats->line = line;
     stats->init_count = 0;
     stats->points = 0.0;
@@ -588,7 +589,7 @@ void lc_control_init(lc_control_t* restrict const control,
                "Loop %s (%s:%d): imin=[%td,%td,%td] imax=[%td,%td,%td]\n"
                "   threads=%d coarse_threads=%d fine_threads=%d\n"
                "   fine_thread.step=[%td,%td,%td] fine_loop.step=[%td,%td,%td] coarse_loop.step=[%td,%td,%td] coarse_thread.step=[%td,%td,%td]",
-               stats->name, stats->file, stats->line,
+               stats->name.c_str(), stats->file.c_str(), stats->line,
                control->loop.min.v[0], control->loop.min.v[1], control->loop.min.v[2],
                control->loop.max.v[0], control->loop.max.v[1], control->loop.max.v[2],
                omp_get_num_threads(), get_num_coarse_threads(), get_num_fine_threads(),
@@ -667,7 +668,7 @@ void lc_control_finish(lc_control_t* restrict const control,
           elapsed_time * omp_get_num_threads() / npoints;
         CCTK_VInfo(CCTK_THORNSTRING,
                    "Loop %s: time=%g, time/point=%g s",
-                   stats->name, elapsed_time, time_point);
+                   stats->name.c_str(), elapsed_time, time_point);
       }
     } else {
       stats->points += double(npoints);
@@ -683,7 +684,7 @@ void lc_control_finish(lc_control_t* restrict const control,
           stats->sum * stats->threads / (stats->count * stats->points);
         CCTK_VInfo(CCTK_THORNSTRING,
                    "Loop %s: count=%g, avg/thread=%g s, avg/point=%g s",
-                   stats->name, stats->count, avg_thread, avg_point);
+                   stats->name.c_str(), stats->count, avg_thread, avg_point);
       }
     }
   }
@@ -804,19 +805,19 @@ void lc_statistics(CCTK_ARGUMENTS)
   DECLARE_CCTK_PARAMETERS;
   
   CCTK_INFO("LoopControl statistics:");
-  for (list<lc_stats_t*>::const_iterator
+  for (all_stats_t::const_iterator
          istats = all_stats.begin(); istats != all_stats.end(); ++istats)
   {
     lc_stats_t const* const stats = *istats;
     if (stats->count == 0.0) {
       printf("   Loop %s (%s:%d):\n",
-             stats->name, stats->file, stats->line);
+             stats->name.c_str(), stats->file.c_str(), stats->line);
     } else {
       double const avg_thread = stats->sum / stats->count;
       double const avg_point =
         stats->sum * stats->threads / (stats->count * stats->points);
       printf("   Loop %s (%s:%d): count=%g, avg/thread=%g s, avg/point=%g s\n",
-             stats->name, stats->file, stats->line,
+             stats->name.c_str(), stats->file.c_str(), stats->line,
              stats->count, avg_thread, avg_point);
     }
   }
