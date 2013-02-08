@@ -70,12 +70,12 @@ CCTK_REAL interp_zmin "zmin for interpolated region"
 CCTK_REAL interp_xmax "xmax for interpolated region"
 {
   *:* :: ""
-} -0.5
+} +0.5
 CCTK_REAL interp_ymax "ymax for interpolated region"
 {
   *:* :: ""
-} -0.5
+} +0.5
 CCTK_REAL interp_zmax "zmax for interpolated region"
 {
   *:* :: ""
-} -0.5
+} +0.5
