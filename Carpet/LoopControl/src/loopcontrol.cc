@@ -802,23 +802,32 @@ void lc_statistics(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  CCTK_INFO("LoopControl statistics:");
+  if (strlen(statistics_filename) == 0) return;
+  
+  string const filename = string(out_dir) + "/" + statistics_filename;
+  FILE *const statsfile = fopen(filename.c_str(), "a");
+  
+  fprintf(statsfile, "\n");
+  fprintf(statsfile, "LoopControl statistics:\n");
   for (all_stats_t::const_iterator
          istats = all_stats.begin(); istats != all_stats.end(); ++istats)
   {
-    lc_stats_t const* const stats = *istats;
+    lc_stats_t const *const stats = *istats;
     if (stats->count == 0.0) {
-      printf("   Loop %s (%s:%d):\n",
-             stats->name.c_str(), stats->file.c_str(), stats->line);
+      fprintf(statsfile,
+              "   Loop %s (%s:%d):\n",
+              stats->name.c_str(), stats->file.c_str(), stats->line);
     } else {
       double const avg_thread = stats->sum / stats->count;
       double const avg_point =
         stats->sum * stats->threads / (stats->count * stats->points);
-      printf("   Loop %s (%s:%d): count=%g, avg/thread=%g s, avg/point=%g s\n",
+      fprintf(statsfile,
+              "   Loop %s (%s:%d): count=%g, avg/thread=%g s, avg/point=%g s\n",
              stats->name.c_str(), stats->file.c_str(), stats->line,
              stats->count, avg_thread, avg_point);
     }
   }
+  fclose(statsfile);
 }
 
 void lc_statistics_maybe(CCTK_ARGUMENTS)

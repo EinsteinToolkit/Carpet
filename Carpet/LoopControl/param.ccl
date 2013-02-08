@@ -12,6 +12,18 @@ BOOLEAN selftest "Run a self test with every loop (expensive)" STEERABLE=always
 {
 } "no"
 
+STRING statistics_filename "File name for LoopControl statistics" STEERABLE=always
+{
+  ""   :: "disable statistics output"
+  ".+" :: "file name"
+} "LoopControl-statistics.txt"
+
+SHARES: IO
+
+USES STRING out_dir
+
+PRIVATE:
+
 
 
 KEYWORD initial_setup "Initial configuration" STEERABLE=always
