@@ -25,7 +25,7 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
   unsigned const allbits = BMSK(bits) - 1;
 #pragma omp parallel
   CCTK_LOOP3_ALL(MaskBase_InitMask, cctkGH, i,j,k) {
-    int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+    int const ind = CCTK_GFINDEX3D (cctkGH, i,j,k);
     iweight[ind] = allbits;
   } CCTK_ENDLOOP3_ALL(MaskBase_InitMask);
 }
