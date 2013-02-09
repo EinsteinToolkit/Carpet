@@ -465,17 +465,17 @@ void lc_control_init(lc_control_t* restrict const control,
   }
   
   // Parameters (all in units of grid points)
-  // TODO: put fine threads into i direction, so that they share cache
-  // lines
   ptrdiff_t smt_size[LC_DIM] = { 1, 1, 1 };
   {
     int const num_fine_threads = get_num_fine_threads();
-    if (num_fine_threads <= loopsize_j) {
-      smt_size[1] = num_fine_threads;
-    } else if (num_fine_threads <= loopsize_k) {
-      smt_size[2] = num_fine_threads;
-    } else {
+    // If possible, stagger fine threads in the i direction, so that
+    // they share cache lines
+    if (istr * num_fine_threads <= loopsize_i) {
       smt_size[0] = num_fine_threads;
+    } else if (num_fine_threads <= loopsize_j) {
+      smt_size[1] = num_fine_threads;
+    } else {
+      smt_size[2] = num_fine_threads;
     }
   }
   ptrdiff_t const tile_size[LC_DIM] = {
