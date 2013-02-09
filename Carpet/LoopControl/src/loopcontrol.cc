@@ -67,14 +67,14 @@ using namespace std;
 
 struct lc_thread_info_t {
   char padding1[128];      // pad to ensure cache lines are not shared
-  int idx;                 // linear index of next coarse thread block
+  volatile int idx;        // linear index of next coarse thread block
   char padding2[128];
 };
 
 struct lc_fine_thread_comm_t {
   char padding1[128];      // pad to ensure cache lines are not shared
-  int state;               // waiting threads
-  int value;               // broadcast value
+  volatile int state;      // waiting threads
+  volatile int value;      // broadcast value
   char padding2[128];
 };
 
@@ -315,7 +315,7 @@ namespace {
   }
   
   // Wait until *ptr is different from old_value
-  void thread_wait(int const *const ptr, int const old_value)
+  void thread_wait(volatile int const *const ptr, int const old_value)
   {
     while (*ptr == old_value) {
 #pragma omp flush
@@ -340,7 +340,7 @@ namespace {
 #pragma omp flush
         for (;;) {
           int const state = comm->state;
-          if (comm->state == all_threads_mask) break;
+          if (state == all_threads_mask) break;
           thread_wait(&comm->state, state);
         }
         // mark the value as invalid
@@ -361,7 +361,7 @@ namespace {
 #pragma omp flush
       for (;;) {
         int const state = comm->state;
-        if ((comm->state & (master_mask | thread_mask)) == master_mask) break;
+        if ((state & (master_mask | thread_mask)) == master_mask) break;
         thread_wait(&comm->state, state);
       }
       // read value
