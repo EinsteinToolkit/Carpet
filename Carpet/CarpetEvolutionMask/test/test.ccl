@@ -9,3 +9,8 @@ TEST CarpetEvolutionMask_test_off
 {
   NPROCS 1
 }
+
+TEST buffer_mask
+{
+  NPROCS 2
+}
