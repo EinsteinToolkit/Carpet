@@ -35,7 +35,7 @@ BOOLEAN use_dgfe "Use DGFE operators instead of Lagrange operators"
 
 BOOLEAN interpolate_from_buffer_zones "Use buffer points for interpolation" STEERABLE=always
 {
-} "no"
+} "yes"
 
 
 
