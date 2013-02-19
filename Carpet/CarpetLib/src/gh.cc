@@ -466,8 +466,8 @@ locate_position (rvect const & rpos,
     
     // Ignore this level if this point is not in the active region
     // (i.e. if it is a buffer point or similar)
-    if (not interpolate_from_buffer_zones and 
-        not dd.level_boxes.AT(ml).AT(rl).active.contains(aligned_ipos))
+    if (not interpolate_from_buffer_zones and
+        dd.level_boxes.AT(ml).AT(rl).buffers.contains(aligned_ipos))
     {
       continue;
     }
@@ -527,8 +527,8 @@ locate_position (ivect const & ipos,
     
     // Ignore this level if this point is not in the active region
     // (i.e. if it is a buffer point or similar)
-    if (not interpolate_from_buffer_zones and 
-        not dd.level_boxes.AT(ml).AT(rl).active.contains(aligned_ipos))
+    if (not interpolate_from_buffer_zones and
+        dd.level_boxes.AT(ml).AT(rl).buffers.contains(aligned_ipos))
     {
       continue;
     }
