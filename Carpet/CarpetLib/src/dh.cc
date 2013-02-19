@@ -559,7 +559,9 @@ regrid (bool const do_init)
       }
       
       // All buffer zones
-      ibset const allbuffers = allowned & notowned.expand (buffer_width);
+      //ibset const allbuffers = allowned & notowned.expand (buffer_width);
+      ibset& allbuffers = level_level.buffers;
+      allbuffers = allowned & notowned.expand (buffer_width);
       
       // All overlap zones
       ibset const alloverlaps = (allowned & notactive) - allbuffers;

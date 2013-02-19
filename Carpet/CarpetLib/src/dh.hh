@@ -99,7 +99,7 @@ public:
     // ibset communicated;
     // ibset boundaries;
     // ibset owned;
-    // ibset buffers;
+    ibset buffers;
     // ibset overlaps;
     ibset active;
     // ibset bndref;
