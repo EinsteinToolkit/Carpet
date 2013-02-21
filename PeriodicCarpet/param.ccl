@@ -4,7 +4,7 @@ BOOLEAN verbose "Produce screen output while applying boundary conditions"
 {
 } "no"
 
-BOOLEAN periodic "Periodic boundary conditions"
+BOOLEAN periodic "Periodic boundary conditions in all directions"
 {
 } "no"
 
