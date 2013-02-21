@@ -1,5 +1,11 @@
 # Schedule definitions for thorn PeriodicCarpet
 
+SCHEDULE PeriodicCarpet_ParamCheck AT paramcheck
+{
+  LANG: C
+  OPTIONS: level
+} "Register periodic boundary conditions"
+
 SCHEDULE PeriodicCarpet_RegisterBC IN SymmetryRegister
 {
   LANG: C
