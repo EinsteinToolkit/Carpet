@@ -2,6 +2,7 @@
 #include <cctk_FortranString.h>
 #include <cctk_Parameters.h>
 
+#include <algorithm>
 #include <cassert>
 #include <cstdarg>
 #include <cstdio>
@@ -41,6 +42,19 @@ namespace Carpet {
   CCTK_INT Carpet_GetRegriddingEpoch (CCTK_POINTER_TO_CONST const cctkGH)
   {
     return regridding_epoch;
+  }
+
+  // Get current regridding epochs
+  extern "C"
+  CCTK_INT Carpet_GetRegriddingEpochs (CCTK_POINTER_TO_CONST const cctkGH,
+                                       CCTK_INT const size,
+                                       CCTK_INT *restrict const epochs)
+  {
+    int const maxrl = min(size, CCTK_INT(level_regridding_epochs.size()));
+    for (int rl=0; rl<maxrl; ++rl) {
+      epochs[rl] = level_regridding_epochs.AT(rl);
+    }
+    return CCTK_INT(level_regridding_epochs.size());
   }
 
   // Get current refinement level

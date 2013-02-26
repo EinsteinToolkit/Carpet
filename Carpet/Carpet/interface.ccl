@@ -264,6 +264,15 @@ PROVIDES FUNCTION GetRegriddingEpoch \
     LANGUAGE C
 
 CCTK_INT FUNCTION                         \
+    GetRegriddingEpochs                   \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN size,                \
+         CCTK_INT ARRAY OUT epochs)
+PROVIDES FUNCTION GetRegriddingEpochs \
+    WITH Carpet_GetRegriddingEpochs   \
+    LANGUAGE C
+
+CCTK_INT FUNCTION                         \
     GetRefinementLevel                    \
         (CCTK_POINTER_TO_CONST IN cctkGH)
 PROVIDES FUNCTION GetRefinementLevel \
