@@ -976,22 +976,20 @@ namespace CarpetIOASCII {
       case 1: return out1D_y;
       case 2: return out1D_z;
       case 3: return out1D_d;
-      default: assert (0);
       }
+      CCTK_BUILTIN_UNREACHABLE();
       
     case 2:
       if (dirs[0]==0 and dirs[1]==1) return out2D_xy;
       if (dirs[0]==0 and dirs[1]==2) return out2D_xz;
       if (dirs[0]==1 and dirs[1]==2) return out2D_yz;
-      assert (0);
+      CCTK_BUILTIN_UNREACHABLE();
       
     case 3:
       // Output is always requested (if switched on)
       return true;
-      
-    default:
-      assert (0);
     }
+    CCTK_BUILTIN_UNREACHABLE();
   }
   
 
@@ -1062,7 +1060,7 @@ namespace CarpetIOASCII {
         // the diagonal: we don't care about the offset
         break;
       default:
-        assert (0);
+        CCTK_BUILTIN_UNREACHABLE();
       }
       break;
       
@@ -1084,7 +1082,7 @@ namespace CarpetIOASCII {
                                    "out2D_yzplane_x",  "out_yzplane_x",
                                    out_yzplane_x);
       } else {
-        assert (0);
+        CCTK_BUILTIN_UNREACHABLE();
       }
       break;
       
@@ -1093,7 +1091,7 @@ namespace CarpetIOASCII {
       break;
       
     default:
-      assert (0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     
     return offset;
