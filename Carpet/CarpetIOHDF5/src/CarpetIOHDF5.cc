@@ -1141,6 +1141,15 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
           if (myGH->recovery_filename_list) {
             for (int i = 0; i < myGH->recovery_num_filenames; i++) {
               if (myGH->recovery_filename_list[i]) {
+                // remove possible index file
+                string old_index_filename = myGH->recovery_filename_list[i];
+                size_t const basenamelen = 
+                  old_index_filename.rfind (out_extension);
+                if(basenamelen != string::npos) {
+                  old_index_filename.insert (basenamelen, ".idx");
+                  remove (old_index_filename.c_str());
+                }
+
                 remove (myGH->recovery_filename_list[i]);
                 free (myGH->recovery_filename_list[i]);
               }
@@ -1148,6 +1157,14 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
             free (myGH->recovery_filename_list);
             myGH->recovery_filename_list = NULL;
           } else {
+            // remove possible index file
+            string old_index_filename =
+              myGH->cp_filename_list[myGH->cp_filename_index];
+            size_t const basenamelen = old_index_filename.rfind (out_extension);
+            if(basenamelen != string::npos) {
+              old_index_filename.insert (basenamelen, ".idx");
+              remove (old_index_filename.c_str());
+            }
             remove (myGH->cp_filename_list[myGH->cp_filename_index]);
             free (myGH->cp_filename_list[myGH->cp_filename_index]);
           }
