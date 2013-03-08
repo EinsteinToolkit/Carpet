@@ -447,11 +447,7 @@ namespace CarpetIOScalar {
         
         int const handle = ireduction->handle;
 
-        union {
-#define TYPECASE(N,T) T var_##T;
-#include "typecase.hh"
-#undef TYPECASE
-        } result;
+        char result[100];       // assuming no type is larger
 
         int const firstvar
           = one_file_per_group ? CCTK_FirstVarIndexI(group) : n;
@@ -461,14 +457,14 @@ namespace CarpetIOScalar {
         for (int n=firstvar; n<firstvar+numvars; ++n) {
           
           int const ierr
-            = CCTK_Reduce (cctkGH, 0, handle, 1, vartype, &result, 1, n);
+            = CCTK_Reduce (cctkGH, 0, handle, 1, vartype, result, 1, n);
           if (ierr) {
             char * const fullname = CCTK_FullName (n);
             CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                         "Error during reduction for variable \"%s\"",
                         fullname);
             free (fullname);
-            memset (&result, 0, sizeof result);
+            memset (result, 0, sizeof result);
           }
           
           if (CCTK_MyProc(cctkGH)==0) {
@@ -477,7 +473,7 @@ namespace CarpetIOScalar {
             switch (specific_cactus_type(vartype)) {
 #define TYPECASE(N,T)                           \
               case N:                           \
-                file << result.var_##T;         \
+                file << *(T const*)result;      \
               break;
 #include "typecase.hh"
 #undef TYPECASE

@@ -63,16 +63,16 @@ namespace dist {
 #define CARPET_NO_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
-#define TYPECASE(N,T)                                           \
-    if (datatype == mpi_datatype<T>()) {                        \
-      assert(not done);                                         \
-      done = true;                                              \
-      T *restrict const invec = (T*)invec_;                     \
-      T *restrict const inoutvec = (T*)inoutvec_;               \
-      for (int n=0; n<len; ++n) {                               \
-        inoutvec[n].Re = max(inoutvec[n].Re, invec[n].Re);      \
-        inoutvec[n].Im = max(inoutvec[n].Im, invec[n].Im);      \
-      }                                                         \
+#define TYPECASE(N,T)                                                   \
+    if (datatype == mpi_datatype<T>()) {                                \
+      assert(not done);                                                 \
+      done = true;                                                      \
+      T *restrict const invec = (T*)invec_;                             \
+      T *restrict const inoutvec = (T*)inoutvec_;                       \
+      for (int n=0; n<len; ++n) {                                       \
+        inoutvec[n] = T(max(real(inoutvec[n]), real(invec[n])),         \
+                        max(imag(inoutvec[n]), imag(invec[n])));        \
+      }                                                                 \
     }
 #define CARPET_COMPLEX
 #include "typecase.hh"
@@ -101,16 +101,16 @@ namespace dist {
 #define CARPET_NO_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
-#define TYPECASE(N,T)                                           \
-    if (datatype == mpi_datatype<T>()) {                        \
-      assert(not done);                                         \
-      done = true;                                              \
-      T *restrict const invec = (T*)invec_;                     \
-      T *restrict const inoutvec = (T*)inoutvec_;               \
-      for (int n=0; n<len; ++n) {                               \
-        inoutvec[n].Re = min(inoutvec[n].Re, invec[n].Re);      \
-        inoutvec[n].Im = min(inoutvec[n].Im, invec[n].Im);      \
-      }                                                         \
+#define TYPECASE(N,T)                                                   \
+    if (datatype == mpi_datatype<T>()) {                                \
+      assert(not done);                                                 \
+      done = true;                                                      \
+      T *restrict const invec = (T*)invec_;                             \
+      T *restrict const inoutvec = (T*)inoutvec_;                       \
+      for (int n=0; n<len; ++n) {                                       \
+        inoutvec[n] = T(min(real(inoutvec[n]), real(invec[n])),         \
+                        min(imag(inoutvec[n]), imag(invec[n])));        \
+      }                                                                 \
     }
 #define CARPET_COMPLEX
 #include "typecase.hh"
@@ -136,22 +136,6 @@ namespace dist {
         inoutvec[n] *= invec[n];                        \
       }                                                 \
     }
-#define CARPET_NO_COMPLEX
-#include "typecase.hh"
-#undef TYPECASE
-#define TYPECASE(N,T)                                   \
-    if (datatype == mpi_datatype<T>()) {                \
-      assert(not done);                                 \
-      done = true;                                      \
-      T *restrict const invec = (T*)invec_;             \
-      T *restrict const inoutvec = (T*)inoutvec_;       \
-      for (int n=0; n<len; ++n) {                       \
-        complex<T>& inout = *(complex<T>*)&inoutvec[n]; \
-        complex<T>& in    = *(complex<T>*)&invec[n];    \
-        inout *= in;                                    \
-      }                                                 \
-    }
-#define CARPET_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
     assert(done);
@@ -175,21 +159,6 @@ namespace dist {
         inoutvec[n] += invec[n];                        \
       }                                                 \
     }
-#define CARPET_NO_COMPLEX
-#include "typecase.hh"
-#undef TYPECASE
-#define TYPECASE(N,T)                                   \
-    if (datatype == mpi_datatype<T>()) {                \
-      assert(not done);                                 \
-      done = true;                                      \
-      T *restrict const invec = (T*)invec_;             \
-      T *restrict const inoutvec = (T*)inoutvec_;       \
-      for (int n=0; n<len; ++n) {                       \
-        inoutvec[n].Re += invec[n].Re;                  \
-        inoutvec[n].Im += invec[n].Im;                  \
-      }                                                 \
-    }
-#define CARPET_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
     assert(done);

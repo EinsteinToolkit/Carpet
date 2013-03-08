@@ -482,14 +482,10 @@ namespace CarpetIOBasic {
         
           int const handle = ireduction->handle;
         
-          union {
-#define TYPECASE(N,T) T var_##T;
-#include "typecase.hh"
-#undef TYPECASE
-          } result;
+          char result[100];     // assuming no type is larger than this
         
           int const ierr
-            = CCTK_Reduce (cctkGH, 0, handle, 1, vartype, &result, 1, n);
+            = CCTK_Reduce (cctkGH, 0, handle, 1, vartype, result, 1, n);
           assert (not ierr);
         
           if (CCTK_MyProc(cctkGH) == 0) {
@@ -500,7 +496,7 @@ namespace CarpetIOBasic {
 #define TYPECASE(N,T)                                                   \
               case N:                                                   \
                 {                                                       \
-                  T const val = result.var_##T;                         \
+                  T const& val = *(T const*)result;                     \
                   if (not isint) {                                      \
                     if (UseScientificNotation (val)) {                  \
                       cout << scientific << setprecision(real_prec_sci); \

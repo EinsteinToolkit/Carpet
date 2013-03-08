@@ -445,32 +445,32 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
   HDF5_ERROR (myGH->HDF5_COMPLEX =
               H5Tcreate (H5T_COMPOUND, sizeof (CCTK_COMPLEX)));
   HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX, "real",
-                         offsetof (CCTK_COMPLEX, Re), HDF5_REAL));
+                         0, HDF5_REAL));
   HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX, "imag",
-                         offsetof (CCTK_COMPLEX, Im), HDF5_REAL));
+                         sizeof (CCTK_REAL), HDF5_REAL));
 #ifdef CCTK_REAL4
   HDF5_ERROR (myGH->HDF5_COMPLEX8 =
               H5Tcreate (H5T_COMPOUND, sizeof (CCTK_COMPLEX8)));
   HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX8, "real",
-                         offsetof (CCTK_COMPLEX8, Re), H5T_NATIVE_FLOAT));
+                         0, H5T_NATIVE_FLOAT));
   HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX8, "imag",
-                         offsetof (CCTK_COMPLEX8, Im), H5T_NATIVE_FLOAT));
+                         sizeof (CCTK_REAL4), H5T_NATIVE_FLOAT));
 #endif
 #ifdef CCTK_REAL8
   HDF5_ERROR (myGH->HDF5_COMPLEX16 =
               H5Tcreate (H5T_COMPOUND, sizeof (CCTK_COMPLEX16)));
   HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX16, "real",
-                         offsetof (CCTK_COMPLEX16, Re), H5T_NATIVE_DOUBLE));
+                         0, H5T_NATIVE_DOUBLE));
   HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX16, "imag",
-                         offsetof (CCTK_COMPLEX16, Im), H5T_NATIVE_DOUBLE));
+                         sizeof (CCTK_REAL8), H5T_NATIVE_DOUBLE));
 #endif
 #ifdef CCTK_REAL16
   HDF5_ERROR (myGH->HDF5_COMPLEX32 =
               H5Tcreate (H5T_COMPOUND, sizeof (CCTK_COMPLEX32)));
   HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX32, "real",
-                         offsetof (CCTK_COMPLEX32, Re), H5T_NATIVE_LDOUBLE));
+                         0, H5T_NATIVE_LDOUBLE));
   HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX32, "imag",
-                         offsetof (CCTK_COMPLEX32, Im), H5T_NATIVE_LDOUBLE));
+                         sizeof (CCTK_REAL16), H5T_NATIVE_LDOUBLE));
 #endif
 
   return (myGH);
