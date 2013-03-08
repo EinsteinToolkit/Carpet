@@ -67,13 +67,13 @@ IOASCII::out1D_vars         = "
         ML_BSSN::ML_lapse
         ML_BSSN::ML_shift
         ML_BSSN::ML_dtshift
-        # Note: Disable output for constraints that cannot be prolongated
-        #       (because they have only one time level)
+        # Note: Disable output for the BSSN constraints;
+        #       they have only one time level and cannot be prolongated
         # ML_BSSN::ML_Ham
         # ML_BSSN::ML_mom
-        ML_BSSN::ML_cons_detg
+        # ML_BSSN::ML_cons_detg
         # ML_BSSN::ML_cons_Gamma
-        ML_BSSN::ML_cons_traceA
+        # ML_BSSN::ML_cons_traceA
 "
 
 #--- driver
