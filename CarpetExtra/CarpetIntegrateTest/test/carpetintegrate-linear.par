@@ -7,7 +7,7 @@
 # Thorn activation
 #==============================================================================
 
-ActiveThorns = "time carpet carpetlib carpetregrid GSL LoopControl carpetreduce carpetslab carpetinterp cartgrid3d coordbase symbase boundary carpetiobasic carpetioascii carpetioscalar ioutil carpetintegratetest"
+ActiveThorns = "time carpet carpetlib carpetregrid GSL LoopControl carpetreduce carpetslab carpetinterp cartgrid3d coordbase symbase boundary carpetiobasic carpetioascii carpetioscalar ioutil carpetintegratetest reflectionsymmetry"
 
 #==============================================================================
 # Directories and recovery
@@ -30,7 +30,6 @@ time::dtfac              		= 	0.375
 #==============================================================================
 
 grid::type                    = "coordbase"
-grid::domain                  = "bitant"
 grid::avoid_origin            = "no"
 
 carpet::domain_from_coordbase = yes
@@ -44,6 +43,9 @@ coordbase::ymax =  0.5
 coordbase::zmin = -0.0
 coordbase::zmax =  0.5
 
+reflectionsymmetry::reflection_z   = yes
+reflectionsymmetry::avoid_origin_z = no
+
 coordbase::spacing = numcells
 coordbase::ncells_x = 45
 coordbase::ncells_y = 45
@@ -52,7 +54,8 @@ coordbase::ncells_z = 23
 coordbase::boundary_size_z_lower     = 3
 coordbase::boundary_shiftout_z_lower = 1
 
-carpet::buffer_width          =  6
+carpet::use_buffer_zones        = yes
+carpet::num_integrator_substeps = 3
 
 carpet::max_refinement_levels   = 12
 carpetregrid::refinement_levels = 3
