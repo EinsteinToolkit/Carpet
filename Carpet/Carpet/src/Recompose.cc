@@ -981,14 +981,16 @@ namespace Carpet {
     num_total_cpu_points  /= num_steps * delta_time;
     
     // Load balance statistics
+    // We count owned points, since these are evolved. Owned points
+    // include active points, overlap points, and buffer points.
     CCTK_REAL const rzero = 0;
     CCTK_REAL const rmax  = numeric_limits<CCTK_REAL>::max();
-    vector<CCTK_REAL> min_active (reflevels, rmax);
-    vector<CCTK_REAL> max_active (reflevels, 0);
-    vector<CCTK_REAL> avg_active (reflevels, 0);
-    vector<CCTK_REAL> sdv_active (reflevels, 0);
+    vector<CCTK_REAL> min_owned (reflevels, rmax);
+    vector<CCTK_REAL> max_owned (reflevels, 0);
+    vector<CCTK_REAL> avg_owned (reflevels, 0);
+    vector<CCTK_REAL> sdv_owned (reflevels, 0);
     for (int rl=0; rl<reflevels; ++rl) {
-      vector<CCTK_REAL> num_active_per_proc (dist::size(), 0);
+      vector<CCTK_REAL> num_owned_per_proc (dist::size(), 0);
       for (int m=0; m<maps; ++m) {
         gh const * const hh = vhh.AT(m);
         dh const * const dd = vdd.AT(m);
@@ -996,20 +998,20 @@ namespace Carpet {
           for (int c=0; c<hh->components(rl); ++c) {
             int const p = hh->processor(rl,c);
             dh::light_dboxes const & b = dd->light_boxes.AT(ml).AT(rl).AT(c);
-            num_active_per_proc.AT(p) += num_gfs * b.active_size;
+            num_owned_per_proc.AT(p) += num_gfs * b.owned_size;
           }
         }
       }
       for (int p=0; p<dist::size(); ++p) {
-        min_active.AT(rl) = min (min_active.AT(rl), num_active_per_proc.AT(p));
-        max_active.AT(rl) = max (max_active.AT(rl), num_active_per_proc.AT(p));
-        avg_active.AT(rl) += num_active_per_proc.AT(p);
-        sdv_active.AT(rl) += ipow (num_active_per_proc.AT(p), 2);
+        min_owned.AT(rl) = min (min_owned.AT(rl), num_owned_per_proc.AT(p));
+        max_owned.AT(rl) = max (max_owned.AT(rl), num_owned_per_proc.AT(p));
+        avg_owned.AT(rl) += num_owned_per_proc.AT(p);
+        sdv_owned.AT(rl) += ipow (num_owned_per_proc.AT(p), 2);
       }
-      avg_active.AT(rl) /= dist::size();
-      sdv_active.AT(rl) /= dist::size();
-      sdv_active.AT(rl) =
-        sqrt (max (rzero, sdv_active.AT(rl) - ipow (avg_active.AT(rl), 2)));
+      avg_owned.AT(rl) /= dist::size();
+      sdv_owned.AT(rl) /= dist::size();
+      sdv_owned.AT(rl) =
+        sqrt (max (rzero, sdv_owned.AT(rl) - ipow (avg_owned.AT(rl), 2)));
     } // for rl
     
     // Output
@@ -1052,16 +1054,16 @@ namespace Carpet {
                 "Total required memory: %.3f GByte (for GAs and currently active GFs)",
                 double ((size_total_array_points + size_total_mem_points) / 1e+9));
     CCTK_VInfo (CCTK_THORNSTRING,
-                "Load balance:  min     avg     max     sdv      max/avg-1");
+                "Load balance:  min     avg     max     sdv     max/avg-1");
     for (int rl=0; rl<reflevels; ++rl) {
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "Level %2d:    %4.0fM   %4.0fM   %4.0fM   %4.0fM active   %4.0f%%",
+                  "Level %2d:    %4.0fM   %4.0fM   %4.0fM   %4.0fM owned   %4.0f%%",
                   rl,
-                  double (min_active.AT(rl) / 1e+6),
-                  double (avg_active.AT(rl) / 1e+6),
-                  double (max_active.AT(rl) / 1e+6),
-                  double (sdv_active.AT(rl) / 1e+6),
-                  double (100 * (max_active.AT(rl) / avg_active.AT(rl) - 1)));
+                  double (min_owned.AT(rl) / 1e+6),
+                  double (avg_owned.AT(rl) / 1e+6),
+                  double (max_owned.AT(rl) / 1e+6),
+                  double (sdv_owned.AT(rl) / 1e+6),
+                  double (100 * (max_owned.AT(rl) / avg_owned.AT(rl) - 1)));
     }
     
     // After this, we will begin to allocate memory for the grid
