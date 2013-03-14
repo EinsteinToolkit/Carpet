@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 
+#include <unistd.h>
+
 #ifdef _OPENMP
 #  include <omp.h>
 #else
@@ -804,8 +806,10 @@ void lc_statistics(CCTK_ARGUMENTS)
   
   if (strlen(statistics_filename) == 0) return;
   
-  string const filename = string(out_dir) + "/" + statistics_filename;
-  FILE *const statsfile = fopen(filename.c_str(), "a");
+  char filename[10000];
+  snprintf(filename, sizeof filename,
+           "%s/%s.%06d.txt", out_dir, statistics_filename, CCTK_MyProc(cctkGH));
+  FILE *const statsfile = fopen(filename, "a");
   
   fprintf(statsfile, "\n");
   fprintf(statsfile, "LoopControl statistics:\n");
@@ -823,8 +827,8 @@ void lc_statistics(CCTK_ARGUMENTS)
         stats->sum * stats->threads / (stats->count * stats->points);
       fprintf(statsfile,
               "   Loop %s (%s:%d): count=%g, avg/thread=%g s, avg/point=%g s\n",
-             stats->name.c_str(), stats->file.c_str(), stats->line,
-             stats->count, avg_thread, avg_point);
+              stats->name.c_str(), stats->file.c_str(), stats->line,
+              stats->count, avg_thread, avg_point);
     }
   }
   fclose(statsfile);

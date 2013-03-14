@@ -16,7 +16,7 @@ STRING statistics_filename "File name for LoopControl statistics" STEERABLE=alwa
 {
   ""   :: "disable statistics output"
   ".+" :: "file name"
-} "LoopControl-statistics.txt"
+} "LoopControl-statistics"
 
 SHARES: IO
 
