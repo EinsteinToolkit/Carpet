@@ -55,7 +55,7 @@ namespace Carpet {
         } LEAVE_LEVEL_MODE;
       } END_REVERSE_MGLEVEL_LOOP;
     } // for rl
-    
+
     // Stop all timers before shutdown, since timers may rely on data
     // structures which are destroyed during shutdown
     int const ierr = CCTK_TimerStop ("CCTK total time");
@@ -79,12 +79,18 @@ namespace Carpet {
       
     } END_REVERSE_MGLEVEL_LOOP;
     
-
     main_timer_tree.root->stop();
-
-    if (output_xml_timer_tree)
+    
+    if (output_timer_tree_every > 0) {
+      TimerNode *et = main_timer_tree.root->getChildTimer("Evolve");
+      et->print(cout, et->getTime(), 0, timer_tree_threshold_percentage, timer_tree_output_precision);
+      mode_timer_tree.root->print(cout, mode_timer_tree.root->getTime(), 0, timer_tree_threshold_percentage, timer_tree_output_precision);
+    }
+    
+    if (output_xml_timer_tree) {
       main_timer_tree.root->outputXML(out_dir,CCTK_MyProc (cctkGH));
-
+    }
+    
     // earlier checkpoint before finalising MPI
     Waypoint ("Done with shutdown");
     
