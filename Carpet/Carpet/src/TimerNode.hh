@@ -34,11 +34,12 @@
 #ifndef TIMERNODE_HH
 #define TIMERNODE_HH
 
-#include <assert.h>
-#include <map>
-#include <string>
-#include <ostream>
+#include <cassert>
 #include <iostream>
+#include <map>
+#include <ostream>
+#include <string>
+#include <utility>
 
 #include "CactusTimer.hh"
 
@@ -94,6 +95,8 @@ public:
   TimerNode* getChildTimer(string name);
 
   double getTime();
+  vector<pair<string, string> > getAllTimerNames() const;
+  vector<double> getAllTimerValues();
   bool isRunning() const;
 
   void print(ostream& out, double total, int level=0, double threshold=0.0, int precision=1);

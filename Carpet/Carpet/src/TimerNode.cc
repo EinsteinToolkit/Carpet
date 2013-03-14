@@ -27,14 +27,15 @@
  *
  * */
 
-#include <assert.h>
-#include <map>
-#include <string>
-#include <ostream>
+#include <algorithm>
+#include <cassert>
+#include <iomanip>
 #include <iostream>
 #include <fstream>
-#include <algorithm>
-#include <iomanip>
+#include <map>
+#include <ostream>
+#include <string>
+#include <utility>
 
 #include "TimerNode.hh"
 
@@ -143,6 +144,18 @@ namespace Carpet {
     return timer->getTime();
   }
 
+  /// Get the names of all clocks of this timer
+  vector<pair<string,string> > TimerNode::getAllTimerNames() const
+  {
+    return timer->getAllTimerNames();
+  }
+
+  /// Get the values of all clocks of this timer
+  vector<double> TimerNode::getAllTimerValues()
+  {
+    return timer->getAllTimerValues();
+  }
+
   /// Print this node and its children as an ASCII tree
   void TimerNode::print(ostream& out, double total, int level,
                         double threshold, int precision)
@@ -156,26 +169,62 @@ namespace Carpet {
     if (level != 0)
       space += "|_";
 
-    const double t = getTime();
-    const string hyphens = string(precision-1,'-');
-    const string spaces  = string(precision-1,' ');
-
-    if (level == 0)
-    {
-      out << "--------" << hyphens << "--------" << hyphens << "-------" << endl;
-      out << "Percent " << spaces  << "  t/secs" << spaces  << "  Timer" << endl;
-      out << "--------" << hyphens << "--------" << hyphens << "-------" << endl;
-    }
-
     const int pcw = 6;
     const int tw = 8;
+    const int tnw = 40;         // timer name
+    const int vw = 9;           // clock values
     const streamsize oldprecision = out.precision();
     const ios_base::fmtflags oldflags = out.flags();
 
+    const double t = getTime();
+    const vector<double> values = getAllTimerValues();
+    const string hyphens = string(precision-1, '-');
+    const string spaces  = string(precision-1, ' ');
+
+    if (level == 0)
+    {
+      const vector<pair<string,string> > names = getAllTimerNames();
+      
+      out << "--------" << hyphens << "--------" << hyphens
+          << string(tnw+2, '-');
+      for (size_t i=0; i<values.size(); ++i) {
+        out << string(vw+2, '-');
+      }
+      out << "\n";
+      
+      out << "Time    " << spaces  << "  Time  " << spaces
+          << "  " << setw(tnw) << left << "Timer" << right;
+      for (size_t i=0; i<names.size(); ++i) {
+        out << "  " << setw(vw) << names[i].first.substr(0,vw);
+      }
+      out << "\n";
+      
+      out << "percent " << spaces  << "  secs  " << spaces
+          << "  " << setw(tnw) << "     ";
+      for (size_t i=0; i<names.size(); ++i) {
+        out << "  " << setw(vw) << names[i].second.substr(0,vw);
+      }
+      out << "\n";
+      
+      out << "--------" << hyphens << "--------" << hyphens
+          << string(tnw+2, '-');
+      for (size_t i=0; i<values.size(); ++i) {
+        out << string(vw+2, '-');
+      }
+      out << "\n";
+    }
+
     // Print this timer value
-    out << fixed << setw(pcw) << setprecision(precision) << 100.0 * t / total << "%"
+    out << fixed << setw(pcw) << setprecision(precision)
+        << 100.0 * t / total << "%"
         << " " << fixed << setw(tw) << setprecision(precision) << t
-        << "  " << space << d_name << endl;
+        << "  " << space << setw(max(size_t(0), tnw - space.length())) << left
+        << d_name.substr(0, max(size_t(10), tnw - space.length())) << right;
+    for (size_t i=0; i<values.size(); ++i) {
+      out.unsetf(ios_base::floatfield);
+      out << "  " << setw(vw) << setprecision(vw-5) << values[i];
+    }
+    out << "\n";
 
     double children_time = 0;
     bool printed_children = false;
@@ -192,24 +241,27 @@ namespace Carpet {
       children_time += iter->second->getTime();
     }
 
-    if (d_children.size() > 0 && printed_children)
-    {
+    if (d_children.size() > 0 && printed_children) {
       const double untimed = t - children_time;
       
-      if (100.0 * untimed / total > threshold)
-      {
+      if (100.0 * untimed / total > threshold) {
         // Print the untimed portion
-        out << fixed << setw(pcw) << setprecision(1) << 100.0 * untimed / total << "%"
+        out << fixed << setw(pcw) << setprecision(1)
+            << 100.0 * untimed / total << "%"
             << " " << fixed << setw(tw) << setprecision(1) << untimed
-            << "  | " << space << "untimed" << endl;
+            << "  | " << space << "untimed" << "\n";
       }
     }
     out.precision (oldprecision);
     out.setf (oldflags);
 
-    if (level == 0)
-    {
-      out << "--------" << hyphens << "--------" << hyphens << "-------" << endl;
+    if (level == 0) {
+      out << "--------" << hyphens << "--------" << hyphens
+          << string(tnw+2, '-');
+      for (size_t i=0; i<values.size(); ++i) {
+        out << string(vw+2, '-');
+      }
+      out << "\n";
     }
   }
 
@@ -243,7 +295,7 @@ namespace Carpet {
     // For compactness, only use multiple lines if there are children
     if (d_children.size() != 0)
     {
-      out << endl;
+      out << "\n";
 
       // Recursively print the children
       for(map<string,TimerNode*>::iterator iter=d_children.begin();iter!=d_children.end();++iter)
@@ -251,7 +303,7 @@ namespace Carpet {
       out << space;
     }
 
-    out << "</timer>" << endl;
+    out << "</timer>" << "\n";
   }
 
   /// Make a string suitable for inclusion in an XML file
@@ -262,8 +314,6 @@ namespace Carpet {
 
     string s2(s);
     using std::string;
-    using std::cout;
-    using std::endl;
     using std::replace;
 
     replace(s2.begin(), s2.end(), '<', '|');
