@@ -1,11 +1,13 @@
-
 #ifndef CACTUSTIMER_HH
 #define CACTUSTIMER_HH
+
+#include <cctk.h>
 
 #include <iostream>
 #include <list>
 #include <string>
-#include <cctk.h>
+#include <utility>
+#include <vector>
 
 namespace Carpet {
 
@@ -39,11 +41,17 @@ namespace Carpet {
     /// Timer name
     string name () const;
 
-    /// Print timer data
-    void printData ();
-
     /// Return the current time of the timer as a double
     double getTime();
+
+    /// Return all clock names
+    vector<pair<string,string> > getAllTimerNames() const;
+
+    /// Return all clock values of the timer as double
+    vector<double> getAllTimerValues();
+
+    /// Print timer data
+    void printData ();
 
     ostream& serialise(ostream &os);
 

@@ -1,8 +1,11 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
-#include <list>
 #include <iomanip>
+#include <list>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
@@ -99,30 +102,57 @@ namespace Carpet
       val = -1;
     }
 
-    // for (int i=0; i<timer->n_vals; ++i) {
-    //   switch (timer->vals[i].type) {
-    //   case val_int:
-    //     val = timer->vals[i].val.i;
-    //     break;
-    //   case val_long:
-    //     val = timer->vals[i].val.l;
-    //     break;
-    //   case val_double:
-    //     val = timer->vals[i].val.d;
-    //     break;
-    //   case val_none:
-    //     val = 0; // ??
-    //     break;
-    //   default:
-    //     assert (0);
-    //   }
-    // }
-
     if (was_running) start();
 
     return val;
   }
-
+  
+  vector<pair<string,string> > CactusTimer::getAllTimerNames() const
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    static cTimerData *timer = NULL;
+    if (not timer) timer = CCTK_TimerCreateData();
+    assert(timer);
+    
+    CCTK_TimerI(handle, timer);
+    
+    vector<pair<string,string> > names(timer->n_vals);
+    for (int i=0; i<timer->n_vals; ++i) {
+      names[i].first  = timer->vals[i].heading;
+      names[i].second = timer->vals[i].units;
+    }
+    
+    return names;
+  }
+  
+  vector<double> CactusTimer::getAllTimerValues()
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    bool const was_running = running;
+    if (was_running) stop();
+    
+    static cTimerData *timer = NULL;
+    if (not timer) timer = CCTK_TimerCreateData();
+    assert(timer);
+    
+    CCTK_TimerI(handle, timer);
+    
+    vector<double> vals(timer->n_vals);
+    for (int i=0; i<timer->n_vals; ++i) {
+      switch (timer->vals[i].type) {
+      case val_int:    vals[i] = timer->vals[i].val.i; break;
+      case val_long:   vals[i] = timer->vals[i].val.l; break;
+      case val_double: vals[i] = timer->vals[i].val.d; break;
+      default: CCTK_BUILTIN_UNREACHABLE();
+      }
+    }
+    
+    if (was_running) start();
+    
+    return vals;
+  }
 
   // Print timer data
   void CactusTimer::printData ()
