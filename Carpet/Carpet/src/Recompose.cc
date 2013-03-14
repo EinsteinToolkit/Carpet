@@ -249,7 +249,7 @@ namespace Carpet {
     if (enable_no_storage) {
       CCTK_WARN (CCTK_WARN_ALERT,
                  "Carpet completed its internal setup, and would now normally go on to allocate memory.  Since the parameter Carpet::enable_no_storage has been set, Carpet will exit instead.");
-      CCTK_Exit ((cGH*) cctkGH, 0);
+      CCTK_Exit (const_cast<cGH*> (cctkGH), 0);
     }
     
     return did_change;
