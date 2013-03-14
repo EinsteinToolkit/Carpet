@@ -1,6 +1,7 @@
 #include "cycleclock.h"
 
 #include <cctk.h>
+#include <cctk_Parameters.h>
 
 #include <cmath>
 
@@ -169,8 +170,12 @@ namespace CycleClock {
   extern "C"
   int CycleClock_Setup()
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     measure_tick();
-    cycleclock_register();
+    if (register_clock) {
+      cycleclock_register();
+    }
     return 0;
   }
   
