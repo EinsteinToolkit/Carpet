@@ -3,3 +3,7 @@
 BOOLEAN verbose "Produce screen output while running" STEERABLE=always
 {
 } "no"
+
+BOOLEAN min_max_time_interpolation "Interpolate in time for min/max reductions" STEERABLE=always
+{
+} "yes"

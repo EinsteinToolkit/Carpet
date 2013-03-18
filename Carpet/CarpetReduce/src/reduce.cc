@@ -1,4 +1,5 @@
 #include <cctk.h>
+#include <cctk_Parameters.h>
 #include <util_ErrorCodes.h>
 #include <util_Table.h>
 
@@ -1174,6 +1175,8 @@ namespace CarpetReduce {
 		 const int num_invars, const int* const invars,
 		 const reduction* const red, const int igrid)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     assert (cgh);
 
     int ierr;
@@ -1332,7 +1335,10 @@ namespace CarpetReduce {
           // Number of necessary time levels
           CCTK_REAL const level_time = cgh->cctk_time;
           bool need_time_interp
-            = (not reduce_arrays
+            = ((min_max_time_interpolation
+                or (red->thered() != do_minimum
+                    and red->thered() != do_maximum))
+               and not reduce_arrays
                and (fabs(current_time - level_time)
                    > 1e-12 * (fabs(level_time) + fabs(current_time)
                               + fabs(cgh->cctk_delta_time))));
