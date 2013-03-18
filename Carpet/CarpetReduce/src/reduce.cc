@@ -701,8 +701,6 @@ namespace CarpetReduce {
 		   void* const mycounts,
 		   const reduction* const red)
   {
-    assert (cgh);
-    
     assert (proc == -1 or (proc>=0 and proc<CCTK_nProcs(cgh)));
     
     assert (num_outvals>=0);
@@ -765,8 +763,6 @@ namespace CarpetReduce {
              void* const myoutvals, const int outtype,
              void* const mycounts)
   {
-    assert (cgh);
-    
     assert (proc == -1 or (proc>=0 and proc<CCTK_nProcs(cgh)));
     
     assert (lsize >= 0);
@@ -824,8 +820,6 @@ namespace CarpetReduce {
 	       const reduction* const red,
                CCTK_REAL const * const weight, CCTK_REAL const levfac)
   {
-    assert (cgh);
-    
     assert (proc == -1 or (proc>=0 and proc<CCTK_nProcs(cgh)));
     
     assert (num_outvals>=0);
@@ -914,8 +908,6 @@ namespace CarpetReduce {
 		 const void* const mycounts,
 		 const reduction* const red)
   {
-    assert (cgh);
-    
     assert (proc == -1 or (proc>=0 and proc<CCTK_nProcs(cgh)));
     
     assert (num_outvals>=0);
@@ -1026,8 +1018,6 @@ namespace CarpetReduce {
 		    void* const outvals, const int outtype,
 		    const reduction* const red, const int igrid)
   {
-    assert (cgh);
-    
     assert (proc == -1 or (proc>=0 and proc<CCTK_nProcs(cgh)));
     
     assert (num_outvals>=0);
@@ -1184,9 +1174,9 @@ namespace CarpetReduce {
 		 const int num_invars, const int* const invars,
 		 const reduction* const red, const int igrid)
   {
-    int ierr;
-    
     assert (cgh);
+
+    int ierr;
     
     assert (proc == -1 or (proc>=0 and proc<CCTK_nProcs(cgh)));
     
