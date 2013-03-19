@@ -28,14 +28,14 @@ static inline int omp_get_thread_num() { return 0; }
 
 #endif
 
-#ifdef HAVE_CAPABILITY_CYCLECLOCK
+
+
+#if defined HAVE_CAPABILITY_CYCLECLOCK
 // We have a fast, accurate clock
 
 #  include <cycleclock.h>
 
-#else
-
-#  ifdef _OPENMP
+#elif defined _OPENMP
 // We use the OpenMP clock
 
 typedef double ticks;
@@ -43,7 +43,7 @@ static inline ticks getticks() { return omp_get_wtime(); }
 static inline double elapsed(ticks t1, ticks t0) { return t1-t0; }
 static inline double seconds_per_tick() { return 1.0; }
 
-#  else
+#else
 // We use gettimeofday as fallback
 
 #include <sys/time.h>
@@ -60,8 +60,9 @@ static inline double elapsed(ticks t1, ticks t0)
 }
 static inline double seconds_per_tick() { return 1.0e-6; }
 
-#  endif
 #endif
+
+
 
 using namespace std;
 
