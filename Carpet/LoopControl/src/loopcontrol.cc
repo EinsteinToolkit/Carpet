@@ -279,15 +279,14 @@ namespace {
     if (omp_get_num_threads() == 1) return 1;
     static int num_smt_threads = -1;
     if (CCTK_BUILTIN_EXPECT(num_smt_threads<0, false)) {
-#pragma omp barrier
-      (void)0;                  // PGI compiler needs this
-#pragma omp master
-      if (CCTK_IsFunctionAliased("GetNumSMTThreads")) {
-        num_smt_threads = GetNumSMTThreads();
-      } else {
-        num_smt_threads = 1;
+#pragma omp critical
+      if (num_smt_threads<0) {
+        if (CCTK_IsFunctionAliased("GetNumSMTThreads")) {
+          num_smt_threads = GetNumSMTThreads();
+        } else {
+          num_smt_threads = 1;
+        }
       }
-#pragma omp barrier
     }
     return num_smt_threads;
   }
