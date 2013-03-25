@@ -471,12 +471,23 @@ namespace CarpetIOScalar {
             file << " ";
             
             switch (specific_cactus_type(vartype)) {
+#define CARPET_NO_COMPLEX
 #define TYPECASE(N,T)                           \
               case N:                           \
                 file << *(T const*)result;      \
               break;
 #include "typecase.hh"
 #undef TYPECASE
+#undef CARPET_NO_COMPLEX
+#define CARPET_COMPLEX
+#define TYPECASE(N,T)                                   \
+              case N:                                   \
+                file << real(*(T const*)result) << " "  \
+                     << imag(*(T const*)result);        \
+              break;
+#include "typecase.hh"
+#undef TYPECASE
+#undef CARPET_COMPLEX
             default:
               UnsupportedVarType (n);
             }

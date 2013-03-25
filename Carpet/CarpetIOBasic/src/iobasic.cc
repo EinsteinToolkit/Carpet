@@ -450,6 +450,7 @@ namespace CarpetIOBasic {
           assert (vardataptr);
 
           switch (specific_cactus_type(vartype)) {
+#define CARPET_NO_COMPLEX
 #define TYPECASE(N,T)                                                   \
             case N:                                                     \
               {                                                         \
@@ -466,6 +467,25 @@ namespace CarpetIOBasic {
             break;
 #include "typecase.hh"
 #undef TYPECASE
+#undef CARPET_NO_COMPLEX
+#define CARPET_COMPLEX
+#define TYPECASE(N,T)                                                   \
+            case N:                                                     \
+              {                                                         \
+                T const val = * static_cast <T const *> (vardataptr);   \
+                if (not isint) {                                        \
+                  if (UseScientificNotation (val)) {                    \
+                    cout << scientific << setprecision(real_prec_sci);  \
+                  } else {                                              \
+                    cout << fixed << setprecision(real_prec);           \
+                  }                                                     \
+                }                                                       \
+                cout << real(val) << " " << imag(val);                  \
+              }                                                         \
+            break;
+#include "typecase.hh"
+#undef TYPECASE
+#undef CARPET_COMPLEX
           default:
             UnsupportedVarType (n);
           }

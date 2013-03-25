@@ -1467,12 +1467,23 @@ namespace CarpetIOASCII {
             const gdata* gfdata = gfdatas.at(n);
             os << (n==0 ? "\t" : " ");
             switch (specific_cactus_type(vartype)) {
+#define CARPET_NO_COMPLEX
 #define TYPECASE(N,T)                                   \
               case N:                                   \
                 os << (*(const data<T>*)gfdata)[index]; \
                 break;
 #include "typecase.hh"
 #undef TYPECASE
+#undef CARPET_NO_COMPLEX
+#define CARPET_COMPLEX
+#define TYPECASE(N,T)                                                   \
+              case N:                                                   \
+                os << real((*(const data<T>*)gfdata)[index]) << " "     \
+                   << imag((*(const data<T>*)gfdata)[index]);           \
+                break;
+#include "typecase.hh"
+#undef TYPECASE
+#undef CARPET_COMPLEX
             default:
               UnsupportedVarType(vi);
             }
