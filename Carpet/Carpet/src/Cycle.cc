@@ -4,13 +4,13 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <Requirements.hh>
+
 #include <ggf.hh>
 #include <gh.hh>
 
 #include <carpet.hh>
 #include <Timers.hh>
-
-#include "Requirements.hh"
 
 
 
@@ -110,7 +110,9 @@ namespace Carpet {
       Accelerator_Cycle(cctkGH);
     }
     
+#ifdef REQUIREMENTS_HH
     Requirements::Cycle(reflevel);
+#endif
     
     if (errors > 0) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,

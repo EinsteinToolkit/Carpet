@@ -1,0 +1,18 @@
+# Parameter definitions for thorn Requirements
+
+BOOLEAN check_requirements "Check schedule requirements" STEERABLE=always
+{
+} "no"
+
+BOOLEAN verbose "Output details when checking requirements" STEERABLE=always
+{
+} "no"
+
+BOOLEAN inconsistencies_are_fatal "Abort when encountering inconsistencies in requirements" STEERABLE=always
+{
+} "no"
+
+STRING ignore_these_variables "Assume that these variables are always valid everywhere" STEERABLE=recover
+{
+  "([A-Za-z0-9_]+[:][:][A-Za-z0-9_]+([[:space:]]+|$))*" :: "space separated list of variables or groups"
+} ""

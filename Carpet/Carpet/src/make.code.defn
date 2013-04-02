@@ -16,7 +16,6 @@ SRCS =	CactusTimer.cc				\
 	OutputGH.cc				\
 	Poison.cc				\
 	Recompose.cc				\
-	Requirements.cc				\
 	Restrict.cc				\
 	ScheduleWrapper.cc			\
 	SetupGH.cc				\

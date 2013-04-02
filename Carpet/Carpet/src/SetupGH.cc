@@ -25,6 +25,8 @@
 #endif
 #include <unistd.h>
 
+#include <Requirements.hh>
+
 #include <bbox.hh>
 #include <defs.hh>
 #include <dist.hh>
@@ -35,7 +37,6 @@
 #include <vect.hh>
 
 #include <carpet.hh>
-#include "Requirements.hh"
 #include "Timers.hh"
 
 
@@ -720,7 +721,9 @@ namespace Carpet {
       maps = num_maps;
     }
     carpetGH.maps = maps;
+#ifdef REQUIREMENTS_HH
     Requirements::Setup (maps);
+#endif
   }
   
   

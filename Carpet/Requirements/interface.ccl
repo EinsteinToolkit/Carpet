@@ -1,0 +1,69 @@
+# Interface definition for thorn Requirements
+
+IMPLEMENTS: Requirements
+
+
+
+INCLUDES HEADER: Requirements.hh IN Requirements.hh
+
+
+
+# Programmatically check a reads clause
+void FUNCTION                             \
+    Requirements_CheckReads               \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN numvars,             \
+         CCTK_INT ARRAY IN varinds,       \
+         CCTK_STRING IN reads_clause)
+PROVIDES FUNCTION Requirements_CheckReads \
+    WITH Carpet_Requirements_CheckReads   \
+    LANGUAGE C
+
+# Programmatically record a writes clause
+void FUNCTION                             \
+    Requirements_NotifyWrites             \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN numvars,             \
+         CCTK_INT ARRAY IN varinds,       \
+         CCTK_STRING IN write_clause)
+PROVIDES FUNCTION Requirements_NotifyWrites \
+    WITH Carpet_Requirements_NotifyWrites   \
+    LANGUAGE C
+
+# Programmatically invalidate a variable
+void FUNCTION                             \
+    Requirements_Invalidate               \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN numvars,             \
+         CCTK_INT ARRAY IN varinds)
+PROVIDES FUNCTION Requirements_Invalidate \
+    WITH Carpet_Requirements_Invalidate   \
+    LANGUAGE C
+
+
+
+CCTK_INT FUNCTION                         \
+    GetRefinementLevel                    \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION GetRefinementLevel
+
+CCTK_INT FUNCTION                         \
+    GetMap                                \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION GetMap
+
+CCTK_INT FUNCTION                         \
+    GetTimeLevel                          \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION GetTimeLevel
+
+CCTK_INT FUNCTION                             \
+     Boundary_SelectedGVs                     \
+         (CCTK_POINTER_TO_CONST IN cctkGH,    \
+          CCTK_INT IN array_size,             \
+          CCTK_INT ARRAY OUT var_indicies,    \
+          CCTK_INT ARRAY OUT faces,           \
+          CCTK_INT ARRAY OUT boundary_widths, \
+          CCTK_INT ARRAY OUT table_handles,   \
+          CCTK_STRING IN bc_name)
+REQUIRES FUNCTION Boundary_SelectedGVs

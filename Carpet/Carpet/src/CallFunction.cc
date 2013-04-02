@@ -10,13 +10,14 @@
 #include <cctk_Parameters.h>
 #include <cctki_GHExtensions.h>
 
+#include <Requirements.hh>
+
 #include <gh.hh>
 
 #include <carpet.hh>
 #include <Timers.hh>
 
 #include "adler32.hh"
-#include "Requirements.hh"
 
 
 
@@ -358,7 +359,9 @@ namespace Carpet {
       CCTK_REAL const saved_cctk_delta_time = cctkGH->cctk_delta_time;
       
       user_timer.start();
+#ifdef REQUIREMENTS_HH
       Requirements::BeforeRoutine(attribute, reflevel, map, timelevel);
+#endif
       timer.start();
       if (CCTK_IsFunctionAliased("Accelerator_PreCallFunction")) {
         Timer pre_timer("PreCall");
@@ -375,7 +378,9 @@ namespace Carpet {
         post_timer.stop();
       }
       timer.stop();
+#ifdef REQUIREMENTS_HH
       Requirements::AfterRoutine(attribute, reflevel, map, timelevel);
+#endif
       user_timer.stop();
       
       // Manage the time step size. If the time step size changes

@@ -6,6 +6,8 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <Requirements.hh>
+
 #include <defs.hh>
 #include <dh.hh>
 #include <gf.hh>
@@ -13,8 +15,6 @@
 #include <typeprops.hh>
 
 #include <carpet.hh>
-
-#include "Requirements.hh"
 
 
 
@@ -219,6 +219,7 @@ namespace Carpet {
       min_num_timelevels = 0;
     }
     
+#ifdef REQUIREMENTS_HH
     vector<int> vgroups(n_groups), vtimelevels(n_groups);
     for (int i=0; i<n_groups; ++i) {
       int const gi = groups[i];
@@ -238,6 +239,7 @@ namespace Carpet {
       vtimelevels.AT(i) = ntls;
     }
     Requirements::ChangeStorage(vgroups, vtimelevels, reflevel);
+#endif
     
     return do_allow_past_timelevels ? 
       min_num_timelevels : min(1,min_num_timelevels);

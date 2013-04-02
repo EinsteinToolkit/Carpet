@@ -8,13 +8,13 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <Requirements.hh>
+
 #include <ggf.hh>
 #include <gh.hh>
 
 #include <carpet.hh>
 #include <Timers.hh>
-
-#include "Requirements.hh"
 
 
 
@@ -165,7 +165,9 @@ namespace Carpet {
         timer.stop();
       }
       
+#ifdef REQUIREMENTS_HH
       Requirements::Sync(function_data, goodgroups, reflevel, timelevel);
+#endif
       
     }
     

@@ -13,12 +13,12 @@
 #include <cctki_ScheduleBindings.h>
 #include <cctki_WarnLevel.h>
 
+#include <Requirements.hh>
+
 #include <carpet.hh>
 #include <Timers.hh>
 #include <TimerSet.hh>
 #include <TimerNode.hh>
-
-#include "Requirements.hh"
 
 
 
@@ -188,7 +188,10 @@ namespace Carpet {
       ScheduleTraverse (where, "CCTK_PARAMCHECK", cctkGH);
     } END_MGLEVEL_LOOP;
     
+#ifdef REQUIREMENTS_HH
+    // TODO: Why is this disabled?
     // Requirements::CheckRequirements (cctkGH);
+#endif
     
     CCTKi_FinaliseParamWarn();
     
@@ -923,7 +926,9 @@ namespace Carpet {
     assert (not did_remove_level or did_regrid);
     
     if (did_regrid) {
+#ifdef REQUIREMENTS_HH
       Requirements::Regrid(reflevels);
+#endif
       bool did_any_recompose = false;
       BEGIN_META_MODE (cctkGH) {
 
@@ -937,12 +942,14 @@ namespace Carpet {
           bool did_recompose = false;
           did_recompose = Recompose (cctkGH, rl, prolongate_initial_data);
           did_any_recompose = did_any_recompose or did_recompose;
+#ifdef REQUIREMENTS_HH
           Requirements::Recompose(rl,
                                   not did_recompose ?
                                   Requirements::valid::everywhere :
                                   prolongate_initial_data ?
                                   Requirements::valid::interior :
                                   Requirements::valid::nowhere);
+#endif
           
           // Carpet assumes that a regridding operation always changes "level N
           // and all finer levels" so we should call POSTREGRID on all finer levels
@@ -995,7 +1002,9 @@ namespace Carpet {
         if (have_done_anything) assert (have_done_late_global_mode);
         
       } END_META_MODE;
+#ifdef REQUIREMENTS_HH
       Requirements::RegridFree();
+#endif
     } // if did_regrid
     
     RegridFree (cctkGH, prolongate_initial_data);
@@ -1052,17 +1061,23 @@ namespace Carpet {
         bool const did_regrid = Regrid (cctkGH, true, prolongate_initial_data);
         
         if (did_regrid) {
+#ifdef REQUIREMENTS_HH
           Requirements::Regrid(reflevels);
+#endif
           for (int rl=0; rl<reflevels; ++rl) {
             if (not enable_no_storage) {
               Recompose (cctkGH, rl, prolongate_initial_data);
+#ifdef REQUIREMENTS_HH
               Requirements::Recompose(rl,
                                       prolongate_initial_data ?
                                       Requirements::valid::interior :
                                       Requirements::valid::nowhere);
+#endif
             }
           } // for rl
+#ifdef REQUIREMENTS_HH
           Requirements::RegridFree();
+#endif
         } // if did_regrid
         
         RegridFree (cctkGH, prolongate_initial_data);
@@ -1125,7 +1140,9 @@ namespace Carpet {
     assert (not did_remove_level or did_regrid);
     
     if (did_regrid) {
+#ifdef REQUIREMENTS_HH
       Requirements::Regrid(reflevels);
+#endif
       bool did_any_recompose = false;
       BEGIN_META_MODE (cctkGH) {
 
@@ -1138,12 +1155,14 @@ namespace Carpet {
           
           bool did_recompose = Recompose (cctkGH, rl, prolongate_initial_data);
           did_any_recompose = did_any_recompose or did_recompose;
+#ifdef REQUIREMENTS_HH
           Requirements::Recompose(rl,
                                   not did_recompose ?
                                   Requirements::valid::everywhere :
                                   prolongate_initial_data ?
                                   Requirements::valid::interior :
                                   Requirements::valid::nowhere);
+#endif
           
           // Carpet assumes that a regridding operation always changes
           // "level N and all finer levels" so we should call
@@ -1214,7 +1233,9 @@ namespace Carpet {
         if (have_done_anything) assert (have_done_late_global_mode);
         
       } END_META_MODE;
+#ifdef REQUIREMENTS_HH
       Requirements::RegridFree();
+#endif
     } // if did_regrid
     
     RegridFree (cctkGH, prolongate_initial_data);

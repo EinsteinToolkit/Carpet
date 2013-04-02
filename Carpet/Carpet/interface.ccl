@@ -7,6 +7,8 @@ include header: carpet_public.h in carpet.h
 
 include header: Timers.hh in CarpetTimers.hh
 
+uses include header: Requirements.hh
+
 uses include header: nompi.h
 
 uses include header: loopcontrol.h
@@ -294,21 +296,21 @@ PROVIDES FUNCTION GetLocalComponents \
     LANGUAGE C
 
 CCTK_INT FUNCTION                         \
-    GetMap                    \
+    GetMap                                \
         (CCTK_POINTER_TO_CONST IN cctkGH)
 PROVIDES FUNCTION GetMap \
     WITH Carpet_GetMap   \
     LANGUAGE C
 
 CCTK_INT FUNCTION                         \
-    GetMaps                   \
+    GetMaps                               \
         (CCTK_POINTER_TO_CONST IN cctkGH)
 PROVIDES FUNCTION GetMaps \
     WITH Carpet_GetMaps   \
     LANGUAGE C
 
 CCTK_INT FUNCTION                         \
-    GetTimeLevel               \
+    GetTimeLevel                          \
         (CCTK_POINTER_TO_CONST IN cctkGH)
 PROVIDES FUNCTION GetTimeLevel \
     WITH Carpet_GetTimeLevel   \
@@ -327,40 +329,6 @@ CCTK_POINTER FUNCTION                     \
          CCTK_INT IN varindex)
 PROVIDES FUNCTION VarDataPtrI \
     WITH Carpet_VarDataPtrI   \
-    LANGUAGE C
-
-
-
-# Programmatically check a reads clause
-void FUNCTION                             \
-    Requirements_CheckReads               \
-        (CCTK_POINTER_TO_CONST IN cctkGH, \
-         CCTK_INT IN numvars,             \
-         CCTK_INT ARRAY IN varinds,       \
-         CCTK_STRING IN reads_clause)
-PROVIDES FUNCTION Requirements_CheckReads \
-    WITH Carpet_Requirements_CheckReads   \
-    LANGUAGE C
-
-# Programmatically record a writes clause
-void FUNCTION                             \
-    Requirements_NotifyWrites             \
-        (CCTK_POINTER_TO_CONST IN cctkGH, \
-         CCTK_INT IN numvars,             \
-         CCTK_INT ARRAY IN varinds,       \
-         CCTK_STRING IN write_clause)
-PROVIDES FUNCTION Requirements_NotifyWrites \
-    WITH Carpet_Requirements_NotifyWrites   \
-    LANGUAGE C
-
-# Programmatically invalidate a variable
-void FUNCTION                             \
-    Requirements_Invalidate               \
-        (CCTK_POINTER_TO_CONST IN cctkGH, \
-         CCTK_INT IN numvars,             \
-         CCTK_INT ARRAY IN varinds)
-PROVIDES FUNCTION Requirements_Invalidate \
-    WITH Carpet_Requirements_Invalidate   \
     LANGUAGE C
 
 

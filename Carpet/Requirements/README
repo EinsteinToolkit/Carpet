@@ -1,0 +1,9 @@
+Cactus Code Thorn Requirements
+Author(s)    : Erik Schnetter <schnetter@gmail.com>
+Maintainer(s): Erik Schnetter <schnetter@gmail.com>
+Licence      : GPLv2+
+--------------------------------------------------------------------------
+
+1. Purpose
+
+Check schedule requirements at run time.
