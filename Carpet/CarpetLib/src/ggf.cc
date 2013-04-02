@@ -401,9 +401,8 @@ mg_restrict_all (comm_state & state,
   static Timer timer ("mg_restrict_all");
   timer.start ();
   // Require same times
-  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
-  assert (abs(t.get_time(ml,rl,0) - t.get_time(ml-1,rl,0))
-	  <= 1.0e-8 * (1.0 + abs(t.get_time(ml,rl,0))));
+  assert (fabs(t.get_time(ml,rl,0) - t.get_time(ml-1,rl,0))
+	  <= 1.0e-8 * (1.0 + fabs(t.get_time(ml,rl,0))));
   vector<int> const tl2s(1,tl);
   transfer_from_all (state,
                      tl  ,rl,ml,
@@ -425,9 +424,8 @@ mg_prolongate_all (comm_state & state,
   static Timer timer ("mg_prolongate_all");
   timer.start ();
   // Require same times
-  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
-  assert (abs(t.get_time(ml,rl,0) - t.get_time(ml+1,rl,0))
-	  <= 1.0e-8 * (1.0 + abs(t.get_time(ml,rl,0))));
+  assert (fabs(t.get_time(ml,rl,0) - t.get_time(ml+1,rl,0))
+	  <= 1.0e-8 * (1.0 + fabs(t.get_time(ml,rl,0))));
   vector<int> const tl2s(1,tl);
   transfer_from_all (state,
                      tl  ,rl,ml,
@@ -449,9 +447,8 @@ ref_restrict_all (comm_state & state,
   static Timer timer ("ref_restrict_all");
   timer.start ();
   // Require same times
-  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
-  assert (abs(t.get_time(ml,rl,tl) - t.get_time(ml,rl+1,tl)) <=
-          1.0e-8 * (1.0 + abs(t.get_time(ml,rl,tl))));
+  assert (fabs(t.get_time(ml,rl,tl) - t.get_time(ml,rl+1,tl)) <=
+          1.0e-8 * (1.0 + fabs(t.get_time(ml,rl,tl))));
   transfer_from_all (state,
                      tl,rl  ,ml,
                      & dh::fast_dboxes::fast_ref_rest_sendrecv,
@@ -500,9 +497,8 @@ ref_reflux_all (comm_state & state,
   static Timer timer ("ref_reflux_all");
   timer.start ();
   // Require same times
-  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
-  assert (abs(t.get_time(ml,rl,tl) - t.get_time(ml,rl+1,tl)) <=
-          1.0e-8 * (1.0 + abs(t.get_time(ml,rl,tl))));
+  assert (fabs(t.get_time(ml,rl,tl) - t.get_time(ml,rl+1,tl)) <=
+          1.0e-8 * (1.0 + fabs(t.get_time(ml,rl,tl))));
   islab slabinfo;
   slabinfo.is_centered = 1 - ivect::dir(dir);
   transfer_from_all (state,
@@ -526,9 +522,8 @@ ref_reflux_prolongate_all (comm_state & state,
   static Timer timer ("ref_reflux_prolongate_all");
   timer.start ();
   // Require same times
-  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
-  assert (abs(t.get_time(ml,rl,tl) - t.get_time(ml,rl-1,tl)) <=
-          1.0e-8 * (1.0 + abs(t.get_time(ml,rl,tl))));
+  assert (fabs(t.get_time(ml,rl,tl) - t.get_time(ml,rl-1,tl)) <=
+          1.0e-8 * (1.0 + fabs(t.get_time(ml,rl,tl))));
   islab slabinfo;
   slabinfo.is_centered = 1 - ivect::dir(dir);
   transfer_from_all (state,

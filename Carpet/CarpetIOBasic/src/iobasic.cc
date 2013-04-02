@@ -81,9 +81,7 @@ namespace CarpetIOBasic {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static_assert (abs(0.1) > 0, "Function abs has wrong signature");
-    
-    CCTK_REAL const xa = abs (x);
+    CCTK_REAL const xa = fabs (x);
     return xa != 0 and (xa < real_min or xa >= real_max);
   }
   

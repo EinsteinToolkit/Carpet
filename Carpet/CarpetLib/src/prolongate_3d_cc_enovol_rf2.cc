@@ -153,7 +153,7 @@ namespace CarpetLib {
         RT const x1 = RT(0.5);
         //cout << "x0=" << x0 << endl;
         RT const y0 = (ipow (x1, n+1) - ipow (x0, n+1)) / ((x1-x0)*(n+1));
-        if (not (abs (res - y0) < 1.0e-12)) {
+        if (not (fabs (res - y0) < 1.0e-12)) {
           RT rt;
           ostringstream buf;
           buf << "Error in prolongate_3d_cc_rf2::coeffs_3d_cc_rf2\n"
@@ -224,7 +224,7 @@ namespace CarpetLib {
   {
      if (a * b < 0)
         return T(0);
-     else if (abs(a) < abs(b))
+     else if (fabs(a) < fabs(b))
         return a;
      else
         return b;
@@ -285,7 +285,7 @@ namespace CarpetLib {
 	 } else {
            int min = 1;
            for (int i=0; i < 3; ++i)
-              if (abs(V[i]) < abs(V[min])) min = i;
+              if (fabs(V[i]) < fabs(V[min])) min = i;
            
            switch (min) {
               case 0:
@@ -418,7 +418,7 @@ namespace CarpetLib {
     RT const x1 = di * RT(0.5) + RT(0.5);
     //cout << "x0=" << x0 << endl;
     RT const y0 = (ipow (x1, ORDER) - ipow (x0, ORDER)) / ((x1-x0)*(ORDER));
-    if (not (abs (res - y0) < 1.0e-12)) {
+    if (not (fabs (res - y0) < 1.0e-12)) {
       RT rt;
       ostringstream buf;
       buf << "Error in prolongate_3d_cc_rf2::coeffs_3d_cc_rf2\n"

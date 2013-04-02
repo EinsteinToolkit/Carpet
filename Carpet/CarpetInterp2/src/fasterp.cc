@@ -1190,12 +1190,12 @@ namespace CarpetInterp2 {
       assert (all (ipos % ext.stride() == ivect(0)));
       ipos /= ext.stride();
       dpos /= rvect(ext.stride());
-      if (not (all (abs(dpos) <= rvect(0.5)))) {
+      if (not (all (fabs(dpos) <= rvect(0.5)))) {
         cout << "fasterp.cc:659\n"
              << "   dpos=" << dpos << "\n"
              << "   ext=" << ext << "\n";
       }
-      assert (all (abs(dpos) <= rvect(0.5)));
+      assert (all (fabs(dpos) <= rvect(0.5)));
       
       ivect const ind = ipos - ext.lower() / ext.stride();
       ivect const ash = pad_shape(ext);

@@ -373,6 +373,7 @@ inline vect<T,D> ipow (const vect<T,D>& a, const vect<int,D>& b)
 
 DECLARE_FUNCTION_1 (abs)
 DECLARE_FUNCTION_1 (ceil)
+DECLARE_FUNCTION_1 (fabs)
 DECLARE_FUNCTION_1 (floor)
 DECLARE_FUNCTION_1 (sqrt)
 namespace std {

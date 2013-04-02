@@ -1441,7 +1441,7 @@ namespace Carpet {
     rvect rcost = cost (superreg);
     CCTK_REAL const rfact = pow (nprocs / prod(rcost), CCTK_REAL(1)/dim);
     rcost *= rfact;
-    assert (abs (prod (rcost) - nprocs) <= 1.0e-6);
+    assert (fabs (prod (rcost) - nprocs) <= 1.0e-6);
     if (recompose_verbose) cout << "SRMA shapes " << rcost << endl;
     
     // Choose a direction

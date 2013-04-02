@@ -124,8 +124,8 @@ namespace CarpetLib {
     
     RT const eps = 1.0e-10;
     
-    if (abs (t1 - t2) < eps or abs (t1 - t3) < eps or abs (t1 - t4) < eps or
-        abs (t2 - t3) < eps or abs (t2 - t4) < eps or abs (t3 - t4) < eps)
+    if (fabs (t1 - t2) < eps or fabs (t1 - t3) < eps or fabs (t1 - t4) < eps or
+        fabs (t2 - t3) < eps or fabs (t2 - t4) < eps or fabs (t3 - t4) < eps)
     {
       CCTK_WARN (0, "Internal error: arrays have same time");
     }

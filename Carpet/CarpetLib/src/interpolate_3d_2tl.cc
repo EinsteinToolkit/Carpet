@@ -119,7 +119,7 @@ namespace CarpetLib {
     // Linear (first order) interpolation
     
     RT const eps = 1.0e-10;
-    if (abs (t1 - t2) < eps) {
+    if (fabs (t1 - t2) < eps) {
       CCTK_WARN (0, "Internal error: arrays have same time");
     }
     if (t < min (t1, t2) - eps or t > max (t1, t2) + eps) {

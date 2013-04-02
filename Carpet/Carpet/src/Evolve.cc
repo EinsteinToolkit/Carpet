@@ -110,15 +110,15 @@ namespace Carpet {
         timer.start();
         CCTK_REAL const eps =
           pow(numeric_limits<CCTK_REAL>::epsilon(), CCTK_REAL(0.75));
-        assert (abs (cctkGH->cctk_time - global_time) <= eps * global_time);
+        assert (fabs (cctkGH->cctk_time - global_time) <= eps * global_time);
         for (int ml=0; ml<mglevels; ++ml) {
           for (int rl=0; rl<reflevels; ++rl) {
             int const do_every =
               ipow (mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
             if (cctkGH->cctk_iteration % do_every == 0) {
-              // assert (abs (leveltimes.AT(ml).AT(rl) - global_time) <=
+              // assert (fabs (leveltimes.AT(ml).AT(rl) - global_time) <=
               //         eps * global_time);
-              assert (abs (tt->get_time(ml,rl,0) - global_time) <=
+              assert (fabs (tt->get_time(ml,rl,0) - global_time) <=
                       eps * global_time);
             }
           }

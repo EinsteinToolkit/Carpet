@@ -150,7 +150,7 @@ namespace CarpetLib {
         RT const x0 = RT(0.25) + di * RT(0.5);
         //cout << "x0=" << x0 << endl;
         RT const y0 = ipow (x0, n);
-        if (not (abs (res - y0) < 1.0e-12)) {
+        if (not (fabs (res - y0) < 1.0e-12)) {
           RT rt;
           ostringstream buf;
           buf << "Error in prolongate_3d_cc_rf2::coeffs_3d_cc_rf2\n"
@@ -260,7 +260,7 @@ namespace CarpetLib {
   {
      if (a * b < 0)
         return T(0);
-     else if (abs(a) < abs(b))
+     else if (fabs(a) < fabs(b))
         return a;
      else
         return b;
@@ -327,7 +327,7 @@ namespace CarpetLib {
 	 // check that divided differences do not change sign: if so go back to first order!
 	 if (lV*rV <= 0)
 	 // if minmod linear slope is smaller than high-order left and right undivided differences, use lowest-order TVD interpolation!
-	 //if (abs(slope) < abs(lV) || abs(slope) < abs(rV))
+	 //if (fabs(slope) < fabs(lV) || fabs(slope) < fabs(rV))
 	 {
 	    // switch back to first order TVD scheme!
 	    res = 0;
@@ -348,7 +348,7 @@ namespace CarpetLib {
 	    break;
 	 }
 	 
-	 if (abs(lV) < abs(rV)) {
+	 if (fabs(lV) < fabs(rV)) {
 	    //cout << "left ";
 	    // use left-shifted stencil since it is smoother
 	    for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
@@ -390,7 +390,7 @@ namespace CarpetLib {
 	 // check that divided differences do not change sign: if so go back to first order!
 	 if (V[0]*V[2] <= 0 || V[0]*V[1] <= 0 || V[1]*V[2] <= 0)
 	 // if minmod linear slope is smaller than high-order left and right undivided differences, use lowest-order TVD interpolation!
-	 //if (abs(slope) < abs(V[0]) || abs(slope) < abs(V[1]) || abs(slope) < abs(V[2]))
+	 //if (fabs(slope) < fabs(V[0]) || fabs(slope) < fabs(V[1]) || fabs(slope) < fabs(V[2]))
 	 {
 	    // switch back to first order!
 	    res = 0;
@@ -406,7 +406,7 @@ namespace CarpetLib {
 	 
 	 int min = 1;  // start off with centered stencil
 	 for (int i=0; i < 3; ++i)
-	    if (abs(V[i]) < abs(V[min])) min = i;
+	    if (fabs(V[i]) < fabs(V[min])) min = i;
 	 
 	 switch (min) {
 	    case 0:
@@ -532,7 +532,7 @@ namespace CarpetLib {
 	 // check that divided differences do not change sign: if so go back to first order!
 	 if (lV*rV <= 0)
 	 // if minmod linear slope is smaller than high-order left and right undivided differences, use lowest-order TVD interpolation!
-	 //if (abs(slope) < abs(lV) || abs(slope) < abs(rV))
+	 //if (fabs(slope) < fabs(lV) || fabs(slope) < fabs(rV))
 	 {
 	    //res = 0;
             //typedef coeffs1d<RT,1,dj,0> coeffs1;
@@ -555,7 +555,7 @@ namespace CarpetLib {
 	    break;
 	 }
 	 
-	 if (abs(lV) < abs(rV)) {
+	 if (fabs(lV) < fabs(rV)) {
 	    // use left-shifted stencil since it is smoother
 	    for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
 	       res += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
@@ -593,7 +593,7 @@ namespace CarpetLib {
 	 // check that divided differences do not change sign: if so go back to first order!
 	 if (V[0]*V[2] <= 0 || V[0]*V[1] <= 0 || V[1]*V[2] <= 0)
 	 // if minmod linear slope is smaller than high-order left and right undivided differences, use lowest-order TVD interpolation!
-	 //if (abs(slope) < abs(V[0]) || abs(slope) < abs(V[1]) || abs(slope) < abs(V[2]))
+	 //if (fabs(slope) < fabs(V[0]) || fabs(slope) < fabs(V[1]) || fabs(slope) < fabs(V[2]))
 	 {
 	    // switch back to first order!
 	    res = 0;
@@ -609,7 +609,7 @@ namespace CarpetLib {
 	 
 	 int min = 1;
 	 for (int i=0; i < 3; ++i)
-	    if (abs(V[i]) < abs(V[min])) min = i;
+	    if (fabs(V[i]) < fabs(V[min])) min = i;
 	 
 	 switch (min) {
 	    case 0:
@@ -736,7 +736,7 @@ namespace CarpetLib {
 	 // check that divided differences do not change sign: if so go back to first order!
 	 if (lV*rV <= 0)
 	 // if minmod linear slope is smaller than high-order left and right undivided differences, use lowest-order TVD interpolation!
-	 //if (abs(slope) < abs(lV) || abs(slope) < abs(rV))
+	 //if (fabs(slope) < fabs(lV) || fabs(slope) < fabs(rV))
 	 {
 	    //res = 0;
             //typedef coeffs1d<RT,1,dk,0> coeffs1;
@@ -759,7 +759,7 @@ namespace CarpetLib {
 	    break;
 	 }
 	 
-	 if (abs(lV) < abs(rV)) {
+	 if (fabs(lV) < fabs(rV)) {
 	    // use left-shifted stencil since it is smoother
 	    for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
 	       res += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
@@ -797,7 +797,7 @@ namespace CarpetLib {
 	 // check that divided differences do not change sign: if so go back to first order!
 	 if (V[0]*V[2] <= 0 || V[0]*V[1] <= 0 || V[1]*V[2] <= 0)
 	 // if minmod linear slope is smaller than high-order left and right undivided differences, use lowest-order TVD interpolation!
-	 //if (abs(slope) < abs(V[0]) || abs(slope) < abs(V[1]) || abs(slope) < abs(V[2]))
+	 //if (fabs(slope) < fabs(V[0]) || fabs(slope) < fabs(V[1]) || fabs(slope) < fabs(V[2]))
 	 {
 	    // switch back to first order!
 	    res = 0;
@@ -813,7 +813,7 @@ namespace CarpetLib {
 	 
 	 int min = 1;
 	 for (int i=0; i < 3; ++i)
-	    if (abs(V[i]) < abs(V[min])) min = i;
+	    if (fabs(V[i]) < fabs(V[min])) min = i;
 	 
 	 switch (min) {
 	    case 0:

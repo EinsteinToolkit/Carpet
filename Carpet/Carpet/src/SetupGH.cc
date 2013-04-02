@@ -1837,7 +1837,7 @@ namespace Carpet {
     npoints = floor (real_npoints + static_cast<CCTK_REAL> (0.5));
     
     // Check domain size
-    if (any (abs (rvect (npoints) - real_npoints) >
+    if (any (fabs (rvect (npoints) - real_npoints) >
              static_cast<CCTK_REAL> (0.001)))
     {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -2100,7 +2100,7 @@ namespace Carpet {
       free (groupname);
     }
     
-    if (any(abs(rvect(sizes) - real_sizes) > static_cast<CCTK_REAL> (1.0e-8))) {
+    if (any(fabs(rvect(sizes) - real_sizes) > static_cast<CCTK_REAL> (1.0e-8))) {
       char * const groupname = CCTK_GroupName(group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is not integer",
