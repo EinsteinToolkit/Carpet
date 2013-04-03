@@ -38,10 +38,12 @@ namespace Requirements {
     }
     return;
   }
+  
   void all_clauses_t::output(ostream& os) const
   {
     os << "all_clauses: {" << std::endl;
-    for (std::map<cFunctionData const*, clauses_t const*>::const_iterator ti=clauses_map.begin();
+    for (std::map<cFunctionData const*, clauses_t const*>::const_iterator
+           ti=clauses_map.begin();
          ti!=clauses_map.end();
          ++ti)
     {
