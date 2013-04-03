@@ -58,22 +58,32 @@ namespace Requirements {
   // This will later be indexed by rl, map etc.
   // Currently only works with unigrid.
   class gridpoint_t {
+    bool i_interior, i_boundary, i_ghostzones, i_boundary_ghostzones;
     public:
-    bool interior, boundary, ghostzones, boundary_ghostzones;
     gridpoint_t():
-      interior(false), boundary(false), ghostzones(false),
-      boundary_ghostzones(false)
+      i_interior(false), i_boundary(false), i_ghostzones(false),
+      i_boundary_ghostzones(false)
     {}
 
     // Construct an object with information about which points are
     // valid, assuming that a function with the given clause has just
     // been run
     gridpoint_t(clause_t const& clause):
-      interior(clause.everywhere or clause.interior),
-      boundary(clause.everywhere or clause.boundary),
-      ghostzones(clause.everywhere),
-      boundary_ghostzones(clause.everywhere or clause.boundary_ghostzones)
+      i_interior(clause.everywhere or clause.interior),
+      i_boundary(clause.everywhere or clause.boundary),
+      i_ghostzones(clause.everywhere),
+      i_boundary_ghostzones(clause.everywhere or clause.boundary_ghostzones)
     {}
+    // Accessors
+    bool interior() const;
+    bool boundary() const;
+    bool ghostzones() const;
+    bool boundary_ghostzones() const;
+    void set_interior(bool b);
+    void set_boundary(bool b);
+    void set_ghostzones(bool b);
+    void set_boundary_ghostzones(bool b);
+
     void check_state(clause_t const& clause,
                      cFunctionData const* function_data,
                      int vi, int rl, int m, int tl) const;
@@ -90,6 +100,28 @@ namespace Requirements {
     void output (ostream& os) const;
   };
   
+  // Accessors
+  bool gridpoint_t::interior() const            { return i_interior; }
+  bool gridpoint_t::boundary() const            { return i_boundary; }
+  bool gridpoint_t::ghostzones() const          { return i_ghostzones; }
+  bool gridpoint_t::boundary_ghostzones() const { return i_boundary_ghostzones; }
+  void gridpoint_t::set_interior(bool b)
+  {
+    i_interior = b;
+  }
+  void gridpoint_t::set_boundary(bool b)
+  {
+    i_boundary = b;
+  }
+  void gridpoint_t::set_ghostzones(bool b)
+  {
+    i_ghostzones = b;
+  }
+  void gridpoint_t::set_boundary_ghostzones(bool b)
+  {
+    i_boundary_ghostzones = b;
+  }
+
   inline ostream& operator<< (ostream& os, const gridpoint_t& a) {
     a.output(os);
     return os;
@@ -104,25 +136,25 @@ namespace Requirements {
                                 int const rl, int const m, int const tl)
     const
   {
-    if (not interior) {
+    if (not i_interior) {
       if (clause.everywhere or clause.interior) {
         report_error(function_data, vi, rl, m, tl,
                      "calling function", "interior");
       }
     }
-    if (not boundary) {
+    if (not i_boundary) {
       if (clause.everywhere or clause.boundary) {
         report_error(function_data, vi, rl, m, tl,
                      "calling function", "boundary");
       }
     }
-    if (not ghostzones) {
+    if (not i_ghostzones) {
       if (clause.everywhere) {
         report_error(function_data, vi, rl, m, tl,
                      "calling function", "ghostzones");
       }
     }
-    if (not boundary_ghostzones) {
+    if (not i_boundary_ghostzones) {
       if (clause.everywhere or clause.boundary_ghostzones) {
         report_error(function_data, vi, rl, m, tl,
                      "calling", "boundary-ghostzones");
@@ -201,26 +233,26 @@ namespace Requirements {
   void gridpoint_t::update_state(clause_t const& clause)
   {
     if (clause.everywhere or clause.interior) {
-      interior = true;
+      set_interior(true);
     }
     if (clause.everywhere or clause.boundary) {
-      boundary = true;
+      set_boundary(true);
     }
     if (clause.everywhere) {
-      ghostzones = true;
+      set_ghostzones(true);
     }
     if (clause.everywhere or clause.boundary_ghostzones) {
-      boundary_ghostzones = true;
+      set_boundary_ghostzones(true);
     }
   }
   
   void gridpoint_t::output(ostream& os) const
   {
     os << "(";
-    if (interior) os << "interior;";
-    if (boundary) os << "boundary;";
-    if (ghostzones) os << "ghostzones;";
-    if (boundary_ghostzones) os << "boundary_ghostzones;";
+    if (i_interior) os << "interior;";
+    if (i_boundary) os << "boundary;";
+    if (i_ghostzones) os << "ghostzones;";
+    if (i_boundary_ghostzones) os << "boundary_ghostzones;";
     os << ")";
   }
   
@@ -572,13 +604,13 @@ namespace Requirements {
                 gridpoint_t& gp = *itl;
                 switch (where) {
                 case valid::nowhere:
-                  gp.interior = false;
+                  gp.set_interior(false);
                   // fall through
                 case valid::interior:
                   // Recomposing sets only the interior
-                  gp.boundary = false;
-                  gp.ghostzones = false;
-                  gp.boundary_ghostzones = false;
+                  gp.set_boundary(false);
+                  gp.set_ghostzones(false);
+                  gp.set_boundary_ghostzones(false);
                   // fall through
                 case valid::everywhere:
                   // do nothing
@@ -927,7 +959,7 @@ namespace Requirements {
             gridpoint_t& gp = tls.AT(tl);
             
             // Synchronising requires a valid interior
-            if (not gp.interior) {
+            if (not gp.interior()) {
               gp.report_error
                 (function_data, vi, rl, m, tl, "synchronising", "interior");
             }
@@ -943,8 +975,8 @@ namespace Requirements {
               int const ctimelevels = int(ctls.size());
               for (int ctl=0; ctl<ctimelevels; ++ctl) {
                 gridpoint_t const& cgp = ctls.AT(ctl);
-                if (not (cgp.interior and cgp.boundary and cgp.ghostzones and
-                         cgp.boundary_ghostzones))
+                if (not (cgp.interior() and cgp.boundary() and cgp.ghostzones() and
+                         cgp.boundary_ghostzones()))
                 {
                   cgp.report_error
                     (function_data, vi, crl, m, ctl,
@@ -955,21 +987,21 @@ namespace Requirements {
             
             // Synchronising sets all ghost zones, and sets boundary
             // ghost zones if boundary zones are set
-            if (gp.boundary ) {
-              if (gp.ghostzones and gp.boundary_ghostzones) {
+            if (gp.boundary() ) {
+              if (gp.ghostzones() and gp.boundary_ghostzones()) {
                 gp.report_warning
                   (function_data, vi, rl, m, tl,
                    "synchronising", "ghostzones+boundary_ghostzones");
               }
             } else {
-              if (gp.ghostzones) {
+              if (gp.ghostzones()) {
                 gp.report_warning
                   (function_data, vi, rl, m, tl,
                    "synchronising", "ghostzones");
               }
             }
-            gp.ghostzones = true;
-            gp.boundary_ghostzones = gp.boundary;
+            gp.set_ghostzones(true);
+            gp.set_boundary_ghostzones(gp.boundary());
           }
         }
       }
@@ -1039,7 +1071,7 @@ namespace Requirements {
             // Restricting requires a valid interior (otherwise we
             // cannot be sure that all of the interior is valid
             // afterwards)
-            if (not gp.interior) {
+            if (not gp.interior()) {
               gp.report_error
                 (NULL, vi, rl, m, tl, "restricting", "interior");
             }
@@ -1053,8 +1085,8 @@ namespace Requirements {
               timelevels_t const& ftls = fms.AT(m);
               int const ftl = 0;
               gridpoint_t const& fgp = ftls.AT(ftl);
-              if (not (fgp.interior and fgp.boundary and fgp.ghostzones and
-                       fgp.boundary_ghostzones))
+              if (not (fgp.interior() and fgp.boundary() and fgp.ghostzones() and
+                       fgp.boundary_ghostzones()))
               {
                 fgp.report_error
                   (NULL, vi, frl, m, ftl, "restricting", "everywhere");
@@ -1063,9 +1095,9 @@ namespace Requirements {
             
             // Restricting fills (part of) the interior, but leaves
             // ghost zones and boundary zones undefined
-            gp.boundary = false;
-            gp.ghostzones = false;
-            gp.boundary_ghostzones = false;
+            gp.set_boundary(false);
+            gp.set_ghostzones(false);
+            gp.set_boundary_ghostzones(false);
           }
         }
       }
