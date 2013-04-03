@@ -18,9 +18,9 @@
 #include <string>
 #include <vector>
 
+#include <all_clauses.hh>
 #include <clause.hh>
 #include <clauses.hh>
-#include <all_clauses.hh>
 #include <util.hh>
 
 using namespace std;

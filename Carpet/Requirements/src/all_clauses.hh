@@ -1,18 +1,18 @@
 #ifndef ALL_CLAUSES_HH
 #define ALL_CLAUSES_HH
 
-#include <iostream>
-#include <map>
-
 #include <cctk.h>
 #include <cctki_Schedule.h>
 
+#include <iostream>
+#include <map>
+
 #include <clauses.hh>
 
-using namespace std;
-
 namespace Requirements {
-
+  
+  using namespace std;
+  
   class all_clauses_t {
     // TODO: Represent I/O as well?
     typedef std::map<cFunctionData const*, clauses_t const*> clauses_map_t;

@@ -4,9 +4,24 @@
 #include <iostream>
 #include <vector>
 
+
+
+// Use this macro AT instead of vector's operator[] or at(). Depending
+// on the macro NDEBUG, this macro AT either checks for valid indices
+// or not.
+#ifndef AT
+#  ifndef NDEBUG
+#    define AT(index) at(index)
+#  else
+#    define AT(index) operator[](index)
+#  endif
+#endif
+
+
+
 namespace Requirements {
 
-using namespace std;
+  using namespace std;
 
   // taken from defs.cc and defs.hh
   // Vector output

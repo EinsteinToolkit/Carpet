@@ -1,14 +1,12 @@
-
 #include <iostream>
+#include <map>
 #include <vector>
 
 #include <cctk.h>
 #include <cctki_Schedule.h>
-//#include <clauses.hh>
-//#include <clause.hh>
+
 #include <all_clauses.hh>
 #include <util.hh>
-#include <map>
 
 using namespace std;
 

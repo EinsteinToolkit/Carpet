@@ -5,25 +5,10 @@
 
 #include <vector>
 
-using namespace std;
-
-
-
-// Use this macro AT instead of vector's operator[] or at(). Depending
-// on the macro NDEBUG, this macro AT either checks for valid indices
-// or not.
-#ifndef AT
-#  ifndef NDEBUG
-#    define AT(index) at(index)
-#  else
-#    define AT(index) operator[](index)
-#  endif
-#endif
-
-
-
 namespace Requirements {
-
+  
+  using namespace std;
+  
   // Represent scheduled functions and their dependencies
   // This reflects exactly what was written in the schedule.ccl file
   struct clause_t {

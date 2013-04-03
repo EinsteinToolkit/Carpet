@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <clause.hh>
+#include <util.hh>
 
 using namespace std;
 
