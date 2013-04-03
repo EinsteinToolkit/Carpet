@@ -136,6 +136,10 @@ namespace Carpet {
 
     if (goodgroups.size() > 0) {
       
+#ifdef REQUIREMENTS_HH
+      Requirements::Sync(function_data, goodgroups, reflevel, timelevel);
+#endif
+      
       // prolongate boundaries
       bool const local_do_prolongate = do_prolongate and not do_taper;
       if (local_do_prolongate) {
@@ -164,10 +168,6 @@ namespace Carpet {
         SyncGroups (cctkGH, goodgroups);
         timer.stop();
       }
-      
-#ifdef REQUIREMENTS_HH
-      Requirements::Sync(function_data, goodgroups, reflevel, timelevel);
-#endif
       
     }
     

@@ -52,7 +52,11 @@ namespace Carpet {
         groups.push_back (group);
       }
     }
-
+    
+#ifdef REQUIREMENTS_HH
+    Requirements::Restrict(groups, reflevel);
+#endif
+    
     // Restrict
     {
       static Timer timer ("Restrict");
@@ -68,10 +72,6 @@ namespace Carpet {
       SyncGroups (cctkGH, groups);
       timer.stop();
     }
-    
-#ifdef REQUIREMENTS_HH
-    Requirements::Restrict(groups, reflevel);
-#endif
   }
   
 

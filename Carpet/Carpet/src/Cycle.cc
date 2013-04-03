@@ -36,6 +36,10 @@ namespace Carpet {
       cctkGH->cctk_time = tt->get_time (mglevel, reflevel, timelevel);
     }
     
+#ifdef REQUIREMENTS_HH
+    Requirements::Cycle(reflevel);
+#endif
+    
     int errors = 0;
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -109,10 +113,6 @@ namespace Carpet {
     if (CCTK_IsFunctionAliased("Accelerator_Cycle")) {
       Accelerator_Cycle(cctkGH);
     }
-    
-#ifdef REQUIREMENTS_HH
-    Requirements::Cycle(reflevel);
-#endif
     
     if (errors > 0) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
