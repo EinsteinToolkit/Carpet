@@ -20,6 +20,7 @@
 
 #include <clause.hh>
 #include <clauses.hh>
+#include <all_clauses.hh>
 #include <util.hh>
 
 using namespace std;
@@ -34,67 +35,13 @@ namespace Requirements {
   // 2. Things can be provided only once, not multiple times.
   //    Except when they are also required.
   
-  class all_clauses_t {
-    // TODO: Represent I/O as well?
-    typedef std::map<cFunctionData const*, clauses_t const*> clauses_map_t;
-    clauses_map_t clauses_map;
-    // Singleton
-    all_clauses_t(all_clauses_t const&);
-    all_clauses_t& operator=(all_clauses_t const&);
-  public:
-    all_clauses_t() {}
-    clauses_t const& get_clauses(cFunctionData const* function_data);
-    void remove_clauses(cFunctionData const* function_data);
-
-    // Input/Output helpers
-    void input (istream& is);
-    void output (ostream& os) const;
-  };
   
-  clauses_t const& all_clauses_t::
-  get_clauses(cFunctionData const* const function_data)
-  {
-    clauses_map_t::const_iterator const iclauses =
-      clauses_map.find(function_data);
-    if (iclauses != clauses_map.end()) return *iclauses->second;
-    clauses_t* const clauses = new clauses_t;
-    clauses->setup(function_data);
-    pair<clauses_map_t::const_iterator, bool> const ret =
-      clauses_map.insert(clauses_map_t::value_type(function_data, clauses));
-    assert(ret.second);
-    return *ret.first->second;
-  }
-  
-  void all_clauses_t::
-  remove_clauses(cFunctionData const* const function_data)
-  {
-    clauses_map_t::iterator const iclauses =
-      clauses_map.find(function_data);
-    if (iclauses != clauses_map.end()) {
-      clauses_map.erase(iclauses);
-    }
-    return;
-  }
   
   inline ostream& operator<< (ostream& os, const all_clauses_t& a) {
     a.output(os);
     return os;
   }
       
-  void all_clauses_t::output(ostream& os) const
-  {
-    os << "all_clauses: {" << std::endl;
-    for (std::map<cFunctionData const*, clauses_t const*>::const_iterator ti=clauses_map.begin();
-         ti!=clauses_map.end();
-         ++ti)
-    {
-      if (ti!=clauses_map.begin()) os << ",";
-      os << ti->first->thorn << "::" 
-         << ti->first->routine << " in " 
-         << ti->first->where << ": " << *ti->second << std::endl;
-    }
-    os << "}";
-  }
   
   all_clauses_t all_clauses;
   
