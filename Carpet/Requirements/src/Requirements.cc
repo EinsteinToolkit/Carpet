@@ -631,8 +631,10 @@ namespace Requirements {
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
       if (verbose) {
+        std::ostringstream stream;
+        stream << "groups: " << groups << " timelevels: " << timelevels;
         CCTK_VInfo(CCTK_THORNSTRING,
-                   "Requirements: ChangeStorage reflevel=%d", reflevel);
+                   "Requirements: ChangeStorage reflevel=%d %s", reflevel, stream.str().c_str());
       }
       all_state.change_storage(groups, timelevels, reflevel);
     }
