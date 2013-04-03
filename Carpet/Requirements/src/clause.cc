@@ -1,4 +1,3 @@
-
 #include <cctk.h>
 #include <cctki_Schedule.h>
 
@@ -135,7 +134,7 @@ namespace Requirements {
   
   void clause_t::output(ostream& os) const
   {
-    char* const groupname = CCTK_GroupNameFromVarI(vars.at(0));
+    char* const groupname = CCTK_GroupNameFromVarI(vars.AT(0));
     os << groupname;
     free(groupname);
     os << "{";

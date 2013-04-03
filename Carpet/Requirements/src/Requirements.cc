@@ -1,7 +1,5 @@
 #include <Requirements.hh>
 
-#include <defs.hh>
-
 #include <cctk.h>
 #include <cctk_Parameters.h>
 #include <cctk_Functions.h>
@@ -19,6 +17,7 @@
 #include <map>
 #include <string>
 #include <vector>
+
 #include <clause.hh>
 #include <clauses.hh>
 #include <util.hh>
@@ -324,7 +323,7 @@ namespace Requirements {
   {
     std::vector<bool>& ivs = *static_cast<std::vector<bool>*>(callback_arg);
     
-    ivs.at(id) = true;
+    ivs.AT(id) = true;
   }
   
   void Setup(int const maps)
