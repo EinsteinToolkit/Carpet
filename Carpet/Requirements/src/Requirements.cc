@@ -53,6 +53,17 @@ namespace Requirements {
   bool there_was_an_error = false;
   bool there_was_a_warning = false;
 
+  // Struct defining a location of a grid point
+  struct location_t {
+    int vi, tl, rl, m;
+    location_t():
+      vi(-1), tl(-1), rl(-1), m(-1)
+    {}
+    location_t(int _vi, int _tl, int _rl, int _m):
+      vi(_vi), tl(_tl), rl(_rl), m(_m)
+    {}
+  };
+
   // Represents which have valid information and which do not.
   // This will later be indexed by rl, map etc.
   // Currently only works with unigrid.
@@ -78,10 +89,10 @@ namespace Requirements {
     bool boundary() const;
     bool ghostzones() const;
     bool boundary_ghostzones() const;
-    bool set_interior(bool b);
-    bool set_boundary(bool b);
-    bool set_ghostzones(bool b);
-    bool set_boundary_ghostzones(bool b);
+    void set_interior(bool b);
+    void set_boundary(bool b);
+    void set_ghostzones(bool b);
+    void set_boundary_ghostzones(bool b);
 
     void check_state(clause_t const& clause,
                      cFunctionData const* function_data,
@@ -104,33 +115,21 @@ namespace Requirements {
   bool gridpoint_t::boundary() const            { return i_boundary; }
   bool gridpoint_t::ghostzones() const          { return i_ghostzones; }
   bool gridpoint_t::boundary_ghostzones() const { return i_boundary_ghostzones; }
-  bool gridpoint_t::set_interior(bool b)
+  void gridpoint_t::set_interior(bool b)
   {
-    if (i_interior == b)
-      return false;
     i_interior = b;
-    return true;
   }
-  bool gridpoint_t::set_boundary(bool b)
+  void gridpoint_t::set_boundary(bool b)
   {
-    if (i_boundary == b)
-      return false;
     i_boundary = b;
-    return true;
   }
-  bool gridpoint_t::set_ghostzones(bool b)
+  void gridpoint_t::set_ghostzones(bool b)
   {
-    if (i_ghostzones == b)
-      return false;
     i_ghostzones = b;
-    return true;
   }
-  bool gridpoint_t::set_boundary_ghostzones(bool b)
+  void gridpoint_t::set_boundary_ghostzones(bool b)
   {
-    if (i_boundary_ghostzones == b)
-      return false;
     i_boundary_ghostzones = b;
-    return true;
   }
 
   inline ostream& operator<< (ostream& os, const gridpoint_t& a) {
