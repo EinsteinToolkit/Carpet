@@ -332,7 +332,7 @@ namespace Requirements {
     if (check_requirements) {
       if (verbose) {
         CCTK_VInfo(CCTK_THORNSTRING,
-                   "Requirements: Setup maps=%d", maps);
+                   "Setup maps=%d", maps);
       }
       all_state.setup(maps);
     }
@@ -365,7 +365,7 @@ namespace Requirements {
           char* const fullname = CCTK_FullName(vi);
           int const rl = &*irl - &*rls.begin();
           CCTK_VInfo(CCTK_THORNSTRING,
-                     "Requirements: Setting up %d maps for variable %s(rl=%d)",
+                     "Setting up %d maps for variable %s(rl=%d)",
                      nms, fullname, rl);
           free(fullname);
         }
@@ -396,7 +396,7 @@ namespace Requirements {
         std::ostringstream stream;
         stream << "groups: " << groups << " timelevels: " << timelevels;
         CCTK_VInfo(CCTK_THORNSTRING,
-                   "Requirements: ChangeStorage reflevel=%d %s", reflevel, stream.str().c_str());
+                   "ChangeStorage reflevel=%d %s", reflevel, stream.str().c_str());
       }
       all_state.change_storage(groups, timelevels, reflevel);
     }
@@ -441,7 +441,7 @@ namespace Requirements {
                 char* const fullname = CCTK_FullName(vi);
                 int const m = &*im - &*ms.begin();
                 CCTK_VInfo(CCTK_THORNSTRING,
-                           "Requirements: Decreasing storage to %d time levels for variable %s(rl=%d,m=%d)",
+                           "Decreasing storage to %d time levels for variable %s(rl=%d,m=%d)",
                            tl, fullname, rl, m);
                 free(fullname);
               }
@@ -452,7 +452,7 @@ namespace Requirements {
                 char* const fullname = CCTK_FullName(vi);
                 int const m = &*im - &*ms.begin();
                 CCTK_VInfo(CCTK_THORNSTRING,
-                           "Requirements: Increasing storage to %d time levels for variable %s(rl=%d,m=%d)",
+                           "Increasing storage to %d time levels for variable %s(rl=%d,m=%d)",
                            tl, fullname, rl, m);
                 free(fullname);
               }
@@ -474,7 +474,7 @@ namespace Requirements {
     if (check_requirements) {
       if (verbose) {
         CCTK_VInfo(CCTK_THORNSTRING,
-                   "Requirements: Regrid reflevels=%d", reflevels);
+                   "Regrid reflevels=%d", reflevels);
       }
       all_state.regrid(reflevels);
     }
@@ -515,7 +515,7 @@ namespace Requirements {
             if (verbose) {
               char* const fullname = CCTK_FullName(vi);
               CCTK_VInfo(CCTK_THORNSTRING,
-                         "Requirements: Deleting unused refinement level %d of variable %s",
+                         "Deleting unused refinement level %d of variable %s",
                          rl, fullname);
               free(fullname);
             }
@@ -531,7 +531,7 @@ namespace Requirements {
             if (verbose) {
               char* const fullname = CCTK_FullName(vi);
               CCTK_VInfo(CCTK_THORNSTRING,
-                         "Requirements: Allocating new refinement level %d for variable %s",
+                         "Allocating new refinement level %d for variable %s",
                          rl, fullname);
               free(fullname);
             }
@@ -563,7 +563,7 @@ namespace Requirements {
     if (check_requirements) {
       if (verbose) {
         CCTK_VInfo(CCTK_THORNSTRING,
-                   "Requirements: Recompose reflevel=%d where=%s",
+                   "Recompose reflevel=%d where=%s",
                    reflevel,
                    where == valid::nowhere    ? "nowhere"    :
                    where == valid::interior   ? "interior"   :
@@ -614,7 +614,7 @@ namespace Requirements {
                 char* const fullname = CCTK_FullName(vi);
                 int const m = &*im - &*ms.begin();
                 CCTK_VInfo(CCTK_THORNSTRING,
-                           "Requirements: Recomposing variable %s(rl=%d,m=%d)",
+                           "Recomposing variable %s(rl=%d,m=%d)",
                            fullname, reflevel, m);
                 free(fullname);
               }
@@ -662,7 +662,7 @@ namespace Requirements {
     if (check_requirements) {
       if (verbose) {
         CCTK_VInfo(CCTK_THORNSTRING,
-                   "Requirements: RegridFree");
+                   "RegridFree");
       }
       all_state.regrid_free();
     }
@@ -697,7 +697,7 @@ namespace Requirements {
     if (check_requirements) {
       if (verbose) {
         CCTK_VInfo(CCTK_THORNSTRING,
-                   "Requirements: Cycle reflevel=%d", reflevel);
+                   "Cycle reflevel=%d", reflevel);
       }
       all_state.cycle(reflevel);
     }
@@ -922,7 +922,7 @@ namespace Requirements {
     if (check_requirements) {
       if (verbose) {
         CCTK_VInfo(CCTK_THORNSTRING,
-                   "Requirements: Sync reflevel=%d timelevel=%d",
+                   "Sync reflevel=%d timelevel=%d",
                    reflevel, timelevel);
       }
       all_state.sync(function_data, groups, reflevel, timelevel);
@@ -1033,7 +1033,7 @@ namespace Requirements {
     if (check_requirements) {
       if (verbose) {
         CCTK_VInfo(CCTK_THORNSTRING,
-                   "Requirements: Restrict reflevel=%d",
+                   "Restrict reflevel=%d",
                    reflevel);
       }
       all_state.restrict1(groups, reflevel);
