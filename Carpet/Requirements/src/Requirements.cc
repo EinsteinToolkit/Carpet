@@ -13,8 +13,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <sstream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -786,7 +786,7 @@ namespace Requirements {
       {
         int const vi = *ivar;
         
-        if (ignored_variables.at(vi))
+        if (ignored_variables.AT(vi))
             continue;
         
         // Loop over all (refinement levels, maps, time levels)
@@ -971,7 +971,7 @@ namespace Requirements {
         int const v0 = CCTK_FirstVarIndexI(gi);
         int const nv = CCTK_NumVarsInGroupI(gi);
         for (int vi=v0; vi<v0+nv; ++vi) {
-          if (ignored_variables.at(vi))
+          if (ignored_variables.AT(vi))
             continue;
           
           reflevels_t& rls = vars.AT(vi);
@@ -1080,7 +1080,7 @@ namespace Requirements {
         int const v0 = CCTK_FirstVarIndexI(gi);
         int const nv = CCTK_NumVarsInGroupI(gi);
         for (int vi=v0; vi<v0+nv; ++vi) {
-          if (ignored_variables.at(vi))
+          if (ignored_variables.AT(vi))
             continue;
           
           reflevels_t& rls = vars.AT(vi);
