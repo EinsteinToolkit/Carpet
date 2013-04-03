@@ -61,7 +61,7 @@ namespace Requirements {
 
 
   // Represent scheduled functions and their dependencies
-  
+  // This reflects exactly what was written in the schedule.ccl file
   struct clause_t {
     bool everywhere;          // all grid points (everywhere)
     bool interior;            // all interior points
@@ -357,13 +357,20 @@ namespace Requirements {
   
   bool there_was_an_error = false;
   bool there_was_a_warning = false;
-  
+
+  // Represents which have valid information and which do not.
+  // This will later be indexed by rl, map etc.
+  // Currently only works with unigrid.
   struct gridpoint_t {
     bool interior, boundary, ghostzones, boundary_ghostzones;
     gridpoint_t():
       interior(false), boundary(false), ghostzones(false),
       boundary_ghostzones(false)
     {}
+
+    // Construct an object with information about which points are
+    // valid, assuming that a function with the given clause has just
+    // been run
     gridpoint_t(clause_t const& clause):
       interior(clause.everywhere or clause.interior),
       boundary(clause.everywhere or clause.boundary),
@@ -391,6 +398,9 @@ namespace Requirements {
     return os;
   }
 
+
+  // Check that all the parts of the grid variables read by a function
+  // are valid.  This will be called before the function is executed.
   void gridpoint_t::check_state(clause_t const& clause,
                                 cFunctionData const* const function_data,
                                 int const vi,
@@ -489,6 +499,8 @@ namespace Requirements {
     there_was_a_warning = true;
   }
   
+  // Update this object to reflect the fact that some parts of some
+  // variables are now valid after a function has been called
   void gridpoint_t::update_state(clause_t const& clause)
   {
     if (clause.everywhere or clause.interior) {
@@ -516,7 +528,8 @@ namespace Requirements {
   }
   
   
-  
+  // The state (valid/invalid) of parts of the grid for all
+  // timelevels, maps, refinement levels and variables
   class all_state_t {
     typedef vector<gridpoint_t> timelevels_t;
     typedef vector<timelevels_t> maps_t;
@@ -643,7 +656,9 @@ namespace Requirements {
                 "Aborting because schedule clauses were not satisfied");
     }
   }
-  
+
+  // Update internal data structures when Carpet changes the number of
+  // active timelevels for a group
   void all_state_t::change_storage(vector<int> const& groups,
                                    vector<int> const& timelevels,
                                    int const reflevel)
@@ -720,6 +735,7 @@ namespace Requirements {
     }
   }
   
+  // Update internal data structures when Carpet regrids
   void all_state_t::regrid(int const reflevels)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -813,6 +829,7 @@ namespace Requirements {
     }
   }
   
+  // Update internal data structures when Carpet recomposes
   void all_state_t::recompose(int const reflevel, valid::valid_t const where)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -941,6 +958,7 @@ namespace Requirements {
     }
   }
   
+  // Update internal data structures when Carpet cycles timelevels
   void all_state_t::cycle(int const reflevel)
   {
     int const ng = CCTK_NumGroups();
@@ -1002,6 +1020,8 @@ namespace Requirements {
     }
   }
   
+  // Check that the grid is in the required state before a given
+  // function is executed
   void all_state_t::before_routine(cFunctionData const* const function_data,
                                    int const reflevel, int const map,
                                    int const timelevel)
@@ -1081,6 +1101,8 @@ namespace Requirements {
     }
   }
   
+  // Update internal data structures after a function has been
+  // executed to reflect the fact that some variables are now valid
   void all_state_t::after_routine(cFunctionData const* const function_data,
                                   int const reflevel, int const map,
                                   int const timelevel)
@@ -1162,6 +1184,7 @@ namespace Requirements {
     }
   }
   
+  // Update internal data structures when Carpet syncs
   void all_state_t::sync(cFunctionData const* const function_data,
                          vector<int> const& groups,
                          int const reflevel, int const timelevel)
@@ -1272,6 +1295,7 @@ namespace Requirements {
     }
   }
   
+  // Update internal data structures when Carpet restricts
   void all_state_t::restrict1(vector<int> const& groups, int const reflevel)
   {
     // Loop over all variables
@@ -1373,7 +1397,8 @@ namespace Requirements {
   ////////////////////////////////////////////////////////////////////////////
   
   
-  
+  // Check that the grid is in the correct state, i.e. all necessary
+  // parts are valid, for the "current" function. 
   extern "C" 
   void Carpet_Requirements_CheckReads(CCTK_POINTER_TO_CONST const cctkGH_,
                                       CCTK_INT const nvars,
@@ -1390,7 +1415,7 @@ namespace Requirements {
       int const map = GetMap(cctkGH);
       int const timelevel = GetTimeLevel(cctkGH);
       // TODO: design an interface to all_state.before_routine that operates
-      //       on indices and claues directly
+      //       on indices and clauses directly
       for (int v=0; v<nvars; ++v) { 
         cFunctionData temp_function_data = *function_data;
         char* const fullname = CCTK_FullName(varinds[v]);
@@ -1411,6 +1436,9 @@ namespace Requirements {
     }
   }
   
+  // Register the fact that certain parts of the grid have been
+  // written in certain variables due to executing the "current"
+  // function.
   extern "C" 
   void Carpet_Requirements_NotifyWrites(CCTK_POINTER_TO_CONST const cctkGH_,
                                         CCTK_INT const nvars,
