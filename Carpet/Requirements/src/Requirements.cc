@@ -230,16 +230,16 @@ namespace Requirements {
       free(fullname);
     }
     os << "}(";
-    if(everywhere) os << "everywhere;";
-    if(interior) os << "interior;";
-    if(boundary) os << "boundary;";
-    if(boundary_ghostzones) os << "boundary_ghostzones;";
-    if(timelevel0) os << "timelevel0;";
-    if(timelevel1) os << "timelevel1;";
-    if(timelevel2) os << "timelevel2;";
-    if(all_timelevels) os << "all_timelevels;";
-    if(all_maps) os << "all_maps;";
-    if(all_reflevels) os << "all_reflevels;";
+    if (everywhere) os << "everywhere;";
+    if (interior) os << "interior;";
+    if (boundary) os << "boundary;";
+    if (boundary_ghostzones) os << "boundary_ghostzones;";
+    if (timelevel0) os << "timelevel0;";
+    if (timelevel1) os << "timelevel1;";
+    if (timelevel2) os << "timelevel2;";
+    if (all_timelevels) os << "all_timelevels;";
+    if (all_maps) os << "all_maps;";
+    if (all_reflevels) os << "all_reflevels;";
     os << ")";
   }
   
