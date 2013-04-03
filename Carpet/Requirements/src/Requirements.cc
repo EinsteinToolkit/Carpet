@@ -287,9 +287,11 @@ namespace Requirements {
     void regrid_free();
     void cycle(int reflevel);
     void before_routine(cFunctionData const* function_data,
-                        int reflevel, int map, int timelevel) const;
+                        int reflevel, int map,
+                        int timelevel, int timelevel_offset) const;
     void after_routine(cFunctionData const* function_data,
-                       int reflevel, int map, int timelevel);
+                       int reflevel, int map,
+                       int timelevel, int timelevel_offset);
     void sync(cFunctionData const* function_data,
               vector<int> const& groups, int reflevel, int timelevel);
     void restrict1(vector<int> const& groups, int reflevel);
@@ -749,11 +751,13 @@ namespace Requirements {
   
    
   void BeforeRoutine(cFunctionData const* const function_data,
-                     int const reflevel, int const map, int const timelevel)
+                     int const reflevel, int const map,
+                     int const timelevel, int const timelevel_offset)
   {
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
-      all_state.before_routine(function_data, reflevel, map, timelevel);
+      all_state.before_routine(function_data,
+                               reflevel, map, timelevel, timelevel_offset);
     }
     if (inconsistencies_are_fatal and there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
@@ -765,7 +769,8 @@ namespace Requirements {
   // function is executed
   void all_state_t::before_routine(cFunctionData const* const function_data,
                                    int const reflevel, int const map,
-                                   int const timelevel)
+                                   int const timelevel,
+                                   int const timelevel_offset)
     const
   {
     // Loop over all clauses
@@ -814,9 +819,9 @@ namespace Requirements {
               timelevel == 0 || timelevels == 1 ? 0 : timelevel;
             const int maxtl =
               timelevel == 0 || timelevels == 1 ? timelevels-1 : timelevel;
-            const int tl_of = timelevels > 1 ? timelevel : 0;
+            const int tloff = timelevel_offset;
             for (int tl=mintl; tl<=maxtl; ++tl) {
-              if (timelevel==-1 or clause.active_on_timelevel(tl-tl_of)) {
+              if (timelevel==-1 or clause.active_on_timelevel(tl-tloff)) {
                 gridpoint_t const& gp = tls.AT(tl);
                 gp.check_state(clause, function_data, vi, rl, m, tl);
               }
@@ -832,11 +837,13 @@ namespace Requirements {
   
   
   void AfterRoutine(cFunctionData const* const function_data,
-                    int const reflevel, int const map, int const timelevel)
+                    int const reflevel, int const map,
+                    int const timelevel, int const timelevel_offset)
   {
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
-      all_state.after_routine(function_data, reflevel, map, timelevel);
+      all_state.after_routine(function_data, reflevel, map,
+                              timelevel, timelevel_offset);
     }
     if (inconsistencies_are_fatal and there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
@@ -848,7 +855,8 @@ namespace Requirements {
   // executed to reflect the fact that some variables are now valid
   void all_state_t::after_routine(cFunctionData const* const function_data,
                                   int const reflevel, int const map,
-                                  int const timelevel)
+                                  int const timelevel,
+                                  int const timelevel_offset)
   {
     // Loop over all clauses
     clauses_t const& clauses = all_clauses.get_clauses(function_data);
@@ -893,9 +901,9 @@ namespace Requirements {
               timelevel == 0 || timelevels == 1 ? 0 : timelevel;
             const int maxtl =
               timelevel == 0 || timelevels == 1 ? timelevels-1 : timelevel;
-            const int tl_of = timelevels > 1 ? timelevel : 0;
+            const int tloff = timelevel_offset;
             for (int tl=mintl; tl<=maxtl; ++tl) {
-              if (timelevel==-1 or clause.active_on_timelevel(tl-tl_of)) {
+              if (timelevel==-1 or clause.active_on_timelevel(tl-tloff)) {
                 gridpoint_t& gp = tls.AT(tl);
                 // TODO: If this variable is both read and written
                 // (i.e. if this is a projection), then only the
@@ -1161,6 +1169,7 @@ namespace Requirements {
       int const reflevel = GetRefinementLevel(cctkGH);
       int const map = GetMap(cctkGH);
       int const timelevel = GetTimeLevel(cctkGH);
+      int const timelevel_offset = GetTimeLevelOffset(cctkGH);
       // TODO: design an interface to all_state.before_routine that operates
       //       on indices and clauses directly
       for (int v=0; v<nvars; ++v) { 
@@ -1175,7 +1184,8 @@ namespace Requirements {
         temp_function_data.n_ReadsClauses = 1;
         temp_function_data.ReadsClauses = (char const**)&reads;
         all_clauses.get_clauses(&temp_function_data);
-        BeforeRoutine(&temp_function_data, reflevel, map, timelevel);
+        BeforeRoutine(&temp_function_data,
+                      reflevel, map, timelevel, timelevel_offset);
         all_clauses.remove_clauses(&temp_function_data);
         free(fullname);
         free(reads);
@@ -1201,6 +1211,7 @@ namespace Requirements {
       int const reflevel = GetRefinementLevel(cctkGH);
       int const map = GetMap(cctkGH);
       int const timelevel = GetTimeLevel(cctkGH);
+      int const timelevel_offset = GetTimeLevelOffset(cctkGH);
       // TODO: design an interface to all_state.before_routine that operates
       //       on indices and claues directly
       for (int v=0; v<nvars; ++v) { 
@@ -1215,7 +1226,8 @@ namespace Requirements {
         temp_function_data.n_ReadsClauses = 0;
         temp_function_data.ReadsClauses = NULL;
         all_clauses.get_clauses(&temp_function_data);
-        AfterRoutine(&temp_function_data, reflevel, map, timelevel);
+        AfterRoutine(&temp_function_data,
+                     reflevel, map, timelevel, timelevel_offset);
         all_clauses.remove_clauses(&temp_function_data);
         free(fullname);
         free(writes);

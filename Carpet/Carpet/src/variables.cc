@@ -57,7 +57,7 @@ namespace Carpet {
   int map;
   int component;
   int local_component;
-  int timelevel;
+  int timelevel, timelevel_offset;
   
   // Current refinement factors
   int timereflevelfact;

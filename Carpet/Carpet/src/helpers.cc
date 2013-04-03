@@ -101,6 +101,13 @@ namespace Carpet {
     return timelevel;
   }
 
+  // Get current map level
+  extern "C"
+  CCTK_INT Carpet_GetTimeLevelOffset (CCTK_POINTER_TO_CONST const cctkGH)
+  {
+    return timelevel_offset;
+  }
+
 
 
   // Enable or disable prolongating

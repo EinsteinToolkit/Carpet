@@ -88,7 +88,7 @@ namespace Carpet {
   extern int map;
   extern int component;
   extern int local_component;   // -1 for non-local
-  extern int timelevel;
+  extern int timelevel, timelevel_offset;
   
   // Current refinement factors
   extern int timereflevelfact;

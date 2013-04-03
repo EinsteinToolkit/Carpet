@@ -57,6 +57,11 @@ CCTK_INT FUNCTION                         \
         (CCTK_POINTER_TO_CONST IN cctkGH)
 REQUIRES FUNCTION GetTimeLevel
 
+CCTK_INT FUNCTION                         \
+    GetTimeLevelOffset                    \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION GetTimeLevelOffset
+
 CCTK_INT FUNCTION                             \
      Boundary_SelectedGVs                     \
          (CCTK_POINTER_TO_CONST IN cctkGH,    \

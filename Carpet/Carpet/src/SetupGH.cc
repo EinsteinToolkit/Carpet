@@ -549,8 +549,9 @@ namespace Carpet {
     cctkGH->cctk_mode = CCTK_MODE_META;
 #endif
     
-    timelevels = prolongation_order_time + 1;
-    timelevel  = 0;
+    timelevels       = prolongation_order_time + 1;
+    timelevel        = 0;
+    timelevel_offset = 0;
     
     // Say hello
 
