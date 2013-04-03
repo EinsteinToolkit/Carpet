@@ -17,7 +17,6 @@
 #include <iostream>
 #include <sstream>
 #include <map>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -349,11 +348,7 @@ namespace Requirements {
   }
   
   all_clauses_t all_clauses;
-
-  // ignore requirements in these variables. Used for internally updated
-  // variables. Putting a variable in this set asserts that it is always
-  // valid.
-  std::set<int> ignore_these_varindices;
+  
   
   
   // Keep track of which time levels contain good data; modify this
@@ -513,10 +508,10 @@ namespace Requirements {
   void gridpoint_t::output(ostream& os) const
   {
     os << "(";
-    if(interior) os << "interior;";
-    if(boundary) os << "boundary;";
-    if(ghostzones) os << "ghostzones;";
-    if(boundary_ghostzones) os << "boundary_ghostzones;";
+    if (interior) os << "interior;";
+    if (boundary) os << "boundary;";
+    if (ghostzones) os << "ghostzones;";
+    if (boundary_ghostzones) os << "boundary_ghostzones;";
     os << ")";
   }
   
@@ -555,13 +550,18 @@ namespace Requirements {
   
   all_state_t all_state;
   
+  // Ignore requirements in these variables; these variables are
+  // always considered valid
+  std::vector<bool> ignored_variables;
   
-  static void add_ignored_variable(int id, const char * opstring, void * callback_arg)
+  
+  
+  static void add_ignored_variable(int const id, const char *const opstring,
+                                   void *const callback_arg)
   {
-    std::set<int>& ignore_these_variables = 
-        *static_cast<std::set<int>*>(callback_arg);
-
-    ignore_these_variables.insert(id);
+    std::vector<bool>& ivs = *static_cast<std::vector<bool>*>(callback_arg);
+    
+    ivs.at(id) = true;
   }
   
   void Setup(int const maps)
@@ -573,9 +573,6 @@ namespace Requirements {
                    "Requirements: Setup maps=%d", maps);
       }
       all_state.setup(maps);
-      CCTK_TraverseString(ignore_these_variables, add_ignored_variable,
-                          (void*)&ignore_these_varindices,
-                          CCTK_GROUP_OR_VAR);
     }
     if (inconsistencies_are_fatal and there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
@@ -618,6 +615,11 @@ namespace Requirements {
         }
       }
     }
+    assert(ignored_variables.empty());
+    ignored_variables.resize(CCTK_NumVars());
+    CCTK_TraverseString(ignore_these_variables, add_ignored_variable,
+                        (void*)&ignored_variables,
+                        CCTK_GROUP_OR_VAR);
   }
   
   
@@ -1015,8 +1017,8 @@ namespace Requirements {
            ++ivar)
       {
         int const vi = *ivar;
-
-        if (ignore_these_varindices.count(vi))
+        
+        if (ignored_variables.at(vi))
             continue;
         
         // Loop over all (refinement levels, maps, time levels)
@@ -1188,9 +1190,9 @@ namespace Requirements {
         int const v0 = CCTK_FirstVarIndexI(gi);
         int const nv = CCTK_NumVarsInGroupI(gi);
         for (int vi=v0; vi<v0+nv; ++vi) {
-          if (ignore_these_varindices.count(vi))
+          if (ignored_variables.at(vi))
             continue;
-        
+          
           reflevels_t& rls = vars.AT(vi);
           maps_t& ms = rls.AT(rl);
           int const maps = int(ms.size());
@@ -1296,7 +1298,7 @@ namespace Requirements {
         int const v0 = CCTK_FirstVarIndexI(gi);
         int const nv = CCTK_NumVarsInGroupI(gi);
         for (int vi=v0; vi<v0+nv; ++vi) {
-          if (ignore_these_varindices.count(vi))
+          if (ignored_variables.at(vi))
             continue;
           
           reflevels_t& rls = vars.AT(vi);
