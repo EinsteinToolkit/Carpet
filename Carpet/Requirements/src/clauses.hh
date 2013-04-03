@@ -8,10 +8,10 @@
 
 #include <clause.hh>
 
-using namespace std;
-
 namespace Requirements {
-
+  
+  using namespace std;
+  
   struct clauses_t {
     vector<clause_t> reads, writes;
     clauses_t() {}

@@ -4,8 +4,9 @@
 
 #include <cctk.h>
 #include <cctki_Schedule.h>
-#include <clauses.hh>
+
 #include <clause.hh>
+#include <clauses.hh>
 #include <util.hh>
 
 using namespace std;

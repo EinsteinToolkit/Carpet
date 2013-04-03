@@ -18,9 +18,9 @@
 #include <string>
 #include <vector>
 
+#include <all_clauses.hh>
 #include <clause.hh>
 #include <clauses.hh>
-#include <all_clauses.hh>
 #include <util.hh>
 
 using namespace std;
@@ -41,7 +41,6 @@ namespace Requirements {
     a.output(os);
     return os;
   }
-      
   
   all_clauses_t all_clauses;
   
@@ -126,8 +125,9 @@ namespace Requirements {
     a.output(os);
     return os;
   }
-
-
+  
+  
+  
   // Check that all the parts of the grid variables read by a function
   // are valid.  This will be called before the function is executed.
   void gridpoint_t::check_state(clause_t const& clause,
@@ -376,7 +376,8 @@ namespace Requirements {
         std::ostringstream stream;
         stream << "groups: " << groups << " timelevels: " << timelevels;
         CCTK_VInfo(CCTK_THORNSTRING,
-                   "ChangeStorage reflevel=%d %s", reflevel, stream.str().c_str());
+                   "ChangeStorage reflevel=%d %s",
+                   reflevel, stream.str().c_str());
       }
       all_state.change_storage(groups, timelevels, reflevel);
     }
@@ -798,8 +799,10 @@ namespace Requirements {
             assert(timelevel != -1);
             assert(timelevels >= clause.min_num_timelevels());
             // TODO: properly handle timelevels the way enter_local_mode() does
-            const int mintl = timelevel == 0 || timelevels == 1 ? 0 : timelevel;
-            const int maxtl = timelevel == 0 || timelevels == 1 ? timelevels-1 : timelevel;
+            const int mintl =
+              timelevel == 0 || timelevels == 1 ? 0 : timelevel;
+            const int maxtl =
+              timelevel == 0 || timelevels == 1 ? timelevels-1 : timelevel;
             const int tl_of = timelevels > 1 ? timelevel : 0;
             for (int tl=mintl; tl<=maxtl; ++tl) {
               if (timelevel==-1 or clause.active_on_timelevel(tl-tl_of)) {
@@ -875,8 +878,10 @@ namespace Requirements {
             assert(timelevel != -1);
             assert(timelevels >= clause.min_num_timelevels());
             // TODO: properly handle timelevels the way enter_local_mode() does
-            const int mintl = timelevel == 0 || timelevels == 1 ? 0 : timelevel;
-            const int maxtl = timelevel == 0 || timelevels == 1 ? timelevels-1 : timelevel;
+            const int mintl =
+              timelevel == 0 || timelevels == 1 ? 0 : timelevel;
+            const int maxtl =
+              timelevel == 0 || timelevels == 1 ? timelevels-1 : timelevel;
             const int tl_of = timelevels > 1 ? timelevel : 0;
             for (int tl=mintl; tl<=maxtl; ++tl) {
               if (timelevel==-1 or clause.active_on_timelevel(tl-tl_of)) {

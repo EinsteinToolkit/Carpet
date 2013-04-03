@@ -1,14 +1,12 @@
-
 #include <iostream>
+#include <map>
 #include <vector>
 
 #include <cctk.h>
 #include <cctki_Schedule.h>
-//#include <clauses.hh>
-//#include <clause.hh>
+
 #include <all_clauses.hh>
 #include <util.hh>
-#include <map>
 
 using namespace std;
 
@@ -38,10 +36,12 @@ namespace Requirements {
     }
     return;
   }
+  
   void all_clauses_t::output(ostream& os) const
   {
     os << "all_clauses: {" << std::endl;
-    for (std::map<cFunctionData const*, clauses_t const*>::const_iterator ti=clauses_map.begin();
+    for (std::map<cFunctionData const*, clauses_t const*>::const_iterator
+           ti=clauses_map.begin();
          ti!=clauses_map.end();
          ++ti)
     {
