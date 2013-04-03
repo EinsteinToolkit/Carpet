@@ -901,6 +901,9 @@ namespace Requirements {
             for (int tl=mintl; tl<=maxtl; ++tl) {
               if (timelevel==-1 or clause.active_on_timelevel(tl-tl_of)) {
                 gridpoint_t& gp = tls.AT(tl);
+                // TODO: If this variable is both read and written
+                // (i.e. if this is a projection), then only the
+                // written region remains valid
                 gp.update_state(clause);
               }
             }
