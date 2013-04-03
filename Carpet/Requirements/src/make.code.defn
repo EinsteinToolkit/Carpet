@@ -1,7 +1,7 @@
 # Main make.code.defn file for thorn Requirements   -*-Makefile-*-
 
 # Source files in this directory
-SRCS = Requirements.cc
+SRCS = Requirements.cc clause.cc
 
 # Subdirectories containing source files
 SUBDIRS =
