@@ -57,7 +57,8 @@ namespace Requirements {
   // Represents which have valid information and which do not.
   // This will later be indexed by rl, map etc.
   // Currently only works with unigrid.
-  struct gridpoint_t {
+  class gridpoint_t {
+    public:
     bool interior, boundary, ghostzones, boundary_ghostzones;
     gridpoint_t():
       interior(false), boundary(false), ghostzones(false),
