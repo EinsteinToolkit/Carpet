@@ -12,6 +12,8 @@ using namespace std;
 
 namespace Requirements {
 
+//template ostream& output (ostream& os, const vector<clause_t>& v);
+
   void clause_t::interpret_options(cFunctionData const* const function_data)
   {
     if (function_data->meta or
@@ -131,11 +133,6 @@ namespace Requirements {
     return false;
   }
   
-  inline ostream& operator<< (ostream& os, const clause_t& a) {
-    a.output(os);
-    return os;
-  }
-
   void clause_t::output(ostream& os) const
   {
     char* const groupname = CCTK_GroupNameFromVarI(vars.at(0));

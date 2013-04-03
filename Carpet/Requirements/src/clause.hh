@@ -1,3 +1,5 @@
+#ifndef CLAUSE_HH
+#define CLAUSE_HH
 
 #include <cctk_Schedule.h>
 #include <vector>
@@ -34,4 +36,12 @@ namespace Requirements {
     void input (istream& is);
     void output (ostream& os) const;
   };
+
+  inline ostream& operator<< (ostream& os, const clause_t& a) {
+    a.output(os);
+    return os;
+  }
+
 };
+
+#endif

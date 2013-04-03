@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 #include <clause.hh>
+#include <clauses.hh>
+#include <util.hh>
 
 using namespace std;
 
@@ -32,69 +34,6 @@ namespace Requirements {
   //
   // 2. Things can be provided only once, not multiple times.
   //    Except when they are also required.
-  
-  
-  // taken from defs.cc and defs.hh
-  // Vector output
-  template<class T>
-  ostream& output (ostream& os, const vector<T>& v) {
-    os << "[";
-    // Do not number the elements, as this would lead to a format that
-    // cannot be read back in.
-  //   int cnt=0;
-    for (typename vector<T>::const_iterator ti=v.begin(); ti!=v.end(); ++ti) {
-      if (ti!=v.begin()) os << ",";
-  //     os << cnt++ << ":";
-      os << *ti;
-    }
-    os << "]";
-    return os;
-  }
-
-  template<class T>
-  inline ostream& operator<< (ostream& os, const vector<T>& v) {
-    return Requirements::output(os,v);
-  }
-  
-  struct clauses_t {
-    vector<clause_t> reads, writes;
-    clauses_t() {}
-    void setup(cFunctionData const* function_data);
-
-    // Input/Output helpers
-    void input (istream& is);
-    void output (ostream& os) const;
-  };
-  
-  void clauses_t::setup(cFunctionData const* const function_data)
-  {
-    clause_t prototype;
-    prototype.interpret_options(function_data);
-    reads.reserve(function_data->n_ReadsClauses);
-    for (int n=0; n<function_data->n_ReadsClauses; ++n) {
-      clause_t clause(prototype);
-      clause.parse_clause(function_data->ReadsClauses[n]);
-      reads.push_back(clause);
-    }
-    writes.reserve(function_data->n_WritesClauses);
-    for (int n=0; n<function_data->n_WritesClauses; ++n) {
-      clause_t clause(prototype);
-      clause.parse_clause(function_data->WritesClauses[n]);
-      writes.push_back(clause);
-    }
-  }
-
-  inline ostream& operator<< (ostream& os, const clauses_t& a) {
-    a.output(os);
-    return os;
-  }
-
-  void clauses_t::output(ostream& os) const
-  {
-    os << "reads = " << reads << ", writes = " << writes;
-  }
-  
-  
   
   class all_clauses_t {
     // TODO: Represent I/O as well?
@@ -1197,7 +1136,6 @@ namespace Requirements {
     os << old_vars << std::endl;
   }
   
-  template ostream& output (ostream& os, const vector<clause_t>& v);
   template ostream& output (ostream& os, const vector<all_state_t::timelevels_t>& v);
   template ostream& output (ostream& os, const vector<all_state_t::maps_t>& v);
   template ostream& output (ostream& os, const vector<all_state_t::reflevels_t>& v);
