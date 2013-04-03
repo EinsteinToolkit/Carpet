@@ -4,13 +4,13 @@
 # of the internal workings of thorn boundary.
 if (check_requirements)
 {
-  schedule CarpetCheckReadsBeforeBoundary IN ApplyBCs BEFORE BoundaryConditions
+  SCHEDULE CarpetCheckReadsBeforeBoundary IN ApplyBCs BEFORE BoundaryConditions
   {
     LANG: C
     OPTIONS: singlemap # local would also work but we don't really need it
   } "Check that interior of grid function is valid before boundary conditions are applied"
 
-  schedule CarpetNotifyWritesAfterBoundary IN ApplyBCs AFTER Boundary_ApplyPhysicalBCs BEFORE Boundary_ClearSelection
+  SCHEDULE CarpetNotifyWritesAfterBoundary IN ApplyBCs AFTER Boundary_ApplyPhysicalBCs BEFORE Boundary_ClearSelection
   {
     LANG: C
     OPTIONS: singlemap # local would also work but we don't really need it

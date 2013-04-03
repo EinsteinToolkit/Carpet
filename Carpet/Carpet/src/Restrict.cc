@@ -41,14 +41,17 @@ namespace Carpet {
       return;
     }
 
-    // remove all groups with are non-GFs, empty, or have no storage assigned
+    // remove all groups that are non-GFs, empty, or have no storage assigned
     vector<int> groups;
     groups.reserve (CCTK_NumGroups());
 
     for (int group = 0; group < CCTK_NumGroups(); ++group) {
-      if (CCTK_GroupTypeI(group) == CCTK_GF
+      operator_type const op = groupdata.AT(group).transport_operator;
+      bool const do_restrict = op != op_none and op != op_sync;
+      if (do_restrict
           and CCTK_NumVarsInGroupI(group) > 0
-          and CCTK_QueryGroupStorageI(cctkGH, group)) {
+          and CCTK_QueryGroupStorageI(cctkGH, group))
+      {
         groups.push_back (group);
       }
     }
