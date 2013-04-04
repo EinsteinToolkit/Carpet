@@ -62,8 +62,24 @@ namespace Requirements {
     location_t(int _vi, int _tl, int _rl, int _m):
       vi(_vi), tl(_tl), rl(_rl), m(_m)
     {}
+    // Output helper
+    void output (ostream& os) const;
   };
 
+  inline ostream& operator<< (ostream& os, const location_t& a) {
+    a.output(os);
+    return os;
+  }
+
+  void location_t::output(ostream& os) const
+  {
+    os << "LOC: ";
+    os << "vi:"  << vi << ",";
+    os << "[rl:" << rl << ",";
+    os <<  "tl:" << tl << ",";
+    os <<  "m:"  << m << "]";
+  }
+  
   // Represents which have valid information and which do not.
   // This will later be indexed by rl, map etc.
   // Currently only works with unigrid.
@@ -89,10 +105,10 @@ namespace Requirements {
     bool boundary() const;
     bool ghostzones() const;
     bool boundary_ghostzones() const;
-    void set_interior(bool b);
-    void set_boundary(bool b);
-    void set_ghostzones(bool b);
-    void set_boundary_ghostzones(bool b);
+    void set_interior(bool b, location_t &l);
+    void set_boundary(bool b, location_t &l);
+    void set_ghostzones(bool b, location_t &l);
+    void set_boundary_ghostzones(bool b, location_t &l);
 
     void check_state(clause_t const& clause,
                      cFunctionData const* function_data,
@@ -103,11 +119,12 @@ namespace Requirements {
     void report_warning(cFunctionData const* function_data,
                         int vi, int rl, int m, int tl,
                         char const* what, char const* where) const;
-    void update_state(clause_t const& clause);
+    void update_state(clause_t const& clause, location_t &loc);
 
     // Input/Output helpers
     void input (istream& is);
     void output (ostream& os) const;
+    void output_location (location_t &l, int changed) const;
   };
   
   // Accessors
@@ -115,20 +132,32 @@ namespace Requirements {
   bool gridpoint_t::boundary() const            { return i_boundary; }
   bool gridpoint_t::ghostzones() const          { return i_ghostzones; }
   bool gridpoint_t::boundary_ghostzones() const { return i_boundary_ghostzones; }
-  void gridpoint_t::set_interior(bool b)
+  void gridpoint_t::set_interior(bool b, location_t &l)
   {
+    if (i_interior == b)
+      return;
+    output_location(l, 1);
     i_interior = b;
   }
-  void gridpoint_t::set_boundary(bool b)
+  void gridpoint_t::set_boundary(bool b, location_t &l)
   {
+    if (i_boundary == b)
+      return;
+    output_location(l, 2);
     i_boundary = b;
   }
-  void gridpoint_t::set_ghostzones(bool b)
+  void gridpoint_t::set_ghostzones(bool b, location_t &l)
   {
+    if (i_ghostzones == b)
+      return;
+    output_location(l, 4);
     i_ghostzones = b;
   }
-  void gridpoint_t::set_boundary_ghostzones(bool b)
+  void gridpoint_t::set_boundary_ghostzones(bool b, location_t &l)
   {
+    if (i_boundary_ghostzones == b)
+      return;
+    output_location(l, 8);
     i_boundary_ghostzones = b;
   }
 
@@ -241,19 +270,19 @@ namespace Requirements {
   
   // Update this object to reflect the fact that some parts of some
   // variables are now valid after a function has been called
-  void gridpoint_t::update_state(clause_t const& clause)
+  void gridpoint_t::update_state(clause_t const& clause, location_t &loc)
   {
     if (clause.everywhere or clause.interior) {
-      set_interior(true);
+      set_interior(true, loc);
     }
     if (clause.everywhere or clause.boundary) {
-      set_boundary(true);
+      set_boundary(true, loc);
     }
     if (clause.everywhere) {
-      set_ghostzones(true);
+      set_ghostzones(true, loc);
     }
     if (clause.everywhere or clause.boundary_ghostzones) {
-      set_boundary_ghostzones(true);
+      set_boundary_ghostzones(true, loc);
     }
   }
   
@@ -265,6 +294,19 @@ namespace Requirements {
     if (i_ghostzones) os << "ghostzones;";
     if (i_boundary_ghostzones) os << "boundary_ghostzones;";
     os << ")";
+  }
+  
+  void gridpoint_t::output_location(location_t& l, int changed) const
+  {
+    DECLARE_CCTK_PARAMETERS;
+    if (!print_changes)
+      return;
+    cout << l
+         << ( (changed&1)?"(in:":"(IN:" ) << i_interior
+         << ( (changed&2)?",bo:":",BO:" ) << i_boundary
+         << ( (changed&4)?",gh:":",GH:" ) << i_ghostzones
+         << ( (changed&8)?",bg:":",BG:" ) << i_boundary_ghostzones
+         << ")\n";
   }
   
   
@@ -577,6 +619,8 @@ namespace Requirements {
   {
     DECLARE_CCTK_PARAMETERS;
     int const ng = CCTK_NumGroups();
+    location_t loc;
+    loc.rl = reflevel;
     for (int gi=0; gi<ng; ++gi) {
       int const group_type = CCTK_GroupTypeI(gi);
       switch (group_type) {
@@ -589,6 +633,7 @@ namespace Requirements {
         int const v0 = CCTK_FirstVarIndexI(gi);
         int const nv = CCTK_NumVarsInGroupI(gi);
         for (int vi=v0; vi<v0+nv; ++vi) {
+          loc.vi = vi;
           reflevels_t& rls = vars.AT(vi);
           maps_t& ms = rls.AT(reflevel);
           reflevels_t& old_rls = old_vars.AT(vi);
@@ -603,6 +648,7 @@ namespace Requirements {
                    im = ms.begin(), old_im = old_ms.begin();
                  im != ms.end(); ++im, ++old_im)
             {
+              loc.m = &*im - &*ms.begin();
               timelevels_t& tls = *im;
               if (verbose) {
                 char* const fullname = CCTK_FullName(vi);
@@ -616,15 +662,16 @@ namespace Requirements {
                      itl = tls.begin(); itl != tls.end(); ++itl)
               {
                 gridpoint_t& gp = *itl;
+                loc.tl = &*itl - &*tls.begin();
                 switch (where) {
                 case valid::nowhere:
-                  gp.set_interior(false);
+                  gp.set_interior(false, loc);
                   // fall through
                 case valid::interior:
                   // Recomposing sets only the interior
-                  gp.set_boundary(false);
-                  gp.set_ghostzones(false);
-                  gp.set_boundary_ghostzones(false);
+                  gp.set_boundary(false, loc);
+                  gp.set_ghostzones(false, loc);
+                  gp.set_boundary_ghostzones(false, loc);
                   // fall through
                 case valid::everywhere:
                   // do nothing
@@ -858,6 +905,7 @@ namespace Requirements {
                                   int const timelevel,
                                   int const timelevel_offset)
   {
+    location_t loc;
     // Loop over all clauses
     clauses_t const& clauses = all_clauses.get_clauses(function_data);
     for (vector<clause_t>::const_iterator iclause = clauses.writes.begin();
@@ -870,6 +918,7 @@ namespace Requirements {
            ++ivar)
       {
         int const vi = *ivar;
+        loc.vi = vi;
         
         // Loop over all (refinement levels, maps, time levels)
         reflevels_t& rls = vars.AT(vi);
@@ -882,6 +931,7 @@ namespace Requirements {
         }
         for (int rl=min_rl; rl<max_rl; ++rl) {
           
+          loc.rl = rl;
           maps_t& ms = rls.AT(rl);
           int const maps = int(ms.size());
           int min_m, max_m;
@@ -892,6 +942,7 @@ namespace Requirements {
           }
           for (int m=min_m; m<max_m; ++m) {
             
+            loc.m = m;
             timelevels_t& tls = ms.AT(m);
             int const timelevels = int(tls.size());
             assert(timelevel != -1);
@@ -904,11 +955,12 @@ namespace Requirements {
             const int tloff = timelevel_offset;
             for (int tl=mintl; tl<=maxtl; ++tl) {
               if (timelevel==-1 or clause.active_on_timelevel(tl-tloff)) {
+                loc.tl = tl;
                 gridpoint_t& gp = tls.AT(tl);
                 // TODO: If this variable is both read and written
                 // (i.e. if this is a projection), then only the
                 // written region remains valid
-                gp.update_state(clause);
+                gp.update_state(clause, loc);
               }
             }
             
@@ -945,6 +997,9 @@ namespace Requirements {
                          vector<int> const& groups,
                          int const reflevel, int const timelevel)
   {
+    location_t loc;
+    loc.rl = reflevel;
+    loc.tl = timelevel;
     // Loop over all variables
     for (vector<int>::const_iterator
            igi = groups.begin(); igi != groups.end(); ++igi)
@@ -973,6 +1028,7 @@ namespace Requirements {
         for (int vi=v0; vi<v0+nv; ++vi) {
           if (ignored_variables.AT(vi))
             continue;
+          loc.vi = vi;
           
           reflevels_t& rls = vars.AT(vi);
           maps_t& ms = rls.AT(rl);
@@ -981,6 +1037,7 @@ namespace Requirements {
             timelevels_t& tls = ms.AT(m);
             int const tl = timelevel;
             gridpoint_t& gp = tls.AT(tl);
+            loc.m = m;
             
             // Synchronising requires a valid interior
             if (not gp.interior()) {
@@ -1024,8 +1081,8 @@ namespace Requirements {
                    "synchronising", "ghostzones");
               }
             }
-            gp.set_ghostzones(true);
-            gp.set_boundary_ghostzones(gp.boundary());
+            gp.set_ghostzones(true, loc);
+            gp.set_boundary_ghostzones(gp.boundary(), loc);
           }
         }
       }
@@ -1054,6 +1111,8 @@ namespace Requirements {
   // Update internal data structures when Carpet restricts
   void all_state_t::restrict1(vector<int> const& groups, int const reflevel)
   {
+    location_t loc;
+    loc.rl = reflevel;
     // Loop over all variables
     for (vector<int>::const_iterator
            igi = groups.begin(); igi != groups.end(); ++igi)
@@ -1082,14 +1141,17 @@ namespace Requirements {
         for (int vi=v0; vi<v0+nv; ++vi) {
           if (ignored_variables.AT(vi))
             continue;
+          loc.vi = vi;
           
           reflevels_t& rls = vars.AT(vi);
           int const reflevels = int(rls.size());
           maps_t& ms = rls.AT(rl);
           int const maps = int(ms.size());
           for (int m=0; m<maps; ++m) {
+            loc.m = m;
             timelevels_t& tls = ms.AT(m);
             int const tl = 0;
+            loc.tl = tl;
             gridpoint_t& gp = tls.AT(tl);
             
             // Restricting requires a valid interior (otherwise we
@@ -1119,9 +1181,9 @@ namespace Requirements {
             
             // Restricting fills (part of) the interior, but leaves
             // ghost zones and boundary zones undefined
-            gp.set_boundary(false);
-            gp.set_ghostzones(false);
-            gp.set_boundary_ghostzones(false);
+            gp.set_boundary(false, loc);
+            gp.set_ghostzones(false, loc);
+            gp.set_boundary_ghostzones(false, loc);
           }
         }
       }
