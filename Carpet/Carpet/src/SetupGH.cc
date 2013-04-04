@@ -2273,7 +2273,7 @@ namespace Carpet {
     
     if (gdata.grouptype != CCTK_GF) {
       // Ignore everything but true grid functions
-      return op_sync;           // was: op_copy -- why?
+      return op_copy;
     }
     
     bool const can_transfer = can_transfer_variable_type (cctkGH, group, gdata);
