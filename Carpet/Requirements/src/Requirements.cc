@@ -315,10 +315,10 @@ namespace Requirements {
       return;
 
     cout << "LOC: " << l << " "
-         << ( (changed&BIT_INTERIOR)           ?"(in:":"(IN:" ) << i_interior
-         << ( (changed&BIT_BOUNDARY)           ?",bo:":",BO:" ) << i_boundary
-         << ( (changed&BIT_GHOSTZONES)         ?",gh:":",GH:" ) << i_ghostzones
-         << ( (changed&BIT_BOUNDARY_GHOSTZONES)?",bg:":",BG:" ) << i_boundary_ghostzones
+         << ( (changed&BIT_INTERIOR)           ?"(IN:":"(in:" ) << i_interior
+         << ( (changed&BIT_BOUNDARY)           ?",BO:":",bo:" ) << i_boundary
+         << ( (changed&BIT_GHOSTZONES)         ?",GH:":",gh:" ) << i_ghostzones
+         << ( (changed&BIT_BOUNDARY_GHOSTZONES)?",BG:":",bg:" ) << i_boundary_ghostzones
          << ") " << l.info << "\n";
   }
   
