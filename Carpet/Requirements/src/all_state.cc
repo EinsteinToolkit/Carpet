@@ -397,7 +397,7 @@ namespace Requirements {
                   clause.active_on_timelevel(tl - timelevel_offset))
               {
                 gridpoint_t const& gp = tls.AT(tl);
-                gp.check_state(clause, function_data, vi, rl, m, tl);
+                gp.check_state(clause, function_data, vi, iteration, rl, m, tl);
               }
             }
             
@@ -539,7 +539,8 @@ namespace Requirements {
             // Synchronising requires a valid interior
             if (not gp.interior()) {
               gp.report_error
-                (function_data, vi, rl, m, tl, "synchronising", "interior");
+                (function_data, vi, iteration, rl, m, tl,
+                 "synchronising", "interior");
             }
             
             // Synchronising (i.e. prolongating) requires valid data
@@ -553,11 +554,11 @@ namespace Requirements {
               int const ctimelevels = int(ctls.size());
               for (int ctl=0; ctl<ctimelevels; ++ctl) {
                 gridpoint_t const& cgp = ctls.AT(ctl);
-                if (not (cgp.interior() and cgp.boundary() and cgp.ghostzones() and
-                         cgp.boundary_ghostzones()))
+                if (not (cgp.interior() and cgp.boundary() and
+                         cgp.ghostzones() and cgp.boundary_ghostzones()))
                 {
                   cgp.report_error
-                    (function_data, vi, crl, m, ctl,
+                    (function_data, vi, iteration, crl, m, ctl,
                      "prolongating", "everywhere");
                 }
               }
@@ -568,13 +569,13 @@ namespace Requirements {
             if (gp.boundary() ) {
               if (gp.ghostzones() and gp.boundary_ghostzones()) {
                 gp.report_warning
-                  (function_data, vi, rl, m, tl,
+                  (function_data, vi, iteration, rl, m, tl,
                    "synchronising", "ghostzones+boundary_ghostzones");
               }
             } else {
               if (gp.ghostzones()) {
                 gp.report_warning
-                  (function_data, vi, rl, m, tl,
+                  (function_data, vi, iteration, rl, m, tl,
                    "synchronising", "ghostzones");
               }
             }
@@ -641,7 +642,7 @@ namespace Requirements {
             // afterwards)
             if (not gp.interior()) {
               gp.report_error
-                (NULL, vi, rl, m, tl, "restricting", "interior");
+                (NULL, vi, iteration, rl, m, tl, "restricting", "interior");
             }
             
             // Restricting requires valid data on the current time
@@ -653,11 +654,12 @@ namespace Requirements {
               timelevels_t const& ftls = fms.AT(m);
               int const ftl = 0;
               gridpoint_t const& fgp = ftls.AT(ftl);
-              if (not (fgp.interior() and fgp.boundary() and fgp.ghostzones() and
-                       fgp.boundary_ghostzones()))
+              if (not (fgp.interior() and fgp.boundary() and
+                       fgp.ghostzones() and fgp.boundary_ghostzones()))
               {
                 fgp.report_error
-                  (NULL, vi, frl, m, ftl, "restricting", "everywhere");
+                  (NULL, vi, iteration, frl, m, ftl,
+                   "restricting", "everywhere");
               }
             }
             

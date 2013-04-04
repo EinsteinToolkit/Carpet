@@ -44,30 +44,31 @@ namespace Requirements {
   void gridpoint_t::check_state(clause_t const& clause,
                                 cFunctionData const* const function_data,
                                 int const vi,
+                                int const it,
                                 int const rl, int const m, int const tl)
     const
   {
     if (not i_interior) {
       if (clause.everywhere or clause.interior) {
-        report_error(function_data, vi, rl, m, tl,
+        report_error(function_data, vi, it, rl, m, tl,
                      "calling function", "interior");
       }
     }
     if (not i_boundary) {
       if (clause.everywhere or clause.boundary) {
-        report_error(function_data, vi, rl, m, tl,
+        report_error(function_data, vi, it, rl, m, tl,
                      "calling function", "boundary");
       }
     }
     if (not i_ghostzones) {
       if (clause.everywhere) {
-        report_error(function_data, vi, rl, m, tl,
+        report_error(function_data, vi, it, rl, m, tl,
                      "calling function", "ghostzones");
       }
     }
     if (not i_boundary_ghostzones) {
       if (clause.everywhere or clause.boundary_ghostzones) {
-        report_error(function_data, vi, rl, m, tl,
+        report_error(function_data, vi, it, rl, m, tl,
                      "calling", "boundary-ghostzones");
       }
     }
@@ -75,6 +76,7 @@ namespace Requirements {
   
   void gridpoint_t::report_error(cFunctionData const* const function_data,
                                  int const vi,
+                                 int const it,
                                  int const rl, int const m, int const tl,
                                  char const* const what,
                                  char const* const where) const
@@ -87,19 +89,19 @@ namespace Requirements {
       CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Schedule READS clause not satisfied: "
                  "Function %s::%s in %s: "
-                 "Variable %s reflevel=%d map=%d timelevel=%d: "
+                 "Variable %s iteration=%d reflevel=%d map=%d timelevel=%d: "
                  "%s not valid for %s. %s",
                  function_data->thorn, function_data->routine,
                  function_data->where,
-                 fullname, rl, m, tl,
+                 fullname, it, rl, m, tl,
                  where, what, state.str().c_str());
     } else {
       // The error is not related to a scheduled function
       CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Schedule READS clause not satisfied: "
-                 "Variable %s reflevel=%d map=%d timelevel=%d: "
+                 "Variable %s iteration=%d reflevel=%d map=%d timelevel=%d: "
                  "%s not valid for %s. %s",
-                 fullname, rl, m, tl,
+                 fullname, it, rl, m, tl,
                  where, what, state.str().c_str());
     }
     free(fullname);
@@ -108,6 +110,7 @@ namespace Requirements {
   
   void gridpoint_t::report_warning(cFunctionData const* const function_data,
                                    int const vi,
+                                   int const it,
                                    int const rl, int const m, int const tl,
                                    char const* const what,
                                    char const* const where) const
@@ -120,19 +123,19 @@ namespace Requirements {
       CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Schedule WRITES clause is superfluous: "
                  "Function %s::%s in %s: "
-                 "Variable %s reflevel=%d map=%d timelevel=%d: "
+                 "Variable %s iteration=%d reflevel=%d map=%d timelevel=%d: "
                  "%s already valid for %s. %s",
                  function_data->thorn, function_data->routine,
                  function_data->where,
-                 fullname, rl, m, tl,
+                 fullname, it, rl, m, tl,
                  where, what, state.str().c_str());
     } else {
       // The error is not related to a scheduled function
       CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Schedule WRITES clause already satisfied: "
-                 "Variable %s reflevel=%d map=%d timelevel=%d: "
+                 "Variable %s iteration=%d reflevel=%d map=%d timelevel=%d: "
                  "%s already valid for %s. %s",
-                 fullname, rl, m, tl,
+                 fullname, it, rl, m, tl,
                  where, what, state.str().c_str());
     }
     free(fullname);

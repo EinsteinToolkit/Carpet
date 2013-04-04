@@ -54,12 +54,12 @@ namespace Requirements {
 
     void check_state(clause_t const& clause,
                      cFunctionData const* function_data,
-                     int vi, int rl, int m, int tl) const;
+                     int vi, int it, int rl, int m, int tl) const;
     void report_error(cFunctionData const* function_data,
-                      int vi, int rl, int m, int tl,
+                      int vi, int it, int rl, int m, int tl,
                       char const* what, char const* where) const;
     void report_warning(cFunctionData const* function_data,
-                        int vi, int rl, int m, int tl,
+                        int vi, int it, int rl, int m, int tl,
                         char const* what, char const* where) const;
     void update_state(clause_t const& clause, const location_t &loc);
     
