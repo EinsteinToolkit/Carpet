@@ -6,10 +6,12 @@ namespace Requirements {
 
   void location_t::output(ostream& os) const
   {
-    os << "vi:" << vi << ", ["
+    os << "vi:" << vi << ", "
+       << "["
        << "it:" << it << ","
        << "rl:" << rl << ","
-       << "tl:" << tl << ","
-       << "m:"  << m << "]";
+       << "m:"  << m  << ","
+       << "tl:" << tl
+       << "]";
   }
 }
