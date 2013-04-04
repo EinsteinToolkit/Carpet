@@ -191,8 +191,6 @@ namespace Requirements {
   void gridpoint_t::output_location(location_t& l, int changed) const
   {
     DECLARE_CCTK_PARAMETERS;
-    if (!print_changes)
-      return;
 
     cout << "LOC: " << l << " "
          << ( (changed&BIT_INTERIOR)           ?"(IN:":"(in:" ) << i_interior
@@ -200,6 +198,7 @@ namespace Requirements {
          << ( (changed&BIT_GHOSTZONES)         ?",GH:":",gh:" ) << i_ghostzones
          << ( (changed&BIT_BOUNDARY_GHOSTZONES)?",BG:":",bg:" ) << i_boundary_ghostzones
          << ") " << l.info << "\n";
+    if (not output_changes) return;
   }
 
 }

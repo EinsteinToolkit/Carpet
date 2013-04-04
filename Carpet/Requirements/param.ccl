@@ -8,6 +8,12 @@ BOOLEAN verbose "Output details when checking requirements" STEERABLE=always
 {
 } "no"
 
+BOOLEAN output_changes "Enable output describing when regions become valid or invalid" STEERABLE=always
+{
+} "no"
+
+
+
 BOOLEAN inconsistencies_are_fatal "Abort when encountering inconsistencies in requirements" STEERABLE=always
 {
 } "no"
@@ -16,7 +22,3 @@ STRING ignore_these_variables "Assume that these variables are always valid ever
 {
   "([A-Za-z0-9_]+[:][:][A-Za-z0-9_]+([[:space:]]+|$))*" :: "space separated list of variables or groups"
 } ""
-
-BOOLEAN print_changes "Enable debug output about when regions get set/unset" STEERABLE=always
-{
-} "no"
