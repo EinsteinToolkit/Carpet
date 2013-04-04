@@ -55,6 +55,7 @@ namespace Carpet {
         groups.push_back (group);
       }
     }
+    if (groups.empty()) return;
     
 #ifdef REQUIREMENTS_HH
     Requirements::Restrict(groups, cctkGH->cctk_iteration, reflevel);
