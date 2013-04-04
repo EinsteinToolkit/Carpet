@@ -347,6 +347,7 @@ namespace Requirements {
   // function is executed
   void all_state_t::before_routine(cFunctionData const* const function_data,
                                    all_clauses_t &all_clauses,
+                                   int const iteration,
                                    int const reflevel, int const map,
                                    int const timelevel,
                                    int const timelevel_offset)
@@ -417,7 +418,7 @@ namespace Requirements {
   // executed to reflect the fact that some variables are now valid
   void all_state_t::after_routine(cFunctionData const* const function_data,
                                   all_clauses_t &all_clauses,
-                                  CCTK_INT cctk_iteration,
+                                  int const iteration,
                                   int const reflevel, int const map,
                                   int const timelevel,
                                   int const timelevel_offset)
@@ -430,7 +431,7 @@ namespace Requirements {
     info += " in ";
     info += function_data->where;
     loc.info = info.c_str();
-    loc.it = cctk_iteration;
+    loc.it = iteration;
     // Loop over all clauses
     clauses_t const& clauses = all_clauses.get_clauses(function_data);
     for (vector<clause_t>::const_iterator iclause = clauses.writes.begin();
@@ -455,8 +456,8 @@ namespace Requirements {
           min_rl = reflevel; max_rl = min_rl+1;
         }
         for (int rl=min_rl; rl<max_rl; ++rl) {
-          
           loc.rl = rl;
+          
           maps_t& ms = rls.AT(rl);
           int const maps = int(ms.size());
           int min_m, max_m;
@@ -498,15 +499,15 @@ namespace Requirements {
   
   // Update internal data structures when Carpet syncs
   void all_state_t::sync(cFunctionData const* const function_data,
-                         CCTK_INT cctk_iteration,
                          vector<int> const& groups,
+                         int const iteration,
                          int const reflevel, int const timelevel)
   {
     location_t loc;
     loc.info = "sync";
+    loc.it = iteration;
     loc.rl = reflevel;
     loc.tl = timelevel;
-    loc.it = cctk_iteration;
     // Loop over all variables
     for (vector<int>::const_iterator
            igi = groups.begin(); igi != groups.end(); ++igi)
@@ -533,18 +534,17 @@ namespace Requirements {
         int const v0 = CCTK_FirstVarIndexI(gi);
         int const nv = CCTK_NumVarsInGroupI(gi);
         for (int vi=v0; vi<v0+nv; ++vi) {
-          if (ignored_variables.AT(vi))
-            continue;
+          if (ignored_variables.AT(vi)) continue;
           loc.vi = vi;
           
           reflevels_t& rls = vars.AT(vi);
           maps_t& ms = rls.AT(rl);
           int const maps = int(ms.size());
           for (int m=0; m<maps; ++m) {
+            loc.m = m;
             timelevels_t& tls = ms.AT(m);
             int const tl = timelevel;
             gridpoint_t& gp = tls.AT(tl);
-            loc.m = m;
             
             // Synchronising requires a valid interior
             if (not gp.interior()) {
@@ -598,12 +598,13 @@ namespace Requirements {
 
 
   // Update internal data structures when Carpet restricts
-  void all_state_t::restrict1(vector<int> const& groups, CCTK_INT const cctk_iteration, int const reflevel)
+  void all_state_t::restrict1(vector<int> const& groups,
+                              int const iteration, int const reflevel)
   {
     location_t loc;
     loc.info = "restrict";
+    loc.it = iteration;
     loc.rl = reflevel;
-    loc.it = cctk_iteration;
     // Loop over all variables
     for (vector<int>::const_iterator
            igi = groups.begin(); igi != groups.end(); ++igi)

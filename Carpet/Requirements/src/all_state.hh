@@ -40,16 +40,16 @@ namespace Requirements {
     void cycle(int reflevel);
     void before_routine(cFunctionData const* function_data,
                         all_clauses_t &all_clauses,
-                        int reflevel, int map,
+                        int iteration, int reflevel, int map,
                         int timelevel, int timelevel_offset) const;
     void after_routine(cFunctionData const* function_data,
                        all_clauses_t &all_clauses,
-                       CCTK_INT cctk_iteration,
-                       int reflevel, int map,
+                       int iteration, int reflevel, int map,
                        int timelevel, int timelevel_offset);
-    void sync(cFunctionData const* function_data, CCTK_INT cctk_iteration,
-              vector<int> const& groups, int reflevel, int timelevel);
-    void restrict1(vector<int> const& groups, CCTK_INT cctk_iteration, int reflevel);
+    void sync(cFunctionData const* function_data,
+              vector<int> const& groups, 
+              int iteration, int reflevel, int timelevel);
+    void restrict1(vector<int> const& groups, int iteration, int reflevel);
     void invalidate(vector<int> const& vars,
                     int reflevel, int map, int timelevel);
     

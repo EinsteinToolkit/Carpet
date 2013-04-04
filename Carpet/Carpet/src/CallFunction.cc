@@ -361,7 +361,8 @@ namespace Carpet {
       user_timer.start();
 #ifdef REQUIREMENTS_HH
       Requirements::BeforeRoutine
-        (attribute, reflevel, map, timelevel, timelevel_offset);
+        (attribute,
+         cctkGH->cctk_iteration, reflevel, map, timelevel, timelevel_offset);
 #endif
       timer.start();
       if (CCTK_IsFunctionAliased("Accelerator_PreCallFunction")) {
@@ -381,7 +382,8 @@ namespace Carpet {
       timer.stop();
 #ifdef REQUIREMENTS_HH
       Requirements::AfterRoutine
-        (attribute, cctkGH->cctk_iteration, reflevel, map, timelevel, timelevel_offset);
+        (attribute,
+         cctkGH->cctk_iteration, reflevel, map, timelevel, timelevel_offset);
 #endif
       user_timer.stop();
       

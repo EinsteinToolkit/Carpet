@@ -142,13 +142,14 @@ namespace Requirements {
   }
    
   void BeforeRoutine(cFunctionData const* const function_data,
-                     int const reflevel, int const map,
+                     int const iteration, int const reflevel, int const map,
                      int const timelevel, int const timelevel_offset)
   {
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
       all_state.before_routine(function_data, all_clauses,
-                               reflevel, map, timelevel, timelevel_offset);
+                               iteration, reflevel, map,
+                               timelevel, timelevel_offset);
     }
     if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
@@ -156,14 +157,15 @@ namespace Requirements {
     }
   }
   
-  void AfterRoutine(cFunctionData const* const function_data, CCTK_INT cctk_iteration,
-                    int const reflevel, int const map,
+  void AfterRoutine(cFunctionData const* const function_data,
+                    int const iteration, int const reflevel, int const map,
                     int const timelevel, int const timelevel_offset)
   {
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
-      all_state.after_routine(function_data, all_clauses, cctk_iteration,
-                              reflevel, map, timelevel, timelevel_offset);
+      all_state.after_routine(function_data, all_clauses,
+                              iteration, reflevel, map,
+                              timelevel, timelevel_offset);
     }
     if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
@@ -172,9 +174,8 @@ namespace Requirements {
   }
   
   void Sync(cFunctionData const* const function_data,
-            CCTK_INT cctk_iteration,
             vector<int> const& groups,
-            int const reflevel, int const timelevel)
+            int const iteration, int const reflevel, int const timelevel)
   {
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
@@ -183,7 +184,7 @@ namespace Requirements {
                    "Sync reflevel=%d timelevel=%d",
                    reflevel, timelevel);
       }
-      all_state.sync(function_data, cctk_iteration, groups, reflevel, timelevel);
+      all_state.sync(function_data, groups, iteration, reflevel, timelevel);
     }
     if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
@@ -191,7 +192,8 @@ namespace Requirements {
     }
   }
   
-  void Restrict(vector<int> const& groups, CCTK_INT const cctk_iteration, int const reflevel)
+  void Restrict(vector<int> const& groups,
+                int const iteration, int const reflevel)
   {
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
@@ -200,7 +202,7 @@ namespace Requirements {
                    "Restrict reflevel=%d",
                    reflevel);
       }
-      all_state.restrict1(groups, cctk_iteration, reflevel);
+      all_state.restrict1(groups, iteration, reflevel);
     }
     if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
@@ -244,7 +246,8 @@ namespace Requirements {
         temp_function_data.ReadsClauses = (char const**)&reads;
         all_clauses.get_clauses(&temp_function_data);
         BeforeRoutine(&temp_function_data,
-                      reflevel, map, timelevel, timelevel_offset);
+                      cctkGH->cctk_iteration, reflevel, map,
+                      timelevel, timelevel_offset);
         all_clauses.remove_clauses(&temp_function_data);
         free(fullname);
         free(reads);
@@ -285,8 +288,9 @@ namespace Requirements {
         temp_function_data.n_ReadsClauses = 0;
         temp_function_data.ReadsClauses = NULL;
         all_clauses.get_clauses(&temp_function_data);
-        AfterRoutine(&temp_function_data, cctkGH->cctk_iteration,
-                     reflevel, map, timelevel, timelevel_offset);
+        AfterRoutine(&temp_function_data,
+                     cctkGH->cctk_iteration, reflevel, map,
+                     timelevel, timelevel_offset);
         all_clauses.remove_clauses(&temp_function_data);
         free(fullname);
         free(writes);

@@ -137,7 +137,8 @@ namespace Carpet {
     if (goodgroups.size() > 0) {
       
 #ifdef REQUIREMENTS_HH
-      Requirements::Sync(function_data, cctkGH->cctk_iteration, goodgroups, reflevel, timelevel);
+      Requirements::Sync(function_data, goodgroups,
+                         cctkGH->cctk_iteration, reflevel, timelevel);
 #endif
       
       // prolongate boundaries

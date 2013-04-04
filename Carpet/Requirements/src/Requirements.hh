@@ -42,20 +42,20 @@ namespace Requirements {
   // TODO: Either combine these "before" and "after" routines, or
   // split the other routines as well
   void BeforeRoutine(cFunctionData const* function_data,
-                     int reflevel, int map,
+                     int iteration, int reflevel, int map,
                      int timelevel, int timelevel_offset);
   // After calling a routine: update according to writes clauses
   void AfterRoutine(cFunctionData const* function_data,
-                    CCTK_INT cctk_iteration,
-                    int reflevel, int map,
+                    int iteration, int reflevel, int map,
                     int timelevel, int timelevel_offset);
   // Synchronise and prolongate
   // TODO: This does not handle variables that are not prolongated
   // TODO: This does not handle buffer zones
-  void Sync(cFunctionData const* function_data, CCTK_INT cctk_iteration,
-            vector<int> const& groups, int reflevel, int timelevel);
+  void Sync(cFunctionData const* function_data,
+            vector<int> const& groups,
+            int iteration, int reflevel, int timelevel);
   // Restrict
-  void Restrict(vector<int> const& groups, CCTK_INT cctk_iteration, int reflevel);
+  void Restrict(vector<int> const& groups, int iteration, int reflevel);
   
 } // namespace Requirements
 
