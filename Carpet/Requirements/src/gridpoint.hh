@@ -16,10 +16,19 @@ namespace Requirements {
   // Currently only works with unigrid.
   class gridpoint_t {
     bool i_interior, i_boundary, i_ghostzones, i_boundary_ghostzones;
-    public:
+  public:
     gridpoint_t():
       i_interior(false), i_boundary(false), i_ghostzones(false),
       i_boundary_ghostzones(false)
+    {}
+    gridpoint_t(bool interior_,
+                bool boundary_,
+                bool ghostzones_,
+                bool boundary_ghostzones_):
+      i_interior(interior_),
+      i_boundary(boundary_),
+      i_ghostzones(ghostzones_),
+      i_boundary_ghostzones(boundary_ghostzones_)
     {}
 
     // Construct an object with information about which points are
@@ -31,15 +40,16 @@ namespace Requirements {
       i_ghostzones(clause.everywhere),
       i_boundary_ghostzones(clause.everywhere or clause.boundary_ghostzones)
     {}
+    
     // Accessors
-    bool interior() const;
-    bool boundary() const;
-    bool ghostzones() const;
-    bool boundary_ghostzones() const;
-    void set_interior(bool b, location_t &l);
-    void set_boundary(bool b, location_t &l);
-    void set_ghostzones(bool b, location_t &l);
-    void set_boundary_ghostzones(bool b, location_t &l);
+    bool interior() const            { return i_interior; }
+    bool boundary() const            { return i_boundary; }
+    bool ghostzones() const          { return i_ghostzones; }
+    bool boundary_ghostzones() const { return i_boundary_ghostzones; }
+    void set_interior(bool b, const location_t &l);
+    void set_boundary(bool b, const location_t &l);
+    void set_ghostzones(bool b, const location_t &l);
+    void set_boundary_ghostzones(bool b, const location_t &l);
 
     void check_state(clause_t const& clause,
                      cFunctionData const* function_data,
@@ -50,12 +60,25 @@ namespace Requirements {
     void report_warning(cFunctionData const* function_data,
                         int vi, int rl, int m, int tl,
                         char const* what, char const* where) const;
-    void update_state(clause_t const& clause, location_t &loc);
-
+    void update_state(clause_t const& clause, const location_t &loc);
+    
+    // Operators
+    bool empty() const
+    {
+      return i_interior or i_boundary or i_ghostzones or i_boundary_ghostzones;
+    }
+    gridpoint_t operator^(const gridpoint_t& gp) const
+    {
+      return gridpoint_t(i_interior ^ gp.i_interior,
+                         i_boundary ^ gp.i_boundary,
+                         i_ghostzones ^ gp.i_ghostzones,
+                         i_boundary_ghostzones ^ gp.i_boundary_ghostzones);
+    }
+    
     // Input/Output helpers
     void input (istream& is);
     void output (ostream& os) const;
-    void output_location (location_t &l, int changed) const;
+    void output_location(const gridpoint_t& oldgp, const location_t& l) const;
 
     static bool there_was_an_error;
     static bool there_was_a_warning;

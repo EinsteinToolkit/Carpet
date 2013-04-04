@@ -10,44 +10,36 @@
 namespace Requirements {
 
   using namespace std;
-
+  
   bool gridpoint_t::there_was_an_error = false;
   bool gridpoint_t::there_was_a_warning = false;
 
   // Accessors
-  bool gridpoint_t::interior() const            { return i_interior; }
-  bool gridpoint_t::boundary() const            { return i_boundary; }
-  bool gridpoint_t::ghostzones() const          { return i_ghostzones; }
-  bool gridpoint_t::boundary_ghostzones() const { return i_boundary_ghostzones; }
-  void gridpoint_t::set_interior(bool b, location_t &l)
+  void gridpoint_t::set_interior(bool b, const location_t &l)
   {
-    if (i_interior == b)
-      return;
+    const gridpoint_t oldgp = *this;
     i_interior = b;
-    output_location(l, BIT_INTERIOR);
+    output_location(oldgp, l);
   }
-  void gridpoint_t::set_boundary(bool b, location_t &l)
+  void gridpoint_t::set_boundary(bool b, const location_t &l)
   {
-    if (i_boundary == b)
-      return;
+    const gridpoint_t oldgp = *this;
     i_boundary = b;
-    output_location(l, BIT_BOUNDARY);
+    output_location(oldgp, l);
   }
-  void gridpoint_t::set_ghostzones(bool b, location_t &l)
+  void gridpoint_t::set_ghostzones(bool b, const location_t &l)
   {
-    if (i_ghostzones == b)
-      return;
+    const gridpoint_t oldgp = *this;
     i_ghostzones = b;
-    output_location(l, BIT_GHOSTZONES);
+    output_location(oldgp, l);
   }
-  void gridpoint_t::set_boundary_ghostzones(bool b, location_t &l)
+  void gridpoint_t::set_boundary_ghostzones(bool b, const location_t &l)
   {
-    if (i_boundary_ghostzones == b)
-      return;
+    const gridpoint_t oldgp = *this;
     i_boundary_ghostzones = b;
-    output_location(l, BIT_BOUNDARY_GHOSTZONES);
+    output_location(oldgp, l);
   }
-
+  
   // Check that all the parts of the grid variables read by a function
   // are valid.  This will be called before the function is executed.
   void gridpoint_t::check_state(clause_t const& clause,
@@ -150,31 +142,22 @@ namespace Requirements {
   
   // Update this object to reflect the fact that some parts of some
   // variables are now valid after a function has been called
-  void gridpoint_t::update_state(clause_t const& clause, location_t &loc)
+  void gridpoint_t::update_state(clause_t const& clause, const location_t &loc)
   {
-    int where = 0;
+    const gridpoint_t oldgp = *this;
     if (clause.everywhere or clause.interior) {
-      if (!i_interior)
-        where |= BIT_INTERIOR;
       i_interior = true;
     }
     if (clause.everywhere or clause.boundary) {
-      if (!i_boundary)
-        where |= BIT_BOUNDARY;
       i_boundary = true;
     }
     if (clause.everywhere) {
-      if (!i_ghostzones)
-        where |= BIT_GHOSTZONES;
       i_ghostzones = true;
     }
     if (clause.everywhere or clause.boundary_ghostzones) {
-      if (!i_boundary_ghostzones)
-        where |= BIT_BOUNDARY_GHOSTZONES;
       i_boundary_ghostzones = true;
     }
-    if (where)
-      output_location(loc, where);
+    output_location(oldgp, loc);
   }
   
   void gridpoint_t::output(ostream& os) const
@@ -188,17 +171,25 @@ namespace Requirements {
   }
   
   // Some readable and parsable debug output
-  void gridpoint_t::output_location(location_t& l, int changed) const
+  void gridpoint_t::output_location(const gridpoint_t& oldgp,
+                                    const location_t& l) const
   {
     DECLARE_CCTK_PARAMETERS;
-
-    cout << "LOC: " << l << " "
-         << ( (changed&BIT_INTERIOR)           ?"(IN:":"(in:" ) << i_interior
-         << ( (changed&BIT_BOUNDARY)           ?",BO:":",bo:" ) << i_boundary
-         << ( (changed&BIT_GHOSTZONES)         ?",GH:":",gh:" ) << i_ghostzones
-         << ( (changed&BIT_BOUNDARY_GHOSTZONES)?",BG:":",bg:" ) << i_boundary_ghostzones
-         << ") " << l.info << "\n";
     if (not output_changes) return;
+    
+    const gridpoint_t difference = *this ^ oldgp;
+    if (difference.empty()) return;
+    
+    cout << "LOC: " << l << " ("
+         << (difference.interior()            ? "IN" : "in" ) << ":"
+         << interior()            << ","
+         << (difference.boundary()            ? "BO" : "bo" ) << ":"
+         << boundary()            << ","
+         << (difference.ghostzones()          ? "GH" : "gh" ) << ":"
+         << ghostzones()          << ","
+         << (difference.boundary_ghostzones() ? "BG" : "bg" ) << ":"
+         << boundary_ghostzones() << ") "
+         << l.info << "\n";
   }
 
 }
