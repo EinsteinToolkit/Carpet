@@ -5,7 +5,15 @@
 #include <cctk_Schedule.h>
 
 #include <vector>
-  
+
+
+
+// This is a public include file, i.e. this file defines the publicly
+// visible API of thorn Requirements. Do not add definitions or
+// declarations that are private to this thorn.
+
+
+
 namespace Requirements {
   
   using namespace std;
