@@ -4,24 +4,13 @@
 #include <cctk_Parameters.h>
 #include <cctk_Functions.h>
 #include <cctk_Schedule.h>
-#include <cctki_GHExtensions.h>
-#include <cctki_Schedule.h>
+
 #include <util_String.h>
 
-#include <algorithm>
-#include <cassert>
-#include <cstdlib>
-#include <cstring>
 #include <iostream>
-#include <map>
-#include <sstream>
-#include <string>
 #include <vector>
 
 #include <all_clauses.hh>
-#include <clause.hh>
-#include <clauses.hh>
-#include <location.hh>
 #include <util.hh>
 #include <gridpoint.hh>
 #include <all_state.hh>
