@@ -235,17 +235,16 @@ namespace Requirements {
               timelevels_t& tls = *im;
               if (verbose) {
                 char* const fullname = CCTK_FullName(vi);
-                int const m = &*im - &*ms.begin();
                 CCTK_VInfo(CCTK_THORNSTRING,
                            "Recomposing variable %s(rl=%d,m=%d)",
-                           fullname, reflevel, m);
+                           fullname, reflevel, loc.m);
                 free(fullname);
               }
               for (timelevels_t::iterator
                      itl = tls.begin(); itl != tls.end(); ++itl)
               {
-                gridpoint_t& gp = *itl;
                 loc.tl = &*itl - &*tls.begin();
+                gridpoint_t& gp = *itl;
                 switch (where) {
                 case valid::nowhere:
                   gp.set_interior(false, loc);
