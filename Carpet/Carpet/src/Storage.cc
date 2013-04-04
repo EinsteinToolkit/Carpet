@@ -59,6 +59,35 @@ namespace Carpet {
       assert (tls[n] >= 0);
     }
     
+#ifdef REQUIREMENTS_HH
+    vector<int> vgroups, vtimelevels;
+    vgroups.reserve(n_groups);
+    vtimelevels.reserve(n_groups);
+    for (int i=0; i<n_groups; ++i) {
+      int const gi = groups[i];
+      int const ml = 0;
+      int const grouptype = CCTK_GroupTypeI(gi);
+      bool const is_array = grouptype != CCTK_GF;
+      bool const all_rl = is_meta_mode() or is_global_mode();
+      int const min_rl = is_array ? 0 : all_rl ? 0 : reflevel;
+      int const max_rl = is_array ? 1 : all_rl ? reflevels : reflevel+1;
+      int const ntls = tls[i];
+      bool do_change = false;
+      for (int rl=min_rl; rl<max_rl; ++rl) {
+        int const ctls = groupdata.AT(gi).activetimelevels.AT(ml).AT(rl);
+        do_change = do_change or
+          (inc and ctls < ntls) or (not inc and ctls > ntls);
+      }
+      if (do_change) {
+        vgroups.push_back(gi);
+        vtimelevels.push_back(ntls);
+      }
+    }
+    if (not vgroups.empty()) {
+      Requirements::ChangeStorage(vgroups, vtimelevels, reflevel);
+    }
+#endif
+    
     bool const can_do = is_meta_mode() or is_global_mode() or is_level_mode();
     bool const all_ml = is_meta_mode();
     int const min_ml = all_ml ? 0        : mglevel;
@@ -218,28 +247,6 @@ namespace Carpet {
     if (min_num_timelevels == INT_MAX) {
       min_num_timelevels = 0;
     }
-    
-#ifdef REQUIREMENTS_HH
-    vector<int> vgroups(n_groups), vtimelevels(n_groups);
-    for (int i=0; i<n_groups; ++i) {
-      int const gi = groups[i];
-      int const ml = 0;
-      int const grouptype = CCTK_GroupTypeI(gi);
-      bool const is_array = grouptype != CCTK_GF;
-      bool const all_rl = is_meta_mode() or is_global_mode();
-      int const min_rl = is_array ? 0 : all_rl ? 0 : reflevel;
-      int const max_rl = is_array ? 1 : all_rl ? reflevels : reflevel+1;
-      int const ntls = groupdata.AT(gi).activetimelevels.AT(ml).AT(min_rl);
-      for (int rl=min_rl; rl<max_rl; ++rl) {
-        // TODO: We assume here that all refinement levels have the
-        // same number of active time levels -- this may not be true
-        assert (groupdata.AT(gi).activetimelevels.AT(ml).AT(rl) == ntls);
-      }
-      vgroups.AT(i) = gi;
-      vtimelevels.AT(i) = ntls;
-    }
-    Requirements::ChangeStorage(vgroups, vtimelevels, reflevel);
-#endif
     
     return do_allow_past_timelevels ? 
       min_num_timelevels : min(1,min_num_timelevels);
