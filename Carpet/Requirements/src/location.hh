@@ -14,8 +14,8 @@ namespace Requirements {
     location_t():
       it(-1), vi(-1), tl(-1), rl(-1), m(-1), info("")
     {}
-    location_t(int _it, int _vi, int _tl, int _rl, int _m, char const* _info):
-      it(_it), vi(_vi), tl(_tl), rl(_rl), m(_m), info(_info)
+    location_t(int it_, int vi_, int tl_, int rl_, int m_, char const* info_):
+      it(it_), vi(vi_), tl(tl_), rl(rl_), m(m_), info(info_)
     {}
     // Output helper
     void output (ostream& os) const;
