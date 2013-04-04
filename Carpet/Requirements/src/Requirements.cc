@@ -136,29 +136,29 @@ namespace Requirements {
   {
     if (i_interior == b)
       return;
-    output_location(l, 1);
     i_interior = b;
+    output_location(l, BIT_INTERIOR);
   }
   void gridpoint_t::set_boundary(bool b, location_t &l)
   {
     if (i_boundary == b)
       return;
-    output_location(l, 2);
     i_boundary = b;
+    output_location(l, BIT_BOUNDARY);
   }
   void gridpoint_t::set_ghostzones(bool b, location_t &l)
   {
     if (i_ghostzones == b)
       return;
-    output_location(l, 4);
     i_ghostzones = b;
+    output_location(l, BIT_GHOSTZONES);
   }
   void gridpoint_t::set_boundary_ghostzones(bool b, location_t &l)
   {
     if (i_boundary_ghostzones == b)
       return;
-    output_location(l, 8);
     i_boundary_ghostzones = b;
+    output_location(l, BIT_BOUNDARY_GHOSTZONES);
   }
 
   inline ostream& operator<< (ostream& os, const gridpoint_t& a) {

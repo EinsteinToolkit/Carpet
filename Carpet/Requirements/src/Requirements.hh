@@ -14,7 +14,11 @@ namespace Requirements {
     enum valid_t { nowhere, interior, everywhere };
   }
 
-  enum zones_t { BIT_NONE, BIT_INTERIOR, BIT_BOUNDARY, BIT_GHOSTZONES, BIT_BOUNDARY_GHOSTZONES };
+  enum zones_t { BIT_INTERIOR            = 1,
+                 BIT_BOUNDARY            = 2,
+                 BIT_GHOSTZONES          = 4,
+                 BIT_BOUNDARY_GHOSTZONES = 8
+               };
   
   // Set up basic grid structure
   void Setup(int maps);
