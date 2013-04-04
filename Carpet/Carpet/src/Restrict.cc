@@ -57,7 +57,7 @@ namespace Carpet {
     }
     
 #ifdef REQUIREMENTS_HH
-    Requirements::Restrict(groups, reflevel);
+    Requirements::Restrict(groups, cctkGH->cctk_iteration, reflevel);
 #endif
     
     // Restrict

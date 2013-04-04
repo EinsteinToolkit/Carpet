@@ -13,6 +13,8 @@ namespace Requirements {
   namespace valid {
     enum valid_t { nowhere, interior, everywhere };
   }
+
+  enum zones_t { BIT_NONE, BIT_INTERIOR, BIT_BOUNDARY, BIT_GHOSTZONES, BIT_BOUNDARY_GHOSTZONES };
   
   // Set up basic grid structure
   void Setup(int maps);
@@ -38,15 +40,16 @@ namespace Requirements {
                      int timelevel, int timelevel_offset);
   // After calling a routine: update according to writes clauses
   void AfterRoutine(cFunctionData const* function_data,
+                    CCTK_INT cctk_iteration,
                     int reflevel, int map,
                     int timelevel, int timelevel_offset);
   // Synchronise and prolongate
   // TODO: This does not handle variables that are not prolongated
   // TODO: This does not handle buffer zones
-  void Sync(cFunctionData const* function_data,
+  void Sync(cFunctionData const* function_data, CCTK_INT cctk_iteration,
             vector<int> const& groups, int reflevel, int timelevel);
   // Restrict
-  void Restrict(vector<int> const& groups, int reflevel);
+  void Restrict(vector<int> const& groups, CCTK_INT cctk_iteration, int reflevel);
   
 } // namespace Requirements
 

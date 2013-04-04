@@ -381,7 +381,7 @@ namespace Carpet {
       timer.stop();
 #ifdef REQUIREMENTS_HH
       Requirements::AfterRoutine
-        (attribute, reflevel, map, timelevel, timelevel_offset);
+        (attribute, cctkGH->cctk_iteration, reflevel, map, timelevel, timelevel_offset);
 #endif
       user_timer.stop();
       

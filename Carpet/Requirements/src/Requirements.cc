@@ -55,12 +55,13 @@ namespace Requirements {
 
   // Struct defining a location of a grid point
   struct location_t {
-    int vi, tl, rl, m;
+    int it, vi, tl, rl, m;
+    char const* info;
     location_t():
-      vi(-1), tl(-1), rl(-1), m(-1)
+      it(-1), vi(-1), tl(-1), rl(-1), m(-1), info("")
     {}
-    location_t(int _vi, int _tl, int _rl, int _m):
-      vi(_vi), tl(_tl), rl(_rl), m(_m)
+    location_t(int _it, int _vi, int _tl, int _rl, int _m, char const* _info):
+      it(_it), vi(_vi), tl(_tl), rl(_rl), m(_m), info(_info)
     {}
     // Output helper
     void output (ostream& os) const;
@@ -73,8 +74,7 @@ namespace Requirements {
 
   void location_t::output(ostream& os) const
   {
-    os << "LOC: ";
-    os << "vi:"  << vi << ",";
+    os << "vi:"  << vi << ",it:" << it << ", ";
     os << "[rl:" << rl << ",";
     os <<  "tl:" << tl << ",";
     os <<  "m:"  << m << "]";
@@ -272,18 +272,29 @@ namespace Requirements {
   // variables are now valid after a function has been called
   void gridpoint_t::update_state(clause_t const& clause, location_t &loc)
   {
+    int where = 0;
     if (clause.everywhere or clause.interior) {
-      set_interior(true, loc);
+      if (!i_interior)
+        where |= BIT_INTERIOR;
+      i_interior = true;
     }
     if (clause.everywhere or clause.boundary) {
-      set_boundary(true, loc);
+      if (!i_boundary)
+        where |= BIT_BOUNDARY;
+      i_boundary = true;
     }
     if (clause.everywhere) {
-      set_ghostzones(true, loc);
+      if (!i_ghostzones)
+        where |= BIT_GHOSTZONES;
+      i_ghostzones = true;
     }
     if (clause.everywhere or clause.boundary_ghostzones) {
-      set_boundary_ghostzones(true, loc);
+      if (!i_boundary_ghostzones)
+        where |= BIT_BOUNDARY_GHOSTZONES;
+      i_boundary_ghostzones = true;
     }
+    if (where)
+      output_location(loc, where);
   }
   
   void gridpoint_t::output(ostream& os) const
@@ -296,17 +307,19 @@ namespace Requirements {
     os << ")";
   }
   
+  // Some readable and parsable debug output
   void gridpoint_t::output_location(location_t& l, int changed) const
   {
     DECLARE_CCTK_PARAMETERS;
     if (!print_changes)
       return;
-    cout << l
-         << ( (changed&1)?"(in:":"(IN:" ) << i_interior
-         << ( (changed&2)?",bo:":",BO:" ) << i_boundary
-         << ( (changed&4)?",gh:":",GH:" ) << i_ghostzones
-         << ( (changed&8)?",bg:":",BG:" ) << i_boundary_ghostzones
-         << ")\n";
+
+    cout << "LOC: " << l << " "
+         << ( (changed&BIT_INTERIOR)           ?"(in:":"(IN:" ) << i_interior
+         << ( (changed&BIT_BOUNDARY)           ?",bo:":",BO:" ) << i_boundary
+         << ( (changed&BIT_GHOSTZONES)         ?",gh:":",GH:" ) << i_ghostzones
+         << ( (changed&BIT_BOUNDARY_GHOSTZONES)?",bg:":",BG:" ) << i_boundary_ghostzones
+         << ") " << l.info << "\n";
   }
   
   
@@ -332,11 +345,12 @@ namespace Requirements {
                         int reflevel, int map,
                         int timelevel, int timelevel_offset) const;
     void after_routine(cFunctionData const* function_data,
+                       CCTK_INT cctk_iteration,
                        int reflevel, int map,
                        int timelevel, int timelevel_offset);
-    void sync(cFunctionData const* function_data,
+    void sync(cFunctionData const* function_data, CCTK_INT cctk_iteration,
               vector<int> const& groups, int reflevel, int timelevel);
-    void restrict1(vector<int> const& groups, int reflevel);
+    void restrict1(vector<int> const& groups, CCTK_INT cctk_iteration, int reflevel);
     void invalidate(vector<int> const& vars,
                     int reflevel, int map, int timelevel);
     
@@ -620,6 +634,7 @@ namespace Requirements {
     DECLARE_CCTK_PARAMETERS;
     int const ng = CCTK_NumGroups();
     location_t loc;
+    loc.info = "recompose";
     loc.rl = reflevel;
     for (int gi=0; gi<ng; ++gi) {
       int const group_type = CCTK_GroupTypeI(gi);
@@ -883,13 +898,13 @@ namespace Requirements {
   
   
   
-  void AfterRoutine(cFunctionData const* const function_data,
+  void AfterRoutine(cFunctionData const* const function_data, CCTK_INT cctk_iteration,
                     int const reflevel, int const map,
                     int const timelevel, int const timelevel_offset)
   {
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
-      all_state.after_routine(function_data, reflevel, map,
+      all_state.after_routine(function_data, cctk_iteration, reflevel, map,
                               timelevel, timelevel_offset);
     }
     if (inconsistencies_are_fatal and there_was_an_error) {
@@ -901,11 +916,20 @@ namespace Requirements {
   // Update internal data structures after a function has been
   // executed to reflect the fact that some variables are now valid
   void all_state_t::after_routine(cFunctionData const* const function_data,
+                                  CCTK_INT cctk_iteration,
                                   int const reflevel, int const map,
                                   int const timelevel,
                                   int const timelevel_offset)
   {
     location_t loc;
+    std::string info = "after_routine ";
+    info += function_data->thorn;
+    info += "::";
+    info += function_data->routine;
+    info += " in ";
+    info += function_data->where;
+    loc.info = info.c_str();
+    loc.it = cctk_iteration;
     // Loop over all clauses
     clauses_t const& clauses = all_clauses.get_clauses(function_data);
     for (vector<clause_t>::const_iterator iclause = clauses.writes.begin();
@@ -974,6 +998,7 @@ namespace Requirements {
   
   
   void Sync(cFunctionData const* const function_data,
+            CCTK_INT cctk_iteration,
             vector<int> const& groups,
             int const reflevel, int const timelevel)
   {
@@ -984,7 +1009,7 @@ namespace Requirements {
                    "Sync reflevel=%d timelevel=%d",
                    reflevel, timelevel);
       }
-      all_state.sync(function_data, groups, reflevel, timelevel);
+      all_state.sync(function_data, cctk_iteration, groups, reflevel, timelevel);
     }
     if (inconsistencies_are_fatal and there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
@@ -994,12 +1019,15 @@ namespace Requirements {
   
   // Update internal data structures when Carpet syncs
   void all_state_t::sync(cFunctionData const* const function_data,
+                         CCTK_INT cctk_iteration,
                          vector<int> const& groups,
                          int const reflevel, int const timelevel)
   {
     location_t loc;
+    loc.info = "sync";
     loc.rl = reflevel;
     loc.tl = timelevel;
+    loc.it = cctk_iteration;
     // Loop over all variables
     for (vector<int>::const_iterator
            igi = groups.begin(); igi != groups.end(); ++igi)
@@ -1091,7 +1119,7 @@ namespace Requirements {
   
   
   
-  void Restrict(vector<int> const& groups, int const reflevel)
+  void Restrict(vector<int> const& groups, CCTK_INT const cctk_iteration, int const reflevel)
   {
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
@@ -1100,7 +1128,7 @@ namespace Requirements {
                    "Restrict reflevel=%d",
                    reflevel);
       }
-      all_state.restrict1(groups, reflevel);
+      all_state.restrict1(groups, cctk_iteration, reflevel);
     }
     if (inconsistencies_are_fatal and there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
@@ -1109,10 +1137,12 @@ namespace Requirements {
   }
   
   // Update internal data structures when Carpet restricts
-  void all_state_t::restrict1(vector<int> const& groups, int const reflevel)
+  void all_state_t::restrict1(vector<int> const& groups, CCTK_INT const cctk_iteration, int const reflevel)
   {
     location_t loc;
+    loc.info = "restrict";
     loc.rl = reflevel;
+    loc.it = cctk_iteration;
     // Loop over all variables
     for (vector<int>::const_iterator
            igi = groups.begin(); igi != groups.end(); ++igi)
@@ -1288,7 +1318,7 @@ namespace Requirements {
         temp_function_data.n_ReadsClauses = 0;
         temp_function_data.ReadsClauses = NULL;
         all_clauses.get_clauses(&temp_function_data);
-        AfterRoutine(&temp_function_data,
+        AfterRoutine(&temp_function_data, cctkGH->cctk_iteration,
                      reflevel, map, timelevel, timelevel_offset);
         all_clauses.remove_clauses(&temp_function_data);
         free(fullname);
