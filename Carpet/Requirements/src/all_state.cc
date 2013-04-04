@@ -15,8 +15,6 @@ namespace Requirements {
   // always considered valid
   std::vector<bool> ignored_variables;
 
-  extern all_clauses_t all_clauses;
-
   static void add_ignored_variable(int const id, const char *const opstring,
                                    void *const callback_arg)
   {
@@ -348,6 +346,7 @@ namespace Requirements {
   // Check that the grid is in the required state before a given
   // function is executed
   void all_state_t::before_routine(cFunctionData const* const function_data,
+                                   all_clauses_t &all_clauses,
                                    int const reflevel, int const map,
                                    int const timelevel,
                                    int const timelevel_offset)
@@ -417,6 +416,7 @@ namespace Requirements {
   // Update internal data structures after a function has been
   // executed to reflect the fact that some variables are now valid
   void all_state_t::after_routine(cFunctionData const* const function_data,
+                                  all_clauses_t &all_clauses,
                                   CCTK_INT cctk_iteration,
                                   int const reflevel, int const map,
                                   int const timelevel,

@@ -10,6 +10,7 @@
 #include <Requirements.hh>
 
 #include <gridpoint.hh>
+#include <all_clauses.hh>
 
 using namespace std;
 
@@ -38,9 +39,11 @@ namespace Requirements {
     void regrid_free();
     void cycle(int reflevel);
     void before_routine(cFunctionData const* function_data,
+                        all_clauses_t &all_clauses,
                         int reflevel, int map,
                         int timelevel, int timelevel_offset) const;
     void after_routine(cFunctionData const* function_data,
+                       all_clauses_t &all_clauses,
                        CCTK_INT cctk_iteration,
                        int reflevel, int map,
                        int timelevel, int timelevel_offset);

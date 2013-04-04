@@ -158,7 +158,7 @@ namespace Requirements {
   {
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
-      all_state.before_routine(function_data,
+      all_state.before_routine(function_data, all_clauses,
                                reflevel, map, timelevel, timelevel_offset);
     }
     if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
@@ -173,8 +173,8 @@ namespace Requirements {
   {
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
-      all_state.after_routine(function_data, cctk_iteration, reflevel, map,
-                              timelevel, timelevel_offset);
+      all_state.after_routine(function_data, all_clauses, cctk_iteration,
+                              reflevel, map, timelevel, timelevel_offset);
     }
     if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
