@@ -390,17 +390,13 @@ namespace Requirements {
           for (int m=min_m; m<max_m; ++m) {
             
             timelevels_t const& tls = ms.AT(m);
-            int const timelevels = int(tls.size());
+            int const ntls = int(tls.size());
+            assert(ntls >= clause.min_num_timelevels());
             assert(timelevel != -1);
-            assert(timelevels >= clause.min_num_timelevels());
-            // TODO: properly handle timelevels the way enter_local_mode() does
-            const int mintl =
-              timelevel == 0 || timelevels == 1 ? 0 : timelevel;
-            const int maxtl =
-              timelevel == 0 || timelevels == 1 ? timelevels-1 : timelevel;
-            const int tloff = timelevel_offset;
-            for (int tl=mintl; tl<=maxtl; ++tl) {
-              if (timelevel==-1 or clause.active_on_timelevel(tl-tloff)) {
+            for (int tl=0; tl<ntls; ++tl) {
+              if (tl >= timelevel_offset and
+                  clause.active_on_timelevel(tl - timelevel_offset))
+              {
                 gridpoint_t const& gp = tls.AT(tl);
                 gp.check_state(clause, function_data, vi, rl, m, tl);
               }
@@ -466,20 +462,16 @@ namespace Requirements {
             min_m = map; max_m = min_m+1;
           }
           for (int m=min_m; m<max_m; ++m) {
-            
             loc.m = m;
+            
             timelevels_t& tls = ms.AT(m);
-            int const timelevels = int(tls.size());
+            int const ntls = int(tls.size());
+            assert(ntls >= clause.min_num_timelevels());
             assert(timelevel != -1);
-            assert(timelevels >= clause.min_num_timelevels());
-            // TODO: properly handle timelevels the way enter_local_mode() does
-            const int mintl =
-              timelevel == 0 || timelevels == 1 ? 0 : timelevel;
-            const int maxtl =
-              timelevel == 0 || timelevels == 1 ? timelevels-1 : timelevel;
-            const int tloff = timelevel_offset;
-            for (int tl=mintl; tl<=maxtl; ++tl) {
-              if (timelevel==-1 or clause.active_on_timelevel(tl-tloff)) {
+            for (int tl=0; tl<ntls; ++tl) {
+              if (tl >= timelevel_offset and
+                  clause.active_on_timelevel(tl - timelevel_offset))
+              {
                 loc.tl = tl;
                 gridpoint_t& gp = tls.AT(tl);
                 // TODO: If this variable is both read and written
