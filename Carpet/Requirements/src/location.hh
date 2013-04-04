@@ -1,7 +1,10 @@
 #ifndef LOCATION_HH
 #define LOCATION_HH
 
+#include <cctk_Schedule.h>
+
 #include <iostream>
+#include <string>
 
 namespace Requirements {
 
@@ -9,20 +12,27 @@ namespace Requirements {
 
   // Struct defining a location of a grid point
   struct location_t {
-    int it, vi, tl, rl, m;
-    char const* info;
+    string info;
+    cFunctionData const* fd;
+    int it;
+    int vi;
+    int rl, m, tl;
     location_t():
-      it(-1), vi(-1), tl(-1), rl(-1), m(-1), info("")
+      info(""), fd(0), it(-1), vi(-1), rl(-1), m(-1), tl(-1)
     {}
-    location_t(int it_, int vi_, int tl_, int rl_, int m_, char const* info_):
-      it(it_), vi(vi_), tl(tl_), rl(rl_), m(m_), info(info_)
+    location_t(string info_):
+      info(info_), fd(0), it(-1), vi(-1), rl(-1), m(-1), tl(-1)
+    {}
+    location_t(string info_, cFunctionData const* fd_):
+      info(info_), fd(fd_), it(-1), vi(-1), rl(-1), m(-1), tl(-1)
     {}
     // Output helper
     void output (ostream& os) const;
   };
-
-  inline ostream& operator<< (ostream& os, const location_t& a) {
-    a.output(os);
+  
+  inline ostream& operator<<(ostream& os, const location_t& loc)
+  {
+    loc.output(os);
     return os;
   }
 }

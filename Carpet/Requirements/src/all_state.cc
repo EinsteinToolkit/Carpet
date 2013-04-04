@@ -18,7 +18,6 @@ namespace Requirements {
                                    void *const callback_arg)
   {
     std::vector<bool>& ivs = *static_cast<std::vector<bool>*>(callback_arg);
-    
     ivs.AT(id) = true;
   }
 
@@ -196,12 +195,13 @@ namespace Requirements {
   }
 
   // Update internal data structures when Carpet recomposes
-  void all_state_t::recompose(int const reflevel, valid::valid_t const where)
+  void all_state_t::recompose(int const iteration, int const reflevel,
+                              valid::valid_t const where)
   {
     DECLARE_CCTK_PARAMETERS;
     int const ng = CCTK_NumGroups();
-    location_t loc;
-    loc.info = "recompose";
+    location_t loc("recompose");
+    loc.it = iteration;
     loc.rl = reflevel;
     for (int gi=0; gi<ng; ++gi) {
       int const group_type = CCTK_GroupTypeI(gi);
@@ -351,6 +351,8 @@ namespace Requirements {
                                    int const timelevel_offset)
     const
   {
+    location_t loc("routine", function_data);
+    loc.it = iteration;
     // Loop over all clauses
     clauses_t const& clauses = all_clauses.get_clauses(function_data);
     for (vector<clause_t>::const_iterator iclause = clauses.reads.begin();
@@ -363,9 +365,9 @@ namespace Requirements {
            ++ivar)
       {
         int const vi = *ivar;
+        loc.vi = vi;
         
-        if (ignored_variables.AT(vi))
-            continue;
+        if (ignored_variables.AT(vi)) continue;
         
         // Loop over all (refinement levels, maps, time levels)
         reflevels_t const& rls = vars.AT(vi);
@@ -377,6 +379,7 @@ namespace Requirements {
           min_rl = reflevel; max_rl = min_rl+1;
         }
         for (int rl=min_rl; rl<max_rl; ++rl) {
+          loc.rl = rl;
           
           maps_t const& ms = rls.AT(rl);
           int const maps = int(ms.size());
@@ -387,17 +390,19 @@ namespace Requirements {
             min_m = map; max_m = min_m+1;
           }
           for (int m=min_m; m<max_m; ++m) {
+            loc.m = m;
             
             timelevels_t const& tls = ms.AT(m);
             int const ntls = int(tls.size());
             assert(ntls >= clause.min_num_timelevels());
             assert(timelevel != -1);
             for (int tl=0; tl<ntls; ++tl) {
+              loc.tl = tl;
               if (tl >= timelevel_offset and
                   clause.active_on_timelevel(tl - timelevel_offset))
               {
                 gridpoint_t const& gp = tls.AT(tl);
-                gp.check_state(clause, function_data, vi, iteration, rl, m, tl);
+                gp.check_state(clause, loc);
               }
             }
             
@@ -417,14 +422,7 @@ namespace Requirements {
                                   int const timelevel,
                                   int const timelevel_offset)
   {
-    location_t loc;
-    std::string info = "after_routine ";
-    info += function_data->thorn;
-    info += "::";
-    info += function_data->routine;
-    info += " in ";
-    info += function_data->where;
-    loc.info = info.c_str();
+    location_t loc("routine", function_data);
     loc.it = iteration;
     // Loop over all clauses
     clauses_t const& clauses = all_clauses.get_clauses(function_data);
@@ -468,10 +466,10 @@ namespace Requirements {
             assert(ntls >= clause.min_num_timelevels());
             assert(timelevel != -1);
             for (int tl=0; tl<ntls; ++tl) {
+              loc.tl = tl;
               if (tl >= timelevel_offset and
                   clause.active_on_timelevel(tl - timelevel_offset))
               {
-                loc.tl = tl;
                 gridpoint_t& gp = tls.AT(tl);
                 // TODO: If this variable is both read and written
                 // (i.e. if this is a projection), then only the
@@ -493,8 +491,7 @@ namespace Requirements {
                          int const iteration,
                          int const reflevel, int const timelevel)
   {
-    location_t loc;
-    loc.info = "sync";
+    location_t loc("synchronisation", function_data);
     loc.it = iteration;
     loc.rl = reflevel;
     loc.tl = timelevel;
@@ -538,28 +535,28 @@ namespace Requirements {
             
             // Synchronising requires a valid interior
             if (not gp.interior()) {
-              gp.report_error
-                (function_data, vi, iteration, rl, m, tl,
-                 "synchronising", "interior");
+              gp.report_error(loc, "interior");
             }
             
             // Synchronising (i.e. prolongating) requires valid data
             // on all time levels of the same map of the next
             // coarser refinement level
             if (rl > 0) {
+              location_t cloc(loc);
+              cloc.info = "prolongation";
               int const crl = rl-1;
+              cloc.rl = crl;
               maps_t const& cms = rls.AT(crl);
               timelevels_t const& ctls = cms.AT(m);
               // TODO: use prolongation_order_time instead?
               int const ctimelevels = int(ctls.size());
               for (int ctl=0; ctl<ctimelevels; ++ctl) {
+                cloc.tl = ctl;
                 gridpoint_t const& cgp = ctls.AT(ctl);
                 if (not (cgp.interior() and cgp.boundary() and
                          cgp.ghostzones() and cgp.boundary_ghostzones()))
                 {
-                  cgp.report_error
-                    (function_data, vi, iteration, crl, m, ctl,
-                     "prolongating", "everywhere");
+                  cgp.report_error(cloc, "everywhere");
                 }
               }
             }
@@ -568,15 +565,11 @@ namespace Requirements {
             // ghost zones if boundary zones are set
             if (gp.boundary() ) {
               if (gp.ghostzones() and gp.boundary_ghostzones()) {
-                gp.report_warning
-                  (function_data, vi, iteration, rl, m, tl,
-                   "synchronising", "ghostzones+boundary_ghostzones");
+                gp.report_warning(loc, "ghostzones+boundary_ghostzones");
               }
             } else {
               if (gp.ghostzones()) {
-                gp.report_warning
-                  (function_data, vi, iteration, rl, m, tl,
-                   "synchronising", "ghostzones");
+                gp.report_warning(loc, "ghostzones");
               }
             }
             gp.set_ghostzones(true, loc);
@@ -592,8 +585,7 @@ namespace Requirements {
   void all_state_t::restrict1(vector<int> const& groups,
                               int const iteration, int const reflevel)
   {
-    location_t loc;
-    loc.info = "restrict";
+    location_t loc("restriction");
     loc.it = iteration;
     loc.rl = reflevel;
     // Loop over all variables
@@ -622,9 +614,8 @@ namespace Requirements {
         int const v0 = CCTK_FirstVarIndexI(gi);
         int const nv = CCTK_NumVarsInGroupI(gi);
         for (int vi=v0; vi<v0+nv; ++vi) {
-          if (ignored_variables.AT(vi))
-            continue;
           loc.vi = vi;
+          if (ignored_variables.AT(vi)) continue;
           
           reflevels_t& rls = vars.AT(vi);
           int const reflevels = int(rls.size());
@@ -641,8 +632,7 @@ namespace Requirements {
             // cannot be sure that all of the interior is valid
             // afterwards)
             if (not gp.interior()) {
-              gp.report_error
-                (NULL, vi, iteration, rl, m, tl, "restricting", "interior");
+              gp.report_error(loc, "interior");
             }
             
             // Restricting requires valid data on the current time
@@ -653,13 +643,13 @@ namespace Requirements {
               maps_t const& fms = rls.AT(frl);
               timelevels_t const& ftls = fms.AT(m);
               int const ftl = 0;
+              location_t floc(loc);
+              floc.rl=frl; floc.tl = ftl;
               gridpoint_t const& fgp = ftls.AT(ftl);
               if (not (fgp.interior() and fgp.boundary() and
                        fgp.ghostzones() and fgp.boundary_ghostzones()))
               {
-                fgp.report_error
-                  (NULL, vi, iteration, frl, m, ftl,
-                   "restricting", "everywhere");
+                fgp.report_error(floc, "everywhere");
               }
             }
             

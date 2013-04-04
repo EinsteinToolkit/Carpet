@@ -32,7 +32,7 @@ namespace Requirements {
   void Regrid(int reflevels);
   // Recompose, ensures valid data on one level, indicating whether
   // boundaries are valid (e.g. if recomposing was a no-op)
-  void Recompose(int reflevel, valid::valid_t where);
+  void Recompose(int iteration, int reflevel, valid::valid_t where);
   // Free data structures after regridding
   void RegridFree();
   // Cycle time levels

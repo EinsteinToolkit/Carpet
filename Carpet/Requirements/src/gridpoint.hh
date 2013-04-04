@@ -47,21 +47,16 @@ namespace Requirements {
     bool boundary() const            { return i_boundary; }
     bool ghostzones() const          { return i_ghostzones; }
     bool boundary_ghostzones() const { return i_boundary_ghostzones; }
-    void set_interior(bool b, const location_t &l);
-    void set_boundary(bool b, const location_t &l);
-    void set_ghostzones(bool b, const location_t &l);
-    void set_boundary_ghostzones(bool b, const location_t &l);
+    void set_interior(bool b, const location_t& loc);
+    void set_boundary(bool b, const location_t& loc);
+    void set_ghostzones(bool b, const location_t& loc);
+    void set_boundary_ghostzones(bool b, const location_t& loc);
 
-    void check_state(clause_t const& clause,
-                     cFunctionData const* function_data,
-                     int vi, int it, int rl, int m, int tl) const;
-    void report_error(cFunctionData const* function_data,
-                      int vi, int it, int rl, int m, int tl,
-                      char const* what, char const* where) const;
-    void report_warning(cFunctionData const* function_data,
-                        int vi, int it, int rl, int m, int tl,
-                        char const* what, char const* where) const;
-    void update_state(clause_t const& clause, const location_t &loc);
+    void check_state(clause_t const& clause, const location_t& loc) const;
+    void update_state(clause_t const& clause, const location_t& loc);
+    
+    void report_error(const location_t& loc, char const* where) const;
+    void report_warning(const location_t& loc, char const* where) const;
     
     // Operators
     bool empty() const
@@ -79,7 +74,7 @@ namespace Requirements {
     // Input/Output helpers
     void input (istream& is);
     void output (ostream& os) const;
-    void output_location(const gridpoint_t& oldgp, const location_t& l) const;
+    void output_location(const gridpoint_t& oldgp, const location_t& loc) const;
 
     static bool there_was_an_error;
     static bool there_was_a_warning;

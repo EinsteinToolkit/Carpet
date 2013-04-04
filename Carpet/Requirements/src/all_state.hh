@@ -35,7 +35,7 @@ namespace Requirements {
                         vector<int> const& timelevels,
                         int reflevel);
     void regrid(int reflevels);
-    void recompose(int reflevel, valid::valid_t where);
+    void recompose(int iteration, int reflevel, valid::valid_t where);
     void regrid_free();
     void cycle(int reflevel);
     void before_routine(cFunctionData const* function_data,

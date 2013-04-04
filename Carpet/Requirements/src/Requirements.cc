@@ -2,7 +2,6 @@
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
-#include <cctk_Functions.h>
 #include <cctk_Schedule.h>
 
 #include <util_String.h>
@@ -88,7 +87,8 @@ namespace Requirements {
     }
   }
 
-  void Recompose(int const reflevel, valid::valid_t const where)
+  void Recompose(int const iteration, int const reflevel,
+                 valid::valid_t const where)
   {
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
@@ -101,7 +101,7 @@ namespace Requirements {
                    where == valid::everywhere ? "everywhere" :
                    NULL);
       }
-      all_state.recompose(reflevel, where);
+      all_state.recompose(iteration, reflevel, where);
     }
     if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,

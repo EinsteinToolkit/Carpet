@@ -943,7 +943,7 @@ namespace Carpet {
           did_recompose = Recompose (cctkGH, rl, prolongate_initial_data);
           did_any_recompose = did_any_recompose or did_recompose;
 #ifdef REQUIREMENTS_HH
-          Requirements::Recompose(rl,
+          Requirements::Recompose(cctkGH->cctk_iteration, rl,
                                   not did_recompose ?
                                   Requirements::valid::everywhere :
                                   prolongate_initial_data ?
@@ -1068,7 +1068,7 @@ namespace Carpet {
             if (not enable_no_storage) {
               Recompose (cctkGH, rl, prolongate_initial_data);
 #ifdef REQUIREMENTS_HH
-              Requirements::Recompose(rl,
+              Requirements::Recompose(cctkGH->cctk_iteration, rl,
                                       prolongate_initial_data ?
                                       Requirements::valid::interior :
                                       Requirements::valid::nowhere);
@@ -1156,7 +1156,7 @@ namespace Carpet {
           bool did_recompose = Recompose (cctkGH, rl, prolongate_initial_data);
           did_any_recompose = did_any_recompose or did_recompose;
 #ifdef REQUIREMENTS_HH
-          Requirements::Recompose(rl,
+          Requirements::Recompose(cctkGH->cctk_iteration, rl,
                                   not did_recompose ?
                                   Requirements::valid::everywhere :
                                   prolongate_initial_data ?

@@ -1,4 +1,7 @@
+#include <cstdlib>
 #include <iostream>
+
+#include <cctk.h>
 
 #include <location.hh>
 
@@ -6,12 +9,18 @@ namespace Requirements {
 
   void location_t::output(ostream& os) const
   {
-    os << "vi:" << vi << ", "
+    os << "LOC: " << info << " ";
+    if (fd) {
+      os << "func " << fd->thorn << "::" << fd->routine << " "
+         << "in " << fd->where << " ";
+    }
+    char* const fullname = CCTK_FullName(vi);
+    os << "it " << it << ", var " << fullname << " "
        << "["
-       << "it:" << it << ","
        << "rl:" << rl << ","
        << "m:"  << m  << ","
        << "tl:" << tl
        << "]";
+    free(fullname);
   }
 }
