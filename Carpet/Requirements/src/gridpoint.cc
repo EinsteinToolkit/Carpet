@@ -11,9 +11,9 @@ namespace Requirements {
 
   using namespace std;
 
-  bool there_was_an_error = false;
-  bool there_was_a_warning = false;
-  
+  bool gridpoint_t::there_was_an_error = false;
+  bool gridpoint_t::there_was_a_warning = false;
+
   // Accessors
   bool gridpoint_t::interior() const            { return i_interior; }
   bool gridpoint_t::boundary() const            { return i_boundary; }

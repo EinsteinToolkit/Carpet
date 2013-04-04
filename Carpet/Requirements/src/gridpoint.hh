@@ -11,9 +11,6 @@ using namespace std;
 
 namespace Requirements {
   
-  extern bool there_was_an_error;
-  extern bool there_was_a_warning;
-
   // Represents which have valid information and which do not.
   // This will later be indexed by rl, map etc.
   // Currently only works with unigrid.
@@ -59,6 +56,9 @@ namespace Requirements {
     void input (istream& is);
     void output (ostream& os) const;
     void output_location (location_t &l, int changed) const;
+
+    static bool there_was_an_error;
+    static bool there_was_a_warning;
   };
 
 

@@ -56,7 +56,7 @@ namespace Requirements {
       }
       all_state.setup(maps);
     }
-    if (inconsistencies_are_fatal and there_was_an_error) {
+    if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
                 "Aborting because schedule clauses were not satisfied");
     }
@@ -77,7 +77,7 @@ namespace Requirements {
       }
       all_state.change_storage(groups, timelevels, reflevel);
     }
-    if (inconsistencies_are_fatal and there_was_an_error) {
+    if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
                 "Aborting because schedule clauses were not satisfied");
     }
@@ -93,7 +93,7 @@ namespace Requirements {
       }
       all_state.regrid(reflevels);
     }
-    if (inconsistencies_are_fatal and there_was_an_error) {
+    if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
                 "Aborting because schedule clauses were not satisfied");
     }
@@ -114,7 +114,7 @@ namespace Requirements {
       }
       all_state.recompose(reflevel, where);
     }
-    if (inconsistencies_are_fatal and there_was_an_error) {
+    if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
                 "Aborting because schedule clauses were not satisfied");
     }
@@ -130,7 +130,7 @@ namespace Requirements {
       }
       all_state.regrid_free();
     }
-    if (inconsistencies_are_fatal and there_was_an_error) {
+    if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
                 "Aborting because schedule clauses were not satisfied");
     }
@@ -146,7 +146,7 @@ namespace Requirements {
       }
       all_state.cycle(reflevel);
     }
-    if (inconsistencies_are_fatal and there_was_an_error) {
+    if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
                 "Aborting because schedule clauses were not satisfied");
     }
@@ -161,7 +161,7 @@ namespace Requirements {
       all_state.before_routine(function_data,
                                reflevel, map, timelevel, timelevel_offset);
     }
-    if (inconsistencies_are_fatal and there_was_an_error) {
+    if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
                 "Aborting because schedule clauses were not satisfied");
     }
@@ -176,7 +176,7 @@ namespace Requirements {
       all_state.after_routine(function_data, cctk_iteration, reflevel, map,
                               timelevel, timelevel_offset);
     }
-    if (inconsistencies_are_fatal and there_was_an_error) {
+    if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
                 "Aborting because schedule clauses were not satisfied");
     }
@@ -196,7 +196,7 @@ namespace Requirements {
       }
       all_state.sync(function_data, cctk_iteration, groups, reflevel, timelevel);
     }
-    if (inconsistencies_are_fatal and there_was_an_error) {
+    if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
                 "Aborting because schedule clauses were not satisfied");
     }
@@ -213,7 +213,7 @@ namespace Requirements {
       }
       all_state.restrict1(groups, cctk_iteration, reflevel);
     }
-    if (inconsistencies_are_fatal and there_was_an_error) {
+    if (inconsistencies_are_fatal and gridpoint_t::there_was_an_error) {
       CCTK_WARN(CCTK_WARN_ABORT,
                 "Aborting because schedule clauses were not satisfied");
     }
