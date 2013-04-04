@@ -129,7 +129,7 @@ namespace Requirements {
     if (timelevel2 and tl==2) return true;
     bool const no_timelevel_clause =
       not timelevel0 and not timelevel1 and not timelevel2;
-    if (tl==0 and no_timelevel_clause) return true;
+    if (no_timelevel_clause and tl==0) return true;
     return false;
   }
   
