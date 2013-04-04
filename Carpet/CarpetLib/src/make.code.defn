@@ -5,7 +5,6 @@ SRCS =	backtrace.cc				\
 	balance.cc				\
 	bbox.cc					\
 	bboxset.cc				\
-	bboxtree.cc				\
 	bintree.cc				\
 	cacheinfo.cc				\
 	commstate.cc				\
