@@ -1,5 +1,6 @@
-#include <location.hh>
 #include <iostream>
+
+#include <location.hh>
 
 namespace Requirements {
 

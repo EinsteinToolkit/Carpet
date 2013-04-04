@@ -1,4 +1,3 @@
-
 #include <cctk.h>
 #include <cctk_Parameters.h>
 

@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <cctk_Schedule.h>
+
 #include <clause.hh>
 #include <location.hh>
 

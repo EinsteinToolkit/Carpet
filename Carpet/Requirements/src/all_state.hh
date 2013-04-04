@@ -9,8 +9,8 @@
 
 #include <Requirements.hh>
 
-#include <gridpoint.hh>
 #include <all_clauses.hh>
+#include <gridpoint.hh>
 
 using namespace std;
 

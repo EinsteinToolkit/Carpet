@@ -1,11 +1,10 @@
-
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
-#include <all_state.hh>
-#include <util.hh>
-#include <clauses.hh>
 #include <all_clauses.hh>
+#include <all_state.hh>
+#include <clauses.hh>
+#include <util.hh>
 
 using namespace std;
 
