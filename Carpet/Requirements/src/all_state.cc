@@ -563,7 +563,7 @@ namespace Requirements {
             
             // Synchronising sets all ghost zones, and sets boundary
             // ghost zones if boundary zones are set
-            if (gp.boundary() ) {
+            if (gp.boundary()) {
               if (gp.ghostzones() and gp.boundary_ghostzones()) {
                 gp.report_warning(loc, "ghostzones+boundary_ghostzones");
               }
