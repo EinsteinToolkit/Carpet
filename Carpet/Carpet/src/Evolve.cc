@@ -486,6 +486,8 @@ namespace Carpet {
   void
   CallRestrict (cGH * const cctkGH)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     char const * const where = "Evolve::CallRestrict";
     static Timer timer ("CallRestrict");
     timer.start();
@@ -549,10 +551,21 @@ namespace Carpet {
                 have_done_late_global_mode |= do_late_global_mode;
                 have_done_anything = true;
                 
+                if (use_tapered_grids and reflevel > 0) {
+                  int const parent_do_every =
+                    ipow(mgfact, mglevel) *
+                    (maxtimereflevelfact / timereffacts.AT(reflevel-1));
+                  bool const parent_is_active =
+                    (cctkGH->cctk_iteration-1) % parent_do_every == 0;
+                  do_taper = not parent_is_active;
+                }
+                
                 Waypoint ("Evolution/PostRestrict at iteration %d time %g",
                           cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
                 
                 ScheduleTraverse (where, "CCTK_POSTRESTRICT", cctkGH);
+                
+                do_taper = false;
                 
                 EndTimingLevel (cctkGH);
               } LEAVE_LEVEL_MODE;
@@ -574,7 +587,7 @@ namespace Carpet {
   
   
   void
-  CallAnalysis  (cGH * const cctkGH)
+  CallAnalysis (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
     
