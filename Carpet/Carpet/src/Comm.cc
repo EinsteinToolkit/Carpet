@@ -41,6 +41,7 @@ namespace Carpet {
   {
     int group, retval = 0;
     vector<int> groups_set;
+    groups_set.reserve(num_groups);
 
     // individual directions aren't supported (yet?)
     if (directions != NULL) {
