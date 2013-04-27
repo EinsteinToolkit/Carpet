@@ -6,6 +6,8 @@
 #include <gridpoint.hh>
 #include <util.hh>
 
+#include <cstdlib>
+
 namespace Requirements {
 
   using namespace std;
