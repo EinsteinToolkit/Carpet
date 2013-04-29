@@ -190,6 +190,7 @@ namespace CarpetLib {
   };
   
 #define CARPET_NO_COMPLEX
+#define CARPET_NO_INT
 #include "typecase.hh"
 #undef TYPECASE
   
@@ -749,6 +750,7 @@ namespace CarpetLib {
                              ibbox3 const & restrict regbbox,   \
                              void * extraargs);
 
+#define CARPET_NO_INT
 #include "typecase.hh"
 #undef TYPECASE
   
