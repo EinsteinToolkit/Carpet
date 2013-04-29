@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h>
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
@@ -21,6 +22,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
   CCTK_INT is_internal[2*cctk_dim];
   CCTK_INT is_staggered[2*cctk_dim];
   CCTK_INT shiftout[2*cctk_dim];
+  CCTK_INT is_periodic[2*cctk_dim];
   
   int bnd_points[2*cctk_dim];   /* points outside the domain */
   int int_points[cctk_dim];     /* global interior points */
@@ -52,6 +54,28 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
   
   
   
+  for (int d=0; d<cctk_dim; ++d) {
+    for (int f=0; f<2; ++f) {
+      is_periodic[2*d+f] = 0;
+    }
+  }
+  CCTK_INT const *const periodic =
+    CCTK_ParameterGet("periodic", "PeriodicCarpet", NULL);
+  CCTK_INT const *const periodic_x =
+    CCTK_ParameterGet("periodic_x", "PeriodicCarpet", NULL);
+  CCTK_INT const *const periodic_y =
+    CCTK_ParameterGet("periodic_x", "PeriodicCarpet", NULL);
+  CCTK_INT const *const periodic_z =
+    CCTK_ParameterGet("periodic_x", "PeriodicCarpet", NULL);
+  is_periodic[0] = is_periodic[1] =
+    (periodic && *periodic) || (periodic_x && *periodic_x);
+  is_periodic[2] = is_periodic[3] =
+    (periodic && *periodic) || (periodic_y && *periodic_y);
+  is_periodic[4] = is_periodic[5] =
+    (periodic && *periodic) || (periodic_z && *periodic_z);
+ 
+  
+  
   /* Calculate the number of boundary points. This excludes points
      that are directly on the boundary. */
   for (int d=0; d<cctk_dim; ++d) {
@@ -62,8 +86,12 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
         bnd_points[2*d+f] = shiftout[2*d+f];
       } else {
         /* The boundary extends outwards */
-        bnd_points[2*d+f] =
-          nboundaryzones[2*d+f] + shiftout[2*d+f] + is_staggered[2*d+f] - 1;
+        if (is_periodic[2*d+f]) {
+          bnd_points[2*d+f] = nboundaryzones[2*d+f];
+        } else{ 
+          bnd_points[2*d+f] =
+            nboundaryzones[2*d+f] + shiftout[2*d+f] + is_staggered[2*d+f] - 1;
+        }
       }
       
     }
@@ -130,9 +158,9 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
           iweight[ind] = 0;
         } CCTK_ENDLOOP3(CoordBase_SetupMask_boundary);
         
-        /* When the boundary is not staggered, then give the points
-           directly on the boundary the weight 1/2 */
-        if (! is_staggered[2*d+f]) {
+        /* When the boundary is neither staggered nor periodic, then
+           give the points directly on the boundary the weight 1/2 */
+        if (! is_staggered[2*d+f] && ! is_periodic[2*d+f]) {
           
           /* Since we are going to cut off 1/2 at each boundary, the
              domain size must be at least 1 to begin with */

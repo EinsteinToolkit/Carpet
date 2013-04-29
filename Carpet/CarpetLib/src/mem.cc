@@ -105,6 +105,7 @@ mem (size_t const vectorlength, size_t const nelems,
       size_t const max_cache_linesize = get_max_cache_linesize();
       size_t const vector_size = CCTK_REAL_VEC_SIZE * sizeof(T);
       size_t const alignment = align_up(max_cache_linesize, vector_size);
+      assert(alignment >= 1);
       // Safety check
       assert(alignment <= 1024);
       // Assume optimistically that operator new returns well-aligned
@@ -123,7 +124,8 @@ mem (size_t const vectorlength, size_t const nelems,
       } else {
       allocate_with_alignment:
         // Operator new needs manual alignment
-        size_t const max_padding = alignment / sizeof(T) - 1;
+        size_t const max_padding = div_up(alignment, sizeof(T));
+        assert(ptrdiff_t(max_padding) >= 0);
         storage_base_ = new T [vectorlength * nelems + max_padding];
         storage_ = (T*) (size_t(storage_base_ + max_padding) & ~(alignment-1));
         assert(size_t(storage_) >= size_t(storage_base_              ) and

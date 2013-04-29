@@ -6,6 +6,8 @@
 #include <clauses.hh>
 #include <util.hh>
 
+#include <cstdlib>
+
 using namespace std;
 
 namespace Requirements {

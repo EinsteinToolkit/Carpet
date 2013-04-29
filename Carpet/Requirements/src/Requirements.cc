@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <vector>
+#include <cstdlib>
 
 #include <all_clauses.hh>
 #include <util.hh>
