@@ -37,9 +37,10 @@ KEYWORD initial_setup "Initial configuration" STEERABLE=always
 # NOTE:
 # - Intel chips divide the D1 cache into two, one for each hyperthread.
 #   The cache is thus not shared!
+#   This is off by default since it seems to affect results on intel processors.
 BOOLEAN use_smt_threads "Place SMT threads close together" STEERABLE=always
 {
-} "yes"
+} "no"
 
 BOOLEAN align_with_cachelines "Align innermost loops with cache line size" STEERABLE=always
 {
