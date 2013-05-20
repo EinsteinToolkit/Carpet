@@ -260,7 +260,9 @@ namespace CarpetIOF5 {
         max_nioprocs == 0 ? 1 : (nprocs + max_nioprocs - 1) / max_nioprocs;
       assert(ioproc_every > 0);
       int const nioprocs = nprocs / ioproc_every;
-      assert(nioprocs > 0 and nioprocs <= max_nioprocs);
+      assert(nioprocs > 0);
+      assert(max_nioprocs == 0 or nioprocs <= max_nioprocs);
+      assert(nioprocs <= nprocs);
       int const myioproc = myproc / ioproc_every * ioproc_every;
       // We split processes into "I/O groups" which range from
       // myioproc to myioproc+ioproc_every-1 (inclusive). Within each
@@ -318,8 +320,8 @@ namespace CarpetIOF5 {
       
       // If I am not the last process in my I/O group, send a token to
       // my successor
-      if (myproc < max(myioproc + ioproc_every, nprocs) - 1) {
-        MPI_Send(NULL, 0, MPI_INT, myproc+1-1, 0, dist::comm());
+      if (myproc < min(myioproc + ioproc_every, nprocs) - 1) {
+        MPI_Send(NULL, 0, MPI_INT, myproc+1, 0, dist::comm());
       }
       
       
