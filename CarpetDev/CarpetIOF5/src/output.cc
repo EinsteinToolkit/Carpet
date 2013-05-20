@@ -862,13 +862,13 @@ namespace CarpetIOF5 {
     
     
     
-    CCTK_INFO("Writing simulation metadata...");
-    
     // Create metadata only once
     // TODO: instead, overwrite the metadata
     htri_t const exists = H5Lexists(file, metadata_group, H5P_DEFAULT);
     assert(exists >= 0);
     if (exists) return;
+    
+    CCTK_INFO("Writing simulation metadata...");
     
     // Create a group to hold all metadata
     hid_t const group =

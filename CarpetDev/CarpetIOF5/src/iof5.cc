@@ -311,6 +311,8 @@ namespace CarpetIOF5 {
       
       vector<bool> output_var(CCTK_NumVars());
       output_var.at(vindex) = true;
+      // NOTE: We should output metadata at most once per iteration,
+      // probably only once per restart (per file)
       output(cctkGH, open_file, output_var, false, true);
       
       // Close file
