@@ -104,20 +104,37 @@ enum centering { error_centered, vertex_centered, cell_centered };
 
 
 
+// Divide, rounding to minus infinity
 template<typename T>
-inline T div_down(T const x, T const align)
+inline T idiv(T const x, T const y)
+{
+  // round down manually if the result is negative
+  return (x^y) >= T(0) ? x/y : (x-y+1)/y;
+}
+// Modulo, rounding to minus infinity
+template<typename T>
+inline T imod(T const x, T const y)
+{
+  // return x - idiv(x,y)*y;
+  return (x^y) >= T(0) ? x%y : (x-y+1)%y + y-1;
+}
+
+
+
+template<typename T>
+inline T div_down(T const x, T const y)
 {
   assert(x >= 0);
-  assert(align > 0);
-  return x / align;
+  assert(y > 0);
+  return x / y;
 }
 
 template<typename T>
-inline T div_up(T const x, T const align)
+inline T div_up(T const x, T const y)
 {
   assert(x >= 0);
-  assert(align > 0);
-  return (x + align - 1) / align;
+  assert(y > 0);
+  return (x + y - 1) / y;
 }
 
 template<typename T>
