@@ -1,5 +1,8 @@
 #include "cacheinfo.hh"
 
+#include <iostream>
+
+#include <cctk.h>
 #include <cctk_Parameters.h>
 
 #include <vectors.h>
