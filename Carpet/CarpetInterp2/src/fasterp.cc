@@ -1424,7 +1424,7 @@ namespace CarpetInterp2 {
       fill (npoints_comp, 0);
       
       // TODO: parallelise with OpenMP
-      for (int n=0; n<send_proc.npoints; ++n) {
+      for (int n=0; n<int(send_proc.npoints); ++n) {
         fasterp_iloc_t const & iloc = gathered_ilocs.AT(send_proc.offset + n);
         int const mrc = iloc.mrc.get_ind();
         if (mrc2comp.AT(mrc) == -1) {
@@ -1464,7 +1464,7 @@ namespace CarpetInterp2 {
       fill_with_poison (send_proc.index);
       // TODO: This is not parallel!  Loop over comps instead?
       // #pragma omp parallel for
-      for (int n=0; n<send_proc.npoints; ++n) {
+      for (int n=0; n<int(send_proc.npoints); ++n) {
         fasterp_iloc_t const & iloc = gathered_ilocs.AT(send_proc.offset + n);
         int const mrc = iloc.mrc.get_ind();
         int const comp = mrc2comp.AT(mrc);
@@ -1492,11 +1492,11 @@ namespace CarpetInterp2 {
 #ifndef NDEBUG
       {
         vector<bool> used(send_proc.npoints, false);
-        for (int n=0; n<send_proc.npoints; ++n) {
+        for (int n=0; n<int(send_proc.npoints); ++n) {
           assert (not used.AT(send_proc.index.AT(n)));
           used.AT(send_proc.index.AT(n)) = true;
         }
-        for (int n=0; n<send_proc.npoints; ++n) {
+        for (int n=0; n<int(send_proc.npoints); ++n) {
           assert (used.AT(send_proc.index.AT(n)));
         }
       }
@@ -1718,7 +1718,7 @@ namespace CarpetInterp2 {
       
       // Gather send points
 #pragma omp parallel for
-      for (int n=0; n<send_proc.npoints; ++n) {
+      for (int n=0; n<int(send_proc.npoints); ++n) {
         size_t const nn = send_proc.index.AT(n);
         for (size_t v=0; v<nvars; ++v) {
           send_points.AT((send_proc.offset + n) * nvars + v) =
@@ -1733,7 +1733,7 @@ namespace CarpetInterp2 {
       
 #ifdef CARPETINTERP2_CHECK
 #pragma omp parallel for
-      for (int n=0; n<send_proc.npoints; ++n) {
+      for (int n=0; n<int(send_proc.npoints); ++n) {
         assert (send_pn.AT(send_proc.offset + n).p == send_proc.p);
         if (n>0) {
           assert (send_pn.AT(send_proc.offset + n  ).n >
