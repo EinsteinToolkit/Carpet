@@ -1202,6 +1202,7 @@ regrid (bool const do_init)
                        << "   local.fine_boundary=" << local_box.fine_boundary[dir][face] << "\n";
                 }
                 
+#if 0                           // OFFSETS,SIZE
                 ibset const& boxes =
                   local_box.fine_boundary[dir][face];
                 vector<int>& offsets =
@@ -1216,6 +1217,7 @@ regrid (bool const do_init)
                   offset += (*bi).size();
                 }
                 local_box.fine_boundary_size[dir][face] = offset;
+#endif
                 
               } // for face
             }   // for dir
@@ -1260,6 +1262,7 @@ regrid (bool const do_init)
                 }
                 assert ((obox.buffers.shift(-idir,2) & all_coarse_boundary[dir][face]).empty());
                 
+#if 0                           // OFFSETS,SIZE
                 ibset const& boxes =
                   local_obox.coarse_boundary[dir][face];
                 vector<int>& offsets =
@@ -1274,6 +1277,7 @@ regrid (bool const do_init)
                   offset += (*bi).size();
                 }
                 local_obox.coarse_boundary_size[dir][face] = offset;
+#endif
                 
               } // for face
             }   // for dir
@@ -2451,11 +2455,13 @@ memory ()
     memoryof (restricted_region) +
     memoryof (unused_region) +
     memoryof (coarse_boundary) +
-    memoryof (fine_boundary) +
+    memoryof (fine_boundary);
+#if 0                           // OFFSETS,SIZE
     memoryof (coarse_boundary_offsets) +
     memoryof (fine_boundary_offsets) +
     memoryof (coarse_boundary_size) +
     memoryof (fine_boundary_size);
+#endif
 }
 
 size_t
@@ -2793,10 +2799,12 @@ output (ostream & os)
      << "   unused_region: " << unused_region << eol
      << "   coarse_boundary: " << coarse_boundary << eol
      << "   fine_boundary: " << fine_boundary << eol
+#if 0                           // OFFSETS,SIZE
      << "   coarse_boundary_offsets: " << coarse_boundary_offsets << eol
      << "   fine_boundary_offsets: " << fine_boundary_offsets << eol
      << "   coarse_boundary_size: " << coarse_boundary_size << eol
      << "   fine_boundary_size: " << fine_boundary_size << eol
+#endif
      << "}" << eol;
   return os;
 }

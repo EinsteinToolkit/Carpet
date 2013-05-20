@@ -77,13 +77,15 @@ public:
     // Does not influence anything but the restricted_region
     ibset unused_region;
     
-    // Refluxing
+    // Refluxing (these live on the respective faces)
     vect<vect<ibset,2>,dim> coarse_boundary;
     vect<vect<ibset,2>,dim> fine_boundary;
+#if 0                           // OFFSETS,SIZE
     vect<vect<vector<int>,2>,dim> coarse_boundary_offsets;
     vect<vect<vector<int>,2>,dim> fine_boundary_offsets;
     vect<vect<int,2>,dim> coarse_boundary_size;
     vect<vect<int,2>,dim> fine_boundary_size;
+#endif
     
     size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;
     istream & input (istream & is);
