@@ -407,19 +407,8 @@ DECLARE_OPERATOR_1_RET (operator!, !, bool)
 DECLARE_FUNCTION_2 (max)
 DECLARE_FUNCTION_2 (min)
 DECLARE_FUNCTION_2 (pow)
-
-template<typename T>
-T idiv(T const& x, T const& y)
-{
-  return x>=T(0) ? x/y : -(-x/y);
-}
-template<typename T>
-T imod(T const& x, T const& y)
-{
-  return x>=T(0) ? x%y : -(-x%y);
-}
-DECLARE_FUNCTION_2 (idiv)       // divide, rounding to minus infinity
-DECLARE_FUNCTION_2 (imod)       // modulo, rounding to minus infinity
+DECLARE_FUNCTION_2 (idiv)
+DECLARE_FUNCTION_2 (imod)
 
 DECLARE_OPERATOR_2 (operator+, +)
 DECLARE_OPERATOR_2 (operator-, -)
