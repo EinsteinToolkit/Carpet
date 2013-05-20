@@ -103,7 +103,11 @@ mem (size_t const vectorlength, size_t const nelems,
     try {
       // TODO: use posix_memalign instead, if available
       size_t const max_cache_linesize = get_max_cache_linesize();
+#if VECTORISE
       size_t const vector_size = CCTK_REAL_VEC_SIZE * sizeof(T);
+#else
+      size_t const vector_size = sizeof(T);
+#endif
       size_t const alignment = align_up(max_cache_linesize, vector_size);
       assert(alignment >= 1);
       // Safety check

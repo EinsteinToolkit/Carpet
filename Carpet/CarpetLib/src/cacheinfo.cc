@@ -79,11 +79,11 @@ pad_shape(vect<int,D> const& shape)
         
         assert(cache_linesize % sizeof(CCTK_REAL) == 0);
         int const linesize = cache_linesize / sizeof(CCTK_REAL);
-        assert(is_power_of_2(linesize));
         if (npoints * accumulated_npoints < linesize) {
           // The extent is less than one cache line long: Ensure that
           // the array size divides the cache line size evenly by
           // rounding to the next power of 2
+          assert(is_power_of_2(linesize));
           npoints = next_power_of_2(npoints);
         } else {
           // The extent is at least one cache line long: round up to
