@@ -579,11 +579,11 @@ inline vect<U,D> vmap (U (* const func)(T x), const vect<T,D>& a)
 /** Return a new vector where the function func() has been used
     element-wise to combine a and b.  */
 template<typename S, typename T, typename U, int D>
-inline vect<U,D> zip (U (* const func)(S x, T y),
-                      const vect<S,D>& a, const vect<T,D>& b);
+inline vect<U,D> vzip (U (* const func)(S x, T y),
+                       const vect<S,D>& a, const vect<T,D>& b);
 template<typename S, typename T, typename U, int D>
-inline vect<U,D> zip (U (* const func)(S x, T y),
-                      const vect<S,D>& a, const vect<T,D>& b)
+inline vect<U,D> vzip (U (* const func)(S x, T y),
+                       const vect<S,D>& a, const vect<T,D>& b)
 {
   vect<U,D> r;
   for (int d=0; d<D; ++d) r[d] = func(a[d], b[d]);
