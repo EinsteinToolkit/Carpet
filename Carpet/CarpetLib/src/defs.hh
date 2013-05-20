@@ -49,11 +49,6 @@ char const * const eol = "\n";
 
 
   
-// A compile time pseudo assert statement
-#define static_assert(_x, _msg) do { typedef int ai[(_x) ? 1 : -1]; } while(0)
-
-
-
 // Check a return value
 #define check(_expr) do { bool const _val = (_expr); assert(_val); } while(0)
 
