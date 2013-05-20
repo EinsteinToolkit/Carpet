@@ -126,6 +126,10 @@ pad_shape(vect<int,D> const& shape)
   }
   
   // Safety check
+  if (not (prod(padded_shape) <= 2 * prod(shape) + 1000)) {
+    cerr << "shape=" << shape << "   prod(shape)=" << prod(shape) << "\n"
+         << "padded_shape=" << padded_shape << "   prod(padded_shape)=" << prod(padded_shape) << "\n";
+  }
   assert(prod(padded_shape) <= 2 * prod(shape) + 1000);
   
   if (verbose) {
