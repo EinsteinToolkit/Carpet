@@ -146,7 +146,7 @@ call_operator (void
      srcregbbox, dstregbbox, extraargs);
 #else
 #  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
-  ibset alldstregbboxes;
+  ibset4 alldstregbboxes;
 #  endif
 #pragma omp parallel
   {
@@ -184,11 +184,11 @@ call_operator (void
     }
   }
 #  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
-  if (not (alldstregbboxes == ibset (dstregbbox))) {
+  if (not (alldstregbboxes == ibset4 (dstregbbox))) {
     cout << "alldstregbboxes=" << alldstregbboxes << endl
          << "dstregbbox=" << dstregbbox << endl;
   }
-  assert (alldstregbboxes == ibset (dstregbbox));
+  assert (alldstregbboxes == ibset4 (dstregbbox));
 #  endif
 #endif
 }

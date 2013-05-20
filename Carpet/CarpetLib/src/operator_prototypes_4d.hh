@@ -7,6 +7,7 @@
 
 #include "defs.hh"
 #include "bbox.hh"
+#include "bboxset.hh"
 #include "vect.hh"
 
 #include "operator_prototypes.hh"
@@ -42,6 +43,7 @@ namespace CarpetLib {
   typedef vect <bool, dim4> bvect4;
   typedef vect <int, dim4> ivect4;
   typedef bbox <int, dim4> ibbox4;
+  typedef bboxset <int, dim4> ibset4;
   
   
   
