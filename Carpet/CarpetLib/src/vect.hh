@@ -53,6 +53,22 @@ public:
   /** Explicit empty constructor.  */
   explicit vect () { }
   
+  /** Create a vector from a lower-dimensional vector.  */
+  vect (const vect<T,D==0?0:D-1>& x, const T& a)
+  {
+    assert(D>0);
+    for (int d=0; d<D-1; ++d) elt[d]=x[d];
+    elt[D-1] = a;
+  }
+  
+  /** Create a vector from a lower-dimensional vector.  */
+  vect (const T& a, const vect<T,D==0?0:D-1>& x)
+  {
+    assert(D>0);
+    elt[0] = a;
+    for (int d=0; d<D-1; ++d) elt[d+1]=x[d];
+  }
+  
   /** Copy constructor.  */
   vect (const vect& a)
   {
