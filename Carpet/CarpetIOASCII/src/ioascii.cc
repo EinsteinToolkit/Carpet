@@ -38,10 +38,10 @@ namespace Carpet {
 }
 
 
-#define GetParameter(parameter) \
-  outdim == 0 ? out0D_##parameter : \
-  outdim == 1 ? out1D_##parameter : \
-  outdim == 2 ? out2D_##parameter : out3D_##parameter
+#define GetParameter(parameter)                         \
+  (outdim == 0 ? out0D_##parameter :                    \
+   outdim == 1 ? out1D_##parameter :                    \
+   outdim == 2 ? out2D_##parameter : out3D_##parameter)
 
 namespace CarpetIOASCII {
   
