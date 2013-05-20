@@ -238,7 +238,7 @@ inline const char * typestring (const CCTK_COMPLEX32&)
                                                         \
   inline int good_isnormal(T const& x)                  \
   {                                                     \
-    return isnormal(x.real()) or isnormal(x.imag());    \
+    return isnormal(x.real()) and isnormal(x.imag());   \
   }
 
 namespace std {
