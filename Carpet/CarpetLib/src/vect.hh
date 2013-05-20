@@ -457,11 +457,11 @@ DECLARE_REDUCTION_OPERATOR_1 (sum,0,+=,id)
 DECLARE_REDUCTION_OPERATOR_2 (dot  ,0,+=,*,id  )
 DECLARE_REDUCTION_OPERATOR_2 (hypot,0,+=,*,sqrt)
 
-/** Count the number of elements in the vector.  */
+/** Count the number of true (non-zero) elements in the vector.  */
 template<typename T,int D>
 inline int count (const vect<T,D>& a)
 {
-  return D;
+  return sum(a != T(0));
 }
 
 /** Return the size (number of elements) of the vector.  */
