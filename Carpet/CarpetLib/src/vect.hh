@@ -762,6 +762,29 @@ inline vect<CCTK_REAL,dim> operator%(const vect<CCTK_REAL,dim>& a, const vect<CC
   return r;
 }
 
+template<>
+inline vect<CCTK_REAL,dim> idiv(const vect<CCTK_REAL,dim>& a, const vect<CCTK_REAL,dim>& b) {
+  vect<CCTK_REAL,dim> r;
+  for (int d=0; d<dim; ++d) {
+    r[d]=floor(a[d]/b[d]);
+    if (r[d]>b[d]*(CCTK_REAL)(1.0-1.0e-10)) r[d]=(CCTK_REAL)0;
+    if (r[d]<b[d]*(CCTK_REAL)(    1.0e-10)) r[d]=(CCTK_REAL)0;
+  }
+  return r;
+}
+
+template<>
+inline vect<CCTK_REAL,dim> imod(const vect<CCTK_REAL,dim>& a, const vect<CCTK_REAL,dim>& b) {
+  vect<CCTK_REAL,dim> r;
+  for (int d=0; d<dim; ++d) {
+    r[d]=a[d]/b[d];
+    r[d]=b[d]*(r[d]-floor(r[d]));
+    if (r[d]>b[d]*(CCTK_REAL)(1.0-1.0e-10)) r[d]=(CCTK_REAL)0;
+    if (r[d]<b[d]*(CCTK_REAL)(    1.0e-10)) r[d]=(CCTK_REAL)0;
+  }
+  return r;
+}
+
 
 
 #endif // VECT_HH
