@@ -81,6 +81,9 @@ MPI_Datatype vect<T,D>::mpi_datatype () const
 // Specialise some constructors for lower dimensions
 // These functions are declared, but must not be used.
 
+// NOTE: __builtin_unreachable() triggers a bug in the OSX linker; we
+// therefore use assert(0) instead.
+
 template<> vect<int,0>::vect (const int& x, const int& y) { assert(0); }
 template<> vect<int,1>::vect (const int& x, const int& y) { assert(0); }
 template<> vect<int,3>::vect (const int& x, const int& y) { assert(0); }
@@ -148,6 +151,7 @@ template size_t memoryof (const vect<T,D>&);                            \
 template istream& operator>> (istream& is, vect<T,D>&);                 \
 template ostream& operator<< (ostream& os, const vect<T,D>&);
 
+// need typedefs since macro calls can't have commas in arguments
 typedef bboxset<int,dim> T1;
 typedef vect<bboxset<int,dim>,2> T2;
 
