@@ -47,66 +47,68 @@ namespace Carpet {
         
         int const activetimelevels = CCTK_ActiveTimeLevelsGI (cctkGH, group);
         
-        switch (groupdata.AT(group).transport_operator) {
-        case op_Lagrange:
-        case op_ENO:
-        case op_WENO:
-        case op_Lagrange_monotone:
-          if (activetimelevels > 1) {
-            if (activetimelevels < prolongation_order_time+1) {
-              char * const groupname = CCTK_GroupName (group);
-              CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                          "Group \"%s\" has %d only active time levels.  Groups with more than one active time level need at least %d active time levels for prolongation_order_time=%d",
-                          groupname,
-                          activetimelevels, int(prolongation_order_time+1),
-                          int(prolongation_order_time));
-              free (groupname);
-              ++ errors;
+	if (activetimelevels > 1) {
+          switch (groupdata.AT(group).transport_operator) {
+          case op_Lagrange:
+          case op_ENO:
+          case op_WENO:
+          case op_Lagrange_monotone:
+            if (activetimelevels > 1) {
+              if (activetimelevels < prolongation_order_time+1) {
+                char * const groupname = CCTK_GroupName (group);
+                CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                            "Group \"%s\" has %d only active time levels.  Groups with more than one active time level need at least %d active time levels for prolongation_order_time=%d",
+                            groupname,
+                            activetimelevels, int(prolongation_order_time+1),
+                            int(prolongation_order_time));
+                free (groupname);
+                ++ errors;
+              }
             }
+            break;
+          default:
+            ;                     // do nothing
           }
-          break;
-        default:
-          ;                     // do nothing
-        }
         
-        switch (CCTK_GroupTypeI(group)) {
+          switch (CCTK_GroupTypeI(group)) {
           
-        case CCTK_GF:
-          assert (reflevel>=0 and reflevel<reflevels);
-	  for (int m=0; m<(int)arrdata.AT(group).size(); ++m) {
-	    for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-              arrdata.AT(group).AT(m).data.AT(var)->
-                cycle_all (reflevel, mglevel);
+          case CCTK_GF:
+            assert (reflevel>=0 and reflevel<reflevels);
+	    for (int m=0; m<(int)arrdata.AT(group).size(); ++m) {
+	      for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+                arrdata.AT(group).AT(m).data.AT(var)->
+                  cycle_all (reflevel, mglevel);
+              }
             }
-          }
-          break;
+            break;
           
-        case CCTK_SCALAR:
-        case CCTK_ARRAY:
-          if (do_global_mode) {
-	    int const numtimelevels = CCTK_NumTimeLevelsI (group);
-	    int const firstvarindex = CCTK_FirstVarIndexI (group);
-            for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-              arrdata.AT(group).AT(0).data.AT(var)->cycle_all (0, mglevel);
-	      {
-                int const varindex = firstvarindex + var;
-		for (int tl=0; tl<numtimelevels; ++tl) {
-                  if (tl < groupdata.AT(group).info.activetimelevels) {
-                    ggf *const ff = arrdata.AT(group).AT(0).data.AT(var);
-                    void *const ptr = ff->data_pointer(tl, 0, 0, 0)->storage();
-                    cctkGH->data[varindex][tl] = ptr;
-                  } else {
-                    cctkGH->data[varindex][tl] = NULL;
-                  }
-		}
-	      }
+            case CCTK_SCALAR:
+            case CCTK_ARRAY:
+            if (do_global_mode) {
+	      int const numtimelevels = CCTK_NumTimeLevelsI (group);
+	      int const firstvarindex = CCTK_FirstVarIndexI (group);
+              for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+                arrdata.AT(group).AT(0).data.AT(var)->cycle_all (0, mglevel);
+	        {
+                  int const varindex = firstvarindex + var;
+		  for (int tl=0; tl<numtimelevels; ++tl) {
+                    if (tl < groupdata.AT(group).info.activetimelevels) {
+                      ggf *const ff = arrdata.AT(group).AT(0).data.AT(var);
+                      void *const ptr = ff->data_pointer(tl, 0, 0, 0)->storage();
+                      cctkGH->data[varindex][tl] = ptr;
+                    } else {
+                      cctkGH->data[varindex][tl] = NULL;
+                    }
+		  }
+	        }
+              }
             }
-          }
-          break;
+            break;
           
-        default:
-          assert (0);
-        } // switch grouptype
+          default:
+            assert (0);
+          } // switch grouptype
+	} // if activetimelevels > 1
       } // if storage
     } // for group
     
