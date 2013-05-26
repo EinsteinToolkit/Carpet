@@ -328,6 +328,44 @@ void bbox<T,D>::output (ostream& os) const {
 
 
 
+// Comparison
+
+namespace std {
+  // ==
+  template<typename T, int D>
+  bool equal_to<bbox<T,D> >::operator()(const bbox<T,D>& x, const bbox<T,D>& y)
+    const
+  {
+    if (x.empty() and y.empty()) return true;
+    if (x.empty() or y.empty()) return false;
+    /*const*/ equal_to<vect<T,D> > vect_equal_to;
+    if (not vect_equal_to(x.stride(), y.stride())) return false;
+    if (not vect_equal_to(x.lower(), y.lower())) return false;
+    if (not vect_equal_to(x.upper(), y.upper())) return false;
+    return true;
+  }
+  
+  // <
+  template<typename T, int D>
+  bool less<bbox<T,D> >::operator()(const bbox<T,D>& x, const bbox<T,D>& y)
+    const
+  {
+    // Empty bboxes compare less than any non-empty bbox
+    if (y.empty()) return false;
+    if (x.empty()) return true;
+    /*const*/ less<vect<T,D> > vect_less;
+    if (vect_less(x.stride(), y.stride())) return true;
+    if (vect_less(y.stride(), x.stride())) return false;
+    if (vect_less(x.lower(), y.lower())) return true;
+    if (vect_less(y.lower(), x.lower())) return false;
+    if (vect_less(x.upper(), y.upper())) return true;
+    if (vect_less(y.upper(), x.upper())) return false;
+    return false;
+  }
+}
+
+
+
 // Note: We need all dimensions all the time.
 template class bbox<int,0>;
 template class bbox<int,1>;
@@ -335,3 +373,11 @@ template class bbox<int,2>;
 template class bbox<int,3>;
 template class bbox<int,4>;
 template class bbox<CCTK_REAL,dim>;
+
+namespace std {
+  template struct less<bbox<int,0> >;
+  template struct less<bbox<int,1> >;
+  template struct less<bbox<int,2> >;
+  template struct less<bbox<int,3> >;
+  template struct less<bbox<int,4> >;
+}

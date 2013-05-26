@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <functional>
 #include <iostream>
 
 #include "defs.hh"
@@ -673,6 +674,81 @@ template<typename T,int D>
 inline ostream& operator<< (ostream& os, const vect<T,D>& a) {
   a.output(os);
   return os;
+}
+
+
+
+// Comparison
+
+namespace std {
+  // ==
+  template<typename T, int D>
+  struct equal_to<vect<T,D> >: binary_function<vect<T,D>, vect<T,D>, bool>
+  {
+    bool operator()(const vect<T,D>& x, const vect<T,D>& y) const
+    {
+      /*const*/ equal_to<T> T_equal_to;
+      for (int d=0; d<D; ++d) {
+        if (not T_equal_to(x[d], y[d])) return false;
+      }
+      return true;
+    }
+  };
+  
+  // <
+  template<typename T, int D>
+  struct less<vect<T,D> >: binary_function<vect<T,D>, vect<T,D>, bool>
+  {
+    bool operator()(const vect<T,D>& x, const vect<T,D>& y) const
+    {
+      /*const*/ less<T> T_less;
+      for (int d=D-1; d>=0; --d) {
+        if (T_less(x[d], y[d])) return true;
+        if (T_less(y[d], x[d])) return false;
+      }
+      return false;
+    }
+  };
+  
+  // >
+  template<typename T, int D>
+  struct greater<vect<T,D> >: binary_function<vect<T,D>, vect<T,D>, bool>
+  {
+    bool operator()(const vect<T,D>& x, const vect<T,D>& y) const
+    {
+      return less<vect<T,D> >()(y, x);
+    }
+  };
+  
+  // >=
+  template<typename T, int D>
+  struct greater_equal<vect<T,D> >: binary_function<vect<T,D>, vect<T,D>, bool>
+  {
+    bool operator()(const vect<T,D>& x, const vect<T,D>& y) const
+    {
+      return not less<vect<T,D> >()(x, y);
+    }
+  };
+  
+  // <=
+  template<typename T, int D>
+  struct less_equal<vect<T,D> >: binary_function<vect<T,D>, vect<T,D>, bool>
+  {
+    bool operator()(const vect<T,D>& x, const vect<T,D>& y) const
+    {
+      return not greater<vect<T,D> >()(x, y);
+    }
+  };
+  
+  // !=
+  template<typename T, int D>
+  struct not_equal_to<vect<T,D> >: binary_function<vect<T,D>, vect<T,D>, bool>
+  {
+    bool operator()(const vect<T,D>& x, const vect<T,D>& y) const
+    {
+      return not equal_to<vect<T,D> >()(x, y);
+    }
+  };
 }
 
 

@@ -278,19 +278,6 @@ namespace std {
 
 
 
-// Container equality
-template <typename T>
-bool equals (vector<T> const& v, vector<T> const& w)
-{
-  if (v.size() != w.size()) return false;
-  for (size_t i=0; i<v.size(); ++i) {
-    if (v.AT(i) != w.AT(i)) return false;
-  }
-  return true;
-}
-
-
-
 // Container memory usage
 inline size_t memoryof (char const & e) { return sizeof e; }
 inline size_t memoryof (short const & e) { return sizeof e; }
