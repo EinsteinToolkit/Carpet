@@ -267,15 +267,16 @@ namespace Requirements {
     cGH const* const cctkGH = static_cast<cGH const*>(cctkGH_);
     DECLARE_CCTK_PARAMETERS;
     if (check_requirements) {
-      // TODO: come up with a scheme to avoid constructing and destroying clauses
+      // TODO: come up with a scheme to avoid constructing and
+      // destroying clauses
       cFunctionData const* const function_data = 
           CCTK_ScheduleQueryCurrentFunction(cctkGH);
       int const reflevel = GetRefinementLevel(cctkGH);
       int const map = GetMap(cctkGH);
       int const timelevel = GetTimeLevel(cctkGH);
       int const timelevel_offset = GetTimeLevelOffset(cctkGH);
-      // TODO: design an interface to all_state.before_routine that operates
-      //       on indices and claues directly
+      // TODO: design an interface to all_state.before_routine that
+      //       operates on indices and claues directly
       for (int v=0; v<nvars; ++v) { 
         cFunctionData temp_function_data = *function_data;
         char* const fullname = CCTK_FullName(varinds[v]);
