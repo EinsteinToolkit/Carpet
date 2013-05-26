@@ -62,9 +62,10 @@ namespace Requirements {
     }
     assert(ignored_variables.empty());
     ignored_variables.resize(CCTK_NumVars());
-    CCTK_TraverseString(ignore_these_variables, add_ignored_variable,
-                        (void*)&ignored_variables,
-                        CCTK_GROUP_OR_VAR);
+    const int iret =
+      CCTK_TraverseString(ignore_these_variables, add_ignored_variable,
+                          (void*)&ignored_variables, CCTK_GROUP_OR_VAR);
+    assert(iret>=0);
   }
   
   // Update internal data structures when Carpet changes the number of
