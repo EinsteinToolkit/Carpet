@@ -70,12 +70,17 @@ namespace Carpet {
     }
 
     // Synchronise
+    // TODO: Why? Restricted grid functions need to have boundary
+    // conditions applied in postrestrict anyway, so this should not
+    // be necessary.
+#if 0
     {
       static Timer timer ("RestrictSync");
       timer.start();
       SyncGroups (cctkGH, groups);
       timer.stop();
     }
+#endif
   }
   
 
