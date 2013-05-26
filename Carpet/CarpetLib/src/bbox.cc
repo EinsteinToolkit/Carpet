@@ -203,8 +203,8 @@ template<typename T, int D>
 bbox<T,D> bbox<T,D>::expanded_for (const bbox& b) const {
   if (empty()) return bbox(b.lower(), b.lower()-b.stride(), b.stride());
   const vect<T,D> str = b.stride();
-  const vect<T,D> loff = ((lower() - b.lower()) % str + str) % str;
-  const vect<T,D> uoff = ((upper() - b.lower()) % str + str) % str;
+  const vect<T,D> loff = imod (lower() - b.lower(), str);
+  const vect<T,D> uoff = imod (upper() - b.lower(), str);
   const vect<T,D> lo = lower() - loff; // go outwards
   const vect<T,D> up = upper() + (str - uoff) % str;
   return bbox(lo,up,str);
@@ -215,8 +215,8 @@ template<typename T, int D>
 bbox<T,D> bbox<T,D>::contracted_for (const bbox& b) const {
   if (empty()) return bbox(b.lower(), b.lower()-b.stride(), b.stride());
   const vect<T,D> str = b.stride();
-  const vect<T,D> loff = ((lower() - b.lower()) % str + str) % str;
-  const vect<T,D> uoff = ((upper() - b.lower()) % str + str) % str;
+  const vect<T,D> loff = imod (lower() - b.lower(), str);
+  const vect<T,D> uoff = imod (upper() - b.lower(), str);
   const vect<T,D> lo = lower() + (str - loff) % str; // go inwards
   const vect<T,D> up = upper() - uoff;
   return bbox(lo,up,str);
