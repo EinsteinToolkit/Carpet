@@ -81,13 +81,6 @@ public:
 #ifdef CARPET_DEBUG
     assert_bbox_limits();
 #endif
-    if (not (all (stride() > T(0))) or
-        not (all ((upper() - lower()) % stride() == T(0))))
-    {
-      cerr << "bbox: lower=" << lower() << " upper=" << upper() << " stride=" << stride() << "\n";
-    }
-    assert (all (stride() > T(0)));
-    assert (all ((upper() - lower()) % stride() == T(0)));
   }
   
   // Poison
