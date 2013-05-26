@@ -283,19 +283,10 @@ namespace Carpet {
       } 
 #endif
       
-#if 0
-      // Do not call Util_GetHostName. Certain InfiniBand libraries do
-      // not allow calling fork or exec, and getting the host name
-      // seems also not allowed. It leads to random crashes.
-      char hostnamebuf[1000];
-      Util_GetHostName (hostnamebuf, sizeof hostnamebuf);
-      string const hostname (hostnamebuf);
-#else
       char hostnamebuf[MPI_MAX_PROCESSOR_NAME];
       int hostnamelen;
       MPI_Get_processor_name (hostnamebuf, &hostnamelen);
       string const hostname (hostnamebuf);
-#endif
       DetermineHosts (hostname, true);
 #if HAVE_GETPID
       int const mypid = static_cast<int> (getpid ());
