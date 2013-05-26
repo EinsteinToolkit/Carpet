@@ -184,6 +184,9 @@ public:
   /** Find the largest b-compatible box inside this bbox.  */
   bbox contracted_for (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
   
+  /** Find the smallest open b-compatible box around *this */
+  bbox anti_contracted_for (const bbox& b) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  
   /** Find the smallest bbox containing both boxes.  */
   bbox expanded_containing (const bbox<T,D>& b) const
     CCTK_MEMBER_ATTRIBUTE_PURE;

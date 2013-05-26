@@ -222,6 +222,26 @@ bbox<T,D> bbox<T,D>::contracted_for (const bbox& b) const {
   return bbox(lo,up,str);
 }
 
+// Find the smallest open b-compatible box around *this:
+// This routine is similar to expanded_for. However, it returns a box
+// that is possibly larger than the box returned by expanded_for.
+template<typename T, int D>
+bbox<T,D> bbox<T,D>::anti_contracted_for (const bbox& b) const {
+  if (empty()) return bbox(b.lower(), b.lower()-b.stride(), b.stride());
+  return expand(1, 1).expanded_for(b).expand(-1, -1);
+  // if (all(stride() <= b.stride())) {
+  //   // New stride is larger or equal to current stride: forward call
+  //   // to expanded_for
+  //   return expanded_for(b);
+  // }
+  // if (all(stride() > b.stride())) {
+  //   // New stride is smaller than current stride: expand box by one
+  //   // stride, call expanded_for, and shrink box by on stride again
+  //   return expand(1, 1).expanded_for(b).expand(-1, -1);
+  // }
+  // __builtin_unreachable();
+}
+
 // Smallest bbox containing both boxes
 template<typename T, int D>
 bbox<T,D> bbox<T,D>::expanded_containing (const bbox& b) const {
