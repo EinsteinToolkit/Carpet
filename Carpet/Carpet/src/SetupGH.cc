@@ -287,7 +287,7 @@ namespace Carpet {
       int hostnamelen;
       MPI_Get_processor_name (hostnamebuf, &hostnamelen);
       string const hostname (hostnamebuf);
-      DetermineHosts (hostname, true);
+      DetermineHosts (hostname, verbose);
 #if HAVE_GETPID
       int const mypid = static_cast<int> (getpid ());
 #else
