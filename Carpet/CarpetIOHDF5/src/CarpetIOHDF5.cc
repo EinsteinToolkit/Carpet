@@ -669,10 +669,15 @@ static int TriggerOutput (const cGH* const cctkGH, const int vindex)
   char* const fullname = CCTK_FullName(vindex);
   if (one_file_per_group) {
     const int gindex = CCTK_GroupIndexFromVarI(vindex);
-    char* const groupname = CCTK_GroupName(gindex);
-    for (char* p=groupname; *p; ++p) *p=tolower(*p);
-    retval = OutputVarAs (cctkGH, fullname, groupname);
-    free (groupname);
+    char* const groupname_c = CCTK_GroupName(gindex);
+    string groupname(groupname_c);
+    free (groupname_c);
+    transform(groupname.begin(), groupname.end(), groupname.begin(), ::tolower);
+    string const oldsep ("::");
+    size_t const oldseppos = groupname.find(oldsep);
+    assert (oldseppos != string::npos);
+    groupname.replace(oldseppos, oldsep.size(), out_group_separator);
+    retval = OutputVarAs (cctkGH, fullname, groupname.c_str());
   } else {
     const char *varname = CCTK_VarName (vindex);
     retval = OutputVarAs (cctkGH, fullname, varname);

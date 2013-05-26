@@ -28,6 +28,11 @@ BOOLEAN all_reductions_in_one_file "Write all requested reductions in one file i
 {
 } "no"
 
+STRING out_group_separator "String to separate group from variable name in file name" STEERABLE = ALWAYS
+{
+  "" :: ""
+} "::"
+
 
 
 CCTK_STRING outScalar_dir "Name of scalar output directory, overrides out_dir" STEERABLE = ALWAYS

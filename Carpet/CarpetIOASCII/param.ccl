@@ -53,6 +53,11 @@ BOOLEAN one_file_per_group "Write one file per group instead of per variable"
 {
 } "no"
 
+STRING out_group_separator "String to separate group from variable name in file name" STEERABLE = ALWAYS
+{
+  "" :: ""
+} "::"
+
 
 
 BOOLEAN output_all_timelevels "Output all timelevels instead of only the current" STEERABLE = ALWAYS

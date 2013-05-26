@@ -120,6 +120,11 @@ CCTK_STRING out3D_vars "Variables to output in 3D HDF5 file format" STEERABLE = 
   "" :: "List of group or variable names"
 } ""
 
+STRING out_group_separator "String to separate group from variable name in file name" STEERABLE = ALWAYS
+{
+  "" :: ""
+} "::"
+
 STRING out_extension "File extension to use for CarpetIOHDF5 output" STEERABLE = ALWAYS
 {
   "" :: "File extension (including a leading dot, if desired)"

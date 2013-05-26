@@ -355,10 +355,15 @@ namespace CarpetIOASCII {
     
     int retval;
     if (one_file_per_group) {
-      char* const alias = CCTK_GroupNameFromVarI (vindex);
-      for (char* p = alias; *p; ++p) *p = (char) tolower (*p);
-      retval = OutputVarAs (cctkGH, fullname, alias);
-      free (alias);
+      char* const alias_c = CCTK_GroupNameFromVarI (vindex);
+      string alias(alias_c);
+      free (alias_c);
+      transform(alias.begin(), alias.end(), alias.begin(), ::tolower);
+      string const oldsep ("::");
+      size_t const oldseppos = alias.find(oldsep);
+      assert (oldseppos != string::npos);
+      alias.replace(oldseppos, oldsep.size(), out_group_separator);
+      retval = OutputVarAs (cctkGH, fullname, alias.c_str());
     } else {
       const char* const alias = CCTK_VarName (vindex);
       retval = OutputVarAs (cctkGH, fullname, alias);

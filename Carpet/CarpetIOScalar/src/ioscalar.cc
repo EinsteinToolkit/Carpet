@@ -719,11 +719,17 @@ namespace CarpetIOScalar {
       
       char* const fullname = CCTK_FullName(vindex);
       int const gindex = CCTK_GroupIndexFromVarI(vindex);
-      char* const groupname = CCTK_GroupName(gindex);
-      for (char* p=groupname; *p; ++p) *p=tolower(*p);
-      retval = OutputVarAs (cctkGH, fullname, groupname, out_reductions);
+      char* const groupname_c = CCTK_GroupName(gindex);
+      string groupname(groupname_c);
+      transform
+        (groupname.begin(), groupname.end(), groupname.begin(), ::tolower);
+      string const oldsep ("::");
+      size_t const oldseppos = groupname.find(oldsep);
+      assert (oldseppos != string::npos);
+      groupname.replace(oldseppos, oldsep.size(), out_group_separator);
+      retval =
+        OutputVarAs (cctkGH, fullname, groupname.c_str(), out_reductions);
       free (fullname);
-      free (groupname);
       
       int const firstvar = CCTK_FirstVarIndexI(gindex);
       int const numvars = CCTK_NumVarsInGroupI(gindex);

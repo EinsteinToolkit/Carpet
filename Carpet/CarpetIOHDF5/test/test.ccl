@@ -12,4 +12,3 @@ TEST CarpetWaveToyRecover_test_4proc
 {
   NPROCS 4
 }
-
