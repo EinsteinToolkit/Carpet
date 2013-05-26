@@ -1,0 +1,7 @@
+# Interface definition for thorn TestBBoxSet2
+
+IMPLEMENTS: TestBBoxSet2
+
+USES INCLUDES HEADER: cycleclock.h
+
+USES INCLUDE HEADER: bboxset.hh

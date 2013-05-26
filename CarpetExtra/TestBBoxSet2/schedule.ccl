@@ -1,0 +1,7 @@
+# Schedule definitions for thorn TestBBoxSet2
+
+SCHEDULE TestBBoxSet2_test AT paramcheck
+{
+  LANG: C
+  OPTIONS: meta
+} "Test bboxset2"

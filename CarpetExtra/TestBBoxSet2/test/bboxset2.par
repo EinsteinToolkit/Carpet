@@ -1,0 +1,6 @@
+ActiveThorns = "Carpet CarpetLib CoordBase IOUtil TestBBoxSet2"
+
+IOUtil::out_dir = $parfile
+
+TestBBoxSet2::verbose         = no
+TestBBoxSet2::components_goal = 20000

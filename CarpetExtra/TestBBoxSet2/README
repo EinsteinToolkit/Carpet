@@ -1,0 +1,10 @@
+Cactus Code Thorn TestBBoxSet2
+Author(s)    : Erik Schnetter <schnetter@gmail.com>
+Maintainer(s): Erik Schnetter <schnetter@gmail.com>
+Licence      : GPL
+--------------------------------------------------------------------------
+
+1. Purpose
+
+Test the new bboxset class by comparing its results to the old bboxset
+class.

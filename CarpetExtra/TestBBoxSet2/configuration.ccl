@@ -1,0 +1,3 @@
+# Configuration definitions for thorn TestBBoxSet2
+
+REQUIRES CarpetLib CycleClock

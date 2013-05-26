@@ -1,0 +1,10 @@
+# Parameter definitions for thorn TestBBoxSet2
+
+BOOLEAN verbose "Provide verbose output" STEERABLE=always
+{
+} "yes"
+
+INT components_goal "Approximate number of components to simulate" STEERABLE=always
+{
+  1:* :: ""
+} 10000
