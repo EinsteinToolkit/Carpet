@@ -285,7 +285,7 @@ ostream& output (ostream& os, const set<T>& s) {
   return os;
 }
 
-#ifndef CARPET_NO_BBOXSET2
+#ifdef CARPET_ENABLE_BBOXSET2
 // Shared pointer output
 template<class T>
 ostream& output (ostream& os, const shared_ptr<T>& s) {
@@ -355,7 +355,7 @@ template size_t memoryof (vector<bbox<int,1> > const & v);
 template size_t memoryof (vector<bbox<int,2> > const & v);
 template size_t memoryof (vector<bbox<int,3> > const & v);
 template size_t memoryof (vector<bboxset1::bboxset<int,dim> > const & v);
-#ifndef CARPET_NO_BBOXSET2
+#ifdef CARPET_ENABLE_BBOXSET2
 template size_t memoryof (vector<bboxset2::bboxset<int,dim>> const & v);
 #endif
 template size_t memoryof (vector<ivect> const & v);
@@ -394,7 +394,7 @@ template istream& input (istream& os, vector<bbox<int,2> >& v);
 template istream& input (istream& os, vector<bbox<int,3> >& v);
 //template istream& input (istream& os, vector<rbbox>& v);
 template istream& input (istream& os, vector<bboxset1::bboxset<int,dim> >& v);
-#ifndef CARPET_NO_BBOXSET2
+#ifdef CARPET_ENABLE_BBOXSET2
 template istream& input (istream& os, vector<bboxset2::bboxset<int,dim>>& v);
 #endif
 template istream& input (istream& os, vector<ivect>& v);
@@ -415,7 +415,7 @@ template istream& input (istream& os, vector<vector<vector<region_t> > >& v);
 
 //template ostream& output (ostream& os, const list<ibbox>& l);
 //template ostream& output (ostream& os, const list<region_t>& l);
-#ifndef CARPET_NO_BBOXSET2
+#ifdef CARPET_ENABLE_BBOXSET2
 //template ostream& output (ostream& os, const map<int,shared_ptr<bboxset2::bboxset<int,0> >>& m);
 //template ostream& output (ostream& os, const map<int,shared_ptr<bboxset2::bboxset<int,1> >>& m);
 //template ostream& output (ostream& os, const map<int,shared_ptr<bboxset2::bboxset<int,2> >>& m);
@@ -428,7 +428,7 @@ template ostream& output (ostream& os, const set<bbox<int,1> >& s);
 template ostream& output (ostream& os, const set<bbox<int,2> >& s);
 template ostream& output (ostream& os, const set<bbox<int,3> >& s);
 //template ostream& output (ostream& os, const set<bboxset1::bboxset<int,dim> >& s);
-#ifndef CARPET_NO_BBOXSET2
+#ifdef CARPET_ENABLE_BBOXSET2
 //template ostream& output (ostream& os, const shared_ptr<bboxset2::bboxset<int,0> >& s);
 #endif
 //template ostream& output (ostream& os, const stack<ibbox>& s);
@@ -440,7 +440,7 @@ template ostream& output (ostream& os, const vector<bbox<int,2> >& v);
 template ostream& output (ostream& os, const vector<bbox<int,3> >& v);
 template ostream& output (ostream& os, const vector<rbbox>& v);
 template ostream& output (ostream& os, const vector<bboxset1::bboxset<int,dim> >& v);
-#ifndef CARPET_NO_BBOXSET2
+#ifdef CARPET_ENABLE_BBOXSET2
 template ostream& output (ostream& os, const vector<bboxset2::bboxset<int,dim>>& v);
 #endif
 template ostream& output (ostream& os, const vector<ivect>& v);

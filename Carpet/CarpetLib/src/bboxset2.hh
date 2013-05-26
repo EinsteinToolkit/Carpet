@@ -23,7 +23,7 @@ using namespace std;
 
 
 
-#ifndef CARPET_NO_BBOXSET2
+#ifdef CARPET_ENABLE_BBOXSET2
 
 namespace bboxset2 {
 
@@ -1362,7 +1362,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
 
 } // namespace bboxset2
 
-#endif  // #ifndef CARPET_NO_BBOXSET2
+#endif  // #ifdef CARPET_ENABLE_BBOXSET2
 
 
 

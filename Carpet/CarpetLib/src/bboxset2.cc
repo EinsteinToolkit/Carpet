@@ -1,6 +1,6 @@
 #include <cctk.h>
 
-#ifndef CARPET_NO_BBOXSET2
+#ifdef CARPET_ENABLE_BBOXSET2
 
 #include "bboxset2.hh"
 
@@ -35,4 +35,4 @@ namespace bboxset2 {
   
 } // namespace bboxset2
 
-#endif  // #ifndef CARPET_NO_BBOXSET2
+#endif  // #ifdef CARPET_ENABLE_BBOXSET2

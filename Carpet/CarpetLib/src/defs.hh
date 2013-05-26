@@ -70,7 +70,7 @@ char const * const eol = "\n";
 template<typename T, int D> class vect;
 template<typename T, int D> class bbox;
 namespace bboxset1 { template<typename T, int D> class bboxset; }
-#ifndef CARPET_NO_BBOXSET2
+#ifdef CARPET_ENABLE_BBOXSET2
 namespace bboxset2 { template<typename T, int D> class bboxset; }
 #endif
 template<typename T, int D, typename P> class fulltree;
@@ -83,7 +83,7 @@ typedef bbox<int,dim>       ibbox;
 typedef bbox<CCTK_INT,dim>  jbbox;
 typedef bbox<CCTK_REAL,dim> rbbox;
 namespace bboxset1 { typedef bboxset<int,dim> ibset; }
-#ifndef CARPET_NO_BBOXSET2
+#ifdef CARPET_ENABLE_BBOXSET2
 namespace bboxset2 { typedef bboxset<int,dim> ibset; }
 #endif
 
@@ -338,7 +338,7 @@ template<class T> ostream& output (ostream& os, const list<T>& l);
 template<class S, class T> ostream& output (ostream& os, const map<S,T>& m);
 template<class S, class T> ostream& output (ostream& os, const pair<S,T>& p);
 template<class T> ostream& output (ostream& os, const set<T>& s);
-#ifndef CARPET_NO_BBOXSET2
+#ifdef CARPET_ENABLE_BBOXSET2
 template<class T> ostream& output (ostream& os, const shared_ptr<T>& s);
 #endif
 template<class T> ostream& output (ostream& os, const stack<T>& s);
@@ -364,7 +364,7 @@ inline ostream& operator<< (ostream& os, const set<T>& s) {
   return output(os,s);
 }
 
-#ifndef CARPET_NO_BBOXSET2
+#ifdef CARPET_ENABLE_BBOXSET2
 template<class T>
 inline ostream& operator<< (ostream& os, const shared_ptr<T>& s) {
   return output(os,s);
