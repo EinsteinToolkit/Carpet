@@ -41,10 +41,13 @@ namespace Carpet {
     /// Timer name
     string name () const;
 
-    /// Return the current time of the timer as a double
+    /// Return the current time of the timer in seconds as a double
     double getTime();
 
-    /// Return all clock names
+    /// Return the average and maximum current time over all MPI processes
+    void getGlobalTime(double& avg, double& max);
+
+    /// Return all clock names and their units
     vector<pair<string,string> > getAllTimerNames() const;
 
     /// Return all clock values of the timer as double

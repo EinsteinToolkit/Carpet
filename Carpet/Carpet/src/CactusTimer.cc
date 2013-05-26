@@ -78,33 +78,57 @@ namespace Carpet
   {
     DECLARE_CCTK_PARAMETERS;
 
-    bool const was_running = running;
-    if (was_running) stop();
-
     static cTimerData * timer = 0;
     if (not timer) timer = CCTK_TimerCreateData ();
     assert (timer);
     CCTK_TimerI (handle, timer);
 
-    double val = 0; // All these timers will be returned as doubles
-
-    const cTimerVal  *tv = CCTK_GetClockValue(timer_xml_clock, timer);
-
-    if (tv != NULL)
-    {
-      val = CCTK_TimerClockSeconds(tv);
-    }
-    else
-    {
-      CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Clock \"%s\" not found for timer #%d \"%s\"",
-                 timer_xml_clock, handle, CCTK_TimerName(handle));
-      val = -1;
-    }
-
+    bool const was_running = running;
+    if (was_running) stop();
+    const cTimerVal * tv = CCTK_GetClockValue(timer_xml_clock, timer);
     if (was_running) start();
 
-    return val;
+    if (not tv) {
+      CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                 "Clock \"%s\" not found for timer #%d \"%s\"",
+                 timer_xml_clock, handle, CCTK_TimerName(handle));
+      return -1.0;
+    }
+
+    return CCTK_TimerClockSeconds(tv);
+  }
+
+  void CactusTimer::getGlobalTime(double& avg, double& max)
+  {
+    const cGH *const cctkGH = 0;
+    
+    int ierr;
+    
+    static int op_sum = -1;
+    static int op_max = -1;
+    if (op_sum<0) op_sum = CCTK_ReductionArrayHandle("sum");
+    if (op_max<0) op_max = CCTK_ReductionArrayHandle("maximum");
+    
+    const double val = getTime();
+    const CCTK_REAL val1 = val;
+    
+    CCTK_REAL sum1;
+    ierr = CCTK_ReduceLocScalar(cctkGH, -1, op_sum,
+                                &val1, &sum1, CCTK_VARIABLE_REAL);
+    if (ierr) {
+      CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                 "Error in sum reduction");
+    }
+    avg = sum1 / CCTK_nProcs(cctkGH);
+    
+    CCTK_REAL max1;
+    ierr = CCTK_ReduceLocScalar(cctkGH, -1, op_max,
+                                &val1, &max1, CCTK_VARIABLE_REAL);
+    if (ierr) {
+      CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                 "Error in maximum reduction");
+    }
+    max = max1;
   }
   
   vector<pair<string,string> > CactusTimer::getAllTimerNames() const

@@ -29,13 +29,16 @@
 
 #include <algorithm>
 #include <cassert>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <fstream>
 #include <map>
 #include <ostream>
 #include <string>
 #include <utility>
+
+#include <dist.hh>
+#include <mpi_string.hh>
 
 #include "TimerNode.hh"
 
@@ -93,22 +96,17 @@ namespace Carpet {
 
   void TimerNode::stop()
   {
-    if (d_running)
-    {
-      // A timer can only be stopped if it is the current timer
-      if(this != d_tree->current)
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Tried to stop non-current timer '%s'", getName().c_str());
+    assert(d_running);
 
-      timer->stop();
+    // A timer can only be stopped if it is the current timer
+    if(this != d_tree->current)
+      CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Tried to stop non-current timer '%s'", getName().c_str());
 
-      d_running = false;
-      d_tree->current = d_parent;
-    }
-    else
-    {
-      assert(0); // Timer is not running
-    }
+    timer->stop();
+
+    d_running = false;
+    d_tree->current = d_parent;
   }
 
   /// Get the name of the timer
@@ -144,6 +142,12 @@ namespace Carpet {
     return timer->getTime();
   }
 
+  /// Get the global time measured by this timer
+  void TimerNode::getGlobalTime(double& avg, double& max)
+  {
+    return timer->getGlobalTime(avg, max);
+  }
+
   /// Get the names of all clocks of this timer
   vector<pair<string,string> > TimerNode::getAllTimerNames() const
   {
@@ -176,7 +180,9 @@ namespace Carpet {
     const streamsize oldprecision = out.precision();
     const ios_base::fmtflags oldflags = out.flags();
 
-    const double t = getTime();
+    // const double t = getTime();
+    double tavg, tmax;
+    getGlobalTime(tavg, tmax);
     const vector<double> values = getAllTimerValues();
     const string hyphens = string(precision-1, '-');
     const string spaces  = string(precision-1, ' ');
@@ -185,39 +191,51 @@ namespace Carpet {
     {
       const vector<pair<string,string> > names = getAllTimerNames();
       
-      out << "--------" << hyphens << "--------" << hyphens
-          << string(tnw+2, '-');
+      out << "--------" << hyphens
+          << "--------" << hyphens
+          << "--------" << hyphens
+          << "--" << string(tnw, '-');
       for (size_t i=0; i<values.size(); ++i) {
-        out << string(vw+2, '-');
+        out << "--" << string(vw, '-');
       }
       out << "\n";
       
-      out << "Time    " << spaces  << "  Time  " << spaces
+      // timer names
+      out << "Time    " << spaces
+          << "  Time  " << spaces
+          << " Imblnc " << spaces
           << "  " << setw(tnw) << left << "Timer" << right;
       for (size_t i=0; i<names.size(); ++i) {
         out << "  " << setw(vw) << names[i].first.substr(0,vw);
       }
       out << "\n";
       
-      out << "percent " << spaces  << "  secs  " << spaces
+      // timer units
+      out << "percent " << spaces
+          << "  secs  " << spaces
+          << " percent" << spaces
           << "  " << setw(tnw) << "     ";
       for (size_t i=0; i<names.size(); ++i) {
         out << "  " << setw(vw) << names[i].second.substr(0,vw);
       }
       out << "\n";
       
-      out << "--------" << hyphens << "--------" << hyphens
-          << string(tnw+2, '-');
+      out << "--------" << hyphens
+          << "--------" << hyphens
+          << "--------" << hyphens
+          << "--" << string(tnw, '-');
       for (size_t i=0; i<values.size(); ++i) {
-        out << string(vw+2, '-');
+        out << "--" << string(vw, '-');
       }
       out << "\n";
     }
 
     // Print this timer value
     out << fixed << setw(pcw) << setprecision(precision)
-        << 100.0 * t / total << "%"
-        << " " << fixed << setw(tw) << setprecision(precision) << t
+        << 100.0 * tavg / total << "%"
+        << " " << fixed << setw(tw) << setprecision(precision) << tavg
+        << " " << fixed << setw(pcw) << setprecision(precision)
+        << 100.0 * (1.0 - tavg / tmax) << "%"
         << "  " << space << setw(max(size_t(0), tnw - space.length())) << left
         << d_name.substr(0, max(size_t(10), tnw - space.length())) << right;
     for (size_t i=0; i<values.size(); ++i) {
@@ -226,29 +244,57 @@ namespace Carpet {
     }
     out << "\n";
 
-    double children_time = 0;
+    // TODO: Don't call getGlobalTime for all timers separately.
+    // Instead, call a single function that takes a snapshot of all
+    // timers, and reduces these snapshots to average and maximum.
+    // While printing, access these snapshots.
+    
+    //double children_time = 0;
+    double children_tavg = 0.0;
     bool printed_children = false;
 
     // Recursively print the children
     for(map<string,TimerNode*>::iterator iter = d_children.begin();
         iter != d_children.end(); iter++)
     {
-      if (iter->second->getTime() * 100.0 / total > threshold)
-      {
+      const string timername = iter->first;
+      const string root_timername =
+        CarpetLib::broadcast_string(dist::comm(), 0, timername);
+      if (timername != root_timername) {
+        CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Timers are inconsistent across processes: root process expects timer %s, this process has timer %s instead",
+                    root_timername.c_str(), timername.c_str());
+      }
+      double child_avg, child_max;
+      iter->second->getGlobalTime(child_avg, child_max);
+      if (child_max * 100.0 / total > threshold) {
         iter->second->print(out,total,level+1,threshold,precision);
         printed_children = true;
       }
-      children_time += iter->second->getTime();
+      //children_time += iter->second->getTime();
+      children_tavg += child_avg;
+    }
+    {
+      const string timername = "[done]";
+      const string root_timername =
+        CarpetLib::broadcast_string(dist::comm(), 0, timername);
+      if (timername != root_timername) {
+        CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Timers are inconsistent across processes: root process expects timer %s, this process has timer %s instead",
+                    root_timername.c_str(), timername.c_str());
+      }
     }
 
     if (d_children.size() > 0 && printed_children) {
-      const double untimed = t - children_time;
+      //const double untimed = t - children_time;
+      const double untimed = tavg - children_tavg;
       
       if (100.0 * untimed / total > threshold) {
         // Print the untimed portion
         out << fixed << setw(pcw) << setprecision(1)
             << 100.0 * untimed / total << "%"
             << " " << fixed << setw(tw) << setprecision(1) << untimed
+            << "        "
             << "  | " << space << "untimed" << "\n";
       }
     }
@@ -256,10 +302,12 @@ namespace Carpet {
     out.setf (oldflags);
 
     if (level == 0) {
-      out << "--------" << hyphens << "--------" << hyphens
-          << string(tnw+2, '-');
+      out << "--------" << hyphens
+          << "--------" << hyphens
+          << "--------" << hyphens
+          << "--" << string(tnw, '-');
       for (size_t i=0; i<values.size(); ++i) {
-        out << string(vw+2, '-');
+        out << "--" << string(vw, '-');
       }
       out << "\n";
     }

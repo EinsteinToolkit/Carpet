@@ -140,7 +140,9 @@ namespace Carpet {
     if (output_initialise_timer_tree)
     {
       TimerNode *it = main_timer_tree.root->getChildTimer("Initialise");
-      it->print(cout, it->getTime(), 0, timer_tree_threshold_percentage, timer_tree_output_precision);
+      double total_avg, total_max;
+      it->getGlobalTime(total_avg, total_max);
+      it->print(cout, total_max, 0, timer_tree_threshold_percentage, timer_tree_output_precision);
     }
 
     Waypoint ("Done with initialisation");

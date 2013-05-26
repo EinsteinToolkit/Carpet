@@ -95,6 +95,7 @@ public:
   TimerNode* getChildTimer(string name);
 
   double getTime();
+  void getGlobalTime(double& avg, double &max);
   vector<pair<string, string> > getAllTimerNames() const;
   vector<double> getAllTimerValues();
   bool isRunning() const;
