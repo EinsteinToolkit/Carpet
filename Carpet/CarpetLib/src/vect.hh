@@ -456,7 +456,7 @@ DECLARE_REDUCTION_OPERATOR_2 (hypot,0,+=,*,sqrt)
 template<typename T,int D>
 inline int count (const vect<T,D>& a)
 {
-  return sum(a != T(0));
+  return sum(ivect(a != T(0)));
 }
 
 /** Return the size (number of elements) of the vector.  */
