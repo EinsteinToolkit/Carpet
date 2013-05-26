@@ -391,7 +391,13 @@ DECLARE_FUNCTION_1 (abs)
 DECLARE_FUNCTION_1 (ceil)
 DECLARE_FUNCTION_1 (fabs)
 DECLARE_FUNCTION_1 (floor)
+DECLARE_FUNCTION_1 (rint)
+DECLARE_FUNCTION_1 (round)
 DECLARE_FUNCTION_1 (sqrt)
+DECLARE_FUNCTION_1 (trunc)
+
+DECLARE_FUNCTION_1_RET (lrint, int)
+
 namespace std {
   namespace Cactus {
     DECLARE_FUNCTION_1_RET (good_fpclassify, int)
