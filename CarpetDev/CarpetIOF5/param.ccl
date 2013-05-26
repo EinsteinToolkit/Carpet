@@ -17,6 +17,17 @@ USES INT     checkpoint_every
 USES BOOLEAN checkpoint_on_terminate
 USES STRING  checkpoint_dir AS IO_checkpoint_dir
 
+USES CCTK_REAL out_xline_y
+USES CCTK_REAL out_xline_z
+USES CCTK_REAL out_yline_x
+USES CCTK_REAL out_yline_z
+USES CCTK_REAL out_zline_x
+USES CCTK_REAL out_zline_y
+
+USES CCTK_REAL out_xyplane_z
+USES CCTK_REAL out_xzplane_y
+USES CCTK_REAL out_yzplane_x
+
 
 
 PRIVATE:
@@ -48,7 +59,35 @@ INT out_every "How often to do CarpetIOF5 output, overrides out_every" STEERABLE
 {
   1:*  :: "Output every so many time steps"
   -1:0 :: "No output"
-  -2   :: "Use 'IO::out_every'"
+  -2   :: "Use IO::out_every"
+} -2
+
+INT out0D_every "How often to do 0D output" STEERABLE = ALWAYS
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use out_every"
+} -2
+
+INT out1D_every "How often to do 1D output" STEERABLE = ALWAYS
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use out_every"
+} -2
+
+INT out2D_every "How often to do 2D output" STEERABLE = ALWAYS
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use out_every"
+} -2
+
+INT out3D_every "How often to do 3D output" STEERABLE = ALWAYS
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use out_every"
 } -2
 
 

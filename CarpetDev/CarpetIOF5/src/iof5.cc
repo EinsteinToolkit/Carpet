@@ -202,7 +202,13 @@ namespace CarpetIOF5 {
     bool output_this_iteration = false;
     
     int const my_out_every = out_every == -2 ? IO_out_every : out_every;
-    if (my_out_every > 0) {
+    int const my_out0D_every = out0D_every == -2 ? my_out_every : out0D_every;
+    int const my_out1D_every = out1D_every == -2 ? my_out_every : out1D_every;
+    int const my_out2D_every = out2D_every == -2 ? my_out_every : out2D_every;
+    int const my_out3D_every = out3D_every == -2 ? my_out_every : out3D_every;
+    if (my_out0D_every > 0 or my_out1D_every > 0 or my_out2D_every > 0 or
+        my_out3D_every > 0)
+    {
       if (*this_iteration == cctk_iteration) {
         // we already decided to output this iteration
         output_this_iteration = true;

@@ -39,8 +39,7 @@ namespace CarpetIOF5 {
   
   
   class output_iterator_t {
-    // Can't be cGH const, since the mode loops change change its
-    // entries
+    // Can't be cGH const, since the mode loops change its entries
     cGH *const cctkGH;
     
     vector<bool> const output_var; // whether to output this variable
@@ -54,6 +53,7 @@ namespace CarpetIOF5 {
     
     string gridname;
     string chartname;
+    ivect slice_ipos;
     string topologyname;
     string fragmentname;
     
@@ -108,7 +108,8 @@ namespace CarpetIOF5 {
       ivect imin, imax, ioff, ilen;
       rvect clower, cupper;
       
-      component_indices_t(cGH const *const cctkGH, int const gindex)
+      component_indices_t(cGH const *const cctkGH, int const gindex,
+                          ivect const slice_ipos)
         : map_indices_t(cctkGH, gindex)
       {
         DECLARE_CCTK_ARGUMENTS;
@@ -146,7 +147,11 @@ namespace CarpetIOF5 {
         for (int d=0; d<(::dim); ++d) {
           imin[d] = 0;
           imax[d] = lsh[d];
-          if (not output_ghost_points) {
+          if (slice_ipos[d] != -1) {
+            imin[d] = max(imin[d], slice_ipos[d] - lbnd[d]);
+            imax[d] = min(imax[d], slice_ipos[d] - lbnd[d] + 1);
+          }
+          if (not output_ghost_points and slice_ipos[d] < 0) {
             // TODO: Don't output ghosts on refinement boundaries;
             // only output ghosts for inter-process boundaries
             int const overlap = min(ughosts[d], minimum_component_overlap);
@@ -278,7 +283,93 @@ namespace CarpetIOF5 {
               }
 #endif
               
-              output_reflevel(file);
+              
+              {
+                int const my_out_every =
+                  out_every == -2 ? IO_out_every : out_every;
+                int const my_out0D_every =
+                  out0D_every == -2 ? my_out_every : out0D_every;
+                int const my_out1D_every =
+                  out1D_every == -2 ? my_out_every : out1D_every;
+                int const my_out2D_every =
+                  out2D_every == -2 ? my_out_every : out2D_every;
+                int const my_out3D_every =
+                  out3D_every == -2 ? my_out_every : out3D_every;
+                
+                rvect const x0(CCTK_ORIGIN_SPACE(0),
+                               CCTK_ORIGIN_SPACE(1),
+                               CCTK_ORIGIN_SPACE(2));
+                rvect const dx(CCTK_DELTA_SPACE(0),
+                               CCTK_DELTA_SPACE(1),
+                               CCTK_DELTA_SPACE(2));
+                rvect slice_pos;
+                
+                // 0D output
+                if (group_index < 0 and
+                    my_out0D_every > 0 and
+                    cctk_iteration % my_out0D_every == 0)
+                {
+                  slice_ipos = 0;
+                  output_reflevel(file);
+                }
+                
+                // 1D output
+                if (group_index < 0 and
+                    my_out1D_every > 0 and
+                    cctk_iteration % my_out1D_every == 0)
+                {
+                  // x
+                  slice_pos = rvect(0.0, out_xline_y, out_xline_z);
+                  slice_ipos = lrint((slice_pos - x0) / dx);
+                  slice_ipos[0] = -1;
+                  output_reflevel(file);
+                  
+                  // y
+                  slice_pos = rvect(out_yline_x, 0.0, out_xline_z);
+                  slice_ipos = lrint((slice_pos - x0) / dx);
+                  slice_ipos[1] = -1;
+                  output_reflevel(file);
+                  
+                  // z
+                  slice_pos = rvect(out_zline_x, out_zline_y, 0.0);
+                  slice_ipos = lrint((slice_pos - x0) / dx);
+                  slice_ipos[2] = -1;
+                  output_reflevel(file);
+                }
+                
+                // 2D output
+                if (group_index < 0 and
+                    my_out2D_every > 0 and
+                    cctk_iteration % my_out2D_every == 0)
+                {
+                  // xy
+                  slice_pos = rvect(0.0, 0.0, out_xyplane_z);
+                  slice_ipos = lrint((slice_pos - x0) / dx);
+                  slice_ipos[0] = slice_ipos[1] = -1;
+                  output_reflevel(file);
+                  
+                  // xz
+                  slice_pos = rvect(0.0, out_xzplane_y, 0.0);
+                  slice_ipos = lrint((slice_pos - x0) / dx);
+                  slice_ipos[0] = slice_ipos[2] = -1;
+                  output_reflevel(file);
+                  
+                  // yz
+                  slice_pos = rvect(out_yzplane_x, 0.0, 0.0);
+                  slice_ipos = lrint((slice_pos - x0) / dx);
+                  slice_ipos[1] = slice_ipos[2] = -1;
+                  output_reflevel(file);
+                }
+                
+                // 3D output
+                if (my_out3D_every > 0 and
+                    cctk_iteration % my_out3D_every == 0)
+                {
+                  // xyz
+                  slice_ipos = -1;
+                  output_reflevel(file);
+                }
+              }
               
             } // for timelevel
             timelevel = 0;
@@ -301,7 +392,8 @@ namespace CarpetIOF5 {
       assert(is_level_mode());
       
       ivect const reffact = spacereffacts.AT(reflevel);
-      topologyname = generate_topologyname(cctkGH, group_index, reffact);
+      topologyname =
+        generate_topologyname(cctkGH, group_index, reffact, slice_ipos);
       cout << indent
            << "reflevel=" << reflevel << " "
            << "topologyname=" << topologyname << "\n";
@@ -364,7 +456,10 @@ namespace CarpetIOF5 {
       // sent email with suggestions.
       
       // Define default topology (once per grid)
-      if (group_type == CCTK_GF and reflevel == 0 and timelevel == 0) {
+      if (group_type == CCTK_GF and reflevel == 0 and timelevel == 0 and
+          all(slice_ipos<0))
+      {
+        // TODO: Check that this happens at least once
         FAILWARN(F5Rlink_default_vertex_topology(path, &v2h(reffact)[0]));
       }
       
@@ -476,7 +571,7 @@ namespace CarpetIOF5 {
           // (This is redundant, since the level's overall bounding
           // box was already defined above, but it provides the
           // individual components' bounding boxes.)
-          component_indices_t const ci(cctkGH, group_index);
+          component_indices_t const ci(cctkGH, group_index, slice_ipos);
           FAILWARN(F5Fwrite_linear_fraction(path, FIBER_HDF5_POSITIONS_STRING,
                                             ci.dim,
                                             &v2h(ci.gsh)[0], &v2h(ci.ilen)[0],
@@ -506,7 +601,6 @@ namespace CarpetIOF5 {
       DECLARE_CCTK_ARGUMENTS;
       DECLARE_CCTK_PARAMETERS;
       indent_t indent;
-      bool error_flag = false;
       
       int ierr;
       
@@ -543,15 +637,12 @@ namespace CarpetIOF5 {
         // do nothing
         break;
       default:
-        assert(0);
+        __builtin_unreachable();
       }
       
       // TODO: Do not output symmetry zones (unless requested by the
       // user)
       // TODO: Do not output buffer zones (is that easily possible?)
-      
-      int const will_cover_complete_domain =
-        (group_type != CCTK_GF or not is_multipatch) and reflevel==0;
       
       cGroupDynamicData dyndata;
       ierr = CCTK_GroupDynamicData(cctkGH, group, &dyndata);
@@ -575,7 +666,7 @@ namespace CarpetIOF5 {
         } else if (var == v0+dim) {
           tensortype = tt_scalar;
         } else {
-          assert(0);
+          __builtin_unreachable();
         }
         
       } else {
@@ -619,7 +710,7 @@ namespace CarpetIOF5 {
         switch (groupdata.vartype) {
         case CCTK_VARIABLE_INT:  type = H5T_NATIVE_INT;    break;
         case CCTK_VARIABLE_REAL: type = H5T_NATIVE_DOUBLE; break;
-        default: assert(0);
+        default: __builtin_unreachable();
         }
         num_comps = 1;
         name = generate_fieldname(cctkGH, var, tensortype);
@@ -632,9 +723,10 @@ namespace CarpetIOF5 {
         case CCTK_VARIABLE_REAL:
           type = write_positions ? F5T_COORD3_DOUBLE : F5T_VEC3_DOUBLE;
           break;
-        default: assert(0);
+        default: __builtin_unreachable();
         }
         num_comps = dim;
+        // TODO: use generate_positionsname
         name =
           write_positions ?
           FIBER_HDF5_POSITIONS_STRING :
@@ -665,7 +757,7 @@ namespace CarpetIOF5 {
         assert(not write_positions);
         switch (groupdata.vartype) {
         case CCTK_VARIABLE_REAL: type = F5T_METRIC33_DOUBLE; break;
-        default: assert(0);
+        default: __builtin_unreachable();
         }
         num_comps = dim*(dim+1)/2;
         name = generate_fieldname(cctkGH, var, tensortype);
@@ -677,7 +769,7 @@ namespace CarpetIOF5 {
         assert(not write_positions);
         switch (groupdata.vartype) {
         case CCTK_VARIABLE_REAL: type = F5T_BIVEC3_DOUBLE; break;
-        default: assert(0);
+        default: __builtin_unreachable();
         }
         num_comps = dim*dim;
         name = generate_fieldname(cctkGH, var, tensortype);
@@ -685,21 +777,43 @@ namespace CarpetIOF5 {
       }
         
       default:
-        assert(0);
+        __builtin_unreachable();
       }
       
       cout << indent << "fieldname=" << name << "\n";
       
+      output_hyperslab(path, var, type, num_comps, name);
+    }
+    
+    
+    
+    void output_hyperslab(F5Path *const path, int const var,
+                          hid_t const type, int const num_comps,
+                          string const name)
+    {
+      DECLARE_CCTK_ARGUMENTS;
+      DECLARE_CCTK_PARAMETERS;
+      indent_t indent;
+      bool error_flag = false;
+      
+      cout << indent << "hyperslab=" << (slice_ipos < ivect(0)) << "\n";
+      
       // Write data
-      assert(type >= 0);
-      assert(num_comps > 0);
-      assert(name.size() > 0);
+      assert(type >= 0);        // HDF5 datatype
+      assert(num_comps > 0);    // field components
+      assert(name.size() > 0);  // field name
       
       // Ensure that the data types match
       int const vartype = CCTK_VarTypeI(var);
       assert(num_comps * CCTK_VarTypeSize(vartype) == (int)H5Tget_size(type));
       
-      component_indices_t const ci(cctkGH, group_index);
+      component_indices_t const ci(cctkGH, group_index, slice_ipos);
+      // Do not output empty datasets, or slices that do not intersect
+      // us
+      if (any(ci.ilen<=0)) return;
+      
+      int const will_cover_complete_domain =
+        (group_type != CCTK_GF or not is_multipatch) and reflevel==0;
       
       void const *data[num_comps];
       switch (vartype) {
@@ -751,7 +865,7 @@ namespace CarpetIOF5 {
       }
         
       default:
-        assert(0);
+        __builtin_unreachable();
       }
       
       // Dataset properties
@@ -808,7 +922,9 @@ namespace CarpetIOF5 {
                              fragmentname.c_str(), prop));
       } else {
         int const full_coverage =
-          will_cover_complete_domain and not fragment_contiguous_components;
+          will_cover_complete_domain and
+          not fragment_contiguous_components and
+          all(slice_ipos<0);
         // F5ls does not seem to support what F5 generates in this
         // case. It seems that F5 does not generate a separated object
         // (it does not generate a group for all datasets), but
@@ -835,10 +951,12 @@ namespace CarpetIOF5 {
       }
       
       for (int d=0; d<num_comps; ++d) {
-        switch (vartype) {
-        case CCTK_VARIABLE_INT:  delete[] (CCTK_INT  const*)data[d]; break;
-        case CCTK_VARIABLE_REAL: delete[] (CCTK_REAL const*)data[d]; break;
-        default: assert(0);
+        if (data[d]) {
+          switch (vartype) {
+          case CCTK_VARIABLE_INT:  delete[] (CCTK_INT  const*)data[d]; break;
+          case CCTK_VARIABLE_REAL: delete[] (CCTK_REAL const*)data[d]; break;
+          default: __builtin_unreachable();
+          }
         }
         data[d] = NULL;
       }

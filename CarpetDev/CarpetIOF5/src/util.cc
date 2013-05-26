@@ -193,7 +193,10 @@ namespace CarpetIOF5 {
             << "nnnn/";
         path = buf.str();
         if (create_directories) {
-          check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
+          if (proc % 10000 == 0) {
+            check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
+          }
+          CCTK_Barrier(cctkGH);
         }
       }
       {
@@ -205,7 +208,10 @@ namespace CarpetIOF5 {
             << "nn/";
         path = buf.str();
         if (create_directories) {
-          check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
+          if (proc % 100 == 0) {
+            check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
+          }
+          CCTK_Barrier(cctkGH);
         }
       }
     }
@@ -265,7 +271,8 @@ namespace CarpetIOF5 {
   string
   generate_topologyname(cGH const *const cctkGH,
                         int const gi,
-                        ivect const& reffact)
+                        ivect const& reffact,
+                        ivect const& slice_ipos)
   {
     ostringstream buf;
     if (gi == -1) {
@@ -274,8 +281,27 @@ namespace CarpetIOF5 {
       int const centering =
         vhh.at(0)->refcent == vertex_centered ? 0 : (1<<dim)-1;
       char name[1000];
+      // TODO: teach TopologyName to not always assume 3 dimensions
       TopologyName(name, sizeof name, &v2h(reffact)[0], centering, dim);
       buf << name;
+#if 0
+      if (centering) {
+        buf << "CellCentering";
+        for (int d=0; d<slice_dim; ++d) {
+          if (centering & (1<<d)) {
+            assert(d<4);
+            buf << "XYZW"[d];
+          } else {
+            buf << "_";
+          }
+        }
+      } else {
+        buf << "VertexLevel";
+      }
+      for (int d=0; d<slice_dim; ++d) {
+        buf << (d==0 ? "_" : "x") << slice_reffact[d];
+      }
+#endif
     } else {
       // grid array
       char *const groupname = CCTK_GroupName(gi);
@@ -284,6 +310,19 @@ namespace CarpetIOF5 {
       }
       buf << "Group_" << groupname;
       free(groupname);
+    }
+    // append slice locations
+    if (any(slice_ipos>=0)) {
+      buf << "_Slice" << count(slice_ipos<0) << "D";
+      if (any(slice_ipos<0)) {
+        buf << "_";
+        for (int d=0; d<dim; ++d) {
+          if (slice_ipos[d] < 0) {
+            assert(d<4);
+            buf << "XYZW"[d];
+          }
+        }
+      }
     }
     return buf.str();
   }

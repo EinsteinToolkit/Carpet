@@ -141,6 +141,19 @@ namespace CarpetIOF5 {
     return res;
   }
   
+  template<typename T, int D>
+  static inline
+  vect<T,D> filter(vect<T,D> const& a, vect<bool,D> const& c,
+                   T const& fill = T(0))
+  {
+    vect<T,D> r(fill);
+    int ri=0;
+    for (int ai=0; ai<dim; ++ai) {
+      if (c[ai]) r[ri++] = a[ai];
+    }
+    return r;
+  }
+  
   static inline
   F5_vec3_point_t v2p(rvect const& a)
   {
@@ -241,7 +254,8 @@ namespace CarpetIOF5 {
   string
   generate_topologyname(cGH const *const cctkGH,
                         int const gi,
-                        ivect const& reffact);
+                        ivect const& reffact,
+                        ivect const& slice_ipos);
   
   // Generate a good chart name (tensor basis name)
   string
