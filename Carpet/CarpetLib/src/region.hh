@@ -7,6 +7,7 @@
 #include "defs.hh"
 #include "dist.hh"
 #include "bbox.hh"
+#include "bboxset.hh"
 #include "fulltree.hh"
 #include "vect.hh"
 

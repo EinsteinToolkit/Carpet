@@ -10,6 +10,7 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <stack>
 #include <vector>
@@ -62,13 +63,16 @@ char const * const eol = "\n";
 #else
 #  define AT(index) operator[](index)
 #endif
-  
+
 
 
 // Some shortcuts for type names
 template<typename T, int D> class vect;
 template<typename T, int D> class bbox;
-template<typename T, int D> class bboxset;
+namespace bboxset1 { template<typename T, int D> class bboxset; }
+#ifndef CARPET_NO_BBOXSET2
+namespace bboxset2 { template<typename T, int D> class bboxset; }
+#endif
 template<typename T, int D, typename P> class fulltree;
 
 typedef vect<bool,dim>      bvect;
@@ -78,15 +82,18 @@ typedef vect<CCTK_REAL,dim> rvect;
 typedef bbox<int,dim>       ibbox;
 typedef bbox<CCTK_INT,dim>  jbbox;
 typedef bbox<CCTK_REAL,dim> rbbox;
-typedef bboxset<int,dim>    ibset;
-  
+namespace bboxset1 { typedef bboxset<int,dim> ibset; }
+#ifndef CARPET_NO_BBOXSET2
+namespace bboxset2 { typedef bboxset<int,dim> ibset; }
+#endif
+
 // (Try to replace these by b2vect and i2vect)
-typedef vect<vect<bool,2>,dim> bbvect;
-typedef vect<vect<int,2>,dim>  iivect;
+typedef vect<vect<bool,2>,dim>     bbvect;
+typedef vect<vect<int,2>,dim>      iivect;
 typedef vect<vect<CCTK_INT,2>,dim> jjvect;
 
-typedef vect<vect<bool,dim>,2> b2vect;
-typedef vect<vect<int,dim>,2>  i2vect;
+typedef vect<vect<bool,dim>,2>      b2vect;
+typedef vect<vect<int,dim>,2>       i2vect;
 typedef vect<vect<CCTK_INT,dim>,2>  j2vect;
 typedef vect<vect<CCTK_REAL,dim>,2> r2vect;
 
@@ -331,6 +338,9 @@ template<class T> ostream& output (ostream& os, const list<T>& l);
 template<class S, class T> ostream& output (ostream& os, const map<S,T>& m);
 template<class S, class T> ostream& output (ostream& os, const pair<S,T>& p);
 template<class T> ostream& output (ostream& os, const set<T>& s);
+#ifndef CARPET_NO_BBOXSET2
+template<class T> ostream& output (ostream& os, const shared_ptr<T>& s);
+#endif
 template<class T> ostream& output (ostream& os, const stack<T>& s);
 template<class T> ostream& output (ostream& os, const vector<T>& v);
 
@@ -344,10 +354,22 @@ inline ostream& operator<< (ostream& os, const map<S,T>& m) {
   return output(os,m);
 }
 
+template<class S, class T>
+inline ostream& operator<< (ostream& os, const pair<S,T>& s) {
+  return output(os,s);
+}
+
 template<class T>
 inline ostream& operator<< (ostream& os, const set<T>& s) {
   return output(os,s);
 }
+
+#ifndef CARPET_NO_BBOXSET2
+template<class T>
+inline ostream& operator<< (ostream& os, const shared_ptr<T>& s) {
+  return output(os,s);
+}
+#endif
 
 template<class T>
 inline ostream& operator<< (ostream& os, const stack<T>& s) {

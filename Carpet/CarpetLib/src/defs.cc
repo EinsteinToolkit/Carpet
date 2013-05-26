@@ -6,9 +6,11 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <stack>
 #include <vector>
+#include <utility>
 
 #include "bbox.hh"
 #include "defs.hh"
@@ -283,6 +285,14 @@ ostream& output (ostream& os, const set<T>& s) {
   return os;
 }
 
+#ifndef CARPET_NO_BBOXSET2
+// Shared pointer output
+template<class T>
+ostream& output (ostream& os, const shared_ptr<T>& s) {
+  return os << "(&" << *s.get() << ")";
+}
+#endif
+
 // Stack output
 template<class T>
 ostream& output (ostream& os, const stack<T>& s) {
@@ -327,13 +337,11 @@ ostream& output (ostream& os, const vector<T>& v) {
 
 template int ipow (int x, int y);
 template CCTK_REAL ipow (CCTK_REAL x, int y);
-template vect<int,dim> ipow (vect<int,dim> x, int y);
+//template vect<int,dim> ipow (vect<int,dim> x, int y);
 template vect<CCTK_REAL,dim> ipow (vect<CCTK_REAL,dim> x, int y);
 
-template bool equals (vector<ibset> const& v, vector<ibset> const& w);
-
-template size_t memoryof (list<ibbox> const & l);
-template size_t memoryof (list<ivect> const & l);
+//template size_t memoryof (list<ibbox> const & l);
+//template size_t memoryof (list<ivect> const & l);
 template size_t memoryof (list<dh*> const & l);
 template size_t memoryof (list<gh*> const & l);
 template size_t memoryof (list<gdata*> const & l);
@@ -342,49 +350,61 @@ template size_t memoryof (list<th*> const & l);
 template size_t memoryof (stack<void*> const & s);
 template size_t memoryof (vector<bool> const & v);
 template size_t memoryof (vector<int> const & v);
-template size_t memoryof (vector<CCTK_REAL> const & v);
-template size_t memoryof (vector<ibbox> const & v);
-template size_t memoryof (vector<ibset> const & v);
+//template size_t memoryof (vector<CCTK_REAL> const & v);
+template size_t memoryof (vector<bbox<int,1> > const & v);
+template size_t memoryof (vector<bbox<int,2> > const & v);
+template size_t memoryof (vector<bbox<int,3> > const & v);
+template size_t memoryof (vector<bboxset1::bboxset<int,dim> > const & v);
+#ifndef CARPET_NO_BBOXSET2
+template size_t memoryof (vector<bboxset2::bboxset<int,dim>> const & v);
+#endif
 template size_t memoryof (vector<ivect> const & v);
 template size_t memoryof (vector<i2vect> const & v);
-template size_t memoryof (vector<fulltree <int,dim,pseudoregion_t> *> const & f);
-template size_t memoryof (vector<pseudoregion_t> const & v);
-template size_t memoryof (vector<region_t> const & v);
+template size_t memoryof (vector<fulltree<int,dim,pseudoregion_t>*> const & f);
+//template size_t memoryof (vector<pseudoregion_t> const & v);
+//template size_t memoryof (vector<region_t> const & v);
 template size_t memoryof (vector<sendrecv_pseudoregion_t> const & v);
 template size_t memoryof (vector<vector<int> > const & v);
 template size_t memoryof (vector<vector<CCTK_REAL> > const & v);
 template size_t memoryof (vector<vector<ibbox> > const & v);
 template size_t memoryof (vector<vector<dh::fast_dboxes> > const & v);
-template size_t memoryof (vector<vector<dh::full_dboxes> > const & v);
+//template size_t memoryof (vector<vector<dh::full_dboxes> > const & v);
 template size_t memoryof (vector<vector<dh::level_dboxes> > const & v);
-template size_t memoryof (vector<vector<dh::light_dboxes> > const & v);
-template size_t memoryof (vector<vector<dh::local_dboxes> > const & v);
-template size_t memoryof (vector<vector<region_t> > const & v);
+//template size_t memoryof (vector<vector<dh::light_dboxes> > const & v);
+//template size_t memoryof (vector<vector<dh::local_dboxes> > const & v);
+//template size_t memoryof (vector<vector<region_t> > const & v);
 template size_t memoryof (vector<vector<vector<CCTK_REAL> > > const & v);
-template size_t memoryof (vector<vector<vector<dh::fast_dboxes> > > const & v);
-template size_t memoryof (vector<vector<vector<dh::full_dboxes> > > const & v);
-template size_t memoryof (vector<vector<vector<dh::level_dboxes> > > const & v);
+//template size_t memoryof (vector<vector<vector<dh::fast_dboxes> > > const & v);
+//template size_t memoryof (vector<vector<vector<dh::full_dboxes> > > const & v);
+//template size_t memoryof (vector<vector<vector<dh::level_dboxes> > > const & v);
 template size_t memoryof (vector<vector<vector<dh::light_dboxes> > > const & v);
 template size_t memoryof (vector<vector<vector<dh::local_dboxes> > > const & v);
 template size_t memoryof (vector<vector<vector<region_t> > > const & v);
-template size_t memoryof (vector<vector<vector<gdata*> > > const & v);
+//template size_t memoryof (vector<vector<vector<gdata*> > > const & v);
 template size_t memoryof (vector<vector<vector<vector<gdata*> > > > const & v);
 
-template istream& input (istream& os, list<ibbox>& l);
-template istream& input (istream& os, set<ibbox>& s);
+//template istream& input (istream& os, list<ibbox>& l);
+template istream& input (istream& os, set<bbox<int,1> >& s);
+template istream& input (istream& os, set<bbox<int,2> >& s);
+template istream& input (istream& os, set<bbox<int,3> >& s);
 template istream& input (istream& os, vector<int>& v);
-template istream& input (istream& os, vector<CCTK_REAL>& v);
-template istream& input (istream& os, vector<ibbox>& v);
-template istream& input (istream& os, vector<rbbox>& v);
-template istream& input (istream& os, vector<ibset>& v);
+//template istream& input (istream& os, vector<CCTK_REAL>& v);
+template istream& input (istream& os, vector<bbox<int,1> >& v);
+template istream& input (istream& os, vector<bbox<int,2> >& v);
+template istream& input (istream& os, vector<bbox<int,3> >& v);
+//template istream& input (istream& os, vector<rbbox>& v);
+template istream& input (istream& os, vector<bboxset1::bboxset<int,dim> >& v);
+#ifndef CARPET_NO_BBOXSET2
+template istream& input (istream& os, vector<bboxset2::bboxset<int,dim>>& v);
+#endif
 template istream& input (istream& os, vector<ivect>& v);
 template istream& input (istream& os, vector<bbvect>& v);
 template istream& input (istream& os, vector<i2vect>& v);
-template istream& input (istream& os, vector<region_t>& v);
-template istream& input (istream& os, vector<pseudoregion_t>& v);
+//template istream& input (istream& os, vector<region_t>& v);
+//template istream& input (istream& os, vector<pseudoregion_t>& v);
 template istream& input (istream& os, vector<sendrecv_pseudoregion_t>& v);
 template istream& input (istream& os, vector<vector<int> >& v);
-template istream& input (istream& os, vector<vector<CCTK_REAL> >& v);
+//template istream& input (istream& os, vector<vector<CCTK_REAL> >& v);
 template istream& input (istream& os, vector<vector<ibbox> >& v);
 template istream& input (istream& os, vector<vector<rbbox> >& v);
 template istream& input (istream& os, vector<vector<bbvect> >& v);
@@ -393,31 +413,53 @@ template istream& input (istream& os, vector<vector<region_t> >& v);
 template istream& input (istream& os, vector<vector<vector<CCTK_REAL> > >& v);
 template istream& input (istream& os, vector<vector<vector<region_t> > >& v);
 
-template ostream& output (ostream& os, const list<ibbox>& l);
-template ostream& output (ostream& os, const list<region_t>& l);
-template ostream& output (ostream& os, const map<string,Carpet::Timer*>& m);
-template ostream& output (ostream& os, const set<ibbox>& s);
-template ostream& output (ostream& os, const set<ibset>& s);
-template ostream& output (ostream& os, const stack<ibbox>& s);
+//template ostream& output (ostream& os, const list<ibbox>& l);
+//template ostream& output (ostream& os, const list<region_t>& l);
+#ifndef CARPET_NO_BBOXSET2
+//template ostream& output (ostream& os, const map<int,shared_ptr<bboxset2::bboxset<int,0> >>& m);
+//template ostream& output (ostream& os, const map<int,shared_ptr<bboxset2::bboxset<int,1> >>& m);
+//template ostream& output (ostream& os, const map<int,shared_ptr<bboxset2::bboxset<int,2> >>& m);
+//template ostream& output (ostream& os, const map<int,shared_ptr<bboxset2::bboxset<int,3> >>& m);
+#endif
+//template ostream& output (ostream& os, const map<string,Carpet::Timer*>& m);
+//template ostream& output (ostream& os, const pair<bbox<int,0>,int>& p);
+//template ostream& output (ostream& os, const set<bbox<int,0> >& s);
+template ostream& output (ostream& os, const set<bbox<int,1> >& s);
+template ostream& output (ostream& os, const set<bbox<int,2> >& s);
+template ostream& output (ostream& os, const set<bbox<int,3> >& s);
+//template ostream& output (ostream& os, const set<bboxset1::bboxset<int,dim> >& s);
+#ifndef CARPET_NO_BBOXSET2
+//template ostream& output (ostream& os, const shared_ptr<bboxset2::bboxset<int,0> >& s);
+#endif
+//template ostream& output (ostream& os, const stack<ibbox>& s);
 template ostream& output (ostream& os, const vector<bool>& v);
 template ostream& output (ostream& os, const vector<int>& v);
 template ostream& output (ostream& os, const vector<CCTK_REAL>& v);
-template ostream& output (ostream& os, const vector<ibbox>& v);
+template ostream& output (ostream& os, const vector<bbox<int,1> >& v);
+template ostream& output (ostream& os, const vector<bbox<int,2> >& v);
+template ostream& output (ostream& os, const vector<bbox<int,3> >& v);
 template ostream& output (ostream& os, const vector<rbbox>& v);
-template ostream& output (ostream& os, const vector<ibset>& v);
+template ostream& output (ostream& os, const vector<bboxset1::bboxset<int,dim> >& v);
+#ifndef CARPET_NO_BBOXSET2
+template ostream& output (ostream& os, const vector<bboxset2::bboxset<int,dim>>& v);
+#endif
 template ostream& output (ostream& os, const vector<ivect>& v);
 template ostream& output (ostream& os, const vector<rvect>& v);
-template ostream& output (ostream& os, const vector<bbvect>& v);
+//template ostream& output (ostream& os, const vector<bbvect>& v);
 template ostream& output (ostream& os, const vector<i2vect>& v);
-template ostream& output (ostream& os, const vector<dh::fast_dboxes> & v);
-template ostream& output (ostream& os, const vector<dh::full_dboxes> & v);
-template ostream& output (ostream& os, const vector<dh::level_dboxes> & v);
-template ostream& output (ostream& os, const vector<dh::light_dboxes> & v);
-template ostream& output (ostream& os, const vector<dh::local_dboxes> & v);
+//template ostream& output (ostream& os, const vector<dh::fast_dboxes> & v);
+//template ostream& output (ostream& os, const vector<dh::full_dboxes> & v);
+//template ostream& output (ostream& os, const vector<dh::level_dboxes> & v);
+//template ostream& output (ostream& os, const vector<dh::light_dboxes> & v);
+//template ostream& output (ostream& os, const vector<dh::local_dboxes> & v);
 template ostream& output (ostream& os, const vector<region_t>& v);
-template ostream& output (ostream& os, const vector<pseudoregion_t>& v);
+//template ostream& output (ostream& os, const vector<pseudoregion_t>& v);
 template ostream& output (ostream& os, const vector<sendrecv_pseudoregion_t>& v);
-template ostream& output (ostream& os, const vector<list<ibbox> >& v);
+//template ostream& output (ostream& os, const vector<list<ibbox> >& v);
+//template ostream& output (ostream& os, const vector<pair<bbox<int,0>,int> >& v);
+//template ostream& output (ostream& os, const vector<pair<bbox<int,1>,int> >& v);
+//template ostream& output (ostream& os, const vector<pair<bbox<int,2>,int> >& v);
+//template ostream& output (ostream& os, const vector<pair<bbox<int,3>,int> >& v);
 template ostream& output (ostream& os, const vector<vector<int> >& v);
 template ostream& output (ostream& os, const vector<vector<CCTK_REAL> >& v);
 template ostream& output (ostream& os, const vector<vector<ibbox> >& v);
@@ -425,16 +467,16 @@ template ostream& output (ostream& os, const vector<vector<rbbox> >& v);
 template ostream& output (ostream& os, const vector<vector<bbvect> >& v);
 template ostream& output (ostream& os, const vector<vector<i2vect> >& v);
 template ostream& output (ostream& os, const vector<vector<dh::fast_dboxes> > & b);
-template ostream& output (ostream& os, const vector<vector<dh::full_dboxes> > & b);
+//template ostream& output (ostream& os, const vector<vector<dh::full_dboxes> > & b);
 template ostream& output (ostream& os, const vector<vector<dh::level_dboxes> > & b);
-template ostream& output (ostream& os, const vector<vector<dh::light_dboxes> > & b);
-template ostream& output (ostream& os, const vector<vector<dh::local_dboxes> > & b);
+//template ostream& output (ostream& os, const vector<vector<dh::light_dboxes> > & b);
+//template ostream& output (ostream& os, const vector<vector<dh::local_dboxes> > & b);
 template ostream& output (ostream& os, const vector<vector<region_t> >& v);
 template ostream& output (ostream& os, const vector<vector<vector<CCTK_REAL> > >& v);
-template ostream& output (ostream& os, const vector<vector<vector<ibbox> > >& v);
-template ostream& output (ostream& os, const vector<vector<vector<dh::fast_dboxes> > > & b);
-template ostream& output (ostream& os, const vector<vector<vector<dh::full_dboxes> > > & b);
-template ostream& output (ostream& os, const vector<vector<vector<dh::level_dboxes> > > & b);
+//template ostream& output (ostream& os, const vector<vector<vector<ibbox> > >& v);
+//template ostream& output (ostream& os, const vector<vector<vector<dh::fast_dboxes> > > & b);
+//template ostream& output (ostream& os, const vector<vector<vector<dh::full_dboxes> > > & b);
+//template ostream& output (ostream& os, const vector<vector<vector<dh::level_dboxes> > > & b);
 template ostream& output (ostream& os, const vector<vector<vector<dh::light_dboxes> > > & b);
 template ostream& output (ostream& os, const vector<vector<vector<dh::local_dboxes> > > & b);
 template ostream& output (ostream& os, const vector<vector<vector<region_t> > >& v);
