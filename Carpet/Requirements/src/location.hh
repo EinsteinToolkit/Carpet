@@ -1,6 +1,7 @@
 #ifndef LOCATION_HH
 #define LOCATION_HH
 
+#include <cctk.h>
 #include <cctk_Schedule.h>
 
 #include <iostream>

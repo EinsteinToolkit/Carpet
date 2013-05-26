@@ -1,12 +1,12 @@
+#include "clause.hh"
+#include "util.hh"
+
 #include <cctk.h>
 #include <cctki_Schedule.h>
 
 #include <cstdlib>
 #include <cstring>
 #include <vector>
-
-#include <clause.hh>
-#include <util.hh>
 
 using namespace std;
 

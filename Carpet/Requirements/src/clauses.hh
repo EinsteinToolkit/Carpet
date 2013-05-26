@@ -1,12 +1,12 @@
 #ifndef CLAUSES_HH
 #define CLAUSES_HH
 
-#include <iostream>
+#include "clause.hh"
 
 #include <cctk.h>
 #include <cctki_Schedule.h>
 
-#include <clause.hh>
+#include <iostream>
 
 namespace Requirements {
   

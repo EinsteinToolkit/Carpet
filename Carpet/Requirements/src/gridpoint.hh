@@ -1,12 +1,12 @@
 #ifndef GRIDPOINT_HH
 #define GRIDPOINT_HH
 
-#include <iostream>
+#include "clause.hh"
+#include "location.hh"
 
 #include <cctk_Schedule.h>
 
-#include <clause.hh>
-#include <location.hh>
+#include <iostream>
 
 using namespace std;
 

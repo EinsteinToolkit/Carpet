@@ -1,6 +1,7 @@
 #ifndef CLAUSE_HH
 #define CLAUSE_HH
 
+#include <cctk.h>
 #include <cctk_Schedule.h>
 
 #include <vector>

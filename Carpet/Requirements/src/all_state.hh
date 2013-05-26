@@ -1,16 +1,15 @@
 #ifndef ALL_STATE_HH
 #define ALL_STATE_HH
 
-#include <iostream>
-#include <vector>
+#include "Requirements.hh"
+#include "all_clauses.hh"
+#include "gridpoint.hh"
 
 #include <cctk.h>
 #include <cctki_Schedule.h>
 
-#include <Requirements.hh>
-
-#include <all_clauses.hh>
-#include <gridpoint.hh>
+#include <iostream>
+#include <vector>
 
 using namespace std;
 

@@ -1,13 +1,13 @@
 #ifndef ALL_CLAUSES_HH
 #define ALL_CLAUSES_HH
 
+#include "clauses.hh"
+
 #include <cctk.h>
 #include <cctki_Schedule.h>
 
 #include <iostream>
 #include <map>
-
-#include <clauses.hh>
 
 namespace Requirements {
   
