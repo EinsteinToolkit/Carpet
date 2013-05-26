@@ -84,7 +84,9 @@ public:
   }
   
   // Poison
-  static bbox poison () CCTK_MEMBER_ATTRIBUTE_PURE;
+  static bbox poison () CCTK_ATTRIBUTE_PURE;
+  
+  bool is_poison () const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Accessors
   // (Don't return references; *this might be a temporary)

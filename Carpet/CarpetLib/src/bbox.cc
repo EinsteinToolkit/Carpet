@@ -51,6 +51,12 @@ bbox<T,D> bbox<T,D>::poison ()
   return bbox (v, v, v);
 }
 
+template<typename T, int D>
+bool bbox<T,D>::is_poison () const
+{
+  return D > 0 and equal_to<bbox> () (*this, poison());
+}
+
 
 
 // Accessors
