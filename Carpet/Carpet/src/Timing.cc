@@ -533,7 +533,7 @@ namespace Carpet {
     
     int const count = dist::size();
     CCTK_REAL const avg = global.ups / count;
-    CCTK_REAL const stddev = sqrt (abs (global.ups2 - ipow (avg,2)) / count);
+    CCTK_REAL const stddev = sqrt (fabs (global.ups2 - ipow (avg,2)) / count);
     
     CCTK_VInfo (CCTK_THORNSTRING,
                 "Local updates per second:   %g",
