@@ -32,15 +32,25 @@ KEYWORD initial_setup "Initial configuration" STEERABLE=always
   "tiled"  :: "Basic LoopControl setup"
 } "tiled"
 
+INT explore_eagerly_before_iteration "Try to explore the parameter space as much as possible before this iteration" STEERABLE=always
+{
+  0:* :: ""
+} 0
+
+INT settle_after_iteration "Do not explore the parameter space any more at or after this iteration" STEERABLE=always
+{
+  -1  :: "always continue exploring"
+  0:* :: ""
+} -1
+
 
 
 # NOTE:
 # - Intel chips divide the D1 cache into two, one for each hyperthread.
 #   The cache is thus not shared!
-#   This is off by default since it seems to affect results on intel processors.
 BOOLEAN use_smt_threads "Place SMT threads close together" STEERABLE=always
 {
-} "no"
+} "yes"
 
 BOOLEAN align_with_cachelines "Align innermost loops with cache line size" STEERABLE=always
 {

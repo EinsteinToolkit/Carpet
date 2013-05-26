@@ -18,3 +18,6 @@ CCTK_INT FUNCTION GetCacheInfo1(CCTK_INT ARRAY OUT linesizes,           \
                                 CCTK_INT ARRAY OUT strides,             \
                                 CCTK_INT IN max_num_cache_levels)
 USES FUNCTION GetCacheInfo1
+
+CCTK_INT FUNCTION IO_TruncateOutputFiles(CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION IO_TruncateOutputFiles

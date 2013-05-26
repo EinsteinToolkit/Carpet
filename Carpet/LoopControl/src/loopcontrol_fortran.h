@@ -54,7 +54,7 @@
    && integer :: name/**/_dir1, name/**/_dir2, name/**/_dir3            \
    && integer :: name/**/_ash1, name/**/_ash2, name/**/_ash3            \
    && integer :: name/**/_str1                                          \
-   && CCTK_POINTER, save :: name/**/_stats = 0                          \
+   && CCTK_POINTER, save :: name/**/_descr = 0                          \
    && type(lc_control_t) :: name/**/_control                            \
       LC_COARSE_DECLARE(name,1)                                         \
       LC_COARSE_DECLARE(name,2)                                         \
@@ -88,8 +88,8 @@
    && name/**/_ash3 = (kash_)                                           \
    && name/**/_str1 = (istr_)                                           \
                                                                         \
-   && call lc_stats_init(name/**/_stats, __LINE__, __FILE__, "name")    \
-   && call lc_control_init(name/**/_control, name/**/_stats,            \
+   && call lc_descr_init(name/**/_descr, __LINE__, __FILE__, "name")    \
+   && call lc_control_init(name/**/_control, name/**/_descr,            \
                            (imin_), (jmin_), (kmin_),                   \
                            (imax_), (jmax_), (kmax_),                   \
                            name/**/_ash1, name/**/_ash2, name/**/_ash3, \
@@ -124,7 +124,7 @@
    &&    end do                                                 \
    &&    call lc_thread_step(name/**/_control)                  \
    && end do                                                    \
-   && call lc_control_finish(name/**/_control, name/**/_stats)
+   && call lc_control_finish(name/**/_control, name/**/_descr)
 
 
 

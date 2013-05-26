@@ -12,6 +12,7 @@
 #include <cstring>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -68,6 +69,11 @@ using namespace std;
 
 
 
+bool lc_do_explore_eagerly = false;
+bool lc_do_settle          = false;
+
+
+
 struct lc_thread_info_t {
   char padding1[128];      // pad to ensure cache lines are not shared
   volatile int idx;        // linear index of next coarse thread block
@@ -83,27 +89,140 @@ struct lc_fine_thread_comm_t {
 
 
 
+// Statistics
 struct lc_stats_t {
+  double points, threads;
+  double count, sum, sum2, min, max;
+  int init_count;
+  lc_stats_t():
+    points(0.0), threads(0.0),
+    count(0.0), sum(0.0), sum2(0.0),
+    min(numeric_limits<double>::max()), max(0.0),
+    init_count(2)
+  {}
+  void add(const int npoints, const int nthreads, const double elapsed_time)
+  {
+    if (init_count > 0) {
+      --init_count;
+      // Reset statistics after the first iteration
+      if (init_count == 0) {
+        points = 0.0; threads = 0.0;
+        count = 0.0; sum = 0.0; sum2 = 0.0;
+        min = numeric_limits<double>::max(); max = 0.0;
+      }
+    }
+    points += double(npoints);
+    threads += double(nthreads);
+    count += 1.0;
+    sum += elapsed_time;
+    sum2 += pow(elapsed_time, 2.0);
+    min = fmin(min, elapsed_time);
+    max = fmax(max, elapsed_time);
+  }
+  double avg_thread() const
+  {
+    return sum / count;
+  }
+  double avg_point() const
+  {
+    return sum * threads / (count * points);
+  }
+};
+
+// Parameters that determine how a loop is traversed. This corresponds
+// to the choices one can make to optimize. This loosely corresponds
+// to parameters of thorn LoopControl.
+struct lc_params_key_t {
+  lc_ivec_t tilesize;
+  lc_ivec_t loopsize;
+  
+  bool operator==(const lc_params_key_t& x) const
+  {
+    return memcmp(this, &x, sizeof *this) == 0;
+  }
+  bool operator<(const lc_params_key_t& x) const
+  {
+    return memcmp(this, &x, sizeof *this) < 0;
+  }
+};
+
+// Unique identifier for an iteration setup, where differing setups
+// need to be optimized separately. This corresponds to the
+// information passed to lc_control_init.
+struct lc_setup_key_t {
+  lc_ivec_t min, max, ash;
+  int num_coarse_threads, num_fine_threads;
+  
+  bool operator==(const lc_setup_key_t& x) const
+  {
+    return memcmp(this, &x, sizeof *this) == 0;
+  }
+  bool operator<(const lc_setup_key_t& x) const
+  {
+    return memcmp(this, &x, sizeof *this) < 0;
+  }
+};
+
+
+
+struct lc_setup_t;
+struct lc_params_t {
+  lc_setup_t& setup;            // setup
+  lc_params_key_t key;          // copy of params
+  
+  lc_params_t(lc_setup_t& setup_, lc_params_key_t& key_):
+    setup(setup_), key(key_)
+  {}
+  
+  lc_stats_t stats;             // statistics for these params
+};
+
+struct lc_descr_t;
+struct lc_setup_t {
+  lc_descr_t& descr;            // descriptor
+  lc_setup_key_t key;           // copy of setup
+  
+  lc_setup_t(lc_descr_t& descr_, lc_setup_key_t& key_):
+    descr(descr_), key(key_),
+    default_params(0), best_params(0), current_params(0)
+  {}
+  
+  typedef map<lc_params_key_t, lc_params_t*> params_map_t;
+  params_map_t params;
+  lc_params_t *default_params;
+  lc_params_t *best_params;
+  
+  lc_params_t *current_params;
+  
+  lc_stats_t stats;        // statistics for all params for this setup
+};
+
+struct lc_descr_t {
   string name;
   string file;
   int line;
-  int init_count;
-  double points, threads;
-  double count, sum, sum2, min, max;
-  ticks start_time;
+  
+  typedef map<lc_setup_key_t, lc_setup_t*> setup_map_t;
+  setup_map_t setups;
+  
+  lc_setup_t *current_setup;           // current setup
+  lc_params_t *current_params;         // current params
+  
+  lc_stats_t stats;             // global statistics for all setups
+  ticks start_time;             // current start time
 };
 
-  
+
 
 extern "C" CCTK_FCALL
-void CCTK_FNAME(lc_get_fortran_type_sizes) (ptrdiff_t* type_sizes);
+void CCTK_FNAME(lc_get_fortran_type_sizes)(ptrdiff_t *type_sizes);
   
 
 
 namespace {
   
-  typedef vector<lc_stats_t*> all_stats_t;
-  all_stats_t all_stats;
+  typedef vector<lc_descr_t*> all_descrs_t;
+  all_descrs_t all_descrs;
   
   
   
@@ -120,34 +239,59 @@ namespace {
   
   
   template<typename T>
-  T divup(T const i, T const j)
+  T divup(const T i, const T j)
   {
     assert(i >= 0 and j > 0);
     return (i + j - 1) / j;
   }
   
   template<typename T>
-  T alignup(T const i, T const j)
-  {
-    return divup(i, j) * j;
-  }
-  
-  template<typename T>
-  T divdown(T const i, T const j)
+  T divdown(const T i, const T j)
   {
     assert(i >= 0 and j > 0);
     return i / j;
   }
   
   template<typename T>
-  T aligndown(T const i, T const j)
+  T divexact(const T i, const T j)
+  {
+    assert(i % j == 0);
+    return i / j;
+  }
+  
+  template<typename T>
+  T moddown(const T i, const T j)
+  {
+    assert(i >= 0 and j > 0);
+    return i % j;
+  }
+  
+  template<typename T>
+  T alignup(const T i, const T j)
+  {
+    return divup(i, j) * j;
+  }
+  
+  template<typename T>
+  T aligndown(const T i, const T j)
   {
     return divdown(i, j) * j;
   }
   
+  // random uniform integer
+  template<typename T>
+  T randomui(const T imin, const T imax, const T istr = 1)
+  {
+    assert(imin<imax);
+    const T res =
+      imin + istr * floor(rand() / (RAND_MAX + 1.0) * (imax - imin) / istr);
+    assert(res>=imin and res<imax and (res-imin) % istr == 0);
+    return res;
+  }
   
   
-  ostream& operator<<(ostream& os, lc_vec_t const& x)
+  
+  ostream& operator<<(ostream& os, const lc_vec_t& x)
   {
     os << "[";
     for (int d=0; d<LC_DIM; ++d) {
@@ -158,7 +302,7 @@ namespace {
     return os;
   }
   
-  ostream& operator<<(ostream& os, lc_ivec_t const& x)
+  ostream& operator<<(ostream& os, const lc_ivec_t& x)
   {
     os << "[";
     for (int d=0; d<LC_DIM; ++d) {
@@ -169,7 +313,7 @@ namespace {
     return os;
   }
   
-  ostream& operator<<(ostream& os, lc_space_t const& s)
+  ostream& operator<<(ostream& os, const lc_space_t& s)
   {
     os << "{"
        << "min:" << s.min << ","
@@ -182,14 +326,14 @@ namespace {
     return os;
   }
   
-  ostream& operator<<(ostream& os, lc_control_t const& c)
+  ostream& operator<<(ostream& os, const lc_control_t& c)
   {
     os << "lc_control{\n"
        << "   ash:" << c.ash << ",\n"
-       << "   loop:" << c.loop << ",\n"
-       << "   thread:" << c.thread << ",\n"
-       << "   coarse:" << c.coarse << ",\n"
-       << "   fine:" << c.fine << "\n"
+       << "   overall:" << c.overall << ",\n"
+       << "   coarse_thread:" << c.coarse_thread << ",\n"
+       << "   coarse_loop:" << c.coarse_loop << ",\n"
+       << "   fine_loop:" << c.fine_loop << "\n"
        << "   fine_thread:" << c.fine_thread << "\n"
        << "}\n";
     return os;
@@ -197,7 +341,7 @@ namespace {
   
   
   
-  ptrdiff_t prod(lc_vec_t const& x)
+  ptrdiff_t prod(const lc_vec_t& x)
   {
     ptrdiff_t r = 1;
     for (int d=0; d<LC_DIM; ++d) {
@@ -207,7 +351,7 @@ namespace {
     return r;
   }
   
-  ptrdiff_t ind(lc_vec_t const& shape, lc_vec_t const& pos)
+  ptrdiff_t ind(const lc_vec_t& shape, const lc_vec_t& pos)
   {
     ptrdiff_t r = 0;
     ptrdiff_t f = 1;
@@ -220,10 +364,10 @@ namespace {
     return r;
   }
   
-  ptrdiff_t ind(lc_vec_t const& shape,
-                ptrdiff_t const i, ptrdiff_t const j, ptrdiff_t const k)
+  ptrdiff_t ind(const lc_vec_t& shape,
+                const ptrdiff_t i, const ptrdiff_t j, const ptrdiff_t k)
   {
-    lc_vec_t const pos = {{ i, j, k }};
+    const lc_vec_t pos = {{ i, j, k }};
     return ind(shape, pos);
   }
   
@@ -249,8 +393,8 @@ namespace {
     assert(gidx >= 0);
     for (int d=0; d<LC_DIM; ++d) {
       if (space.count.v[d] > 0) {
-        space.idx.v[d] = gidx % space.count.v[d];
-        gidx /= space.count.v[d];
+        space.idx.v[d] = moddown(gidx, space.count.v[d]);
+        gidx = divdown(gidx, space.count.v[d]);
       } else {
         space.idx.v[d] = 0;
       }
@@ -258,7 +402,7 @@ namespace {
     return gidx != 0;
   }
   
-  int space_local2global(lc_space_t const& space)
+  int space_local2global(const lc_space_t& space)
   {
     int gidx = 0;
     int fact = 1;
@@ -296,28 +440,27 @@ namespace {
     DECLARE_CCTK_PARAMETERS;
     if (not use_smt_threads) return 0;
     if (omp_get_num_threads() == 1) return 0;
-    int const thread_num = omp_get_thread_num();
-    int const num_fine_threads = get_num_fine_threads();
-    return thread_num % num_fine_threads;
+    const int thread_num = omp_get_thread_num();
+    const int num_fine_threads = get_num_fine_threads();
+    return moddown(thread_num, num_fine_threads);
   }
   
   int get_num_coarse_threads()
   {
-    int const num_threads = omp_get_num_threads();
-    int const num_fine_threads = get_num_fine_threads();
-    assert(num_threads % num_fine_threads == 0);
-    return num_threads / num_fine_threads;
+    const int num_threads = omp_get_num_threads();
+    const int num_fine_threads = get_num_fine_threads();
+    return divexact(num_threads, num_fine_threads);
   }
   
   int get_coarse_thread_num()
   {
-    int const thread_num = omp_get_thread_num();
-    int const num_fine_threads = get_num_fine_threads();
-    return thread_num / num_fine_threads;
+    const int thread_num = omp_get_thread_num();
+    const int num_fine_threads = get_num_fine_threads();
+    return divdown(thread_num, num_fine_threads);
   }
   
   // Wait until *ptr is different from old_value
-  void thread_wait(volatile int const *const ptr, int const old_value)
+  void thread_wait(volatile int *const ptr, const int old_value)
   {
     while (*ptr == old_value) {
 #pragma omp flush
@@ -325,23 +468,23 @@ namespace {
     }
   }
   
-  int fine_thread_broadcast(lc_fine_thread_comm_t* const comm, int value)
+  int fine_thread_broadcast(lc_fine_thread_comm_t *const comm, int value)
   {
-    int const num_fine_threads = get_num_fine_threads();
+    const int num_fine_threads = get_num_fine_threads();
     if (num_fine_threads == 1) return value;
     assert(num_fine_threads < 8 * int(sizeof comm->state));
-    int const fine_thread_num = get_fine_thread_num();
-    int const master_mask = 1;
+    const int fine_thread_num = get_fine_thread_num();
+    const int master_mask = 1;
     
     // Assume comm->count == 0 initially
     if (fine_thread_num == 0) { // if on master
       
-      int const all_threads_mask = (1 << num_fine_threads) - 1;
+      const int all_threads_mask = (1 << num_fine_threads) - 1;
       if (comm->state != 0) {
         // wait until everybody has acknowledged the previous value
 #pragma omp flush
         for (;;) {
-          int const state = comm->state;
+          const int state = comm->state;
           if (state == all_threads_mask) break;
           thread_wait(&comm->state, state);
         }
@@ -359,10 +502,10 @@ namespace {
     } else {                    // if not on master
       
       // wait until the value is valid, and it is a new value
-      int const thread_mask = 1 << fine_thread_num;
+      const int thread_mask = 1 << fine_thread_num;
 #pragma omp flush
       for (;;) {
-        int const state = comm->state;
+        const int state = comm->state;
         if ((state & (master_mask | thread_mask)) == master_mask) break;
         thread_wait(&comm->state, state);
       }
@@ -384,59 +527,41 @@ namespace {
 
 
 
-void lc_stats_init(lc_stats_t** const stats_ptr,
-                   char const* const name,
-                   char const* const file,
-                   int const line)
+void lc_descr_init(lc_descr_t **const descr_ptr,
+                   const char *const name,
+                   const char *const file,
+                   const int line)
 {
-  if (CCTK_BUILTIN_EXPECT(*stats_ptr != 0, true)) return;
+  if (CCTK_BUILTIN_EXPECT(*descr_ptr != 0, true)) return;
   
 #pragma omp barrier
 #pragma omp master
   {
-    lc_stats_t* const stats = new lc_stats_t;
+    lc_descr_t *const descr = new lc_descr_t;
     
-    stats->name = name;
-    stats->file = file;
-    stats->line = line;
-    stats->init_count = 0;
-    stats->points = 0.0;
-    stats->threads = 0.0;
-    stats->count = 0.0;
-    stats->sum = 0.0;
-    stats->sum2 = 0.0;
-    stats->min = numeric_limits<double>::max();
-    stats->max = 0.0;
+    descr->name = name;
+    descr->file = file;
+    descr->line = line;
     
-    all_stats.push_back(stats);
-    *stats_ptr = stats;
+    descr->current_setup = NULL;
+    descr->current_params = NULL;
+    
+    all_descrs.push_back(descr);
+    *descr_ptr = descr;
   }
 #pragma omp barrier
 }
 
 
 
-void lc_control_init(lc_control_t* restrict const control,
-                     lc_stats_t* const stats,
+void lc_control_init(lc_control_t *restrict const control,
+                     lc_descr_t *const descr,
                      ptrdiff_t imin, ptrdiff_t jmin, ptrdiff_t kmin,
                      ptrdiff_t imax, ptrdiff_t jmax, ptrdiff_t kmax,
                      ptrdiff_t iash, ptrdiff_t jash, ptrdiff_t kash,
                      ptrdiff_t istr)
 {
   DECLARE_CCTK_PARAMETERS;
-  
-#pragma omp barrier
-#pragma omp master
-  {
-    stats->start_time = getticks();
-  }
-  
-  // Initialize everything with a large, bogus value
-  memset(control, 123, sizeof *control);
-  
-  // Ensure thread counts are consistent
-  assert(get_num_coarse_threads() * get_num_fine_threads() ==
-         omp_get_num_threads());
   
   // Get cache line size
   static ptrdiff_t max_cache_linesize = -1;
@@ -446,7 +571,7 @@ void lc_control_init(lc_control_t* restrict const control,
     {
       max_cache_linesize = 1;
       if (CCTK_IsFunctionAliased("GetCacheInfo1")) {
-        int const num_levels = GetCacheInfo1(NULL, NULL, 0);
+        const int num_levels = GetCacheInfo1(NULL, NULL, 0);
         vector<int> linesizes(num_levels);
         vector<int> strides  (num_levels);
         GetCacheInfo1(&linesizes[0], &strides[0], num_levels);
@@ -466,32 +591,200 @@ void lc_control_init(lc_control_t* restrict const control,
     tilesize_alignment = alignup(tilesize_alignment, istr);
   }
   
+#pragma omp barrier
+#pragma omp master
+  {
+    // Start timing
+    descr->start_time = getticks();
+    
+    // Capture loop setup key
+    lc_setup_key_t setup_key;
+    setup_key.min.v[0] = imin;
+    setup_key.min.v[1] = jmin;
+    setup_key.min.v[2] = kmin;
+    setup_key.max.v[0] = imax;
+    setup_key.max.v[1] = jmax;
+    setup_key.max.v[2] = kmax;
+    setup_key.ash.v[0] = iash;
+    setup_key.ash.v[1] = jash;
+    setup_key.ash.v[2] = kash;
+    setup_key.num_coarse_threads = get_num_coarse_threads();
+    setup_key.num_fine_threads = get_num_fine_threads();
+    
+    // Determine loop setup
+    {
+      const pair<lc_descr_t::setup_map_t::iterator, bool> res =
+        descr->setups.insert(make_pair(setup_key,
+                                       static_cast<lc_setup_t*>(0)));
+      const lc_descr_t::setup_map_t::iterator setup_i = res.first;
+      lc_setup_t*& setup_p = setup_i->second;
+      const bool isnew = res.second;
+      assert(isnew == not setup_p);
+      if (isnew) {
+        setup_p = new lc_setup_t(*descr, setup_key);
+      }
+      assert(not descr->current_setup);
+      descr->current_setup = setup_p;
+    }
+    
+    
+    
+    // Choose loop params
+    
+    lc_setup_t& setup = *descr->current_setup;
+    
+    const int max_size_factor = 4;
+    const double very_expensive_factor = 1.5;
+    const int tryout_iterations = 1; // 10;
+    const double random_jump_probability = 0.1;
+    
+    enum choices_t {
+      choice_set_default,
+      choice_keep_current,
+      choice_use_best,
+      choice_random_jump
+    };
+    choices_t choice = choice_set_default;
+    
+    if (setup.current_params) {
+      choice = choice_keep_current;
+      
+      if (setup.current_params->stats.avg_point() >
+          very_expensive_factor * setup.best_params->stats.avg_point())
+      {
+        // Bail out if this params setting is too expensive
+        choice = choice_use_best;
+      }
+      if (setup.current_params->stats.count >= double(tryout_iterations)) {
+        // Switch if we tried this setting for some time
+        choice = choice_use_best;
+      }
+    }
+    if (choice == choice_use_best) {
+      // Make a random jump every so often
+#if 0
+      const bool do_settle =
+        settle_after_iteration >= 0 and
+        cctkGH->cctk_iteration >= settle_after_iteration;
+#endif
+      if (not lc_do_settle) {
+#if 0
+        const bool do_explore_eagerly =
+          cctkGH->cctk_iteration < explore_eagerly_before_iteration;
+#endif
+        if (lc_do_explore_eagerly or
+            rand() / (RAND_MAX + 1.0) < random_jump_probability)
+        {
+          choice = choice_random_jump;
+        }
+      }
+    }
+    
+    lc_params_key_t params_key;
+    switch (choice) {
+    case choice_set_default:
+      // Set default
+      params_key.tilesize.v[0] = alignup(tilesize_i, int(tilesize_alignment));
+      params_key.tilesize.v[1] = tilesize_j;
+      params_key.tilesize.v[2] = tilesize_k;
+      params_key.loopsize.v[0] = alignup(loopsize_i, params_key.tilesize.v[0]);
+      params_key.loopsize.v[1] = alignup(loopsize_j, params_key.tilesize.v[1]);
+      params_key.loopsize.v[2] = alignup(loopsize_k, params_key.tilesize.v[2]);
+      break;
+    case choice_keep_current:
+      params_key = setup.current_params->key;
+      break;
+    case choice_use_best:
+      params_key = setup.best_params->key;
+      break;
+    case choice_random_jump: {
+      const int tilesizes[LC_DIM] = {tilesize_i, tilesize_j, tilesize_k};
+      const int loopsizes[LC_DIM] = {loopsize_i, loopsize_j, loopsize_k};
+      for (int d=0; d<LC_DIM; ++d) {
+        const int align = d==0 ? int(tilesize_alignment) : 1;
+        for (int count=0; count<10; ++count) {
+          params_key.tilesize.v[d] =
+            randomui(align, max_size_factor * tilesizes[d], align);
+          params_key.loopsize.v[d] =
+            randomui(align, max_size_factor * loopsizes[d], align);
+          if (params_key.loopsize.v[d] % params_key.tilesize.v[d] == 0) break;
+        }
+        params_key.tilesize.v[d] =
+          alignup(params_key.tilesize.v[0], align);
+        params_key.loopsize.v[d] =
+          alignup(params_key.loopsize.v[d], params_key.tilesize.v[d]);
+      }
+      break;
+    }
+    default:
+      CCTK_BUILTIN_UNREACHABLE();
+    }
+    
+    // Determine loop params
+    {
+      const pair<lc_setup_t::params_map_t::iterator, bool> res =
+        setup.params.insert(make_pair(params_key,
+                                      static_cast<lc_params_t*>(0)));
+      const lc_setup_t::params_map_t::iterator params_i = res.first;
+      lc_params_t*& params_p = params_i->second;
+      const bool isnew = res.second;
+      assert(isnew == not params_p);
+      if (isnew) {
+        params_p = new lc_params_t(setup, params_key);
+      }
+      assert(not descr->current_params);
+      descr->current_params = params_p;
+      setup.current_params = descr->current_params;
+      if (not setup.default_params) {
+        setup.default_params = setup.current_params;
+      }
+      if (not setup.best_params) {
+        setup.best_params = setup.current_params;
+      }
+    }
+    
+  }
+#pragma omp barrier
+  
+  // Ensure thread counts are consistent
+  assert(get_num_coarse_threads() * get_num_fine_threads() ==
+         omp_get_num_threads());
+  
+  
+  
+  // Initialize everything with a large, bogus value
+  memset(control, 123, sizeof *control);
+  
   // Parameters (all in units of grid points)
+  const ptrdiff_t tilesize[LC_DIM] = {
+    descr->current_params->key.tilesize.v[0],
+    descr->current_params->key.tilesize.v[1],
+    descr->current_params->key.tilesize.v[2],
+  };
+  const ptrdiff_t loopsize[LC_DIM] = {
+    descr->current_params->key.loopsize.v[0],
+    descr->current_params->key.loopsize.v[1],
+    descr->current_params->key.loopsize.v[2],
+  };
   ptrdiff_t smt_size[LC_DIM] = { 1, 1, 1 };
   {
-    int const num_fine_threads = get_num_fine_threads();
+    const int num_fine_threads = get_num_fine_threads();
     // If possible, stagger fine threads in the i direction, so that
     // they share cache lines
-    if (istr * num_fine_threads <= loopsize_i) {
+    if (istr * num_fine_threads <= loopsize[0]) {
       smt_size[0] = num_fine_threads;
-    } else if (num_fine_threads <= loopsize_j) {
+    } else if (num_fine_threads <= loopsize[1]) {
       smt_size[1] = num_fine_threads;
     } else {
       smt_size[2] = num_fine_threads;
     }
   }
-  ptrdiff_t const tile_size[LC_DIM] = {
-    alignup(ptrdiff_t(tilesize_i), tilesize_alignment),
-    tilesize_j,
-    tilesize_k,
-  };
-  ptrdiff_t const loop_size[LC_DIM] = { loopsize_i, loopsize_j, loopsize_k };
   
   // Arguments
-  ptrdiff_t const loop_min[LC_DIM] = { imin, jmin, kmin };
-  ptrdiff_t const loop_max[LC_DIM] = { imax, jmax, kmax };
-  ptrdiff_t const ash[LC_DIM] = { iash, jash, kash };
-  ptrdiff_t const vect_size[LC_DIM] = { istr, 1, 1 };
+  const ptrdiff_t loop_min[LC_DIM] = { imin, jmin, kmin };
+  const ptrdiff_t loop_max[LC_DIM] = { imax, jmax, kmax };
+  const ptrdiff_t ash[LC_DIM] = { iash, jash, kash };
+  const ptrdiff_t vect_size[LC_DIM] = { istr, 1, 1 };
   
   // Copy ash arguments
   for (int d=0; d<LC_DIM; ++d) {
@@ -499,22 +792,22 @@ void lc_control_init(lc_control_t* restrict const control,
   }
   
   // Set up multithreading state
-  lc_thread_info_t* thread_info_ptr;
+  lc_thread_info_t *thread_info_ptr;
 #pragma omp single copyprivate(thread_info_ptr)
   {
     thread_info_ptr = new lc_thread_info_t;
   }
-  control->thread_info_ptr = thread_info_ptr;
+  control->coarse_thread_info_ptr = thread_info_ptr;
   
   {
-    lc_fine_thread_comm_t** fine_thread_comm_ptrs;
+    lc_fine_thread_comm_t **fine_thread_comm_ptrs;
 #pragma omp single copyprivate(fine_thread_comm_ptrs)
     {
       fine_thread_comm_ptrs =
         new lc_fine_thread_comm_t*[get_num_coarse_threads()];
     }
     if (get_fine_thread_num() == 0) {
-      lc_fine_thread_comm_t* const
+      lc_fine_thread_comm_t *const
         fine_thread_comm_ptr = new lc_fine_thread_comm_t;
       fine_thread_comm_ptr->state = 0;
       fine_thread_comm_ptrs[get_coarse_thread_num()] = fine_thread_comm_ptr;
@@ -532,23 +825,23 @@ void lc_control_init(lc_control_t* restrict const control,
   // Set loop sizes
   for(int d=0; d<LC_DIM; ++d) {
     // Overall loop: as specified
-    control->loop.min.v[d] = loop_min[d];
-    control->loop.max.v[d] = loop_max[d];
+    control->overall.min.v[d] = loop_min[d];
+    control->overall.max.v[d] = loop_max[d];
     // Thread loop
 #if VECTORISE_ALIGNED_ARRAYS
     // Move start to be aligned with vector size
-    control->thread.min.v[d] =
-      aligndown(control->loop.min.v[d], vect_size[d]);
+    control->coarse_thread.min.v[d] =
+      aligndown(control->overall.min.v[d], vect_size[d]);
 #else
-    control->thread.min.v[d] = control->loop.min.v[d];
+    control->coarse_thread.min.v[d] = control->overall.min.v[d];
 #endif
-    control->thread.max.v[d] = loop_max[d];
+    control->coarse_thread.max.v[d] = loop_max[d];
     // Fine threads
     control->fine_thread.count.v[d] = smt_size[d];
   }
   {
-    int const fine_thread_num = get_fine_thread_num();
-    bool const outside =
+    const int fine_thread_num = get_fine_thread_num();
+    const bool outside =
       space_global2local(control->fine_thread, fine_thread_num);
     assert(not outside);
   }
@@ -561,23 +854,25 @@ void lc_control_init(lc_control_t* restrict const control,
     for(int d=0; d<LC_DIM; ++d) {
       assert(smt_size[d] == 1); // TODO: implement this
       control->fine_thread.step.v[d] = vect_size[d];
-      control->fine.step.v[d] = vect_size[d];
-      ptrdiff_t const npoints = control->loop.max.v[d] - control->loop.min.v[d];
-      ptrdiff_t const nthreads = d!=LC_DIM-1 ? 1 : get_num_coarse_threads();
-      control->coarse.step.v[d] =
-        alignup(divup(npoints, nthreads), control->fine.step.v[d]);
-      control->thread.step.v[d] = alignup(npoints, control->coarse.step.v[d]);
+      control->fine_loop.step.v[d] = vect_size[d];
+      const ptrdiff_t npoints =
+        control->overall.max.v[d] - control->overall.min.v[d];
+      const ptrdiff_t nthreads = d!=LC_DIM-1 ? 1 : get_num_coarse_threads();
+      control->coarse_loop.step.v[d] =
+        alignup(divup(npoints, nthreads), control->fine_loop.step.v[d]);
+      control->coarse_thread.step.v[d] =
+        alignup(npoints, control->coarse_loop.step.v[d]);
     }
   } else if (CCTK_EQUALS(initial_setup, "tiled")) {
     // Basic LoopControl setup
     for(int d=0; d<LC_DIM; ++d) {
       control->fine_thread.step.v[d] = vect_size[d];
-      control->fine.step.v[d] =
-        alignup(smt_size[d], control->fine_thread.step.v[d]);
-      control->coarse.step.v[d] =
-        alignup(tile_size[d], control->fine.step.v[d]);
-      control->thread.step.v[d] =
-        alignup(loop_size[d], control->coarse.step.v[d]);
+      control->fine_loop.step.v[d] =
+        smt_size[d] * control->fine_thread.step.v[d];
+      control->coarse_loop.step.v[d] =
+        alignup(tilesize[d], control->fine_loop.step.v[d]);
+      control->coarse_thread.step.v[d] =
+        alignup(loopsize[d], control->coarse_loop.step.v[d]);
     }
   } else {
     CCTK_WARN(CCTK_WARN_ABORT, "internal error");
@@ -589,22 +884,22 @@ void lc_control_init(lc_control_t* restrict const control,
                "Loop %s (%s:%d): imin=[%td,%td,%td] imax=[%td,%td,%td]\n"
                "   threads=%d coarse_threads=%d fine_threads=%d\n"
                "   fine_thread.step=[%td,%td,%td] fine_loop.step=[%td,%td,%td] coarse_loop.step=[%td,%td,%td] coarse_thread.step=[%td,%td,%td]",
-               stats->name.c_str(), stats->file.c_str(), stats->line,
-               control->loop.min.v[0], control->loop.min.v[1], control->loop.min.v[2],
-               control->loop.max.v[0], control->loop.max.v[1], control->loop.max.v[2],
+               descr->name.c_str(), descr->file.c_str(), descr->line,
+               control->overall.min.v[0], control->overall.min.v[1], control->overall.min.v[2],
+               control->overall.max.v[0], control->overall.max.v[1], control->overall.max.v[2],
                omp_get_num_threads(), get_num_coarse_threads(), get_num_fine_threads(),
                control->fine_thread.step.v[0], control->fine_thread.step.v[1], control->fine_thread.step.v[2],
-               control->fine.step.v[0], control->fine.step.v[1], control->fine.step.v[2],
-               control->coarse.step.v[0], control->coarse.step.v[1], control->coarse.step.v[2],
-               control->thread.step.v[0], control->thread.step.v[1], control->thread.step.v[2]);
+               control->fine_loop.step.v[0], control->fine_loop.step.v[1], control->fine_loop.step.v[2],
+               control->coarse_loop.step.v[0], control->coarse_loop.step.v[1], control->coarse_loop.step.v[2],
+               control->coarse_thread.step.v[0], control->coarse_thread.step.v[1], control->coarse_thread.step.v[2]);
   }
   
   // Initialise selftest
   if (selftest) {
-    unsigned char* selftest_array;
+    unsigned char *selftest_array;
 #pragma omp single copyprivate(selftest_array)
     {
-      ptrdiff_t const npoints = prod(control->ash);
+      const ptrdiff_t npoints = prod(control->ash);
       selftest_array = new unsigned char[npoints];
       memset(selftest_array, 0, npoints * sizeof *selftest_array);
     }
@@ -614,28 +909,29 @@ void lc_control_init(lc_control_t* restrict const control,
   }
 }
 
-void lc_control_finish(lc_control_t* restrict const control,
-                       lc_stats_t* const stats)
+void lc_control_finish(lc_control_t *restrict const control,
+                       lc_descr_t *const descr)
 {
   DECLARE_CCTK_PARAMETERS;
-  
-#pragma omp barrier
   
   // Finish selftest
   if (selftest) {
     assert(control->selftest_array);
 #pragma omp barrier
-#pragma omp single nowait
+#pragma omp master
     {
       ptrdiff_t nfailed = 0;
       for (ptrdiff_t k=0; k<control->ash.v[2]; ++k) {
         for (ptrdiff_t j=0; j<control->ash.v[1]; ++j) {
           for (ptrdiff_t i=0; i<control->ash.v[0]; ++i) {
-            bool const inside =
-              i >= control->loop.min.v[0] and i < control->loop.max.v[0] and
-              j >= control->loop.min.v[1] and j < control->loop.max.v[1] and
-              k >= control->loop.min.v[2] and k < control->loop.max.v[2];
-            ptrdiff_t const ipos = ind(control->ash, i,j,k);
+            const bool inside =
+              i >= control->overall.min.v[0] and
+              j >= control->overall.min.v[1] and
+              k >= control->overall.min.v[2] and
+              i < control->overall.max.v[0] and
+              j < control->overall.max.v[1] and
+              k < control->overall.max.v[2];
+            const ptrdiff_t ipos = ind(control->ash, i,j,k);
             nfailed += control->selftest_array[ipos] != inside;
           }
         }
@@ -649,99 +945,126 @@ void lc_control_finish(lc_control_t* restrict const control,
     control->selftest_array = NULL;
   }
   
-  // Collect statistics
 #pragma omp barrier
 #pragma omp master
   {
-    ticks const end_time = getticks();
-    double const elapsed_time =
-      seconds_per_tick() * elapsed(end_time, stats->start_time);
+    // Finish timing
+    const ticks end_time = getticks();
+    const double elapsed_time =
+      seconds_per_tick() * elapsed(end_time, descr->start_time);
     ptrdiff_t npoints = 1;
     for (int d=0; d<LC_DIM; ++d) {
-      npoints *= control->loop.max.v[d] - control->loop.min.v[d];
+      npoints *= control->overall.max.v[d] - control->overall.min.v[d];
     }
-    if (stats->init_count < 1) {
-      // Skip the first iteration
-      ++stats->init_count;
-      if (veryverbose) {
-        double const time_point =
+    
+    // Collect statistics
+    const double old_avg = descr->current_params->stats.avg_point();
+    descr->current_params->stats.add
+      (npoints, omp_get_num_threads(), elapsed_time);
+    const double new_avg = descr->current_params->stats.avg_point();
+    descr->current_setup->stats.add
+      (npoints, omp_get_num_threads(), elapsed_time);
+    descr->stats.add(npoints, omp_get_num_threads(), elapsed_time);
+    if (veryverbose) {
+      if (descr->stats.count == 0.0) {
+        const double time_point =
           elapsed_time * omp_get_num_threads() / npoints;
         CCTK_VInfo(CCTK_THORNSTRING,
                    "Loop %s: time=%g, time/point=%g s",
-                   stats->name.c_str(), elapsed_time, time_point);
-      }
-    } else {
-      stats->points += double(npoints);
-      stats->threads += double(omp_get_num_threads());
-      stats->count += 1.0;
-      stats->sum += elapsed_time;
-      stats->sum2 += pow(elapsed_time, 2.0);
-      stats->min = fmin(stats->min, elapsed_time);
-      stats->max = fmax(stats->max, elapsed_time);
-      if (veryverbose) {
-        double const avg_thread = stats->sum / stats->count;
-        double const avg_point =
-          stats->sum * stats->threads / (stats->count * stats->points);
+                   descr->name.c_str(), elapsed_time, time_point);
+      } else {
         CCTK_VInfo(CCTK_THORNSTRING,
                    "Loop %s: count=%g, avg/thread=%g s, avg/point=%g s",
-                   stats->name.c_str(), stats->count, avg_thread, avg_point);
+                   descr->name.c_str(),
+                   descr->stats.count,
+                   descr->stats.avg_thread(),
+                   descr->stats.avg_point());
       }
     }
+    
+    lc_setup_t *const setup = descr->current_setup;
+    if (setup->current_params == setup->best_params and new_avg > old_avg) {
+      // The current best params just became worse, so forget it
+      setup->best_params = NULL;
+    } else if (setup->current_params != setup->best_params and
+               new_avg < setup->best_params->stats.avg_point())
+    {
+      // We found a new best params
+      setup->best_params = setup->current_params;
+    }
+    if (not setup->best_params) {
+      // We don't know which params is best, so find it
+      // TODO: This is expensive -- maintain a tree instead?
+      double best_avg = -1.0;
+      for (lc_setup_t::params_map_t::iterator
+             params_i = setup->params.begin(), params_end = setup->params.end();
+           params_i != params_end; ++params_i)
+      {
+        lc_params_t *const params = params_i->second;
+        const double avg = params->stats.avg_point();
+        if (best_avg < 0.0 or avg < best_avg) {
+          setup->best_params = params;
+          best_avg = avg;
+        }
+      }
+    }
+    assert(setup->best_params);
+    
+    descr->current_setup = NULL;
+    descr->current_params = NULL;
+    
+    // Tear down multithreading state
+    delete control->coarse_thread_info_ptr;
+    control->coarse_thread_info_ptr = NULL;
+    if (get_fine_thread_num() == 0) {
+      delete control->fine_thread_comm_ptr;
+    }
+    control->fine_thread_comm_ptr = NULL;
   }
-  
-  // Tear down multithreading state
-#pragma omp single nowait
-  {
-    delete control->thread_info_ptr;
-  }
-  control->thread_info_ptr = NULL;
-  if (get_fine_thread_num() == 0) {
-    delete control->fine_thread_comm_ptr;
-  }
-  control->fine_thread_comm_ptr = NULL;
 }
 
 
 
-void lc_thread_init(lc_control_t* restrict const control)
+void lc_thread_init(lc_control_t *restrict const control)
 {
-  space_set_count(control->thread);
+  space_set_count(control->coarse_thread);
 #pragma omp single
   {
-    control->thread_info_ptr->idx = get_num_coarse_threads();
+    control->coarse_thread_info_ptr->idx = get_num_coarse_threads();
   }
-  control->thread_done =
-    space_global2local(control->thread, get_coarse_thread_num());
-  space_idx2pos(control->thread);
+  control->coarse_thread_done =
+    space_global2local(control->coarse_thread, get_coarse_thread_num());
+  space_idx2pos(control->coarse_thread);
 }
 
-int lc_thread_done(lc_control_t const* restrict const control)
+int lc_thread_done(const lc_control_t *restrict const control)
 {
-  return control->thread_done;
+  return control->coarse_thread_done;
 }
 
-void lc_thread_step(lc_control_t* restrict const control)
+void lc_thread_step(lc_control_t *restrict const control)
 {
   // Get next thread block
   int new_global_idx = -1;
   if (get_fine_thread_num() == 0) {
 #pragma omp critical(LoopControl_lc_thread_step)
     {
-      new_global_idx = control->thread_info_ptr->idx++;
+      new_global_idx = control->coarse_thread_info_ptr->idx++;
     }
   }
   new_global_idx =
     fine_thread_broadcast(control->fine_thread_comm_ptr, new_global_idx);
-  control->thread_done = space_global2local(control->thread, new_global_idx);
-  space_idx2pos(control->thread);
+  control->coarse_thread_done =
+    space_global2local(control->coarse_thread, new_global_idx);
+  space_idx2pos(control->coarse_thread);
 }
 
 
 
-void lc_selftest_set(lc_control_t const* restrict control,
-                     ptrdiff_t const imin, ptrdiff_t const imax,
-                     ptrdiff_t const istr,
-                     ptrdiff_t const i0, ptrdiff_t const j, ptrdiff_t const k)
+void lc_selftest_set(const lc_control_t *restrict control,
+                     const ptrdiff_t imin, const ptrdiff_t imax,
+                     const ptrdiff_t istr,
+                     const ptrdiff_t i0, const ptrdiff_t j, const ptrdiff_t k)
 {
   DECLARE_CCTK_PARAMETERS;
   assert(selftest);
@@ -749,22 +1072,22 @@ void lc_selftest_set(lc_control_t const* restrict control,
   assert(istr>0);
   assert(j>=0 and j<control->ash.v[1]);
   assert(k>=0 and k<control->ash.v[2]);
-  assert(i0+istr-1>=control->loop.min.v[0] and i0<control->loop.max.v[0]);
-  if (imin>control->loop.min.v[0]) {
-    ptrdiff_t const ipos_imin = ind(control->ash, imin,j,k);
+  assert(i0+istr-1>=control->overall.min.v[0] and i0<control->overall.max.v[0]);
+  if (imin>control->overall.min.v[0]) {
+    const ptrdiff_t ipos_imin = ind(control->ash, imin,j,k);
     assert(ipos_imin % istr == 0);
   }
-  if (imax<control->loop.max.v[0]) {
-    ptrdiff_t const ipos_imax = ind(control->ash, imax,j,k);
+  if (imax<control->overall.max.v[0]) {
+    const ptrdiff_t ipos_imax = ind(control->ash, imax,j,k);
     assert(ipos_imax % istr == 0);
   }
-  assert(j>=control->loop.min.v[1] and j<control->loop.max.v[1]);
-  assert(k>=control->loop.min.v[2] and k<control->loop.max.v[2]);
+  assert(j>=control->overall.min.v[1] and j<control->overall.max.v[1]);
+  assert(k>=control->overall.min.v[2] and k<control->overall.max.v[2]);
   for (ptrdiff_t i=i0; i<i0+istr; ++i) {
     if (i>=imin and i<imax) {
       assert(i>=0 and i<control->ash.v[0]);
-      assert(i>=control->loop.min.v[0] and i<control->loop.max.v[0]);
-      ptrdiff_t const ipos = ind(control->ash, i,j,k);
+      assert(i>=control->overall.min.v[0] and i<control->overall.max.v[0]);
+      const ptrdiff_t ipos = ind(control->ash, i,j,k);
       unsigned char& elt = control->selftest_array[ipos];
 #ifdef _CRAYC
       // Cray C++ compiler 8.1.2 segfaults on atomic
@@ -777,12 +1100,13 @@ void lc_selftest_set(lc_control_t const* restrict control,
       if (elt!=1) {
 #pragma omp critical
         {
+          fflush(stdout);
           fprintf(stderr,
                   "thread=%d/%d fine_thread=%d/%d ijk=[%td,%td,%td]\n",
                   get_coarse_thread_num(), get_num_coarse_threads(),
                   get_fine_thread_num(), get_num_fine_threads(),
                   i,j,k);
-          assert(elt==1);
+          assert(0);
         }
       }
     }
@@ -804,34 +1128,114 @@ void lc_statistics(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
+  {
+    CCTK_INFO("LoopControl statistics:");
+    const size_t nloops = all_descrs.size();
+    size_t nsetups = 0, nparams = 0;
+    double time_default = 0.0, time_best = 0.0, time_actual = 0.0;
+    for (all_descrs_t::const_iterator
+           idescr = all_descrs.begin(); idescr != all_descrs.end(); ++idescr)
+    {
+      const lc_descr_t& descr = **idescr;
+      nsetups += descr.setups.size();
+      for (lc_descr_t::setup_map_t::const_iterator
+             setup_i = descr.setups.begin(), setup_end = descr.setups.end();
+           setup_i != setup_end; ++setup_i)
+      {
+        const lc_setup_t& setup = *setup_i->second;
+        nparams += setup.params.size();
+        const double setup_count = setup.stats.count * setup.stats.points;
+        time_default += setup_count * setup.default_params->stats.avg_point();
+        time_best    += setup_count * setup.best_params->stats.avg_point();
+        time_actual  += setup_count * setup.stats.avg_point();
+      }
+    }
+    CCTK_VInfo(CCTK_THORNSTRING, "  Loops traversed:    %td", nloops);
+    CCTK_VInfo(CCTK_THORNSTRING, "  Setups encountered: %td", nsetups);
+    CCTK_VInfo(CCTK_THORNSTRING, "  Params explored:    %td", nparams);
+    CCTK_VInfo(CCTK_THORNSTRING,
+               "   Unoptimized time would have been: %g s",
+               time_default);
+    CCTK_VInfo(CCTK_THORNSTRING,
+               "   Actual time spent:                %g s   (%+.1f%%)",
+               time_actual, 100.0 * (time_actual / time_default - 1.0));
+    CCTK_VInfo(CCTK_THORNSTRING,
+               "   Ideal time could have been:       %g s   (%+.1f%%)",
+               time_best, 100.0 * (time_best / time_actual - 1.0));
+  }
+  
+  
+  
   if (strlen(statistics_filename) == 0) return;
+  
+  static bool did_truncate = false;
+  const bool do_truncate = IO_TruncateOutputFiles(cctkGH);
+  const char* const mode = do_truncate and not did_truncate ? "w" : "a";
+  did_truncate = true;
   
   char filename[10000];
   snprintf(filename, sizeof filename,
            "%s/%s.%06d.txt", out_dir, statistics_filename, CCTK_MyProc(cctkGH));
-  FILE *const statsfile = fopen(filename, "a");
+  FILE *const descrfile = fopen(filename, mode);
   
-  fprintf(statsfile, "\n");
-  fprintf(statsfile, "LoopControl statistics:\n");
-  for (all_stats_t::const_iterator
-         istats = all_stats.begin(); istats != all_stats.end(); ++istats)
+  fprintf(descrfile, "LoopControl statistics:\n");
+  for (all_descrs_t::const_iterator
+         idescr = all_descrs.begin(); idescr != all_descrs.end(); ++idescr)
   {
-    lc_stats_t const *const stats = *istats;
-    if (stats->count == 0.0) {
-      fprintf(statsfile,
-              "   Loop %s (%s:%d):\n",
-              stats->name.c_str(), stats->file.c_str(), stats->line);
-    } else {
-      double const avg_thread = stats->sum / stats->count;
-      double const avg_point =
-        stats->sum * stats->threads / (stats->count * stats->points);
-      fprintf(statsfile,
-              "   Loop %s (%s:%d): count=%g, avg/thread=%g s, avg/point=%g s\n",
-              stats->name.c_str(), stats->file.c_str(), stats->line,
-              stats->count, avg_thread, avg_point);
+    const lc_descr_t *const descr = *idescr;
+    fprintf(descrfile,
+            "   Loop %s (%s:%d):\n",
+            descr->name.c_str(), descr->file.c_str(), descr->line);
+    for (lc_descr_t::setup_map_t::const_iterator
+           setup_i = descr->setups.begin(), setup_end = descr->setups.end();
+         setup_i != setup_end; ++setup_i)
+    {
+      const lc_setup_t& setup = *setup_i->second;
+      fprintf(descrfile,
+              "      setup=[%d,%d,%d]:[%d,%d,%d]/[%d,%d,%d] nt=%d/%d\n",
+              setup.key.min.v[0], setup.key.min.v[1], setup.key.min.v[2],
+              setup.key.max.v[0], setup.key.max.v[1], setup.key.max.v[2],
+              setup.key.ash.v[0], setup.key.ash.v[1], setup.key.ash.v[2],
+              setup.key.num_coarse_threads, setup.key.num_fine_threads);
+      double best_avg = numeric_limits<double>::max(), worst_avg = 0.0;
+      for (lc_setup_t::params_map_t::const_iterator
+             params_i = setup.params.begin(), params_end = setup.params.end();
+           params_i != params_end; ++params_i)
+      {
+        const lc_params_t& params = *params_i->second;
+        fprintf(descrfile,
+                "         tilesize=[%d,%d,%d] loopsize=[%d,%d,%d]\n",
+                params.key.tilesize.v[0],
+                params.key.tilesize.v[1],
+                params.key.tilesize.v[2],
+                params.key.loopsize.v[0],
+                params.key.loopsize.v[1],
+                params.key.loopsize.v[2]);
+        const lc_stats_t& stats = params.stats;
+        fprintf(descrfile,
+                "            count=%g, avg/thread=%g s, avg/point=%g s%s%s\n",
+                stats.count, stats.avg_thread(), stats.avg_point(),
+                &params == setup.default_params ? " (DEFAULT)" : "",
+                &params == setup.best_params ? " (BEST)" : "");
+        best_avg = min(best_avg, stats.avg_point());
+        worst_avg = max(worst_avg, stats.avg_point());
+      }
+      const double default_avg = setup.default_params->stats.avg_point();
+      fprintf(descrfile,
+              "         best(avg/point)=%g s, worst(avg/point)=%g s, default(avg/point)=%g s\n",
+              best_avg, worst_avg, default_avg);
+      const lc_stats_t& stats = setup.stats;
+      fprintf(descrfile,
+              "         count=%g, avg/thread=%g s, avg/point=%g s\n",
+              stats.count, stats.avg_thread(), stats.avg_point());
     }
+    const lc_stats_t& stats = descr->stats;
+    fprintf(descrfile,
+            "      count=%g, avg/thread=%g s, avg/point=%g s\n",
+            stats.count, stats.avg_thread(), stats.avg_point());
   }
-  fclose(statsfile);
+  fprintf(descrfile, "\n");
+  fclose(descrfile);
 }
 
 void lc_statistics_maybe(CCTK_ARGUMENTS)
@@ -847,25 +1251,26 @@ void lc_statistics_maybe(CCTK_ARGUMENTS)
 
 
 extern "C" CCTK_FCALL
-void CCTK_FNAME(lc_stats_init)(CCTK_POINTER& stats,
+void CCTK_FNAME(lc_descr_init)(CCTK_POINTER& descr,
                                int& line,
                                TWO_FORTSTRINGS_ARGS)
 {
   TWO_FORTSTRINGS_CREATE(file, name);
-  lc_stats_init((lc_stats_t**)&stats, name, file, line);
+  lc_descr_init((lc_descr_t**)&descr, name, file, line);
   free(name);
   free(file);
 }
 
 extern "C" CCTK_FCALL
-void CCTK_FNAME(lc_control_init)(lc_control_t& restrict control,
-                                 CCTK_POINTER& stats,
-                                 int const& imin, int const& jmin, int const& kmin,
-                                 int const& imax, int const& jmax, int const& kmax,
-                                 int const& iash, int const& jash, int const& kash,
-                                 int const& istr)
+void
+CCTK_FNAME(lc_control_init)(lc_control_t& restrict control,
+                            CCTK_POINTER& descr,
+                            const int& imin, const int& jmin, const int& kmin,
+                            const int& imax, const int& jmax, const int& kmax,
+                            const int& iash, const int& jash, const int& kash,
+                            const int& istr)
 {
-  lc_control_init(&control, (lc_stats_t*)stats,
+  lc_control_init(&control, (lc_descr_t*)descr,
                   imin, jmin, kmin,
                   imax, jmax, kmax,
                   iash, jash, kash,
@@ -874,9 +1279,9 @@ void CCTK_FNAME(lc_control_init)(lc_control_t& restrict control,
 
 extern "C" CCTK_FCALL
 void CCTK_FNAME(lc_control_finish)(lc_control_t& restrict control,
-                                   CCTK_POINTER& stats)
+                                   CCTK_POINTER& descr)
 {
-  lc_control_finish(&control, (lc_stats_t*)stats);
+  lc_control_finish(&control, (lc_descr_t*)descr);
 }
 
 extern "C"
@@ -886,7 +1291,7 @@ CCTK_FCALL void CCTK_FNAME(lc_thread_init)(lc_control_t& control)
 }
 
 extern "C"
-CCTK_FCALL int CCTK_FNAME(lc_thread_done)(lc_control_t const& control)
+CCTK_FCALL int CCTK_FNAME(lc_thread_done)(const lc_control_t& control)
 {
   return lc_thread_done(&control);
 }
