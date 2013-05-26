@@ -334,10 +334,12 @@ namespace Requirements {
               for (int tl=ntl-1; tl>0; --tl) {
                 tls.AT(tl) = tls.AT(tl-1);
               }
+#if 0
               // The new time level is uninitialised
               // TODO: keep it valid to save time, since MoL will
               // copy it anyway?
               tls.AT(0) = gridpoint_t();
+#endif
             }
           }
         }
