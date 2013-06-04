@@ -26,34 +26,42 @@ function eno1d(q)
 
   CCTK_REAL8 :: eno1d
   CCTK_REAL8, INTENT(IN) :: q(4)
-  CCTK_REAL8 :: zero, one, two, three, six, half, eighth
+  CCTK_REAL8 :: zero, one, two, three, six, nine, half, eighth, sixteenth
   parameter (zero = 0)
   parameter (two = 2)
   parameter (one = 1)
   parameter (three = 3)
   parameter (six = 6)
+  parameter (nine = 9)
   parameter (eighth = one / 8)
   parameter (half = one / two)
+  parameter (sixteenth = one / 16)
   CCTK_REAL8 :: diffleft, diffright
 
 !!$  Directly find the second undivided differences
 !!$  We need to pick between discrete values at
 !!$  1 2 3 4 for the interpolation between 2 and 3.
 
-  diffleft  = q(1) + q(3) - two * q(2)
-  diffright = q(2) + q(4) - two * q(3)
+  diffleft  = (q(1) + q(3)) - two * q(2)
+  diffright = (q(4) + q(2)) - two * q(3)
 
   if ( abs(diffleft) .lt. abs(diffright) ) then
 
 !!$      Apply the left quadratic
 
-    eno1d = eighth * (-q(1) + six * q(2) + three * q(3))
+    eno1d = eighth * ((-q(1) + six * q(2)) + three * q(3))
     
-  else
+  elseif ( abs(diffleft) .gt. abs(diffright) ) then
 
 !!$      Apply the right quadratic
 
-    eno1d = eighth * (three * q(2) + six * q(3) - q(4))
+    eno1d = eighth * ((-q(4) + six * q(3)) + three * q(2))
+    
+  else
+
+!!$      Both are equally good, use average
+
+    eno1d = sixteenth * (nine * (q(2)+q(3)) - (q(1)+q(4)))
     
   end if
 
