@@ -257,7 +257,7 @@ namespace CarpetLib {
         typedef typename VP::vector_t VT;
         ptrdiff_t i = coeffs::imin;
         T res = typ::fromreal (0);
-        if (coeffs::ncoeffs >= ptrdiff_t(VP::size())) {
+        if (0 && coeffs::ncoeffs >= ptrdiff_t(VP::size())) {
           VT vres =
             VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
                     VP::loadu(interp0<T,ORDER> (p + i)));
@@ -335,6 +335,7 @@ namespace CarpetLib {
             res += VP::elt(vres,d);
           }
         }
+#if 0
         assert (i == (ptrdiff_t(coeffs::imax) -
                       ptrdiff_t(coeffs::ncoeffs % VP::size())));
         for (i = coeffs::imax - coeffs::ncoeffs % VP::size();
@@ -343,7 +344,16 @@ namespace CarpetLib {
         {
           res += coeffs::get(i) * interp0<T,ORDER> (p + i*d1);
         }
-        return res;
+#endif
+        T resL = typ::fromreal (0);
+        T resR = typ::fromreal (0);
+	for(i = coeffs::imin ; i < coeffs::imin+coeffs::ncoeffs/2 ; ++i) {
+	  resL += coeffs::get(i) * interp0<T,ORDER> (p + i*d1);
+	}
+	for(i = coeffs::imax-1 ; i >= coeffs::imin+coeffs::ncoeffs/2 ; --i) {
+	  resR += coeffs::get(i) * interp0<T,ORDER> (p + i*d1);
+	}
+        return resL+resR;
       } else {
         assert (0);             // why would d1 have a non-unit stride?
         T res = typ::fromreal (0);
@@ -369,11 +379,15 @@ namespace CarpetLib {
     if (dj == 0) {
       return interp1<T,ORDER,di> (p, d1);
     } else {
-      T res = typeprops<T>::fromreal (0);
-      for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
-        res += coeffs::get(i) * interp1<T,ORDER,di> (p + i*d2, d1);
+      T resL = typeprops<T>::fromreal (0);
+      T resR = typeprops<T>::fromreal (0);
+      for (ptrdiff_t i=coeffs::imin; i<coeffs::imin+coeffs::ncoeffs/2; ++i) {
+        resL += coeffs::get(i) * interp1<T,ORDER,di> (p + i*d2, d1);
       }
-      return res;
+      for (ptrdiff_t i=coeffs::imax-1; i>=coeffs::imin+coeffs::ncoeffs/2; --i) {
+        resR += coeffs::get(i) * interp1<T,ORDER,di> (p + i*d2, d1);
+      }
+      return resL+resR;
     }
   }
   
@@ -392,11 +406,15 @@ namespace CarpetLib {
     if (dk == 0) {
       return interp2<T,ORDER,di,dj> (p, d1, d2);
     } else {
-      T res = typeprops<T>::fromreal (0);
-      for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
-        res += coeffs::get(i) * interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+      T resL = typeprops<T>::fromreal (0);
+      T resR = typeprops<T>::fromreal (0);
+      for (ptrdiff_t i=coeffs::imin; i<coeffs::imin+coeffs::ncoeffs/2; ++i) {
+        resL += coeffs::get(i) * interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
       }
-      return res;
+      for (ptrdiff_t i=coeffs::imax-1; i>=coeffs::imin+coeffs::ncoeffs/2; --i) {
+        resR += coeffs::get(i) * interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+      }
+      return resL+resR;
     }
   }
   
