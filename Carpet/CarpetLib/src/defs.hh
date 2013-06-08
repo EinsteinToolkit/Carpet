@@ -21,6 +21,26 @@
 
 using namespace std;
 
+// TODO: autoconf these
+
+#ifdef CARPET_USE_BOOST_FOREACH
+#  include <boost/foreach.hpp>
+// We call the macro "forall", not "foreach", since the name "foreach"
+// is taken by Boost and cannot be used here. An alternative name
+// would be "foreach_" with a trailing underscore.
+#  define forall   BOOST_FOREACH
+// #  define forall_r BOOST_REVERSE_FOREACH
+#else
+#  define forall(var, expr) for (var: expr)
+#endif
+
+#ifdef CARPET_USE_BOOST_SHARED_PTR
+#  include <boost/shared_ptr.hpp>
+#  include <boost/make_shared.hpp>
+#  define shared_ptr boost::shared_ptr
+#  define make_shared boost::make_shared
+#endif
+
 
 
 // Stringify
