@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <map>
@@ -23,6 +24,82 @@ using namespace std;
 
 
 
+/* A note on CARPET_AVOID_LAMBDA:
+   
+   When this macro is defined, then we cannot use C++11 lambdas.
+   Instead, we use macros, both for the lambdas that we would
+   otherwise create, and for the functions to which the lambdas would
+   otherwise be passed. The functions taking lambdas as arguments
+   could also be re-written as iterators, but we don't do this because
+   this would be significantly more complex. Changing these functions
+   and the lambdas to macros is a straightforward syntactical
+   replacement.
+   
+   The macros can behave as expressions or as statements. Macros that
+   behave like an expression can easily be created via the ({ ... })
+   GNU extension, which is supported by almost all compilers.
+   Unfortunately, e.g. the Blue Gene/Q IBM compiler does not seem to
+   handle these correctly when they contain variable declarations
+   requiring a non-trivial constructor. Therefore, we use macros that
+   behave like statements.
+   
+   The functions that would otherwise take a lambda as argument are
+   turned into a macro in the standard manner:
+   - Name becomes all upper case
+   - Name may have a suffix added since macros cannot be overloaded
+   - Macro is wrapped in do { ... } while (0)
+   - Macro arguments are safely accessed by defining local variables,
+     and assigning the macro argument to them. Note that this is
+     slightly non-trivial: the macro argument name must not be used
+     elsewere (since it would otherwise be replaced as well), so we
+     append an underscore to the original function argument name. If
+     the macro argument that is passed has the name name as the local
+     variable in which it is captured, then there is a conflict, so we
+     choose a local variable name that has two underscores appended.
+     Since this looks ugly, we then define a second local variable
+     (without underscores) and assign in the double-underscore local
+     variable.
+   - Calling a lambda is also non-trivial, since the respective macro
+     argument will be a sequence of statements, not a function-like
+     object to which arguments can be passed. Instead, we store the
+     arguments that the lambda would receive in local variables
+     numbered _1, _2, ..., and define (if necessary) a local variable
+     _0 that will hold the result. To keep our namespace clean, we put
+     the "lambda call" into curly braces.
+   
+   The lambda definitions are then always located inside a macro call
+   as just described. The actual lambda definition becomes a sequence
+   of statements that is one argument to the macro call. (Note that
+   one cannot have top-level commas in macro calls, since these would
+   separate macro arguments. Luckily, top-level commas do not often
+   appear in a sequence of statements.) Since the arguments will be
+   passed in variables called _1, _2, ..., it is convenient to define
+   local variables and assign these variables to them. Note also that
+   the return value needs to be assigned to a variable called _0.
+   
+   Alternative approaches (that did not work) include:
+   - Define local classes that can be called like a function. This
+     does not work because these are local classes, and hence cannot
+     be used as template argument.
+   - Define local classes that can be called like a function, and make
+     them a sub-class of an abstract base class. Instead of using
+     templates, change the functions that accept lambda arguments from
+     templates to using virtual function calls to evaluate the lambda.
+     This does not work because ... (why did this not work?)
+   - Use Boost lambdas. This does not work because these are intended
+     for short expressions, and do not work for longer sections of
+     code.
+   
+   Alternative approaches that could work:
+   - Change the functions that accept lambda arguments into C++
+     iterators. This would work, but will probably be d tedious.
+   - Change the lambdas into function-like classes, but define these
+     classes outside their containing function. This would work, but
+     would be an invasive change to the code.
+ */
+
+
+
 #ifdef CARPET_ENABLE_BBOXSET2
 
 namespace bboxset2 {
@@ -38,15 +115,23 @@ class bboxset {
   typedef ::bbox<T,D-1> bbox1;
   typedef bboxset<T,D-1> bboxset1;
   
-#if 0 && !defined __ICC
+#if 0
+  // We can't use auto_ptr or unique_ptr because we make read-only
+  // copies of pointers. We could use weak_ptr for these copies, but
+  // we don't do that yet.
   template<typename U>
-  using ptr = unique_ptr<U>;
+  using smart_ptr = auto_ptr<U>;
+#elif 0
+  template<typename U>
+  using smart_ptr = unique_ptr<U>;
 #else
-  template<typename U>
-  using ptr = shared_ptr<U>;
+  // This "using" declaration is not accepted by older C++ compilers
+  // template<typename U>
+  // using smart_ptr = shared_ptr<U>;
+#  define smart_ptr shared_ptr
 #endif
   
-  typedef map<T, ptr<bboxset1>> subsets_t;
+  typedef map<T, smart_ptr<bboxset1>> subsets_t;
   subsets_t subsets;
   
   vect stride, offset;
@@ -55,10 +140,11 @@ class bboxset {
   
   template<typename F>
   void traverse_subsets(const F& f) const
+  // void traverse_subsets(function<void(int, const bboxset1&)>& f) const
   {
     bboxset1 decoded_subset;
     assert(decoded_subset.empty());
-    for (const auto& pos_subset: subsets) {
+    forall (const auto& pos_subset, subsets) {
       const T& pos = pos_subset.first;
       const bboxset1* const subsetp = pos_subset.second.get();
       decoded_subset ^= *subsetp;
@@ -66,6 +152,22 @@ class bboxset {
     }
     assert(decoded_subset.empty());
   }
+#define TRAVERSE_SUBSETS1(f)                                    \
+  do {                                                          \
+    bboxset1 decoded_subset;                                    \
+    assert(decoded_subset.empty());                             \
+    forall (const auto& pos_subset, subsets) {                  \
+      const T& pos = pos_subset.first;                          \
+      const bboxset1* const subsetp = pos_subset.second.get();  \
+      decoded_subset ^= *subsetp;                               \
+      {                                                         \
+        const auto& _1(pos);                                    \
+        const auto& _2(decoded_subset);                         \
+        f;                                                      \
+      }                                                         \
+    }                                                           \
+    assert(decoded_subset.empty());                             \
+  } while (0)
   
   template<typename F>
   void traverse_subsets(const F& f, const bboxset& other) const
@@ -99,6 +201,47 @@ class bboxset {
     assert(decoded_subset0.empty());
     assert(decoded_subset1.empty());
   }
+#define TRAVERSE_SUBSETS2(f, other_)                                    \
+  do {                                                                  \
+    const auto& other__(other_);                                        \
+    const bboxset& other(other__);                                      \
+                                                                        \
+    bboxset1 decoded_subset0;                                           \
+    bboxset1 decoded_subset1;                                           \
+    assert(decoded_subset0.empty());                                    \
+    assert(decoded_subset1.empty());                                    \
+                                                                        \
+    typedef typename subsets_t::const_iterator subsets_iter_t;          \
+    subsets_iter_t iter0 = subsets.begin();                             \
+    subsets_iter_t iter1 = other.subsets.begin();                       \
+    subsets_iter_t const end0 = subsets.end();                          \
+    subsets_iter_t const end1 = other.subsets.end();                    \
+    while (iter0!=end0 or iter1!=end1) {                                \
+      const T next_pos0 =                                               \
+        iter0!=end0 ? iter0->first : numeric_limits<T>::max();          \
+      const T next_pos1 =                                               \
+        iter1!=end1 ? iter1->first : numeric_limits<T>::max();          \
+      const T pos = min(next_pos0, next_pos1);                          \
+      const bool active0 = next_pos0==pos;                              \
+      const bool active1 = next_pos1==pos;                              \
+      const bboxset1* const subset0p = active0 ? iter0->second.get() : 0; \
+      const bboxset1* const subset1p = active1 ? iter1->second.get() : 0; \
+      if (active0) decoded_subset0 ^= *subset0p;                        \
+      if (active1) decoded_subset1 ^= *subset1p;                        \
+                                                                        \
+      {                                                                 \
+        const auto& _1(pos);                                            \
+        const auto& _2(decoded_subset0);                                \
+        const auto& _3(decoded_subset1);                                \
+        f;                                                              \
+      }                                                                 \
+                                                                        \
+      if (active0) ++iter0;                                             \
+      if (active1) ++iter1;                                             \
+    }                                                                   \
+    assert(decoded_subset0.empty());                                    \
+    assert(decoded_subset1.empty());                                    \
+  } while (0)
   
   template<typename F>
   bboxset binary_operator(const F& op, const bboxset& other) const
@@ -116,11 +259,6 @@ class bboxset {
     
     if (not empty() and not other.empty()) {
       assert(all(stride == other.stride));
-      // TODO
-      if (not (all(offset == other.offset))) {
-        cout << "*this=" << *this << "\n"
-             << "other=" << other << "\n";
-      }
       assert(all(offset == other.offset));
     }
     
@@ -134,6 +272,7 @@ class bboxset {
     }
     
     bboxset1 old_decoded_subsetr;
+#ifndef CARPET_AVOID_LAMBDA
     traverse_subsets
       ([&](const T& pos,
            const bboxset1& decoded_subset0,
@@ -148,10 +287,59 @@ class bboxset {
          swap(old_decoded_subsetr, decoded_subsetr);
        },
        other);
+#else
+    __builtin_unreachable();
+#endif
     assert(old_decoded_subsetr.empty());
     
     return res;
   }
+#define BINARY_OPERATOR(op, other_)                                     \
+  do {                                                                  \
+    const auto& other__(other_);                                        \
+    const bboxset& other(other__);                                      \
+                                                                        \
+    assert(not is_poison() and not other.is_poison());                  \
+                                                                        \
+    if (not empty() and not other.empty()) {                            \
+      assert(all(stride == other.stride));                              \
+      assert(all(offset == other.offset));                              \
+    }                                                                   \
+                                                                        \
+    bboxset res;                                                        \
+    if (empty()) {                                                      \
+      res.stride = other.stride;                                        \
+      res.offset = other.offset;                                        \
+    } else {                                                            \
+      res.stride = stride;                                              \
+      res.offset = offset;                                              \
+    }                                                                   \
+                                                                        \
+    bboxset1 old_decoded_subsetr;                                       \
+    TRAVERSE_SUBSETS2                                                   \
+      (const T& pos(_1);                                                \
+       const bboxset1& decoded_subset0(_2);                             \
+       const bboxset1& decoded_subset1(_3);                             \
+       {                                                                \
+         bboxset1 decoded_subsetr;                                      \
+         {                                                              \
+           auto& _0(decoded_subsetr);                                   \
+           const auto& _1(decoded_subset0);                             \
+           const auto& _2(decoded_subset1);                             \
+           op;                                                          \
+         }                                                              \
+         const auto subsetrp =                                          \
+           make_shared<bboxset1>(decoded_subsetr ^ old_decoded_subsetr); \
+         if (not subsetrp->empty()) {                                   \
+           res.subsets.insert(res.subsets.end(), make_pair(pos, subsetrp)); \
+         }                                                              \
+         swap(old_decoded_subsetr, decoded_subsetr);                    \
+       },                                                               \
+       other);                                                          \
+    assert(old_decoded_subsetr.empty());                                \
+                                                                        \
+    _0 = res;                                                           \
+  } while (0)
   
 public:
   
@@ -161,7 +349,7 @@ public:
     if (is_poison() and not empty()) return false;
     if (any(stride <= vect(0))) return false;
     if (any(offset < vect(0) or offset >= stride)) return false;
-    for (const auto& pos_subset: subsets) {
+    forall (const auto& pos_subset, subsets) {
       if (pos_subset.second.get()->empty()) return false;
       if (any(pos_subset.second.get()->stride != init(stride))) return false;
       if (any(pos_subset.second.get()->offset != init(offset))) return false;
@@ -409,6 +597,7 @@ public:
   istream& input(istream& is);
   
   /** Output */
+  ostream& debug_output(ostream& os) const;
   ostream& output(ostream& os) const;
 };
 
@@ -618,6 +807,7 @@ public:
   
   istream& input(istream& is);
   
+  ostream& debug_output(ostream& os) const;
   ostream& output(ostream& os) const;
 };
 
@@ -800,7 +990,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   bboxset<T,D>::bboxset(const bboxset& other): 
     stride(other.stride), offset(other.offset), is_poison_(other.is_poison_)
   {
-    for (const auto& pos_subset: other.subsets) {
+    forall (const auto& pos_subset, other.subsets) {
       const T& pos = pos_subset.first;
       const auto new_subsetp = make_shared<bboxset1>(*pos_subset.second.get());
       subsets.insert(subsets.end(), make_pair(pos, new_subsetp));
@@ -819,7 +1009,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   {
     if (&other == this) return *this;
     subsets.clear();
-    for (const auto& pos_subset: other.subsets) {
+    forall (const auto& pos_subset, other.subsets) {
       const T& pos = pos_subset.first;
       const auto new_subsetp = make_shared<bboxset1>(*pos_subset.second.get());
       subsets.insert(subsets.end(), make_pair(pos, new_subsetp));
@@ -865,7 +1055,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   bboxset<T,D>::bboxset(const C& elts)
   {
     *this = bboxset();
-    for (const auto& elt: elts) {
+    forall (const auto& elt, elts) {
       *this += bboxset(elt);
     }
   }
@@ -877,7 +1067,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   bboxset<T,D>::bboxset(const C& elts, const B S::* const mptr)
   {
     *this = bboxset();
-    for (const auto& elt: elts) {
+    forall (const auto& elt, elts) {
       *this += bboxset(elt.*mptr);
     }
   }
@@ -903,7 +1093,9 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   {
     assert(not is_poison());
     T sum = 0;
-    for (const auto& pos_subset: subsets) sum += pos_subset.second->chi_size();
+    forall (const auto& pos_subset, subsets) {
+      sum += pos_subset.second->chi_size();
+    }
     return sum;
   }
   
@@ -915,6 +1107,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
     T total_size = 0;           // accumulated total number of points
     T old_pos = numeric_limits<T>::min(); // location of last subset
     T old_subset_size = 0;      // number of points in the last subset
+#ifndef CARPET_AVOID_LAMBDA
     traverse_subsets
       ([&](const T& pos, const bboxset1& subset)
        {
@@ -923,6 +1116,17 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
          old_pos = pos;
          old_subset_size = subset_size;
        });
+#else
+    TRAVERSE_SUBSETS1
+      (const T& pos(_1);
+       const bboxset1& subset(_2);
+       {
+         const T subset_size = subset.size();
+         total_size += (pos - old_pos) * old_subset_size;
+         old_pos = pos;
+         old_subset_size = subset_size;
+       });
+#endif
     assert(old_subset_size == 0);
     return total_size;
   }
@@ -936,11 +1140,20 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
     const T lo = subsets.begin()->first;
     const T hi = subsets.rbegin()->first;
     bbox1 container1;
+#ifndef CARPET_AVOID_LAMBDA
     traverse_subsets
       ([&](const T& pos, const bboxset1& subset)
        {
          container1 = container1.expanded_containing(subset.container());
        });
+#else
+    TRAVERSE_SUBSETS1
+      (const T& pos(_1);
+       const bboxset1& subset(_2);
+       {
+         container1 = container1.expanded_containing(subset.container());
+       });
+#endif
     return bbox(vect(container1.lower(), lo),
                 vect(container1.upper(), hi - last(stride)),
                 vect(container1.stride(), last(stride)));
@@ -977,9 +1190,19 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   {
     // TODO: If other is much smaller than this, direct insertion may
     // be faster
+#ifndef CARPET_AVOID_LAMBDA
     return binary_operator
       ([](const bboxset1& set0, const bboxset1& set1) { return set0 ^ set1; },
        other);
+#else
+    bboxset _0;
+    BINARY_OPERATOR
+      (const bboxset1& set0(_1);
+       const bboxset1& set1(_2);
+       { _0 = set0 ^ set1; },
+       other);
+    return _0;
+#endif
   }
   
   /** Symmetric set difference */
@@ -994,9 +1217,19 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   template<typename T, int D>
   bboxset<T,D> bboxset<T,D>::operator&(const bboxset& other) const
   {
+#ifndef CARPET_AVOID_LAMBDA
     return binary_operator
       ([](const bboxset1& set0, const bboxset1& set1) { return set0 & set1; },
        other);
+#else
+    bboxset _0;
+    BINARY_OPERATOR
+      (const bboxset1& set0(_1);
+       const bboxset1& set1(_2);
+       { _0 = set0 & set1; },
+       other);
+    return _0;
+#endif
   }
   
   /** Set intersection */
@@ -1010,9 +1243,19 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   template<typename T, int D>
   bboxset<T,D> bboxset<T,D>::operator|(const bboxset& other) const
   {
+#ifndef CARPET_AVOID_LAMBDA
     return binary_operator
       ([](const bboxset1& set0, const bboxset1& set1) { return set0 | set1; },
        other);
+#else
+    bboxset _0;
+    BINARY_OPERATOR
+      (const bboxset1& set0(_1);
+       const bboxset1& set1(_2);
+       { _0 = set0 | set1; },
+       other);
+    return _0;
+#endif
   }
   
   /** Set union */
@@ -1046,9 +1289,19 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   template<typename T, int D>
   bboxset<T,D> bboxset<T,D>::operator-(const bboxset& other) const
   {
+#ifndef CARPET_AVOID_LAMBDA
     return binary_operator
       ([](const bboxset1& set0, const bboxset1& set1) { return set0 - set1; },
        other);
+#else
+    bboxset _0;
+    BINARY_OPERATOR
+      (const bboxset1& set0(_1);
+       const bboxset1& set1(_2);
+       { _0 = set0 - set1; },
+       other);
+    return _0;
+#endif
   }
   
   /** Set difference */
@@ -1071,7 +1324,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
     bboxset res;
     res.stride = stride;
     res.offset = imod(offset + dist * stride / dist_denom, res.stride);
-    for (const auto& pos_subset: subsets) {
+    forall (const auto& pos_subset, subsets) {
       const T& pos = pos_subset.first;
       const bboxset1& subset = *pos_subset.second.get();
       const T new_pos = pos + last(dist * stride / dist_denom);
@@ -1128,7 +1381,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
     vector<bbox> bs;
     serialise(bs);
     bboxset res;
-    for (const auto& b: bs) {
+    forall (const auto& b, bs) {
       res |= b.expanded_for(target);
     }
     return res;
@@ -1163,7 +1416,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
     vector<bbox> bs;
     serialise(bs);
     bboxset res;
-    for (const auto& b: bs) {
+    forall (const auto& b, bs) {
       res |= b.anti_contracted_for(target);
     }
     return res;
@@ -1182,6 +1435,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
     // TODO: Instead of copying from old_subboxes to subboxes,
     // maintain subboxes via a non-const iterator
     subboxes_t old_subboxes;
+#ifndef CARPET_AVOID_LAMBDA
     traverse_subsets
       ([&](const T& pos, const bboxset1& subset)
        {
@@ -1239,6 +1493,66 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
          }
          swap(old_subboxes, subboxes);
        });
+#else
+    TRAVERSE_SUBSETS1
+      (const T& pos(_1);
+       const bboxset1& subset(_2);
+       {
+         // Convert subset to bboxes
+         subboxes1_t subboxes1;
+         subset.serialise(subboxes1);
+         
+         const bbox1 dummy1;
+         subboxes_t subboxes;
+         // subboxes.reserve(old_subboxes.size() + subboxes1.size());
+         typedef typename subboxes_t::const_iterator subboxes_iter_t;
+         typedef typename subboxes1_t::const_iterator subboxes1_iter_t;
+         subboxes_iter_t iter0 = old_subboxes.begin();
+         subboxes1_iter_t iter1 = subboxes1.begin();
+         subboxes_iter_t const end0 = old_subboxes.end();
+         subboxes1_iter_t const end1 = subboxes1.end();
+         while (iter0!=end0 or iter1!=end1) {
+           bool active0 = iter0!=end0;
+           bool active1 = iter1!=end1;
+           const bbox1& subbox0 = active0 ? iter0->first : dummy1;
+           const bbox1& subbox1 = active1 ? *iter1 : dummy1;
+           // When both subboxes are active, keep only the first (as
+           // determined by less<>)
+           if (active0 and active1) {
+             if (subbox0 != subbox1) {
+               /*const*/ less<bbox1> bbox1_less;
+               if (bbox1_less(subbox0, subbox1)) {
+                 active1 = false;
+               } else {
+                 active0 = false;
+               }
+             }
+           }
+           const T old_pos = active0 ? iter0->second : T();
+           
+           if ((active0 and active1) and (subbox0 == subbox1)) {
+             // The current bbox continues unchanged -- keep it
+             subboxes.insert(subboxes.end(), *iter0);
+           } else {
+             if (active0) {
+               // The current box changed; finalize it
+               const bbox new_box(vect(subbox0.lower(), old_pos),
+                                  vect(subbox0.upper(), pos - last(stride)),
+                                  stride);
+               out.insert(out.end(), new_box);
+             }
+             if (active1) {
+               // There is a new box; add it
+               subboxes.insert(subboxes.end(), make_pair(subbox1, pos));
+             }
+           }
+           
+           if (active0) ++iter0;
+           if (active1) ++iter1;
+         }
+         swap(old_subboxes, subboxes);
+       });
+#endif
     assert(old_subboxes.empty());
   }
   
@@ -1249,7 +1563,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   size_t bboxset<T,D>::memory() const
   {
     size_t s = sizeof *this;
-    for (const auto& pos_subset: subsets) {
+    forall (const auto& pos_subset, subsets) {
       s += sizeof pos_subset;
       const auto* const subsetp = pos_subset.second.get();
       s += memoryof(*subsetp);
@@ -1299,6 +1613,26 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   
   /** Output */
   template<typename T, int D>
+  ostream& bboxset<T,D>::debug_output(ostream& os) const
+  {
+    T Tdummy;
+    os << "bboxset[debug]<" << typestring(Tdummy) << "," << D << ">("
+       << "subsets:{";
+    bool first=true;
+    forall (const auto& pos_subset, subsets) {
+      if (not first) os << ",";
+      first=false;
+      os << pos_subset.first << ":";
+      pos_subset.second.get()->debug_output(os);
+    }
+    os << "},"
+       << "stride:" << stride << ","
+       << "offset:" << offset << ","
+       << "is_poison_:" << is_poison_ << ")";
+    return os;
+  }
+  
+  template<typename T, int D>
   ostream& bboxset<T,D>::output(ostream& os) const
   {
     assert(not is_poison());
@@ -1347,6 +1681,17 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
 
 
 
+  template<typename T>
+  ostream& bboxset<T,0>::debug_output(ostream& os) const
+  {
+    T Tdummy;
+    return os << "bboxset[debug]<" << typestring(Tdummy) << ",0>("
+              << "state:" << state << ","
+              << "stride:" << stride << ","
+              << "offset:" << offset << ","
+              << "is_poison_:" << is_poison_ << ")";
+  }
+  
   template<typename T>
   ostream& bboxset<T,0>::output(ostream& os) const
   {
