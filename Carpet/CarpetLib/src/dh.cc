@@ -687,7 +687,7 @@ regrid (bool const do_init)
       } // for c
       
       timer_test.stop();
-       
+      
       
       
       // Communication schedule:
@@ -920,7 +920,6 @@ regrid (bool const do_init)
             sync += ovlp;
             
           } // for cc
-          
           
         }
         
