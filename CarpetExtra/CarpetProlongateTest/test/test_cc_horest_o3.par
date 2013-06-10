@@ -1,0 +1,133 @@
+Cactus::cctk_itlast = 0
+
+
+
+ActiveThorns = "IOUtil"
+
+IO::out_dir = $parfile
+
+
+
+ActiveThorns = "AEILocalInterp"
+
+ActiveThorns = "InitBase"
+
+ActiveThorns = "LoopControl"
+
+
+
+ActiveThorns = "Carpet CarpetLib CarpetInterp CarpetReduce"
+
+Carpet::domain_from_coordbase = yes
+Carpet::max_refinement_levels = 10
+
+driver::ghost_size           = 2
+Carpet::use_buffer_zones     = yes
+Carpet::refinement_centering = "cell"
+
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time  = 2
+
+CarpetLib::restriction_order_space = 3
+CarpetLib::use_higher_order_restriction = yes
+
+Carpet::init_fill_timelevels = yes
+
+Carpet::poison_new_timelevels = yes
+CarpetLib::poison_new_memory  = yes
+
+
+
+ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
+
+CoordBase::domainsize = "minmax"
+
+CoordBase::xmin = -1.00
+CoordBase::ymin = -1.00
+CoordBase::zmin = -1.00
+CoordBase::xmax = +1.00
+CoordBase::ymax = +1.00
+CoordBase::zmax = +1.00
+CoordBase::dx   =  0.02
+CoordBase::dy   =  0.02
+CoordBase::dz   =  0.02
+
+CoordBase::boundary_staggered_x_lower = yes
+CoordBase::boundary_staggered_y_lower = yes
+CoordBase::boundary_staggered_z_lower = yes
+CoordBase::boundary_staggered_x_upper = yes
+CoordBase::boundary_staggered_y_upper = yes
+CoordBase::boundary_staggered_z_upper = yes
+
+CoordBase::boundary_size_x_lower = 2
+CoordBase::boundary_size_y_lower = 2
+CoordBase::boundary_size_z_lower = 2
+CoordBase::boundary_size_x_upper = 2
+CoordBase::boundary_size_y_upper = 2
+CoordBase::boundary_size_z_upper = 2
+
+CartGrid3D::type = "coordbase"
+
+
+
+ActiveThorns = "SphericalSurface"
+
+
+
+ActiveThorns = "CarpetRegrid2 CarpetTracker"
+
+CarpetRegrid2::regrid_every   = 0
+CarpetRegrid2::snap_to_coarse = yes
+CarpetRegrid2::verbose        = yes
+
+CarpetRegrid2::num_centres = 1
+
+CarpetRegrid2::num_levels_1 = 2
+CarpetRegrid2::radius_1[1]  = 0.2
+
+
+
+ActiveThorns = "MoL"
+
+
+
+ActiveThorns = "CarpetProlongateTest"
+
+CarpetProlongateTest::power_x = 3
+CarpetProlongateTest::power_y = 3
+CarpetProlongateTest::power_z = 3
+
+
+
+ActiveThorns = "CarpetIOASCII"
+
+IOASCII::one_file_per_group = yes
+
+IOASCII::out0D_every = 1
+IOASCII::out0D_vars  = "
+        CarpetProlongateTest::errornorm
+"
+
+IOASCII::out1D_every = 1
+IOASCII::out1D_vars  = "
+        CarpetProlongateTest::scalar
+        CarpetProlongateTest::difference
+"
+
+IOASCII::out3D_every = 0
+IOASCII::out3D_vars  = "
+        CarpetProlongateTest::scalar
+        CarpetProlongateTest::difference
+"
+
+
+
+ActiveThorns = "CarpetIOScalar"
+
+IOScalar::one_file_per_group = yes
+
+IOScalar::outScalar_every      = 0
+IOScalar::outScalar_reductions = "sum"
+IOScalar::outScalar_vars       = "
+        CarpetProlongateTest::scaled
+"
