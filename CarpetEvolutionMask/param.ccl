@@ -30,3 +30,7 @@ INT enlarge_evolved_region_by "enlarge or shrink evolved region" STEERABLE=alway
 BOOLEAN provide_buffer_mask "Compute mask indicating which points need only be computed for some MoL substeps"
 {
 } "no"
+
+BOOLEAN provide_substep_mask "Compute mask indicating which points need only be computed for some MoL substeps"
+{
+} "no"

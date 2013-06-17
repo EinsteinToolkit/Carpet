@@ -109,6 +109,17 @@ namespace CarpetEvolutionMask {
         (antirefined.expand(antishrinkby) & base);
       buffers -= antirefined;
       buffers &= base;
+
+      // All buffer points, in stages
+      int const num_substeps = any (any (ghost_widths == 0)) ?
+        0 :
+        minval (minval (buffer_widths / ghost_widths)) + 1; // +1 are the ghosts
+      vector<ibset> buffers_stepped (num_substeps+1);
+      buffers_stepped.AT(0) = base;
+      for (int substep = 1; substep <= num_substeps; ++substep) {
+        buffers_stepped.AT(substep) = base -
+          (base - refined).expand((substep-1)*ghost_widths);
+      }
       
       //      cout << "antishrunk1: " << antishrunk << endl;
 
@@ -269,6 +280,58 @@ namespace CarpetEvolutionMask {
         } END_LOCAL_COMPONENT_LOOP;
       }
       
+      if (provide_substep_mask) {
+        BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+          
+          DECLARE_CCTK_ARGUMENTS;
+          
+          ibbox const & ext
+            = dd.light_boxes.at(mglevel).at(reflevel).at(component).exterior;
+          
+          assert(num_substeps+1 == int(buffers_stepped.size()));
+          for (int substep=0; substep<=num_substeps; ++substep) {
+            for (ibset::const_iterator bi = buffers_stepped.at(substep).begin();
+                 bi != buffers_stepped.at(substep).end();
+                 ++bi)
+            {
+              
+              ibbox const & box = (*bi) & ext;
+              if (! box.empty()) {
+                
+                assert (all ((box.lower() - ext.lower()               ) >= 0));
+                assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
+                assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
+                assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
+                ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
+                ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
+                assert (all (izero <= imin));
+                assert (box.empty() || all (imin <= imax));
+                assert (all (imax <= ivect::ref(cctk_lsh)));
+                
+                if (verbose) {
+                  ostringstream buf;
+                  buf << "Setting substeps region " << substep << " on level " << reflevel << ": " << imin << ":" << imax-ione;
+                  CCTK_INFO (buf.str().c_str());
+                }
+                
+                // Set mask in the to MoL_Substep value where a point is valid
+                assert (dim == 3);
+                for (int k=imin[2]; k<imax[2]; ++k) {
+                  for (int j=imin[1]; j<imax[1]; ++j) {
+                    for (int i=imin[0]; i<imax[0]; ++i) {
+                      int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                      substep_mask[ind] = num_substeps - substep;
+                    }
+                  }
+                }
+                
+              } // if box not empty
+                
+            } // for box
+          } // for step
+          
+        } END_LOCAL_COMPONENT_LOOP;
+      }
     } // if reflevel>0
   }
   

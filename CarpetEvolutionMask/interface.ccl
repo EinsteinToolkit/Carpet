@@ -24,3 +24,10 @@ CCTK_REAL evolution_mask TYPE=gf TAGS='prolongation="none" InterpNumTimelevels=1
 # 0 - grid point is not in buffer region
 # 1 - grid point is in buffer region
 CCTK_INT buffer_mask TYPE=gf TAGS='prolongation="none" InterpNumTimelevels=1' "buffer mask function"
+
+# value key:
+# 0               - grid point is not in buffer region
+# 1..num_substeps - grid point is in buffer region and used when in substep num_substeps-n in MoL_RHS
+# NB: when in MoL_PostStep, the step counter is one less than in MoL_RHS
+# NB: MoL_IntermediaStep counts backwards and is 1 for the last MoL_Step in RHS and 0 in MoL_PostStep
+CCTK_INT substep_mask TYPE=gf TAGS='prolongation="none" InterpNumTimelevels=1 checkpoint="no"' "substep mask function"

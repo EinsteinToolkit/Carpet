@@ -30,6 +30,9 @@ EvolutionMaskBase_InitEvolutionMask (CCTK_ARGUMENTS)
         if (provide_buffer_mask) {
           buffer_mask[ind] = 0;
         }
+        if (provide_substep_mask) {
+          substep_mask[ind] = 0;
+        }
         
       }
     }

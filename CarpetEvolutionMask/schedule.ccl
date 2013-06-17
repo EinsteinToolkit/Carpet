@@ -6,6 +6,10 @@ if (provide_buffer_mask) {
   STORAGE: buffer_mask
 }
 
+if (provide_substep_mask) {
+  STORAGE: substep_mask
+}
+
 
 SCHEDULE GROUP EvolutionMaskBase_SetupEvolutionMask AT basegrid
 {
