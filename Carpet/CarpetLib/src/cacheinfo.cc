@@ -21,6 +21,7 @@ pad_shape(bbox<int,D> const& extent)
 
 namespace {
   struct cache_info_t {
+    int type;
     int linesize;
     int stride;
   };
@@ -45,12 +46,16 @@ pad_shape(vect<int,D> const& shape)
 #pragma omp master
     {
       if (CCTK_IsFunctionAliased("GetCacheInfo1")) {
-        int const num_levels = GetCacheInfo1(NULL, NULL, 0);
+        int const num_levels =
+          GetCacheInfo1(NULL, NULL, NULL, NULL, NULL, NULL, 0);
+        vector<int> types    (num_levels);
         vector<int> linesizes(num_levels);
         vector<int> strides  (num_levels);
-        GetCacheInfo1(&linesizes[0], &strides[0], num_levels);
+        GetCacheInfo1(NULL, &types[0], NULL, &linesizes[0], &strides[0], NULL,
+                      num_levels);
         cache_info.resize(num_levels);
         for (int level=0; level<num_levels; ++level) {
+          cache_info[level].type     = types    [level];
           cache_info[level].linesize = linesizes[level];
           cache_info[level].stride   = strides  [level];
         }
@@ -75,40 +80,42 @@ pad_shape(vect<int,D> const& shape)
     
     if (pad_to_cachelines) {
       for (size_t cache_level=0; cache_level<cache_info.size(); ++cache_level) {
-        // Pad array in this direction to a multiple of this cache
-        // line size
-        int const cache_linesize = cache_info[cache_level].linesize;
-        int const cache_stride   = cache_info[cache_level].stride;
-        
-        assert(cache_linesize % sizeof(CCTK_REAL) == 0);
-        int const linesize = cache_linesize / sizeof(CCTK_REAL);
-        if (npoints * accumulated_npoints < linesize) {
-          // The extent is less than one cache line long: Ensure that
-          // the array size divides the cache line size evenly by
-          // rounding to the next power of 2
-          assert(is_power_of_2(linesize));
-          npoints = next_power_of_2(npoints);
-        } else {
-          // The extent is at least one cache line long: round up to
-          // the next full cache line
-          int total_npoints = npoints * accumulated_npoints;
-          total_npoints = align_up(total_npoints, linesize);
-          assert(total_npoints % accumulated_npoints == 0);
-          npoints = total_npoints / accumulated_npoints;
-        }
-        
-        // Avoid multiples of the cache stride
-        if (cache_stride > 0) {
-          assert(cache_stride % sizeof(CCTK_REAL) == 0);
-          int const stride = cache_stride / sizeof(CCTK_REAL);
-          if (npoints * accumulated_npoints % stride == 0) {
-            assert(stride > linesize);
+        if (cache_info[cache_level].type == 0) {
+          // Pad array in this direction to a multiple of this cache
+          // line size
+          int const cache_linesize = cache_info[cache_level].linesize;
+          int const cache_stride   = cache_info[cache_level].stride;
+          
+          assert(cache_linesize % sizeof(CCTK_REAL) == 0);
+          int const linesize = cache_linesize / sizeof(CCTK_REAL);
+          if (npoints * accumulated_npoints < linesize) {
+            // The extent is less than one cache line long: Ensure
+            // that the array size divides the cache line size evenly
+            // by rounding to the next power of 2
+            assert(is_power_of_2(linesize));
+            npoints = next_power_of_2(npoints);
+          } else {
+            // The extent is at least one cache line long: round up to
+            // the next full cache line
             int total_npoints = npoints * accumulated_npoints;
-            total_npoints += max(linesize, accumulated_npoints);
+            total_npoints = align_up(total_npoints, linesize);
             assert(total_npoints % accumulated_npoints == 0);
             npoints = total_npoints / accumulated_npoints;
           }
-        }
+          
+          // Avoid multiples of the cache stride
+          if (cache_stride > 0) {
+            assert(cache_stride % sizeof(CCTK_REAL) == 0);
+            int const stride = cache_stride / sizeof(CCTK_REAL);
+            if (npoints * accumulated_npoints % stride == 0) {
+              assert(stride > linesize);
+              int total_npoints = npoints * accumulated_npoints;
+              total_npoints += max(linesize, accumulated_npoints);
+              assert(total_npoints % accumulated_npoints == 0);
+              npoints = total_npoints / accumulated_npoints;
+            }
+          }
+        } // if is cache
       } // for cache_level
     }   // if pad_to_cachelines
 #endif

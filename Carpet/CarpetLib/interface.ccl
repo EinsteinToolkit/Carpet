@@ -80,7 +80,12 @@ USES FUNCTION GetBoundarySpecification
 
 
 
-CCTK_INT FUNCTION GetCacheInfo1(CCTK_INT ARRAY OUT linesizes,           \
-                                CCTK_INT ARRAY OUT strides,             \
-                                CCTK_INT IN max_num_cache_levels)
+CCTK_INT FUNCTION GetCacheInfo1                            \
+    (CCTK_POINTER_TO_CONST ARRAY OUT names,                \
+     CCTK_INT              ARRAY OUT types,                \
+     CCTK_POINTER_TO_CONST ARRAY OUT sizes,                \
+     CCTK_INT              ARRAY OUT linesizes,            \
+     CCTK_INT              ARRAY OUT strides,              \
+     CCTK_INT              ARRAY OUT num_puss,             \
+     CCTK_INT                    IN  max_num_cache_levels)
 USES FUNCTION GetCacheInfo1
