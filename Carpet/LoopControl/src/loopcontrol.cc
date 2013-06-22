@@ -571,13 +571,18 @@ void lc_control_init(lc_control_t *restrict const control,
     {
       max_cache_linesize = 1;
       if (CCTK_IsFunctionAliased("GetCacheInfo1")) {
-        const int num_levels = GetCacheInfo1(NULL, NULL, 0);
+        const int num_levels =
+          GetCacheInfo1(NULL, NULL, NULL, NULL, NULL, NULL, 0);
+        vector<int> types    (num_levels);
         vector<int> linesizes(num_levels);
         vector<int> strides  (num_levels);
-        GetCacheInfo1(&linesizes[0], &strides[0], num_levels);
+        GetCacheInfo1(NULL, &types[0], NULL, &linesizes[0], &strides[0], NULL,
+                      num_levels);
         for (int level=0; level<num_levels; ++level) {
-          max_cache_linesize =
-            max(max_cache_linesize, ptrdiff_t(linesizes[level]));
+          if (types[level]==0) { // if this is a cache
+            max_cache_linesize =
+              max(max_cache_linesize, ptrdiff_t(linesizes[level]));
+          }
         }
       }
     }
