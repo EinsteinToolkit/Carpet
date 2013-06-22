@@ -239,7 +239,7 @@ bbox<T,D> bbox<T,D>::anti_contracted_for (const bbox& b) const {
   //   // stride, call expanded_for, and shrink box by on stride again
   //   return expand(1, 1).expanded_for(b).expand(-1, -1);
   // }
-  // __builtin_unreachable();
+  // CCTK_BUILTIN_UNREACHABLE();
 }
 
 // Smallest bbox containing both boxes
