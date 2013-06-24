@@ -49,7 +49,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
       (2*cctk_dim, nboundaryzones, is_internal, is_staggered, shiftout);
   }
   if (ierr != 0) {
-    CCTK_WARN (CCTK_WARN_ABORT, "Could not get boundary specification");
+    CCTK_ERROR ("Could not get boundary specification");
   }
   
   
@@ -107,7 +107,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
   for (int d=0; d<cctk_dim; ++d) {
     int_points[d] = (gmax[d] - bnd_points[2*d+1]) - (gmin[d] + bnd_points[2*d]);
     if (int_points[d] < 0) {
-      CCTK_WARN (CCTK_WARN_ABORT, "Number of internal grid points is negative");
+      CCTK_ERROR ("Number of internal grid points is negative");
     }
   }
   
@@ -121,7 +121,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
       if (cctk_bbox[2*d+f]) {
         
         if (bnd_points[2*d+f] < 0 || bnd_points[2*d+f] > cctk_lsh[d]) {
-          CCTK_WARN (CCTK_WARN_ABORT, "Illegal number of boundary points");
+          CCTK_ERROR ("Illegal number of boundary points");
         }
         
         /* Calculate the extent of the local part of the domain */
