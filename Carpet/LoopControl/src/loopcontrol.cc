@@ -892,7 +892,7 @@ void lc_control_init(lc_control_t *restrict const control,
         alignup(loopsize[d], control->coarse_loop.step.v[d]);
     }
   } else {
-    CCTK_WARN(CCTK_WARN_ABORT, "internal error");
+    CCTK_BUILTIN_UNREACHABLE();
   }
   
   if (veryverbose) {
@@ -926,6 +926,8 @@ void lc_control_init(lc_control_t *restrict const control,
   }
 }
 
+
+
 void lc_control_finish(lc_control_t *restrict const control,
                        lc_descr_t *const descr)
 {
@@ -954,8 +956,8 @@ void lc_control_finish(lc_control_t *restrict const control,
         }
       }
       if (nfailed > 0) {
-        CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                   "LoopControl self-test failed");
+        CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                    "LoopControl self-test failed");
       }
       delete[] control->selftest_array;
     }
