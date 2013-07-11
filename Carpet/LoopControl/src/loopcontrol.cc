@@ -224,6 +224,20 @@ namespace {
   typedef vector<lc_descr_t*> all_descrs_t;
   all_descrs_t all_descrs;
   
+  struct descr_comp_name {
+    bool operator()(const lc_descr_t* a, const lc_descr_t* b) const
+    {
+      return a->name < b->name;
+    }
+  };
+  
+  struct params_comp_time {
+    bool operator()(const lc_params_t* a, const lc_params_t* b) const
+    {
+      return a->stats.avg_point() < b->stats.avg_point();
+    }
+  };
+  
   
   
   void check_fortran_type_sizes()
@@ -1182,15 +1196,20 @@ void lc_statistics(CCTK_ARGUMENTS)
   FILE *const descrfile = fopen(filename, mode);
   
   fprintf(descrfile, "LoopControl statistics:\n");
-  for (all_descrs_t::const_iterator
-         idescr = all_descrs.begin(); idescr != all_descrs.end(); ++idescr)
+  vector<lc_descr_t*> all_descrs_sorted;
+  all_descrs_sorted = all_descrs;
+  sort(all_descrs_sorted.begin(), all_descrs_sorted.end(), descr_comp_name());
+  for (vector<lc_descr_t*>::const_iterator
+         descr_i=all_descrs_sorted.begin(), descr_e=all_descrs_sorted.end();
+       descr_i!=descr_e; ++descr_i)
   {
-    const lc_descr_t *const descr = *idescr;
+    const lc_descr_t& descr = **descr_i;
     fprintf(descrfile,
             "   Loop %s (%s:%d):\n",
-            descr->name.c_str(), descr->file.c_str(), descr->line);
+            descr.name.c_str(), descr.file.c_str(), descr.line);
+    // TODO: sort setups?
     for (lc_descr_t::setup_map_t::const_iterator
-           setup_i = descr->setups.begin(), setup_end = descr->setups.end();
+           setup_i = descr.setups.begin(), setup_end = descr.setups.end();
          setup_i != setup_end; ++setup_i)
     {
       const lc_setup_t& setup = *setup_i->second;
@@ -1201,11 +1220,20 @@ void lc_statistics(CCTK_ARGUMENTS)
               setup.key.ash.v[0], setup.key.ash.v[1], setup.key.ash.v[2],
               setup.key.num_coarse_threads, setup.key.num_fine_threads);
       double best_avg = numeric_limits<double>::max(), worst_avg = 0.0;
+      vector<lc_params_t*> params_sorted;
+      params_sorted.reserve(setup.params.size());
       for (lc_setup_t::params_map_t::const_iterator
-             params_i = setup.params.begin(), params_end = setup.params.end();
-           params_i != params_end; ++params_i)
+             params_i=setup.params.begin(), params_e=setup.params.end();
+           params_i!=params_e; ++params_i)
       {
-        const lc_params_t& params = *params_i->second;
+        params_sorted.push_back(params_i->second);
+      }
+      sort(params_sorted.begin(), params_sorted.end(), params_comp_time());
+      for (vector<lc_params_t*>::const_iterator
+             params_i=params_sorted.begin(), params_e=params_sorted.end();
+           params_i!=params_e; ++params_i)
+      {
+        const lc_params_t& params = **params_i;
         fprintf(descrfile,
                 "         tilesize=[%d,%d,%d] loopsize=[%d,%d,%d]\n",
                 params.key.tilesize.v[0],
@@ -1232,7 +1260,7 @@ void lc_statistics(CCTK_ARGUMENTS)
               "         count=%g, avg/thread=%g s, avg/point=%g s\n",
               stats.count, stats.avg_thread(), stats.avg_point());
     }
-    const lc_stats_t& stats = descr->stats;
+    const lc_stats_t& stats = descr.stats;
     fprintf(descrfile,
             "      count=%g, avg/thread=%g s, avg/point=%g s\n",
             stats.count, stats.avg_thread(), stats.avg_point());
