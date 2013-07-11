@@ -638,11 +638,6 @@ void lc_control_init(lc_control_t *restrict const control,
     
     lc_setup_t& setup = *descr->current_setup;
     
-    const int max_size_factor = 4;
-    const double very_expensive_factor = 1.5;
-    const int tryout_iterations = 1; // 10;
-    const double random_jump_probability = 0.1;
-    
     enum choices_t {
       choice_set_default,
       choice_keep_current,
