@@ -1171,11 +1171,11 @@ void lc_statistics(CCTK_ARGUMENTS)
     CCTK_VInfo(CCTK_THORNSTRING, "  Setups encountered: %td", nsetups);
     CCTK_VInfo(CCTK_THORNSTRING, "  Params explored:    %td", nparams);
     CCTK_VInfo(CCTK_THORNSTRING,
-               "   Unoptimized time would have been: %g s",
-               time_default);
+               "   Actual time spent:                %g s",
+               time_actual);
     CCTK_VInfo(CCTK_THORNSTRING,
-               "   Actual time spent:                %g s   (%+.1f%%)",
-               time_actual, 100.0 * (time_actual / time_default - 1.0));
+               "   Unoptimized time would have been: %g s   (%+.1f%%)",
+               time_default, 100.0 * (time_default / time_actual - 1.0));
     CCTK_VInfo(CCTK_THORNSTRING,
                "   Ideal time could have been:       %g s   (%+.1f%%)",
                time_best, 100.0 * (time_best / time_actual - 1.0));
