@@ -719,17 +719,16 @@ void lc_control_init(lc_control_t *restrict const control,
       const int loopsizes[LC_DIM] = {loopsize_i, loopsize_j, loopsize_k};
       for (int d=0; d<LC_DIM; ++d) {
         const int align = d==0 ? int(tilesize_alignment) : 1;
-        for (int count=0; count<10; ++count) {
-          params_key.tilesize.v[d] =
-            randomui(align, max_size_factor * tilesizes[d], align);
-          params_key.loopsize.v[d] =
-            randomui(align, max_size_factor * loopsizes[d], align);
-          if (params_key.loopsize.v[d] % params_key.tilesize.v[d] == 0) break;
-        }
         params_key.tilesize.v[d] =
-          alignup(params_key.tilesize.v[0], align);
+          randomui(align, alignup(max_size_factor * tilesizes[d], align),
+                   align);
+        const int tilesize = params_key.tilesize.v[d];
         params_key.loopsize.v[d] =
-          alignup(params_key.loopsize.v[d], params_key.tilesize.v[d]);
+          randomui(tilesize, alignup(max_size_factor * loopsizes[d], tilesize),
+                   tilesize);
+        assert(moddown(params_key.tilesize.v[d], align) == 0);
+        assert(moddown(params_key.loopsize.v[d], params_key.tilesize.v[d]) ==
+               0);
       }
       break;
     }
