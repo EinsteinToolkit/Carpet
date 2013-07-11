@@ -283,8 +283,11 @@ namespace {
   T randomui(const T imin, const T imax, const T istr = 1)
   {
     assert(imin<imax);
+    // const T res =
+    //   imin + istr * floor(rand() / (RAND_MAX + 1.0) * (imax - imin) / istr);
     const T res =
-      imin + istr * floor(rand() / (RAND_MAX + 1.0) * (imax - imin) / istr);
+      imin +
+      istr * llrint(floor(random() / (RAND_MAX + 1.0) * (imax - imin) / istr));
     assert(res>=imin and res<imax and (res-imin) % istr == 0);
     return res;
   }
@@ -673,7 +676,7 @@ void lc_control_init(lc_control_t *restrict const control,
           cctkGH->cctk_iteration < explore_eagerly_before_iteration;
 #endif
         if (lc_do_explore_eagerly or
-            rand() / (RAND_MAX + 1.0) < random_jump_probability)
+            random() / (RAND_MAX + 1.0) < random_jump_probability)
         {
           choice = choice_random_jump;
         }
