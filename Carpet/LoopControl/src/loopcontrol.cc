@@ -1243,7 +1243,24 @@ void lc_statistics(CCTK_ARGUMENTS)
   fclose(descrfile);
 }
 
-void lc_statistics_maybe(CCTK_ARGUMENTS)
+void lc_statistics_analysis(CCTK_ARGUMENTS)
+{
+  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_PARAMETERS;
+  
+  static double last_output = 0.0;
+  const double run_time = CCTK_RunTime();
+  
+  if (veryverbose ||
+      (statistics_every_seconds >= 0.0 &&
+       run_time >= last_output + statistics_every_seconds))
+  {
+    lc_statistics(CCTK_PASS_CTOC);
+    last_output = run_time;
+  }
+}
+
+void lc_statistics_terminate(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;

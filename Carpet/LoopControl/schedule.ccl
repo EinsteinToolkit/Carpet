@@ -5,13 +5,13 @@ SCHEDULE lc_setup AT startup BEFORE Driver_Startup
   LANG: C
 } "Set up LoopControl"
 
-SCHEDULE lc_statistics_maybe AT analysis
+SCHEDULE lc_statistics_analysis AT analysis
 {
   LANG: C
   OPTIONS: meta
 } "Output LoopControl statistics"
 
-SCHEDULE lc_statistics AT terminate
+SCHEDULE lc_statistics_terminate AT terminate
 {
   LANG: C
   OPTIONS: meta

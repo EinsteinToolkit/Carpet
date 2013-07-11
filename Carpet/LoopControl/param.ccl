@@ -18,6 +18,12 @@ STRING statistics_filename "File name for LoopControl statistics" STEERABLE=alwa
   ".+" :: "file name"
 } "LoopControl-statistics"
 
+REAL statistics_every_seconds "Output statistics every so many seconds" STEERABLE=always
+{
+  -1.0  :: "don't output"
+  0.0:* :: "output every so many seconds"
+} -1.0
+
 SHARES: IO
 
 USES STRING out_dir
