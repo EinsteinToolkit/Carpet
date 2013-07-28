@@ -60,6 +60,13 @@ call_operator (void
                ibbox3 const & restrict dstregbbox,
                void * const extraargs)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
+  if (use_loopcontrol_in_operators) {
+    (* the_operator)
+      (src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox, dstbbox,
+       srcregbbox, dstregbbox, extraargs);
+  } else {
 #ifndef _OPENMP
   (* the_operator)
     (src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox, dstbbox,
@@ -111,6 +118,7 @@ call_operator (void
   assert (alldstregbboxes == ibset (dstregbbox));
 #  endif
 #endif
+  }
 }
 
 template <typename T>

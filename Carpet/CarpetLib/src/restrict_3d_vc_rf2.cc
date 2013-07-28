@@ -1,6 +1,8 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <loopcontrol.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -152,8 +154,6 @@ namespace CarpetLib {
     
     DECLARE_CCTK_PARAMETERS;
     
-    typedef typename typeprops<T>::real RT;
-    
     // false: vertex centered, true: cell centered
     ivect const icent (centi, centj, centk);
     assert (all (icent == 0 or icent == 1));
@@ -250,36 +250,35 @@ namespace CarpetLib {
     
     
     // Loop over coarse region
-#pragma omp parallel for collapse(3)
-    for (int k=0; k<regkext; ++k) {
-      for (int j=0; j<regjext; ++j) {
-        for (int i=0; i<regiext; ++i) {
-#ifdef CARPET_DEBUG
-    if(not (2 * k + centk < srckext and
-            2 * j + centj < srcjext and
-            2 * i + centi < srciext))
+#pragma omp parallel
+    CCTK_LOOP3(restrict_3d_vc_rf2,
+               i,j,k, 0,0,0, regiext,regjext,regkext,
+               dstipadext,dstjpadext,dstkpadext)
     {
-      cout << "restrict_3d_vc_rf2.cc\n";
-      cout << "regext " << regext << "\n";
-      cout << "srcext " << srcext << "\n";
-      cout << "srcbbox=" << srcbbox << "\n";
-      cout << "dstbbox=" << dstbbox << "\n";
-      cout << "regbbox=" << regbbox << "\n";
-      cout << "srcregbbox=" << srcregbbox << "\n";
-      cout << "icent=" << icent << "\n";
-    }
-    assert(2 * k + centk < srckext and
-           2 * j + centj < srcjext and
-           2 * i + centi < srciext);
-#endif    
-          
-          dst [DSTIND3(i, j, k)] =
-            restrict3<T,centi,centj,centk>::call
-            (& src[SRCIND3(2*i, 2*j, 2*k)], srcdi, srcdj, srcdk);
-          
-        }
+#ifdef CARPET_DEBUG
+      if(not (2 * k + centk < srckext and
+              2 * j + centj < srcjext and
+              2 * i + centi < srciext))
+      {
+        cout << "restrict_3d_vc_rf2.cc\n";
+        cout << "regext " << regext << "\n";
+        cout << "srcext " << srcext << "\n";
+        cout << "srcbbox=" << srcbbox << "\n";
+        cout << "dstbbox=" << dstbbox << "\n";
+        cout << "regbbox=" << regbbox << "\n";
+        cout << "srcregbbox=" << srcregbbox << "\n";
+        cout << "icent=" << icent << "\n";
       }
-    }
+      assert(2 * k + centk < srckext and
+             2 * j + centj < srcjext and
+             2 * i + centi < srciext);
+#endif    
+      
+      dst [DSTIND3(i, j, k)] =
+        restrict3<T,centi,centj,centk>::call
+        (& src[SRCIND3(2*i, 2*j, 2*k)], srcdi, srcdj, srcdk);
+      
+    } CCTK_ENDLOOP3(restrict_3d_vc_rf2);
     
   }
   

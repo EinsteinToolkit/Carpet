@@ -1,12 +1,12 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <loopcontrol.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
-
-#include <loopcontrol.h>
 
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"

@@ -1,6 +1,8 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <loopcontrol.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -138,103 +140,102 @@ namespace CarpetLib {
     
     
     // Loop over coarse region
-#pragma omp parallel for collapse(3)
-    for (int k=0; k<regkext; ++k) {
-      for (int j=0; j<regjext; ++j) {
-        for (int i=0; i<regiext; ++i) {
-          
-#ifdef CARPET_DEBUG
-    if(not (2 * k + 2 + srckoff < srckext and
-            2 * j + 2 + srcjoff < srcjext and
-            2 * i + 2 + srcioff < srciext and
-            2 * k - 1 + srckoff >= 0 and
-            2 * j - 1 + srcjoff >= 0 and
-            2 * i - 1 + srcioff >= 0))
+#pragma omp parallel
+    CCTK_LOOP3(restrict_3d_cc_o3_rf2,
+               i,j,k, 0,0,0, regiext,regjext,regkext,
+               dstipadext,dstjpadext,dstkpadext)
     {
-      cout << "restrict_3d_cc_o3_rf2.cc\n";
-      cout << "regext " << regext << "\n";
-      cout << "srcext " << srcext << "\n";
-      cout << "srcbbox=" << srcbbox << "\n";
-      cout << "dstbbox=" << dstbbox << "\n";
-      cout << "regbbox=" << regbbox << "\n";
-      cout << "i,j,k=" << i << " " << j << " " << k << "\n";
-      assert(2 * k + 2 + srckoff < srckext);
-      assert(2 * j + 2 + srcjoff < srcjext);
-      assert(2 * i + 2 + srcioff < srciext);
-      assert(2 * k - 1 + srckoff >= 0);
-      assert(2 * j - 1 + srcjoff >= 0);
-      assert(2 * i - 1 + srcioff >= 0);
-    }
-#endif    
-          dst [DSTIND3(i, j, k)] =
-            - f1 * src [SRCIND3(2*i-1, 2*j-1, 2*k-1)]
-            + f2 * src [SRCIND3(2*i  , 2*j-1, 2*k-1)]
-            + f2 * src [SRCIND3(2*i+1, 2*j-1, 2*k-1)]
-            - f1 * src [SRCIND3(2*i+2, 2*j-1, 2*k-1)]
-            + f2 * src [SRCIND3(2*i-1, 2*j  , 2*k-1)]
-            - f3 * src [SRCIND3(2*i  , 2*j  , 2*k-1)]
-            - f3 * src [SRCIND3(2*i+1, 2*j  , 2*k-1)]
-            + f2 * src [SRCIND3(2*i+2, 2*j  , 2*k-1)]
-            + f2 * src [SRCIND3(2*i-1, 2*j+1, 2*k-1)]
-            - f3 * src [SRCIND3(2*i  , 2*j+1, 2*k-1)]
-            - f3 * src [SRCIND3(2*i+1, 2*j+1, 2*k-1)]
-            + f2 * src [SRCIND3(2*i+2, 2*j+1, 2*k-1)]
-            - f1 * src [SRCIND3(2*i-1, 2*j+2, 2*k-1)]
-            + f2 * src [SRCIND3(2*i  , 2*j+2, 2*k-1)]
-            + f2 * src [SRCIND3(2*i+1, 2*j+2, 2*k-1)]
-            - f1 * src [SRCIND3(2*i+2, 2*j+2, 2*k-1)]
-            + f2 * src [SRCIND3(2*i-1, 2*j-1, 2*k  )]
-            - f3 * src [SRCIND3(2*i  , 2*j-1, 2*k  )]
-            - f3 * src [SRCIND3(2*i+1, 2*j-1, 2*k  )]
-            + f2 * src [SRCIND3(2*i+2, 2*j-1, 2*k  )]
-            - f3 * src [SRCIND3(2*i-1, 2*j  , 2*k  )]
-            + f4 * src [SRCIND3(2*i  , 2*j  , 2*k  )]
-            + f4 * src [SRCIND3(2*i+1, 2*j  , 2*k  )]
-            - f3 * src [SRCIND3(2*i+2, 2*j  , 2*k  )]
-            - f3 * src [SRCIND3(2*i-1, 2*j+1, 2*k  )]
-            + f4 * src [SRCIND3(2*i  , 2*j+1, 2*k  )]
-            + f4 * src [SRCIND3(2*i+1, 2*j+1, 2*k  )]
-            - f3 * src [SRCIND3(2*i+2, 2*j+1, 2*k  )]
-            + f2 * src [SRCIND3(2*i-1, 2*j+2, 2*k  )]
-            - f3 * src [SRCIND3(2*i  , 2*j+2, 2*k  )]
-            - f3 * src [SRCIND3(2*i+1, 2*j+2, 2*k  )]
-            + f2 * src [SRCIND3(2*i+2, 2*j+2, 2*k  )]
-            + f2 * src [SRCIND3(2*i-1, 2*j-1, 2*k+1)]
-            - f3 * src [SRCIND3(2*i  , 2*j-1, 2*k+1)]
-            - f3 * src [SRCIND3(2*i+1, 2*j-1, 2*k+1)]
-            + f2 * src [SRCIND3(2*i+2, 2*j-1, 2*k+1)]
-            - f3 * src [SRCIND3(2*i-1, 2*j  , 2*k+1)]
-            + f4 * src [SRCIND3(2*i  , 2*j  , 2*k+1)]
-            + f4 * src [SRCIND3(2*i+1, 2*j  , 2*k+1)]
-            - f3 * src [SRCIND3(2*i+2, 2*j  , 2*k+1)]
-            - f3 * src [SRCIND3(2*i-1, 2*j+1, 2*k+1)]
-            + f4 * src [SRCIND3(2*i  , 2*j+1, 2*k+1)]
-            + f4 * src [SRCIND3(2*i+1, 2*j+1, 2*k+1)]
-            - f3 * src [SRCIND3(2*i+2, 2*j+1, 2*k+1)]
-            + f2 * src [SRCIND3(2*i-1, 2*j+2, 2*k+1)]
-            - f3 * src [SRCIND3(2*i  , 2*j+2, 2*k+1)]
-            - f3 * src [SRCIND3(2*i+1, 2*j+2, 2*k+1)]
-            + f2 * src [SRCIND3(2*i+2, 2*j+2, 2*k+1)]
-            - f1 * src [SRCIND3(2*i-1, 2*j-1, 2*k+2)]
-            + f2 * src [SRCIND3(2*i  , 2*j-1, 2*k+2)]
-            + f2 * src [SRCIND3(2*i+1, 2*j-1, 2*k+2)]
-            - f1 * src [SRCIND3(2*i+2, 2*j-1, 2*k+2)]
-            + f2 * src [SRCIND3(2*i-1, 2*j  , 2*k+2)]
-            - f3 * src [SRCIND3(2*i  , 2*j  , 2*k+2)]
-            - f3 * src [SRCIND3(2*i+1, 2*j  , 2*k+2)]
-            + f2 * src [SRCIND3(2*i+2, 2*j  , 2*k+2)]
-            + f2 * src [SRCIND3(2*i-1, 2*j+1, 2*k+2)]
-            - f3 * src [SRCIND3(2*i  , 2*j+1, 2*k+2)]
-            - f3 * src [SRCIND3(2*i+1, 2*j+1, 2*k+2)]
-            + f2 * src [SRCIND3(2*i+2, 2*j+1, 2*k+2)]
-            - f1 * src [SRCIND3(2*i-1, 2*j+2, 2*k+2)]
-            + f2 * src [SRCIND3(2*i  , 2*j+2, 2*k+2)]
-            + f2 * src [SRCIND3(2*i+1, 2*j+2, 2*k+2)]
-            - f1 * src [SRCIND3(2*i+2, 2*j+2, 2*k+2)];
-
-        }
+      
+#ifdef CARPET_DEBUG
+      if(not (2 * k + 2 + srckoff < srckext and
+              2 * j + 2 + srcjoff < srcjext and
+              2 * i + 2 + srcioff < srciext and
+              2 * k - 1 + srckoff >= 0 and
+              2 * j - 1 + srcjoff >= 0 and
+              2 * i - 1 + srcioff >= 0))
+      {
+        cout << "restrict_3d_cc_o3_rf2.cc\n";
+        cout << "regext " << regext << "\n";
+        cout << "srcext " << srcext << "\n";
+        cout << "srcbbox=" << srcbbox << "\n";
+        cout << "dstbbox=" << dstbbox << "\n";
+        cout << "regbbox=" << regbbox << "\n";
+        cout << "i,j,k=" << i << " " << j << " " << k << "\n";
+        assert(2 * k + 2 + srckoff < srckext);
+        assert(2 * j + 2 + srcjoff < srcjext);
+        assert(2 * i + 2 + srcioff < srciext);
+        assert(2 * k - 1 + srckoff >= 0);
+        assert(2 * j - 1 + srcjoff >= 0);
+        assert(2 * i - 1 + srcioff >= 0);
       }
-    }
+#endif    
+      dst [DSTIND3(i, j, k)] =
+        - f1 * src [SRCIND3(2*i-1, 2*j-1, 2*k-1)]
+        + f2 * src [SRCIND3(2*i  , 2*j-1, 2*k-1)]
+        + f2 * src [SRCIND3(2*i+1, 2*j-1, 2*k-1)]
+        - f1 * src [SRCIND3(2*i+2, 2*j-1, 2*k-1)]
+        + f2 * src [SRCIND3(2*i-1, 2*j  , 2*k-1)]
+        - f3 * src [SRCIND3(2*i  , 2*j  , 2*k-1)]
+        - f3 * src [SRCIND3(2*i+1, 2*j  , 2*k-1)]
+        + f2 * src [SRCIND3(2*i+2, 2*j  , 2*k-1)]
+        + f2 * src [SRCIND3(2*i-1, 2*j+1, 2*k-1)]
+        - f3 * src [SRCIND3(2*i  , 2*j+1, 2*k-1)]
+        - f3 * src [SRCIND3(2*i+1, 2*j+1, 2*k-1)]
+        + f2 * src [SRCIND3(2*i+2, 2*j+1, 2*k-1)]
+        - f1 * src [SRCIND3(2*i-1, 2*j+2, 2*k-1)]
+        + f2 * src [SRCIND3(2*i  , 2*j+2, 2*k-1)]
+        + f2 * src [SRCIND3(2*i+1, 2*j+2, 2*k-1)]
+        - f1 * src [SRCIND3(2*i+2, 2*j+2, 2*k-1)]
+        + f2 * src [SRCIND3(2*i-1, 2*j-1, 2*k  )]
+        - f3 * src [SRCIND3(2*i  , 2*j-1, 2*k  )]
+        - f3 * src [SRCIND3(2*i+1, 2*j-1, 2*k  )]
+        + f2 * src [SRCIND3(2*i+2, 2*j-1, 2*k  )]
+        - f3 * src [SRCIND3(2*i-1, 2*j  , 2*k  )]
+        + f4 * src [SRCIND3(2*i  , 2*j  , 2*k  )]
+        + f4 * src [SRCIND3(2*i+1, 2*j  , 2*k  )]
+        - f3 * src [SRCIND3(2*i+2, 2*j  , 2*k  )]
+        - f3 * src [SRCIND3(2*i-1, 2*j+1, 2*k  )]
+        + f4 * src [SRCIND3(2*i  , 2*j+1, 2*k  )]
+        + f4 * src [SRCIND3(2*i+1, 2*j+1, 2*k  )]
+        - f3 * src [SRCIND3(2*i+2, 2*j+1, 2*k  )]
+        + f2 * src [SRCIND3(2*i-1, 2*j+2, 2*k  )]
+        - f3 * src [SRCIND3(2*i  , 2*j+2, 2*k  )]
+        - f3 * src [SRCIND3(2*i+1, 2*j+2, 2*k  )]
+        + f2 * src [SRCIND3(2*i+2, 2*j+2, 2*k  )]
+        + f2 * src [SRCIND3(2*i-1, 2*j-1, 2*k+1)]
+        - f3 * src [SRCIND3(2*i  , 2*j-1, 2*k+1)]
+        - f3 * src [SRCIND3(2*i+1, 2*j-1, 2*k+1)]
+        + f2 * src [SRCIND3(2*i+2, 2*j-1, 2*k+1)]
+        - f3 * src [SRCIND3(2*i-1, 2*j  , 2*k+1)]
+        + f4 * src [SRCIND3(2*i  , 2*j  , 2*k+1)]
+        + f4 * src [SRCIND3(2*i+1, 2*j  , 2*k+1)]
+        - f3 * src [SRCIND3(2*i+2, 2*j  , 2*k+1)]
+        - f3 * src [SRCIND3(2*i-1, 2*j+1, 2*k+1)]
+        + f4 * src [SRCIND3(2*i  , 2*j+1, 2*k+1)]
+        + f4 * src [SRCIND3(2*i+1, 2*j+1, 2*k+1)]
+        - f3 * src [SRCIND3(2*i+2, 2*j+1, 2*k+1)]
+        + f2 * src [SRCIND3(2*i-1, 2*j+2, 2*k+1)]
+        - f3 * src [SRCIND3(2*i  , 2*j+2, 2*k+1)]
+        - f3 * src [SRCIND3(2*i+1, 2*j+2, 2*k+1)]
+        + f2 * src [SRCIND3(2*i+2, 2*j+2, 2*k+1)]
+        - f1 * src [SRCIND3(2*i-1, 2*j-1, 2*k+2)]
+        + f2 * src [SRCIND3(2*i  , 2*j-1, 2*k+2)]
+        + f2 * src [SRCIND3(2*i+1, 2*j-1, 2*k+2)]
+        - f1 * src [SRCIND3(2*i+2, 2*j-1, 2*k+2)]
+        + f2 * src [SRCIND3(2*i-1, 2*j  , 2*k+2)]
+        - f3 * src [SRCIND3(2*i  , 2*j  , 2*k+2)]
+        - f3 * src [SRCIND3(2*i+1, 2*j  , 2*k+2)]
+        + f2 * src [SRCIND3(2*i+2, 2*j  , 2*k+2)]
+        + f2 * src [SRCIND3(2*i-1, 2*j+1, 2*k+2)]
+        - f3 * src [SRCIND3(2*i  , 2*j+1, 2*k+2)]
+        - f3 * src [SRCIND3(2*i+1, 2*j+1, 2*k+2)]
+        + f2 * src [SRCIND3(2*i+2, 2*j+1, 2*k+2)]
+        - f1 * src [SRCIND3(2*i-1, 2*j+2, 2*k+2)]
+        + f2 * src [SRCIND3(2*i  , 2*j+2, 2*k+2)]
+        + f2 * src [SRCIND3(2*i+1, 2*j+2, 2*k+2)]
+        - f1 * src [SRCIND3(2*i+2, 2*j+2, 2*k+2)];
+      
+    } CCTK_ENDLOOP3(restrict_3d_cc_o3_rf2);
     
   }
   

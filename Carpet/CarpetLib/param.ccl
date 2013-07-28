@@ -39,6 +39,12 @@ BOOLEAN interpolate_from_buffer_zones "Use buffer points for interpolation" STEE
 
 
 
+BOOLEAN use_loopcontrol_in_operators "Use LoopControl to parallelize AMR operators" STEERABLE=always
+{
+} "no"
+
+
+
 restricted:
 
 BOOLEAN use_higher_order_restriction "Use third order cell centered restriction operators instead of first order"
