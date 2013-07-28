@@ -545,6 +545,7 @@ regrid (bool const do_init)
         CCTK_WARN (CCTK_WARN_COMPLAIN, buf.str().c_str());
       }
       
+#ifdef CARPET_DEBUG
       vector<ibset> notactive_stepped (num_substeps+1);
       notactive_stepped.AT(0) = notowned;
       for (int substep = 1; substep <= num_substeps; ++ substep) {
@@ -557,6 +558,7 @@ regrid (bool const do_init)
         ASSERT_rl (notactive_overlaps == notactive,
                    "The stepped not-owned region including overlaps must be equal to the not-active region");
       }
+#endif
       
       // All buffer zones
       //ibset const allbuffers = allowned & notowned.expand (buffer_width);
@@ -570,6 +572,7 @@ regrid (bool const do_init)
       ibset& allactive = level_level.active;
       allactive = allowned - notactive;
       
+#ifdef CARPET_DEBUG
       // All stepped buffer zones
       vector<ibset> allbuffers_stepped (num_substeps);
       ibset allbuffers_stepped_combined;
@@ -583,6 +586,7 @@ regrid (bool const do_init)
         ASSERT_rl (allbuffers_stepped_combined == allbuffers,
                    "The stepped buffer zones must be equal to the buffer zones");
       }
+#endif
       
       // Overlap zones and buffer zones must be in the active part of
       // the domain
