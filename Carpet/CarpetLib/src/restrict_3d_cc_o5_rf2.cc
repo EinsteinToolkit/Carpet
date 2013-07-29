@@ -204,6 +204,47 @@ namespace CarpetLib {
     
     
     
+    if (not use_loopcontrol_in_operators) {
+
+    // Loop over coarse region
+#pragma omp parallel for collapse(3)
+    for (int k=0; k<regkext; ++k) {
+      for (int j=0; j<regjext; ++j) {
+        for (int i=0; i<regiext; ++i) {
+          
+#ifdef CARPET_DEBUG
+    if(not (2 * k + 3 + srckoff < srckext and
+            2 * j + 3 + srcjoff < srcjext and
+            2 * i + 3 + srcioff < srciext and
+            2 * k - 2 + srckoff >= 0 and
+            2 * j - 2 + srcjoff >= 0 and
+            2 * i - 2 + srcioff >= 0))
+    {
+      cout << "restrict_3d_cc_o3_rf2.cc\n";
+      cout << "regext " << regext << "\n";
+      cout << "srcext " << srcext << "\n";
+      cout << "srcbbox=" << srcbbox << "\n";
+      cout << "dstbbox=" << dstbbox << "\n";
+      cout << "regbbox=" << regbbox << "\n";
+      cout << "i,j,k=" << i << " " << j << " " << k << "\n";
+      assert(2 * k + 2 + srckoff < srckext);
+      assert(2 * j + 2 + srcjoff < srcjext);
+      assert(2 * i + 2 + srcioff < srciext);
+      assert(2 * k - 1 + srckoff >= 0);
+      assert(2 * j - 1 + srcjoff >= 0);
+      assert(2 * i - 1 + srcioff >= 0);
+    }
+#endif    
+          dst [DSTIND3(i, j, k)] =
+            CarpetLib::restrict3
+            (& src[SRCIND3(2*i, 2*j, 2*k)], srcdi, srcdj, srcdk);
+
+        }
+      }
+    }
+
+    } else {
+
     // Loop over coarse region
 #pragma omp parallel
     CCTK_LOOP3(restrict_3d_cc_o5_rf2,
@@ -240,6 +281,8 @@ namespace CarpetLib {
 
     } CCTK_ENDLOOP3(restrict_3d_cc_o5_rf2);
     
+    }
+
   }
   
   

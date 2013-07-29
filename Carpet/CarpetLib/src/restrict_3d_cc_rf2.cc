@@ -128,6 +128,32 @@ namespace CarpetLib {
     
     
     
+    if (not use_loopcontrol_in_operators) {
+
+    // Loop over coarse region
+#pragma omp parallel for collapse(3)
+    for (int k=0; k<regkext; ++k) {
+      for (int j=0; j<regjext; ++j) {
+        for (int i=0; i<regiext; ++i) {
+          
+          // TODO: Introduce higher-order restriction operators (but
+          // don't use these for hydro!)
+          dst [DSTIND3(i, j, k)] =
+            + f1*f1*f1 * src [SRCIND3(2*i  , 2*j  , 2*k  )]
+            + f2*f1*f1 * src [SRCIND3(2*i+1, 2*j  , 2*k  )]
+            + f1*f2*f1 * src [SRCIND3(2*i  , 2*j+1, 2*k  )]
+            + f2*f2*f1 * src [SRCIND3(2*i+1, 2*j+1, 2*k  )]
+            + f1*f1*f2 * src [SRCIND3(2*i  , 2*j  , 2*k+1)]
+            + f2*f1*f2 * src [SRCIND3(2*i+1, 2*j  , 2*k+1)]
+            + f1*f2*f2 * src [SRCIND3(2*i  , 2*j+1, 2*k+1)]
+            + f2*f2*f2 * src [SRCIND3(2*i+1, 2*j+1, 2*k+1)];
+          
+        }
+      }
+    }
+
+    } else {
+
     // Loop over coarse region
 #pragma omp parallel
     CCTK_LOOP3(restrict_3d_cc_rf2,
@@ -149,6 +175,8 @@ namespace CarpetLib {
       
     } CCTK_ENDLOOP3(restrict_3d_cc_rf2);
     
+    }
+
   }
   
   

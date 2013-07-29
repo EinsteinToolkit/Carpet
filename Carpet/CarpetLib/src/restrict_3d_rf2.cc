@@ -45,6 +45,8 @@ namespace CarpetLib {
                    ibbox3 const & restrict regbbox,
                    void * extraargs)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     assert (not extraargs);
     
     if (any (srcbbox.stride() >= regbbox.stride() or
@@ -114,16 +116,33 @@ namespace CarpetLib {
     
     
     
-    // Loop over coarse region
+    if (not use_loopcontrol_in_operators) {
+      
+      // Loop over coarse region
+      for (int k=0; k<regkext; ++k) {
+        for (int j=0; j<regjext; ++j) {
+          for (int i=0; i<regiext; ++i) {
+            
+            dst [DSTIND3(i, j, k)] = src [SRCIND3(2*i, 2*j, 2*k)];
+            
+          }
+        }
+      }
+      
+    } else {
+      
+      // Loop over coarse region
 #pragma omp parallel
-    CCTK_LOOP3(restrict_3d_rf2,
-               i,j,k, 0,0,0, regiext,regjext,regkext,
-               dstipadext,dstjpadext,dstkpadext)
-    {
+      CCTK_LOOP3(restrict_3d_rf2,
+                 i,j,k, 0,0,0, regiext,regjext,regkext,
+                 dstipadext,dstjpadext,dstkpadext)
+      {
+        
+        dst [DSTIND3(i, j, k)] = src [SRCIND3(2*i, 2*j, 2*k)];
+        
+      } CCTK_ENDLOOP3(restrict_3d_rf2);
       
-      dst [DSTIND3(i, j, k)] = src [SRCIND3(2*i, 2*j, 2*k)];
-      
-    } CCTK_ENDLOOP3(restrict_3d_rf2);
+    }
     
   }
   
