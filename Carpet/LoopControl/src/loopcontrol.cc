@@ -836,7 +836,7 @@ void lc_control_init(lc_control_t *restrict const control,
   }
   
   // Set loop sizes
-  for(int d=0; d<LC_DIM; ++d) {
+  for (int d=0; d<LC_DIM; ++d) {
     // Overall loop: as specified
     control->overall.min.v[d] = loop_min[d];
     control->overall.max.v[d] = loop_max[d];
@@ -864,7 +864,7 @@ void lc_control_init(lc_control_t *restrict const control,
     // Like a non-LoopControl loop: no loop tiling (i.e. do not use
     // coarse loops), parallelise only in k direction (i.e. assign
     // equal k ranges to threads)
-    for(int d=0; d<LC_DIM; ++d) {
+    for (int d=0; d<LC_DIM; ++d) {
       assert(smt_size[d] == 1); // TODO: implement this
       control->fine_thread.step.v[d] = vect_size[d];
       control->fine_loop.step.v[d] = vect_size[d];
@@ -878,7 +878,7 @@ void lc_control_init(lc_control_t *restrict const control,
     }
   } else if (CCTK_EQUALS(initial_setup, "tiled")) {
     // Basic LoopControl setup
-    for(int d=0; d<LC_DIM; ++d) {
+    for (int d=0; d<LC_DIM; ++d) {
       control->fine_thread.step.v[d] = vect_size[d];
       control->fine_loop.step.v[d] =
         smt_size[d] * control->fine_thread.step.v[d];
