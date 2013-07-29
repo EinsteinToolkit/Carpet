@@ -1036,6 +1036,7 @@ void lc_control_finish(lc_control_t *restrict const control,
     }
     control->fine_thread_comm_ptr = NULL;
   }
+#pragma omp barrier
 }
 
 
