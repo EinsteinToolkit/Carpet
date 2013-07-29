@@ -202,6 +202,11 @@ struct lc_descr_t {
   string file;
   int line;
   
+  lc_descr_t(const char *name_, const char *file_, int line_):
+    name(name_), file(file_), line(line_),
+    current_setup(0), current_params(0)
+  {}
+  
   typedef map<lc_setup_key_t, lc_setup_t*> setup_map_t;
   setup_map_t setups;
   
@@ -554,15 +559,7 @@ void lc_descr_init(lc_descr_t **const descr_ptr,
 #pragma omp barrier
 #pragma omp master
   {
-    lc_descr_t *const descr = new lc_descr_t;
-    
-    descr->name = name;
-    descr->file = file;
-    descr->line = line;
-    
-    descr->current_setup = NULL;
-    descr->current_params = NULL;
-    
+    lc_descr_t *const descr = new lc_descr_t(name, file, line);
     all_descrs.push_back(descr);
     *descr_ptr = descr;
   }
