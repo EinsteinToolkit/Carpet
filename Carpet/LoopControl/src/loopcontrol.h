@@ -145,7 +145,7 @@ extern "C" {
       CCTK_BUILTIN_EXPECT(lc_dir##D==0, 1) ? 0 :                \
        lc_dir##D<0 ? I+1 : lc_control.overall.max.v[D]-I;
   
-#if VECTORISE_ALIGNED_ARRAYS
+#if VECTORISE && VECTORISE_ALIGNED_ARRAYS
   /* Arrays are aligned: fmin0 is the aligned loop boundary; keep it,
      and set up imin to be the intended loop boundary */
 #  define LC_ALIGN(i,j,k, vec_imin,vec_imax)                            \

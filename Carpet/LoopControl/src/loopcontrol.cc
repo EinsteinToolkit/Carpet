@@ -841,7 +841,7 @@ void lc_control_init(lc_control_t *restrict const control,
     control->overall.min.v[d] = loop_min[d];
     control->overall.max.v[d] = loop_max[d];
     // Thread loop
-#if VECTORISE_ALIGNED_ARRAYS
+#if VECTORISE && VECTORISE_ALIGNED_ARRAYS
     // Move start to be aligned with vector size
     control->coarse_thread.min.v[d] =
       aligndown(control->overall.min.v[d], vect_size[d]);
