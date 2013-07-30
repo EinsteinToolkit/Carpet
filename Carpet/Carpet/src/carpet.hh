@@ -84,6 +84,9 @@ namespace Carpet {
   // Error output
   void UnsupportedVarType (int vindex);
   
+  // Check for a map0group
+  bool IsMap0Group(int gindex);
+  
 } // namespace Carpet
 
 #endif // !defined(CARPET_HH)

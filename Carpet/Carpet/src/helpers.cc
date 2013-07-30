@@ -1,6 +1,7 @@
 #include <cctk.h>
 #include <cctk_FortranString.h>
 #include <cctk_Parameters.h>
+#include <util_Table.h>
 
 #include <algorithm>
 #include <cassert>
@@ -548,11 +549,30 @@ namespace Carpet {
   void UnsupportedVarType (const int vindex)
   {
     assert (vindex>=0 and vindex<CCTK_NumVars());
-    CCTK_VWarn
-      (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+    CCTK_VError
+      (__LINE__, __FILE__, CCTK_THORNSTRING,
        "Carpet does not support the type of the variable \"%s\".\n"
        "Either enable support for this type, "
        "or change the type of this variable.", CCTK_FullName(vindex));
   }
-
+  
+  
+  
+  bool IsMap0Group(const int gindex)
+  {
+    assert(gindex>=0 and gindex<CCTK_NumGroups());
+    const int table = CCTK_GroupTagsTableI(gindex);
+    assert(table>=0);
+    CCTK_INT map0group;
+    int status = Util_TableGetInt(table, &map0group, "map0group");
+    if (status==UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      map0group = false;
+      status = 1;
+    }
+    if (status!=1) {
+      CCTK_ERROR("illegal table value");
+    }
+    return map0group;
+  }
+  
 } // namespace Carpet
