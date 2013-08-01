@@ -562,7 +562,8 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       assert (myGH->cp_filename_index == 0);
 
       // add a dummy entry in the checkpoint filename ring buffer
-      myGH->cp_filename_list[myGH->cp_filename_index] = (char*)"bla";
+      static char bla[] = "bla";
+      myGH->cp_filename_list[myGH->cp_filename_index] = bla;
       myGH->cp_filename_index = (myGH->cp_filename_index+1) % checkpoint_keep;
     }
   }
@@ -1509,10 +1510,10 @@ static int ReadVar (const cGH* const cctkGH,
                                        NULL, count, NULL));
       HDF5_ERROR (H5Dread (dataset, datatype, memspace, filespace, xfer,
                            cctkGH->data[patch->vindex][timelevel]));
-      hid_t datatype;
-      HDF5_ERROR (datatype = H5Dget_type (dataset));
-      io_bytes += H5Sget_select_npoints (filespace) * H5Tget_size (datatype);
-      HDF5_ERROR (H5Tclose (datatype));
+      hid_t iodatatype;
+      HDF5_ERROR (iodatatype = H5Dget_type (dataset));
+      io_bytes += H5Sget_select_npoints (filespace) * H5Tget_size (iodatatype);
+      HDF5_ERROR (H5Tclose (iodatatype));
       HDF5_ERROR (H5Sclose (memspace));
 
     } END_LOCAL_COMPONENT_LOOP;
