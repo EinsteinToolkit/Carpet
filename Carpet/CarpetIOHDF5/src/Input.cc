@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <map>
+#include <algorithm>
 
 #include "util_Table.h"
 #include "cctk.h"
@@ -534,6 +536,20 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     }
   }
 
+  // construct list of aliases for variable names. This is a global list even
+  // though the user gives a per-variable list.
+  std::map<string, unsigned int> alias;
+#ifdef IOUTIL_IOGH_HAS_ALIAS
+  for (unsigned int vindex = 0; vindex < read_completely.size(); vindex++) {
+    if (ioUtilGH->alias && ioUtilGH->alias[vindex]) {
+      string key(ioUtilGH->alias[vindex]);
+      // the explicit cast avoids ambiguity in the overloaded function pointer
+      transform(key.begin(), key.end(), key.begin(), (int(*)(int))toupper);
+      alias[key] = vindex;
+    }
+  }
+#endif
+
   CarpetIOHDF5GH* myGH =
                   (CarpetIOHDF5GH*) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
   // allocate list of recovery filenames
@@ -598,8 +614,9 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       HDF5_ERROR (H5Pclose (fapl_id));
 
       // browse through all datasets contained in this file
+      void *args[2] = {&file, &alias};
       HDF5_ERROR (H5Giterate (file.indexfile >= 0 ? file.indexfile : file.file,
-                              "/", NULL, BrowseDatasets, &file));
+                              "/", NULL, BrowseDatasets, args));
     }
     assert (file.patches.size() > 0);
     if (myGH->recovery_filename_list and not myGH->recovery_filename_list[i]) {
@@ -1177,10 +1194,12 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
 // Browses through all the datasets in a checkpoint/data file
 // and stores this information in a list of patch_t objects
 //////////////////////////////////////////////////////////////////////////////
-static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
+static herr_t BrowseDatasets (hid_t group, const char *objectname, void *args)
 {
   int error_count = 0;
-  file_t *file = (file_t *) arg;
+  file_t *file = ((file_t **) args)[0];
+  std::map<string, unsigned int>& alias =
+    *((std::map<string, unsigned int>**)args)[1];
   patch_t patch;
   hid_t dataset, dataspace, attr, attrtype;
   H5G_stat_t object_info;
@@ -1216,7 +1235,13 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
   HDF5_ERROR (H5Aread (attr, attrtype, &varname[0]));
   HDF5_ERROR (H5Tclose (attrtype));
   HDF5_ERROR (H5Aclose (attr));
-  patch.vindex = CCTK_VarIndex (&varname[0]);
+  string key(&varname[0]);
+  transform(key.begin(), key.end(), key.begin(), (int(*)(int))toupper);
+  if (alias.count(key)) {
+    patch.vindex = alias[key];
+  } else {
+    patch.vindex = CCTK_VarIndex (&varname[0]);
+  }
   HDF5_ERROR (attr = H5Aopen_name (dataset, "carpet_mglevel"));
   HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &patch.mglevel));
   HDF5_ERROR (H5Aclose (attr));

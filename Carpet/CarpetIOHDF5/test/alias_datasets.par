@@ -1,0 +1,61 @@
+# deactivate the IDScalarWaveMoL thorn
+# initial data is read from files using the filereader
+ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce LoopControl GSL Boundary CoordBase InitBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL WaveToyMoL IOUtil CarpetIOBasic CarpetIOScalar HDF5 CarpetIOHDF5"
+#ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce LoopControl GSL Boundary CoordBase InitBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL WaveToyMoL IOUtil CarpetIOBasic CarpetIOScalar HDF5 CarpetIOHDF5 IDScalarWaveMoL"
+
+
+Cactus::cctk_itlast = 0
+
+Driver::global_nx  = 24
+Driver::global_ny  = 5
+Driver::global_nz  = 5
+Driver::ghost_size = 2
+
+InitBase::initial_data_setup_method = "init_all_levels"
+
+Carpet::max_refinement_levels    = 3
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time  = 2
+
+CarpetRegrid::refinement_levels = 1
+CarpetRegrid::refined_regions   = "manual-gridpoint-list"
+CarpetRegrid::gridpoints        = "[[ ([28,4,4]:[68,12,12]:[2,2,2]) ]]"
+CarpetRegrid::outerbounds       = "[[ [[0,0],[1,1],[1,1]] ]]"
+
+NaNChecker::check_every     = 16
+NaNChecker::check_vars      = "wavetoymol::phi wavetoymol::psi"
+NaNChecker::action_if_found = "terminate"
+
+Grid::domain = full
+Grid::type   = byrange
+Grid::xmin   = -0.1
+Grid::ymin   = -0.15
+Grid::zmin   = -0.15
+Grid::xmax   = +1.05
+Grid::ymax   = +0.15
+Grid::zmax   = +0.15
+
+Periodic::periodic = "yes"
+
+Time::dtfac = 0.25
+
+MoL::ODE_Method = "ICN"
+
+IO::out_dir       = $parfile
+IO::out_fileinfo  = "none"
+IO::parfile_write = "no"
+IO::out_every     = 1
+IO::out_yline_x   = 0.5
+IO::out_zline_x   = 0.5
+ 
+IOBasic::outInfo_vars          = "WaveToyMoL::scalarevolve"
+IOScalar::outScalar_vars       = "WaveToyMoL::scalarevolve"
+IOScalar::outScalar_reductions = "average count maximum minimum  norm1 norm2 norm_inf"
+
+# filereader input files and directory
+IO::filereader_ID_files = "psi phi"
+# to generate use
+#IO::filereader_ID_dir   = "../../../../../arrangements/Carpet/CarpetIOHDF5/test/input_initial_data"
+IO::filereader_ID_dir   = "../../../arrangements/Carpet/CarpetIOHDF5/test/input_initial_data"
+IO::filereader_ID_vars  = "WaveToyMoL::psi{alias='WaveToyMoL::phi'}
+                           WaveToyMoL::phi{alias='WaveToyMoL::psi'}"
