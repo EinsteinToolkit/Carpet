@@ -172,7 +172,7 @@ namespace Carpet {
             const bool ismap0group = IsMap0Group(group);
             
             for (int m=0; m<(int)arrdata.AT(group).size(); ++m) {
-              if (ismap0group) continue;
+              if (m>0 and ismap0group) continue;
               for (int var=0; var<gp.numvars; ++var) {
 #ifdef CCTK_HAVE_CONTIGUOUS_GROUPS
                 bool const contiguous = gp.contiguous;
