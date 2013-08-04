@@ -66,7 +66,7 @@ protected:
   operator_type transport_operator;
   
   bool _has_storage;		// has storage associated (on some process)
-  int _size;			// size
+  int _size;			// size (number of elements including padding)
 
   int _proc;			// stored on process
   
