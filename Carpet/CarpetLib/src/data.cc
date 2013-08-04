@@ -573,7 +573,8 @@ copy_from_innerloop (gdata const * const gsrc,
                      ibbox const & srcregbox,
                      islab const * restrict const slabinfo)
 {
-  data const * const src = dynamic_cast <data const *> (gsrc);
+  //data const * const src = dynamic_cast <data const *> (gsrc);
+  data const * const src = (data const *) gsrc;
   assert (has_storage() and src->has_storage());
   
   assert (proc() == src->proc());
@@ -665,7 +666,8 @@ transfer_time (vector <gdata const *> const & gsrcs,
       tmps.AT(tl)->allocate (dstbox, this->proc());
       
       assert (gsrcs.AT(tl));
-      data const * const src = dynamic_cast <data const *> (gsrcs.AT(tl));
+      // data const * const src = dynamic_cast <data const *> (gsrcs.AT(tl));
+      data const * const src = (data const *) gsrcs.AT(tl);
       tmps.AT(tl)->transfer_p_r (src, dstbox, srcbox, slabinfo, order_space);
     }
     
@@ -681,7 +683,8 @@ transfer_time (vector <gdata const *> const & gsrcs,
     assert ((int)gsrcs.size() > timelevel0);
     assert ((int)times.size() > timelevel0);
     
-    data const * const src = dynamic_cast <data const *> (gsrcs.AT(timelevel0));
+    // data const * const src = dynamic_cast <data const *> (gsrcs.AT(timelevel0));
+    data const * const src = (data const *) gsrcs.AT(timelevel0);
     
     transfer_p_r (src, dstbox, srcbox, slabinfo, order_space);
     
