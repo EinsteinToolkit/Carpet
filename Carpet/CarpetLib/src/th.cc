@@ -14,7 +14,7 @@ using namespace std;
 
 
 
-list<th*> th::allth;
+set<th*> th::allth;
 
 
 
@@ -27,8 +27,8 @@ th::th (gh& h_,
     timelevels(0)
 {
   reffacts.resize(1, 1);
-  allthi = allth.insert(allth.end(), this);
-  gh_handle = h.add(this);
+  allth.insert(this);
+  h.insert(this);
 }
 
 th::th (gh& h_, int const timelevels_, vector<int> const& reffacts_,
@@ -44,15 +44,15 @@ th::th (gh& h_, int const timelevels_, vector<int> const& reffacts_,
     assert (reffacts.AT(n) >= reffacts.AT(n-1));
     assert (reffacts.AT(n) % reffacts.AT(n-1) == 0);
   }
-  allthi = allth.insert(allth.end(), this);
-  gh_handle = h.add(this);
+  allth.insert(this);
+  h.insert(this);
 }
 
 // Destructors
 th::~th ()
 {
-  h.erase(gh_handle);
-  allth.erase(allthi);
+  h.erase(this);
+  allth.erase(this);
 }
 
 // Modifiers
@@ -187,7 +187,7 @@ th::
 allmemory ()
 {
   size_t mem = memoryof(allth);
-  for (list<th*>::const_iterator
+  for (set<th*>::const_iterator
          thi = allth.begin(); thi != allth.end(); ++ thi)
   {
     mem += memoryof(**thi);

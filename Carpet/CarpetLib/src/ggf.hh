@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -29,9 +30,8 @@ ostream& operator<< (ostream& os, const ggf& f);
 // A generic grid function without type information
 class ggf {
   
-  static list<ggf*> allggf;
-  list<ggf*>::iterator allggfi;
-
+  static set<ggf*> allggf;
+  
   // Types
   typedef vector <pseudoregion_t> pvect;
   typedef vector <sendrecv_pseudoregion_t> srpvect;
@@ -53,7 +53,6 @@ public:				// should be readonly
   
   const gh &h;                  // grid hierarchy
   dh &d;			// data hierarchy
-  dh::ggf_handle dh_handle;
 
 protected:
   vector<vector<int> > timelevels_; // time levels [ml][rl]

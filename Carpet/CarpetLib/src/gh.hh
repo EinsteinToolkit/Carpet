@@ -3,7 +3,7 @@
 
 #include <cassert>
 #include <iostream>
-#include <list>
+#include <set>
 #include <vector>
 
 #include "bbox.hh"
@@ -28,8 +28,7 @@ class gh;
 // level.  The extents do not include ghost zones.
 class gh {
   
-  static list<gh*> allgh;
-  list<gh*>::iterator allghi;
+  static set<gh*> allgh;
   
 public:
   
@@ -64,10 +63,8 @@ public:
   mregs regions;                // extents and properties of all grids
   mregs oldregions;             // extents and properties of all grids
   
-  typedef list<th*>::iterator th_handle;
-  list<th*> ths;		// list of all time hierarchies
-  typedef list<dh*>::iterator dh_handle;
-  list<dh*> dhs;		// list of all data hierarchies
+  set<th*> ths;                 // all time hierarchies
+  set<dh*> dhs;                 // all data hierarchies
   
 public:
   
@@ -179,12 +176,12 @@ public:
     CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Time hierarchy management
-  th_handle add (th * t);
-  void erase (th_handle ti);
+  void insert (th * t);
+  void erase (th * t);
   
   // Data hierarchy management
-  dh_handle add (dh * d);
-  void erase (dh_handle di);
+  void insert (dh * d);
+  void erase (dh * d);
   
   // Output
   size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;

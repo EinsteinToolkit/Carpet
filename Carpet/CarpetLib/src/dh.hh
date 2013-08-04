@@ -4,7 +4,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
-#include <list>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -29,8 +29,7 @@ class dh;
 // A data hierarchy (grid hierarchy plus ghost zones)
 class dh {
   
-  static list<dh*> alldh;
-  list<dh*>::iterator alldhi;
+  static set<dh*> alldh;
   
   // Types
 public:
@@ -232,7 +231,6 @@ public:                         // should be readonly
   
   // Fields
   gh & h;                       // hierarchy
-  gh::dh_handle gh_handle;
   
 #if 0
   i2vect ghost_width;           // number of ghost zones
@@ -250,8 +248,7 @@ public:                         // should be readonly
   level_mboxes level_boxes;     // grid hierarchy [ml][rl]
   fast_mboxes fast_boxes;       // grid hierarchy [ml][rl][p]
   
-  typedef list<ggf*>::iterator ggf_handle;
-  list<ggf*> gfs;               // list of all grid functions
+  set<ggf*> gfs;                // all grid functions
   
 public:
   
@@ -288,8 +285,8 @@ private:
   
 public:
   // Grid function management
-  ggf_handle add (ggf * f);
-  void erase (ggf_handle fi);
+  void insert (ggf * f);
+  void erase (ggf * f);
   
   // Output
   size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;

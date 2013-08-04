@@ -28,14 +28,12 @@ ostream& operator<< (ostream& os, const th& t);
 // The time hierarchy (information about the current time)
 class th {
   
-  static list<th*> allth;
-  list<th*>::iterator allthi;
+  static set<th*> allth;
   
 public:				// should be readonly
   
   // Fields
   gh& h;                        // hierarchy
-  gh::th_handle gh_handle;
   
   bool const time_interpolation_during_regridding;
   

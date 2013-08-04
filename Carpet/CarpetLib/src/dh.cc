@@ -23,7 +23,7 @@ using namespace CarpetLib;
 
 
 
-list<dh*> dh::alldh;
+set<dh*> dh::alldh;
 
 
 
@@ -120,8 +120,8 @@ dh (gh & h_,
     assert (prolongation_orders_space.AT(rl) >= 0);
   }
   
-  alldhi = alldh.insert(alldh.end(), this);
-  gh_handle = h.add (this);
+  alldh.insert(this);
+  h.insert (this);
   CHECKPOINT;
   regrid (false);
   for (int rl = 0; rl < h.reflevels(); ++ rl) {
@@ -137,8 +137,9 @@ dh::
 ~dh ()
 {
   CHECKPOINT;
-  h.erase (gh_handle);
-  alldh.erase(alldhi);
+  assert (gfs.empty());
+  h.erase (this);
+  alldh.erase (this);
 }
 
 
@@ -2114,8 +2115,7 @@ regrid (bool const do_init)
     cout << "memoryof(dh.fast_boxes)=" << memoryof(fast_boxes) << eol;
     int gfcount = 0;
     size_t gfmemory = 0;
-    for (list<ggf*>::const_iterator
-           gfi = gfs.begin(); gfi != gfs.end(); ++ gfi)
+    for (set<ggf*>::const_iterator gfi = gfs.begin(); gfi != gfs.end(); ++ gfi)
     {
       ++ gfcount;
       gfmemory += memoryof(**gfi);
@@ -2200,39 +2200,39 @@ recompose (int const rl, bool const do_prolongate)
   static Carpet::Timer timer ("CarpetLib::dh::recompose");
   timer.start ();
   
-  for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+  for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
     (*f)->recompose_crop ();
   }
   
   if (combine_recompose) {
     // Recompose all grid functions of this refinement levels at once.
     // This may be faster, but requires more memory.
-    for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+    for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
       (*f)->recompose_allocate (rl);
     }
     // TODO: If this works, rename do_prolongate to do_init here, and
     // remove the do_prolongate parameter from ggf::recompose_fill
 #if 0
     for (comm_state state; not state.done(); state.step()) {
-      for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
         (*f)->recompose_fill (state, rl, do_prolongate);
       }
     }
 #endif
     if (do_prolongate) {
       for (comm_state state; not state.done(); state.step()) {
-        for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+        for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
           (*f)->recompose_fill (state, rl, true);
         }
       }
     }
-    for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+    for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
       (*f)->recompose_free_old (rl);
     }
   } else {
     // Recompose the grid functions sequentially.  This may be slower,
     // but requires less memory.  This is the default.
-    for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+    for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
       (*f)->recompose_allocate (rl);
 #if 0
       for (comm_state state; not state.done(); state.step()) {
@@ -2254,20 +2254,20 @@ recompose (int const rl, bool const do_prolongate)
 
 
 // Grid function management
-dh::ggf_handle
+void
 dh::
-add (ggf * const f)
+insert (ggf * const f)
 {
   CHECKPOINT;
-  return gfs.insert (gfs.end(), f);
+  gfs.insert (f);
 }
 
 void
 dh::
-erase (ggf_handle const fi)
+erase (ggf * const f)
 {
   CHECKPOINT;
-  gfs.erase (fi);
+  gfs.erase (f);
 }
 
 
@@ -2397,9 +2397,6 @@ memory ()
   const
 {
   return
-    sizeof alldhi +             // memoryof (alldhi) +
-    sizeof & h +                // memoryof (& h) +
-    sizeof gh_handle +          // memoryof (gh_handle) +
     memoryof (ghost_widths) +
     memoryof (buffer_widths) +
     memoryof (overlap_widths) +
@@ -2416,8 +2413,7 @@ dh::
 allmemory ()
 {
   size_t mem = memoryof(alldh);
-  for (list<dh*>::const_iterator
-         dhi = alldh.begin(); dhi != alldh.end(); ++ dhi)
+  for (set<dh*>::const_iterator dhi = alldh.begin(); dhi != alldh.end(); ++ dhi)
   {
     mem += memoryof(**dhi);
   }
@@ -2754,7 +2750,7 @@ output (ostream & os)
      << "gfs={";
   {
     bool isfirst = true;
-    for (list<ggf*>::const_iterator
+    for (set<ggf*>::const_iterator
            f = gfs.begin(); f != gfs.end(); ++ f, isfirst = false)
     {
       if (not isfirst) os << ",";

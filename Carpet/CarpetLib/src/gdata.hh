@@ -51,9 +51,8 @@ namespace dist {
 // A generic data storage without type information
 class gdata {
   
-  static list<gdata*> allgdata;
-  list<gdata*>::iterator allgdatai;
-
+  static set<gdata*> allgdata;
+  
 protected:                      // should be readonly
 
   // Fields

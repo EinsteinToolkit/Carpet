@@ -21,7 +21,7 @@ using namespace CarpetLib;
 
 
 
-list<ggf*> ggf::allggf;
+set<ggf*> ggf::allggf;
 
 
 
@@ -50,15 +50,14 @@ ggf::ggf (const int varindex_, const operator_type transport_operator_,
     timelevels_.AT(ml).resize(d.h.reflevels(), 0);
   }
   
-  allggfi = allggf.insert(allggf.end(), this);
-  
-  dh_handle = d.add(this);
+  allggf.insert (this);
+  d.insert (this);
 }
 
 // Destructors
 ggf::~ggf () {
-  d.erase(dh_handle);
-  allggf.erase(allggfi);
+  d.erase (this);
+  allggf.erase (this);
 }
 
 // Comparison
@@ -663,7 +662,7 @@ ggf::
 allmemory ()
 {
   size_t mem = memoryof(allggf);
-  for (list<ggf*>::const_iterator
+  for (set<ggf*>::const_iterator
          ggfi = allggf.begin(); ggfi != allggf.end(); ++ ggfi)
   {
     mem += memoryof(**ggfi);
