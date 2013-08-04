@@ -64,6 +64,19 @@ PROVIDES FUNCTION CCTK_ProcsOnHost  WITH Carpet_ProcsOnHost  LANGUAGE C
 
 
 
+# Return total amount of memory used by Carpet
+# These numbers report number of bytes for the current MPI process.
+# They are mutually exclusive.
+# The return value indicates success (0) or an error (negative).
+CCTK_INT FUNCTION Driver_TotalMemoryUsed( \
+    CCTK_REAL OUT metadata,               \
+    CCTK_REAL OUT grid_structure,         \
+    CCTK_REAL OUT grid_arrays,            \
+    CCTK_REAL OUT grid_functions)
+PROVIDES FUNCTION Driver_TotalMemoryUsed WITH Carpet_TotalMemoryUsed LANGUAGE C
+
+
+
 # Register and unregister routines which are called before and after
 # every scheduled routine
 CCTK_INT \
