@@ -961,15 +961,6 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   // read all the metadata information
   ReadMetadata (fileset, file.file);
 
-  // first try to open a chunked file written on this processor
-  // browse through all datasets contained in this file
-
-  // TODO: measure if it is actually beneficial to open the index file for this
-  // file where we always read the metadata group
-  HDF5_ERROR (H5Giterate (file.indexfile >= 0 ? file.indexfile : file.file,
-                          "/", NULL, BrowseDatasets, &file));
-  assert (file.patches.size() > 0);
-
   // recover parameters
   if (called_from == CP_RECOVER_PARAMETERS) {
     if (not CCTK_Equals (verbose, "none")) {
