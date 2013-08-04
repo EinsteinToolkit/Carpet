@@ -214,13 +214,6 @@ public:
     return storage.AT(ml).AT(rl).AT(lc).AT(tl);
   }
   
-#if 0
-  virtual const gdata* operator() (int tl, int rl, int lc, int ml) const
-    CCTK_MEMBER_ATTRIBUTE_PURE = 0;
-  virtual gdata* operator() (int tl, int rl, int lc, int ml)
-    CCTK_MEMBER_ATTRIBUTE_PURE = 0;
-#endif
-  
   
   
   // Output

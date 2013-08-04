@@ -22,13 +22,6 @@ using namespace std;
 // A real grid function
 template<typename T>
 class gf: public ggf {
-  
-  // Types
-  typedef data<T>*      tdata;	        // data ...
-  typedef vector<tdata> mdata;	        // ... for each multigrid level
-  typedef vector<mdata> cdata;	        // ... for each component
-  typedef vector<cdata> rdata;	        // ... for each refinement level
-  typedef vector<rdata> fdata;          // ... for each time level
 
 public:
   
@@ -68,13 +61,6 @@ public:
   
   
   // Access to the data
-  
-#if 0
-  virtual const data<T>* operator() (int tl, int rl, int lc, int ml) const
-    CCTK_MEMBER_ATTRIBUTE_PURE;
-  virtual data<T>* operator() (int tl, int rl, int lc, int ml)
-    CCTK_MEMBER_ATTRIBUTE_PURE;
-#endif
   
   data<T> const* typed_data_pointer (int tl, int rl, int lc, int ml) const
   {

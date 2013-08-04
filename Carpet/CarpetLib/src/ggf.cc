@@ -132,13 +132,8 @@ void ggf::recompose_allocate (const int rl)
   oldstorage.resize(storage.size());
   for (int ml=0; ml<(int)storage.size(); ++ml) {
     oldstorage.AT(ml).resize(storage.AT(ml).size());
-#if 0
-    oldstorage.AT(ml).AT(rl) = storage.AT(ml).AT(rl);
-    storage.AT(ml).AT(rl).clear();
-#else
     oldstorage.AT(ml).AT(rl).clear();
     swap (storage.AT(ml).AT(rl), oldstorage.AT(ml).AT(rl));
-#endif
   }
   
   for (int ml=0; ml<d.h.mglevels(); ++ml) {
