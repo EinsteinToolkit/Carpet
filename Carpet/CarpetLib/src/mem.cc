@@ -69,8 +69,6 @@ namespace {
     assert(max_cache_linesize>0);
     return max_cache_linesize;
   }
-  
-  bool need_alignment = false;
 }
 
 
@@ -91,12 +89,26 @@ mem (size_t const vectorlength, size_t const nelems,
 {
   DECLARE_CCTK_PARAMETERS;
   if (memptr == NULL) {
-    const double nbytes = vectorlength * nelems * sizeof (T);
-    if (max_allowed_memory_MB > 0
-        and (total_allocated_bytes + nbytes > MEGA * max_allowed_memory_MB))
+    
+#if VECTORISE
+    size_t const vector_size = CCTK_REAL_VEC_SIZE;
+#else
+    size_t const vector_size = 1;
+#endif
+    size_t const final_padding = vector_size - 1;
+    size_t const max_cache_linesize = get_max_cache_linesize();
+    size_t const alignment =
+      align_up(max_cache_linesize, vector_size * sizeof (T));
+    assert(alignment >= 1);
+    // Safety check
+    assert(alignment <= 1024);
+    
+    const double nbytes = (vectorlength * nelems + final_padding) * sizeof (T);
+    if (max_allowed_memory_MB > 0 and
+        (total_allocated_bytes + nbytes > MEGA * max_allowed_memory_MB))
     {
       T Tdummy;
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
                   "Refusing to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated in %d objects.  The parameter file specifies a maximum of %d MB",
                   double(nbytes), double(nbytes/MEGA),
                   typestring(Tdummy),
@@ -105,46 +117,12 @@ mem (size_t const vectorlength, size_t const nelems,
                   int(total_allocated_objects),
                   int(max_allowed_memory_MB));
     }
-    try {
-      // TODO: use posix_memalign instead, if available
-      size_t const max_cache_linesize = get_max_cache_linesize();
-#if VECTORISE
-      size_t const vector_size = CCTK_REAL_VEC_SIZE * sizeof(T);
-#else
-      size_t const vector_size = sizeof(T);
-#endif
-      size_t const alignment = align_up(max_cache_linesize, vector_size);
-      assert(alignment >= 1);
-      // Safety check
-      assert(alignment <= 1024);
-      // Assume optimistically that operator new returns well-aligned
-      // pointers
-      if (not need_alignment) {
-        // Operator new works fine; just call it
-        storage_base_ = new T [vectorlength * nelems];
-        need_alignment = size_t(storage_base_) & (alignment-1);
-        if (need_alignment) {
-          // This pointer is no good; try again with manual alignment
-          delete [] storage_base_;
-          CCTK_INFO("Switching memory allocation to manual alignment");
-          goto allocate_with_alignment;
-        }
-        storage_ = storage_base_;
-      } else {
-      allocate_with_alignment:
-        // Operator new needs manual alignment
-        size_t const max_padding = div_up(alignment, sizeof(T));
-        assert(ptrdiff_t(max_padding) >= 0);
-        storage_base_ = new T [vectorlength * nelems + max_padding];
-        storage_ = (T*) (size_t(storage_base_ + max_padding) & ~(alignment-1));
-        assert(size_t(storage_) >= size_t(storage_base_              ) and
-               size_t(storage_) <= size_t(storage_base_ + max_padding));
-      }
-      assert(not (size_t(storage_) & (alignment-1)));
-      owns_storage_ = true;
-    } catch (...) {
+    
+    void* ptr;
+    const int ierr = posix_memalign(&ptr, alignment, nbytes);
+    if (ierr) {
       T Tdummy;
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
                   "Failed to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated in %d objects",
                   double(nbytes), double(nbytes/MEGA),
                   typestring(Tdummy),
@@ -152,13 +130,18 @@ mem (size_t const vectorlength, size_t const nelems,
                   double(total_allocated_bytes/MEGA),
                   int(total_allocated_objects));
     }
+    
+    storage_base_ = (T*)ptr;
+    storage_ = storage_base_;
+    assert(not (size_t(storage_) & (alignment-1)));
+    owns_storage_ = true;
+    
     total_allocated_bytes += nbytes;
     max_allocated_bytes = max (max_allocated_bytes, total_allocated_bytes);
     if (poison_new_memory) {
-      memset (storage_base_,
-              poison_value, (vectorlength * nelems +
-                             storage_ - storage_base_) * sizeof (T));
+      memset (storage_, poison_value, nbytes);
     }
+    
   } else {
     assert (memsize >= vectorlength * nelems * sizeof (T));
     // Don't poison the memory.  Passing in a pointer allows the
@@ -176,8 +159,17 @@ mem<T>::
 {
   assert (not has_clients());
   if (owns_storage_) {
-    delete [] storage_base_;
-    const double nbytes = vectorlength_ * nelems_ * sizeof (T);
+    free(storage_base_);
+    
+#if VECTORISE
+    size_t const vector_size = CCTK_REAL_VEC_SIZE;
+#else
+    size_t const vector_size = 1;
+#endif
+    size_t const final_padding = vector_size - 1;
+    
+    const double nbytes =
+      (vectorlength_ * nelems_ + final_padding) * sizeof (T);
     total_allocated_bytes -= nbytes;
   }
   -- total_allocated_objects;
