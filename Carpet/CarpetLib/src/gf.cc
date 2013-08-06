@@ -21,20 +21,12 @@ gf<T>::gf (const int varindex_, const operator_type transport_operator_,
         t_, d_, prolongation_order_time_,
         vectorlength_, vectorindex_, vectorleader_)
 {
-  recompose_crop ();
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    recompose_allocate (rl);
-    recompose_free_old (rl);
-  } // for rl
 }
 
 // Destructors
 template<typename T>
 gf<T>::~gf ()
 {
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    recompose_free (rl);
-  } // for rl
 }
 
 

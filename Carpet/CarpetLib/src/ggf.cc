@@ -52,10 +52,20 @@ ggf::ggf (const int varindex_, const operator_type transport_operator_,
   
   allggf.insert (this);
   d.insert (this);
+  
+  recompose_crop ();
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    recompose_allocate (rl);
+    recompose_free_old (rl);
+  } // for rl
 }
 
 // Destructors
 ggf::~ggf () {
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    recompose_free (rl);
+  } // for rl
+  
   d.erase (this);
   allggf.erase (this);
 }
