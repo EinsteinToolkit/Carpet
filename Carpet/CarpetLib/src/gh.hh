@@ -63,8 +63,8 @@ public:
   mregs regions;                // extents and properties of all grids
   mregs oldregions;             // extents and properties of all grids
   
-  set<th*> ths;                 // all time hierarchies
   set<dh*> dhs;                 // all data hierarchies
+  set<th*> ths;                 // all time hierarchies
   
 public:
   

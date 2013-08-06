@@ -77,6 +77,8 @@ gh (vector<ivect> const & reffacts_, centering const refcent_,
 gh::
 ~gh ()
 {
+  assert (dhs.empty());
+  assert (ths.empty());
   allgh.erase (this);
 }
 
