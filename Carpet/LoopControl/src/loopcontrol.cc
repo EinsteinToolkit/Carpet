@@ -1166,6 +1166,13 @@ void lc_statistics(CCTK_ARGUMENTS)
         time_actual  += setup_count * setup.stats.avg_point();
       }
     }
+    const size_t nbytes =
+      (nloops *
+       (sizeof(lc_descr_t*) + sizeof(lc_descr_t))) +
+      (nsetups *
+       (sizeof(lc_setup_key_t) + sizeof(lc_setup_t*) + sizeof(lc_setup_t))) +
+      (nparams *
+       (sizeof(lc_params_key_t) + sizeof (lc_params_t*) + sizeof(lc_params_t)));
     CCTK_VInfo(CCTK_THORNSTRING, "  Loops traversed:    %td", nloops);
     CCTK_VInfo(CCTK_THORNSTRING, "  Setups encountered: %td", nsetups);
     CCTK_VInfo(CCTK_THORNSTRING, "  Params explored:    %td", nparams);
@@ -1178,6 +1185,7 @@ void lc_statistics(CCTK_ARGUMENTS)
     CCTK_VInfo(CCTK_THORNSTRING,
                "    Ideal time could have been:       %g s   (%+.1f%%)",
                time_best, 100.0 * (time_best / time_actual - 1.0));
+    CCTK_VInfo(CCTK_THORNSTRING, "  Memory allocated: %g MB", nbytes / 1.0e+6);
   }
   
   
