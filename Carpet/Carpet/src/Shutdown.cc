@@ -79,6 +79,8 @@ namespace Carpet {
       
     } END_REVERSE_MGLEVEL_LOOP;
     
+    
+    
     main_timer_tree.root->stop();
     
     if (output_timer_tree_every > 0) {
@@ -93,6 +95,54 @@ namespace Carpet {
     if (output_xml_timer_tree) {
       main_timer_tree.root->outputXML(out_dir,CCTK_MyProc (cctkGH));
     }
+        
+    
+    
+    // Delete timer tree
+    delete main_timer_tree.root; main_timer_tree.root = 0;
+    delete mode_timer_tree.root; mode_timer_tree.root = 0;
+    
+    // Free all memory, call all destructors
+    for (size_t gi=0; gi<arrdata.size(); ++gi) {
+      for (size_t m=0; m<arrdata.AT(gi).size(); ++m) {
+        for (size_t vi=0; vi<arrdata.AT(gi).AT(m).data.size(); ++vi) {
+          ggf*& f = arrdata.AT(gi).AT(m).data.AT(vi);
+          if (f) {
+            delete f; f = 0;
+          }
+        }
+      }
+    }
+    // for (int gi=0; gi<CCTK_NumGroups(); ++gi) {
+    //   const int tls = 0;
+    //   CCTK_GroupStorageDecrease(cctkGH, 1, &gi, &tls, 0);
+    // }
+    
+    for (size_t gi=0; gi<arrdata.size(); ++gi) {
+      if (CCTK_GroupTypeI(gi) == CCTK_GF) {
+        for (size_t m=0; m<arrdata.AT(gi).size(); ++m) {
+          arrdata.AT(gi).AT(m).tt = 0;
+          arrdata.AT(gi).AT(m).dd = 0;
+          arrdata.AT(gi).AT(m).hh = 0;
+        }
+      } else {
+        for (size_t m=0; m<arrdata.AT(gi).size(); ++m) {
+          delete arrdata.AT(gi).AT(m).tt; arrdata.AT(gi).AT(m).tt = 0;
+          delete arrdata.AT(gi).AT(m).dd; arrdata.AT(gi).AT(m).dd = 0;
+          delete arrdata.AT(gi).AT(m).hh; arrdata.AT(gi).AT(m).hh = 0;
+        }
+      }
+    }
+    
+    delete tt; tt = 0;
+    for (size_t m=0; m<vdd.size(); ++m) {
+      delete vdd.AT(m); vdd.AT(m) = 0;
+    }
+    for (size_t m=0; m<vhh.size(); ++m) {
+      delete vhh.AT(m); vhh.AT(m) = 0;
+    }
+    
+    
     
     // earlier checkpoint before finalising MPI
     Waypoint ("Done with shutdown");
