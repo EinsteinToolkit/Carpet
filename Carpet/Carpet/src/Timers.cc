@@ -59,6 +59,7 @@ namespace Carpet {
   void Timer::start ()
   {
     TimerNode *current_timer = d_tree->current;
+    if (not d_tree->root) return; // do nothing if there is no root
     assert(current_timer);
     current_timer->getChildTimer(name())->start();
   }
@@ -67,6 +68,7 @@ namespace Carpet {
   void Timer::stop ()
   {
     TimerNode *current = d_tree->current;
+    if (not d_tree->root) return; // do nothing if there is no root
     if (current->getName() != name())
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Trying to stop enclosing timer '%s' before enclosed time '%s'",
