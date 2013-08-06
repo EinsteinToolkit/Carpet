@@ -62,6 +62,11 @@ ggf::ggf (const int varindex_, const operator_type transport_operator_,
 
 // Destructors
 ggf::~ggf () {
+  for (int ml=0; ml<(int)oldstorage.size(); ++ml) {
+    for (int rl=0; rl<(int)oldstorage.AT(ml).size(); ++rl) {
+      assert (oldstorage.AT(ml).AT(rl).empty());
+    }
+  }
   for (int rl=0; rl<h.reflevels(); ++rl) {
     recompose_free (rl);
   } // for rl
