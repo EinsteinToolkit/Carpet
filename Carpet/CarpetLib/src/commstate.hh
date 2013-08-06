@@ -77,12 +77,8 @@ private:
     bool did_post_recv;
     
     // constructor for an instance of this structure
-    procbufdesc() :
-      sendbufsize(0), recvbufsize(0),
-      sendbuf(NULL), recvbuf(NULL),
-      did_post_send(false), did_post_recv(false)
-    {
-    }
+    procbufdesc();
+    void reinitialize();
   };
   
   
@@ -99,26 +95,24 @@ private:
     int datatypesize;
     
     // per-process buffers
+    // TODO: make this scale (by using e.g. a map)
     vector<procbufdesc> procbufs; // [dist::size()]
     
     // constructor for an instance of this structure
-    typebufdesc() :
-      in_use(false),
-      mpi_datatype(MPI_DATATYPE_NULL), datatypesize(0)
-    {
-    }
+    typebufdesc();
   };
   
   
   
   // datatype buffers
-  vector<typebufdesc> typebufs; // [type]
+  static bool typebufs_busy;
+  static vector<typebufdesc> typebufs; // [type]
   
   
   
   // outstanding requests for posted send/recv communications
-  vector<MPI_Request> srequests;
-  vector<MPI_Request> rrequests;
+  static vector<MPI_Request> srequests;
+  static vector<MPI_Request> rrequests;
   
   static inline
   MPI_Request & push_back (vector<MPI_Request> & reqs)

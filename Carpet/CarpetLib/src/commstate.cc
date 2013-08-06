@@ -29,10 +29,50 @@ char const * tostring (astate const & thestate)
   case state_do_some_work:       return "state_do_some_work";
   case state_empty_recv_buffers: return "state_empty_recv_buffers";
   case state_done:               return "state_done";
-  default: assert(0); abort();
+  default: CCTK_BUILTIN_UNREACHABLE();
   }
   return NULL;
 }
+
+
+
+comm_state::procbufdesc::procbufdesc() :
+  sendbufsize(0), recvbufsize(0),
+  sendbuf(NULL), recvbuf(NULL),
+  did_post_send(false), did_post_recv(false)
+{
+}
+
+void comm_state::procbufdesc::reinitialize()
+{
+  // Note: calling resize(0) instead of clear() ensures that the
+  // vector capacity does not change
+  sendbufbase.resize(0);
+  recvbufbase.resize(0);
+  // Re-initialize the procbuf
+  sendbufsize = 0;
+  recvbufsize = 0;
+  sendbuf = NULL;
+  recvbuf = NULL;
+  did_post_send = false;
+  did_post_recv = false;
+}
+
+
+
+comm_state::typebufdesc::typebufdesc() :
+  in_use(false),
+  mpi_datatype(MPI_DATATYPE_NULL), datatypesize(0)
+{
+}
+
+
+
+// Define static class members
+bool comm_state::typebufs_busy = false;
+vector<comm_state::typebufdesc> comm_state::typebufs;
+vector<MPI_Request> comm_state::srequests;
+vector<MPI_Request> comm_state::rrequests;
 
 
 
@@ -45,19 +85,25 @@ comm_state::comm_state ()
   timer.start ();
   thestate = state_get_buffer_sizes;
   
-  typebufs.resize (dist::c_ndatatypes());
+  assert (not typebufs_busy);
+  typebufs_busy = true;
+  if (typebufs.empty()) {
+    typebufs.resize (dist::c_ndatatypes());
 #define TYPECASE(N,T)                                                   \
-  {                                                                     \
-    T dummy;                                                            \
-    unsigned const type = dist::c_datatype (dummy);                     \
-    typebufs.AT(type).mpi_datatype = dist::mpi_datatype (dummy);        \
-    typebufs.AT(type).datatypesize = sizeof dummy;                      \
-  }
+    {                                                                   \
+      T dummy;                                                          \
+      unsigned const type = dist::c_datatype (dummy);                   \
+      typebufs.AT(type).mpi_datatype = dist::mpi_datatype (dummy);      \
+      typebufs.AT(type).datatypesize = sizeof dummy;                    \
+    }
 #include "typecase.hh"
 #undef TYPECASE
+  }
   
   srequests.reserve (dist::c_ndatatypes() * dist::size());
   rrequests.reserve (dist::c_ndatatypes() * dist::size());
+  assert (srequests.empty());
+  assert (rrequests.empty());
   
   timer.stop (0);
 }
@@ -459,13 +505,13 @@ void comm_state::step ()
     
     
   case state_done: {
-    assert (0); abort();
+    CCTK_BUILTIN_UNREACHABLE();
   }
     
     
     
   default:
-    assert (0); abort();
+    CCTK_BUILTIN_UNREACHABLE();
   }
   
   
@@ -484,6 +530,17 @@ bool comm_state::done () const
 comm_state::~comm_state ()
 {
   DECLARE_CCTK_PARAMETERS;
+  
+  for (size_t type=0; type<typebufs.size(); ++type) {
+    typebufdesc& typebuf = typebufs.AT(type);
+    for (size_t proc=0; proc<typebuf.procbufs.size(); ++proc) {
+      procbufdesc& procbuf = typebuf.procbufs.AT(proc);
+      procbuf.reinitialize();
+    }
+  }
+  
+  assert (typebufs_busy);
+  typebufs_busy = false;
   
   assert (thestate == state_done or
           thestate == state_get_buffer_sizes);
