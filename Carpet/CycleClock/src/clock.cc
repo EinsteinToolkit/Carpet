@@ -26,6 +26,7 @@ namespace CycleClock {
     cycleclock_t()
     {
       reset();
+      start();
     }
     
     ~cycleclock_t()
