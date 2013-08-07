@@ -107,14 +107,18 @@ namespace Timers {
   extern "C"
   int Timer_Startup()
   {
-    // This must happen before any Timer objects are created
-    main_timer_tree.root = new TimerNode(&main_timer_tree, "main");
-    main_timer_tree.current = 0; // No timer has been started yet
-    main_timer_tree.root->start();
+    DECLARE_CCTK_PARAMETERS;
     
-    mode_timer_tree.root = new TimerNode(&mode_timer_tree, "meta mode");
-    mode_timer_tree.current = 0; // No timer has been started yet
-    mode_timer_tree.root->start();
+    if (not disable_timer_trees) {
+      // This must happen before any Timer objects are created
+      main_timer_tree.root = new TimerNode(&main_timer_tree, "main");
+      main_timer_tree.current = 0; // No timer has been started yet
+      main_timer_tree.root->start();
+      
+      mode_timer_tree.root = new TimerNode(&mode_timer_tree, "meta mode");
+      mode_timer_tree.current = 0; // No timer has been started yet
+      mode_timer_tree.root->start();
+    }
     
     return 0;
   }
@@ -122,12 +126,16 @@ namespace Timers {
   extern "C"
   int Timer_Shutdown()
   {
-    // main_timer_tree.root->stop();
-    // mode_timer_tree.root->stop();
+    DECLARE_CCTK_PARAMETERS;
     
-    // Delete timer tree
-    delete main_timer_tree.root; main_timer_tree.root = 0;
-    delete mode_timer_tree.root; mode_timer_tree.root = 0;
+    if (not disable_timer_trees) {
+      // main_timer_tree.root->stop();
+      // mode_timer_tree.root->stop();
+      
+      // Delete timer trees
+      delete main_timer_tree.root; main_timer_tree.root = 0;
+      delete mode_timer_tree.root; mode_timer_tree.root = 0;
+    }
     
     return 0;
   }

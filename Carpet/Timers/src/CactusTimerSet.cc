@@ -31,12 +31,18 @@ namespace Timers {
   // Add a timer
   void CactusTimerSet::add(CactusTimer* const timer)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (disable_cactus_timer_set) return;
     timers.insert(timer);
   }
   
   // Remove a timer
   void CactusTimerSet::remove(CactusTimer* const timer)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (disable_cactus_timer_set) return;
     timers.erase(timer);
   }
   

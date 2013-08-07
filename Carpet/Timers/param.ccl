@@ -12,6 +12,14 @@ BOOLEAN verbose "Output (debug) messages when a timer is started or stopped" STE
 {
 } "no"
 
+BOOLEAN disable_cactus_timer_set "Disable Cactus timer set" STEERABLE=recover
+{
+} "no"
+
+BOOLEAN disable_timer_trees "Disable timer trees" STEERABLE=recover
+{
+} "no"
+
 STRING xml_clock "Which clock to use in the XML timer output file" STEERABLE=always
 {
   ".*" :: "must be a legal clock name"
@@ -26,4 +34,3 @@ INT output_precision "Number of decimal places to use in standard output for tim
 {
   1:* :: "number of decimal places"
 } 1
-
