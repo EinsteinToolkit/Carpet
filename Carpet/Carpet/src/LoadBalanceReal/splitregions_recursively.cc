@@ -25,6 +25,8 @@
 #  include "nompi.h"
 #endif
 
+#include <Timer.hh>
+
 #include <loopcontrol.h>
 
 #include <bbox.hh>
@@ -38,7 +40,6 @@
 #include <carpet.hh>
 #include <modes.hh>
 #include <variables.hh>
-#include <Timers.hh>
 
 
 

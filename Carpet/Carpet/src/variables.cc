@@ -26,9 +26,6 @@ namespace Carpet {
   // Maximum refinement factors on finest possible grid
   int maxtimereflevelfact;
   vect<int,dim> maxspacereflevelfact;
-  
-  TimerTree main_timer_tree;
-  TimerTree mode_timer_tree;
 
   // Base multigrid level
   int basemglevel;

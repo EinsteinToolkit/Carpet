@@ -25,6 +25,8 @@
 #  include "nompi.h"
 #endif
 
+#include <Timer.hh>
+
 #include <loopcontrol.h>
 
 #include <balance.hh>
@@ -39,7 +41,6 @@
 #include <carpet.hh>
 #include <modes.hh>
 #include <variables.hh>
-#include <Timers.hh>
 
 
 
@@ -92,7 +93,7 @@ namespace Carpet {
   CheckRegions (gh::mregs const & regsss)
   {
     char const * const where = "CheckRegions";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     // At least one multigrid level
@@ -150,7 +151,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "Regrid";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     Checkpoint ("Regridding level %d...", reflevel);
@@ -267,7 +268,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "RegridMap";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     Waypoint ("Regridding map %d...", m);
@@ -327,7 +328,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "PostRegrid";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     // Calculate new number of levels
@@ -390,7 +391,7 @@ namespace Carpet {
              bool const do_init)
   {
     char const * const where = "Recompose";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     bool did_recompose = false;
@@ -422,7 +423,7 @@ namespace Carpet {
               bool const do_init)
   {
     char const * const where = "RegridFree";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     Checkpoint ("Freeing after regridding level %d...", reflevel);

@@ -6,10 +6,11 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <Timer.hh>
+
 #include <dist.hh>
 
 #include <carpet.hh>
-#include <Timers.hh>
 
 
 
@@ -23,7 +24,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer ("OutputGH");
+    static Timers::Timer timer ("OutputGH");
     timer.start();
     
     Checkpoint ("OutputGH");
@@ -34,7 +35,7 @@ namespace Carpet {
       return -1;
     }
     
-    static vector<Timer *> timers;
+    static vector<Timers::Timer *> timers;
     timers.resize (num_methods, NULL);
     
     int num_vars = 0;
@@ -48,7 +49,7 @@ namespace Carpet {
         buf << method->implementation
             << "::" << method->name
             << " [" << handle << "]";
-        timers.AT(handle) = new Timer (buf.str().c_str());
+        timers.AT(handle) = new Timers::Timer (buf.str().c_str());
       }
       
       timers.AT(handle)->start();

@@ -19,21 +19,22 @@
 #include <defs.hh>
 
 #include "CactusTimer.hh"
-#include "TimerSet.hh"
+#include "CactusTimerSet.hh"
 
-namespace Carpet
-{
+
+
+namespace Timers {
+  
   using namespace std;
-
+  
   // Create a new Cactus timer with the given name
-  CactusTimer::CactusTimer (const string &timername)
-    : running (false)
+  CactusTimer::CactusTimer(string timername)
+    : running(false)
   {
-//    cout << "CactusTimer::CactusTimer(): name = " << timername << endl;
-    handle = CCTK_TimerCreate (timername.c_str());
-    assert (handle >= 0);
-
-    timerSet.add (this);
+    handle = CCTK_TimerCreate(timername.c_str());
+    assert(handle >= 0);
+    
+    timerSet.add(this);
   }
 
   // Destroy a timer
@@ -69,7 +70,7 @@ namespace Carpet
   // Timer name
   string CactusTimer::name () const
   {
-    char const * const timername = CCTK_TimerName (handle);
+    const char* const timername = CCTK_TimerName (handle);
     assert (timername);
     return string(timername);
   }
@@ -83,15 +84,15 @@ namespace Carpet
     assert (timer);
     CCTK_TimerI (handle, timer);
 
-    bool const was_running = running;
+    const bool was_running = running;
     if (was_running) stop();
-    const cTimerVal * tv = CCTK_GetClockValue(timer_xml_clock, timer);
+    const cTimerVal* tv = CCTK_GetClockValue(xml_clock, timer);
     if (was_running) start();
-
+    
     if (not tv) {
       CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Clock \"%s\" not found for timer #%d \"%s\"",
-                 timer_xml_clock, handle, CCTK_TimerName(handle));
+                 xml_clock, handle, CCTK_TimerName(handle));
       return -1.0;
     }
 
@@ -154,7 +155,7 @@ namespace Carpet
   {
     DECLARE_CCTK_PARAMETERS;
     
-    bool const was_running = running;
+    const bool was_running = running;
     if (was_running) stop();
     
     static cTimerData *timer = NULL;
@@ -181,7 +182,7 @@ namespace Carpet
   // Print timer data
   void CactusTimer::printData ()
   {
-    bool const was_running = running;
+    const bool was_running = running;
     if (was_running) stop();
 
 #if 0
@@ -228,10 +229,10 @@ namespace Carpet
   }
 
   // Output (debug) messages that a timer is starting or stopping
-  void CactusTimer::msgStart ()  const
+  void CactusTimer::msgStart () const
   {
     DECLARE_CCTK_PARAMETERS;
-    if (timers_verbose) {
+    if (verbose) {
       CCTK_VInfo (CCTK_THORNSTRING, "Timer \"%s\" starting", name().c_str());
     }
   }
@@ -239,7 +240,7 @@ namespace Carpet
   void CactusTimer::msgStop () const
   {
     DECLARE_CCTK_PARAMETERS;
-    if (timers_verbose) {
+    if (verbose) {
       CCTK_VInfo (CCTK_THORNSTRING, "Timer \"%s\" stopping", name().c_str());
     }
   }

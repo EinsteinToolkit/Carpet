@@ -12,18 +12,17 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 #include <cctk_Termination.h>
+#include <util_String.h>
 
 #include <Requirements.hh>
 
-#include <util_String.h>
+#include <CactusTimerSet.hh>
+#include <Timer.hh>
 
 #include <dist.hh>
 #include <th.hh>
 
 #include <carpet.hh>
-#include <Timers.hh>
-#include <TimerSet.hh>
-#include <TimerNode.hh>
 
 
 
@@ -61,7 +60,7 @@ namespace Carpet {
     
     // Main loop
     BeginTimingEvolution (cctkGH);
-    static Timer timer ("Evolve");
+    static Timers::Timer timer ("Evolve");
     timer.start();
     while (not do_terminate (cctkGH)) {
       
@@ -83,33 +82,28 @@ namespace Carpet {
       
       // Print timer values
       {
-        Timer timer("PrintTimers");
+        Timers::Timer timer("PrintTimers");
         timer.start();
         int const do_every = maxtimereflevelfact / timereffacts.AT(reflevels-1);
         if (output_timers_every > 0 and
             cctkGH->cctk_iteration % output_timers_every == 0 and
             cctkGH->cctk_iteration % do_every == 0)
         {
-          Carpet::TimerSet::writeData (cctkGH, timer_file);
+          Timers::CactusTimerSet::writeData (cctkGH, timer_file);
         }
 
         if (output_timer_tree_every > 0 and
             cctkGH->cctk_iteration % output_timer_tree_every == 0 and
             cctkGH->cctk_iteration % do_every == 0)
         {
-          TimerNode *et = main_timer_tree.root->getChildTimer("Evolve");
-          double total_avg, total_max;
-          et->getGlobalTime(total_avg, total_max);
-          et->print(cout, total_max, 0, timer_tree_threshold_percentage, timer_tree_output_precision);
-          mode_timer_tree.root->getGlobalTime(total_avg, total_max);
-          mode_timer_tree.root->print(cout, total_max, 0, timer_tree_threshold_percentage, timer_tree_output_precision);
+          Timers::Timer::outputTree("Evolve");
         }
         timer.stop();
       }
       
       // Ensure that all levels have consistent times
       {
-        Timer timer("CheckLevelTimes");
+        Timers::Timer timer("CheckLevelTimes");
         timer.start();
         CCTK_REAL const eps =
           pow(numeric_limits<CCTK_REAL>::epsilon(), CCTK_REAL(0.75));
@@ -144,7 +138,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer ("DoTerminate");
+    static Timers::Timer timer ("DoTerminate");
     timer.start();
     
     bool term;
@@ -228,7 +222,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer ("AdvanceTime");
+    static Timers::Timer timer ("AdvanceTime");
     timer.start();
     
     Checkpoint ("AdvanceTime");
@@ -264,7 +258,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CallRegrid";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     assert (is_level_mode());
@@ -404,7 +398,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CallEvol";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {
@@ -492,7 +486,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "Evolve::CallRestrict";
-    static Timer timer ("CallRestrict");
+    static Timers::Timer timer ("CallRestrict");
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {
@@ -595,7 +589,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CallAnalysis";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {
@@ -727,7 +721,7 @@ namespace Carpet {
   void ScheduleTraverse (char const * const where, char const * const name,
                          cGH * const cctkGH)
   {
-    Timer timer(name);
+    Timers::Timer timer(name);
     timer.start();
     ostringstream infobuf;
     infobuf << "Scheduling " << name;
@@ -739,7 +733,7 @@ namespace Carpet {
   
   void OutputGH (char const * const where, cGH * const cctkGH)
   {
-    static Timer timer("OutputGH");
+    static Timers::Timer timer("OutputGH");
     timer.start();
     CCTK_OutputGH (cctkGH);
     timer.stop();

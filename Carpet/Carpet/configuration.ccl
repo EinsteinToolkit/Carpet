@@ -4,7 +4,7 @@ PROVIDES Carpet
 {
 }
 
-REQUIRES IOUtil CarpetLib MPI
+REQUIRES CarpetLib IOUtil MPI Timers
 
 OPTIONAL LoopControl
 {

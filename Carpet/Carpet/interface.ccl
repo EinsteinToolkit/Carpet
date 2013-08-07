@@ -5,13 +5,15 @@ IMPLEMENTS: Driver
 include header: carpet_public.hh in carpet.hh
 include header: carpet_public.h in carpet.h
 
-include header: Timers.hh in CarpetTimers.hh
-
 uses include header: Requirements.hh
 
 uses include header: nompi.h
 
 uses include header: loopcontrol.h
+
+uses include header: CactusTimerSet.hh
+uses include header: Timer.hh
+uses include header: TimerTree.hh
 
 uses include header: mpi_string.hh
 

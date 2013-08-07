@@ -32,7 +32,7 @@
 #include <vect.hh>
 
 #include "carpet_public.h"
-#include "TimerNode.hh"
+
 
 
 namespace Carpet {
@@ -93,9 +93,6 @@ namespace Carpet {
   // Current refinement factors
   extern int timereflevelfact;
   extern vect<int,dim> spacereflevelfact;
-  
-  extern TimerTree main_timer_tree;
-  extern TimerTree mode_timer_tree;
 
   // Current multigrid factor
   extern int mglevelfact;

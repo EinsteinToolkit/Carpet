@@ -11,6 +11,8 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 
+#include <Timer.hh>
+
 #include <bbox.hh>
 #include <bboxset.hh>
 #include <defs.hh>
@@ -20,7 +22,6 @@
 #include <vect.hh>
 
 #include <carpet.hh>
-#include <CarpetTimers.hh>
 
 #include "amr.hh"
 #include "boundary.hh"
@@ -485,7 +486,7 @@ namespace CarpetRegrid2 {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CarpetRegrid2::Regrid";
-    static Carpet::Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     assert (is_singlemap_mode());
@@ -675,7 +676,7 @@ namespace CarpetRegrid2 {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CarpetRegrid2::RegridMaps";
-    static Carpet::Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     assert (is_level_mode());

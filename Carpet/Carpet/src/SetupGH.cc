@@ -27,6 +27,8 @@
 
 #include <Requirements.hh>
 
+#include <Timer.hh>
+
 #include <bbox.hh>
 #include <defs.hh>
 #include <dist.hh>
@@ -37,7 +39,6 @@
 #include <vect.hh>
 
 #include <carpet.hh>
-#include "Timers.hh"
 
 
 
@@ -546,7 +547,7 @@ namespace Carpet {
     
     // Say hello
 
-    Timer timer("CarpetStartup");
+    Timers::Timer timer("CarpetStartup");
     timer.start();
 
     Waypoint ("Setting up the grid hierarchy");
@@ -823,7 +824,7 @@ namespace Carpet {
     
     // Allocate grid hierarchy
 
-    Timer timer("AllocateGridHierarchy");
+    Timers::Timer timer("AllocateGridHierarchy");
     timer.start();
     vhh.resize(maps);
     vhh.AT(m) = new gh (spacereffacts, refcentering,
@@ -1368,6 +1369,8 @@ namespace Carpet {
   void
   set_state (cGH * const cctkGH)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     // // Allocate level times
     // leveltimes.resize (mglevels);
     // for (int ml=0; ml<mglevels; ++ml) {
@@ -1399,6 +1402,15 @@ namespace Carpet {
     local_component = -1;
     
     // Leave everything, so that everything is set up correctly
+    Timers::Timer("meta mode", 1).start();
+    Timers::Timer("global mode", 1).start();
+    Timers::Timer("level(0)", 1).start();
+    if (include_maps_in_mode_timer_tree) {
+      Timers::Timer("map(0)", 1).start();
+    }
+    if (include_local_mode_in_mode_timer_tree) {
+      Timers::Timer("local", 1).start();
+    }
     leave_local_mode     (cctkGH);
     leave_singlemap_mode (cctkGH);
     leave_level_mode     (cctkGH);

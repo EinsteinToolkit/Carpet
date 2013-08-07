@@ -7,7 +7,7 @@
 #include <iostream>
 #include <string>
 
-#include "CarpetTimers.hh"
+#include <Timer.hh>
 
 #include "defs.hh"
 #include "dh.hh"
@@ -121,7 +121,7 @@ void ggf::set_timelevels (const int ml, const int rl, const int new_timelevels)
 void ggf::recompose_crop ()
 {
   // Free storage that will not be needed
-  static Carpet::Timer timer ("CarpetLib::ggf::recompose_crop");
+  static Timers::Timer timer ("CarpetLib::ggf::recompose_crop");
   timer.start ();
   
   for (int ml=0; ml<h.mglevels(); ++ml) {
@@ -141,7 +141,7 @@ void ggf::recompose_crop ()
 void ggf::recompose_allocate (const int rl)
 {
   // Retain storage that might be needed
-  static Carpet::Timer timer ("CarpetLib::ggf::recompose_allocate");
+  static Timers::Timer timer ("CarpetLib::ggf::recompose_allocate");
   timer.start ();
   
   oldstorage.resize(storage.size());
@@ -178,7 +178,7 @@ void ggf::recompose_fill (comm_state & state, int const rl,
                           bool const do_prolongate)
 {
   // Initialise the new storage
-  static Carpet::Timer timer ("CarpetLib::ggf::recompose_fill");
+  static Timers::Timer timer ("CarpetLib::ggf::recompose_fill");
   timer.start ();
   
   for (int ml = 0; ml < h.mglevels(); ++ ml) {
@@ -230,7 +230,7 @@ void ggf::recompose_fill (comm_state & state, int const rl,
 void ggf::recompose_free_old (const int rl)
 {
   // Delete old storage
-  static Carpet::Timer timer ("dh::recompose_free_old");
+  static Timers::Timer timer ("dh::recompose_free_old");
   timer.start ();
 
   for (int ml=0; ml<(int)oldstorage.size(); ++ml) {
@@ -248,7 +248,7 @@ void ggf::recompose_free_old (const int rl)
 void ggf::recompose_free (const int rl)
 {
   // Delete old storage
-  static Carpet::Timer timer ("dh::recompose_free");
+  static Timers::Timer timer ("dh::recompose_free");
   timer.start ();
   
   for (int ml=0; ml<(int)storage.size(); ++ml) {

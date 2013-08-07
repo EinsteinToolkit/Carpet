@@ -333,8 +333,6 @@ ostream& output (ostream& os, const vector<T>& v) {
 #include "th.hh"
 #include "vect.hh"
 
-#include "CarpetTimers.hh"
-
 template int ipow (int x, int y);
 template CCTK_REAL ipow (CCTK_REAL x, int y);
 //template vect<int,dim> ipow (vect<int,dim> x, int y);

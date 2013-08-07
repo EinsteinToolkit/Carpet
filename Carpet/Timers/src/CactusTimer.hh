@@ -9,67 +9,61 @@
 #include <utility>
 #include <vector>
 
-namespace Carpet {
 
-  using namespace std;
 
-/** The CactusTimer class wraps the Cactus timer mechanism.  All times
-    are returned as doubles for now. */
+namespace Timers {
 
-  class CactusTimer
-  {
+  /** The CactusTimer class wraps the Cactus timer mechanism. All
+      times are returned as doubles for now. */
+  
+  class CactusTimer {
     int handle;
     bool running;
-
+    
   public:
-
+    
     /// Create a new Cactus timer with the given name
-    CactusTimer (const string &timername);
-
-    /// Destroy a timer
-    ~CactusTimer ();
-
+    CactusTimer(std::string timername);
+    
+    /// Destruct the timer
+    ~CactusTimer();
+    
     /// Start the timer
-    void start ();
-
+    void start();
+    
     /// Stop the timer
-    void stop ();
-
+    void stop();
+    
     /// Reset the timer
-    void reset ();
+    void reset();
 
     /// Timer name
-    string name () const;
-
+    std::string name() const;
+    
     /// Return the current time of the timer in seconds as a double
     double getTime();
-
+    
     /// Return the average and maximum current time over all MPI processes
     void getGlobalTime(double& avg, double& max);
-
+    
     /// Return all clock names and their units
-    vector<pair<string,string> > getAllTimerNames() const;
-
+    std::vector<std::pair<std::string,std::string> > getAllTimerNames() const;
+    
     /// Return all clock values of the timer as double
-    vector<double> getAllTimerValues();
-
+    std::vector<double> getAllTimerValues();
+    
     /// Print timer data
     void printData ();
-
-    ostream& serialise(ostream &os);
-
+    
+    std::ostream& serialise(std::ostream &os);
+    
   private:
-
+    
     // Output (debug) messages that a timer is starting or stopping
-    void
-    msgStart ()
-      const;
-
-    void
-    msgStop ()
-      const;
-
+    void msgStart() const;
+    void msgStop() const;
   };
-}  // namespace Carpet
+  
+} // namespace Timers
 
 #endif // CACTUSTIMER_HH

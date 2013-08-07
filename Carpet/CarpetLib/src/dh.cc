@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <sstream>
 
-#include "CarpetTimers.hh"
+#include <Timer.hh>
 
 #include "mpi_string.hh"
 #include "bbox.hh"
@@ -271,7 +271,7 @@ regrid (bool const do_init)
 {
   DECLARE_CCTK_PARAMETERS;
     
-  static Carpet::Timer timer ("CarpetLib::dh::regrid");
+  static Timers::Timer timer ("CarpetLib::dh::regrid");
   timer.start();
   
   CHECKPOINT;
@@ -323,7 +323,7 @@ regrid (bool const do_init)
       
       // Domain:
       
-      static Carpet::Timer timer_domain ("domain");
+      static Timers::Timer timer_domain ("domain");
       timer_domain.start();
       
       ibbox const & domain_exterior = h.baseextent(ml,rl);
@@ -348,7 +348,7 @@ regrid (bool const do_init)
       
       
       
-      static Carpet::Timer timer_region ("region");
+      static Timers::Timer timer_region ("region");
       timer_region.start();
       
       for (int c = 0; c < h.components(rl); ++ c) {
@@ -517,7 +517,7 @@ regrid (bool const do_init)
       
       // Conjunction of all buffer zones:
       
-      static Carpet::Timer timer_buffers ("buffers");
+      static Timers::Timer timer_buffers ("buffers");
       timer_buffers.start();
       
       // Enlarge active part of domain
@@ -656,7 +656,7 @@ regrid (bool const do_init)
       
       // Test constituency relations:
       
-      static Carpet::Timer timer_test ("test");
+      static Timers::Timer timer_test ("test");
       timer_test.start();
       
       for (int c = 0; c < h.components(rl); ++ c) {
@@ -697,14 +697,14 @@ regrid (bool const do_init)
       
       // Communication schedule:
       
-      static Carpet::Timer timer_comm ("comm");
+      static Timers::Timer timer_comm ("comm");
       timer_comm.start();
       
-      static Carpet::Timer timer_comm_mgrest ("mgrest");
-      static Carpet::Timer timer_comm_mgprol ("mgprol");
-      static Carpet::Timer timer_comm_refprol ("refprol");
-      static Carpet::Timer timer_comm_sync ("sync");
-      static Carpet::Timer timer_comm_refbndprol ("refbndprol");
+      static Timers::Timer timer_comm_mgrest ("mgrest");
+      static Timers::Timer timer_comm_mgprol ("mgprol");
+      static Timers::Timer timer_comm_refprol ("refprol");
+      static Timers::Timer timer_comm_sync ("sync");
+      static Timers::Timer timer_comm_refbndprol ("refbndprol");
       timer_comm_mgrest.instantiate ();
       timer_comm_mgprol.instantiate ();
       timer_comm_refprol.instantiate ();
@@ -1017,7 +1017,7 @@ regrid (bool const do_init)
       
       // Refinement restriction:
       
-      static Carpet::Timer timer_comm_refrest ("refrest");
+      static Timers::Timer timer_comm_refrest ("refrest");
       timer_comm_refrest.start();
       
       if (rl > 0) {
@@ -1120,7 +1120,7 @@ regrid (bool const do_init)
       
       // Refinement refluxing:
       
-      static Carpet::Timer timer_comm_reflux ("reflux");
+      static Timers::Timer timer_comm_reflux ("reflux");
       timer_comm_reflux.start();
       
       // If there is no coarser level, do nothing
@@ -1416,7 +1416,7 @@ regrid (bool const do_init)
       
       // Reduction mask:
       
-      static Carpet::Timer timer_mask ("mask");
+      static Timers::Timer timer_mask ("mask");
       timer_mask.start();
       
       for (int lc=0; lc<h.local_components(rl); ++lc) {
@@ -1581,7 +1581,7 @@ regrid (bool const do_init)
       // Mask for unused points on coarser level (which do not
       // influence the future evolution provided regridding is done at
       // the right times):
-      static Carpet::Timer timer_overwrittenmask ("unusedpoints_mask");
+      static Timers::Timer timer_overwrittenmask ("unusedpoints_mask");
       timer_overwrittenmask.start();
       
       // Declare this here to save it for later use. Contains all the boxes
@@ -1725,11 +1725,11 @@ regrid (bool const do_init)
       fast_level.do_init = do_init;
       if (do_init) {
         
-        static Carpet::Timer timer_regrid ("regrid");
+        static Timers::Timer timer_regrid ("regrid");
         timer_regrid.start();
         
-        static Carpet::Timer timer_regrid_sync ("sync");
-        static Carpet::Timer timer_regrid_prolongate ("prolongate");
+        static Timers::Timer timer_regrid_sync ("sync");
+        static Timers::Timer timer_regrid_prolongate ("prolongate");
         
         for (int lc = 0; lc < h.local_components(rl); ++ lc) {
           int const c = h.get_component (rl, lc);
@@ -1879,7 +1879,7 @@ regrid (bool const do_init)
       
       {
         
-        static Carpet::Timer timer_bcast_boxes ("bcast_boxes");
+        static Timers::Timer timer_bcast_boxes ("bcast_boxes");
         timer_bcast_boxes.start();
         
         int const count_send = h.local_components(rl);
@@ -1910,22 +1910,22 @@ regrid (bool const do_init)
       
       {
         
-        static Carpet::Timer timer_bcast_comm ("bcast_comm");
+        static Timers::Timer timer_bcast_comm ("bcast_comm");
         timer_bcast_comm.start();
         
-        static Carpet::Timer timer_bcast_comm_ref_prol ("ref_prol");
+        static Timers::Timer timer_bcast_comm_ref_prol ("ref_prol");
         timer_bcast_comm_ref_prol.start();
         broadcast_schedule (fast_level_otherprocs, fast_level,
                             & fast_dboxes::fast_ref_prol_sendrecv);
         timer_bcast_comm_ref_prol.stop();
         
-        static Carpet::Timer timer_bcast_comm_sync ("sync");
+        static Timers::Timer timer_bcast_comm_sync ("sync");
         timer_bcast_comm_sync.start();
         broadcast_schedule (fast_level_otherprocs, fast_level,
                             & fast_dboxes::fast_sync_sendrecv);
         timer_bcast_comm_sync.stop();
         
-        static Carpet::Timer timer_bcast_comm_ref_bnd_prol ("ref_bnd_prol");
+        static Timers::Timer timer_bcast_comm_ref_bnd_prol ("ref_bnd_prol");
         timer_bcast_comm_ref_bnd_prol.start();
         broadcast_schedule (fast_level_otherprocs, fast_level,
                             & fast_dboxes::fast_ref_bnd_prol_sendrecv);
@@ -1934,7 +1934,7 @@ regrid (bool const do_init)
         if (rl > 0) {
           int const orl = rl - 1;
           fast_dboxes & fast_olevel = fast_boxes.AT(ml).AT(orl);
-          static Carpet::Timer timer_bcast_comm_ref_rest ("ref_rest");
+          static Timers::Timer timer_bcast_comm_ref_rest ("ref_rest");
           timer_bcast_comm_ref_rest.start();
           broadcast_schedule (fast_level_otherprocs, fast_olevel,
                               & fast_dboxes::fast_ref_rest_sendrecv);
@@ -1944,7 +1944,7 @@ regrid (bool const do_init)
         if (rl > 0) {
           int const orl = rl - 1;
           fast_dboxes & fast_olevel = fast_boxes.AT(ml).AT(orl);
-          static Carpet::Timer timer_bcast_comm_ref_refl ("ref_refl");
+          static Timers::Timer timer_bcast_comm_ref_refl ("ref_refl");
           timer_bcast_comm_ref_refl.start();
           for (int dir = 0; dir < dim; ++ dir) {
             for (int face = 0; face < 2; ++ face) {
@@ -1957,7 +1957,7 @@ regrid (bool const do_init)
           timer_bcast_comm_ref_refl.stop();
         }
         
-        static Carpet::Timer timer_bcast_comm_ref_refl_prol
+        static Timers::Timer timer_bcast_comm_ref_refl_prol
           ("ref_refl_prol");
         timer_bcast_comm_ref_refl_prol.start();
         for (int dir = 0; dir < dim; ++ dir) {
@@ -1972,13 +1972,13 @@ regrid (bool const do_init)
         
         // TODO: Maybe broadcast old2new schedule only if do_init is
         // set
-        static Carpet::Timer timer_bcast_comm_old2new_sync ("old2new_sync");
+        static Timers::Timer timer_bcast_comm_old2new_sync ("old2new_sync");
         timer_bcast_comm_old2new_sync.start();
         broadcast_schedule (fast_level_otherprocs, fast_level,
                             & fast_dboxes::fast_old2new_sync_sendrecv);
         timer_bcast_comm_old2new_sync.stop();
         
-        static Carpet::Timer timer_bcast_comm_old2new_ref_prol
+        static Timers::Timer timer_bcast_comm_old2new_ref_prol
           ("old2new_ref_prol");
         timer_bcast_comm_old2new_ref_prol.start();
         broadcast_schedule (fast_level_otherprocs, fast_level,
@@ -2144,7 +2144,7 @@ broadcast_schedule (vector<fast_dboxes> & fast_level_otherprocs,
                     fast_dboxes & fast_level,
                     srpvect fast_dboxes::* const schedule_item)
 {
-  static Carpet::Timer timer_bs1 ("CarpetLib::dh::bs1");
+  static Timers::Timer timer_bs1 ("CarpetLib::dh::bs1");
   timer_bs1.start();
   vector <srpvect> send (dist::size());
   for (int p=0; p<dist::size(); ++p) {
@@ -2152,12 +2152,12 @@ broadcast_schedule (vector<fast_dboxes> & fast_level_otherprocs,
   }
   timer_bs1.stop();
   
-  static Carpet::Timer timer_bs2 ("CarpetLib::dh::bs2");
+  static Timers::Timer timer_bs2 ("CarpetLib::dh::bs2");
   timer_bs2.start();
   srpvect const recv = alltoallv1 (dist::comm(), send);
   timer_bs2.stop();
   
-  static Carpet::Timer timer_bs3 ("CarpetLib::dh::bs3");
+  static Timers::Timer timer_bs3 ("CarpetLib::dh::bs3");
   timer_bs3.start();
   (fast_level.*schedule_item).insert
     ((fast_level.*schedule_item).end(), recv.begin(), recv.end());
@@ -2197,7 +2197,7 @@ recompose (int const rl, bool const do_prolongate)
   
   assert (rl>=0 and rl<h.reflevels());
   
-  static Carpet::Timer timer ("CarpetLib::dh::recompose");
+  static Timers::Timer timer ("CarpetLib::dh::recompose");
   timer.start ();
   
   for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {

@@ -9,7 +9,6 @@
 #include <dist.hh>
 
 #include <carpet.hh>
-#include <TimerNode.hh>
 
 
 
@@ -65,15 +64,6 @@ namespace Carpet {
     CCTK_OverloadQueryGroupStorageB (QueryGroupStorageB);
     CCTK_OverloadGroupDynamicData (GroupDynamicData);
     
-    // This must happen before any Timer objects are created
-    main_timer_tree.root = new TimerNode(&main_timer_tree,"main");
-    main_timer_tree.current = 0; // No timer has been started yet
-    main_timer_tree.root->start();
-
-    mode_timer_tree.root = new TimerNode(&mode_timer_tree,"meta mode");
-    mode_timer_tree.current = 0; // No timer has been started yet
-    mode_timer_tree.root->start();
-
     return 0;
   }
   

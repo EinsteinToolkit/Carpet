@@ -40,26 +40,28 @@
 #include <dist.hh>
 #include <mpi_string.hh>
 
-#include "TimerNode.hh"
+#include "TimerTree.hh"
 
-namespace Carpet {
+
+
+namespace Timers {
 
   using namespace std;
 
-  TimerNode::TimerNode(TimerTree *tree, string name):
-    d_name(name), d_parent(0), d_tree(tree), d_running(0), timer(0)
+  TimerNode::TimerNode(TimerTree *tree, const string& name):
+    d_name(name), d_parent(0), d_tree(tree), d_running(0), d_timer(0)
   {
   }
 
   TimerNode::~TimerNode()
   {
-    for(map<string,TimerNode*>::iterator iter=d_children.begin();
-        iter!=d_children.end(); ++iter)
+    for (map<string,TimerNode*>::iterator
+           iter=d_children.begin(); iter!=d_children.end(); ++iter)
     {
       delete iter->second;
     }
     d_children.clear();
-    delete timer;
+    delete d_timer;
   }
 
   string TimerNode::pathName() const
@@ -76,119 +78,119 @@ namespace Carpet {
     assert(!d_running);
     d_parent = d_tree->current;
     d_tree->current = this;
-    if (timer == 0)
-      timer = new CactusTimer(pathName());
+    if (!d_timer)
+      d_timer = new CactusTimer(pathName());
     d_tree->current = d_parent;
   }
 
   void TimerNode::start()
   {
     assert(!d_running);
-
+    
     d_running = true;
     d_parent = d_tree->current;
     d_tree->current = this;
-    if (timer == 0)
-      timer = new CactusTimer(pathName());
-    assert(timer);
-    timer->start();
+    if (!d_timer)
+      d_timer = new CactusTimer(pathName());
+    assert(d_timer);
+    d_timer->start();
   }
 
   void TimerNode::stop()
   {
     assert(d_running);
-
+    
     // A timer can only be stopped if it is the current timer
-    if(this != d_tree->current)
-      CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
-                   "Tried to stop non-current timer '%s'", getName().c_str());
-
-    timer->stop();
-
+    if (this != d_tree->current)
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Tried to stop non-current timer '%s'", getName().c_str());
+    
+    d_timer->stop();
+    
     d_running = false;
     d_tree->current = d_parent;
   }
-
+  
   /// Get the name of the timer
   string TimerNode::getName() const
   {
-    assert(d_name.length() > 0);
+    assert(not d_name.empty());
     return d_name;
   }
-
+  
   /// Determine if the timer is running
   bool TimerNode::isRunning() const
   {
     return d_running;
   }
-
+  
   /// Find the child timer that matches the name provided.  If it is
   /// not found then a new timer with that name is allocated.
-  TimerNode* TimerNode::getChildTimer(string name)
+  TimerNode* TimerNode::getChildTimer(const string& name)
   {
     // Find child
-    TimerNode *child=d_children[name];
-
+    TimerNode *child = d_children[name];
+    
     // If the pointer is null then allocate it
-    if(child == 0)
+    if (not child)
       d_children[name] = child = new TimerNode(d_tree, name);
-
+    
     return child;
   }
-
+  
   /// Get the time measured by this timer
   double TimerNode::getTime()
   {
-    return timer->getTime();
+    return d_timer->getTime();
   }
-
+  
   /// Get the global time measured by this timer
   void TimerNode::getGlobalTime(double& avg, double& max)
   {
-    return timer->getGlobalTime(avg, max);
+    return d_timer->getGlobalTime(avg, max);
   }
-
+  
   /// Get the names of all clocks of this timer
   vector<pair<string,string> > TimerNode::getAllTimerNames() const
   {
-    return timer->getAllTimerNames();
+    return d_timer->getAllTimerNames();
   }
-
+  
   /// Get the values of all clocks of this timer
   vector<double> TimerNode::getAllTimerValues()
   {
-    return timer->getAllTimerValues();
+    return d_timer->getAllTimerValues();
   }
-
+  
   /// Print this node and its children as an ASCII tree
-  void TimerNode::print(ostream& out, double total, int level,
-                        double threshold, int precision)
+  void TimerNode::print(ostream& out,
+                        double total, int level, double threshold,
+                        int precision)
   {
     string space;
-
+    
     // Compute the level of indentation for this depth
-    for(int i=0;i<level-1;i++)
+    for (int i=0;i<level-1;i++)
       space += "| ";
-
+    
     if (level != 0)
       space += "|_";
-
+    
     const int pcw = 6;
     const int tw = 8;
     const int tnw = 40;         // timer name
     const int vw = 9;           // clock values
     const streamsize oldprecision = out.precision();
     const ios_base::fmtflags oldflags = out.flags();
-
+    
     // const double t = getTime();
     double tavg, tmax;
     getGlobalTime(tavg, tmax);
     const vector<double> values = getAllTimerValues();
     const string hyphens = string(precision-1, '-');
     const string spaces  = string(precision-1, ' ');
-
-    if (level == 0)
-    {
+    
+    if (level == 0) {
       const vector<pair<string,string> > names = getAllTimerNames();
       
       out << "--------" << hyphens
@@ -229,7 +231,7 @@ namespace Carpet {
       }
       out << "\n";
     }
-
+    
     // Print this timer value
     out << fixed << setw(pcw) << setprecision(precision)
         << 100.0 * tavg / total << "%"
@@ -252,10 +254,10 @@ namespace Carpet {
     //double children_time = 0;
     double children_tavg = 0.0;
     bool printed_children = false;
-
+    
     // Recursively print the children
-    for(map<string,TimerNode*>::iterator iter = d_children.begin();
-        iter != d_children.end(); iter++)
+    for (map<string,TimerNode*>::iterator iter = d_children.begin();
+         iter != d_children.end(); iter++)
     {
       const string timername = iter->first;
       const string root_timername =
@@ -284,7 +286,7 @@ namespace Carpet {
                     root_timername.c_str(), timername.c_str());
       }
     }
-
+    
     if (d_children.size() > 0 && printed_children) {
       //const double untimed = t - children_time;
       const double untimed = tavg - children_tavg;
@@ -300,7 +302,7 @@ namespace Carpet {
     }
     out.precision (oldprecision);
     out.setf (oldflags);
-
+    
     if (level == 0) {
       out << "--------" << hyphens
           << "--------" << hyphens
@@ -312,62 +314,65 @@ namespace Carpet {
       out << "\n";
     }
   }
-
-  void TimerNode::outputXML(const string &out_dir, int proc)
+  
+  void TimerNode::outputXML(const string& out_dir, int proc)
   {
     ostringstream filenamebuf;
     filenamebuf << out_dir << "/timertree." << proc << ".xml";
     string filenamestr = filenamebuf.str();
-    const char * filename = filenamestr.c_str();
+    const char* filename = filenamestr.c_str();
     ofstream file;
     file.open (filename, ios::out | ios::trunc);
-
-    printXML(file,0);
-
+    
+    printXML(file, 0);
+    
     file.close();
     assert (file.good());
   }
-
+  
   /// Print this node and its children as an XML file
   void TimerNode::printXML(ostream& out, int level)
   {
     string space;
-
+    
     // Compute the level of indentation for this node
-    for(int i=0;i<level;i++)
-      space=space+"  ";
-
+    for (int i=0;i<level;i++)
+      space += "  ";
+    
     out << space << "<timer name = " << "\"" << escapeForXML(d_name) << "\"> ";
     out << getTime() << " ";
-
+    
     // For compactness, only use multiple lines if there are children
     if (d_children.size() != 0)
     {
       out << "\n";
-
+      
       // Recursively print the children
-      for(map<string,TimerNode*>::iterator iter=d_children.begin();iter!=d_children.end();++iter)
+      for (map<string,TimerNode*>::iterator
+             iter=d_children.begin(); iter!=d_children.end(); ++iter)
         iter->second->printXML(out,level+1);
       out << space;
     }
-
+    
     out << "</timer>" << "\n";
   }
-
+  
   /// Make a string suitable for inclusion in an XML file
-  string TimerNode::escapeForXML(const string &s) const
+  string TimerNode::escapeForXML(const string& s) const
   {
-    // XML attributes cannot contain unescaped angle-brackets.  As a
-    // simple solution to this, replace them with | characters.
-
-    string s2(s);
-    using std::string;
-    using std::replace;
-
-    replace(s2.begin(), s2.end(), '<', '|');
-    replace(s2.begin(), s2.end(), '>', '|');
-    replace(s2.begin(), s2.end(), '&', '|');
-
-    return s2;
+    ostringstream res;
+    for (string::const_iterator si=s.begin(); si!=s.end(); ++si) {
+      switch (*si) {
+      case '\'': res << "&apos;"; break;
+      case '"': res << "&quot;"; break;
+      case '&': res << "&amp;"; break;
+      case '<': res << "&lt;"; break;
+      case '>': res << "&gt;"; break;
+      default: res << *si; break;
+      }
+    }    
+    
+    return res.str();
   }
-}
+  
+} // namespace Timers

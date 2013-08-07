@@ -1,8 +1,7 @@
 # Main make.code.defn file for thorn Carpet   -*-Makefile-*-
 
 # Source files in this directory
-SRCS =	CactusTimer.cc				\
-	CallFunction.cc				\
+SRCS =	CallFunction.cc				\
 	CarpetBasegrid.cc			\
 	CarpetParamCheck.cc			\
 	CarpetStartup.cc			\
@@ -21,9 +20,6 @@ SRCS =	CactusTimer.cc				\
 	SetupGH.cc				\
 	Shutdown.cc				\
 	Storage.cc				\
-	Timers.cc				\
-	TimerNode.cc				\
-	TimerSet.cc				\
 	Timing.cc				\
 	UnusedMask.cc				\
 	adler32.cc				\

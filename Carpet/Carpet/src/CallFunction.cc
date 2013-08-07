@@ -12,10 +12,11 @@
 
 #include <Requirements.hh>
 
+#include <Timer.hh>
+
 #include <gh.hh>
 
 #include <carpet.hh>
-#include <Timers.hh>
 
 #include "adler32.hh"
 
@@ -32,12 +33,12 @@ namespace Carpet {
                          void * function,
                          cFunctionData * attribute,
                          void * data,
-                         Timer & user_timer);
+                         Timers::Timer & user_timer);
   
   static void
   SyncGroupsInScheduleBlock (cFunctionData * attribute, cGH * cctkGH,
                              vector<int> const & sync_groups,
-                             Timer & sync_timer);
+                             Timers::Timer & sync_timer);
   
   /// Traverse one function on all components of one refinement level
   /// of one multigrid level.
@@ -47,9 +48,9 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer total_timer ("CallFunction");
-    static Timer user_timer  ("thorns");
-    static Timer sync_timer  ("syncs");
+    static Timers::Timer total_timer ("CallFunction");
+    static Timers::Timer user_timer  ("thorns");
+    static Timers::Timer sync_timer  ("syncs");
     
     total_timer.start();
     
@@ -322,7 +323,7 @@ namespace Carpet {
       buf << attribute->routine << "\n";
       string const str = buf.str();
       int const id = adler32(str.c_str(), str.length());
-      static Timer barrier_timer  ("barrier");
+      static Timers::Timer barrier_timer  ("barrier");
       barrier_timer.start();
       Carpet::NamedBarrier (NULL, id, "Carpet::CallFunction");
       barrier_timer.stop();
@@ -344,7 +345,7 @@ namespace Carpet {
                          void * const function,
                          cFunctionData * const attribute,
                          void * const data,
-                         Timer & user_timer)
+                         Timers::Timer & user_timer)
   {
     cGH const * const cctkGH = static_cast <cGH const *> (data);
     Checkpoint ("%s call at %s to %s::%s",
@@ -353,7 +354,7 @@ namespace Carpet {
                 attribute->thorn, attribute->routine);
     int const skip = CallBeforeRoutines (cctkGH, function, attribute, data);
     if (not skip) {
-      Timer timer(attribute->routine);
+      Timers::Timer timer(attribute->routine);
       
       // Save the time step size
       CCTK_REAL const saved_cctk_delta_time = cctkGH->cctk_delta_time;
@@ -366,7 +367,7 @@ namespace Carpet {
 #endif
       timer.start();
       if (CCTK_IsFunctionAliased("Accelerator_PreCallFunction")) {
-        Timer pre_timer("PreCall");
+        Timers::Timer pre_timer("PreCall");
         pre_timer.start();
         Accelerator_PreCallFunction(cctkGH, attribute);
         pre_timer.stop();
@@ -374,7 +375,7 @@ namespace Carpet {
       int const res = CCTK_CallFunction (function, attribute, data);
       assert (res==0);
       if (CCTK_IsFunctionAliased("Accelerator_PostCallFunction")) {
-        Timer post_timer("PostCall");
+        Timers::Timer post_timer("PostCall");
         post_timer.start();
         Accelerator_PostCallFunction(cctkGH, attribute);
         post_timer.stop();
@@ -430,7 +431,7 @@ namespace Carpet {
   
   void SyncGroupsInScheduleBlock (cFunctionData* attribute, cGH* cctkGH,
                                   vector<int> const & sync_groups,
-                                  Timer & sync_timer)
+                                  Timers::Timer & sync_timer)
   {
     DECLARE_CCTK_PARAMETERS;
 
@@ -453,7 +454,7 @@ namespace Carpet {
       buf << attribute->routine << " sync\n";
       string const str = buf.str();
       int const id = adler32(str.c_str(), str.length());
-      static Timer barrier_timer  ("sync_barrier");
+      static Timers::Timer barrier_timer  ("sync_barrier");
       barrier_timer.start();
       Carpet::NamedBarrier (NULL, id, "Carpet::Sync");
       barrier_timer.stop();

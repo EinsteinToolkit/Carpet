@@ -6,7 +6,7 @@
 #include <iostream>
 #include <vector>
 
-#include "CarpetTimers.hh"
+#include <Timer.hh>
 
 #include "defs.hh"
 #include "dh.hh"
@@ -91,7 +91,7 @@ regrid (rregs const & superregs, mregs const & regs, bool const do_init)
 {
   DECLARE_CCTK_PARAMETERS;
     
-  static Carpet::Timer timer ("CarpetLib::gh::regrid");
+  static Timers::Timer timer ("CarpetLib::gh::regrid");
   timer.start();
   
   superregions = superregs;

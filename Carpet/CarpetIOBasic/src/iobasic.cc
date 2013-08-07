@@ -12,16 +12,16 @@
 #include <string>
 #include <vector>
 
-#include "cctk.h"
-#include "cctk_Arguments.h"
-#include "cctk_Functions.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Arguments.h>
+#include <cctk_Parameters.h>
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
+#include <Timer.hh>
+
 #include "carpet.hh"
-#include "CarpetTimers.hh"
 
 #include "typeprops.hh"
 
@@ -181,7 +181,7 @@ namespace CarpetIOBasic {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    static Carpet::Timer timer ("OutputGH");
+    static Timers::Timer timer ("OutputGH");
     timer.start();
     
     if (TimeToOutput (cctkGH)) {

@@ -4,12 +4,12 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <CactusTimerSet.hh>
+#include <Timer.hh>
+
 #include <dist.hh>
 
 #include <carpet.hh>
-#include <Timers.hh>
-#include <TimerNode.hh>
-#include <TimerSet.hh>
 
 
 
@@ -28,7 +28,7 @@ namespace Carpet {
     const int convlev = 0;
     cGH* cctkGH = fc->GH[convlev];
     
-    static Timer timer ("Shutdown");
+    static Timers::Timer timer ("Shutdown");
     timer.start();
     for (int rl=reflevels-1; rl>=0; --rl) {
       BEGIN_REVERSE_MGLEVEL_LOOP(cctkGH) {
@@ -62,7 +62,7 @@ namespace Carpet {
     assert (not ierr);
     timer.stop();
     if (output_timers_every > 0) {
-      TimerSet::writeData (cctkGH, timer_file);
+      Timers::CactusTimerSet::writeData (cctkGH, timer_file);
     }
     
     BEGIN_REVERSE_MGLEVEL_LOOP(cctkGH) {
@@ -81,26 +81,15 @@ namespace Carpet {
     
     
     
-    main_timer_tree.root->stop();
-    
     if (output_timer_tree_every > 0) {
-      TimerNode *et = main_timer_tree.root->getChildTimer("Evolve");
-      double total_avg, total_max;
-      et->getGlobalTime(total_avg, total_max);
-      et->print(cout, total_max, 0, timer_tree_threshold_percentage, timer_tree_output_precision);
-      mode_timer_tree.root->getGlobalTime(total_avg, total_max);
-      mode_timer_tree.root->print(cout, total_max, 0, timer_tree_threshold_percentage, timer_tree_output_precision);
+      Timers::Timer::outputTree("Evolve");
     }
     
     if (output_xml_timer_tree) {
-      main_timer_tree.root->outputXML(out_dir,CCTK_MyProc (cctkGH));
+      Timers::Timer::outputTreeXML();
     }
         
     
-    
-    // Delete timer tree
-    delete main_timer_tree.root; main_timer_tree.root = 0;
-    delete mode_timer_tree.root; mode_timer_tree.root = 0;
     
     // Free all memory, call all destructors
     for (size_t gi=0; gi<arrdata.size(); ++gi) {
