@@ -103,7 +103,7 @@ mem (size_t const vectorlength, size_t const nelems,
     // Safety check
     assert(alignment <= 1024);
     
-    const double nbytes = (vectorlength * nelems + final_padding) * sizeof (T);
+    const size_t nbytes = (vectorlength * nelems + final_padding) * sizeof (T);
     if (max_allowed_memory_MB > 0 and
         (total_allocated_bytes + nbytes > MEGA * max_allowed_memory_MB))
     {
@@ -168,7 +168,7 @@ mem<T>::
 #endif
     size_t const final_padding = vector_size - 1;
     
-    const double nbytes =
+    const size_t nbytes =
       (vectorlength_ * nelems_ + final_padding) * sizeof (T);
     total_allocated_bytes -= nbytes;
   }
