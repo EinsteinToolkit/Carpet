@@ -14,14 +14,15 @@
    && !$omp private (name/**/_cmin/**/D, name/**/_cmax/**/D,    \
                      name/**/_cstep/**/D, name/**/_cpos/**/D)
 #define LC_COARSE_SETUP(name, D)                                        \
-   && name/**/_control%coarse%min%v(D) = name/**/_control%thread%pos%v(D) \
-   && name/**/_control%coarse%max%v(D) =                                \
-         min(name/**/_control%thread%max%v(D),                          \
-             name/**/_control%coarse%min%v(D) +                         \
-                name/**/_control%thread%step%v(D))                      \
-   && name/**/_cmin/**/D = name/**/_control%coarse%min%v(D)             \
-   && name/**/_cmax/**/D = name/**/_control%coarse%max%v(D)             \
-   && name/**/_cstep/**/D = name/**/_control%coarse%step%v(D)
+   && name/**/_control%coarse_loop%min%v(D) =                           \
+         name/**/_control%coarse_thread%pos%v(D)                        \
+   && name/**/_control%coarse_loop%max%v(D) =                           \
+         min(name/**/_control%coarse_thread%max%v(D),                   \
+             name/**/_control%coarse_loop%min%v(D) +                    \
+                name/**/_control%coarse_thread%step%v(D))               \
+   && name/**/_cmin/**/D = name/**/_control%coarse_loop%min%v(D)        \
+   && name/**/_cmax/**/D = name/**/_control%coarse_loop%max%v(D)        \
+   && name/**/_cstep/**/D = name/**/_control%coarse_loop%step%v(D)
 #define LC_COARSE_LOOP(name, D)                                         \
    && do name/**/_cpos/**/D = name/**/_cmin/**/D, name/**/_cmax/**/D,   \
                               name/**/_cstep/**/D
@@ -32,21 +33,21 @@
 #define LC_FINE_OMP_PRIVATE(name, I, NI, D)                     \
    && !$omp private (name/**/_fmin/**/D, name/**/_fmax/**/D,    \
                      name/**/_fstep/**/D, I, NI)
-#define LC_FINE_SETUP(name, D)                                  \
-   && name/**/_control%fine%min%v(D) = name/**/_cpos/**/D       \
-   && name/**/_control%fine%max%v(D) =                          \
-         min(name/**/_control%coarse%max%v(D),                  \
-             name/**/_control%fine%min%v(D) +                   \
-                name/**/_control%coarse%step%v(D))              \
-   && name/**/_fmin/**/D = name/**/_control%fine%min%v(D)       \
-   && name/**/_fmax/**/D = name/**/_control%fine%max%v(D)       \
-   && name/**/_fstep/**/D = name/**/_control%fine%step%v(D)
+#define LC_FINE_SETUP(name, D)                                          \
+   && name/**/_control%fine_loop%min%v(D) = name/**/_cpos/**/D          \
+   && name/**/_control%fine_loop%max%v(D) =                             \
+         min(name/**/_control%coarse_loop%max%v(D),                     \
+             name/**/_control%fine_loop%min%v(D) +                      \
+                name/**/_control%coarse_loop%step%v(D))                 \
+   && name/**/_fmin/**/D = name/**/_control%fine_loop%min%v(D)          \
+   && name/**/_fmax/**/D = name/**/_control%fine_loop%max%v(D)          \
+   && name/**/_fstep/**/D = name/**/_control%fine_loop%step%v(D)
 #define LC_FINE_LOOP(name, I, NI, D)                                    \
    && do I = name/**/_fmin/**/D, name/**/_fmax/**/D,                    \
              name/**/_fstep/**/D                                        \
    &&    NI = 0                                                         \
    &&    if (name/**/_dir/**/D<0) NI = I                                \
-   &&    if (name/**/_dir/**/D>0) NI = name/**/_control%loop%max%v(D)+1-I
+   &&    if (name/**/_dir/**/D>0) NI = name/**/_control%overall%max%v(D)+1-I
 
 
 
