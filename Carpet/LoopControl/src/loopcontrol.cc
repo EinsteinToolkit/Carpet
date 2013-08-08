@@ -229,7 +229,6 @@ namespace {
   
   template<typename T>
   class mempool {
-    const int nobjects = 1000000 / sizeof(T);
     T* next;
     int nleft;
   public:
@@ -239,7 +238,7 @@ namespace {
     void* allocate()
     {
       if (nleft < 1) {
-        nleft = nobjects;
+        nleft = 1000000 / sizeof(T);
         next = (T*)new char[nleft * sizeof(T)];
       }
       assert(nleft >= 1);
