@@ -118,9 +118,10 @@ mem (size_t const vectorlength, size_t const nelems,
                   int(max_allowed_memory_MB));
     }
     
-    void* ptr;
-    const int ierr = posix_memalign(&ptr, alignment, nbytes);
-    if (ierr) {
+    // void* ptr;
+    // const int ierr = posix_memalign(&ptr, alignment, nbytes);
+    void* ptr = malloc(nbytes + alignment - 1);
+    if (not ptr) {
       T Tdummy;
       CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
                   "Failed to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated in %d objects",
@@ -132,8 +133,8 @@ mem (size_t const vectorlength, size_t const nelems,
     }
     
     storage_base_ = (T*)ptr;
-    storage_ = storage_base_;
-    assert(not (size_t(storage_) & (alignment-1)));
+    storage_ = (T*)align_up(size_t(ptr), alignment);
+    assert(size_t(storage_) % alignment == 0);
     owns_storage_ = true;
     
     total_allocated_bytes += nbytes;
