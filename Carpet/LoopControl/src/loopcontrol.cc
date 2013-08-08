@@ -222,6 +222,38 @@ struct lc_descr_t {
 
 
 
+// The Intel compiler keeps increasing the amount of "free" memory
+// allocated by libc. Work around this by allocating memory in large
+// batches.
+namespace {
+  
+  template<typename T>
+  class mempool {
+    const int nobjects = 1000000 / sizeof(T);
+    T* next;
+    int nleft;
+  public:
+    mempool(): nleft(0)
+    {
+    }
+    void* allocate()
+    {
+      if (nleft < 1) {
+        nleft = nobjects;
+        next = (T*)new char[nleft * sizeof(T)];
+      }
+      assert(nleft >= 1);
+      return nleft--, next++;
+    }
+  };
+  
+  mempool<lc_params_t> params_mempool;
+  mempool<lc_setup_t> setup_mempool;
+  
+}
+
+
+
 extern "C" CCTK_FCALL
 void CCTK_FNAME(lc_get_fortran_type_sizes)(ptrdiff_t *type_sizes);
   
@@ -643,7 +675,8 @@ void lc_control_init(lc_control_t *restrict const control,
       const bool isnew = res.second;
       assert(isnew == not setup_p);
       if (isnew) {
-        setup_p = new lc_setup_t(*descr, setup_key);
+        void *ptr = setup_mempool.allocate();
+        setup_p = new (ptr) lc_setup_t(*descr, setup_key);
       }
       assert(not descr->current_setup);
       descr->current_setup = setup_p;
@@ -736,7 +769,8 @@ void lc_control_init(lc_control_t *restrict const control,
       const bool isnew = res.second;
       assert(isnew == not params_p);
       if (isnew) {
-        params_p = new lc_params_t(setup, params_key);
+        void *ptr = params_mempool.allocate();
+        params_p = new (ptr) lc_params_t(setup, params_key);
       }
       assert(not descr->current_params);
       descr->current_params = params_p;
