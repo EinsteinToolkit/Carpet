@@ -219,7 +219,7 @@ prolongate_3d_eno (T const * restrict const /*src*/,
                    ibbox3 const & /*dstregbbox*/,
                    void * /*extraargs*/)
 {
-  CCTK_WARN (0, "Data type not supported");
+  CCTK_ERROR("Data type not supported");
 }
 
 extern "C"
@@ -278,7 +278,7 @@ prolongate_3d_weno (T const * restrict const /*src*/,
                     ibbox3 const & /*dstregbbox*/,
                     void * extraargs)
 {
-  CCTK_WARN (0, "Data type not supported");
+  CCTK_ERROR("Data type not supported");
 }
 
 extern "C"
@@ -336,7 +336,7 @@ prolongate_3d_tvd (T const * restrict const /*src*/,
                    ibbox3 const & /*dstregbbox*/,
                    void * /*extraargs*/)
 {
-  CCTK_WARN (0, "Data type not supported");
+  CCTK_ERROR("Data type not supported");
 }
 
 #ifndef OMIT_F90
@@ -397,7 +397,7 @@ prolongate_3d_cc_tvd (T const * restrict const /*src*/,
                       ibbox3 const & /*dstregbbox*/,
                       void * /*extraargs*/)
 {
-  CCTK_WARN (0, "Data type not supported");
+  CCTK_ERROR("Data type not supported");
 }
 
 #ifndef OMIT_F90
@@ -716,7 +716,7 @@ transfer_p_r (data const * const src,
     assert (transport_operator != op_sync);
     transfer_restrict (src, dstbox, srcbox, slabinfo, order_space);
   } else {
-    assert (0);
+    CCTK_BUILTIN_UNREACHABLE();
   }
 }
 
@@ -741,7 +741,7 @@ transfer_p_vc_cc (data const * const /*src*/,
                   ibbox const & /*srcbox*/,
                   int const /*order_space*/)
 {
-  CCTK_WARN (0, "Data type not supported");
+  CCTK_ERROR("Data type not supported");
 }
 
 
@@ -799,15 +799,13 @@ transfer_prolongate (data const * const src,
 #if defined(CCTK_REAL_PRECISION_4)
       if (order_space == 11)
       {
-        CCTK_WARN (CCTK_WARN_ABORT,
-                   "There is no single precision vertex-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space=11");
+        CCTK_ERROR("There is no single precision vertex-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space=11");
       }
 #endif
       if (order_space < 0 or order_space > 11 or
           not the_operators[order_space])
       {
-        CCTK_WARN (CCTK_WARN_ABORT,
-                   "There is no vertex-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space not in {1, 3, 5, 7, 9, 11}");
+        CCTK_ERROR("There is no vertex-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space not in {1, 3, 5, 7, 9, 11}");
       }
       call_operator<T> (the_operators[order_space],
                         static_cast <T const *> (src->storage()),
@@ -852,8 +850,7 @@ transfer_prolongate (data const * const src,
           & prolongate_3d_cc_rf2<T,5>
         };
       if (order_space < 0 or order_space > 5) {
-        CCTK_WARN (CCTK_WARN_ABORT,
-                   "There is no cell-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space not in {0, 1, 2, 3, 4, 5}");
+        CCTK_ERROR("There is no cell-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space not in {0, 1, 2, 3, 4, 5}");
       }
       call_operator<T> (the_operators[order_space],
                         static_cast <T const *> (src->storage()),
@@ -866,7 +863,7 @@ transfer_prolongate (data const * const src,
       break;
     }
     default:
-      assert (0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     timer.stop (0);
     break;
@@ -880,8 +877,7 @@ transfer_prolongate (data const * const src,
       case vertex_centered: {
          switch (order_space) {
             case 1:
-            CCTK_WARN (CCTK_WARN_ABORT,
-                        "There is no stencil for op=\"ENO\" with order_space=1");
+            CCTK_ERROR("There is no stencil for op=\"ENO\" with order_space=1");
             break;
             case 3:
             call_operator<T> (& prolongate_3d_eno,
@@ -907,8 +903,7 @@ transfer_prolongate (data const * const src,
                               srcbox, dstbox, NULL);
             break;
             default:
-            CCTK_WARN (CCTK_WARN_ABORT,
-                        "There is no stencil for op=\"ENO\" with order_space!=3");
+            CCTK_ERROR("There is no stencil for op=\"ENO\" with order_space!=3");
             break;
          }
          break;
@@ -935,8 +930,7 @@ transfer_prolongate (data const * const src,
             // and second, we want to allow spacetime interpolation to be of higher order while keeping the implemeneted ENO order!
          };
          if (order_space < 2 or order_space > 5) {
-         CCTK_WARN (CCTK_WARN_ABORT,
-                     "There is no cell-centred stencil for op=\"ENO\" with order_space not in {2,3,4,5}");
+           CCTK_ERROR("There is no cell-centred stencil for op=\"ENO\" with order_space not in {2,3,4,5}");
          }
          
          call_operator<T> (the_operators[order_space-2],
@@ -950,7 +944,7 @@ transfer_prolongate (data const * const src,
       }
       break;
     default:
-      assert(0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     timer.stop (0);
   }
@@ -962,8 +956,7 @@ transfer_prolongate (data const * const src,
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
       case vertex_centered: {
-        CCTK_WARN (CCTK_WARN_ABORT,
-                   "There is no there is no vertex-centred stencil for op=\"ENOVOL\".");
+        CCTK_ERROR("There is no there is no vertex-centred stencil for op=\"ENOVOL\".");
       }
       break;
       case cell_centered: {
@@ -988,8 +981,7 @@ transfer_prolongate (data const * const src,
             // and second, we want to allow spacetime interpolation to be of higher order while keeping the implemeneted ENO order!
          };
          if (order_space < 2 or order_space > 5) {
-         CCTK_WARN (CCTK_WARN_ABORT,
-                     "There is no cell-centred stencil for op=\"ENOVOL\" with order_space not in {2,3,4,5}");
+           CCTK_ERROR("There is no cell-centred stencil for op=\"ENOVOL\" with order_space not in {2,3,4,5}");
          }
          
          call_operator<T> (the_operators[order_space-2],
@@ -1003,7 +995,7 @@ transfer_prolongate (data const * const src,
         break;
       }
     default:
-      assert(0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     timer.stop (0);
     break;
@@ -1016,12 +1008,10 @@ transfer_prolongate (data const * const src,
       case vertex_centered: {
          switch (order_space) {
          case 1:
-            CCTK_WARN (CCTK_WARN_ABORT,
-                     "There is no stencil for op=\"WENO\" with order_space=1");
+            CCTK_ERROR("There is no stencil for op=\"WENO\" with order_space=1");
             break;
          case 3:
-            CCTK_WARN (CCTK_WARN_ABORT,
-                     "There is no stencil for op=\"WENO\" with order_space=3");
+            CCTK_ERROR("There is no stencil for op=\"WENO\" with order_space=3");
             break;
          case 5:
             call_operator<T> (& prolongate_3d_eno,
@@ -1034,19 +1024,17 @@ transfer_prolongate (data const * const src,
                               srcbox, dstbox, NULL);
             break;
          default:
-            CCTK_WARN (CCTK_WARN_ABORT,
-                     "There is no stencil for op=\"WENO\" with order_space!=5");
+            CCTK_ERROR("There is no stencil for op=\"WENO\" with order_space!=5");
             break;
          }
          break;
       }
       case cell_centered: {
-         CCTK_WARN (CCTK_WARN_ABORT,
-                 "There are currently no cell-centred stencils for op=\"WENO\"");
+         CCTK_ERROR("There are currently no cell-centred stencils for op=\"WENO\"");
        break;
       }
     default:
-      assert(0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     timer.stop (0);
   }
@@ -1069,8 +1057,7 @@ transfer_prolongate (data const * const src,
                           srcbox, dstbox, NULL);
         break;
       default:
-        CCTK_WARN (CCTK_WARN_ABORT,
-                   "There is no stencil for op=\"TVD\" with order_space!=1");
+        CCTK_ERROR("There is no stencil for op=\"TVD\" with order_space!=1");
         break;
       }
       break;
@@ -1088,14 +1075,13 @@ transfer_prolongate (data const * const src,
                           srcbox, dstbox, NULL);
         break;
       default:
-        CCTK_WARN (CCTK_WARN_ABORT,
-                   "There is no stencil for op=\"TVD\" with order_space!=1");
+        CCTK_ERROR("There is no stencil for op=\"TVD\" with order_space!=1");
         break;
       }
       break;
     }
     default:
-      assert(0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     timer.stop (0);
     break;
@@ -1106,12 +1092,10 @@ transfer_prolongate (data const * const src,
     timer.start ();
     switch (order_space) {
     case 1:
-      CCTK_WARN (CCTK_WARN_ABORT,
-                 "There is no stencil for op=\"Lagrange_monotone\" with order_space=1");
+      CCTK_ERROR("There is no stencil for op=\"Lagrange_monotone\" with order_space=1");
       break;
     case 3:
-      CCTK_WARN (CCTK_WARN_ABORT,
-                 "There is no stencil for op=\"Lagrange_monotone\" with order_space=3");
+      CCTK_ERROR("There is no stencil for op=\"Lagrange_monotone\" with order_space=3");
       break;
     case 5:
       call_operator<T> (& prolongate_3d_o5_monotone_rf2,
@@ -1124,8 +1108,7 @@ transfer_prolongate (data const * const src,
                         srcbox, dstbox, NULL);
       break;
     default:
-      CCTK_WARN (CCTK_WARN_ABORT,
-                 "There is no stencil for op=\"Lagrange_monotone\" with order_space!=5");
+      CCTK_ERROR("There is no stencil for op=\"Lagrange_monotone\" with order_space!=5");
       break;
     }
     timer.stop (0);
@@ -1133,7 +1116,7 @@ transfer_prolongate (data const * const src,
   }
     
   default:
-    assert (0);
+    CCTK_BUILTIN_UNREACHABLE();
   } // switch (transport_operator)
   
 #elif CARPET_DIM == 4
@@ -1159,19 +1142,18 @@ transfer_prolongate (data const * const src,
                           srcbox, dstbox, NULL);
         break;
       default:
-        CCTK_WARN (CCTK_WARN_ABORT,
-                   "There is no vertex-centred stencil for op=\"LAGRANGE\" with order_space not in {1}");
+        CCTK_ERROR("There is no vertex-centred stencil for op=\"LAGRANGE\" with order_space not in {1}");
         break;
       }
       break;
     default:
-      assert (0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     timer.stop (0);
     break;
   }
   default:
-    assert (0);
+    CCTK_BUILTIN_UNREACHABLE();
   } // switch (transport_operator)
   
 #else
@@ -1189,7 +1171,7 @@ transfer_prolongate (data const * const /*src*/,
                      ibbox const & /*srcbox*/,
                      int const /*order_space*/)
 {
-  CCTK_WARN (0, "Data type not supported");
+  CCTK_ERROR("Data type not supported");
 }
 
 
@@ -1286,7 +1268,7 @@ transfer_restrict (data const * const src,
                                   srcregbox, dstregbox, NULL);
             break;
           default:
-            CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+            CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
                         "There is no restriction stencil with restriction_order_space==%d", restriction_order_space);
             break;
           }
@@ -1328,17 +1310,17 @@ transfer_restrict (data const * const src,
                                     dstbox,
                                     srcregbox, dstregbox, NULL);
       } else {
-        assert (0);
+        CCTK_BUILTIN_UNREACHABLE();
       }
       break;
     }
     default:
-      assert (0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     break;
     
   default:
-    assert (0);
+    CCTK_BUILTIN_UNREACHABLE();
   }
   
 #elif CARPET_DIM == 4
@@ -1360,12 +1342,12 @@ transfer_restrict (data const * const src,
                       srcregbox, dstregbox, NULL);
       break;
     default:
-      assert (0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     break;
     
   default:
-    assert (0);
+    CCTK_BUILTIN_UNREACHABLE();
   }
 
 #else
@@ -1384,7 +1366,7 @@ transfer_restrict (data const * const /*src*/,
                    islab const *restrict const /*slabinfo*/,
                    int const /*order_space*/)
 {
-  CCTK_WARN (0, "Data type not supported");
+  CCTK_ERROR("Data type not supported");
 }
 
 
@@ -1485,7 +1467,7 @@ time_interpolate (vector <data *> const & srcs,
       break;
       
     default:
-      assert (0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     timer.stop (0);
     break;
@@ -1534,19 +1516,19 @@ time_interpolate (vector <data *> const & srcs,
       break;
       
     default:
-      assert (0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     timer.stop (0);
     break;
   }
     
   default:
-    assert (0);
+    CCTK_BUILTIN_UNREACHABLE();
   } // switch (transport_operator)
   
 #elif CARPET_DIM == 4
   
-  assert (0);
+  CCTK_BUILTIN_UNREACHABLE();
   
 #else
 #  error "Value for CARPET_DIM not supported"
@@ -1565,7 +1547,7 @@ time_interpolate (vector <data *> const & /*srcs*/,
                   CCTK_REAL const /*time*/,
                   int const /*order_time*/)
 {
-  CCTK_WARN (0, "Data type not supported");
+  CCTK_ERROR("Data type not supported");
 }
 
 
