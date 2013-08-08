@@ -75,17 +75,20 @@ static bool lc_do_settle          = false;
 
 
 struct lc_thread_info_t {
-  char padding1[128];      // pad to ensure cache lines are not shared
   volatile int idx;        // linear index of next coarse thread block
-  char padding2[128];
-};
+} CCTK_ATTRIBUTE_ALIGNED(128);  // align to prevent sharing cache lines
 
 struct lc_fine_thread_comm_t {
-  char padding1[128];      // pad to ensure cache lines are not shared
   volatile int state;      // waiting threads
   volatile int value;      // broadcast value
-  char padding2[128];
-};
+} CCTK_ATTRIBUTE_ALIGNED(128);  // align to prevent sharing cache lines
+
+// One object per coarse thread: shared between fine threads
+// Note: Since we use a vector, the individual elements may not
+// actually be aligned, but they will still be spaced apart and thus
+// be placed into different cache lines.
+static vector<lc_fine_thread_comm_t> lc_fine_thread_comm;
+
 
 
 
@@ -753,6 +756,18 @@ void lc_control_init(lc_control_t *restrict const control,
   assert(get_num_coarse_threads() * get_num_fine_threads() ==
          omp_get_num_threads());
   
+  // Allocate fine thread communicators
+  if (int(lc_fine_thread_comm.size()) < get_num_coarse_threads()) {
+#pragma omp barrier
+    assert(int(lc_fine_thread_comm.size()) < get_num_coarse_threads());
+#pragma omp master
+    {
+      lc_fine_thread_comm.resize(get_num_coarse_threads());
+    }
+#pragma omp barrier
+    assert(int(lc_fine_thread_comm.size()) == get_num_coarse_threads());
+  }
+  
   
   
   // Initialize everything with a large, bogus value
@@ -795,34 +810,13 @@ void lc_control_init(lc_control_t *restrict const control,
   }
   
   // Set up multithreading state
-  lc_thread_info_t *thread_info_ptr;
+  {
+    lc_thread_info_t *thread_info_ptr;
 #pragma omp single copyprivate(thread_info_ptr)
-  {
-    thread_info_ptr = new lc_thread_info_t;
-  }
-  control->coarse_thread_info_ptr = thread_info_ptr;
-  
-  {
-    lc_fine_thread_comm_t **fine_thread_comm_ptrs;
-#pragma omp single copyprivate(fine_thread_comm_ptrs)
     {
-      fine_thread_comm_ptrs =
-        new lc_fine_thread_comm_t*[get_num_coarse_threads()];
+      thread_info_ptr = new lc_thread_info_t;
     }
-    if (get_fine_thread_num() == 0) {
-      lc_fine_thread_comm_t *const
-        fine_thread_comm_ptr = new lc_fine_thread_comm_t;
-      fine_thread_comm_ptr->state = 0;
-      fine_thread_comm_ptrs[get_coarse_thread_num()] = fine_thread_comm_ptr;
-    }
-#pragma omp barrier
-    control->fine_thread_comm_ptr =
-      fine_thread_comm_ptrs[get_coarse_thread_num()];
-#pragma omp barrier
-#pragma omp single nowait
-    {
-      delete[] fine_thread_comm_ptrs;
-    }
+    control->coarse_thread_info_ptr = thread_info_ptr;
   }
   
   // Set loop sizes
@@ -1021,10 +1015,6 @@ void lc_control_finish(lc_control_t *restrict const control,
     // Tear down multithreading state
     delete control->coarse_thread_info_ptr;
     control->coarse_thread_info_ptr = NULL;
-    if (get_fine_thread_num() == 0) {
-      delete control->fine_thread_comm_ptr;
-    }
-    control->fine_thread_comm_ptr = NULL;
   }
 #pragma omp barrier
 }
@@ -1059,7 +1049,8 @@ void lc_thread_step(lc_control_t *restrict const control)
     }
   }
   new_global_idx =
-    fine_thread_broadcast(control->fine_thread_comm_ptr, new_global_idx);
+    fine_thread_broadcast(&lc_fine_thread_comm[get_coarse_thread_num()],
+                          new_global_idx);
   control->coarse_thread_done =
     space_global2local(control->coarse_thread, new_global_idx);
   space_idx2pos(control->coarse_thread);

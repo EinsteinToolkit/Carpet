@@ -81,8 +81,6 @@ extern "C" {
 
     /* fine threads; min, max, pos are undefined */
     lc_space_t fine_thread;
-    /* shared between fine threads */
-    struct lc_fine_thread_comm_t* fine_thread_comm_ptr;
     
     /* selftest: shared between all threads */
     unsigned char* selftest_array;
