@@ -1329,7 +1329,7 @@ void lc_statistics_terminate(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  if (verbose or veryverbose) {
+  if (verbose or veryverbose or statistics_every_seconds >= 0.0) {
     lc_statistics(CCTK_PASS_CTOC);
   }
 }
