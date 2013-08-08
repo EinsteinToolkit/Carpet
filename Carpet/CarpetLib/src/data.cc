@@ -657,8 +657,7 @@ transfer_time (vector <gdata const *> const & gsrcs,
     assert ((int)gsrcs.size() >= ntimelevels);
     assert ((int)times.size() >= ntimelevels);
     
-    data * const null = 0;
-    vector <data *> tmps (timelevel0 + ntimelevels, null);
+    vector <data *> tmps (timelevel0 + ntimelevels, (data *) 0);
     
     for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
       tmps.AT(tl) =
