@@ -1221,7 +1221,7 @@ void lc_statistics(CCTK_ARGUMENTS)
   
   
   
-  if (strlen(statistics_filename) == 0) return;
+  if (strcmp(statistics_filename, "") == 0) return;
   
   static bool did_truncate = false;
   const bool do_truncate = IO_TruncateOutputFiles(cctkGH);
