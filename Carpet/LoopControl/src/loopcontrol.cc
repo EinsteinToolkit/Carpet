@@ -69,8 +69,8 @@ using namespace std;
 
 
 
-bool lc_do_explore_eagerly = false;
-bool lc_do_settle          = false;
+static bool lc_do_explore_eagerly = false;
+static bool lc_do_settle          = false;
 
 
 
@@ -676,21 +676,11 @@ void lc_control_init(lc_control_t *restrict const control,
     }
     if (choice == choice_use_best) {
       // Make a random jump every so often
-#if 0
-      const bool do_settle =
-        settle_after_iteration >= 0 and
-        cctkGH->cctk_iteration >= settle_after_iteration;
-#endif
-      if (not lc_do_settle) {
-#if 0
-        const bool do_explore_eagerly =
-          cctkGH->cctk_iteration < explore_eagerly_before_iteration;
-#endif
-        if (lc_do_explore_eagerly or
-            random() / (RAND_MAX + 1.0) < random_jump_probability)
-        {
-          choice = choice_random_jump;
-        }
+      if (not lc_do_settle and
+          (lc_do_explore_eagerly or
+           random() / (RAND_MAX + 1.0) < random_jump_probability))
+      {
+        choice = choice_random_jump;
       }
     }
     
@@ -1135,6 +1125,22 @@ int lc_setup(void)
 {
   check_fortran_type_sizes();
   return 0;
+}
+
+
+
+void lc_steer(CCTK_ARGUMENTS)
+{
+  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_PARAMETERS;
+  
+  lc_do_settle =
+    settle_after_iteration >= 0 and
+    cctkGH->cctk_iteration >= settle_after_iteration;
+  
+  lc_do_explore_eagerly =
+    not lc_do_settle and
+    cctkGH->cctk_iteration < explore_eagerly_before_iteration;
 }
 
 
