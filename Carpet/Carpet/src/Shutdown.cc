@@ -55,7 +55,9 @@ namespace Carpet {
         } LEAVE_LEVEL_MODE;
       } END_REVERSE_MGLEVEL_LOOP;
     } // for rl
-
+    
+    
+    
     // Stop all timers before shutdown, since timers may rely on data
     // structures which are destroyed during shutdown
     int const ierr = CCTK_TimerStop ("CCTK total time");
@@ -64,6 +66,16 @@ namespace Carpet {
     if (output_timers_every > 0) {
       Timers::CactusTimerSet::writeData (cctkGH, timer_file);
     }
+    
+    if (output_timer_tree_every > 0) {
+      Timers::Timer::outputTree("Evolve");
+    }
+    
+    if (output_xml_timer_tree) {
+      Timers::Timer::outputTreeXML();
+    }
+    
+    
     
     BEGIN_REVERSE_MGLEVEL_LOOP(cctkGH) {
       do_early_global_mode = true;
@@ -78,16 +90,6 @@ namespace Carpet {
       CCTK_ScheduleTraverse ("CCTK_SHUTDOWN", cctkGH, CallFunction);
       
     } END_REVERSE_MGLEVEL_LOOP;
-    
-    
-    
-    if (output_timer_tree_every > 0) {
-      Timers::Timer::outputTree("Evolve");
-    }
-    
-    if (output_xml_timer_tree) {
-      Timers::Timer::outputTreeXML();
-    }
         
     
     
