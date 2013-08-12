@@ -389,9 +389,9 @@ void comm_state::step ()
     // Transfer messages again for performance testing
     for (int n = 1; n < message_count_multiplier; ++ n) {
       
-      srequests.clear();
+      srequests.resize(0);
       srequests.reserve (dist::c_ndatatypes() * dist::size());
-      rrequests.clear();
+      rrequests.resize(0);
       rrequests.reserve (dist::c_ndatatypes() * dist::size());
       
       // Irecv
