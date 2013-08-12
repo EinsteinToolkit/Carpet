@@ -531,6 +531,11 @@ comm_state::~comm_state ()
 {
   DECLARE_CCTK_PARAMETERS;
   
+  // Note: calling resize(0) instead of clear() ensures that the
+  // vector capacity does not change
+  srequests.resize(0);
+  rrequests.resize(0);
+  
   for (size_t type=0; type<typebufs.size(); ++type) {
     typebufdesc& typebuf = typebufs.AT(type);
     for (size_t proc=0; proc<typebuf.procbufs.size(); ++proc) {
