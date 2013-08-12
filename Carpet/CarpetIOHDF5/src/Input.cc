@@ -993,16 +993,19 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     HDF5_ERROR (datatype = H5Dget_type(dataset));
     HDF5_ERROR (old_data = H5Tequal(datatype, H5T_NATIVE_CHAR));
     if (old_data) {
+        hid_t dataspace;
+        HDF5_ERROR (dataspace = H5Dget_space(dataset));
         /* old data that stored this as an array of chars */
         CCTK_WARN (CCTK_WARN_ALERT, "Old-style checkpoint data found.");
-        HDF5_ERROR (len = H5Dget_storage_size(dataset) + 1);
+        HDF5_ERROR (len = H5Sget_simple_extent_npoints(dataspace) + 1);
+        HDF5_ERROR (H5Sclose(dataspace));
     } else {
         HDF5_ERROR (len = H5Tget_size(datatype));
     }
     vector<char> parameter_buf(len);
     char* parameters = &parameter_buf[0];
 
-    HDF5_ERROR (H5Dread (dataset, datatype, H5S_ALL, H5S_ALL,
+    HDF5_ERROR (H5Dread (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
                          H5P_DEFAULT, parameters));
     HDF5_ERROR (H5Dclose (dataset));
     HDF5_ERROR (H5Tclose (datatype));
@@ -1096,16 +1099,19 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
     HDF5_ERROR (datatype = H5Dget_type(dataset));
     HDF5_ERROR (old_data = H5Tequal(datatype, H5T_NATIVE_CHAR));
     if (old_data) {
+        hid_t dataspace;
+        HDF5_ERROR (dataspace = H5Dget_space(dataset));
         /* old data that stored this as an array of chars */
         CCTK_WARN (CCTK_WARN_ALERT, "Old-style checkpoint data found.");
-        HDF5_ERROR (len = H5Dget_storage_size(dataset) + 1);
+        HDF5_ERROR (len = H5Sget_simple_extent_npoints(dataspace) + 1);
+        HDF5_ERROR (H5Sclose(dataspace));
     } else {
         HDF5_ERROR (len = H5Tget_size(datatype));
     }
     vector<char> gs_str_buf(len);
     char* gs_str = &gs_str_buf[0];
 
-    HDF5_ERROR (H5Dread (dataset, datatype, H5S_ALL, H5S_ALL,
+    HDF5_ERROR (H5Dread (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
                          H5P_DEFAULT, gs_str));
     HDF5_ERROR (H5Dclose (dataset));
     HDF5_ERROR (H5Tclose (datatype));
