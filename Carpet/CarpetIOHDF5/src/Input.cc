@@ -1371,13 +1371,6 @@ static int ReadVar (const cGH* const cctkGH,
   }
   const hid_t datatype = CCTKtoHDF5_Datatype (cctkGH, group.vartype, 0);
 
-  const ivect stride =
-    group.grouptype == CCTK_GF ?
-    arrdata.AT(gindex).AT(patch->map).hh->baseextent(mglevel,reflevel).stride() : 1;
-  assert (all (stride % patch->ioffsetdenom == 0));
-  ivect lower = patch->iorigin * stride + patch->ioffset * stride / patch->ioffsetdenom;
-  ivect upper = lower + (shape - 1) * stride;
-
   // Traverse all local components on all maps
   hid_t filespace = -1, dataset = -1;
   hid_t xfer = H5P_DEFAULT;
@@ -1389,6 +1382,14 @@ static int ReadVar (const cGH* const cctkGH,
     if (group.grouptype == CCTK_GF and patch->map != Carpet::map) {
       continue;
     }
+
+    // map patch into simulation grid, needs existing map
+    const ivect stride =
+      group.grouptype == CCTK_GF ?
+      arrdata.AT(gindex).AT(patch->map).hh->baseextent(mglevel,reflevel).stride() : 1;
+    assert (all (stride % patch->ioffsetdenom == 0));
+    ivect lower = patch->iorigin * stride + patch->ioffset * stride / patch->ioffsetdenom;
+    ivect upper = lower + (shape - 1) * stride;
 
     struct arrdesc& data = arrdata.at(gindex).at(Carpet::map);
 
