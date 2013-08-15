@@ -784,9 +784,43 @@ void lc_control_init(lc_control_t *restrict const control,
   }
 #pragma omp barrier
   
+  
+  
   // Ensure thread counts are consistent
   assert(get_num_coarse_threads() * get_num_fine_threads() ==
          omp_get_num_threads());
+  
+  {
+    lc_descr_t* global_descr;
+    int global_num_threads;
+    int global_num_coarse_threads;
+    int global_num_fine_threads;
+    static int is_inconsistent;
+#pragma omp single copyprivate(global_descr, global_num_threads, global_num_coarse_threads, global_num_fine_threads)
+    {
+      global_descr = descr;
+      global_num_threads = omp_get_num_threads();
+      global_num_coarse_threads = get_num_coarse_threads();
+      global_num_fine_threads = get_num_fine_threads();
+      is_inconsistent = 0;
+    }
+#pragma omp atomic
+    is_inconsistent |=
+      global_descr != descr or
+      global_num_threads != omp_get_num_threads() or
+      global_num_coarse_threads != get_num_coarse_threads() or
+      global_num_fine_threads != get_num_fine_threads();
+#pragma omp barrier
+    if (is_inconsistent) {
+#pragma omp critical
+      cout << "thread: " << omp_get_thread_num() << "\n"
+           << "   loop name: " << descr->name << "\n"
+           << "   file: " << descr->file << ":" << descr->line << "\n" << flush;
+#pragma omp barrier
+#pragma omp critical
+      CCTK_ERROR("Thread inconsistency");
+    }
+  }
   
   // Allocate fine thread communicators
   if (int(lc_fine_thread_comm.size()) < get_num_coarse_threads()) {
