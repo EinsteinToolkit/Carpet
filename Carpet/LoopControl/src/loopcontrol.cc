@@ -588,12 +588,18 @@ void lc_descr_init(lc_descr_t **const descr_ptr,
     all_descrs.push_back(descr);
     *descr_ptr = descr;
     
+    // Determine number of SMT threads
     if (CCTK_BUILTIN_EXPECT(num_smt_threads==0, false)) {
       if (CCTK_IsFunctionAliased("GetNumSMTThreads")) {
         num_smt_threads = GetNumSMTThreads();
       } else {
         num_smt_threads = 1;
       }
+    }
+    
+    // Allocate fine thread communicators
+    if (CCTK_BUILTIN_EXPECT(lc_fine_thread_comm.empty(), false)) {
+      lc_fine_thread_comm.resize(omp_get_max_threads());
     }
   }
 #pragma omp barrier
@@ -820,25 +826,6 @@ void lc_control_init(lc_control_t *restrict const control,
 #pragma omp critical
       CCTK_ERROR("Thread inconsistency");
     }
-  }
-  
-  // Allocate fine thread communicators
-  int ftcs, gnct;
-  if ((ftcs=int(lc_fine_thread_comm.size())) < (gnct=get_num_coarse_threads())) {
-#pragma omp barrier
-    if (not ((int(lc_fine_thread_comm.size()) < get_num_coarse_threads()))) {
-#pragma omp critical
-      cout << "thread: " << omp_get_thread_num() << " "
-           << "ftcs1=" << ftcs << " "
-           << "gnct1=" << gnct << "  "
-           << "ftcs2=" << lc_fine_thread_comm.size() << " "
-           << "gnct2=" << get_num_coarse_threads() << "\n" << flush;
-    }
-    assert(int(lc_fine_thread_comm.size()) < get_num_coarse_threads());
-#pragma omp master
-    lc_fine_thread_comm.resize(get_num_coarse_threads());
-#pragma omp barrier
-    assert(int(lc_fine_thread_comm.size()) == get_num_coarse_threads());
   }
   
   
