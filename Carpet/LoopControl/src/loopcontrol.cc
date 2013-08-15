@@ -796,6 +796,7 @@ void lc_control_init(lc_control_t *restrict const control,
   assert(get_num_coarse_threads() * get_num_fine_threads() ==
          omp_get_num_threads());
   
+#if 0
   {
     lc_descr_t* global_descr;
     int global_num_threads;
@@ -827,6 +828,7 @@ void lc_control_init(lc_control_t *restrict const control,
       CCTK_ERROR("Thread inconsistency");
     }
   }
+#endif
   
   
   
