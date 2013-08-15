@@ -472,22 +472,13 @@ namespace {
   
   
   
+  static int num_smt_threads = 0;
+  
   int get_num_fine_threads()
   {
     DECLARE_CCTK_PARAMETERS;
     if (not use_smt_threads) return 1;
     if (omp_get_num_threads() == 1) return 1;
-    static int num_smt_threads = -1;
-    if (CCTK_BUILTIN_EXPECT(num_smt_threads<0, false)) {
-#pragma omp critical
-      if (num_smt_threads<0) {
-        if (CCTK_IsFunctionAliased("GetNumSMTThreads")) {
-          num_smt_threads = GetNumSMTThreads();
-        } else {
-          num_smt_threads = 1;
-        }
-      }
-    }
     return num_smt_threads;
   }
   
@@ -596,6 +587,14 @@ void lc_descr_init(lc_descr_t **const descr_ptr,
     lc_descr_t *const descr = new lc_descr_t(name, file, line);
     all_descrs.push_back(descr);
     *descr_ptr = descr;
+    
+    if (CCTK_BUILTIN_EXPECT(num_smt_threads==0, false)) {
+      if (CCTK_IsFunctionAliased("GetNumSMTThreads")) {
+        num_smt_threads = GetNumSMTThreads();
+      } else {
+        num_smt_threads = 1;
+      }
+    }
   }
 #pragma omp barrier
 }
