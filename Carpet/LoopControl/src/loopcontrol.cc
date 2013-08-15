@@ -823,13 +823,20 @@ void lc_control_init(lc_control_t *restrict const control,
   }
   
   // Allocate fine thread communicators
-  if (int(lc_fine_thread_comm.size()) < get_num_coarse_threads()) {
+  int ftcs, gnct;
+  if ((ftcs=int(lc_fine_thread_comm.size())) < (gnct=get_num_coarse_threads())) {
 #pragma omp barrier
+    if (not ((int(lc_fine_thread_comm.size()) < get_num_coarse_threads()))) {
+#pragma omp critical
+      cout << "thread: " << omp_get_thread_num() << " "
+           << "ftcs1=" << ftcs << " "
+           << "gnct1=" << gnct << "  "
+           << "ftcs2=" << lc_fine_thread_comm.size() << " "
+           << "gnct2=" << get_num_coarse_threads() << "\n" << flush;
+    }
     assert(int(lc_fine_thread_comm.size()) < get_num_coarse_threads());
 #pragma omp master
-    {
-      lc_fine_thread_comm.resize(get_num_coarse_threads());
-    }
+    lc_fine_thread_comm.resize(get_num_coarse_threads());
 #pragma omp barrier
     assert(int(lc_fine_thread_comm.size()) == get_num_coarse_threads());
   }
