@@ -88,7 +88,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
                                               const string setname,
                                               const char *basefilename,
                                               int called_from);
-static void ReadMetadata (fileset_t& fileset, hid_t file);
+static void ReadMetadata (fileset_t& fileset, const file_t& file);
 static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg);
 static int ReadVar (const cGH* const cctkGH,
                     file_t & file,
@@ -976,7 +976,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
 
 
   // read all the metadata information
-  ReadMetadata (fileset, file.file);
+  ReadMetadata (fileset, file);
 
   // recover parameters
   if (called_from == CP_RECOVER_PARAMETERS) {
@@ -984,7 +984,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
       CCTK_VInfo (CCTK_THORNSTRING, "Recovering parameters from checkpoint "
                   "file '%s'", file.filename);
     }
-    hid_t dataset, datatype;
+    hid_t dataset, datatype, memtype = -1;
     size_t len;
     htri_t old_data;
 
@@ -999,15 +999,19 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
         CCTK_WARN (CCTK_WARN_ALERT, "Old-style checkpoint data found.");
         HDF5_ERROR (len = H5Sget_simple_extent_npoints(dataspace) + 1);
         HDF5_ERROR (H5Sclose(dataspace));
+        HDF5_ERROR (memtype = H5Tcopy(H5T_NATIVE_CHAR));
     } else {
         HDF5_ERROR (len = H5Tget_size(datatype));
+        HDF5_ERROR (memtype = H5Tcopy(H5T_C_S1));
+        HDF5_ERROR (H5Tset_size(memtype, len));
     }
     vector<char> parameter_buf(len);
     char* parameters = &parameter_buf[0];
 
-    HDF5_ERROR (H5Dread (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
+    HDF5_ERROR (H5Dread (dataset, memtype, H5S_ALL, H5S_ALL,
                          H5P_DEFAULT, parameters));
     HDF5_ERROR (H5Dclose (dataset));
+    HDF5_ERROR (H5Tclose (memtype));
     HDF5_ERROR (H5Tclose (datatype));
     IOUtil_SetAllParameters (parameters);
 
@@ -1037,7 +1041,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
 //////////////////////////////////////////////////////////////////////////////
 // Read the metadata for a set of input files
 //////////////////////////////////////////////////////////////////////////////
-static void ReadMetadata (fileset_t& fileset, hid_t file)
+static void ReadMetadata (fileset_t& fileset, const file_t& file)
 {
   int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
@@ -1045,7 +1049,7 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
   fileset.nioprocs = 1;
   hid_t metadata, attr; //, dataspace;
   H5E_BEGIN_TRY {
-    metadata = H5Gopen (file, METADATA_GROUP);
+    metadata = H5Gopen (file.file, METADATA_GROUP);
   } H5E_END_TRY;
   if (metadata < 0) {
     // no metadata at all - this must be old-fashioned data output file
@@ -1060,7 +1064,7 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
   const bool is_old_fashioned_file = attr < 0;
   if (is_old_fashioned_file) {
     HDF5_ERROR (H5Gclose (metadata));
-    HDF5_ERROR (metadata = H5Dopen (file,
+    HDF5_ERROR (metadata = H5Dopen (file.file,
                                     METADATA_GROUP "/" ALL_PARAMETERS));
   } else {
     HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &fileset.nioprocs));
@@ -1091,11 +1095,10 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
     dataset = H5Dopen (metadata, GRID_STRUCTURE);
   } H5E_END_TRY;
   if (dataset >= 0) {
-    hid_t datatype;
+    hid_t datatype, memtype = -1;
     htri_t old_data;
     size_t len;
 
-    HDF5_ERROR (datatype = H5Dget_type(dataset));
     HDF5_ERROR (datatype = H5Dget_type(dataset));
     HDF5_ERROR (old_data = H5Tequal(datatype, H5T_NATIVE_CHAR));
     if (old_data) {
@@ -1105,15 +1108,19 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
         CCTK_WARN (CCTK_WARN_ALERT, "Old-style checkpoint data found.");
         HDF5_ERROR (len = H5Sget_simple_extent_npoints(dataspace) + 1);
         HDF5_ERROR (H5Sclose(dataspace));
+        HDF5_ERROR (memtype = H5Tcopy(H5T_NATIVE_CHAR));
     } else {
         HDF5_ERROR (len = H5Tget_size(datatype));
+        HDF5_ERROR (memtype = H5Tcopy(H5T_C_S1));
+        HDF5_ERROR (H5Tset_size(memtype, len));
     }
     vector<char> gs_str_buf(len);
     char* gs_str = &gs_str_buf[0];
 
-    HDF5_ERROR (H5Dread (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
+    HDF5_ERROR (H5Dread (dataset, memtype, H5S_ALL, H5S_ALL,
                          H5P_DEFAULT, gs_str));
     HDF5_ERROR (H5Dclose (dataset));
+    HDF5_ERROR (H5Tclose (memtype));
     HDF5_ERROR (H5Tclose (datatype));
     istringstream gs_buf (gs_str);
     
