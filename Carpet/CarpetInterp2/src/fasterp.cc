@@ -605,8 +605,8 @@ namespace CarpetInterp2 {
     rvect const offset = iloc.offset - rvect(iorigin);
     //cout << "Left " << iorigin << " " << iloc.offset << " " << offset << endl;
     // Ensure that interpolation point is between second and third point
-    assert (all (offset >= 1.0 and
-                 offset <= 2.0));
+    assert (all (offset >= CCTK_REAL(1.0) and
+                 offset <= CCTK_REAL(2.0)));
     
     for (int d=0; d<dim; ++d) {
       // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
@@ -681,8 +681,8 @@ namespace CarpetInterp2 {
     rvect const offset = iloc.offset - rvect(iorigin);
     //cout << "Right " << iorigin << " " << iloc.offset << " " << offset << endl;
     // Ensure that the interpolation point is between first and second point
-    assert (all (offset >= 0.0 and
-                 offset <= 1.0));
+    assert (all (offset >= CCTK_REAL(0.0) and
+                 offset <= CCTK_REAL(1.0)));
     
     for (int d=0; d<dim; ++d) {
       // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
