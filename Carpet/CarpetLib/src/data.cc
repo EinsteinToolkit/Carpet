@@ -561,6 +561,19 @@ size_t data<T>::allocsize (const ibbox & extent_, const int proc_) const
   return vectorlength * prod (pad_shape (extent_)) * sizeof (T);
 }
 
+template<typename T>
+bool data<T>::check_fence (const int upperlower) const
+{
+  assert ((vectorleader != NULL) xor (vectorindex == 0));
+  bool retval = true;
+  // since vectors share _memory we only check the first/last vector element
+  if ((vectorindex == 0 and upperlower == 0) or
+      (vectorindex == vectorlength-1 and upperlower == 1)) {
+    retval = _memory->is_fence_intact(upperlower);
+  }
+  return retval;
+}
+
 
 
 // Data manipulators

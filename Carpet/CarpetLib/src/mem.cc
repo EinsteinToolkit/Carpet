@@ -95,6 +95,7 @@ mem (size_t const vectorlength, size_t const nelems,
 #else
     size_t const vector_size = 1;
 #endif
+    size_t const canary = electric_fence ? 2*fence_width : 0;
     size_t const final_padding = vector_size - 1;
     size_t const max_cache_linesize = get_max_cache_linesize();
     size_t const alignment =
@@ -103,7 +104,8 @@ mem (size_t const vectorlength, size_t const nelems,
     // Safety check
     assert(alignment <= 1024);
     
-    const size_t nbytes = (vectorlength * nelems + final_padding) * sizeof (T);
+    const size_t nbytes = (vectorlength * nelems + canary + final_padding) *
+                          sizeof (T);
     if (max_allowed_memory_MB > 0 and
         (total_allocated_bytes + nbytes > MEGA * max_allowed_memory_MB))
     {
@@ -133,7 +135,7 @@ mem (size_t const vectorlength, size_t const nelems,
     }
     
     storage_base_ = (T*)ptr;
-    storage_ = (T*)align_up(size_t(ptr), alignment);
+    storage_ = (T*)align_up(size_t(storage_base_ + canary/2), alignment);
     assert(size_t(storage_) % alignment == 0);
     owns_storage_ = true;
     
@@ -141,6 +143,14 @@ mem (size_t const vectorlength, size_t const nelems,
     max_allocated_bytes = max (max_allocated_bytes, total_allocated_bytes);
     if (poison_new_memory) {
       memset (storage_, poison_value, nbytes);
+    }
+    if (electric_fence) {
+      // put poison just before and just after payload region
+      // FIXME: this will not work with alignment for vectorizing. Not sure how
+      // to support that as well as protect grid scalars.
+      memset (storage_ - fence_width, poison_value, fence_width*sizeof(T));
+      memset (storage_ + vectorlength_ * nelems_, poison_value,
+              fence_width*sizeof(T));
     }
     
   } else {
@@ -158,8 +168,13 @@ template<typename T>
 mem<T>::
 ~mem ()
 {
+  DECLARE_CCTK_PARAMETERS;
   assert (not has_clients());
   if (owns_storage_) {
+    // do we really want this automated check in the destructor?
+    // what if we are already terminating to to a failed fence check?
+    if (electric_fence)
+      assert(is_fence_intact(0) && is_fence_intact(1) );
     free(storage_base_);
     
 #if VECTORISE
@@ -167,13 +182,46 @@ mem<T>::
 #else
     size_t const vector_size = 1;
 #endif
+    size_t const canary = electric_fence ? 2*fence_width : 0;
     size_t const final_padding = vector_size - 1;
     
     const size_t nbytes =
-      (vectorlength_ * nelems_ + final_padding) * sizeof (T);
+      (vectorlength_ * nelems_ + canary + final_padding) * sizeof (T);
     total_allocated_bytes -= nbytes;
   }
   -- total_allocated_objects;
+}
+
+
+
+template<typename T>
+bool mem<T>::
+is_fence_intact (const int upperlower) const
+{
+  DECLARE_CCTK_PARAMETERS;
+  bool retval = true;
+
+  if (owns_storage_) {
+    assert(storage_ and storage_base_);
+    if (electric_fence) {
+      T worm;
+      memset (&worm, poison_value, sizeof (T));
+      if (upperlower) {
+        for(int i=0; i<fence_width; ++i) {
+          retval = retval &&
+                   (memcmp (&worm, storage_ + vectorlength_ * nelems_ + i,
+                            sizeof (T)) == 0);
+        }
+      } else {
+        for(int i=0; i<fence_width; ++i) {
+          retval = retval &&
+                   (memcmp (&worm, storage_ - 1 - i, sizeof (T)) == 0);
+        }
+      }
+    }
+  }
+
+  return retval;
 }
 
 
@@ -248,6 +296,7 @@ mempool::
   }
 }
 
+// TODO: add electric fence
 void *
 mempool::
 alloc (size_t nbytes)
