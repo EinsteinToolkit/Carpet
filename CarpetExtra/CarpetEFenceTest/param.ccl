@@ -1,0 +1,7 @@
+# Parameter definitions for thorn CarpetEFenceTest
+
+KEYWORD breach_at "where to breach the fence"
+{
+  "upper" :: "lower boundary, idx = -1"
+  "lower" :: "upper boundary idx = prod(cctk_lsh[i]-1)+1"
+} "lower"

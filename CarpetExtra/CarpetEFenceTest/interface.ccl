@@ -1,0 +1,4 @@
+# Interface definition for thorn CarpetEFenceTest
+implements: CarpetEFenceTest
+
+CCTK_REAL sheep TYPE=GF "test grid function"

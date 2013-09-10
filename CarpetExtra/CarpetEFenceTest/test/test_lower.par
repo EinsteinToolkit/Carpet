@@ -1,0 +1,58 @@
+Cactus::cctk_itlast = 0
+
+
+
+ActiveThorns = "IOUtil"
+
+IO::out_dir = $parfile
+
+
+
+ActiveThorns = "InitBase"
+
+ActiveThorns = "LoopControl"
+
+
+
+ActiveThorns = "Carpet CarpetLib"
+
+Carpet::domain_from_coordbase = yes
+Carpet::max_refinement_levels = 1
+
+driver::ghost_size       = 1
+
+Carpet::init_fill_timelevels = yes
+
+Carpet::poison_new_timelevels = yes
+CarpetLib::poison_new_memory  = yes
+
+
+
+ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
+
+CoordBase::domainsize = "minmax"
+
+CoordBase::xmin = -1.00
+CoordBase::ymin = -1.00
+CoordBase::zmin = -1.00
+CoordBase::xmax = +1.00
+CoordBase::ymax = +1.00
+CoordBase::zmax = +1.00
+CoordBase::dx   =  0.02
+CoordBase::dy   =  0.02
+CoordBase::dz   =  0.02
+
+CoordBase::boundary_size_x_lower = 1
+CoordBase::boundary_size_y_lower = 1
+CoordBase::boundary_size_z_lower = 1
+CoordBase::boundary_size_x_upper = 1
+CoordBase::boundary_size_y_upper = 1
+CoordBase::boundary_size_z_upper = 1
+
+CartGrid3D::type = "coordbase"
+
+
+
+ActiveThorns = "CarpetEFenceTest"
+
+CarpetEFenceTest::breach_at = "lower"
