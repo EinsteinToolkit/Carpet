@@ -20,7 +20,7 @@
 
 #include "adler32.hh"
 
-
+#define KNARFDEBL 2
 
 namespace Carpet {
   
@@ -482,6 +482,7 @@ namespace Carpet {
     }
 
     sync_timer.start();
+    KNARFDEB(2, "KNARF SyncProlongateGroups proc %d, rl %d\n", CCTK_MyProc(NULL), reflevel);
     SyncProlongateGroups (cctkGH, sync_groups, attribute);
     sync_timer.stop();
   }

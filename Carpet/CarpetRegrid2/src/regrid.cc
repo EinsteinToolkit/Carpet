@@ -886,16 +886,31 @@ namespace CarpetRegrid2 {
           SplitRegionsMaps (cctkGH, superregss, regss);
           for (int m = 0; m < maps; ++ m) {
             const int newmap = maps+m;
+            for (uint c = 0; c < superregss.at(m).size(); ++ c)
+            {
+              // KNARF  =0 should be =m
+              superregss.at(m).AT(c).map = 0;
+            }
+            for (uint c = 0; c < regss.at(m).size(); ++ c)
+            {
+              regss.at(m).AT(c).map = 0;
+            }
+            superregsss.at(m).at(rl) = superregss.at(m);
             for (uint c = 0; c < superregss.at(newmap).size(); ++ c)
             {
-              superregss.at(newmap).AT(c).map = m;
-              regss.at(newmap).AT(c).map = m;
+              // KNARF  =0 should be =m
+              superregss.at(newmap).AT(c).map = 0;
+              }
+            for (uint c = 0; c < regss.at(newmap).size(); ++ c)
+            {
+              regss.at(newmap).AT(c).map = 0;
             }
             superregsss.at(m).at(rl) = superregss.at(m);
             regsss.at(m).at(rl) = regss.at(m);
             superregsss.at(m).at(maxrl-1) = superregss.at(newmap);
             regsss.at(m).at(maxrl-1) = regss.at(newmap);
           }
+          cout << "KNARF RRRRRRRRRRRRRRR" << regss << "\n";
         }
       }
       else

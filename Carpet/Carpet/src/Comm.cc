@@ -17,7 +17,8 @@
 
 #include <carpet.hh>
 
-
+#undef KNARFDEBL
+#define KNARFDEBL 1
 
 namespace Carpet {
 
@@ -157,8 +158,9 @@ namespace Carpet {
           timer.stop();
           reflevel++;
         }
-        // PTODO: Whose phone number is this? Why isn't the barrier in the if?
-        Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
+        // PTODO: Whose phone number is this?
+        if (use_psamr)
+          Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
       }
 
       if (local_do_prolongate) {

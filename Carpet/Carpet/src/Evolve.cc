@@ -135,7 +135,16 @@ namespace Carpet {
       AdvanceTimePSAMR(cctkGH, lvl);
       KNARFDEB(1, "KNARF iterations, proc %d: cit: %d, it(l0): %d, it(l1): %d\n", CCTK_MyProc(NULL), carpet_cctk_iteration, carpet_level_iteration[0], carpet_level_iteration[1]);
       // Always evolve the finest grid where this is local
-      if (arrdata.AT(0).AT(0).hh->local_components(reflevels-1))
+      KNARFDEB(1, "KNARF 1 %p\n", &arrdata);
+      KNARFDEB(1, "KNARF 2 %p\n", &arrdata.AT(0));
+      KNARFDEB(1, "KNARF 3 %p\n", &arrdata.AT(0).AT(0));
+      KNARFDEB(1, "KNARF 4 %p\n", &arrdata.AT(0).AT(0).hh);
+      KNARFDEB(1, "KNARF 5 %d\n", arrdata.AT(0).AT(0).hh->local_components(0));
+      //KNARFDEB(1, "KNARF 6 %d\n", arrdata.AT(0).AT(0).hh->local_components(reflevels-1));
+      //if (arrdata.AT(0).AT(0).hh->local_components(reflevels-1))
+      //if (!arrdata.AT(0).AT(0).hh->local_components(0))
+      // TODO: This is definately a very, very, very evil hack, and only works in some cases
+      if (CCTK_MyProc(NULL) >= (CCTK_nProcs(NULL)/2))
         lvl = reflevels - 1;
 //      fprintf(stderr, "KNARF evolve lvl %d on proc %d at internal iteration %d\n", lvl, CCTK_MyProc(NULL), carpet_cctk_iteration);
       CallEvol (cctkGH, lvl);
