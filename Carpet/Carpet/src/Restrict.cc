@@ -72,7 +72,7 @@ namespace Carpet {
     }
     if(use_psamr)
     {
-      SyncGroups (cctkGH, groups);
+      //SyncGroups (cctkGH, groups);
     }
     
     // Note: Carpet used to call SyncGroups here. This is now done in
