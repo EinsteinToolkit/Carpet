@@ -223,6 +223,8 @@ namespace Carpet {
       // Prolongate one of the coarse grids
       retval = SyncProlongateGroups(cctkGH, groups, function_data);
       reflevel = save_reflevel;
+      // We want to synchronize 'reflevel' as well
+      SyncGroups(cctkGH, groups);
       return retval;
     }
     return SyncProlongateGroups_(cctkGH, groups, function_data);
