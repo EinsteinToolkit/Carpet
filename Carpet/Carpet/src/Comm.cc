@@ -160,9 +160,6 @@ namespace Carpet {
           timer.stop();
           reflevel++;
         }
-        // PTODO: Whose phone number is this?
-        if (use_psamr)
-          Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
       }
 
       if (local_do_prolongate) {

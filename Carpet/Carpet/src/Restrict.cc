@@ -72,10 +72,7 @@ namespace Carpet {
     }
     if(use_psamr)
     {
-      // PTODO: Whose phone number is this?
-      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
       SyncGroups (cctkGH, groups);
-      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
     }
     
     // Note: Carpet used to call SyncGroups here. This is now done in
@@ -89,11 +86,10 @@ namespace Carpet {
 
     static vector<Timers::Timer*> timers;
 
-    if (use_psamr)
+    // PTODO
+    if (false and use_psamr)
     {
-      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
       SyncGroups (cctkGH, groups);
-      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
     }
     if (timers.empty()) {
       timers.push_back(new Timers::Timer("comm_state[0].create"));
@@ -135,9 +131,7 @@ namespace Carpet {
 
     if (use_psamr)
     {
-      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
       SyncGroups (cctkGH, groups);
-      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
     }
 
   }
