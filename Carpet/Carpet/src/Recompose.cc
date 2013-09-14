@@ -1165,12 +1165,13 @@ namespace Carpet {
   void
   SplitRegions_Automatic (cGH const * const cctkGH,
                           vector<region_t> & superregs,
-                          vector<region_t> & regs)
+                          vector<region_t> & regs,
+                          bvect const & no_split_dims)
   {
     assert (regs.empty());
     vector<vector<region_t> > superregss (1, superregs);
     vector<vector<region_t> > regss (1);
-    SplitRegionsMaps_Automatic (cctkGH, superregss, regss);
+    SplitRegionsMaps_Automatic (cctkGH, superregss, regss, no_split_dims);
     assert (superregss.size() == 1);
     superregs = superregss.AT(0);
     assert (regss.size() == 1);
@@ -1595,7 +1596,8 @@ namespace Carpet {
   void
   SplitRegionsMaps_Automatic (cGH const * const cctkGH,
                               vector<vector<region_t> > & superregss,
-                              vector<vector<region_t> > & regss)
+                              vector<vector<region_t> > & regss,
+                              bvect const & no_split_dims)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -1710,7 +1712,7 @@ namespace Carpet {
     for (int r=0, p=0; r<nregs; p+=mynprocs.AT(r), ++r) {
       if (recompose_verbose) cout << "SRMA superreg[" << r << "] " << superregs.AT(r) << endl;
       // bvect const dims = false;
-      bvect const dims = not split_components;
+      bvect const dims = not split_components || no_split_dims;
       SplitRegionsMaps_Automatic_Recursively
         (dims, p, mynprocs.AT(r), superregs.AT(r), newregs);
     } // for r

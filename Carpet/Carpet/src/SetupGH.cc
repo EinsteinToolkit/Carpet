@@ -1249,7 +1249,16 @@ namespace Carpet {
     // Split it into components, one for each processor
     switch (gdata.disttype) {
     case CCTK_DISTRIB_DEFAULT: {
-      SplitRegions_Automatic (cctkGH, superregs, regs);
+      CCTK_INT no_split_directions[dim];
+      bvect no_split_dims(false);
+      int const nvals =
+        Util_TableGetIntArray(gdata.tagstable, dim, no_split_directions,
+                              "no_split_directions");
+      assert((0 <= nvals && nvals <= dim) || nvals == UTIL_ERROR_TABLE_NO_SUCH_KEY);
+      for(int i=0;i<nvals;++i) {
+        no_split_dims[i] = true;
+      }
+      SplitRegions_Automatic (cctkGH, superregs, regs, no_split_dims);
       break;
     }
     case CCTK_DISTRIB_CONSTANT: {
