@@ -539,7 +539,7 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
     if (not CCTK_Equals (verbose, "none")) {
       int count = 0;
       ostringstream msg;
-      msg << "Periodic scalar output requested for:";
+      msg << "Periodic AMR output requested for:";
       for (int vi=0; vi<CCTK_NumVars(); ++vi) {
         if (myGH->requests[vi]) {
           ++count;
