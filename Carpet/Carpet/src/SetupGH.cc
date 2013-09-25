@@ -57,6 +57,8 @@ namespace Carpet {
   static void
   setup_map_information ();
   static void
+  setup_time_information ();
+  static void
   setup_domain_extents (cGH const * cctkGH);
   static void
   allocate_grid_hierarchy (cGH const * cctkGH,
@@ -534,18 +536,17 @@ namespace Carpet {
     
     // Initialise current position (must be the very first thing,
     // before the first output)
-    mglevel      = -1;
-    reflevel     = -1;
-    mc_grouptype = -1;
-    map          = -1;
-    component    = -1;
+    mglevel          = -1;
+    reflevel         = -1;
+    mc_grouptype     = -1;
+    map              = -1;
+    component        = -1;
+    local_component  = -1;
+    timelevel        = -1;
+    timelevel_offset = -1;
 #ifdef HAVE_CGH_CCTK_MODE
     cctkGH->cctk_mode = CCTK_MODE_META;
 #endif
-    
-    timelevels       = maxtimelevels;
-    timelevel        = 0;
-    timelevel_offset = 0;
     
     // Say hello
 
@@ -568,6 +569,7 @@ namespace Carpet {
     setup_multigrid_information (cctkGH);
     setup_refinement_information ();
     setup_map_information ();
+    setup_time_information ();
     
     // Calculate domain extents for each map
     setup_domain_extents (cctkGH);
@@ -636,19 +638,6 @@ namespace Carpet {
   setup_refinement_information ()
   {
     DECLARE_CCTK_PARAMETERS;
-    
-    // Set maximum number of time levels
-    if (max_time_levels < 0) {
-      // Set automatically (backward compatibility)
-      maxtimelevels = prolongation_order_time + 1;
-    } else {
-      maxtimelevels = max_time_levels;
-    }
-    if (maxtimelevels < prolongation_order_time + 1) {
-      CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
-                   "There are enough time levels for this time prolongation order: max_time_levels=%d, prolongation_order_time=%d",
-                   int(max_time_levels), int(prolongation_order_time));
-    }
     
     // Set maximum number of refinement levels
     maxreflevels = max_refinement_levels;
@@ -732,6 +721,27 @@ namespace Carpet {
 #ifdef REQUIREMENTS_HH
     Requirements::Setup (maps);
 #endif
+  }
+  
+  
+  
+  void
+  setup_time_information ()
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Set maximum number of time levels
+    if (max_time_levels < 0) {
+      // Set automatically (backward compatibility)
+      maxtimelevels = prolongation_order_time + 1;
+    } else {
+      maxtimelevels = max_time_levels;
+    }
+    if (maxtimelevels < prolongation_order_time + 1) {
+      CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                   "There are enough time levels for this time prolongation order: max_time_levels=%d, prolongation_order_time=%d",
+                   int(max_time_levels), int(prolongation_order_time));
+    }
   }
   
   
@@ -932,7 +942,7 @@ namespace Carpet {
     
     // We are using the gh of the first map.  This works because all
     // maps have the same number of refinement levels.
-    tt = new th (* vhh.AT(0), timelevels, timereffacts,
+    tt = new th (* vhh.AT(0), maxtimelevels, timereffacts,
                  time_interpolation_during_regridding);
   }
   
@@ -1010,6 +1020,8 @@ namespace Carpet {
     for (int m=0; m<maps; ++m) {
       assert (vhh.AT(m)->reflevels() == reflevels);
     }
+    
+    timelevels = maxtimelevels;
   }
   
   
@@ -1199,7 +1211,7 @@ namespace Carpet {
               ghosts, buffers, overlaps, my_prolongation_orders_space);
     
     arrdata.AT(group).AT(m).tt =
-      new th (*arrdata.AT(group).AT(m).hh, timelevels, grouptimereffacts,
+      new th (*arrdata.AT(group).AT(m).hh, maxtimelevels, grouptimereffacts,
               time_interpolation_during_regridding);
   }
   
@@ -1409,12 +1421,14 @@ namespace Carpet {
     }
     
     // Set up things as if in local mode
-    mglevel         = 0;
-    reflevel        = 0;
-    mc_grouptype    = CCTK_GF;
-    map             = 0;
-    component       = 0;
-    local_component = -1;
+    mglevel          = 0;
+    reflevel         = 0;
+    mc_grouptype     = CCTK_GF;
+    map              = 0;
+    component        = 0;
+    local_component  = -1;
+    timelevel        = 0;
+    timelevel_offset = 0;
     
     // Leave everything, so that everything is set up correctly
     Timers::Timer("meta mode", 1).start();
