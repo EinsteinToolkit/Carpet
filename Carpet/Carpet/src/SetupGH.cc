@@ -175,8 +175,10 @@ namespace Carpet {
   
   static void
   ensure_CartGrid3D_type ();
+#if 0
   static void
   ensure_CartGrid3D_domain ();  // UNUSED
+#endif
   static void
   ensure_CartGrid3D_avoid_origin ();
   static void
@@ -2594,6 +2596,7 @@ namespace Carpet {
   
   
   
+#if 0
   // UNUSED:
   // Ensure that CartGrid3D doesn't apply symmetries
   void
@@ -2613,6 +2616,7 @@ namespace Carpet {
       }
     }
   }
+#endif
   
   
   
