@@ -38,6 +38,7 @@ th::th (gh& h_, int const timelevels_, vector<int> const& reffacts_,
     (time_interpolation_during_regridding_),
     timelevels(timelevels_), reffacts(reffacts_)
 {
+  assert (timelevels_ > 0);
   assert (reffacts.size() >= 1);
   assert (reffacts.front() == 1);
   for (size_t n = 1; n < reffacts.size(); ++ n) {
