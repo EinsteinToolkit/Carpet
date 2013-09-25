@@ -739,7 +739,7 @@ namespace Carpet {
     }
     if (maxtimelevels < prolongation_order_time + 1) {
       CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
-                   "There are enough time levels for this time prolongation order: max_time_levels=%d, prolongation_order_time=%d",
+                   "There are not enough time levels for this time prolongation order: max_time_levels=%d, prolongation_order_time=%d",
                    int(max_time_levels), int(prolongation_order_time));
     }
   }
