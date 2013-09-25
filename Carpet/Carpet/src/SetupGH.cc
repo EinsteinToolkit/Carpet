@@ -541,7 +541,7 @@ namespace Carpet {
     cctkGH->cctk_mode = CCTK_MODE_META;
 #endif
     
-    timelevels       = prolongation_order_time + 1;
+    timelevels       = maxtimelevels;
     timelevel        = 0;
     timelevel_offset = 0;
     
@@ -634,6 +634,19 @@ namespace Carpet {
   setup_refinement_information ()
   {
     DECLARE_CCTK_PARAMETERS;
+    
+    // Set maximum number of time levels
+    if (max_time_levels < 0) {
+      // Set automatically (backward compatibility)
+      maxtimelevels = prolongation_order_time + 1;
+    } else {
+      maxtimelevels = max_time_levels;
+    }
+    if (maxtimelevels < prolongation_order_time + 1) {
+      CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                   "There are enough time levels for this time prolongation order: max_time_levels=%d, prolongation_order_time=%d",
+                   int(max_time_levels), int(prolongation_order_time));
+    }
     
     // Set maximum number of refinement levels
     maxreflevels = max_refinement_levels;

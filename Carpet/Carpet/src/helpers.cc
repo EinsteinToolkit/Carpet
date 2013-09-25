@@ -156,8 +156,8 @@ namespace Carpet {
       assert (rl == 0);
       assert (c == CCTK_MyProc (NULL));
     }
-    int const maxtimelevels = CCTK_MaxTimeLevelsGI (groupindex);
-    assert (tl >= 0 and tl < maxtimelevels);
+    int const maxtls = CCTK_MaxTimeLevelsGI (groupindex);
+    assert (tl >= 0 and tl < maxtls);
     
     int const activetimelevels =
       groupdata.AT(groupindex).activetimelevels.AT(mglevel).AT(rl);

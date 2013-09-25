@@ -47,6 +47,12 @@ namespace Carpet {
   // Maximum number of refinement levels
   extern int maxreflevels;
   
+  // Maximum number of time levels
+  extern int maxtimelevels;
+  
+  // Timelevels
+  extern int timelevels;
+  
   // Refinement levels
   extern int reflevels;
   
@@ -75,9 +81,6 @@ namespace Carpet {
   
   // Maps
   extern int maps;
-  
-  // Timelevels
-  extern int timelevels;
   
   
   

@@ -719,8 +719,8 @@ namespace Carpet {
                 
                 int const num_tl =
                   regridinitial
-                  ? (init_each_timelevel ? prolongation_order_time+1 : 1)
-                  : prolongation_order_time+1;
+                  ? (init_each_timelevel ? maxtimelevels : 1)
+                  : maxtimelevels;
                 
                 bool const old_do_allow_past_timelevels =
                   do_allow_past_timelevels;
@@ -822,7 +822,7 @@ namespace Carpet {
                     (do_global_mode ? " (global)" : ""),
                     (do_meta_mode ? " (meta)" : ""));
           
-          int const num_tl = prolongation_order_time + 1;
+          int const num_tl = maxtimelevels;
           
           bool const old_do_allow_past_timelevels = do_allow_past_timelevels;
           do_allow_past_timelevels = false;
