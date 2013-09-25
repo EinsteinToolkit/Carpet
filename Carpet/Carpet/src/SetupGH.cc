@@ -667,8 +667,8 @@ namespace Carpet {
         istringstream srf (space_refinement_factors);
         srf >> spacereffacts;
       } catch (input_error) {
-        CCTK_WARN
-          (0, "Could not parse parameter \"space_refinement_factors\"");
+        CCTK_ERROR
+          ("Could not parse parameter \"space_refinement_factors\"");
       }
     }
     // TODO: turn these into real error messages
@@ -693,7 +693,7 @@ namespace Carpet {
         istringstream trf (time_refinement_factors);
         trf >> timereffacts;
       } catch (input_error) {
-        CCTK_WARN (0, "Could not parse parameter \"time_refinement_factors\"");
+        CCTK_ERROR ("Could not parse parameter \"time_refinement_factors\"");
       }
     }
     // TODO: turn these into real error messages
@@ -768,7 +768,7 @@ namespace Carpet {
       refcentering = cell_centered;
       reffactdenom = 2;
     } else {
-      assert (0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     
     // Number of grid points
@@ -1041,12 +1041,12 @@ namespace Carpet {
       try {
         ext_str >> exts;
       } catch (input_error) {
-        CCTK_WARN (0, "Could not parse parameter \"base_extents\"");
+        CCTK_ERROR ("Could not parse parameter \"base_extents\"");
       }
       CCTK_VInfo (CCTK_THORNSTRING,
                   "Using %d grid components", int(exts.size()));
       if (exts.size() == 0) {
-        CCTK_WARN (0, "Cannot evolve with zero grid components");
+        CCTK_ERROR ("Cannot evolve with zero grid components");
       }
       
       vector<bbvect> obs;
@@ -1054,7 +1054,7 @@ namespace Carpet {
       try {
         ob_str >> obs;
       } catch (input_error) {
-        CCTK_WARN (0, "Could not parse parameter \"base_outerbounds\"");
+        CCTK_ERROR ("Could not parse parameter \"base_outerbounds\"");
       }
       assert (obs.size() == exts.size());
       
@@ -1146,7 +1146,7 @@ namespace Carpet {
       } // case scalar or array
         
       default:
-        assert (0);
+        CCTK_BUILTIN_UNREACHABLE();
       } // switch grouptype
       
       initialise_group_info (cctkGH, group, gdata);
@@ -1244,7 +1244,7 @@ namespace Carpet {
       break;
     }
     default:
-      assert (0);
+      CCTK_BUILTIN_UNREACHABLE();
     }
     
     // Add empty regions if there are fewer regions than processors
@@ -1578,7 +1578,7 @@ namespace Carpet {
         }
       } else {
         // TODO: handle processor_topology values "along-z" and "along-dir"
-        CCTK_WARN (0, "Unsupported value of parameter processor_topology");
+        CCTK_ERROR ("Unsupported value of parameter processor_topology");
       }
     } // if constant_load_per_processor
     return npoints;
@@ -1675,14 +1675,14 @@ namespace Carpet {
         for (int f=0; f<2; ++f) {
           if (CCTK_EQUALS (refinement_centering, "vertex")) {
             if (is_staggered[f][d]) {
-              CCTK_WARN (0, "The parameters CoordBase::boundary_staggered specify a staggered boundary.  Carpet does not support staggered boundaries when Carpet::max_refinement_levels > 1 with Carpet::centering = \"vertex\"");
+              CCTK_ERROR ("The parameters CoordBase::boundary_staggered specify a staggered boundary.  Carpet does not support staggered boundaries when Carpet::max_refinement_levels > 1 with Carpet::centering = \"vertex\"");
             }
           } else if (CCTK_EQUALS (refinement_centering, "cell")) {
             if (not is_staggered[f][d]) {
-              CCTK_WARN (0, "The parameters CoordBase::boundary_staggered specify a non-staggered boundary.  Carpet does not support non-staggered boundaries when Carpet::max_refinement_levels > 1 with Carpet::centering = \"cell\"");
+              CCTK_ERROR ("The parameters CoordBase::boundary_staggered specify a non-staggered boundary.  Carpet does not support non-staggered boundaries when Carpet::max_refinement_levels > 1 with Carpet::centering = \"cell\"");
             }
           } else {
-            assert (0);
+            CCTK_BUILTIN_UNREACHABLE();
           }
         }
       }
@@ -1857,9 +1857,9 @@ namespace Carpet {
     if (any (fabs (rvect (npoints) - real_npoints) >
              static_cast<CCTK_REAL> (0.001)))
     {
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The domain size for map %d scaled for convergence level %d with convergence factor %d is not integer",
-                  m, int(basemglevel), int(convergence_factor));
+      CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                   "The domain size for map %d scaled for convergence level %d with convergence factor %d is not integer",
+                   m, int(basemglevel), int(convergence_factor));
     }
     
     // Sanity check
@@ -1875,9 +1875,9 @@ namespace Carpet {
       CCTK_REAL const total_npoints = prod(rvect(npoints));
       CCTK_REAL const size_max = numeric_limits<ibbox::size_type>::max();
       if (total_npoints > size_max) {
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "The domain for map %d contains %g grid points.  This number is larger than the maximum number supported by Carpet (%g).",
-                    m, double(total_npoints), double(size_max));
+        CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                     "The domain for map %d contains %g grid points.  This number is larger than the maximum number supported by Carpet (%g).",
+                     m, double(total_npoints), double(size_max));
       }
       CCTK_REAL const int_max = numeric_limits<int>::max();
       if (total_npoints > int_max) {
@@ -1965,7 +1965,7 @@ namespace Carpet {
               break;
             }
             default:
-              assert (0);
+              CCTK_BUILTIN_UNREACHABLE();
             }
           }
         } else {
@@ -2078,7 +2078,7 @@ namespace Carpet {
     }
       
     default:
-      assert (0);
+      CCTK_BUILTIN_UNREACHABLE();
     } // switch grouptype
   }
   
@@ -2111,17 +2111,17 @@ namespace Carpet {
     
     if (any(sizes < 0)) {
       char * const groupname = CCTK_GroupName (group);
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is negative",
-                  groupname, int(basemglevel), int(convergence_factor));
+      CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                   "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is negative",
+                   groupname, int(basemglevel), int(convergence_factor));
       free (groupname);
     }
     
     if (any(fabs(rvect(sizes) - real_sizes) > static_cast<CCTK_REAL> (1.0e-8))) {
       char * const groupname = CCTK_GroupName(group);
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is not integer",
-                  groupname, int(basemglevel), int(convergence_factor));
+      CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                   "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is not integer",
+                   groupname, int(basemglevel), int(convergence_factor));
       free (groupname);
     }
   }
@@ -2150,9 +2150,9 @@ namespace Carpet {
           convpowers = convpowers1;
         } else {
           char * const groupname = CCTK_GroupName (group);
-          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "The key \"convergence_power\" in the tags table of group \"%s\" is wrong",
-                      groupname);
+          CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                       "The key \"convergence_power\" in the tags table of group \"%s\" is wrong",
+                       groupname);
           free (groupname);
         }
         assert (all (convpowers >= 0));
@@ -2173,9 +2173,9 @@ namespace Carpet {
           convoffsets = convoffsets1;
         } else {
           char * const groupname = CCTK_GroupName (group);
-          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "The key \"convergence_offset\" in the tags table of group \"%s\" is wrong",
-                      groupname);
+          CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                       "The key \"convergence_offset\" in the tags table of group \"%s\" is wrong",
+                       groupname);
           free (groupname);
         }
       }
@@ -2201,10 +2201,10 @@ namespace Carpet {
     case CCTK_DISTRIB_CONSTANT: {
       if (not all (all (ghosts.AT(0) == 0))) {
         char * const groupname = CCTK_GroupName (group);
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "The group \"%s\" has DISTRIB=constant, but its "
-                    "ghostsize is not 0",
-                    groupname);
+        CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                     "The group \"%s\" has DISTRIB=constant, but its "
+                     "ghostsize is not 0",
+                     groupname);
         free (groupname);
       }
       assert (all (all (ghosts.AT(0) == 0)));
@@ -2222,7 +2222,7 @@ namespace Carpet {
     }
       
     default:
-      assert (0);
+      CCTK_BUILTIN_UNREACHABLE();
     } // switch disttype
   }
     
@@ -2256,7 +2256,7 @@ namespace Carpet {
         num_array_vars.AT(gdata.dim) += gdata.numvars * gdata.numtimelevels;
         break;
       default:
-        assert (0);
+        CCTK_BUILTIN_UNREACHABLE();
       }
     } // for group
     
@@ -2301,14 +2301,14 @@ namespace Carpet {
         (gdata.tagstable,  0, NULL, "Prolongate");
       if (prolong_length >= 0) {
         char * const groupname = CCTK_GroupName (group);
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Group \"%s\" contains the illegal tag \"Prolongate\".  (Did you mean \"Prolongation\" instead?)",
-                    groupname);
+        CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Group \"%s\" contains the illegal tag \"Prolongate\".  (Did you mean \"Prolongation\" instead?)",
+                     groupname);
         free (groupname);
       } else if (prolong_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
         // good -- do nothing
       } else {
-        assert (0);
+        CCTK_BUILTIN_UNREACHABLE();
       }
     }
     
@@ -2324,7 +2324,7 @@ namespace Carpet {
       } else if (prolong_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
         // do nothing
       } else {
-        assert (0);
+        CCTK_BUILTIN_UNREACHABLE();
       }
     }
     
@@ -2341,16 +2341,16 @@ namespace Carpet {
       } else if (prolong_param_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
         // do nothing
       } else {
-        assert (0);
+        CCTK_BUILTIN_UNREACHABLE();
       }
     }
     
     // Complain if both are given
     if (have_prolong_string and have_prolong_param_string) {
       char * const groupname = CCTK_GroupName (group);
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Group \"%s\" has both the tags \"Prolongation\" and \"ProlongationParameter\".  This is not possible.",
-                  groupname);
+      CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Group \"%s\" has both the tags \"Prolongation\" and \"ProlongationParameter\".  This is not possible.",
+                   groupname);
       free (groupname);
     }
     
@@ -2362,9 +2362,9 @@ namespace Carpet {
         = CCTK_DecomposeName (prolong_param_string, &thorn, &name);
       if (ierr < 0) {
         char * const groupname = CCTK_GroupName (group);
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This is not a valid parameter name.",
-                    groupname, prolong_param_string);
+        CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This is not a valid parameter name.",
+                     groupname, prolong_param_string);
         free (groupname);
       }
       int type;
@@ -2373,16 +2373,16 @@ namespace Carpet {
            (CCTK_ParameterGet (name, thorn, &type)));
       if (not value or not *value) {
         char * const groupname = CCTK_GroupName (group);
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This parameter does not exist.",
-                    groupname, prolong_param_string);
+        CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This parameter does not exist.",
+                     groupname, prolong_param_string);
         free (groupname);
       }
       if (type != PARAMETER_KEYWORD and type != PARAMETER_STRING) {
         char * const groupname = CCTK_GroupName (group);
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This parameter has the wrong type; it must be either KEYWORD or STRING.",
-                    groupname, prolong_param_string);
+        CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This parameter has the wrong type; it must be either KEYWORD or STRING.",
+                     groupname, prolong_param_string);
         free (groupname);
       }
       free (thorn);
@@ -2453,9 +2453,9 @@ namespace Carpet {
       return op_Lagrange_monotone;
     } else {
       char * const groupname = CCTK_GroupName (group);
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Group \"%s\" has the unknown prolongation method \"%s\".",
-                  groupname, prolong_string);
+      CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                   "Group \"%s\" has the unknown prolongation method \"%s\".",
+                   groupname, prolong_string);
       free (groupname);
       return op_error;
     }
@@ -2555,10 +2555,10 @@ namespace Carpet {
       
     default:
       {
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Internal error: encountered variable type %d (%s) for group %d (%s)",
-                    type1, CCTK_VarTypeName(type1),
-                    group, CCTK_GroupName(group));
+        CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                     "Internal error: encountered variable type %d (%s) for group %d (%s)",
+                     type1, CCTK_VarTypeName(type1),
+                     group, CCTK_GroupName(group));
       }
     }
     
@@ -2587,7 +2587,7 @@ namespace Carpet {
       char const * const coordtype
         = * static_cast<char const * const *> (ptr);
       if (not CCTK_EQUALS (coordtype, "coordbase")) {
-        CCTK_WARN (0, "When Carpet::domain_from_coordbase = yes, and when thorn CartGrid3D is active, then you also have to set CartGrid3D::type = \"coordbase\"");
+        CCTK_ERROR ("When Carpet::domain_from_coordbase = yes, and when thorn CartGrid3D is active, then you also have to set CartGrid3D::type = \"coordbase\"");
       }
     }
   }
@@ -2609,7 +2609,7 @@ namespace Carpet {
       char const * const domain
         = * static_cast<char const * const *> (ptr);
       if (not CCTK_EQUALS (domain, "full")) {
-        CCTK_WARN (0, "When Carpet::domain_from_coordbase = no, and when Carpet::max_refinement_levels > 1, then thorn CartGrid3D cannot provide symmetry boundaries");
+        CCTK_ERROR ("When Carpet::domain_from_coordbase = no, and when Carpet::max_refinement_levels > 1, then thorn CartGrid3D cannot provide symmetry boundaries");
       }
     }
   }
@@ -2677,7 +2677,7 @@ namespace Carpet {
       // TODO: Check only if there is actually a symmetry boundary
       // TODO: Take cell centring into account
       if (not CCTK_EQUALS (domain, "full") and any(stag)) {
-        CCTK_WARN (0, "When Carpet::domain_from_coordbase = no, when Carpet::max_refinement_levels > 1, and when thorn CartGrid3D provides symmetry boundaries, then you have to set CartGrid3D::avoid_origin = no");
+        CCTK_ERROR ("When Carpet::domain_from_coordbase = no, when Carpet::max_refinement_levels > 1, and when thorn CartGrid3D provides symmetry boundaries, then you have to set CartGrid3D::avoid_origin = no");
       }
     }
   }
@@ -2728,17 +2728,17 @@ namespace Carpet {
             (reflection_y and avoid_origin_y) or
             (reflection_z and avoid_origin_z))
         {
-          CCTK_WARN (0, "When Carpet::max_refinement_levels > 1, and when ReflectionSymmetry::symmetry_[xyz] = yes, then you also have to set ReflectionSymmetry::avoid_origin_[xyz] = no");
+          CCTK_ERROR ("When Carpet::max_refinement_levels > 1, and when ReflectionSymmetry::symmetry_[xyz] = yes, then you also have to set ReflectionSymmetry::avoid_origin_[xyz] = no");
         }
       } else if (refcentering == cell_centered) {
         if ((reflection_x and not avoid_origin_x) or
             (reflection_y and not avoid_origin_y) or
             (reflection_z and not avoid_origin_z))
         {
-          CCTK_WARN (0, "When Carpet::max_refinement_levels > 1, and when ReflectionSymmetry::symmetry_[xyz] = yes, then you have to set ReflectionSymmetry::avoid_origin_[xyz] = yes");
+          CCTK_ERROR ("When Carpet::max_refinement_levels > 1, and when ReflectionSymmetry::symmetry_[xyz] = yes, then you have to set ReflectionSymmetry::avoid_origin_[xyz] = yes");
         }
       } else {
-        assert (0);
+        CCTK_BUILTIN_UNREACHABLE();
       }
     }
   }
@@ -2763,15 +2763,15 @@ namespace Carpet {
       int const min_nghosts_restrict =
         restriction_order_space / 2;
       if (any (any (ghosts.AT(rl) < i2vect (min_nghosts)))) {
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "There are not enough ghost zones for the desired spatial prolongation order on map %d, refinement level %d.  With a spatial prolongation order of %d, you need at least %d ghost zones.",
-                    m, rl, my_prolongation_order_space, min_nghosts);
+        CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                     "There are not enough ghost zones for the desired spatial prolongation order on map %d, refinement level %d.  With a spatial prolongation order of %d, you need at least %d ghost zones.",
+                     m, rl, my_prolongation_order_space, min_nghosts);
       }
       if (use_higher_order_restriction and 
           any (any (ghosts.AT(rl) < i2vect (min_nghosts_restrict)))) {
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "There are not enough ghost zones for the desired restriction order on map %d, refinement level %d.  With a restriction order of %d, you need at least %d ghost zones.",
-                    m, rl, restriction_order_space, min_nghosts_restrict);
+        CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                     "There are not enough ghost zones for the desired restriction order on map %d, refinement level %d.  With a restriction order of %d, you need at least %d ghost zones.",
+                     m, rl, restriction_order_space, min_nghosts_restrict);
       }
     }
   }
@@ -2785,9 +2785,9 @@ namespace Carpet {
 #ifdef CCTK_HAVE_COMPACT_GROUPS
     if (gdata.compact) {
       char * const groupname = CCTK_GroupName (group);
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The group \"%s\" has COMPACT=1.  Compact groups are not yet supported",
-                  groupname);
+      CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                   "The group \"%s\" has COMPACT=1.  Compact groups are not yet supported",
+                   groupname);
       free (groupname);
     }
 #endif
@@ -2795,9 +2795,9 @@ namespace Carpet {
 #ifdef CCTK_HAVE_CONTIGUOUS_GROUPS
     if (gdata.contiguous) {
       char * const groupname = CCTK_GroupName (group);
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The group \"%s\" has CONTIGUOUS=1.  Contiguous groups are not yet supported",
-                  groupname);
+      CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                   "The group \"%s\" has CONTIGUOUS=1.  Contiguous groups are not yet supported",
+                   groupname);
       free (groupname);
     }
 #endif
