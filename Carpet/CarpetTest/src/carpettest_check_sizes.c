@@ -47,7 +47,6 @@ void carpettest_check_sizes (CCTK_ARGUMENTS)
     print_scalar_descr ("grouptype", data.grouptype, grouptype_string(data.grouptype));
     print_scalar_descr ("vartype", data.vartype, CCTK_VarTypeName(data.vartype));
     print_scalar_descr ("disttype", data.disttype, disttype_string(data.disttype));
-    print_scalar ("stagtype", data.stagtype);
     print_scalar ("numvars", data.numvars);
     print_scalar ("numtimelevels", data.numtimelevels);
     print_array ("gsh", dim, dyndata.gsh);
