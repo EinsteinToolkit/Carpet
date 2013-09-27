@@ -204,8 +204,9 @@ namespace CarpetSlab {
     
     // Create collector data object
     void* myhdata = rank==collect_proc ? hdata : 0;
+    size_t const mymemsize = totalsize * typesize;
     gdata* const alldata = mydata->make_typed (-1, error_centered, op_sync);
-    alldata->allocate (hextent, collect_proc, myhdata);
+    alldata->allocate (hextent, collect_proc, myhdata, mymemsize);
     
     // Done with the temporary stuff
     mydata = 0;
