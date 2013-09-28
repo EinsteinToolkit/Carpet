@@ -1256,7 +1256,8 @@ namespace Carpet {
                               "no_split_directions");
       assert((0 <= nvals && nvals <= dim) || nvals == UTIL_ERROR_TABLE_NO_SUCH_KEY);
       for(int i=0;i<nvals;++i) {
-        no_split_dims[i] = true;
+        assert(no_split_directions[i] < dim);
+        no_split_dims[no_split_directions[i]] = true;
       }
       SplitRegions_Automatic (cctkGH, superregs, regs, no_split_dims);
       break;
