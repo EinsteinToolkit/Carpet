@@ -24,19 +24,19 @@ c     -*-Fortran-*-
             end do
          end do
       end do
-      do k=1,i5
-         do j=1,i4
-            do i=1,i3
+      do k=1,SIZE(arr3,3)
+         do j=1,SIZE(arr3,2)
+            do i=1,SIZE(arr3,1)
                arr3(i,j,k) = i*10000 + j*100 + k
             end do
          end do
       end do
-      do j=1,i7
-         do i=1,i6
+      do j=1,SIZE(arr2,2)
+         do i=1,SIZE(arr2,1)
             arr2(i,j) = i*100 + j
          end do
       end do
-      do i=1,i8
+      do i=1,SIZE(arr1,1)
          arr1(i) = i
       end do
       sc = 42

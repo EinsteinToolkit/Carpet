@@ -29,3 +29,7 @@ CCTK_INT i8 "eight"
 {
   0:* :: "should be 8"
 } 8
+
+BOOLEAN test_slab "test CarpetSlab, requires NPROCS=1"
+{
+} "no"
