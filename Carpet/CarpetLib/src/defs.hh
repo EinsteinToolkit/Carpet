@@ -326,6 +326,8 @@ template<class T> inline size_t memoryof (typename list<T>::const_iterator const
 
 template<class T> size_t memoryof (list<T> const & c) CCTK_ATTRIBUTE_PURE;
 template<class T> size_t memoryof (set<T> const & c) CCTK_ATTRIBUTE_PURE;
+template<class S, class T>
+  size_t memoryof (map<S,T> const & c) CCTK_ATTRIBUTE_PURE;
 template<class T> size_t memoryof (stack<T> const & c) CCTK_ATTRIBUTE_PURE;
 template<class T> size_t memoryof (vector<T> const & c) CCTK_ATTRIBUTE_PURE;
 

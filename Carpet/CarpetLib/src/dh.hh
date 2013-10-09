@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <set>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -248,7 +249,12 @@ public:                         // should be readonly
   level_mboxes level_boxes;     // grid hierarchy [ml][rl]
   fast_mboxes fast_boxes;       // grid hierarchy [ml][rl][p]
   
-  set<ggf*> gfs;                // all grid functions
+private:
+
+  // this needs to be sorted by varindex so that when iteration through the
+  // container in order with a forward iterator, vector leaders are processed
+  // first
+  map<int,ggf*> gfs;            // all grid functions
   
 public:
   

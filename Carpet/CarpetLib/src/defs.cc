@@ -129,6 +129,19 @@ memoryof (set<T> const & c)
   return s;
 }
 
+template <class S, class T>
+size_t
+memoryof (map<S,T> const & c)
+{
+  size_t s = sizeof c;
+  for (typename map<S,T>::const_iterator i=c.begin(); i!=c.end(); ++i) {
+    // Assume that there are three pointers per list element, forming
+    // a tree structure
+    s += 3 * sizeof (void *) + memoryof(i->second);
+  }
+  return s;
+}
+
 template <class T>
 size_t
 memoryof (stack<T> const & c)
@@ -345,6 +358,7 @@ template size_t memoryof (set<dh*> const & l);
 template size_t memoryof (set<gh*> const & l);
 template size_t memoryof (set<gdata*> const & l);
 template size_t memoryof (set<ggf*> const & l);
+template size_t memoryof (map<int,ggf*> const & l);
 template size_t memoryof (set<th*> const & l);
 template size_t memoryof (stack<void*> const & s);
 template size_t memoryof (vector<bool> const & v);
@@ -419,6 +433,7 @@ template istream& input (istream& os, vector<vector<vector<region_t> > >& v);
 
 //template ostream& output (ostream& os, const list<ibbox>& l);
 //template ostream& output (ostream& os, const list<region_t>& l);
+template ostream& output (ostream& os, const pair<int const, ggf*>& p);
 #ifdef CARPET_ENABLE_BBOXSET2
 //template ostream& output (ostream& os, const map<int,shared_ptr<bboxset2::bboxset<int,0> > >& m);
 //template ostream& output (ostream& os, const map<int,shared_ptr<bboxset2::bboxset<int,1> > >& m);

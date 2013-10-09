@@ -2115,10 +2115,10 @@ regrid (bool const do_init)
     cout << "memoryof(dh.fast_boxes)=" << memoryof(fast_boxes) << eol;
     int gfcount = 0;
     size_t gfmemory = 0;
-    for (set<ggf*>::const_iterator gfi = gfs.begin(); gfi != gfs.end(); ++ gfi)
+    for (map<int,ggf*>::const_iterator gfi = gfs.begin(); gfi != gfs.end(); ++ gfi)
     {
       ++ gfcount;
-      gfmemory += memoryof(**gfi);
+      gfmemory += memoryof(*gfi->second);
     }
     cout << "#gfs=" << gfcount << eol;
     cout << "memoryof(gfs)=" << gfmemory << eol;
@@ -2200,51 +2200,51 @@ recompose (int const rl, bool const do_prolongate)
   static Timers::Timer timer ("CarpetLib::dh::recompose");
   timer.start ();
   
-  for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-    (*f)->recompose_crop ();
+  for (map<int,ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+    f->second->recompose_crop ();
   }
   
   if (combine_recompose) {
     // Recompose all grid functions of this refinement levels at once.
     // This may be faster, but requires more memory.
-    for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-      (*f)->recompose_allocate (rl);
+    for (map<int,ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      f->second->recompose_allocate (rl);
     }
     // TODO: If this works, rename do_prolongate to do_init here, and
     // remove the do_prolongate parameter from ggf::recompose_fill
 #if 0
     for (comm_state state; not state.done(); state.step()) {
-      for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-        (*f)->recompose_fill (state, rl, do_prolongate);
+      for (map<int,ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+        f->second->recompose_fill (state, rl, do_prolongate);
       }
     }
 #endif
     if (do_prolongate) {
       for (comm_state state; not state.done(); state.step()) {
-        for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-          (*f)->recompose_fill (state, rl, true);
+        for (map<int,ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+          f->second->recompose_fill (state, rl, true);
         }
       }
     }
-    for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-      (*f)->recompose_free_old (rl);
+    for (map<int,ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      f->second->recompose_free_old (rl);
     }
   } else {
     // Recompose the grid functions sequentially.  This may be slower,
     // but requires less memory.  This is the default.
-    for (set<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-      (*f)->recompose_allocate (rl);
+    for (map<int,ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      f->second->recompose_allocate (rl);
 #if 0
       for (comm_state state; not state.done(); state.step()) {
-        (*f)->recompose_fill (state, rl, do_prolongate);
+        f->second->recompose_fill (state, rl, do_prolongate);
       }
 #endif
       if (do_prolongate) {
         for (comm_state state; not state.done(); state.step()) {
-          (*f)->recompose_fill (state, rl, true);
+          f->second->recompose_fill (state, rl, true);
         }
       }
-      (*f)->recompose_free_old (rl);
+      f->second->recompose_free_old (rl);
     }
   }
   
@@ -2259,7 +2259,12 @@ dh::
 insert (ggf * const f)
 {
   CHECKPOINT;
-  gfs.insert (f);
+  assert (f);
+  assert (f->varindex >= 0);
+  assert (f->varindex < CCTK_NumVars());
+  const bool inserted =
+    gfs.insert (pair<int,ggf*> (f->varindex, f)).second;
+  assert (inserted);
 }
 
 void
@@ -2267,7 +2272,11 @@ dh::
 erase (ggf * const f)
 {
   CHECKPOINT;
-  gfs.erase (f);
+  assert (f);
+  assert (f->varindex >= 0);
+  assert (f->varindex < CCTK_NumVars());
+  const size_t erased = gfs.erase (f->varindex);
+  assert (erased == 1);
 }
 
 
@@ -2750,7 +2759,7 @@ output (ostream & os)
      << "gfs={";
   {
     bool isfirst = true;
-    for (set<ggf*>::const_iterator
+    for (map<int,ggf*>::const_iterator
            f = gfs.begin(); f != gfs.end(); ++ f, isfirst = false)
     {
       if (not isfirst) os << ",";
