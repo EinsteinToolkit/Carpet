@@ -1,5 +1,7 @@
 #include "cycleclock.h"
 
+#ifdef HAVE_TICK_COUNTER
+
 #include <cctk.h>
 
 
@@ -106,3 +108,5 @@ double seconds_per_tick()
   // }
   return cycleclock_tick;
 }
+
+#endif

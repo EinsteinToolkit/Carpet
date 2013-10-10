@@ -22,12 +22,12 @@ extern "C" {
   
 #include "cycle.h"
   
-#ifndef HAVE_TICK_COUNTER
-#  error "tick counter not available"
-#endif
-  
+#ifdef HAVE_TICK_COUNTER
   double seconds_per_tick(void);
   void measure_tick(void);
+#else
+#  warning "tick counter not available"
+#endif
   
 #ifdef __cplusplus
 }
