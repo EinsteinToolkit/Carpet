@@ -2,8 +2,6 @@
 
 IMPLEMENTS: CarpetLib
 
-INHERITS: CycleClock
-
 includes header: mpi_string.hh in mpi_string.hh
 
 includes header: cacheinfo.hh in cacheinfo.hh

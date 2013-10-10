@@ -7,9 +7,9 @@ PROVIDES CarpetLib
 }
 
 # TODO: make Vectors optional
-REQUIRES CycleClock MPI Vectors
+REQUIRES MPI Vectors
 
-OPTIONAL Boost hwloc LoopControl
+OPTIONAL Boost CycleClock hwloc LoopControl
 {
 }
 

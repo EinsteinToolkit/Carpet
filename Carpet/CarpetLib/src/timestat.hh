@@ -8,6 +8,12 @@
 #include <cctk.h>
 
 #include <cycleclock.h>
+#ifndef HAVE_TICK_COUNTER
+typedef int ticks;
+inline ticks getticks() { return 0; }
+inline double seconds_per_tick(void) { return 0.0; }
+inline void measure_tick(void) {}
+#endif
 
 
 
