@@ -76,16 +76,16 @@ BOOLEAN poison_new_memory "Try to catch uninitialised data by setting newly allo
 {
 } "no"
 
-BOOLEAN electric_fence "Surround each allocated memory block by canaries to check for out-of-bounds accesses" STEERABLE=recover
-{
-} "no"
-
 CCTK_INT fence_width "number of guard cells to use" STEERABLE=recover
 {
   1:* :: "any number of cells"
 } 1
 
 RESTRICTED:
+
+BOOLEAN electric_fence "Surround each allocated memory block by canaries to check for out-of-bounds accesses" STEERABLE=recover
+{
+} "no"
 
 CCTK_INT poison_value "Integer value (0..255) used to poison new timelevels (with memset)" STEERABLE=always
 {
