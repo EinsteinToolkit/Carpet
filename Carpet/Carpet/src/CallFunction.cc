@@ -473,7 +473,11 @@ namespace Carpet {
 
   void CheckFence (cGH const * const cctkGH, cFunctionData * attribute)
   {
+    DECLARE_CCTK_PARAMETERS;
+
     if (is_meta_mode()) return; // meta mode has no accessible variables
+    // enumerating the grid variables is expensive
+    if (not electric_fence) return;
 
     Timers::Timer timer("FenceCheck");
     timer.start();

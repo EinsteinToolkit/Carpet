@@ -606,3 +606,7 @@ BOOLEAN adaptive_stepsize "Allow adaptive timestep sizes"
 BOOLEAN use_unusedpoints_mask "Turn on storage and usage of 'unusedpoints_mask'" STEERABLE=recover
 {
 } "no"
+
+SHARES: CarpetLib
+
+USES BOOLEAN electric_fence
