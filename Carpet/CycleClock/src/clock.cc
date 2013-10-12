@@ -184,4 +184,13 @@ namespace CycleClock {
   
 } // namespace CycleClock
 
+#else // HAVE_TICK_COUNTER
+
+namespace CycleClock {
+  extern "C"
+  int CycleClock_Setup()
+  {
+    return 0;
+  }
+}
 #endif
