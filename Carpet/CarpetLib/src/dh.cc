@@ -1071,7 +1071,7 @@ regrid (bool const do_init)
             // _should_ be caught be by the expand()ed is_contained_in(srcbbox)
             // test in the actual operator. 
             int const shrink_by =
-              use_higher_order_restriction and (h.refcent == cell_centered) ?
+              use_higher_order_restriction and h.refcent == cell_centered ?
               restriction_order_space/2  : 0;
             ibbox const contracted_exterior = 
               box.exterior.expand(ivect(-shrink_by)).contracted_for(odomext);
