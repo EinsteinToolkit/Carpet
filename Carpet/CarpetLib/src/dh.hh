@@ -251,7 +251,7 @@ public:                         // should be readonly
   
 private:
 
-  // this needs to be sorted by varindex so that when iteration through the
+  // this needs to be sorted by varindex so that when iterating through the
   // container in order with a forward iterator, vector leaders are processed
   // first
   map<int,ggf*> gfs;            // all grid functions

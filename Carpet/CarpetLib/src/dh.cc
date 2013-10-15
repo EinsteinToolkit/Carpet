@@ -2254,7 +2254,7 @@ insert (ggf * const f)
   assert (f);
   assert (f->varindex >= 0);
   assert (f->varindex < CCTK_NumVars());
-  const bool inserted =
+  bool const inserted =
     gfs.insert (pair<int,ggf*> (f->varindex, f)).second;
   assert (inserted);
 }
@@ -2267,7 +2267,7 @@ erase (ggf * const f)
   assert (f);
   assert (f->varindex >= 0);
   assert (f->varindex < CCTK_NumVars());
-  const size_t erased = gfs.erase (f->varindex);
+  size_t const erased = gfs.erase (f->varindex);
   assert (erased == 1);
 }
 
