@@ -131,7 +131,7 @@ CCTK_INT max_refinement_levels "Maximum number of refinement levels (including t
   1:* :: "must be positive"
 } 1
 
-CCTK_INT max_time_levels "Maximum number of time levels (including the current time level)"
+CCTK_INT max_timelevels "Maximum number of time levels (including the current time level)"
 {
   -1 :: "Set automatically to prolonation_order_time+1"
   1:* :: "Set this explicitly"

@@ -726,16 +726,16 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     // Set maximum number of time levels
-    if (max_time_levels < 0) {
+    if (max_timelevels < 0) {
       // Set automatically (backward compatibility)
       maxtimelevels = prolongation_order_time + 1;
     } else {
-      maxtimelevels = max_time_levels;
+      maxtimelevels = max_timelevels;
     }
     if (maxtimelevels < prolongation_order_time + 1) {
       CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
-                   "There are not enough time levels for this time prolongation order: max_time_levels=%d, prolongation_order_time=%d",
-                   int(max_time_levels), int(prolongation_order_time));
+                   "There are not enough time levels for this time prolongation order: max_timelevels=%d, prolongation_order_time=%d",
+                   int(max_timelevels), int(prolongation_order_time));
     }
   }
   
