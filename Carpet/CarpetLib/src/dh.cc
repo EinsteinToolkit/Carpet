@@ -1055,12 +1055,7 @@ regrid (bool const do_init)
           int const oc = h.get_component(orl, olc);
           full_dboxes const& obox = full_olevel.AT(oc);
           
-          ibset needrecv = allrestricted & obox.owned;
-          if(use_higher_order_restriction) {
-            // NOTE: change in behaviour (affects only outer boundaries I think)!!!!
-            // NOTE: b/c of this we need a low-level sync after the restrict
-            needrecv = allrestricted & obox.interior;
-          }
+          ibset needrecv = allrestricted & obox.interior;
           // Cannot restrict into buffer zones
           assert ((allrestricted & obox.buffers).empty());
           
