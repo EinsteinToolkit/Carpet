@@ -1045,14 +1045,6 @@ regrid (bool const do_init)
           ibset const tmp3 = tmp2.expand(1,1);
           ibset const tmp4 = all_target - tmp3;
           allrestricted = tmp4;
-          //cout << "source=" << source << "\n"
-          //     << "target=" << target << "\n"
-          //     << "all_source=" << all_source << "\n"
-          //     << "all_target=" << all_target << "\n"
-          //     << "tmp1=" << tmp1 << "\n"
-          //     << "tmp2=" << tmp2 << "\n"
-          //     << "tmp3=" << tmp3 << "\n"
-          //     << "allrestricted=" << allrestricted << "\n";
           break;
         }
         default:
