@@ -18,6 +18,7 @@
 #include <cacheinfo.hh>
 #include <carpet.hh>
 #include <vect.hh>
+#include <Timer.hh>
 
 #include "fasterp.hh"
 
@@ -1646,6 +1647,11 @@ namespace CarpetInterp2 {
     
     // Post Irecvs
     if (verbose) CCTK_INFO ("Posting MPI_Irecvs");
+
+    static Timers::Timer irecvs_timer ("PostIrecvs");
+    irecvs_timer.start();
+
+
     vector<CCTK_REAL> recv_points (recv_descr.npoints * nvars);
     fill_with_poison (recv_points);
     vector<MPI_Request> recv_reqs (recv_descr.procs.size());
@@ -1667,9 +1673,13 @@ namespace CarpetInterp2 {
                  comm_world, & recv_reqs_pn.AT(pp));
 #endif
     }
+    irecvs_timer.stop();
     
     // Interpolate data and post Isends
     if (verbose) CCTK_INFO ("Interpolating and posting MPI_Isends");
+    static Timers::Timer interpolate_timer ("Interpolate");
+    interpolate_timer.start();
+
     // TODO: Use one array per processor?
     vector<CCTK_REAL> send_points (send_descr.npoints * nvars);
     fill_with_poison (send_points);
@@ -1761,16 +1771,25 @@ namespace CarpetInterp2 {
                  comm_world, & send_reqs_pn.AT(pp));
 #endif
     } // for pp
-    
+
+    interpolate_timer.stop();
+
     // Wait for Irecvs to complete
     if (verbose) CCTK_INFO ("Waiting for MPI_Irevcs to complete");
+
+    static Timers::Timer waitall_ir_timer ("WaitAll_Irecvs");
+    waitall_ir_timer.start();
     MPI_Waitall (recv_reqs.size(), & recv_reqs.front(), MPI_STATUSES_IGNORE);
 #ifdef CARPETINTERP2_CHECK
     MPI_Waitall (recv_reqs.size(), & recv_reqs_pn.front(), MPI_STATUSES_IGNORE);
 #endif
     
+    waitall_ir_timer.stop();
     // Gather data
     if (verbose) CCTK_INFO ("Gathering data");
+    static Timers::Timer gather_timer ("Gather");
+    gather_timer.start();
+
 #pragma omp parallel for
     for (int n=0; n<recv_descr.npoints; ++n) {
       size_t const nn = recv_descr.index.AT(n);
@@ -1785,14 +1804,19 @@ namespace CarpetInterp2 {
       assert (recv_pn.AT(nn).n == n);
 #endif
     }
+
+    gather_timer.stop();
     
     // Wait for Isends to complete
     if (verbose) CCTK_INFO ("Waiting for MPI_Isends to complete");
+    static Timers::Timer waitall_is_timer ("WaitAll_Isend");
+    waitall_is_timer.start();
     MPI_Waitall (send_reqs.size(), & send_reqs.front(), MPI_STATUSES_IGNORE);
 #ifdef CARPETINTERP2_CHECK
     MPI_Waitall (send_reqs.size(), & send_reqs_pn.front(), MPI_STATUSES_IGNORE);
 #endif
     
+    waitall_is_timer.stop();
     if (verbose) CCTK_INFO ("Done.");
   }
   
