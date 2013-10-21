@@ -1619,6 +1619,14 @@ namespace CarpetInterp2 {
     assert (values.size() == nvars);
     
     if (nvars == 0) return;
+
+    if (interp_barrier)
+    {
+      static Timers::Timer barrier_timer ("Barrier");
+      barrier_timer.start();
+      CCTK_Barrier(cctkGH);
+      barrier_timer.stop();
+    }
     
     for (size_t v=0; v<values.size(); ++v) {
       int const vi = varinds.AT(v);

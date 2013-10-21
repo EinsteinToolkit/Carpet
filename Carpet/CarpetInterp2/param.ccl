@@ -7,3 +7,8 @@ BOOLEAN verbose "Produce info output" STEERABLE=always
 BOOLEAN veryverbose "Produce debugging output" STEERABLE=always
 {
 } "no"
+
+BOOLEAN interp_barrier "Wait for all processes before interpolating" STEERABLE=always
+{
+} "no"
+
