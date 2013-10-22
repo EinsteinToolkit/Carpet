@@ -21,6 +21,12 @@
 
 #include "fasterp.hh"
 
+#ifdef CARPETINTERP2_CHECK
+#  define CI2C(x,y) x,y
+#else
+#  define CI2C(x,y)
+#endif
+
 
 
 namespace CarpetInterp2 {
@@ -396,29 +402,29 @@ namespace CarpetInterp2 {
     if (exact[2]) {
       if (exact[1]) {
         if (exact[0]) {
-          interpolate<Z,Z,Z> (ash, lsh, varptrs, vals);
+          interpolate<Z,Z,Z> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,Z,Z> (ash, lsh, varptrs, vals);
+          interpolate<O,Z,Z> (ash, CI2C(lsh,) varptrs, vals);
         }
       } else {
         if (exact[0]) {
-          interpolate<Z,O,Z> (ash, lsh, varptrs, vals);
+          interpolate<Z,O,Z> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,O,Z> (ash, lsh, varptrs, vals);
+          interpolate<O,O,Z> (ash, CI2C(lsh,) varptrs, vals);
         }
       }
     } else {
       if (exact[1]) {
         if (exact[0]) {
-          interpolate<Z,Z,O> (ash, lsh, varptrs, vals);
+          interpolate<Z,Z,O> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,Z,O> (ash, lsh, varptrs, vals);
+          interpolate<O,Z,O> (ash, CI2C(lsh,) varptrs, vals);
         }
       } else {
         if (exact[0]) {
-          interpolate<Z,O,O> (ash, lsh, varptrs, vals);
+          interpolate<Z,O,O> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,O,O> (ash, lsh, varptrs, vals);
+          interpolate<O,O,O> (ash, CI2C(lsh,) varptrs, vals);
         }
       }
     }
@@ -442,18 +448,18 @@ namespace CarpetInterp2 {
     const
   {
     switch (order) {
-    case  0: interpolate< 0> (ash, lsh, varptrs, vals); break;
-    case  1: interpolate< 1> (ash, lsh, varptrs, vals); break;
-    case  2: interpolate< 2> (ash, lsh, varptrs, vals); break;
-    case  3: interpolate< 3> (ash, lsh, varptrs, vals); break;
-    case  4: interpolate< 4> (ash, lsh, varptrs, vals); break;
-    case  5: interpolate< 5> (ash, lsh, varptrs, vals); break;
-    case  6: interpolate< 6> (ash, lsh, varptrs, vals); break;
-    case  7: interpolate< 7> (ash, lsh, varptrs, vals); break;
-    case  8: interpolate< 8> (ash, lsh, varptrs, vals); break;
-    case  9: interpolate< 9> (ash, lsh, varptrs, vals); break;
-    case 10: interpolate<10> (ash, lsh, varptrs, vals); break;
-    case 11: interpolate<11> (ash, lsh, varptrs, vals); break;
+    case  0: interpolate< 0> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  1: interpolate< 1> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  2: interpolate< 2> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  3: interpolate< 3> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  4: interpolate< 4> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  5: interpolate< 5> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  6: interpolate< 6> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  7: interpolate< 7> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  8: interpolate< 8> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  9: interpolate< 9> (ash, CI2C(lsh,) varptrs, vals); break;
+    case 10: interpolate<10> (ash, CI2C(lsh,) varptrs, vals); break;
+    case 11: interpolate<11> (ash, CI2C(lsh,) varptrs, vals); break;
     default:
       // Add higher orders here as desired
       CCTK_WARN (CCTK_WARN_ABORT,
@@ -900,29 +906,29 @@ namespace CarpetInterp2 {
     if (exact[2]) {
       if (exact[1]) {
         if (exact[0]) {
-          interpolate<Z,Z,Z> (ash, lsh, varptrs, vals);
+          interpolate<Z,Z,Z> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,Z,Z> (ash, lsh, varptrs, vals);
+          interpolate<O,Z,Z> (ash, CI2C(lsh,) varptrs, vals);
         }
       } else {
         if (exact[0]) {
-          interpolate<Z,O,Z> (ash, lsh, varptrs, vals);
+          interpolate<Z,O,Z> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,O,Z> (ash, lsh, varptrs, vals);
+          interpolate<O,O,Z> (ash, CI2C(lsh,) varptrs, vals);
         }
       }
     } else {
       if (exact[1]) {
         if (exact[0]) {
-          interpolate<Z,Z,O> (ash, lsh, varptrs, vals);
+          interpolate<Z,Z,O> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,Z,O> (ash, lsh, varptrs, vals);
+          interpolate<O,Z,O> (ash, CI2C(lsh,) varptrs, vals);
         }
       } else {
         if (exact[0]) {
-          interpolate<Z,O,O> (ash, lsh, varptrs, vals);
+          interpolate<Z,O,O> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,O,O> (ash, lsh, varptrs, vals);
+          interpolate<O,O,O> (ash, CI2C(lsh,) varptrs, vals);
         }
       }
     }
@@ -946,7 +952,7 @@ namespace CarpetInterp2 {
     const
   {
     switch (order) {
-    case  2: interpolate< 2> (ash, lsh, varptrs, vals); break;
+    case  2: interpolate< 2> (ash, CI2C(lsh,) varptrs, vals); break;
     default:
       // Add higher orders here as desired
       CCTK_WARN (CCTK_WARN_ABORT,
@@ -1452,7 +1458,9 @@ namespace CarpetInterp2 {
         ibbox const & ext =
           Carpet::vdd.AT(m)->light_boxes.AT(Carpet::mglevel).AT(rl).AT(c).exterior;
         send_comp.ash = pad_shape(ext);
+#ifdef CARPETINTERP2_CHECK
         send_comp.lsh = ext.shape() / ext.stride();
+#endif
         
         send_comp.offset = offset;
         send_comp.npoints = npoints_comp.AT(mrc);
@@ -1475,7 +1483,7 @@ namespace CarpetInterp2 {
         //fasterp_src_loc_t sloc;
         FASTERP sloc;
         int const ierr =
-          sloc.calc_stencil (iloc, send_comp.ash, send_comp.lsh, order);
+          sloc.calc_stencil (iloc, send_comp.ash, CI2C(send_comp.lsh,) order);
         if (ierr) {
           CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "Could not determine valid interpolation stencil for point %d on map %d, refinement level %d, component %d",
@@ -1707,7 +1715,7 @@ namespace CarpetInterp2 {
         for (int n=0; n<int(send_comp.locs.size()); ++n) {
           size_t const ind = (send_comp.offset + n) * nvars;
           send_comp.locs.AT(n).interpolate
-            (send_comp.ash, send_comp.lsh,
+            (send_comp.ash, CI2C(send_comp.lsh,)
              order, varptrs, &computed_points.AT(ind));
 #ifdef CARPETINTERP2_CHECK
           computed_pn.AT(send_comp.offset + n) = send_comp.locs.AT(n).pn;
