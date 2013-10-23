@@ -341,6 +341,15 @@ namespace Timers {
     
     out << space << "<timer name = " << "\"" << escapeForXML(d_name) << "\"> ";
     out << getTime() << " ";
+    const vector<double> values = getAllTimerValues();
+    const vector<pair<string,string> > names = getAllTimerNames();
+
+    out << endl;
+
+    for (size_t i=0; i<names.size(); ++i)
+    {
+      out << space << "  " << "<value clock=\"" << names[i].first << "\" unit=\"" << names[i].second << "\">" << values[i] << "</value>" << endl;
+    }
     
     // For compactness, only use multiple lines if there are children
     if (d_children.size() != 0)
