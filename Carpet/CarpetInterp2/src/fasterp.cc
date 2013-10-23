@@ -1656,7 +1656,7 @@ namespace CarpetInterp2 {
     // Post Irecvs
     if (verbose) CCTK_INFO ("Posting MPI_Irecvs");
 
-    static Timers::Timer irecvs_timer ("PostIrecvs");
+    static Timers::Timer irecvs_timer ("PostIrecvs",0,true);
     irecvs_timer.start();
 
 
@@ -1685,8 +1685,9 @@ namespace CarpetInterp2 {
     
     // Interpolate data and post Isends
     if (verbose) CCTK_INFO ("Interpolating and posting MPI_Isends");
-    static Timers::Timer interpolate_timer ("Interpolate");
-    interpolate_timer.start();
+    static Timers::Timer interpolate_timer ("Interpolate",0,true);
+
+    interpolate_timer.instantiate();
 
     // TODO: Use one array per processor?
     vector<CCTK_REAL> send_points (send_descr.npoints * nvars);
@@ -1729,6 +1730,7 @@ namespace CarpetInterp2 {
         
         // TODO: This loops seems unbalanced.  Maybe the different
         // interpolations have different costs.
+        interpolate_timer.start();
 #pragma omp parallel for schedule (dynamic, 1000)
         for (int n=0; n<int(send_comp.locs.size()); ++n) {
           size_t const ind = (send_comp.offset + n) * nvars;
@@ -1739,6 +1741,7 @@ namespace CarpetInterp2 {
           computed_pn.AT(send_comp.offset + n) = send_comp.locs.AT(n).pn;
 #endif
         }
+        interpolate_timer.stop();
         
       } // for comp
       
@@ -1780,12 +1783,10 @@ namespace CarpetInterp2 {
 #endif
     } // for pp
 
-    interpolate_timer.stop();
-
     // Wait for Irecvs to complete
     if (verbose) CCTK_INFO ("Waiting for MPI_Irevcs to complete");
 
-    static Timers::Timer waitall_ir_timer ("WaitAll_Irecvs");
+    static Timers::Timer waitall_ir_timer ("WaitAll_Irecvs",0,true);
     waitall_ir_timer.start();
     MPI_Waitall (recv_reqs.size(), & recv_reqs.front(), MPI_STATUSES_IGNORE);
 #ifdef CARPETINTERP2_CHECK
@@ -1795,7 +1796,7 @@ namespace CarpetInterp2 {
     waitall_ir_timer.stop();
     // Gather data
     if (verbose) CCTK_INFO ("Gathering data");
-    static Timers::Timer gather_timer ("Gather");
+    static Timers::Timer gather_timer ("Gather",0,true);
     gather_timer.start();
 
 #pragma omp parallel for
@@ -1817,7 +1818,7 @@ namespace CarpetInterp2 {
     
     // Wait for Isends to complete
     if (verbose) CCTK_INFO ("Waiting for MPI_Isends to complete");
-    static Timers::Timer waitall_is_timer ("WaitAll_Isend");
+    static Timers::Timer waitall_is_timer ("WaitAll_Isend",0,true);
     waitall_is_timer.start();
     MPI_Waitall (send_reqs.size(), & send_reqs.front(), MPI_STATUSES_IGNORE);
 #ifdef CARPETINTERP2_CHECK
