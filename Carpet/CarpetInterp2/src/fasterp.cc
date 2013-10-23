@@ -1622,7 +1622,7 @@ namespace CarpetInterp2 {
 
     if (interp_barrier)
     {
-      static Timers::Timer barrier_timer ("Barrier");
+      static Timers::Timer barrier_timer ("PreBarrier",0,true);
       barrier_timer.start();
       CCTK_Barrier(cctkGH);
       barrier_timer.stop();
@@ -1825,6 +1825,15 @@ namespace CarpetInterp2 {
 #endif
     
     waitall_is_timer.stop();
+
+    if (interp_barrier)
+    {
+      static Timers::Timer barrier_timer ("PostBarrier",0,true);
+      barrier_timer.start();
+      CCTK_Barrier(cctkGH);
+      barrier_timer.stop();
+    }
+
     if (verbose) CCTK_INFO ("Done.");
   }
   

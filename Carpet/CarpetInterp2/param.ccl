@@ -8,7 +8,7 @@ BOOLEAN veryverbose "Produce debugging output" STEERABLE=always
 {
 } "no"
 
-BOOLEAN interp_barrier "Wait for all processes before interpolating" STEERABLE=always
+BOOLEAN interp_barrier "Wait for all processes before and after interpolating" STEERABLE=always
 {
 } "no"
 
