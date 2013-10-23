@@ -1107,7 +1107,7 @@ namespace CarpetInterp2 {
     mrc_t::determine_mrc_info();
     int const maxmrc = mrc_t::get_max_ind();
     
-    MPI_Comm & comm_world = * (MPI_Comm *) GetMPICommWorld (cctkGH);
+    MPI_Comm const & comm_world = * (MPI_Comm const *) GetMPICommWorld (cctkGH);
     
     
     
@@ -1641,7 +1641,7 @@ namespace CarpetInterp2 {
       assert (recv_descr.npoints == 0 or values.AT(v) != NULL);
     }
     
-    MPI_Comm & comm_world = * (MPI_Comm *) GetMPICommWorld (cctkGH);
+    MPI_Comm const & comm_world = * (MPI_Comm const *) GetMPICommWorld (cctkGH);
     int const mpi_tag = 0;
     
     // Post Irecvs
