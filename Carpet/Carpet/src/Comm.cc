@@ -163,7 +163,15 @@ namespace Carpet {
       Carpet::NamedBarrier(cctkGH,
                            8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
 #endif
-      
+
+      if (sync_barriers)
+      {
+        static Timers::Timer barrier_timer ("ProlongateSyncBarrier",0,true);
+        barrier_timer.start();
+        CCTK_Barrier(cctkGH);
+        barrier_timer.stop();
+      }
+
       // synchronise ghostzones
       if (sync_during_time_integration or local_do_prolongate) {
         static Timers::Timer timer ("Sync");
