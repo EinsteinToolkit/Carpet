@@ -166,7 +166,7 @@ namespace Carpet {
 
       if (sync_barriers)
       {
-        static Timers::Timer barrier_timer ("ProlongateSyncBarrier",0,true);
+        static Timers::Timer barrier_timer ("ProlongateSyncBarrier");
         barrier_timer.start();
         CCTK_Barrier(cctkGH);
         barrier_timer.stop();

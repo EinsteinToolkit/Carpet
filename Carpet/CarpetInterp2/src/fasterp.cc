@@ -1622,7 +1622,7 @@ namespace CarpetInterp2 {
 
     if (interp_barrier)
     {
-      static Timers::Timer barrier_timer ("PreBarrier",0,true);
+      static Timers::Timer barrier_timer ("PreBarrier");
       barrier_timer.start();
       CCTK_Barrier(cctkGH);
       barrier_timer.stop();
@@ -1656,7 +1656,7 @@ namespace CarpetInterp2 {
     // Post Irecvs
     if (verbose) CCTK_INFO ("Posting MPI_Irecvs");
 
-    static Timers::Timer irecvs_timer ("PostIrecvs",0,true);
+    static Timers::Timer irecvs_timer ("PostIrecvs");
     irecvs_timer.start();
 
 
@@ -1685,7 +1685,7 @@ namespace CarpetInterp2 {
     
     // Interpolate data and post Isends
     if (verbose) CCTK_INFO ("Interpolating and posting MPI_Isends");
-    static Timers::Timer interpolate_timer ("Interpolate",0,true);
+    static Timers::Timer interpolate_timer ("Interpolate");
 
     interpolate_timer.instantiate();
 
@@ -1786,7 +1786,7 @@ namespace CarpetInterp2 {
     // Wait for Irecvs to complete
     if (verbose) CCTK_INFO ("Waiting for MPI_Irevcs to complete");
 
-    static Timers::Timer waitall_ir_timer ("WaitAll_Irecvs",0,true);
+    static Timers::Timer waitall_ir_timer ("WaitAll_Irecvs");
     waitall_ir_timer.start();
     MPI_Waitall (recv_reqs.size(), & recv_reqs.front(), MPI_STATUSES_IGNORE);
 #ifdef CARPETINTERP2_CHECK
@@ -1796,7 +1796,7 @@ namespace CarpetInterp2 {
     waitall_ir_timer.stop();
     // Gather data
     if (verbose) CCTK_INFO ("Gathering data");
-    static Timers::Timer gather_timer ("Gather",0,true);
+    static Timers::Timer gather_timer ("Gather");
     gather_timer.start();
 
 #pragma omp parallel for
@@ -1818,7 +1818,7 @@ namespace CarpetInterp2 {
     
     // Wait for Isends to complete
     if (verbose) CCTK_INFO ("Waiting for MPI_Isends to complete");
-    static Timers::Timer waitall_is_timer ("WaitAll_Isend",0,true);
+    static Timers::Timer waitall_is_timer ("WaitAll_Isend");
     waitall_is_timer.start();
     MPI_Waitall (send_reqs.size(), & send_reqs.front(), MPI_STATUSES_IGNORE);
 #ifdef CARPETINTERP2_CHECK
@@ -1829,7 +1829,7 @@ namespace CarpetInterp2 {
 
     if (interp_barrier)
     {
-      static Timers::Timer barrier_timer ("PostBarrier",0,true);
+      static Timers::Timer barrier_timer ("PostBarrier");
       barrier_timer.start();
       CCTK_Barrier(cctkGH);
       barrier_timer.stop();
