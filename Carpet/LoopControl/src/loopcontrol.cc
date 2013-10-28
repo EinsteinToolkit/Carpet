@@ -1226,6 +1226,14 @@ void lc_statistics(CCTK_ARGUMENTS)
         time_actual  += setup_count * setup.stats.avg_point();
       }
     }
+    const double ratio_unopt =
+      time_default == 0.0 && time_actual == 0.0 ?
+      0.0 :
+      time_default / time_actual - 1.0;
+    const double ratio_ideal =
+      time_default == 0.0 && time_actual == 0.0 ?
+      0.0 :
+      time_best / time_actual - 1.0;
     const size_t nbytes =
       (nloops *
        (sizeof(lc_descr_t*) + sizeof(lc_descr_t))) +
@@ -1241,10 +1249,10 @@ void lc_statistics(CCTK_ARGUMENTS)
                time_actual);
     CCTK_VInfo(CCTK_THORNSTRING,
                "    Unoptimized time would have been: %g s   (%+.1f%%)",
-               time_default, 100.0 * (time_default / time_actual - 1.0));
+               time_default, 100.0 * ratio_unopt);
     CCTK_VInfo(CCTK_THORNSTRING,
                "    Ideal time could have been:       %g s   (%+.1f%%)",
-               time_best, 100.0 * (time_best / time_actual - 1.0));
+               time_best, 100.0 * ratio_ideal);
     CCTK_VInfo(CCTK_THORNSTRING, "  Memory allocated: %g MB", nbytes / 1.0e+6);
   }
   
