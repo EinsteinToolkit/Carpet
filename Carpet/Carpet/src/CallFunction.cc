@@ -477,7 +477,7 @@ namespace Carpet {
 
     if (is_meta_mode()) return; // meta mode has no accessible variables
     // enumerating the grid variables is expensive
-    if (not electric_fence) return;
+    if (not gdata::fence_is_energized()) return;
 
     Timers::Timer timer("FenceCheck");
     timer.start();
