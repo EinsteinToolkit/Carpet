@@ -105,8 +105,10 @@ public:
     0;
   virtual void free () = 0;
   virtual size_t allocsize (const ibbox& extent, const int proc) const = 0;
+
   // true if fence is intact
   virtual bool check_fence (const int upperlower) const = 0;
+  static bool fence_is_energized ();
   
   // Accessors
   bool has_storage () const {

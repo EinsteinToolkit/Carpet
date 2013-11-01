@@ -186,6 +186,14 @@ allocated_memory_shape (vect<int,D> shape)
 }
 #endif
 
+bool
+gdata::
+fence_is_energized ()
+{
+  DECLARE_CCTK_PARAMETERS;
+
+  return electric_fence;
+}
 
 
 // Data manipulators
