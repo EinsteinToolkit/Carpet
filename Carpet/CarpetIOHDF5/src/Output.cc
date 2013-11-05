@@ -147,23 +147,23 @@ int WriteVarUnchunked (const cGH* const cctkGH,
           } H5E_END_TRY;
         }
         // enable compression if requested
-        hid_t plist;
-        HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
+        hid_t plist_dataset;
+        HDF5_ERROR (plist_dataset = H5Pcreate (H5P_DATASET_CREATE));
         const int compression_lvl = request->compression_level >= 0 ?
                                     request->compression_level :
                                     compression_level;
         if (compression_lvl) {
-          HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
-          HDF5_ERROR (H5Pset_deflate (plist, compression_lvl));
+          HDF5_ERROR (H5Pset_chunk (plist_dataset, group.dim, shape));
+          HDF5_ERROR (H5Pset_deflate (plist_dataset, compression_lvl));
         }
         // enable checksums if requested
         if (use_checksums) {
-          HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
-          HDF5_ERROR (H5Pset_filter (plist, H5Z_FILTER_FLETCHER32, 0, 0, NULL));
+          HDF5_ERROR (H5Pset_chunk (plist_dataset, group.dim, shape));
+          HDF5_ERROR (H5Pset_filter (plist_dataset, H5Z_FILTER_FLETCHER32, 0, 0, NULL));
         }
         HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
-                                         filedatatype, dataspace, plist));
-        HDF5_ERROR (H5Pclose (plist));
+                                         filedatatype, dataspace, plist_dataset));
+        HDF5_ERROR (H5Pclose (plist_dataset));
       }
 
       // Loop over all components
