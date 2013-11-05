@@ -136,7 +136,6 @@ int WriteVarUnchunked (const cGH* const cctkGH,
         // than recombining an HDF5 dataset on a disk file.
         HDF5_ERROR (memfile = H5Fcreate ("tempfile", H5F_ACC_EXCL, H5P_DEFAULT,
                                          plist));
-        HDF5_ERROR (H5Pclose (plist));
         HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
         HDF5_ERROR (memdataset = H5Dcreate (memfile, datasetname.str().c_str(),
                                          filedatatype, dataspace, H5P_DEFAULT));
