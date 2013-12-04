@@ -85,7 +85,7 @@ MoL::ODE_Method = RK3
 
 ActiveThorns = "WaveMoL"
 
-WaveMoL::num_timelevels = 3
+#WaveMoL::num_timelevels = 3
 
 
 
