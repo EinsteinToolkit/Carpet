@@ -74,11 +74,16 @@ namespace Carpet {
     {
       // Synchronising in POSTRESTRICT (e.g. in MoL_PostStep) is not
       // sufficient, as there it happens coarse to fine, whereas it
-      // needs to happen fine to coarse, like restriction.
+      // needs to happen fine to coarse, like restriction.  This sync
+      // is not necessary if ghost zones are filled by restriction,
+      // which happens when restriction requires no stencil
+      // (e.g. vertex-centered mesh refinement).
       static Timers::Timer timer ("RestrictSync");
-      timer.start();
-      SyncGroups (cctkGH, groups);
-      timer.stop();
+      if (use_higher_order_restriction) {
+        timer.start();
+        SyncGroups (cctkGH, groups);
+        timer.stop();
+      }
     }
   }
   

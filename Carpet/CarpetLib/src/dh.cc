@@ -1054,8 +1054,14 @@ regrid (bool const do_init)
         for (int olc = 0; olc < h.local_components(orl); ++ olc) {
           int const oc = h.get_component(orl, olc);
           full_dboxes const& obox = full_olevel.AT(oc);
-          
-          ibset needrecv = allrestricted & obox.owned;
+
+          // Ghost zones: can restrict into ghost zones if not using
+          // higher order restriction, which is probably much cheaper
+          // than performing a sync after restriction
+          ibset needrecv = allrestricted &
+            (use_higher_order_restriction ? obox.owned : obox.exterior);
+
+          // Outer boundaries
           if(use_higher_order_restriction) {
             // NOTE: change in behaviour (affects only outer boundaries I think)!!!!
             // NOTE: b/c of this we need a low-level sync after the restrict
