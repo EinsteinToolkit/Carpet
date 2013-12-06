@@ -71,17 +71,15 @@ namespace Carpet {
     }
 
     // Synchronise
-    // TODO: Why? Restricted grid functions need to have boundary
-    // conditions applied in postrestrict anyway, so this should not
-    // be necessary.
-#if 0
     {
+      // Synchronising in POSTRESTRICT (e.g. in MoL_PostStep) is not
+      // sufficient, as there it happens coarse to fine, whereas it
+      // needs to happen fine to coarse, like restriction.
       static Timers::Timer timer ("RestrictSync");
       timer.start();
       SyncGroups (cctkGH, groups);
       timer.stop();
     }
-#endif
   }
   
 
