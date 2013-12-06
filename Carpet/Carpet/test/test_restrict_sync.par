@@ -1,0 +1,167 @@
+
+################################################################################
+# Active thorns
+################################################################################
+
+ActiveThorns = "
+  Boundary
+  Carpet
+  CarpetIOASCII
+  CarpetIOBasic
+  CarpetIOScalar
+  CarpetInterp
+  CarpetLib
+  CarpetReduce
+  CarpetRegrid2
+  CartGrid3D
+  CoordBase
+  CoordGauge
+  IOUtil
+  InitBase
+  LoopControl
+  MoL
+  NaNChecker
+  Slab
+  SymBase
+  SystemStatistics
+  Time
+  WaveMoL
+  IDWaveMoL
+"
+
+################################################################################
+# Grid structure
+################################################################################
+
+CartGrid3D::type                        = "coordbase"
+Carpet::domain_from_coordbase           = yes
+CoordBase::domainsize                   = "minmax"
+
+CoordBase::xmax                         = 32
+CoordBase::ymax                         = 0.5
+CoordBase::zmax                         = 32
+CoordBase::xmin                         = -32
+CoordBase::ymin                         = -0.5
+CoordBase::zmin                         = -32
+CoordBase::dx                           = 0.5
+CoordBase::dy                           = 0.5
+CoordBase::dz                           = 0.5
+
+CoordBase::boundary_size_x_lower        = 3
+CoordBase::boundary_size_y_lower        = 3
+CoordBase::boundary_size_z_lower        = 3
+CoordBase::boundary_size_x_upper        = 3
+CoordBase::boundary_size_y_upper        = 3
+CoordBase::boundary_size_z_upper        = 3
+
+Driver::ghost_size                      = 3
+
+Time::timestep_method                   = "given"
+Time::timestep                          = 0.25
+Carpet::time_refinement_factors         = "[1,2,4,8,16,32,64,128,256,512]"
+
+################################################################################
+# Mesh refinement
+################################################################################
+
+Carpet::max_refinement_levels           = 5
+Carpet::max_timelevels                  = 3
+
+CarpetRegrid2::num_centres              = 1
+CarpetRegrid2::num_levels_1             = 3
+CarpetRegrid2::radius_1             [1] = 16
+CarpetRegrid2::radius_1             [2] = 8
+
+Carpet::use_buffer_zones                = yes
+CarpetRegrid2::ensure_proper_nesting    = yes
+
+Carpet::prolongation_order_space        = 5
+Carpet::prolongation_order_time         = 2
+
+CarpetRegrid2::regrid_every             = 0
+
+################################################################################
+# Initial data
+################################################################################
+
+idwavemol::initial_data = "gaussian"
+#wavemol::bound = "radiation"
+
+Carpet::init_fill_timelevels            = yes
+InitBase::initial_data_setup_method     = "init_single_level"
+
+################################################################################
+# Boundary conditions
+################################################################################
+
+Boundary::radpower                     = 2
+
+################################################################################
+# Time integration
+################################################################################
+
+MoL::ODE_Method                         = "rk4"
+MoL::MoL_Intermediate_Steps             = 4
+MoL::MoL_Num_Scratch_Levels             = 1
+
+################################################################################
+# Correctness checking
+################################################################################
+
+Carpet::poison_new_timelevels           = yes
+#Carpet::poison_value                    = 100
+CarpetLib::poison_new_memory            = yes
+#CarpetLib::poison_value                 = 200
+Carpet::check_for_poison                = no
+
+NaNChecker::check_every                 = 512 # Allow time for the nans to appear in the output
+NanChecker::check_after                 = 0
+NaNChecker::report_max                  = 10
+NaNChecker::verbose                     = "all"
+NaNChecker::action_if_found             = terminate
+NaNChecker::out_NaNmask                 = yes
+NaNChecker::check_vars                  = "
+        wavemol::phi
+"
+
+################################################################################
+# Output
+################################################################################
+
+IO::out_dir                             = $parfile
+IOScalar::one_file_per_group            = yes
+IOASCII::one_file_per_group             = no
+IO::parfile_write                       = no
+IO::out_fileinfo                        = "none"
+
+IOBasic::outInfo_every                  = 1
+IOBasic::outInfo_reductions             = "minimum maximum"
+IOBasic::outInfo_vars                   = "
+  Carpet::physical_time_per_hour
+  SystemStatistics::maxrss_mb
+  SystemStatistics::swap_used_mb
+"
+
+IOASCII::out1D_every                    = 1
+IOASCII::out1D_x                        = yes
+IOASCII::out1D_y                        = no
+IOASCII::out1D_z                        = no
+IOASCII::out1D_d                        = no
+IOASCII::out1D_xline_z                  = 0.5
+
+IOASCII::output_ghost_points            = no
+CarpetIOASCII::compact_format           = yes
+
+IOASCII::out1D_vars                     = "
+wavemol::phi
+"
+
+Cactus::highlight_warning_messages          = no
+
+################################################################################
+# Run termination
+################################################################################
+
+Cactus::terminate                               = iteration
+Cactus::cctk_itlast                             = 16
+
