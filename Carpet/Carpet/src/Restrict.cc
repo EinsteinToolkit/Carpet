@@ -71,17 +71,13 @@ namespace Carpet {
     }
 
     // Synchronise
-    // TODO: Why? Restricted grid functions need to have boundary
-    // conditions applied in postrestrict anyway, so this should not
-    // be necessary.
-#if 0
+    // Restriction uses ghost zones, but does not fill ghost zones
     {
       static Timers::Timer timer ("RestrictSync");
       timer.start();
       SyncGroups (cctkGH, groups);
       timer.stop();
     }
-#endif
   }
   
 
