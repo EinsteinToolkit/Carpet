@@ -8,15 +8,13 @@ IO::out_dir = $parfile
 
 
 
-ActiveThorns = "AEILocalInterp"
-
 ActiveThorns = "InitBase"
 
 ActiveThorns = "LoopControl"
 
 
 
-ActiveThorns = "Carpet CarpetLib CarpetInterp CarpetReduce"
+ActiveThorns = "Carpet CarpetLib CarpetReduce"
 
 Carpet::domain_from_coordbase = yes
 Carpet::max_refinement_levels = 10
