@@ -317,10 +317,11 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
   CHECK_HDF5 (stringdatatype = H5Aget_type (attr));
   size_t length = H5Tget_size (stringdatatype);
   assert (length > 0);
-  vector<char> varname_char(length + 1);
-  CHECK_HDF5 (H5Aread (attr, stringdatatype, &varname_char[0]));
+  // before carpet-6-init-413-g68ba001 we did not store the terminating NUL
+  // in the attribute and therefore have to provide it here
+  vector<char> varname(length + 1);
+  CHECK_HDF5 (H5Aread (attr, stringdatatype, &varname[0]));
   CHECK_HDF5 (H5Aclose (attr));
-  string varname(&varname_char[0]);
 
   // read the dimensions
   hid_t dataspace = -1;
@@ -499,7 +500,7 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
   CHECK_HDF5 (H5Aclose (attr));
   CHECK_HDF5 (attr = H5Acreate (dataset, "name", stringdatatype,
                                 dataspace, H5P_DEFAULT));
-  CHECK_HDF5 (H5Awrite (attr, stringdatatype, varname.c_str()));
+  CHECK_HDF5 (H5Awrite (attr, stringdatatype, &varname[0]));
   CHECK_HDF5 (H5Tclose (stringdatatype));
   CHECK_HDF5 (H5Sclose (dataspace));
   CHECK_HDF5 (H5Dclose (dataset));
