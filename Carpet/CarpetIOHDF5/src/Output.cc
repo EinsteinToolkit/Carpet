@@ -739,7 +739,7 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
   HDF5_ERROR (H5Aclose (attr));
 
   HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
-  HDF5_ERROR (H5Tset_size (datatype, strlen (fullname)));
+  HDF5_ERROR (H5Tset_size (datatype, strlen (fullname) + 1));
   HDF5_ERROR (attr = H5Acreate (dataset, "name", datatype,
                                 dataspace, H5P_DEFAULT));
   HDF5_ERROR (H5Awrite (attr, datatype, fullname));
