@@ -1245,6 +1245,8 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *args)
   HDF5_ERROR (attrtype = H5Aget_type (attr));
   size_t length = H5Tget_size (attrtype);
   assert (length > 0);
+  // before carpet-6-init-413-g68ba001 we did not store the terminating NUL
+  // in the attribute and therefore have to provide it here
   vector<char> varname(length + 1);
   HDF5_ERROR (H5Aread (attr, attrtype, &varname[0]));
   HDF5_ERROR (H5Tclose (attrtype));
