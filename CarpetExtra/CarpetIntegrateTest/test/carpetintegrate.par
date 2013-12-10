@@ -54,7 +54,7 @@ reflectionsymmetry::avoid_origin_z = no
 coordbase::boundary_size_z_lower     = 3
 coordbase::boundary_shiftout_z_lower = 1
 
-carpet::use_buffer_zones        = yes
+carpet::use_buffer_zones        = no
 carpet::num_integrator_substeps = 3
 
 carpet::max_refinement_levels   = 12
