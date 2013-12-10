@@ -6,4 +6,5 @@ TEST carpetintegrate
 TEST carpetintegrate-linear
 {
   NPROCS 1
+  RELTOL 1e-11
 }
