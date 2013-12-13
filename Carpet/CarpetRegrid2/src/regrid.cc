@@ -335,6 +335,7 @@ namespace CarpetRegrid2 {
     properties.push_back (new snap_coarse());
     properties.push_back (new rotsym90());
     properties.push_back (new rotsym180());
+    properties.push_back (new parsym());
     properties.push_back (new periodic<0>());
     properties.push_back (new periodic<1>());
     properties.push_back (new periodic<2>());
