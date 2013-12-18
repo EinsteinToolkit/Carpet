@@ -57,7 +57,7 @@ CoordBase::boundary_size_z_upper        = 3
 Driver::ghost_size                      = 3
 
 Time::timestep_method                   = "given"
-Time::timestep                          = 0.25
+Time::timestep                          = 0.25/4 # timestep of finest level
 Carpet::time_refinement_factors         = "[1,1,1,1,1]"
 
 ################################################################################
@@ -87,6 +87,7 @@ CarpetRegrid2::regrid_every             = 0
 ML_WaveToy::initial_data = "Gaussian"
 ML_WaveToy::WT_u_bound   = "newrad"
 ML_WaveToy::WT_rho_bound = "newrad"
+ML_WaveToy::width = 16
 
 Carpet::init_fill_timelevels            = yes
 InitBase::initial_data_setup_method     = "init_single_level"
@@ -143,7 +144,7 @@ IOBasic::outInfo_vars                   = "
   SystemStatistics::swap_used_mb
 "
 
-IOASCII::out1D_every                    = 16
+IOASCII::out1D_every                    = 64
 IOASCII::out1D_x                        = yes
 IOASCII::out1D_y                        = no
 IOASCII::out1D_z                        = no
@@ -164,5 +165,4 @@ Cactus::highlight_warning_messages          = no
 ################################################################################
 
 Cactus::terminate                               = iteration
-Cactus::cctk_itlast                             = 16
-
+Cactus::cctk_itlast                             = 64
