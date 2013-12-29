@@ -1103,7 +1103,7 @@ static void ReadMap (fileset_t& fileset, bool in_recovery)
       int lenvname, lenpatchname;
       cmap::iterator vindex;
 
-      assert(data[i++] == 0x4242);
+      assert(data[i++] == 0x4444);
       filenum = data[i++];
 
       patch.map = data[i++];
@@ -1125,6 +1125,9 @@ static void ReadMap (fileset_t& fileset, bool in_recovery)
       patch.shape.resize(patch.rank);
       patch.shape.assign(data+i, data+i+patch.rank);
       i+= 3; // file always write three elements
+      // skip: double origin[3], delta[3], time
+      // skip: int nghosts[3] bbox[6]
+      i += 3*2 + 3*2 + 2 + 3 + 6;
       lenvname = data[i++]; // strlen(objectname)
       lenpatchname = data[i++]; // strlen(varname)
 
