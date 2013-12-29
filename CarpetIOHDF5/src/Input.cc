@@ -20,6 +20,16 @@
 
 #include "defs.hh"
 
+
+#include <cstdio>
+#include "util_String.h"
+
+static bool lexcmp (const char* lhs, const char* rhs)
+{
+    return strcmp(lhs,rhs)<0;
+}
+typedef std::map<const char*,int,bool(*)(const char*, const char*)> cmap;
+
 namespace CarpetIOHDF5 {
 
 using namespace std;
@@ -78,6 +88,8 @@ typedef struct {
   vector<vector<i2vect> > grid_buffers;          // [map]
   vector<vector<int> > grid_prolongation_orders; // [map]
 
+  bool tried_map;
+
 } fileset_t;
 
 // list of checkpoint/filereader files
@@ -95,6 +107,7 @@ static herr_t BrowseDatasets(hid_t group, const char *objectname, void *arg);
 static int ReadVar(const cGH *const cctkGH, file_t &file, CCTK_REAL &io_bytes,
                    list<patch_t>::const_iterator patch,
                    vector<ibset> &bboxes_read, bool in_recovery);
+static void ReadMap (fileset_t& fileset, bool in_recovery);
 
 //////////////////////////////////////////////////////////////////////////////
 // Register with the Cactus Recovery Interface
@@ -369,6 +382,8 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
       return (1);
     }
   }
+  if (not fileset->tried_map)
+    ReadMap(*fileset, in_recovery);
 
   // set global Cactus/Carpet variables
   if (in_recovery) {
@@ -1031,9 +1046,122 @@ static list<fileset_t>::iterator OpenFileSet(const cGH *const cctkGH,
   fileset.setname = setname;
   fileset.basefilename = basefilename;
 
+  fileset.tried_map = false;
+
   // add the new fileset to the list of sets and return an iterator to it
   filesets.push_front(fileset);
   return (filesets.begin());
+}
+
+static void ReadMap (fileset_t& fileset, bool in_recovery)
+{
+  DECLARE_CCTK_PARAMETERS;
+
+  // populate fileset from map file if it exists
+  vector<char> content;
+  int sz = -1;
+
+  fileset.tried_map = true;
+
+  if (dist::rank() == 0) {
+    const char* const dir = in_recovery ? recover_dir : filereader_ID_dir;
+    FILE *fh = NULL;
+    char *fn = NULL;
+
+    Util_asprintf(&fn, "%s/%s.map", dir, fileset.basefilename.c_str());
+    fh = fopen(fn, "r");
+
+    if (fh) {
+      fseek(fh, 0, SEEK_END);
+      sz = ftell(fh);
+      fseek(fh, 0, SEEK_SET);
+
+      content.resize(sz);
+
+      fread(&content[0], sz, 1, fh);
+
+      fclose(fh);
+    }
+
+    free(fn);
+  }
+
+  MPI_Bcast(&sz, 1, MPI_INT, 0, dist::comm());
+  if (sz > 0) {
+    content.resize(sz);
+    MPI_Bcast(&content[0], sz, MPI_BYTE, 0, dist::comm());
+
+    cmap varids(lexcmp);
+    const cmap::const_iterator invalid_id = varids.end();
+
+    assert(sz % sizeof(int) == 0);
+    int nelems = sz / sizeof(int);
+    const int* data = (const int*)(&content[0]);
+    for(int i = 0 ; i < nelems ; ) {
+      patch_t patch;
+      int filenum;
+      int lenvname, lenpatchname;
+      cmap::iterator vindex;
+
+      assert(data[i++] == 0x4242);
+      filenum = data[i++];
+
+      patch.map = data[i++];
+      patch.mglevel = data[i++];
+      patch.reflevel = data[i++];
+      patch.timestep = data[i++];
+      patch.timelevel = data[i++];
+      patch.component = data[i++];
+      patch.rank = data[i++];
+      patch.iorigin[0] = data[i++];
+      patch.iorigin[1] = data[i++];
+      patch.iorigin[2] = data[i++];
+      patch.ioffset[0] = data[i++];
+      patch.ioffset[1] = data[i++];
+      patch.ioffset[2] = data[i++];
+      patch.ioffsetdenom[0] = data[i++];
+      patch.ioffsetdenom[1] = data[i++];
+      patch.ioffsetdenom[2] = data[i++];
+      patch.shape.resize(patch.rank);
+      patch.shape.assign(data+i, data+i+patch.rank);
+      i+= 3; // file always write three elements
+      lenvname = data[i++]; // strlen(objectname)
+      lenpatchname = data[i++]; // strlen(varname)
+
+      // cache found indices in a map rather than having many many VarIndex
+      // lookups
+      vindex = varids.find((const char*)&data[i]);
+      if (vindex == invalid_id)
+        vindex = varids.insert(pair<const char*,int>((const char*)&data[i], CCTK_VarIndex((const char*)&data[i]))).first;
+
+      patch.vindex = vindex->second;
+      i += ((lenvname + 1 + sizeof(int)-1) & ~(sizeof(int)-1)) / sizeof(int);
+
+      patch.patchname = (const char*)&data[i];
+      i += ((lenpatchname + 1 + sizeof(int)-1) & ~(sizeof(int)-1)) / sizeof(int);
+
+      static int oldfilenum = -1;
+      if(filenum != oldfilenum) {
+        oldfilenum = filenum;
+        char *fullname = CCTK_FullName(patch.vindex);
+        printf("still alive... just read patch, at pos %d of %d\n", i, nelems);
+        printf("filenum=%d,"
+               "vname=%s,map=%d,mglevel=%d,reflevel=%d,timestep=%d,"
+               "timelevel=%d,component=%d,rank=%d,iorigin=(%d,%d,%d),"
+               "ioffset=(%d,%d,%d),ioffsetdenom=(%d,%d,%d),shape=(%d,%d,%d),"
+               "patchname=%s,\n",
+               filenum,
+               fullname, patch.map, patch.mglevel, patch.reflevel, patch.timestep, patch.timelevel, patch.component,
+               patch.rank, patch.iorigin[0], patch.iorigin[1], patch.iorigin[2], patch.ioffset[0], patch.ioffset[1],
+               patch.ioffset[2], patch.ioffsetdenom[0], patch.ioffsetdenom[1], patch.ioffsetdenom[2],
+               (int)patch.shape[0], (int)patch.shape[1], (int)patch.shape[2], patch.patchname.c_str());
+        free(fullname);
+      }
+
+      fileset.files[filenum].patches.push_back (patch);
+      assert(i <= nelems);
+    }
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
