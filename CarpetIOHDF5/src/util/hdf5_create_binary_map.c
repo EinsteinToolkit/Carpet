@@ -242,7 +242,7 @@ static herr_t CopyObject (hid_t from,
     CHECK_ERROR (dataspace = H5Dget_space (from));
 
     {
-    hsize_t shape[3];
+    hsize_t shape[3] = {1,1,1};
     hid_t attr, attrtype;
     char *s;
 
@@ -257,6 +257,11 @@ static herr_t CopyObject (hid_t from,
     int iorigin[3];
     int ioffset[3];
     int ioffsetdenom[3];   
+    double origin[3];
+    double delta[3];
+    double time;
+    int nghosts[3];
+    int bbox[6];
 
     rank = H5Sget_simple_extent_ndims (dataspace);
     assert(rank <= 3);
@@ -298,19 +303,41 @@ static herr_t CopyObject (hid_t from,
     CHECK_ERROR (attr = H5Aopen_name (from, "ioffsetdenom"));
     CHECK_ERROR (H5Aread (attr, H5T_NATIVE_INT, ioffsetdenom));
     CHECK_ERROR (H5Aclose (attr));
+    CHECK_ERROR (attr = H5Aopen_name (from, "origin"));
+    CHECK_ERROR (H5Aread (attr, H5T_NATIVE_DOUBLE, origin));
+    CHECK_ERROR (H5Aclose (attr));
+    CHECK_ERROR (attr = H5Aopen_name (from, "delta"));
+    CHECK_ERROR (H5Aread (attr, H5T_NATIVE_DOUBLE, delta));
+    CHECK_ERROR (H5Aclose (attr));
+    CHECK_ERROR (attr = H5Aopen_name (from, "time"));
+    CHECK_ERROR (H5Aread (attr, H5T_NATIVE_DOUBLE, &time));
+    CHECK_ERROR (H5Aclose (attr));
+    CHECK_ERROR (attr = H5Aopen_name (from, "cctk_nghostzones"));
+    CHECK_ERROR (H5Aread (attr, H5T_NATIVE_INT, nghosts));
+    CHECK_ERROR (H5Aclose (attr));
+    CHECK_ERROR (attr = H5Aopen_name (from, "cctk_bbox"));
+    CHECK_ERROR (H5Aread (attr, H5T_NATIVE_INT, bbox));
+    CHECK_ERROR (H5Aclose (attr));
 
+    #define DOUBLE_TO_INT(d) ((int*)&(d))[0],((int*)&(d))[1]
+    assert(2*sizeof(int) == sizeof(double));
     int len;
     int data[] = {
-           0x4242, filenum,
+           0x4444, filenum,
            map, mglevel, reflevel, timestep, timelevel, component,
            rank, iorigin[0], iorigin[1], iorigin[2], ioffset[0], ioffset[1],
            ioffset[2], ioffsetdenom[0], ioffsetdenom[1], ioffsetdenom[2],
            (int)shape[0], (int)shape[1], (int)shape[2],
+           DOUBLE_TO_INT(origin[0]), DOUBLE_TO_INT(origin[1]), DOUBLE_TO_INT(origin[2]),
+           DOUBLE_TO_INT(delta[0]), DOUBLE_TO_INT(delta[1]), DOUBLE_TO_INT(delta[2]),
+           DOUBLE_TO_INT(time),
+           (int)nghosts[0], (int)nghosts[1], (int)nghosts[2],
+           bbox[0], bbox[1], bbox[2], bbox[3], bbox[4], bbox[5],
            (int)strlen(vname), (int)strlen(objectname)
     };
     fwrite(data, sizeof(data), 1, outfile);
     len = (strlen(vname) + 1 + sizeof(int)-1) / sizeof(int);
-    fwrite(vname, len, 1, outfile);
+    fwrite(vname, len, sizeof(int), outfile);
     len = (strlen(objectname) + 1 + sizeof(int)-1) / sizeof(int);
     fwrite(objectname, len, sizeof(int), outfile);
 
