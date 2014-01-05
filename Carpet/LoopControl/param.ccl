@@ -47,7 +47,9 @@ INT settle_after_iteration "Do not explore the parameter space any more at or af
 {
   -1  :: "always continue exploring"
   0:* :: ""
-} -1
+# Setting settle_after_iteration=0 apparently avoids an inefficiency,
+# so make it the default for the time being.
+} 0 # -1
 
 
 
