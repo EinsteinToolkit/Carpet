@@ -24,6 +24,7 @@
 #else
 
 // Simple non-OpenMP implementations
+static inline int omp_get_max_threads() { return 1; }
 static inline int omp_get_num_threads() { return 1; }
 static inline int omp_get_thread_num() { return 0; }
 
@@ -69,23 +70,26 @@ using namespace std;
 
 
 
-bool lc_do_explore_eagerly = false;
-bool lc_do_settle          = false;
+static bool lc_do_explore_eagerly = false;
+static bool lc_do_settle          = false;
 
 
 
 struct lc_thread_info_t {
-  char padding1[128];      // pad to ensure cache lines are not shared
   volatile int idx;        // linear index of next coarse thread block
-  char padding2[128];
-};
+} CCTK_ATTRIBUTE_ALIGNED(128);  // align to prevent sharing cache lines
 
 struct lc_fine_thread_comm_t {
-  char padding1[128];      // pad to ensure cache lines are not shared
   volatile int state;      // waiting threads
   volatile int value;      // broadcast value
-  char padding2[128];
-};
+} CCTK_ATTRIBUTE_ALIGNED(128);  // align to prevent sharing cache lines
+
+// One object per coarse thread: shared between fine threads
+// Note: Since we use a vector, the individual elements may not
+// actually be aligned, but they will still be spaced apart and thus
+// be placed into different cache lines.
+static vector<lc_fine_thread_comm_t> lc_fine_thread_comm;
+
 
 
 
@@ -202,6 +206,11 @@ struct lc_descr_t {
   string file;
   int line;
   
+  lc_descr_t(const char *name_, const char *file_, int line_):
+    name(name_), file(file_), line(line_),
+    current_setup(0), current_params(0)
+  {}
+  
   typedef map<lc_setup_key_t, lc_setup_t*> setup_map_t;
   setup_map_t setups;
   
@@ -214,6 +223,37 @@ struct lc_descr_t {
 
 
 
+// The Intel compiler keeps increasing the amount of "free" memory
+// allocated by libc. Work around this by allocating memory in large
+// batches.
+namespace {
+  
+  template<typename T>
+  class mempool {
+    T* next;
+    int nleft;
+  public:
+    mempool(): nleft(0)
+    {
+    }
+    void* allocate()
+    {
+      if (nleft < 1) {
+        nleft = 1000000 / sizeof(T);
+        next = (T*)new char[nleft * sizeof(T)];
+      }
+      assert(nleft >= 1);
+      return nleft--, next++;
+    }
+  };
+  
+  mempool<lc_params_t> params_mempool;
+  mempool<lc_setup_t> setup_mempool;
+  
+}
+
+
+
 extern "C" CCTK_FCALL
 void CCTK_FNAME(lc_get_fortran_type_sizes)(ptrdiff_t *type_sizes);
   
@@ -223,6 +263,20 @@ namespace {
   
   typedef vector<lc_descr_t*> all_descrs_t;
   all_descrs_t all_descrs;
+  
+  struct descr_comp_name {
+    bool operator()(const lc_descr_t* a, const lc_descr_t* b) const
+    {
+      return a->name < b->name;
+    }
+  };
+  
+  struct params_comp_time {
+    bool operator()(const lc_params_t* a, const lc_params_t* b) const
+    {
+      return a->stats.avg_point() < b->stats.avg_point();
+    }
+  };
   
   
   
@@ -283,8 +337,11 @@ namespace {
   T randomui(const T imin, const T imax, const T istr = 1)
   {
     assert(imin<imax);
+    // const T res =
+    //   imin + istr * floor(rand() / (RAND_MAX + 1.0) * (imax - imin) / istr);
     const T res =
-      imin + istr * floor(rand() / (RAND_MAX + 1.0) * (imax - imin) / istr);
+      imin +
+      istr * llrint(floor(random() / (RAND_MAX + 1.0) * (imax - imin) / istr));
     assert(res>=imin and res<imax and (res-imin) % istr == 0);
     return res;
   }
@@ -416,22 +473,13 @@ namespace {
   
   
   
+  static int num_smt_threads = 0;
+  
   int get_num_fine_threads()
   {
     DECLARE_CCTK_PARAMETERS;
     if (not use_smt_threads) return 1;
     if (omp_get_num_threads() == 1) return 1;
-    static int num_smt_threads = -1;
-    if (CCTK_BUILTIN_EXPECT(num_smt_threads<0, false)) {
-#pragma omp critical
-      if (num_smt_threads<0) {
-        if (CCTK_IsFunctionAliased("GetNumSMTThreads")) {
-          num_smt_threads = GetNumSMTThreads();
-        } else {
-          num_smt_threads = 1;
-        }
-      }
-    }
     return num_smt_threads;
   }
   
@@ -537,17 +585,23 @@ void lc_descr_init(lc_descr_t **const descr_ptr,
 #pragma omp barrier
 #pragma omp master
   {
-    lc_descr_t *const descr = new lc_descr_t;
-    
-    descr->name = name;
-    descr->file = file;
-    descr->line = line;
-    
-    descr->current_setup = NULL;
-    descr->current_params = NULL;
-    
+    lc_descr_t *const descr = new lc_descr_t(name, file, line);
     all_descrs.push_back(descr);
     *descr_ptr = descr;
+    
+    // Determine number of SMT threads
+    if (CCTK_BUILTIN_EXPECT(num_smt_threads==0, false)) {
+      if (CCTK_IsFunctionAliased("GetNumSMTThreads")) {
+        num_smt_threads = GetNumSMTThreads();
+      } else {
+        num_smt_threads = 1;
+      }
+    }
+    
+    // Allocate fine thread communicators
+    if (CCTK_BUILTIN_EXPECT(lc_fine_thread_comm.empty(), false)) {
+      lc_fine_thread_comm.resize(omp_get_max_threads());
+    }
   }
 #pragma omp barrier
 }
@@ -626,7 +680,8 @@ void lc_control_init(lc_control_t *restrict const control,
       const bool isnew = res.second;
       assert(isnew == not setup_p);
       if (isnew) {
-        setup_p = new lc_setup_t(*descr, setup_key);
+        void *ptr = setup_mempool.allocate();
+        setup_p = new (ptr) lc_setup_t(*descr, setup_key);
       }
       assert(not descr->current_setup);
       descr->current_setup = setup_p;
@@ -637,11 +692,6 @@ void lc_control_init(lc_control_t *restrict const control,
     // Choose loop params
     
     lc_setup_t& setup = *descr->current_setup;
-    
-    const int max_size_factor = 4;
-    const double very_expensive_factor = 1.5;
-    const int tryout_iterations = 1; // 10;
-    const double random_jump_probability = 0.1;
     
     enum choices_t {
       choice_set_default,
@@ -667,21 +717,11 @@ void lc_control_init(lc_control_t *restrict const control,
     }
     if (choice == choice_use_best) {
       // Make a random jump every so often
-#if 0
-      const bool do_settle =
-        settle_after_iteration >= 0 and
-        cctkGH->cctk_iteration >= settle_after_iteration;
-#endif
-      if (not lc_do_settle) {
-#if 0
-        const bool do_explore_eagerly =
-          cctkGH->cctk_iteration < explore_eagerly_before_iteration;
-#endif
-        if (lc_do_explore_eagerly or
-            rand() / (RAND_MAX + 1.0) < random_jump_probability)
-        {
-          choice = choice_random_jump;
-        }
+      if (not lc_do_settle and
+          (lc_do_explore_eagerly or
+           random() / (RAND_MAX + 1.0) < random_jump_probability))
+      {
+        choice = choice_random_jump;
       }
     }
     
@@ -707,17 +747,16 @@ void lc_control_init(lc_control_t *restrict const control,
       const int loopsizes[LC_DIM] = {loopsize_i, loopsize_j, loopsize_k};
       for (int d=0; d<LC_DIM; ++d) {
         const int align = d==0 ? int(tilesize_alignment) : 1;
-        for (int count=0; count<10; ++count) {
-          params_key.tilesize.v[d] =
-            randomui(align, max_size_factor * tilesizes[d], align);
-          params_key.loopsize.v[d] =
-            randomui(align, max_size_factor * loopsizes[d], align);
-          if (params_key.loopsize.v[d] % params_key.tilesize.v[d] == 0) break;
-        }
         params_key.tilesize.v[d] =
-          alignup(params_key.tilesize.v[0], align);
+          randomui(align, alignup(max_size_factor * tilesizes[d], align),
+                   align);
+        const int tilesize = params_key.tilesize.v[d];
         params_key.loopsize.v[d] =
-          alignup(params_key.loopsize.v[d], params_key.tilesize.v[d]);
+          randomui(tilesize, alignup(max_size_factor * loopsizes[d], tilesize),
+                   tilesize);
+        assert(moddown(params_key.tilesize.v[d], align) == 0);
+        assert(moddown(params_key.loopsize.v[d], params_key.tilesize.v[d]) ==
+               0);
       }
       break;
     }
@@ -735,7 +774,8 @@ void lc_control_init(lc_control_t *restrict const control,
       const bool isnew = res.second;
       assert(isnew == not params_p);
       if (isnew) {
-        params_p = new lc_params_t(setup, params_key);
+        void *ptr = params_mempool.allocate();
+        params_p = new (ptr) lc_params_t(setup, params_key);
       }
       assert(not descr->current_params);
       descr->current_params = params_p;
@@ -751,9 +791,45 @@ void lc_control_init(lc_control_t *restrict const control,
   }
 #pragma omp barrier
   
+  
+  
   // Ensure thread counts are consistent
   assert(get_num_coarse_threads() * get_num_fine_threads() ==
          omp_get_num_threads());
+  
+#if 0
+  {
+    lc_descr_t* global_descr;
+    int global_num_threads;
+    int global_num_coarse_threads;
+    int global_num_fine_threads;
+    static int is_inconsistent;
+#pragma omp single copyprivate(global_descr, global_num_threads, global_num_coarse_threads, global_num_fine_threads)
+    {
+      global_descr = descr;
+      global_num_threads = omp_get_num_threads();
+      global_num_coarse_threads = get_num_coarse_threads();
+      global_num_fine_threads = get_num_fine_threads();
+      is_inconsistent = 0;
+    }
+#pragma omp atomic
+    is_inconsistent |=
+      global_descr != descr or
+      global_num_threads != omp_get_num_threads() or
+      global_num_coarse_threads != get_num_coarse_threads() or
+      global_num_fine_threads != get_num_fine_threads();
+#pragma omp barrier
+    if (is_inconsistent) {
+#pragma omp critical
+      cout << "thread: " << omp_get_thread_num() << "\n"
+           << "   loop name: " << descr->name << "\n"
+           << "   file: " << descr->file << ":" << descr->line << "\n" << flush;
+#pragma omp barrier
+#pragma omp critical
+      CCTK_ERROR("Thread inconsistency");
+    }
+  }
+#endif
   
   
   
@@ -797,43 +873,22 @@ void lc_control_init(lc_control_t *restrict const control,
   }
   
   // Set up multithreading state
-  lc_thread_info_t *thread_info_ptr;
+  {
+    lc_thread_info_t *thread_info_ptr;
 #pragma omp single copyprivate(thread_info_ptr)
-  {
-    thread_info_ptr = new lc_thread_info_t;
-  }
-  control->coarse_thread_info_ptr = thread_info_ptr;
-  
-  {
-    lc_fine_thread_comm_t **fine_thread_comm_ptrs;
-#pragma omp single copyprivate(fine_thread_comm_ptrs)
     {
-      fine_thread_comm_ptrs =
-        new lc_fine_thread_comm_t*[get_num_coarse_threads()];
+      thread_info_ptr = new lc_thread_info_t;
     }
-    if (get_fine_thread_num() == 0) {
-      lc_fine_thread_comm_t *const
-        fine_thread_comm_ptr = new lc_fine_thread_comm_t;
-      fine_thread_comm_ptr->state = 0;
-      fine_thread_comm_ptrs[get_coarse_thread_num()] = fine_thread_comm_ptr;
-    }
-#pragma omp barrier
-    control->fine_thread_comm_ptr =
-      fine_thread_comm_ptrs[get_coarse_thread_num()];
-#pragma omp barrier
-#pragma omp single nowait
-    {
-      delete[] fine_thread_comm_ptrs;
-    }
+    control->coarse_thread_info_ptr = thread_info_ptr;
   }
   
   // Set loop sizes
-  for(int d=0; d<LC_DIM; ++d) {
+  for (int d=0; d<LC_DIM; ++d) {
     // Overall loop: as specified
     control->overall.min.v[d] = loop_min[d];
     control->overall.max.v[d] = loop_max[d];
     // Thread loop
-#if VECTORISE_ALIGNED_ARRAYS
+#if VECTORISE && VECTORISE_ALIGNED_ARRAYS
     // Move start to be aligned with vector size
     control->coarse_thread.min.v[d] =
       aligndown(control->overall.min.v[d], vect_size[d]);
@@ -856,7 +911,7 @@ void lc_control_init(lc_control_t *restrict const control,
     // Like a non-LoopControl loop: no loop tiling (i.e. do not use
     // coarse loops), parallelise only in k direction (i.e. assign
     // equal k ranges to threads)
-    for(int d=0; d<LC_DIM; ++d) {
+    for (int d=0; d<LC_DIM; ++d) {
       assert(smt_size[d] == 1); // TODO: implement this
       control->fine_thread.step.v[d] = vect_size[d];
       control->fine_loop.step.v[d] = vect_size[d];
@@ -870,7 +925,7 @@ void lc_control_init(lc_control_t *restrict const control,
     }
   } else if (CCTK_EQUALS(initial_setup, "tiled")) {
     // Basic LoopControl setup
-    for(int d=0; d<LC_DIM; ++d) {
+    for (int d=0; d<LC_DIM; ++d) {
       control->fine_thread.step.v[d] = vect_size[d];
       control->fine_loop.step.v[d] =
         smt_size[d] * control->fine_thread.step.v[d];
@@ -880,7 +935,7 @@ void lc_control_init(lc_control_t *restrict const control,
         alignup(loopsize[d], control->coarse_loop.step.v[d]);
     }
   } else {
-    CCTK_WARN(CCTK_WARN_ABORT, "internal error");
+    CCTK_BUILTIN_UNREACHABLE();
   }
   
   if (veryverbose) {
@@ -914,6 +969,8 @@ void lc_control_init(lc_control_t *restrict const control,
   }
 }
 
+
+
 void lc_control_finish(lc_control_t *restrict const control,
                        lc_descr_t *const descr)
 {
@@ -942,8 +999,8 @@ void lc_control_finish(lc_control_t *restrict const control,
         }
       }
       if (nfailed > 0) {
-        CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                   "LoopControl self-test failed");
+        CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                    "LoopControl self-test failed");
       }
       delete[] control->selftest_array;
     }
@@ -1021,11 +1078,8 @@ void lc_control_finish(lc_control_t *restrict const control,
     // Tear down multithreading state
     delete control->coarse_thread_info_ptr;
     control->coarse_thread_info_ptr = NULL;
-    if (get_fine_thread_num() == 0) {
-      delete control->fine_thread_comm_ptr;
-    }
-    control->fine_thread_comm_ptr = NULL;
   }
+#pragma omp barrier
 }
 
 
@@ -1058,7 +1112,8 @@ void lc_thread_step(lc_control_t *restrict const control)
     }
   }
   new_global_idx =
-    fine_thread_broadcast(control->fine_thread_comm_ptr, new_global_idx);
+    fine_thread_broadcast(&lc_fine_thread_comm[get_coarse_thread_num()],
+                          new_global_idx);
   control->coarse_thread_done =
     space_global2local(control->coarse_thread, new_global_idx);
   space_idx2pos(control->coarse_thread);
@@ -1128,6 +1183,22 @@ int lc_setup(void)
 
 
 
+void lc_steer(CCTK_ARGUMENTS)
+{
+  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_PARAMETERS;
+  
+  lc_do_settle =
+    settle_after_iteration >= 0 and
+    cctkGH->cctk_iteration >= settle_after_iteration;
+  
+  lc_do_explore_eagerly =
+    not lc_do_settle and
+    cctkGH->cctk_iteration < explore_eagerly_before_iteration;
+}
+
+
+
 void lc_statistics(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
@@ -1155,23 +1226,39 @@ void lc_statistics(CCTK_ARGUMENTS)
         time_actual  += setup_count * setup.stats.avg_point();
       }
     }
+    const double ratio_unopt =
+      time_default == 0.0 && time_actual == 0.0 ?
+      0.0 :
+      time_default / time_actual - 1.0;
+    const double ratio_ideal =
+      time_default == 0.0 && time_actual == 0.0 ?
+      0.0 :
+      time_best / time_actual - 1.0;
+    const size_t nbytes =
+      (nloops *
+       (sizeof(lc_descr_t*) + sizeof(lc_descr_t))) +
+      (nsetups *
+       (sizeof(lc_setup_key_t) + sizeof(lc_setup_t*) + sizeof(lc_setup_t))) +
+      (nparams *
+       (sizeof(lc_params_key_t) + sizeof (lc_params_t*) + sizeof(lc_params_t)));
     CCTK_VInfo(CCTK_THORNSTRING, "  Loops traversed:    %td", nloops);
     CCTK_VInfo(CCTK_THORNSTRING, "  Setups encountered: %td", nsetups);
     CCTK_VInfo(CCTK_THORNSTRING, "  Params explored:    %td", nparams);
     CCTK_VInfo(CCTK_THORNSTRING,
-               "   Unoptimized time would have been: %g s",
-               time_default);
+               "    Actual time spent:                %g s",
+               time_actual);
     CCTK_VInfo(CCTK_THORNSTRING,
-               "   Actual time spent:                %g s   (%+.1f%%)",
-               time_actual, 100.0 * (time_actual / time_default - 1.0));
+               "    Unoptimized time would have been: %g s   (%+.1f%%)",
+               time_default, 100.0 * ratio_unopt);
     CCTK_VInfo(CCTK_THORNSTRING,
-               "   Ideal time could have been:       %g s   (%+.1f%%)",
-               time_best, 100.0 * (time_best / time_actual - 1.0));
+               "    Ideal time could have been:       %g s   (%+.1f%%)",
+               time_best, 100.0 * ratio_ideal);
+    CCTK_VInfo(CCTK_THORNSTRING, "  Memory allocated: %g MB", nbytes / 1.0e+6);
   }
   
   
   
-  if (strlen(statistics_filename) == 0) return;
+  if (strcmp(statistics_filename, "") == 0) return;
   
   static bool did_truncate = false;
   const bool do_truncate = IO_TruncateOutputFiles(cctkGH);
@@ -1184,15 +1271,20 @@ void lc_statistics(CCTK_ARGUMENTS)
   FILE *const descrfile = fopen(filename, mode);
   
   fprintf(descrfile, "LoopControl statistics:\n");
-  for (all_descrs_t::const_iterator
-         idescr = all_descrs.begin(); idescr != all_descrs.end(); ++idescr)
+  vector<lc_descr_t*> all_descrs_sorted;
+  all_descrs_sorted = all_descrs;
+  sort(all_descrs_sorted.begin(), all_descrs_sorted.end(), descr_comp_name());
+  for (vector<lc_descr_t*>::const_iterator
+         descr_i=all_descrs_sorted.begin(), descr_e=all_descrs_sorted.end();
+       descr_i!=descr_e; ++descr_i)
   {
-    const lc_descr_t *const descr = *idescr;
+    const lc_descr_t& descr = **descr_i;
     fprintf(descrfile,
             "   Loop %s (%s:%d):\n",
-            descr->name.c_str(), descr->file.c_str(), descr->line);
+            descr.name.c_str(), descr.file.c_str(), descr.line);
+    // TODO: sort setups?
     for (lc_descr_t::setup_map_t::const_iterator
-           setup_i = descr->setups.begin(), setup_end = descr->setups.end();
+           setup_i = descr.setups.begin(), setup_end = descr.setups.end();
          setup_i != setup_end; ++setup_i)
     {
       const lc_setup_t& setup = *setup_i->second;
@@ -1203,11 +1295,20 @@ void lc_statistics(CCTK_ARGUMENTS)
               setup.key.ash.v[0], setup.key.ash.v[1], setup.key.ash.v[2],
               setup.key.num_coarse_threads, setup.key.num_fine_threads);
       double best_avg = numeric_limits<double>::max(), worst_avg = 0.0;
+      vector<lc_params_t*> params_sorted;
+      params_sorted.reserve(setup.params.size());
       for (lc_setup_t::params_map_t::const_iterator
-             params_i = setup.params.begin(), params_end = setup.params.end();
-           params_i != params_end; ++params_i)
+             params_i=setup.params.begin(), params_e=setup.params.end();
+           params_i!=params_e; ++params_i)
       {
-        const lc_params_t& params = *params_i->second;
+        params_sorted.push_back(params_i->second);
+      }
+      sort(params_sorted.begin(), params_sorted.end(), params_comp_time());
+      for (vector<lc_params_t*>::const_iterator
+             params_i=params_sorted.begin(), params_e=params_sorted.end();
+           params_i!=params_e; ++params_i)
+      {
+        const lc_params_t& params = **params_i;
         fprintf(descrfile,
                 "         tilesize=[%d,%d,%d] loopsize=[%d,%d,%d]\n",
                 params.key.tilesize.v[0],
@@ -1234,7 +1335,7 @@ void lc_statistics(CCTK_ARGUMENTS)
               "         count=%g, avg/thread=%g s, avg/point=%g s\n",
               stats.count, stats.avg_thread(), stats.avg_point());
     }
-    const lc_stats_t& stats = descr->stats;
+    const lc_stats_t& stats = descr.stats;
     fprintf(descrfile,
             "      count=%g, avg/thread=%g s, avg/point=%g s\n",
             stats.count, stats.avg_thread(), stats.avg_point());
@@ -1243,12 +1344,29 @@ void lc_statistics(CCTK_ARGUMENTS)
   fclose(descrfile);
 }
 
-void lc_statistics_maybe(CCTK_ARGUMENTS)
+void lc_statistics_analysis(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  if (verbose or veryverbose) {
+  static double last_output = 0.0;
+  const double run_time = CCTK_RunTime();
+  
+  if (veryverbose ||
+      (statistics_every_seconds >= 0.0 &&
+       run_time >= last_output + statistics_every_seconds))
+  {
+    lc_statistics(CCTK_PASS_CTOC);
+    last_output = run_time;
+  }
+}
+
+void lc_statistics_terminate(CCTK_ARGUMENTS)
+{
+  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_PARAMETERS;
+  
+  if (verbose or veryverbose or statistics_every_seconds >= 0.0) {
     lc_statistics(CCTK_PASS_CTOC);
   }
 }

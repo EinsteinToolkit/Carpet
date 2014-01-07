@@ -7,11 +7,12 @@
 #include <util_ErrorCodes.h>
 #include <util_Table.h>
 
+#include <Timer.hh>
+
 #include <defs.hh>
 #include <typeprops.hh>
 
 #include <carpet.hh>
-#include "Timers.hh"
 
 
 namespace Carpet {
@@ -33,7 +34,7 @@ namespace Carpet {
     
     if (not poison_new_timelevels) return;
     
-    Timer timer("Poison");
+    Timers::Timer timer("Poison");
     timer.start();
 
     for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -149,7 +150,7 @@ namespace Carpet {
     if (not check_for_poison) return;
     
     Checkpoint ("PoisonCheck");
-    Timer timer("PoisonCheck");
+    Timers::Timer timer("PoisonCheck");
     timer.start();
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {

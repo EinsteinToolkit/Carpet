@@ -86,6 +86,10 @@ namespace Carpet {
   
   #define KNARFDEBL 0
   #define KNARFDEB(l, ...) {if (KNARFDEBL>=l) {fprintf(stderr, __VA_ARGS__); }}
+
+  // Check for a map0group
+  bool IsMap0Group(int gindex);
+  
 } // namespace Carpet
 
 #endif // !defined(CARPET_HH)

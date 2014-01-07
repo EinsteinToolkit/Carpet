@@ -14,6 +14,12 @@ namespace Carpet {
   // Maximum number of refinement levels
   int maxreflevels;
   
+  // Maximum number of time levels
+  int maxtimelevels;
+  
+  // Timelevels
+  int timelevels;
+  
   // Refinement levels
   int reflevels;
   
@@ -26,9 +32,6 @@ namespace Carpet {
   // Maximum refinement factors on finest possible grid
   int maxtimereflevelfact;
   vect<int,dim> maxspacereflevelfact;
-  
-  TimerTree main_timer_tree;
-  TimerTree mode_timer_tree;
 
   // Base multigrid level
   int basemglevel;
@@ -44,9 +47,6 @@ namespace Carpet {
   
   // Maps
   int maps;
-  
-  // Timelevels
-  int timelevels;
   
   
   

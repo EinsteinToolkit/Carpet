@@ -18,6 +18,12 @@ STRING statistics_filename "File name for LoopControl statistics" STEERABLE=alwa
   ".+" :: "file name"
 } "LoopControl-statistics"
 
+REAL statistics_every_seconds "Output statistics every so many seconds" STEERABLE=always
+{
+  -1.0  :: "don't output"
+  0.0:* :: "output every so many seconds"
+} -1.0
+
 SHARES: IO
 
 USES STRING out_dir
@@ -89,3 +95,25 @@ INT loopsize_k "Size of each thread's loop in k direction (in grid points) for m
 {
   1:* :: ""
 } 8
+
+
+
+CCTK_INT max_size_factor "Maximum size for modifying loop sizes" STEERABLE=always
+{
+  1:* :: ""
+} 4
+
+CCTK_REAL very_expensive_factor "Params worse than the current-best by more than this factor are ignored more quickly" STEERABLE=always
+{
+  1.0:* :: ""
+} 1.5
+
+CCTK_INT tryout_iterations "Try out new params for this many iterations before judging them" STEERABLE=always
+{
+  1:* :: ""
+} 1
+
+CCTK_REAL random_jump_probability "Probability of a random jump to begin exploring a very different param" STEERABLE=always
+{
+  0.0:1.0 :: ""
+} 0.1

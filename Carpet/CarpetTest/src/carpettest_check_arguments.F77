@@ -11,32 +11,32 @@ c     -*-Fortran-*-
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
       integer i,j,k
-      print *, "Xgfg ", X0gfg, X1gfg, X2gfg
-      print *, "Xarrg3 ", X0arrg3, X1arrg3, X2arrg3
-      print *, "Xarrg2 ", X0arrg2, X1arrg2
-      print *, "Xarrg1 ", X0arrg1
+      print *, "Xgfg ", cctk_lsh(1), cctk_lsh(2), cctk_lsh(3)
+      print *, "Xarrg3 ", i3,i4,i5
+      print *, "Xarrg2 ", i6,i7
+      print *, "Xarrg1 ", i8
       print *, "Xscg"
       print *
-      do k=1,X2gfg
-         do j=1,X1gfg
-            do i=1,X0gfg
+      do k=1,cctk_lsh(3)
+         do j=1,cctk_lsh(2)
+            do i=1,cctk_lsh(1)
                gf(i,j,k) = i*10000 + j*100 + k
             end do
          end do
       end do
-      do k=1,X2arrg3
-         do j=1,X1arrg3
-            do i=1,X0arrg3
+      do k=1,SIZE(arr3,3)
+         do j=1,SIZE(arr3,2)
+            do i=1,SIZE(arr3,1)
                arr3(i,j,k) = i*10000 + j*100 + k
             end do
          end do
       end do
-      do j=1,X1arrg2
-         do i=1,X0arrg2
+      do j=1,SIZE(arr2,2)
+         do i=1,SIZE(arr2,1)
             arr2(i,j) = i*100 + j
          end do
       end do
-      do i=1,X0arrg1
+      do i=1,SIZE(arr1,1)
          arr1(i) = i
       end do
       sc = 42

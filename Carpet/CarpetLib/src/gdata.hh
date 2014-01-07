@@ -51,9 +51,8 @@ namespace dist {
 // A generic data storage without type information
 class gdata {
   
-  static list<gdata*> allgdata;
-  list<gdata*>::iterator allgdatai;
-
+  static set<gdata*> allgdata;
+  
 protected:                      // should be readonly
 
   // Fields
@@ -67,7 +66,7 @@ protected:
   operator_type transport_operator;
   
   bool _has_storage;		// has storage associated (on some process)
-  int _size;			// size
+  int _size;			// size (number of elements including padding)
 
   int _proc;			// stored on process
   
@@ -106,6 +105,10 @@ public:
     0;
   virtual void free () = 0;
   virtual size_t allocsize (const ibbox& extent, const int proc) const = 0;
+
+  // true if fence is intact
+  virtual bool check_fence (const int upperlower) const = 0;
+  static bool fence_is_energized ();
   
   // Accessors
   bool has_storage () const {

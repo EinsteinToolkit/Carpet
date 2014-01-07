@@ -7,11 +7,12 @@
 
 #include <Requirements.hh>
 
+#include <Timer.hh>
+
 #include <ggf.hh>
 #include <gh.hh>
 
 #include <carpet.hh>
-#include <Timers.hh>
 
 
 
@@ -63,7 +64,7 @@ namespace Carpet {
     
     // Restrict
     {
-      static Timer timer ("Restrict");
+      static Timers::Timer timer ("Restrict");
       timer.start();
       RestrictGroups (cctkGH, groups);
       timer.stop();
@@ -75,7 +76,7 @@ namespace Carpet {
     // be necessary.
 #if 0
     {
-      static Timer timer ("RestrictSync");
+      static Timers::Timer timer ("RestrictSync");
       timer.start();
       SyncGroups (cctkGH, groups);
       timer.stop();
@@ -88,9 +89,9 @@ namespace Carpet {
   static void RestrictGroups (const cGH* cctkGH, const vector<int>& groups) {
     DECLARE_CCTK_PARAMETERS;
 
-    static vector<Timer*> timers;
+    static vector<Timers::Timer*> timers;
     if (timers.empty()) {
-      timers.push_back(new Timer("comm_state[0].create"));
+      timers.push_back(new Timers::Timer("comm_state[0].create"));
       for (astate state = static_cast<astate>(0);
            state != state_done;
            state = static_cast<astate>(static_cast<int>(state)+1))
@@ -98,15 +99,15 @@ namespace Carpet {
         ostringstream name1;
         name1 << "comm_state[" << timers.size() << "]"
               << "." << tostring(state) << ".user";
-        timers.push_back(new Timer(name1.str()));
+        timers.push_back(new Timers::Timer(name1.str()));
         ostringstream name2;
         name2 << "comm_state[" << timers.size() << "]"
               << "." << tostring(state) << ".step";
-        timers.push_back(new Timer(name2.str()));
+        timers.push_back(new Timers::Timer(name2.str()));
       }
     }
 
-    vector<Timer*>::iterator ti = timers.begin();
+    vector<Timers::Timer*>::iterator ti = timers.begin();
     (*ti)->start();
     for (comm_state state; not state.done(); state.step()) {
       (*ti)->stop(); ++ti; (*ti)->start();

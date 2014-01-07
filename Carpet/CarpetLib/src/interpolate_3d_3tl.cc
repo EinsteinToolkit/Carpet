@@ -1,12 +1,12 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <loopcontrol.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
-
-#include <loopcontrol.h>
 
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
@@ -59,23 +59,23 @@ namespace CarpetLib {
     if (any (srcbbox.stride() != regbbox.stride() or
              dstbbox.stride() != regbbox.stride()))
     {
-      CCTK_WARN (0, "Internal error: strides disagree");
+      CCTK_ERROR("Internal error: strides disagree");
     }
     
     if (any (srcbbox.stride() != dstbbox.stride())) {
-      CCTK_WARN (0, "Internal error: strides disagree");
+      CCTK_ERROR("Internal error: strides disagree");
     }
     
     // This could be handled, but is likely to point to an error
     // elsewhere
     if (regbbox.empty()) {
-      CCTK_WARN (0, "Internal error: region extent is empty");
+      CCTK_ERROR("Internal error: region extent is empty");
     }
     
     if (not regbbox.is_contained_in(srcbbox) or
         not regbbox.is_contained_in(dstbbox))
     {
-      CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
+      CCTK_ERROR("Internal error: region extent is not contained in array extent");
     }
     
     
@@ -123,10 +123,12 @@ namespace CarpetLib {
     RT const eps = 1.0e-10;
     
     if (fabs (t1 - t2) < eps or fabs (t1 - t3) < eps or fabs (t2 - t3) < eps) {
-      CCTK_WARN (0, "Internal error: arrays have same time");
+      CCTK_ERROR("Internal error: arrays have same time");
     }
-    if (t < min (min (t1, t2), t3) - eps or t > max (max (t1, t2), t3) + eps) {
-      CCTK_WARN (0, "Internal error: extrapolation in time");
+    if (t < fmin (fmin (t1, t2), t3) - eps or
+        t > fmax (fmax (t1, t2), t3) + eps)
+    {
+      CCTK_ERROR("Internal error: extrapolation in time");
     }
     
     RT const s1fac = (t - t2) * (t - t3) / ((t1 - t2) * (t1 - t3));

@@ -9,17 +9,17 @@
 #include <string>
 #include <vector>
 
-#include "cctk.h"
-#include "cctk_Arguments.h"
-#include "cctk_Functions.h"
-#include "cctk_Parameters.h"
-#include "util_Network.h"
+#include <cctk.h>
+#include <cctk_Arguments.h>
+#include <cctk_Parameters.h>
+#include <util_Network.h>
+
+#include <Timer.hh>
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 #include "carpet.hh"
-#include "CarpetTimers.hh"
 
 #include "typeprops.hh"
 
@@ -163,7 +163,7 @@ namespace CarpetIOScalar {
   int
   OutputGH (const cGH * const cctkGH)
   {
-    static Carpet::Timer timer ("OutputGH");
+    static Timers::Timer timer ("OutputGH");
     timer.start();
     for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
       if (TimeToOutput(cctkGH, vindex)) {

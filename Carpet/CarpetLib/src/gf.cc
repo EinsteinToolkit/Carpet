@@ -21,52 +21,13 @@ gf<T>::gf (const int varindex_, const operator_type transport_operator_,
         t_, d_, prolongation_order_time_,
         vectorlength_, vectorindex_, vectorleader_)
 {
-  recompose_crop ();
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    recompose_allocate (rl);
-    recompose_free_old (rl);
-  } // for rl
 }
 
 // Destructors
 template<typename T>
 gf<T>::~gf ()
 {
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    recompose_free (rl);
-  } // for rl
 }
-
-
-
-#if 0
-// Access to the data
-template<typename T>
-const data<T>* gf<T>::operator() (int tl, int rl, int lc, int ml) const
-{
-  assert (rl>=0 and rl<h.reflevels());
-  assert (lc>=0 and lc<h.local_components(rl));
-  assert (ml>=0 and ml<h.mglevels());
-  assert (tl>=0 and tl<timelevels(ml, rl));
-  return (const data<T>*)storage.AT(ml).AT(rl).AT(lc).AT(tl);
-}
-
-template<typename T>
-data<T>* gf<T>::operator() (int tl, int rl, int lc, int ml)
-{
-  assert (rl>=0 and rl<h.reflevels());
-  assert (lc>=0 and lc<h.local_components(rl));
-  assert (ml>=0 and ml<h.mglevels());
-  if (not (tl>=0 and tl<timelevels(ml, rl))) {
-    cerr << "gf<T>::operator() "
-         << "vi=" << varindex << " name=" << (varindex>=0 ? CCTK_FullName(varindex) : "") << " "
-         << "pot=" << prolongation_order_time << " "
-         << "tl=" << tl << " rl=" << rl << " lc=" << lc << " ml=" << ml << "\n";
-  }
-  assert (tl>=0 and tl<timelevels(ml, rl));
-  return (data<T>*)storage.AT(ml).AT(rl).AT(lc).AT(tl);
-}
-#endif
 
 
 

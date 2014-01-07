@@ -81,8 +81,6 @@ extern "C" {
 
     /* fine threads; min, max, pos are undefined */
     lc_space_t fine_thread;
-    /* shared between fine threads */
-    struct lc_fine_thread_comm_t* fine_thread_comm_ptr;
     
     /* selftest: shared between all threads */
     unsigned char* selftest_array;
@@ -145,7 +143,7 @@ extern "C" {
       CCTK_BUILTIN_EXPECT(lc_dir##D==0, 1) ? 0 :                \
        lc_dir##D<0 ? I+1 : lc_control.overall.max.v[D]-I;
   
-#if VECTORISE_ALIGNED_ARRAYS
+#if VECTORISE && VECTORISE_ALIGNED_ARRAYS
   /* Arrays are aligned: fmin0 is the aligned loop boundary; keep it,
      and set up imin to be the intended loop boundary */
 #  define LC_ALIGN(i,j,k, vec_imin,vec_imax)                            \
@@ -155,10 +153,10 @@ extern "C" {
   lc_assert(lc_fmin0 < lc_fmax0);                                       \
   lc_assert(lc_fmax0 <= lc_control.overall.max.v[0]);                   \
   const ptrdiff_t lc_iminpos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);  \
-  const ptrdiff_t lc_iminoffset = lc_iminpos % lc_str0;                 \
+  const ptrdiff_t lc_iminoffset CCTK_ATTRIBUTE_UNUSED = lc_iminpos % lc_str0; \
   const int lc_fmax0_is_outer = lc_fmax0 == lc_control.overall.max.v[0]; \
   const ptrdiff_t lc_imaxpos = lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);  \
-  const ptrdiff_t lc_imaxoffset = lc_imaxpos % lc_str0;                 \
+  const ptrdiff_t lc_imaxoffset CCTK_ATTRIBUTE_UNUSED = lc_imaxpos % lc_str0; \
   lc_assert(lc_iminoffset == 0);                                        \
   if (!lc_fmax0_is_outer) lc_assert(lc_imaxoffset == 0);                \
   lc_assert(vec_imin >= lc_control.overall.min.v[0]);                   \

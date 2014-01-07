@@ -39,6 +39,12 @@ BOOLEAN interpolate_from_buffer_zones "Use buffer points for interpolation" STEE
 
 
 
+BOOLEAN use_loopcontrol_in_operators "Use LoopControl to parallelize AMR operators" STEERABLE=always
+{
+} "no"
+
+
+
 restricted:
 
 BOOLEAN use_higher_order_restriction "Use third order cell centered restriction operators instead of first order"
@@ -69,6 +75,15 @@ BOOLEAN check_bboxes "Check bounding box information for self-consistency" STEER
 BOOLEAN poison_new_memory "Try to catch uninitialised data by setting newly allocated memory to values that will catch your attention" STEERABLE=always
 {
 } "no"
+
+BOOLEAN electric_fence "Surround each allocated memory block by canaries to check for out-of-bounds accesses" STEERABLE=recover
+{
+} "no"
+
+CCTK_INT fence_width "number of guard cells to use" STEERABLE=recover
+{
+  1:* :: "any number of cells"
+} 1
 
 RESTRICTED:
 

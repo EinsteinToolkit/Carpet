@@ -10,11 +10,12 @@
 
 #include <Requirements.hh>
 
+#include <Timer.hh>
+
 #include <ggf.hh>
 #include <gh.hh>
 
 #include <carpet.hh>
-#include <Timers.hh>
 
 
 
@@ -145,7 +146,7 @@ namespace Carpet {
       // prolongate boundaries
       bool const local_do_prolongate = do_prolongate and not do_taper;
       if (local_do_prolongate) {
-        static Timer timer ("Prolongate");
+        static Timers::Timer timer ("Prolongate");
         timer.start();
         ProlongateGroupBoundaries (cctkGH, goodgroups);
         timer.stop();
@@ -162,10 +163,18 @@ namespace Carpet {
       Carpet::NamedBarrier(cctkGH,
                            8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
 #endif
-      
+
+      if (sync_barriers)
+      {
+        static Timers::Timer barrier_timer ("ProlongateSyncBarrier");
+        barrier_timer.start();
+        CCTK_Barrier(cctkGH);
+        barrier_timer.stop();
+      }
+
       // synchronise ghostzones
       if (sync_during_time_integration or local_do_prolongate) {
-        static Timer timer ("Sync");
+        static Timers::Timer timer ("Sync");
         timer.start();
         SyncGroups (cctkGH, goodgroups);
         timer.stop();
@@ -191,9 +200,9 @@ namespace Carpet {
     // use the current time here (which may be modified by the user)
     const CCTK_REAL time = cctkGH->cctk_time;
 
-    static vector<Timer*> timers;
+    static vector<Timers::Timer*> timers;
     if (timers.empty()) {
-      timers.push_back(new Timer("comm_state[0].create"));
+      timers.push_back(new Timers::Timer("comm_state[0].create"));
       for (astate state = static_cast<astate>(0);
            state != state_done;
            state = static_cast<astate>(static_cast<int>(state)+1))
@@ -201,15 +210,15 @@ namespace Carpet {
         ostringstream name1;
         name1 << "comm_state[" << timers.size() << "]"
               << "." << tostring(state) << ".user";
-        timers.push_back(new Timer(name1.str()));
+        timers.push_back(new Timers::Timer(name1.str()));
         ostringstream name2;
         name2 << "comm_state[" << timers.size() << "]"
               << "." << tostring(state) << ".step";
-        timers.push_back(new Timer(name2.str()));
+        timers.push_back(new Timers::Timer(name2.str()));
       }
     }
     
-    vector<Timer*>::iterator ti = timers.begin();
+    vector<Timers::Timer*>::iterator ti = timers.begin();
     (*ti)->start();
     for (comm_state state; not state.done(); state.step()) {
       (*ti)->stop(); ++ti; (*ti)->start();
@@ -253,9 +262,9 @@ namespace Carpet {
       Accelerator_PreSync(cctkGH, &groups.front(), groups.size());
     }
 
-    static vector<Timer*> timers;
+    static vector<Timers::Timer*> timers;
     if (timers.empty()) {
-      timers.push_back(new Timer("comm_state[0].create"));
+      timers.push_back(new Timers::Timer("comm_state[0].create"));
       for (astate state = static_cast<astate>(0);
            state != state_done;
            state = static_cast<astate>(static_cast<int>(state)+1))
@@ -263,15 +272,15 @@ namespace Carpet {
         ostringstream name1;
         name1 << "comm_state[" << timers.size() << "]"
               << "." << tostring(state) << ".user";
-        timers.push_back(new Timer(name1.str()));
+        timers.push_back(new Timers::Timer(name1.str()));
         ostringstream name2;
         name2 << "comm_state[" << timers.size() << "]"
               << "." << tostring(state) << ".step";
-        timers.push_back(new Timer(name2.str()));
+        timers.push_back(new Timers::Timer(name2.str()));
       }
     }
     
-    vector<Timer*>::iterator ti = timers.begin();
+    vector<Timers::Timer*>::iterator ti = timers.begin();
     (*ti)->start();
     for (comm_state state; not state.done(); state.step()) {
       (*ti)->stop(); ++ti; (*ti)->start();

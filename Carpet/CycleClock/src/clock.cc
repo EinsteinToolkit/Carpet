@@ -1,5 +1,7 @@
 #include "cycleclock.h"
 
+#ifdef HAVE_TICK_COUNTER
+
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
@@ -26,6 +28,7 @@ namespace CycleClock {
     cycleclock_t()
     {
       reset();
+      start();
     }
     
     ~cycleclock_t()
@@ -180,3 +183,14 @@ namespace CycleClock {
   }
   
 } // namespace CycleClock
+
+#else // HAVE_TICK_COUNTER
+
+namespace CycleClock {
+  extern "C"
+  int CycleClock_Setup()
+  {
+    return 0;
+  }
+}
+#endif

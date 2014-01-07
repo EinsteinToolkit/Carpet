@@ -12,10 +12,11 @@
 
 #include <Requirements.hh>
 
+#include <Timer.hh>
+
 #include <gh.hh>
 
 #include <carpet.hh>
-#include <Timers.hh>
 
 #include "adler32.hh"
 
@@ -32,12 +33,17 @@ namespace Carpet {
                          void * function,
                          cFunctionData * attribute,
                          void * data,
-                         Timer & user_timer);
+                         Timers::Timer & user_timer);
   
   static void
   SyncGroupsInScheduleBlock (cFunctionData * attribute, cGH * cctkGH,
                              vector<int> const & sync_groups,
-                             Timer & sync_timer);
+                             Timers::Timer & sync_timer);
+
+  // check if scheduled function overwrote any of the poison surrounding
+  // allocated memory
+  static void
+  CheckFence (cGH const * const cctkGH, cFunctionData * attribute);
   
   /// Traverse one function on all components of one refinement level
   /// of one multigrid level.
@@ -47,9 +53,9 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer total_timer ("CallFunction");
-    static Timer user_timer  ("thorns");
-    static Timer sync_timer  ("syncs");
+    static Timers::Timer total_timer ("CallFunction");
+    static Timers::Timer user_timer  ("thorns");
+    static Timers::Timer sync_timer  ("syncs");
     
     total_timer.start();
     
@@ -322,7 +328,7 @@ namespace Carpet {
       buf << attribute->routine << "\n";
       string const str = buf.str();
       int const id = adler32(str.c_str(), str.length());
-      static Timer barrier_timer  ("barrier");
+      static Timers::Timer barrier_timer  ("barrier");
       barrier_timer.start();
       Carpet::NamedBarrier (NULL, id, "Carpet::CallFunction");
       barrier_timer.stop();
@@ -344,7 +350,7 @@ namespace Carpet {
                          void * const function,
                          cFunctionData * const attribute,
                          void * const data,
-                         Timer & user_timer)
+                         Timers::Timer & user_timer)
   {
     cGH const * const cctkGH = static_cast <cGH const *> (data);
     Checkpoint ("%s call at %s to %s::%s",
@@ -353,7 +359,7 @@ namespace Carpet {
                 attribute->thorn, attribute->routine);
     int const skip = CallBeforeRoutines (cctkGH, function, attribute, data);
     if (not skip) {
-      Timer timer(attribute->routine);
+      Timers::Timer timer(attribute->routine);
       
       // Save the time step size
       CCTK_REAL const saved_cctk_delta_time = cctkGH->cctk_delta_time;
@@ -366,7 +372,7 @@ namespace Carpet {
 #endif
       timer.start();
       if (CCTK_IsFunctionAliased("Accelerator_PreCallFunction")) {
-        Timer pre_timer("PreCall");
+        Timers::Timer pre_timer("PreCall");
         pre_timer.start();
         Accelerator_PreCallFunction(cctkGH, attribute);
         pre_timer.stop();
@@ -374,12 +380,13 @@ namespace Carpet {
       int const res = CCTK_CallFunction (function, attribute, data);
       assert (res==0);
       if (CCTK_IsFunctionAliased("Accelerator_PostCallFunction")) {
-        Timer post_timer("PostCall");
+        Timers::Timer post_timer("PostCall");
         post_timer.start();
         Accelerator_PostCallFunction(cctkGH, attribute);
         post_timer.stop();
       }
       timer.stop();
+      CheckFence (cctkGH, attribute);
 #ifdef REQUIREMENTS_HH
       Requirements::AfterRoutine
         (attribute,
@@ -430,7 +437,7 @@ namespace Carpet {
   
   void SyncGroupsInScheduleBlock (cFunctionData* attribute, cGH* cctkGH,
                                   vector<int> const & sync_groups,
-                                  Timer & sync_timer)
+                                  Timers::Timer & sync_timer)
   {
     DECLARE_CCTK_PARAMETERS;
 
@@ -453,7 +460,7 @@ namespace Carpet {
       buf << attribute->routine << " sync\n";
       string const str = buf.str();
       int const id = adler32(str.c_str(), str.length());
-      static Timer barrier_timer  ("sync_barrier");
+      static Timers::Timer barrier_timer  ("sync_barrier");
       barrier_timer.start();
       Carpet::NamedBarrier (NULL, id, "Carpet::Sync");
       barrier_timer.stop();
@@ -462,6 +469,73 @@ namespace Carpet {
     sync_timer.start();
     SyncProlongateGroups (cctkGH, sync_groups, attribute);
     sync_timer.stop();
+  }
+
+  void CheckFence (cGH const * const cctkGH, cFunctionData * attribute)
+  {
+    DECLARE_CCTK_PARAMETERS;
+
+    if (is_meta_mode()) return; // meta mode has no accessible variables
+    // enumerating the grid variables is expensive
+    if (not gdata::fence_is_energized()) return;
+
+    Timers::Timer timer("FenceCheck");
+    timer.start();
+
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      if (CCTK_QueryGroupStorageI(cctkGH, group)) {
+        int const nvar = CCTK_NumVarsInGroupI(group);
+        if (nvar == 0) continue;
+        int const n0 = CCTK_FirstVarIndexI(group);
+        assert (n0>=0);
+
+        int const num_tl = CCTK_ActiveTimeLevelsVI(cctkGH, n0);
+        if (num_tl == 0) continue;
+        int const min_tl = 0;
+        int const max_tl = num_tl-1;
+
+        int const grouptype = CCTK_GroupTypeI(group);
+        if (grouptype == CCTK_GF && not is_local_mode()) continue;
+        assert(not is_meta_mode());
+
+        // FIXME: query is_XXX() functions
+        const bool is_array = grouptype == CCTK_ARRAY or
+                              grouptype == CCTK_SCALAR;
+        const int m = is_array ? 0 : map;
+        const int rl = is_array ? 0 : reflevel;
+        const int ml = is_array ? 0 : mglevel;
+        const int lc = is_array ? 0 : local_component;
+
+        {
+          char * const groupname = CCTK_GroupName(group);
+          Checkpoint ("FenceCheck \"%s\"", groupname);
+          free (groupname);
+        }
+
+        for (int var=0; var<nvar; ++var) {
+          assert (n0 + var<CCTK_NumVars());
+          for (int tl=min_tl; tl<=max_tl; ++tl) {
+            // TODO: turns this into a call of ggf taken a callback routine
+            ggf * const ff = arrdata.AT(group).AT(m).data.AT(var);
+            assert(ff);
+            gdata * const data =
+              ff->data_pointer (tl, rl, lc, ml);
+            for (int f=0; f<2; ++f) {
+              if (not data->check_fence(f)) {
+                char* fullname = CCTK_FullName(n0+var);
+                CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                            "At iteration %d: timelevel %d, component %d, map %d, refinement level %d of the variable \"%s\" contains was written to beyond to %s bound of the allocated memory by %s::%s at %s.",
+                            cctkGH->cctk_iteration, tl, component, m,
+                            rl, fullname, f ? "lower" : "upper",
+                            attribute->thorn, attribute->routine, attribute->where);
+                free (fullname);
+              }
+            }// for f
+          } // for tl
+        } // for var
+      }
+    }
+    timer.stop();
   }
   
 } // namespace Carpet

@@ -79,7 +79,7 @@ template MPI_Datatype mpi_datatype (slab<int,dim> const&);
 
 
 
-list<gdata*> gdata::allgdata;
+set<gdata*> gdata::allgdata;
 
 
 
@@ -96,7 +96,7 @@ gdata::gdata (const int varindex_,
 {
   DECLARE_CCTK_PARAMETERS;
   
-  allgdatai = allgdata.insert(allgdata.end(), this);
+  allgdata.insert(this);
   
   if (barriers) {
     dist::barrier (dist::comm(), 783988953, "CarpetLib::gdata::gdata");
@@ -108,7 +108,7 @@ gdata::~gdata ()
 {
   DECLARE_CCTK_PARAMETERS;
   
-  allgdata.erase(allgdatai);
+  allgdata.erase(this);
   
   if (barriers) {
     dist::barrier (dist::comm(), 109687805, "CarpetLib::gdata::~gdata");
@@ -186,6 +186,14 @@ allocated_memory_shape (vect<int,D> shape)
 }
 #endif
 
+bool
+gdata::
+fence_is_energized ()
+{
+  DECLARE_CCTK_PARAMETERS;
+
+  return electric_fence;
+}
 
 
 // Data manipulators
@@ -463,7 +471,7 @@ gdata::
 allmemory ()
 {
   size_t mem = memoryof(allgdata);
-  for (list<gdata*>::const_iterator
+  for (set<gdata*>::const_iterator
          gdatai = allgdata.begin(); gdatai != allgdata.end(); ++ gdatai)
   {
     mem += memoryof(**gdatai);

@@ -46,9 +46,11 @@ namespace CarpetRegrid {
     assert (CCTK_GroupDimI(gi) == dim);
     
     assert (arrdata.at(gi).at(Carpet::map).data.at(vi-v1));
-    const gf<CCTK_REAL>& errorgf
-      = (*dynamic_cast<const gf<CCTK_REAL>*>
-         (arrdata.at(gi).at(Carpet::map).data.at(vi-v1)));
+    // const gf<CCTK_REAL>& errorgf
+    //   = (*dynamic_cast<const gf<CCTK_REAL>*>
+    //      (arrdata.at(gi).at(Carpet::map).data.at(vi-v1)));
+    const gf<CCTK_REAL>& errorgf =
+      *(const gf<CCTK_REAL>*)arrdata.at(gi).at(Carpet::map).data.at(vi-v1);
     
     assert (not smart_outer_boundaries);
     

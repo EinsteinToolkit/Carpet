@@ -60,6 +60,9 @@ public:
     assert (clients_.AT(vectorindex));
     return & storage_ [vectorindex * nelems_];
   }
+
+  // return true if fence is intact, ie poison value is still there
+  bool is_fence_intact (const int upperlower) const;
   
   void register_client (size_t vectorindex);
   void unregister_client (size_t vectorindex);

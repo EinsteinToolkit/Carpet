@@ -1,4 +1,4 @@
 TEST arraysizes
 {
-  NPROCS 1
+  NPROCS 2
 }

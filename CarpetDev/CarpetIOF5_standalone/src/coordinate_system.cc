@@ -84,8 +84,10 @@ namespace CarpetIOF5 {
       assert (all (coarse_delta > (CCTK_REAL) 0));
       assert (all (level_offset_denominator > 0));
       
+      // mesh_refinement_topology_t * mesh_refinement_topology
+      //   = dynamic_cast<mesh_refinement_topology_t *> (& topology);
       mesh_refinement_topology_t * mesh_refinement_topology
-        = dynamic_cast<mesh_refinement_topology_t *> (& topology);
+        = (mesh_refinement_topology_t *) (& topology);
       assert (mesh_refinement_topology != 0);
       mesh_refinement_topology
         ->calculate_level_origin_delta (coarse_origin, coarse_delta,

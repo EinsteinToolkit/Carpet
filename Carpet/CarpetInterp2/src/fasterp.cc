@@ -18,8 +18,15 @@
 #include <cacheinfo.hh>
 #include <carpet.hh>
 #include <vect.hh>
+#include <Timer.hh>
 
 #include "fasterp.hh"
+
+#ifdef CARPETINTERP2_CHECK
+#  define CI2C(x,y) x,y
+#else
+#  define CI2C(x,y)
+#endif
 
 
 
@@ -396,29 +403,29 @@ namespace CarpetInterp2 {
     if (exact[2]) {
       if (exact[1]) {
         if (exact[0]) {
-          interpolate<Z,Z,Z> (ash, lsh, varptrs, vals);
+          interpolate<Z,Z,Z> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,Z,Z> (ash, lsh, varptrs, vals);
+          interpolate<O,Z,Z> (ash, CI2C(lsh,) varptrs, vals);
         }
       } else {
         if (exact[0]) {
-          interpolate<Z,O,Z> (ash, lsh, varptrs, vals);
+          interpolate<Z,O,Z> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,O,Z> (ash, lsh, varptrs, vals);
+          interpolate<O,O,Z> (ash, CI2C(lsh,) varptrs, vals);
         }
       }
     } else {
       if (exact[1]) {
         if (exact[0]) {
-          interpolate<Z,Z,O> (ash, lsh, varptrs, vals);
+          interpolate<Z,Z,O> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,Z,O> (ash, lsh, varptrs, vals);
+          interpolate<O,Z,O> (ash, CI2C(lsh,) varptrs, vals);
         }
       } else {
         if (exact[0]) {
-          interpolate<Z,O,O> (ash, lsh, varptrs, vals);
+          interpolate<Z,O,O> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,O,O> (ash, lsh, varptrs, vals);
+          interpolate<O,O,O> (ash, CI2C(lsh,) varptrs, vals);
         }
       }
     }
@@ -442,18 +449,18 @@ namespace CarpetInterp2 {
     const
   {
     switch (order) {
-    case  0: interpolate< 0> (ash, lsh, varptrs, vals); break;
-    case  1: interpolate< 1> (ash, lsh, varptrs, vals); break;
-    case  2: interpolate< 2> (ash, lsh, varptrs, vals); break;
-    case  3: interpolate< 3> (ash, lsh, varptrs, vals); break;
-    case  4: interpolate< 4> (ash, lsh, varptrs, vals); break;
-    case  5: interpolate< 5> (ash, lsh, varptrs, vals); break;
-    case  6: interpolate< 6> (ash, lsh, varptrs, vals); break;
-    case  7: interpolate< 7> (ash, lsh, varptrs, vals); break;
-    case  8: interpolate< 8> (ash, lsh, varptrs, vals); break;
-    case  9: interpolate< 9> (ash, lsh, varptrs, vals); break;
-    case 10: interpolate<10> (ash, lsh, varptrs, vals); break;
-    case 11: interpolate<11> (ash, lsh, varptrs, vals); break;
+    case  0: interpolate< 0> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  1: interpolate< 1> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  2: interpolate< 2> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  3: interpolate< 3> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  4: interpolate< 4> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  5: interpolate< 5> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  6: interpolate< 6> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  7: interpolate< 7> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  8: interpolate< 8> (ash, CI2C(lsh,) varptrs, vals); break;
+    case  9: interpolate< 9> (ash, CI2C(lsh,) varptrs, vals); break;
+    case 10: interpolate<10> (ash, CI2C(lsh,) varptrs, vals); break;
+    case 11: interpolate<11> (ash, CI2C(lsh,) varptrs, vals); break;
     default:
       // Add higher orders here as desired
       CCTK_WARN (CCTK_WARN_ABORT,
@@ -605,8 +612,8 @@ namespace CarpetInterp2 {
     rvect const offset = iloc.offset - rvect(iorigin);
     //cout << "Left " << iorigin << " " << iloc.offset << " " << offset << endl;
     // Ensure that interpolation point is between second and third point
-    assert (all (offset >= 1.0 and
-                 offset <= 2.0));
+    assert (all (offset >= CCTK_REAL(1.0) and
+                 offset <= CCTK_REAL(2.0)));
     
     for (int d=0; d<dim; ++d) {
       // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
@@ -681,8 +688,8 @@ namespace CarpetInterp2 {
     rvect const offset = iloc.offset - rvect(iorigin);
     //cout << "Right " << iorigin << " " << iloc.offset << " " << offset << endl;
     // Ensure that the interpolation point is between first and second point
-    assert (all (offset >= 0.0 and
-                 offset <= 1.0));
+    assert (all (offset >= CCTK_REAL(0.0) and
+                 offset <= CCTK_REAL(1.0)));
     
     for (int d=0; d<dim; ++d) {
       // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
@@ -900,29 +907,29 @@ namespace CarpetInterp2 {
     if (exact[2]) {
       if (exact[1]) {
         if (exact[0]) {
-          interpolate<Z,Z,Z> (ash, lsh, varptrs, vals);
+          interpolate<Z,Z,Z> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,Z,Z> (ash, lsh, varptrs, vals);
+          interpolate<O,Z,Z> (ash, CI2C(lsh,) varptrs, vals);
         }
       } else {
         if (exact[0]) {
-          interpolate<Z,O,Z> (ash, lsh, varptrs, vals);
+          interpolate<Z,O,Z> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,O,Z> (ash, lsh, varptrs, vals);
+          interpolate<O,O,Z> (ash, CI2C(lsh,) varptrs, vals);
         }
       }
     } else {
       if (exact[1]) {
         if (exact[0]) {
-          interpolate<Z,Z,O> (ash, lsh, varptrs, vals);
+          interpolate<Z,Z,O> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,Z,O> (ash, lsh, varptrs, vals);
+          interpolate<O,Z,O> (ash, CI2C(lsh,) varptrs, vals);
         }
       } else {
         if (exact[0]) {
-          interpolate<Z,O,O> (ash, lsh, varptrs, vals);
+          interpolate<Z,O,O> (ash, CI2C(lsh,) varptrs, vals);
         } else {
-          interpolate<O,O,O> (ash, lsh, varptrs, vals);
+          interpolate<O,O,O> (ash, CI2C(lsh,) varptrs, vals);
         }
       }
     }
@@ -946,7 +953,7 @@ namespace CarpetInterp2 {
     const
   {
     switch (order) {
-    case  2: interpolate< 2> (ash, lsh, varptrs, vals); break;
+    case  2: interpolate< 2> (ash, CI2C(lsh,) varptrs, vals); break;
     default:
       // Add higher orders here as desired
       CCTK_WARN (CCTK_WARN_ABORT,
@@ -1101,7 +1108,7 @@ namespace CarpetInterp2 {
     mrc_t::determine_mrc_info();
     int const maxmrc = mrc_t::get_max_ind();
     
-    MPI_Comm & comm_world = * (MPI_Comm *) GetMPICommWorld (cctkGH);
+    MPI_Comm const & comm_world = * (MPI_Comm const *) GetMPICommWorld (cctkGH);
     
     
     
@@ -1452,7 +1459,9 @@ namespace CarpetInterp2 {
         ibbox const & ext =
           Carpet::vdd.AT(m)->light_boxes.AT(Carpet::mglevel).AT(rl).AT(c).exterior;
         send_comp.ash = pad_shape(ext);
+#ifdef CARPETINTERP2_CHECK
         send_comp.lsh = ext.shape() / ext.stride();
+#endif
         
         send_comp.offset = offset;
         send_comp.npoints = npoints_comp.AT(mrc);
@@ -1475,7 +1484,7 @@ namespace CarpetInterp2 {
         //fasterp_src_loc_t sloc;
         FASTERP sloc;
         int const ierr =
-          sloc.calc_stencil (iloc, send_comp.ash, send_comp.lsh, order);
+          sloc.calc_stencil (iloc, send_comp.ash, CI2C(send_comp.lsh,) order);
         if (ierr) {
           CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "Could not determine valid interpolation stencil for point %d on map %d, refinement level %d, component %d",
@@ -1610,6 +1619,14 @@ namespace CarpetInterp2 {
     assert (values.size() == nvars);
     
     if (nvars == 0) return;
+
+    if (interp_barrier)
+    {
+      static Timers::Timer barrier_timer ("PreBarrier");
+      barrier_timer.start();
+      CCTK_Barrier(cctkGH);
+      barrier_timer.stop();
+    }
     
     for (size_t v=0; v<values.size(); ++v) {
       int const vi = varinds.AT(v);
@@ -1633,11 +1650,16 @@ namespace CarpetInterp2 {
       assert (recv_descr.npoints == 0 or values.AT(v) != NULL);
     }
     
-    MPI_Comm & comm_world = * (MPI_Comm *) GetMPICommWorld (cctkGH);
+    MPI_Comm const & comm_world = * (MPI_Comm const *) GetMPICommWorld (cctkGH);
     int const mpi_tag = 0;
     
     // Post Irecvs
     if (verbose) CCTK_INFO ("Posting MPI_Irecvs");
+
+    static Timers::Timer irecvs_timer ("PostIrecvs");
+    irecvs_timer.start();
+
+
     vector<CCTK_REAL> recv_points (recv_descr.npoints * nvars);
     fill_with_poison (recv_points);
     vector<MPI_Request> recv_reqs (recv_descr.procs.size());
@@ -1659,9 +1681,14 @@ namespace CarpetInterp2 {
                  comm_world, & recv_reqs_pn.AT(pp));
 #endif
     }
+    irecvs_timer.stop();
     
     // Interpolate data and post Isends
     if (verbose) CCTK_INFO ("Interpolating and posting MPI_Isends");
+    static Timers::Timer interpolate_timer ("Interpolate");
+
+    interpolate_timer.instantiate();
+
     // TODO: Use one array per processor?
     vector<CCTK_REAL> send_points (send_descr.npoints * nvars);
     fill_with_poison (send_points);
@@ -1703,16 +1730,18 @@ namespace CarpetInterp2 {
         
         // TODO: This loops seems unbalanced.  Maybe the different
         // interpolations have different costs.
+        interpolate_timer.start();
 #pragma omp parallel for schedule (dynamic, 1000)
         for (int n=0; n<int(send_comp.locs.size()); ++n) {
           size_t const ind = (send_comp.offset + n) * nvars;
           send_comp.locs.AT(n).interpolate
-            (send_comp.ash, send_comp.lsh,
+            (send_comp.ash, CI2C(send_comp.lsh,)
              order, varptrs, &computed_points.AT(ind));
 #ifdef CARPETINTERP2_CHECK
           computed_pn.AT(send_comp.offset + n) = send_comp.locs.AT(n).pn;
 #endif
         }
+        interpolate_timer.stop();
         
       } // for comp
       
@@ -1753,16 +1782,23 @@ namespace CarpetInterp2 {
                  comm_world, & send_reqs_pn.AT(pp));
 #endif
     } // for pp
-    
+
     // Wait for Irecvs to complete
     if (verbose) CCTK_INFO ("Waiting for MPI_Irevcs to complete");
+
+    static Timers::Timer waitall_ir_timer ("WaitAll_Irecvs");
+    waitall_ir_timer.start();
     MPI_Waitall (recv_reqs.size(), & recv_reqs.front(), MPI_STATUSES_IGNORE);
 #ifdef CARPETINTERP2_CHECK
     MPI_Waitall (recv_reqs.size(), & recv_reqs_pn.front(), MPI_STATUSES_IGNORE);
 #endif
     
+    waitall_ir_timer.stop();
     // Gather data
     if (verbose) CCTK_INFO ("Gathering data");
+    static Timers::Timer gather_timer ("Gather");
+    gather_timer.start();
+
 #pragma omp parallel for
     for (int n=0; n<recv_descr.npoints; ++n) {
       size_t const nn = recv_descr.index.AT(n);
@@ -1777,14 +1813,28 @@ namespace CarpetInterp2 {
       assert (recv_pn.AT(nn).n == n);
 #endif
     }
+
+    gather_timer.stop();
     
     // Wait for Isends to complete
     if (verbose) CCTK_INFO ("Waiting for MPI_Isends to complete");
+    static Timers::Timer waitall_is_timer ("WaitAll_Isend");
+    waitall_is_timer.start();
     MPI_Waitall (send_reqs.size(), & send_reqs.front(), MPI_STATUSES_IGNORE);
 #ifdef CARPETINTERP2_CHECK
     MPI_Waitall (send_reqs.size(), & send_reqs_pn.front(), MPI_STATUSES_IGNORE);
 #endif
     
+    waitall_is_timer.stop();
+
+    if (interp_barrier)
+    {
+      static Timers::Timer barrier_timer ("PostBarrier");
+      barrier_timer.start();
+      CCTK_Barrier(cctkGH);
+      barrier_timer.stop();
+    }
+
     if (verbose) CCTK_INFO ("Done.");
   }
   

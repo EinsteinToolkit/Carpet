@@ -9,16 +9,16 @@
 #include <string>
 #include <vector>
 
-#include "util_Table.h"
-#include "cctk.h"
-#include "cctk_Arguments.h"
-#include "cctk_Parameters.h"
-#include "cctk_Version.h"
+#include <cctk.h>
+#include <cctk_Arguments.h>
+#include <cctk_Parameters.h>
+#include <cctk_Version.h>
+#include <util_Table.h>
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
-#include "CarpetTimers.hh"
+#include <Timer.hh>
 
 #include "CarpetIOHDF5.hh"
 
@@ -539,7 +539,7 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
     if (not CCTK_Equals (verbose, "none")) {
       int count = 0;
       ostringstream msg;
-      msg << "Periodic scalar output requested for:";
+      msg << "Periodic AMR output requested for:";
       for (int vi=0; vi<CCTK_NumVars(); ++vi) {
         if (myGH->requests[vi]) {
           ++count;
@@ -562,7 +562,7 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
 
 static int OutputGH (const cGH* const cctkGH)
 {
-  static Carpet::Timer timer ("OutputGH");
+  static Timers::Timer timer ("OutputGH");
   timer.start();
   for (int vindex = CCTK_NumVars () - 1; vindex >= 0; vindex--) {
     if (TimeToOutput (cctkGH, vindex)) {

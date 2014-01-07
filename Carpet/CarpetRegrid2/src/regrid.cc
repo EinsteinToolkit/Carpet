@@ -11,6 +11,8 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 
+#include <Timer.hh>
+
 #include <bbox.hh>
 #include <bboxset.hh>
 #include <defs.hh>
@@ -20,7 +22,6 @@
 #include <vect.hh>
 
 #include <carpet.hh>
-#include <CarpetTimers.hh>
 
 #include "amr.hh"
 #include "boundary.hh"
@@ -89,7 +90,7 @@ namespace CarpetRegrid2 {
       }
       if (any (rad < CCTK_REAL(0))) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "The radius of refinement level %d of region %d is [%g,%g,%g], which is non-negative",
+                    "The radius of refinement level %d of region %d is [%g,%g,%g], which is not non-negative",
                     rl, n + 1,
                     double(rad[0]), double(rad[1]), double(rad[2]));
         found_error = true;
@@ -485,7 +486,7 @@ namespace CarpetRegrid2 {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CarpetRegrid2::Regrid";
-    static Carpet::Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     assert (is_singlemap_mode());
@@ -538,76 +539,82 @@ namespace CarpetRegrid2 {
       // Regrid only if the regions have changed sufficiently
       do_recompose = false;
       if (adaptive_refinement) do_recompose = true;
-      for (int n = 0; n < num_centres; ++ n) {
-        
-        // Regrid if a region became active or inactive
-        do_recompose = active[n] != old_active[n];
-        if (do_recompose) break;
-        
-        // Check only active regions
-        if (not active[n]) continue;
-        
-        // Regrid if the number of levels changed
-        do_recompose = num_levels[n] != old_num_levels[n];
-        if (do_recompose) break;
-        
-        // Regrid if the positions have changed sufficiently
-        CCTK_REAL const dist2 =
-          pow (position_x[n] - old_position_x[n], 2) +
-          pow (position_y[n] - old_position_y[n], 2) +
-          pow (position_z[n] - old_position_z[n], 2);
-        CCTK_REAL mindist;
-        switch (n) {
-        case 0: mindist = movement_threshold_1; break;
-        case 1: mindist = movement_threshold_2; break;
-        case 2: mindist = movement_threshold_3; break;
-        case 3: mindist = movement_threshold_4; break;
-        case 4: mindist = movement_threshold_5; break;
-        case 5: mindist = movement_threshold_6; break;
-        case 6: mindist = movement_threshold_7; break;
-        case 7: mindist = movement_threshold_8; break;
-        case 8: mindist = movement_threshold_9; break;
-        case 9: mindist = movement_threshold_10; break;
-        default: assert (0);
-        }
-        do_recompose = dist2 > pow (mindist, 2);
-        if (do_recompose) break;
-        
-        // Regrid if the radii have changed sufficiently
-        for (int rl = 1; rl < num_levels[n]; ++ rl) {
-          int const ind = index2 (lsh, rl, n);
-          CCTK_REAL const rx = radius_x[ind] < 0 ? radius[ind] : radius_x[ind];
-          CCTK_REAL const ry = radius_y[ind] < 0 ? radius[ind] : radius_y[ind];
-          CCTK_REAL const rz = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
-          rvect const rad (rx, ry, rz);
-          rvect const oldrad
-            (old_radius_x[ind], old_radius_y[ind], old_radius_z[ind]);
-          CCTK_REAL const drfac = 
-	    (sqrt (sum (ipow (rad - oldrad, 2))))/(sqrt (sum (ipow (oldrad, 2))));
-          CCTK_REAL mindrfac;
-          switch (n) {
-          case 0: mindrfac = radius_rel_change_threshold_1; break;
-          case 1: mindrfac = radius_rel_change_threshold_2; break;
-          case 2: mindrfac = radius_rel_change_threshold_3; break;
-          case 3: mindrfac = radius_rel_change_threshold_4; break;
-          case 4: mindrfac = radius_rel_change_threshold_5; break;
-          case 5: mindrfac = radius_rel_change_threshold_6; break;
-          case 6: mindrfac = radius_rel_change_threshold_7; break;
-          case 7: mindrfac = radius_rel_change_threshold_8; break;
-          case 8: mindrfac = radius_rel_change_threshold_9; break;
-          case 9: mindrfac = radius_rel_change_threshold_10; break;
-          default: assert (0);
-          }
-          do_recompose = drfac > mindrfac;
+      if (not do_recompose) {
+        for (int n = 0; n < num_centres; ++ n) {
+          
+          // Regrid if a region became active or inactive
+          do_recompose = active[n] != old_active[n];
           if (do_recompose) break;
-        } // for rl
-        if (do_recompose) break;
-        
-      } // for n
-      if (verbose or veryverbose) {
-        if (not do_recompose) {
-          CCTK_INFO
-            ("Refined regions have not changed sufficiently; skipping regridding");
+          
+          // Check only active regions
+          if (not active[n]) continue;
+          
+          // Regrid if the number of levels changed
+          do_recompose = num_levels[n] != old_num_levels[n];
+          if (do_recompose) break;
+          
+          // Regrid if the positions have changed sufficiently
+          CCTK_REAL const dist2 =
+            pow (position_x[n] - old_position_x[n], 2) +
+            pow (position_y[n] - old_position_y[n], 2) +
+            pow (position_z[n] - old_position_z[n], 2);
+          CCTK_REAL mindist;
+          switch (n) {
+          case 0: mindist = movement_threshold_1; break;
+          case 1: mindist = movement_threshold_2; break;
+          case 2: mindist = movement_threshold_3; break;
+          case 3: mindist = movement_threshold_4; break;
+          case 4: mindist = movement_threshold_5; break;
+          case 5: mindist = movement_threshold_6; break;
+          case 6: mindist = movement_threshold_7; break;
+          case 7: mindist = movement_threshold_8; break;
+          case 8: mindist = movement_threshold_9; break;
+          case 9: mindist = movement_threshold_10; break;
+          default: CCTK_BUILTIN_UNREACHABLE();
+          }
+          do_recompose = dist2 > pow (mindist, 2);
+          if (do_recompose) break;
+          
+          // Regrid if the radii have changed sufficiently
+          for (int rl = 1; rl < num_levels[n]; ++ rl) {
+            int const ind = index2 (lsh, rl, n);
+            CCTK_REAL const rx =
+              radius_x[ind] < 0 ? radius[ind] : radius_x[ind];
+            CCTK_REAL const ry =
+              radius_y[ind] <0 ? radius[ind] : radius_y[ind];
+            CCTK_REAL const rz =
+              radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
+            rvect const rad (rx, ry, rz);
+            rvect const oldrad
+              (old_radius_x[ind], old_radius_y[ind], old_radius_z[ind]);
+            CCTK_REAL const drfac = 
+              sqrt (sum (ipow (rad - oldrad, 2))) /
+              sqrt (sum (ipow (oldrad, 2)));
+            CCTK_REAL mindrfac;
+            switch (n) {
+            case 0: mindrfac = radius_rel_change_threshold_1; break;
+            case 1: mindrfac = radius_rel_change_threshold_2; break;
+            case 2: mindrfac = radius_rel_change_threshold_3; break;
+            case 3: mindrfac = radius_rel_change_threshold_4; break;
+            case 4: mindrfac = radius_rel_change_threshold_5; break;
+            case 5: mindrfac = radius_rel_change_threshold_6; break;
+            case 6: mindrfac = radius_rel_change_threshold_7; break;
+            case 7: mindrfac = radius_rel_change_threshold_8; break;
+            case 8: mindrfac = radius_rel_change_threshold_9; break;
+            case 9: mindrfac = radius_rel_change_threshold_10; break;
+            default: CCTK_BUILTIN_UNREACHABLE();
+            }
+            do_recompose = drfac > mindrfac;
+            if (do_recompose) break;
+          } // for rl
+          if (do_recompose) break;
+          
+        } // for n
+        if (verbose or veryverbose) {
+          if (not do_recompose) {
+            CCTK_INFO
+              ("Refined regions have not changed sufficiently; skipping regridding");
+          }
         }
       }
     }
@@ -669,7 +676,7 @@ namespace CarpetRegrid2 {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CarpetRegrid2::RegridMaps";
-    static Carpet::Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     assert (is_level_mode());
@@ -721,87 +728,93 @@ namespace CarpetRegrid2 {
       // Regrid only if the regions have changed sufficiently
       do_recompose = false;
       if (adaptive_refinement) do_recompose = true;
-      for (int n = 0; n < num_centres; ++ n) {
-        
-        // When debugging, sneakily add a new level, but skip the
-        // initial regrid, and the regrid before the first time step
-        if (add_levels_automatically and cctk_iteration > 1) {
-          num_levels[n] = min (num_levels[n] + 1, maxreflevels);
-          CCTK_VInfo (CCTK_THORNSTRING,
-                      "Increasing number of levels of centre %d to %d (it=%d)",
-                      n + 1, 
-                      static_cast <int> (num_levels[n]),
-                      cctk_iteration);
-        }
-        
-        // Regrid if a region became active or inactive
-        do_recompose = active[n] != old_active[n];
-        if (do_recompose) break;
-        
-        // Check only active regions
-        if (not active[n]) continue;
-        
-        // Regrid if the number of levels changed
-        do_recompose = num_levels[n] != old_num_levels[n];
-        if (do_recompose) break;
-        
-        // Regrid if the positions have changed sufficiently
-        CCTK_REAL const dist2 =
-          pow (position_x[n] - old_position_x[n], 2) +
-          pow (position_y[n] - old_position_y[n], 2) +
-          pow (position_z[n] - old_position_z[n], 2);
-        CCTK_REAL mindist;
-        switch (n) {
-        case 0: mindist = movement_threshold_1; break;
-        case 1: mindist = movement_threshold_2; break;
-        case 2: mindist = movement_threshold_3; break;
-        case 3: mindist = movement_threshold_4; break;
-        case 4: mindist = movement_threshold_5; break;
-        case 5: mindist = movement_threshold_6; break;
-        case 6: mindist = movement_threshold_7; break;
-        case 7: mindist = movement_threshold_8; break;
-        case 8: mindist = movement_threshold_9; break;
-        case 9: mindist = movement_threshold_10; break;
-        default: assert (0);
-        }
-        do_recompose = dist2 > pow (mindist, 2);
-        if (do_recompose) break;
-        
-        // Regrid if the radii have changed sufficiently
-        for (int rl = 1; rl < num_levels[n]; ++ rl) {
-          int const ind = index2 (lsh, rl, n);
-          CCTK_REAL const rx = radius_x[ind] < 0 ? radius[ind] : radius_x[ind];
-          CCTK_REAL const ry = radius_y[ind] < 0 ? radius[ind] : radius_y[ind];
-          CCTK_REAL const rz = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
-          rvect const rad (rx, ry, rz);
-          rvect const oldrad
-            (old_radius_x[ind], old_radius_y[ind], old_radius_z[ind]);
-          CCTK_REAL const drfac = 
-	    (sqrt (sum (ipow (rad - oldrad, 2))))/(sqrt (sum (ipow (oldrad, 2))));
-          CCTK_REAL mindrfac;
-          switch (n) {
-          case 0: mindrfac = radius_rel_change_threshold_1; break;
-          case 1: mindrfac = radius_rel_change_threshold_2; break;
-          case 2: mindrfac = radius_rel_change_threshold_3; break;
-          case 3: mindrfac = radius_rel_change_threshold_4; break;
-          case 4: mindrfac = radius_rel_change_threshold_5; break;
-          case 5: mindrfac = radius_rel_change_threshold_6; break;
-          case 6: mindrfac = radius_rel_change_threshold_7; break;
-          case 7: mindrfac = radius_rel_change_threshold_8; break;
-          case 8: mindrfac = radius_rel_change_threshold_9; break;
-          case 9: mindrfac = radius_rel_change_threshold_10; break;
-          default: assert (0);
+      if (not do_recompose) {
+        for (int n = 0; n < num_centres; ++ n) {
+          
+          // When debugging, sneakily add a new level, but skip the
+          // initial regrid, and the regrid before the first time step
+          if (add_levels_automatically and cctk_iteration > 1) {
+            num_levels[n] = min (num_levels[n] + 1, maxreflevels);
+            CCTK_VInfo (CCTK_THORNSTRING,
+                        "Increasing number of levels of centre %d to %d (it=%d)",
+                        n + 1, 
+                        static_cast <int> (num_levels[n]),
+                        cctk_iteration);
           }
-          do_recompose = drfac > mindrfac;
+          
+          // Regrid if a region became active or inactive
+          do_recompose = active[n] != old_active[n];
           if (do_recompose) break;
-        } // for rl
-        if (do_recompose) break;
-        
-      } // for n
-      if (verbose or veryverbose) {
-        if (not do_recompose) {
-          CCTK_INFO
-            ("Refined regions have not changed sufficiently; skipping regridding");
+          
+          // Check only active regions
+          if (not active[n]) continue;
+          
+          // Regrid if the number of levels changed
+          do_recompose = num_levels[n] != old_num_levels[n];
+          if (do_recompose) break;
+          
+          // Regrid if the positions have changed sufficiently
+          CCTK_REAL const dist2 =
+            pow (position_x[n] - old_position_x[n], 2) +
+            pow (position_y[n] - old_position_y[n], 2) +
+            pow (position_z[n] - old_position_z[n], 2);
+          CCTK_REAL mindist;
+          switch (n) {
+          case 0: mindist = movement_threshold_1; break;
+          case 1: mindist = movement_threshold_2; break;
+          case 2: mindist = movement_threshold_3; break;
+          case 3: mindist = movement_threshold_4; break;
+          case 4: mindist = movement_threshold_5; break;
+          case 5: mindist = movement_threshold_6; break;
+          case 6: mindist = movement_threshold_7; break;
+          case 7: mindist = movement_threshold_8; break;
+          case 8: mindist = movement_threshold_9; break;
+          case 9: mindist = movement_threshold_10; break;
+          default: CCTK_BUILTIN_UNREACHABLE();
+          }
+          do_recompose = dist2 > pow (mindist, 2);
+          if (do_recompose) break;
+          
+          // Regrid if the radii have changed sufficiently
+          for (int rl = 1; rl < num_levels[n]; ++ rl) {
+            int const ind = index2 (lsh, rl, n);
+            CCTK_REAL const rx =
+              radius_x[ind] < 0 ? radius[ind] : radius_x[ind];
+            CCTK_REAL const ry =
+              radius_y[ind] < 0 ? radius[ind] : radius_y[ind];
+            CCTK_REAL const rz =
+              radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
+            rvect const rad (rx, ry, rz);
+            rvect const oldrad
+              (old_radius_x[ind], old_radius_y[ind], old_radius_z[ind]);
+            CCTK_REAL const drfac = 
+              sqrt (sum (ipow (rad - oldrad, 2))) /
+              sqrt (sum (ipow (oldrad, 2)));
+            CCTK_REAL mindrfac;
+            switch (n) {
+            case 0: mindrfac = radius_rel_change_threshold_1; break;
+            case 1: mindrfac = radius_rel_change_threshold_2; break;
+            case 2: mindrfac = radius_rel_change_threshold_3; break;
+            case 3: mindrfac = radius_rel_change_threshold_4; break;
+            case 4: mindrfac = radius_rel_change_threshold_5; break;
+            case 5: mindrfac = radius_rel_change_threshold_6; break;
+            case 6: mindrfac = radius_rel_change_threshold_7; break;
+            case 7: mindrfac = radius_rel_change_threshold_8; break;
+            case 8: mindrfac = radius_rel_change_threshold_9; break;
+            case 9: mindrfac = radius_rel_change_threshold_10; break;
+            default: CCTK_BUILTIN_UNREACHABLE();
+            }
+            do_recompose = drfac > mindrfac;
+            if (do_recompose) break;
+          } // for rl
+          if (do_recompose) break;
+          
+        } // for n
+        if (verbose or veryverbose) {
+          if (not do_recompose) {
+            CCTK_INFO
+              ("Refined regions have not changed sufficiently; skipping regridding");
+          }
         }
       }
     }

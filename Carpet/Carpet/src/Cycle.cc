@@ -6,11 +6,12 @@
 
 #include <Requirements.hh>
 
+#include <Timer.hh>
+
 #include <ggf.hh>
 #include <gh.hh>
 
 #include <carpet.hh>
-#include <Timers.hh>
 
 
 
@@ -24,7 +25,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
   
-    Timer timer("CycleTimeLevels");
+    Timers::Timer timer("CycleTimeLevels");
     timer.start();
   
     Checkpoint ("CycleTimeLevels");

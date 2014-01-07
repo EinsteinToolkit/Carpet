@@ -7,10 +7,11 @@
 #include <util_ErrorCodes.h>
 #include <util_Table.h>
 
+#include <Timer.hh>
+
 #include <gh.hh>
 
 #include <carpet.hh>
-#include "Timers.hh"
 
 
 namespace Carpet {
@@ -68,7 +69,7 @@ namespace Carpet {
     
     if (! checksum_timelevels) return;
 
-    Timer timer("CalculateChecksums");
+    Timers::Timer timer("CalculateChecksums");
     timer.start();
     
     Checkpoint ("CalculateChecksums");

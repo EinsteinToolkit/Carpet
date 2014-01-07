@@ -12,7 +12,9 @@ schedule carpettest_check_arguments AT initial
   LANG: Fortran
 } "Check grid function and grid array arguments"
 
-schedule carpettest_slabtest AT initial
-{
-  LANG: C
-} "Test hyperslabbing"
+if (test_slab) {
+  schedule carpettest_slabtest AT initial
+  {
+    LANG: C
+  } "Test hyperslabbing"
+}

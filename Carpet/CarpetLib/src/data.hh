@@ -65,6 +65,7 @@ public:
 			 void* const memptr = NULL, size_t const memsize = 0);
   virtual void free ();
   virtual size_t allocsize (const ibbox& extent, const int proc) const;
+  virtual bool check_fence (const int upperlower) const;
   
 public:
   

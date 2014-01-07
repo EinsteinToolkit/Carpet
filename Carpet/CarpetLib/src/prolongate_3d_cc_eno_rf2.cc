@@ -1,6 +1,8 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <loopcontrol.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -966,6 +968,7 @@ namespace CarpetLib {
                             ibbox3 const & restrict regbbox,
                             void * extraargs)
   {
+    DECLARE_CCTK_PARAMETERS;
     assert (not extraargs);
     
     static_assert (ORDER>=0, "ORDER must be non-negative");
@@ -1091,6 +1094,8 @@ namespace CarpetLib {
     
     
     
+    if (not use_loopcontrol_in_operators) {
+
     // Loop over fine region
     // Label scheme: l 8 fk fj fi
     
@@ -1284,8 +1289,85 @@ namespace CarpetLib {
     
     // end k loop
   l9:;
+  
     
+  
+  } else { // use_loopcontrol_in_operators
+    
+    // Loop over fine region
+#pragma omp parallel
+    CCTK_LOOP3(prolongate_3d_cc_eno_rf2,
+               i,j,k, 0,0,0, regiext,regjext,regkext,
+               dstipadext,dstjpadext,dstkpadext)
+    {
+      const ptrdiff_t is = (srcioff + i) / 2;
+      const ptrdiff_t js = (srcjoff + j) / 2;
+      const ptrdiff_t ks = (srckoff + k) / 2;
+      const ptrdiff_t im = (srcioff + i) % 2;
+      const ptrdiff_t jm = (srcjoff + j) % 2;
+      const ptrdiff_t km = (srckoff + k) % 2;
+      const ptrdiff_t id = dstioff + i;
+      const ptrdiff_t jd = dstjoff + j;
+      const ptrdiff_t kd = dstkoff + k;
+      if (km == 0) {
+        if (jm == 0) {
+          if (im == 0) {
+            check_indices3<T,ORDER,0,0,0> (is,js,ks, srciext, srcjext, srckext);
+            dst[DSTIND3(id,jd,kd)] =
+              interp3<T,ORDER,0,0,0>
+              (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
+          } else {
+            check_indices3<T,ORDER,1,0,0> (is,js,ks, srciext, srcjext, srckext);
+            dst[DSTIND3(id,jd,kd)] =
+              interp3<T,ORDER,1,0,0>
+              (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
+          }
+        } else {
+          if (im == 0) {
+            check_indices3<T,ORDER,0,1,0> (is,js,ks, srciext, srcjext, srckext);
+            dst[DSTIND3(id,jd,kd)] =
+              interp3<T,ORDER,0,1,0>
+              (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
+          } else {
+            check_indices3<T,ORDER,1,1,0> (is,js,ks, srciext, srcjext, srckext);
+            dst[DSTIND3(id,jd,kd)] =
+              interp3<T,ORDER,1,1,0>
+              (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
+          }
+        }
+      } else {
+        if (jm == 0) {
+          if (im == 0) {
+            check_indices3<T,ORDER,0,0,1> (is,js,ks, srciext, srcjext, srckext);
+            dst[DSTIND3(id,jd,kd)] =
+              interp3<T,ORDER,0,0,1>
+              (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
+          } else {
+            check_indices3<T,ORDER,1,0,1> (is,js,ks, srciext, srcjext, srckext);
+            dst[DSTIND3(id,jd,kd)] =
+              interp3<T,ORDER,1,0,1>
+              (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
+          }
+        } else {
+          if (im == 0) {
+            check_indices3<T,ORDER,0,1,1> (is,js,ks, srciext, srcjext, srckext);
+            dst[DSTIND3(id,jd,kd)] =
+              interp3<T,ORDER,0,1,1>
+              (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
+          } else {
+            check_indices3<T,ORDER,1,1,1> (is,js,ks, srciext, srcjext, srckext);
+            dst[DSTIND3(id,jd,kd)] =
+              interp3<T,ORDER,1,1,1>
+              (& src[SRCIND3(is,js,ks)], srcdi, srcdj, srcdk);
+          }
+        }
+      }
+    } CCTK_ENDLOOP3(prolongate_3d_cc_eno_rf2);
+    
+    } // if use_loopcontrol_in_operators
+
   }
+  
   
 
   // Specialise for complex types

@@ -5,13 +5,15 @@ IMPLEMENTS: Driver
 include header: carpet_public.hh in carpet.hh
 include header: carpet_public.h in carpet.h
 
-include header: Timers.hh in CarpetTimers.hh
-
 uses include header: Requirements.hh
 
 uses include header: nompi.h
 
 uses include header: loopcontrol.h
+
+uses include header: CactusTimerSet.hh
+uses include header: Timer.hh
+uses include header: TimerTree.hh
 
 uses include header: mpi_string.hh
 
@@ -243,6 +245,7 @@ CCTK_INT FUNCTION Accelerator_NotifyVariableWritten       \
 USES FUNCTION Accelerator_NotifyVariableWritten
 
 
+
 # Access coordinate information (on the coarse level)
 CCTK_INT FUNCTION GetCoordRange        \
     (CCTK_POINTER_TO_CONST IN  cctkGH, \
@@ -393,6 +396,8 @@ CCTK_INT point_classification TYPE=gf TAGS='checkpoint="no" prolongation="none"'
   #                n>1: used only while time stepping (e.g. buffer zones)
 } "Grid point classification"
 
+CCTK_INT carpet_unusedpoints_mask TYPE=GF tags='Prolongation="none"' "mask which is set !=0 for points which do not influence future evolution, assuming appropriate regridding"
+
 
 
 CCTK_REAL timing TAGS='checkpoint="no"'
@@ -435,4 +440,10 @@ CCTK_REAL timing_levels TYPE=array DIM=1 SIZE=max_refinement_levels DISTRIB=cons
   time_level time_level_count
 } "Per-level timing information"
 
-CCTK_INT carpet_unusedpoints_mask TYPE=GF tags='Prolongation="none"' "mask which is set !=0 for points which do not influence future evolution, assuming appropriate regridding"
+CCTK_REAL memory_procs TYPE=array DIM=1 SIZE=1 DISTRIB=CONSTANT TAGS='checkpoint="no"'
+{
+  metadata
+  grid_structure
+  grid_arrays
+  grid_functions
+} "Memory usage information"

@@ -14,7 +14,7 @@ CCTK_REAL arrg3 type=ARRAY size=i3,i4,i5
   arr3
 } "3D array"
 
-CCTK_REAL arrg2 type=ARRAY dim=2 size=i6,i7
+CCTK_REAL arrg2 type=ARRAY dim=2 size=i6,i7 tags="no_split_directions={1}"
 {
   arr2
 } "2D array"

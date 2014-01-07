@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <sstream>
 
-#include "CarpetTimers.hh"
+#include <Timer.hh>
 
 #include "mpi_string.hh"
 #include "bbox.hh"
@@ -23,7 +23,7 @@ using namespace CarpetLib;
 
 
 
-list<dh*> dh::alldh;
+set<dh*> dh::alldh;
 
 
 
@@ -120,8 +120,8 @@ dh (gh & h_,
     assert (prolongation_orders_space.AT(rl) >= 0);
   }
   
-  alldhi = alldh.insert(alldh.end(), this);
-  gh_handle = h.add (this);
+  alldh.insert(this);
+  h.insert (this);
   CHECKPOINT;
   regrid (false);
   for (int rl = 0; rl < h.reflevels(); ++ rl) {
@@ -137,8 +137,9 @@ dh::
 ~dh ()
 {
   CHECKPOINT;
-  h.erase (gh_handle);
-  alldh.erase(alldhi);
+  assert (gfs.empty());
+  h.erase (this);
+  alldh.erase (this);
 }
 
 
@@ -270,7 +271,7 @@ regrid (bool const do_init)
 {
   DECLARE_CCTK_PARAMETERS;
     
-  static Carpet::Timer timer ("CarpetLib::dh::regrid");
+  static Timers::Timer timer ("CarpetLib::dh::regrid");
   timer.start();
   
   CHECKPOINT;
@@ -322,7 +323,7 @@ regrid (bool const do_init)
       
       // Domain:
       
-      static Carpet::Timer timer_domain ("domain");
+      static Timers::Timer timer_domain ("domain");
       timer_domain.start();
       
       ibbox const & domain_exterior = h.baseextent(ml,rl);
@@ -347,7 +348,7 @@ regrid (bool const do_init)
       
       
       
-      static Carpet::Timer timer_region ("region");
+      static Timers::Timer timer_region ("region");
       timer_region.start();
       
       for (int c = 0; c < h.components(rl); ++ c) {
@@ -516,7 +517,7 @@ regrid (bool const do_init)
       
       // Conjunction of all buffer zones:
       
-      static Carpet::Timer timer_buffers ("buffers");
+      static Timers::Timer timer_buffers ("buffers");
       timer_buffers.start();
       
       // Enlarge active part of domain
@@ -545,6 +546,7 @@ regrid (bool const do_init)
         CCTK_WARN (CCTK_WARN_COMPLAIN, buf.str().c_str());
       }
       
+#ifdef CARPET_DEBUG
       vector<ibset> notactive_stepped (num_substeps+1);
       notactive_stepped.AT(0) = notowned;
       for (int substep = 1; substep <= num_substeps; ++ substep) {
@@ -557,6 +559,7 @@ regrid (bool const do_init)
         ASSERT_rl (notactive_overlaps == notactive,
                    "The stepped not-owned region including overlaps must be equal to the not-active region");
       }
+#endif
       
       // All buffer zones
       //ibset const allbuffers = allowned & notowned.expand (buffer_width);
@@ -570,6 +573,7 @@ regrid (bool const do_init)
       ibset& allactive = level_level.active;
       allactive = allowned - notactive;
       
+#ifdef CARPET_DEBUG
       // All stepped buffer zones
       vector<ibset> allbuffers_stepped (num_substeps);
       ibset allbuffers_stepped_combined;
@@ -583,6 +587,7 @@ regrid (bool const do_init)
         ASSERT_rl (allbuffers_stepped_combined == allbuffers,
                    "The stepped buffer zones must be equal to the buffer zones");
       }
+#endif
       
       // Overlap zones and buffer zones must be in the active part of
       // the domain
@@ -651,7 +656,7 @@ regrid (bool const do_init)
       
       // Test constituency relations:
       
-      static Carpet::Timer timer_test ("test");
+      static Timers::Timer timer_test ("test");
       timer_test.start();
       
       for (int c = 0; c < h.components(rl); ++ c) {
@@ -692,14 +697,14 @@ regrid (bool const do_init)
       
       // Communication schedule:
       
-      static Carpet::Timer timer_comm ("comm");
+      static Timers::Timer timer_comm ("comm");
       timer_comm.start();
       
-      static Carpet::Timer timer_comm_mgrest ("mgrest");
-      static Carpet::Timer timer_comm_mgprol ("mgprol");
-      static Carpet::Timer timer_comm_refprol ("refprol");
-      static Carpet::Timer timer_comm_sync ("sync");
-      static Carpet::Timer timer_comm_refbndprol ("refbndprol");
+      static Timers::Timer timer_comm_mgrest ("mgrest");
+      static Timers::Timer timer_comm_mgprol ("mgprol");
+      static Timers::Timer timer_comm_refprol ("refprol");
+      static Timers::Timer timer_comm_sync ("sync");
+      static Timers::Timer timer_comm_refbndprol ("refbndprol");
       timer_comm_mgrest.instantiate ();
       timer_comm_mgprol.instantiate ();
       timer_comm_refprol.instantiate ();
@@ -1012,7 +1017,7 @@ regrid (bool const do_init)
       
       // Refinement restriction:
       
-      static Carpet::Timer timer_comm_refrest ("refrest");
+      static Timers::Timer timer_comm_refrest ("refrest");
       timer_comm_refrest.start();
       
       if (rl > 0) {
@@ -1040,14 +1045,6 @@ regrid (bool const do_init)
           ibset const tmp3 = tmp2.expand(1,1);
           ibset const tmp4 = all_target - tmp3;
           allrestricted = tmp4;
-          //cout << "source=" << source << "\n"
-          //     << "target=" << target << "\n"
-          //     << "all_source=" << all_source << "\n"
-          //     << "all_target=" << all_target << "\n"
-          //     << "tmp1=" << tmp1 << "\n"
-          //     << "tmp2=" << tmp2 << "\n"
-          //     << "tmp3=" << tmp3 << "\n"
-          //     << "allrestricted=" << allrestricted << "\n";
           break;
         }
         default:
@@ -1074,7 +1071,7 @@ regrid (bool const do_init)
             // _should_ be caught be by the expand()ed is_contained_in(srcbbox)
             // test in the actual operator. 
             int const shrink_by =
-              use_higher_order_restriction and (h.refcent == cell_centered) ?
+              use_higher_order_restriction and h.refcent == cell_centered ?
               restriction_order_space/2  : 0;
             ibbox const contracted_exterior = 
               box.exterior.expand(ivect(-shrink_by)).contracted_for(odomext);
@@ -1115,7 +1112,7 @@ regrid (bool const do_init)
       
       // Refinement refluxing:
       
-      static Carpet::Timer timer_comm_reflux ("reflux");
+      static Timers::Timer timer_comm_reflux ("reflux");
       timer_comm_reflux.start();
       
       // If there is no coarser level, do nothing
@@ -1411,7 +1408,7 @@ regrid (bool const do_init)
       
       // Reduction mask:
       
-      static Carpet::Timer timer_mask ("mask");
+      static Timers::Timer timer_mask ("mask");
       timer_mask.start();
       
       for (int lc=0; lc<h.local_components(rl); ++lc) {
@@ -1576,7 +1573,7 @@ regrid (bool const do_init)
       // Mask for unused points on coarser level (which do not
       // influence the future evolution provided regridding is done at
       // the right times):
-      static Carpet::Timer timer_overwrittenmask ("unusedpoints_mask");
+      static Timers::Timer timer_overwrittenmask ("unusedpoints_mask");
       timer_overwrittenmask.start();
       
       // Declare this here to save it for later use. Contains all the boxes
@@ -1720,11 +1717,11 @@ regrid (bool const do_init)
       fast_level.do_init = do_init;
       if (do_init) {
         
-        static Carpet::Timer timer_regrid ("regrid");
+        static Timers::Timer timer_regrid ("regrid");
         timer_regrid.start();
         
-        static Carpet::Timer timer_regrid_sync ("sync");
-        static Carpet::Timer timer_regrid_prolongate ("prolongate");
+        static Timers::Timer timer_regrid_sync ("sync");
+        static Timers::Timer timer_regrid_prolongate ("prolongate");
         
         for (int lc = 0; lc < h.local_components(rl); ++ lc) {
           int const c = h.get_component (rl, lc);
@@ -1874,7 +1871,7 @@ regrid (bool const do_init)
       
       {
         
-        static Carpet::Timer timer_bcast_boxes ("bcast_boxes");
+        static Timers::Timer timer_bcast_boxes ("bcast_boxes");
         timer_bcast_boxes.start();
         
         int const count_send = h.local_components(rl);
@@ -1905,22 +1902,22 @@ regrid (bool const do_init)
       
       {
         
-        static Carpet::Timer timer_bcast_comm ("bcast_comm");
+        static Timers::Timer timer_bcast_comm ("bcast_comm");
         timer_bcast_comm.start();
         
-        static Carpet::Timer timer_bcast_comm_ref_prol ("ref_prol");
+        static Timers::Timer timer_bcast_comm_ref_prol ("ref_prol");
         timer_bcast_comm_ref_prol.start();
         broadcast_schedule (fast_level_otherprocs, fast_level,
                             & fast_dboxes::fast_ref_prol_sendrecv);
         timer_bcast_comm_ref_prol.stop();
         
-        static Carpet::Timer timer_bcast_comm_sync ("sync");
+        static Timers::Timer timer_bcast_comm_sync ("sync");
         timer_bcast_comm_sync.start();
         broadcast_schedule (fast_level_otherprocs, fast_level,
                             & fast_dboxes::fast_sync_sendrecv);
         timer_bcast_comm_sync.stop();
         
-        static Carpet::Timer timer_bcast_comm_ref_bnd_prol ("ref_bnd_prol");
+        static Timers::Timer timer_bcast_comm_ref_bnd_prol ("ref_bnd_prol");
         timer_bcast_comm_ref_bnd_prol.start();
         broadcast_schedule (fast_level_otherprocs, fast_level,
                             & fast_dboxes::fast_ref_bnd_prol_sendrecv);
@@ -1929,7 +1926,7 @@ regrid (bool const do_init)
         if (rl > 0) {
           int const orl = rl - 1;
           fast_dboxes & fast_olevel = fast_boxes.AT(ml).AT(orl);
-          static Carpet::Timer timer_bcast_comm_ref_rest ("ref_rest");
+          static Timers::Timer timer_bcast_comm_ref_rest ("ref_rest");
           timer_bcast_comm_ref_rest.start();
           broadcast_schedule (fast_level_otherprocs, fast_olevel,
                               & fast_dboxes::fast_ref_rest_sendrecv);
@@ -1939,7 +1936,7 @@ regrid (bool const do_init)
         if (rl > 0) {
           int const orl = rl - 1;
           fast_dboxes & fast_olevel = fast_boxes.AT(ml).AT(orl);
-          static Carpet::Timer timer_bcast_comm_ref_refl ("ref_refl");
+          static Timers::Timer timer_bcast_comm_ref_refl ("ref_refl");
           timer_bcast_comm_ref_refl.start();
           for (int dir = 0; dir < dim; ++ dir) {
             for (int face = 0; face < 2; ++ face) {
@@ -1952,7 +1949,7 @@ regrid (bool const do_init)
           timer_bcast_comm_ref_refl.stop();
         }
         
-        static Carpet::Timer timer_bcast_comm_ref_refl_prol
+        static Timers::Timer timer_bcast_comm_ref_refl_prol
           ("ref_refl_prol");
         timer_bcast_comm_ref_refl_prol.start();
         for (int dir = 0; dir < dim; ++ dir) {
@@ -1967,13 +1964,13 @@ regrid (bool const do_init)
         
         // TODO: Maybe broadcast old2new schedule only if do_init is
         // set
-        static Carpet::Timer timer_bcast_comm_old2new_sync ("old2new_sync");
+        static Timers::Timer timer_bcast_comm_old2new_sync ("old2new_sync");
         timer_bcast_comm_old2new_sync.start();
         broadcast_schedule (fast_level_otherprocs, fast_level,
                             & fast_dboxes::fast_old2new_sync_sendrecv);
         timer_bcast_comm_old2new_sync.stop();
         
-        static Carpet::Timer timer_bcast_comm_old2new_ref_prol
+        static Timers::Timer timer_bcast_comm_old2new_ref_prol
           ("old2new_ref_prol");
         timer_bcast_comm_old2new_ref_prol.start();
         broadcast_schedule (fast_level_otherprocs, fast_level,
@@ -2110,11 +2107,10 @@ regrid (bool const do_init)
     cout << "memoryof(dh.fast_boxes)=" << memoryof(fast_boxes) << eol;
     int gfcount = 0;
     size_t gfmemory = 0;
-    for (list<ggf*>::const_iterator
-           gfi = gfs.begin(); gfi != gfs.end(); ++ gfi)
+    for (map<int,ggf*>::const_iterator gfi = gfs.begin(); gfi != gfs.end(); ++ gfi)
     {
       ++ gfcount;
-      gfmemory += memoryof(**gfi);
+      gfmemory += memoryof(*gfi->second);
     }
     cout << "#gfs=" << gfcount << eol;
     cout << "memoryof(gfs)=" << gfmemory << eol;
@@ -2140,7 +2136,7 @@ broadcast_schedule (vector<fast_dboxes> & fast_level_otherprocs,
                     fast_dboxes & fast_level,
                     srpvect fast_dboxes::* const schedule_item)
 {
-  static Carpet::Timer timer_bs1 ("CarpetLib::dh::bs1");
+  static Timers::Timer timer_bs1 ("CarpetLib::dh::bs1");
   timer_bs1.start();
   vector <srpvect> send (dist::size());
   for (int p=0; p<dist::size(); ++p) {
@@ -2148,12 +2144,12 @@ broadcast_schedule (vector<fast_dboxes> & fast_level_otherprocs,
   }
   timer_bs1.stop();
   
-  static Carpet::Timer timer_bs2 ("CarpetLib::dh::bs2");
+  static Timers::Timer timer_bs2 ("CarpetLib::dh::bs2");
   timer_bs2.start();
   srpvect const recv = alltoallv1 (dist::comm(), send);
   timer_bs2.stop();
   
-  static Carpet::Timer timer_bs3 ("CarpetLib::dh::bs3");
+  static Timers::Timer timer_bs3 ("CarpetLib::dh::bs3");
   timer_bs3.start();
   (fast_level.*schedule_item).insert
     ((fast_level.*schedule_item).end(), recv.begin(), recv.end());
@@ -2193,54 +2189,54 @@ recompose (int const rl, bool const do_prolongate)
   
   assert (rl>=0 and rl<h.reflevels());
   
-  static Carpet::Timer timer ("CarpetLib::dh::recompose");
+  static Timers::Timer timer ("CarpetLib::dh::recompose");
   timer.start ();
   
-  for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-    (*f)->recompose_crop ();
+  for (map<int,ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+    f->second->recompose_crop ();
   }
   
   if (combine_recompose) {
     // Recompose all grid functions of this refinement levels at once.
     // This may be faster, but requires more memory.
-    for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-      (*f)->recompose_allocate (rl);
+    for (map<int,ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      f->second->recompose_allocate (rl);
     }
     // TODO: If this works, rename do_prolongate to do_init here, and
     // remove the do_prolongate parameter from ggf::recompose_fill
 #if 0
     for (comm_state state; not state.done(); state.step()) {
-      for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-        (*f)->recompose_fill (state, rl, do_prolongate);
+      for (map<int,ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+        f->second->recompose_fill (state, rl, do_prolongate);
       }
     }
 #endif
     if (do_prolongate) {
       for (comm_state state; not state.done(); state.step()) {
-        for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-          (*f)->recompose_fill (state, rl, true);
+        for (map<int,ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+          f->second->recompose_fill (state, rl, true);
         }
       }
     }
-    for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-      (*f)->recompose_free_old (rl);
+    for (map<int,ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      f->second->recompose_free_old (rl);
     }
   } else {
     // Recompose the grid functions sequentially.  This may be slower,
     // but requires less memory.  This is the default.
-    for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-      (*f)->recompose_allocate (rl);
+    for (map<int,ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      f->second->recompose_allocate (rl);
 #if 0
       for (comm_state state; not state.done(); state.step()) {
-        (*f)->recompose_fill (state, rl, do_prolongate);
+        f->second->recompose_fill (state, rl, do_prolongate);
       }
 #endif
       if (do_prolongate) {
         for (comm_state state; not state.done(); state.step()) {
-          (*f)->recompose_fill (state, rl, true);
+          f->second->recompose_fill (state, rl, true);
         }
       }
-      (*f)->recompose_free_old (rl);
+      f->second->recompose_free_old (rl);
     }
   }
   
@@ -2250,20 +2246,29 @@ recompose (int const rl, bool const do_prolongate)
 
 
 // Grid function management
-dh::ggf_handle
+void
 dh::
-add (ggf * const f)
+insert (ggf * const f)
 {
   CHECKPOINT;
-  return gfs.insert (gfs.end(), f);
+  assert (f);
+  assert (f->varindex >= 0);
+  assert (f->varindex < CCTK_NumVars());
+  bool const inserted =
+    gfs.insert (pair<int,ggf*> (f->varindex, f)).second;
+  assert (inserted);
 }
 
 void
 dh::
-erase (ggf_handle const fi)
+erase (ggf * const f)
 {
   CHECKPOINT;
-  gfs.erase (fi);
+  assert (f);
+  assert (f->varindex >= 0);
+  assert (f->varindex < CCTK_NumVars());
+  size_t const erased = gfs.erase (f->varindex);
+  assert (erased == 1);
 }
 
 
@@ -2393,9 +2398,6 @@ memory ()
   const
 {
   return
-    sizeof alldhi +             // memoryof (alldhi) +
-    sizeof & h +                // memoryof (& h) +
-    sizeof gh_handle +          // memoryof (gh_handle) +
     memoryof (ghost_widths) +
     memoryof (buffer_widths) +
     memoryof (overlap_widths) +
@@ -2412,8 +2414,7 @@ dh::
 allmemory ()
 {
   size_t mem = memoryof(alldh);
-  for (list<dh*>::const_iterator
-         dhi = alldh.begin(); dhi != alldh.end(); ++ dhi)
+  for (set<dh*>::const_iterator dhi = alldh.begin(); dhi != alldh.end(); ++ dhi)
   {
     mem += memoryof(**dhi);
   }
@@ -2750,7 +2751,7 @@ output (ostream & os)
      << "gfs={";
   {
     bool isfirst = true;
-    for (list<ggf*>::const_iterator
+    for (map<int,ggf*>::const_iterator
            f = gfs.begin(); f != gfs.end(); ++ f, isfirst = false)
     {
       if (not isfirst) os << ",";

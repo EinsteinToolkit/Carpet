@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <map>
+#include <algorithm>
 
 #include "util_Table.h"
 #include "cctk.h"
@@ -86,7 +88,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
                                               const string setname,
                                               const char *basefilename,
                                               int called_from);
-static void ReadMetadata (fileset_t& fileset, hid_t file);
+static void ReadMetadata (fileset_t& fileset, const file_t& file);
 static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg);
 static int ReadVar (const cGH* const cctkGH,
                     file_t & file,
@@ -534,6 +536,20 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     }
   }
 
+  // construct list of aliases for variable names. This is a global list even
+  // though the user gives a per-variable list.
+  std::map<string, unsigned int> alias;
+#ifdef IOUTIL_IOGH_HAS_ALIAS
+  for (unsigned int vindex = 0; vindex < read_completely.size(); vindex++) {
+    if (ioUtilGH->alias && ioUtilGH->alias[vindex]) {
+      string key(ioUtilGH->alias[vindex]);
+      // the explicit cast avoids ambiguity in the overloaded function pointer
+      transform(key.begin(), key.end(), key.begin(), (int(*)(int))toupper);
+      alias[key] = vindex;
+    }
+  }
+#endif
+
   CarpetIOHDF5GH* myGH =
                   (CarpetIOHDF5GH*) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
   // allocate list of recovery filenames
@@ -546,7 +562,8 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       assert (myGH->cp_filename_index == 0);
 
       // add a dummy entry in the checkpoint filename ring buffer
-      myGH->cp_filename_list[myGH->cp_filename_index] = (char*)"bla";
+      static char bla[] = "bla";
+      myGH->cp_filename_list[myGH->cp_filename_index] = bla;
       myGH->cp_filename_index = (myGH->cp_filename_index+1) % checkpoint_keep;
     }
   }
@@ -598,8 +615,9 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       HDF5_ERROR (H5Pclose (fapl_id));
 
       // browse through all datasets contained in this file
+      void *args[2] = {&file, &alias};
       HDF5_ERROR (H5Giterate (file.indexfile >= 0 ? file.indexfile : file.file,
-                              "/", NULL, BrowseDatasets, &file));
+                              "/", NULL, BrowseDatasets, args));
     }
     assert (file.patches.size() > 0);
     if (myGH->recovery_filename_list and not myGH->recovery_filename_list[i]) {
@@ -959,16 +977,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
 
 
   // read all the metadata information
-  ReadMetadata (fileset, file.file);
-
-  // first try to open a chunked file written on this processor
-  // browse through all datasets contained in this file
-
-  // TODO: measure if it is actually beneficial to open the index file for this
-  // file where we always read the metadata group
-  HDF5_ERROR (H5Giterate (file.indexfile >= 0 ? file.indexfile : file.file,
-                          "/", NULL, BrowseDatasets, &file));
-  assert (file.patches.size() > 0);
+  ReadMetadata (fileset, file);
 
   // recover parameters
   if (called_from == CP_RECOVER_PARAMETERS) {
@@ -976,7 +985,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
       CCTK_VInfo (CCTK_THORNSTRING, "Recovering parameters from checkpoint "
                   "file '%s'", file.filename);
     }
-    hid_t dataset, datatype;
+    hid_t dataset, datatype, memtype = -1;
     size_t len;
     htri_t old_data;
 
@@ -985,18 +994,25 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     HDF5_ERROR (datatype = H5Dget_type(dataset));
     HDF5_ERROR (old_data = H5Tequal(datatype, H5T_NATIVE_CHAR));
     if (old_data) {
+        hid_t dataspace;
+        HDF5_ERROR (dataspace = H5Dget_space(dataset));
         /* old data that stored this as an array of chars */
         CCTK_WARN (CCTK_WARN_ALERT, "Old-style checkpoint data found.");
-        HDF5_ERROR (len = H5Dget_storage_size(dataset) + 1);
+        HDF5_ERROR (len = H5Sget_simple_extent_npoints(dataspace) + 1);
+        HDF5_ERROR (H5Sclose(dataspace));
+        HDF5_ERROR (memtype = H5Tcopy(H5T_NATIVE_CHAR));
     } else {
         HDF5_ERROR (len = H5Tget_size(datatype));
+        HDF5_ERROR (memtype = H5Tcopy(H5T_C_S1));
+        HDF5_ERROR (H5Tset_size(memtype, len));
     }
     vector<char> parameter_buf(len);
     char* parameters = &parameter_buf[0];
 
-    HDF5_ERROR (H5Dread (dataset, datatype, H5S_ALL, H5S_ALL,
+    HDF5_ERROR (H5Dread (dataset, memtype, H5S_ALL, H5S_ALL,
                          H5P_DEFAULT, parameters));
     HDF5_ERROR (H5Dclose (dataset));
+    HDF5_ERROR (H5Tclose (memtype));
     HDF5_ERROR (H5Tclose (datatype));
     IOUtil_SetAllParameters (parameters);
 
@@ -1026,7 +1042,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
 //////////////////////////////////////////////////////////////////////////////
 // Read the metadata for a set of input files
 //////////////////////////////////////////////////////////////////////////////
-static void ReadMetadata (fileset_t& fileset, hid_t file)
+static void ReadMetadata (fileset_t& fileset, const file_t& file)
 {
   int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
@@ -1034,7 +1050,7 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
   fileset.nioprocs = 1;
   hid_t metadata, attr; //, dataspace;
   H5E_BEGIN_TRY {
-    metadata = H5Gopen (file, METADATA_GROUP);
+    metadata = H5Gopen (file.file, METADATA_GROUP);
   } H5E_END_TRY;
   if (metadata < 0) {
     // no metadata at all - this must be old-fashioned data output file
@@ -1049,7 +1065,7 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
   const bool is_old_fashioned_file = attr < 0;
   if (is_old_fashioned_file) {
     HDF5_ERROR (H5Gclose (metadata));
-    HDF5_ERROR (metadata = H5Dopen (file,
+    HDF5_ERROR (metadata = H5Dopen (file.file,
                                     METADATA_GROUP "/" ALL_PARAMETERS));
   } else {
     HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &fileset.nioprocs));
@@ -1080,26 +1096,32 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
     dataset = H5Dopen (metadata, GRID_STRUCTURE);
   } H5E_END_TRY;
   if (dataset >= 0) {
-    hid_t datatype;
+    hid_t datatype, memtype = -1;
     htri_t old_data;
     size_t len;
 
     HDF5_ERROR (datatype = H5Dget_type(dataset));
-    HDF5_ERROR (datatype = H5Dget_type(dataset));
     HDF5_ERROR (old_data = H5Tequal(datatype, H5T_NATIVE_CHAR));
     if (old_data) {
+        hid_t dataspace;
+        HDF5_ERROR (dataspace = H5Dget_space(dataset));
         /* old data that stored this as an array of chars */
         CCTK_WARN (CCTK_WARN_ALERT, "Old-style checkpoint data found.");
-        HDF5_ERROR (len = H5Dget_storage_size(dataset) + 1);
+        HDF5_ERROR (len = H5Sget_simple_extent_npoints(dataspace) + 1);
+        HDF5_ERROR (H5Sclose(dataspace));
+        HDF5_ERROR (memtype = H5Tcopy(H5T_NATIVE_CHAR));
     } else {
         HDF5_ERROR (len = H5Tget_size(datatype));
+        HDF5_ERROR (memtype = H5Tcopy(H5T_C_S1));
+        HDF5_ERROR (H5Tset_size(memtype, len));
     }
     vector<char> gs_str_buf(len);
     char* gs_str = &gs_str_buf[0];
 
-    HDF5_ERROR (H5Dread (dataset, datatype, H5S_ALL, H5S_ALL,
+    HDF5_ERROR (H5Dread (dataset, memtype, H5S_ALL, H5S_ALL,
                          H5P_DEFAULT, gs_str));
     HDF5_ERROR (H5Dclose (dataset));
+    HDF5_ERROR (H5Tclose (memtype));
     HDF5_ERROR (H5Tclose (datatype));
     istringstream gs_buf (gs_str);
     
@@ -1186,10 +1208,12 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
 // Browses through all the datasets in a checkpoint/data file
 // and stores this information in a list of patch_t objects
 //////////////////////////////////////////////////////////////////////////////
-static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
+static herr_t BrowseDatasets (hid_t group, const char *objectname, void *args)
 {
   int error_count = 0;
-  file_t *file = (file_t *) arg;
+  file_t *file = ((file_t **) args)[0];
+  std::map<string, unsigned int>& alias =
+    *((std::map<string, unsigned int>**)args)[1];
   patch_t patch;
   hid_t dataset, dataspace, attr, attrtype;
   H5G_stat_t object_info;
@@ -1225,7 +1249,13 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
   HDF5_ERROR (H5Aread (attr, attrtype, &varname[0]));
   HDF5_ERROR (H5Tclose (attrtype));
   HDF5_ERROR (H5Aclose (attr));
-  patch.vindex = CCTK_VarIndex (&varname[0]);
+  string key(&varname[0]);
+  transform(key.begin(), key.end(), key.begin(), (int(*)(int))toupper);
+  if (alias.count(key)) {
+    patch.vindex = alias[key];
+  } else {
+    patch.vindex = CCTK_VarIndex (&varname[0]);
+  }
   HDF5_ERROR (attr = H5Aopen_name (dataset, "carpet_mglevel"));
   HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &patch.mglevel));
   HDF5_ERROR (H5Aclose (attr));
@@ -1341,13 +1371,6 @@ static int ReadVar (const cGH* const cctkGH,
   }
   const hid_t datatype = CCTKtoHDF5_Datatype (cctkGH, group.vartype, 0);
 
-  const ivect stride =
-    group.grouptype == CCTK_GF ?
-    arrdata.AT(gindex).AT(patch->map).hh->baseextent(mglevel,reflevel).stride() : 1;
-  assert (all (stride % patch->ioffsetdenom == 0));
-  ivect lower = patch->iorigin * stride + patch->ioffset * stride / patch->ioffsetdenom;
-  ivect upper = lower + (shape - 1) * stride;
-
   // Traverse all local components on all maps
   hid_t filespace = -1, dataset = -1;
   hid_t xfer = H5P_DEFAULT;
@@ -1359,6 +1382,14 @@ static int ReadVar (const cGH* const cctkGH,
     if (group.grouptype == CCTK_GF and patch->map != Carpet::map) {
       continue;
     }
+
+    // map patch into simulation grid, needs existing map
+    const ivect stride =
+      group.grouptype == CCTK_GF ?
+      arrdata.AT(gindex).AT(patch->map).hh->baseextent(mglevel,reflevel).stride() : 1;
+    assert (all (stride % patch->ioffsetdenom == 0));
+    ivect lower = patch->iorigin * stride + patch->ioffset * stride / patch->ioffsetdenom;
+    ivect upper = lower + (shape - 1) * stride;
 
     struct arrdesc& data = arrdata.at(gindex).at(Carpet::map);
 
@@ -1480,10 +1511,10 @@ static int ReadVar (const cGH* const cctkGH,
                                        NULL, count, NULL));
       HDF5_ERROR (H5Dread (dataset, datatype, memspace, filespace, xfer,
                            cctkGH->data[patch->vindex][timelevel]));
-      hid_t datatype;
-      HDF5_ERROR (datatype = H5Dget_type (dataset));
-      io_bytes += H5Sget_select_npoints (filespace) * H5Tget_size (datatype);
-      HDF5_ERROR (H5Tclose (datatype));
+      hid_t iodatatype;
+      HDF5_ERROR (iodatatype = H5Dget_type (dataset));
+      io_bytes += H5Sget_select_npoints (filespace) * H5Tget_size (iodatatype);
+      HDF5_ERROR (H5Tclose (iodatatype));
       HDF5_ERROR (H5Sclose (memspace));
 
     } END_LOCAL_COMPONENT_LOOP;

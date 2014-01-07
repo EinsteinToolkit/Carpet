@@ -15,10 +15,10 @@
 
 #include <Requirements.hh>
 
+#include <CactusTimerSet.hh>
+#include <Timer.hh>
+
 #include <carpet.hh>
-#include <Timers.hh>
-#include <TimerSet.hh>
-#include <TimerNode.hh>
 
 #undef KNARFDEBL
 #define KNARFDEBL 1
@@ -93,7 +93,7 @@ namespace Carpet {
       carpet_level_iteration[i] = 0;
 
     
-    static Timer timer ("Initialise");
+    static Timers::Timer timer ("Initialise");
     timer.start();
     
     // Delay checkpoint until MPI has been initialised
@@ -144,15 +144,11 @@ namespace Carpet {
     
     timer.stop();
     if (output_timers_every > 0) {
-      TimerSet::writeData (cctkGH, timer_file);
+      Timers::CactusTimerSet::writeData (cctkGH, timer_file);
     }
 
-    if (output_initialise_timer_tree)
-    {
-      TimerNode *it = main_timer_tree.root->getChildTimer("Initialise");
-      double total_avg, total_max;
-      it->getGlobalTime(total_avg, total_max);
-      it->print(cout, total_max, 0, timer_tree_threshold_percentage, timer_tree_output_precision);
+    if (output_initialise_timer_tree) {
+      Timers::Timer::outputTree("Initialise");
     }
 
     Waypoint ("Done with initialisation");
@@ -172,7 +168,7 @@ namespace Carpet {
   CallSetup (cGH * const cctkGH)
   {
     char const * const where = "CallSetup";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     BEGIN_MGLEVEL_LOOP(cctkGH) {
@@ -216,7 +212,7 @@ namespace Carpet {
   CallRecoverVariables (cGH * const cctkGH)
   {
     char const * const where = "CallRecoverVariables";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     DECLARE_CCTK_PARAMETERS;
@@ -283,7 +279,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CallPostRecoverVariables";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     for (int rl=0; rl<reflevels; ++rl) {
@@ -376,7 +372,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CallInitial";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     if (not regrid_during_initialisation) {
@@ -513,7 +509,7 @@ CallProlong (cGH * const cctkGH)
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "Initialise::CallRestrict";
-    static Timer timer ("CallRestrict");
+    static Timers::Timer timer ("CallRestrict");
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {
@@ -589,7 +585,7 @@ CallProlong (cGH * const cctkGH)
   CallPostInitial (cGH * const cctkGH)
   {
     char const * const where = "CallPostInitial";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     for (int rl=0; rl<reflevels; ++rl) {
@@ -635,7 +631,7 @@ CallProlong (cGH * const cctkGH)
   CallAnalysis (cGH * const cctkGH, bool const did_recover)
   {
     char const * const where = "CallAnalysis";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     for (int rl=0; rl<reflevels; ++rl) {
@@ -766,8 +762,8 @@ CallProlong (cGH * const cctkGH)
                 
                 int const num_tl =
                   regridinitial
-                  ? (init_each_timelevel ? prolongation_order_time+1 : 1)
-                  : prolongation_order_time+1;
+                  ? (init_each_timelevel ? maxtimelevels : 1)
+                  : maxtimelevels;
                 
                 bool const old_do_allow_past_timelevels =
                   do_allow_past_timelevels;
@@ -845,7 +841,7 @@ CallProlong (cGH * const cctkGH)
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CallRegridRecoverMeta";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     assert (is_meta_mode());
@@ -869,7 +865,7 @@ CallProlong (cGH * const cctkGH)
                     (do_global_mode ? " (global)" : ""),
                     (do_meta_mode ? " (meta)" : ""));
           
-          int const num_tl = prolongation_order_time + 1;
+          int const num_tl = maxtimelevels;
           
           bool const old_do_allow_past_timelevels = do_allow_past_timelevels;
           do_allow_past_timelevels = false;
@@ -935,7 +931,7 @@ CallProlong (cGH * const cctkGH)
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CallRegridRecoverLevel";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     CCTK_WARN (CCTK_WARN_ALERT,
@@ -1072,7 +1068,7 @@ CallProlong (cGH * const cctkGH)
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CallRegridInitialMeta";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     assert (is_meta_mode());
@@ -1149,7 +1145,7 @@ CallProlong (cGH * const cctkGH)
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "CallRegridInitialLevel";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     CCTK_WARN (CCTK_WARN_ALERT,
@@ -1317,7 +1313,7 @@ CallProlong (cGH * const cctkGH)
     Waypoint ("Initialising three timelevels:");
     
     char const * const where = "Initialise3TL";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
 
 #if 0
@@ -1363,7 +1359,7 @@ CallProlong (cGH * const cctkGH)
   initialise_3tl_evolve (cGH * const cctkGH)
   {
     char const * const where = "Evolve";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     BEGIN_MGLEVEL_LOOP(cctkGH) {
@@ -1403,7 +1399,7 @@ CallProlong (cGH * const cctkGH)
   initialise_3tl_recycle (cGH * const cctkGH)
   {
     char const * const where = "Recycle";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     BEGIN_MGLEVEL_LOOP(cctkGH) {
@@ -1448,7 +1444,7 @@ CallProlong (cGH * const cctkGH)
   void ScheduleTraverse (char const * const where, char const * const name,
                          cGH * const cctkGH)
   {
-    Timer timer(name);
+    Timers::Timer timer(name);
 
     timer.start();
     ostringstream infobuf;
@@ -1461,7 +1457,7 @@ CallProlong (cGH * const cctkGH)
   
   void OutputGH (char const * const where, cGH * const cctkGH)
   {
-    static Timer timer("OutputGH");
+    static Timers::Timer timer("OutputGH");
     timer.start();
     CCTK_OutputGH (cctkGH);
     timer.stop();

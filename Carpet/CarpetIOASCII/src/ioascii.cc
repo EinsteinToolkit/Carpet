@@ -15,16 +15,17 @@
 #include <string>
 #include <vector>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
-#include "util_Network.h"
-#include "util_Table.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
+#include <util_Network.h>
+#include <util_Table.h>
+
+#include <Timer.hh>
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 #include "carpet.hh"
-#include "CarpetTimers.hh"
 
 #include "typeprops.hh"
 
@@ -232,7 +233,7 @@ namespace CarpetIOASCII {
   {
     ostringstream timer_name;
     timer_name << "OutputGH<" << outdim << ">";
-    Carpet::Timer timer(timer_name.str());
+    Timers::Timer timer(timer_name.str());
 
     timer.start();
     for (int vi=0; vi<CCTK_NumVars(); ++vi) {

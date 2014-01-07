@@ -145,17 +145,17 @@ subroutine prolongate_3d_real8_tvd ( &
 
   ! Loop over fine region
 
+  !$omp parallel do collapse(3) private(i,j,k, i0,fi,j0,fj,k0,fk, firstloop, ii,jj,kk, dupw,dloc, slopex,slopey,slopez)
   do k = 0, regkext-1
-     k0 = (srckoff + k) / dstkfac
-     fk = mod(srckoff + k, dstkfac)
-
      do j = 0, regjext-1
-        j0 = (srcjoff + j) / dstjfac
-        fj = mod(srcjoff + j, dstjfac)
-
         do i = 0, regiext-1
+
            i0 = (srcioff + i) / dstifac
            fi = mod(srcioff + i, dstifac)
+           j0 = (srcjoff + j) / dstjfac
+           fj = mod(srcjoff + j, dstjfac)
+           k0 = (srckoff + k) / dstkfac
+           fk = mod(srckoff + k, dstkfac)
 
            firstloop = .true.
 

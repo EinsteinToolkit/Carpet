@@ -8,12 +8,12 @@
 #include <map>
 #include <string>
 
-#include "cctk.h"
-#include "util_Table.h"
+#include <cctk.h>
+#include <util_Table.h>
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 
-#include "CarpetTimers.hh"
+#include <Timer.hh>
 
 #include "typeprops.hh"
 
@@ -234,7 +234,7 @@ namespace CarpetIOHDF5 {
     ostringstream timer_name;
     timer_name << "OutputGH<" << outdim << ">";
     
-    Carpet::Timer timer(timer_name.str());
+    Timers::Timer timer(timer_name.str());
 
     timer.start();
     for (int vi=0; vi<CCTK_NumVars(); ++vi) {

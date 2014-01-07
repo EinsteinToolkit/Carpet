@@ -25,6 +25,8 @@
 #  include "nompi.h"
 #endif
 
+#include <Timer.hh>
+
 #include <loopcontrol.h>
 
 #include <balance.hh>
@@ -39,7 +41,6 @@
 #include <carpet.hh>
 #include <modes.hh>
 #include <variables.hh>
-#include <Timers.hh>
 
 
 
@@ -92,7 +93,7 @@ namespace Carpet {
   CheckRegions (gh::mregs const & regsss)
   {
     char const * const where = "CheckRegions";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     // At least one multigrid level
@@ -150,7 +151,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "Regrid";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     Checkpoint ("Regridding level %d...", reflevel);
@@ -267,7 +268,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "RegridMap";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     Waypoint ("Regridding map %d...", m);
@@ -327,7 +328,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     char const * const where = "PostRegrid";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     // Calculate new number of levels
@@ -390,7 +391,7 @@ namespace Carpet {
              bool const do_init)
   {
     char const * const where = "Recompose";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     bool did_recompose = false;
@@ -422,7 +423,7 @@ namespace Carpet {
               bool const do_init)
   {
     char const * const where = "RegridFree";
-    static Timer timer (where);
+    static Timers::Timer timer (where);
     timer.start();
     
     Checkpoint ("Freeing after regridding level %d...", reflevel);
@@ -1164,12 +1165,13 @@ namespace Carpet {
   void
   SplitRegions_Automatic (cGH const * const cctkGH,
                           vector<region_t> & superregs,
-                          vector<region_t> & regs)
+                          vector<region_t> & regs,
+                          bvect const & no_split_dims)
   {
     assert (regs.empty());
     vector<vector<region_t> > superregss (1, superregs);
     vector<vector<region_t> > regss (1);
-    SplitRegionsMaps_Automatic (cctkGH, superregss, regss);
+    SplitRegionsMaps_Automatic (cctkGH, superregss, regss, no_split_dims);
     assert (superregss.size() == 1);
     superregs = superregss.AT(0);
     assert (regss.size() == 1);
@@ -1594,7 +1596,8 @@ namespace Carpet {
   void
   SplitRegionsMaps_Automatic (cGH const * const cctkGH,
                               vector<vector<region_t> > & superregss,
-                              vector<vector<region_t> > & regss)
+                              vector<vector<region_t> > & regss,
+                              bvect const & no_split_dims)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -1709,7 +1712,7 @@ namespace Carpet {
     for (int r=0, p=0; r<nregs; p+=mynprocs.AT(r), ++r) {
       if (recompose_verbose) cout << "SRMA superreg[" << r << "] " << superregs.AT(r) << endl;
       // bvect const dims = false;
-      bvect const dims = not split_components;
+      bvect const dims = not split_components || no_split_dims;
       SplitRegionsMaps_Automatic_Recursively
         (dims, p, mynprocs.AT(r), superregs.AT(r), newregs);
     } // for r

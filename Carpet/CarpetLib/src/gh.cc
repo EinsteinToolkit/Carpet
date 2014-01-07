@@ -6,7 +6,7 @@
 #include <iostream>
 #include <vector>
 
-#include "CarpetTimers.hh"
+#include <Timer.hh>
 
 #include "defs.hh"
 #include "dh.hh"
@@ -19,7 +19,7 @@ using namespace std;
 
 
 
-list<gh*> gh::allgh;
+set<gh*> gh::allgh;
 
 
 
@@ -70,14 +70,16 @@ gh (vector<ivect> const & reffacts_, centering const refcent_,
     }
   }
   
-  allghi = allgh.insert(allgh.end(), this);
+  allgh.insert (this);
 }
 
 // Destructors
 gh::
 ~gh ()
 {
-  allgh.erase(allghi);
+  assert (dhs.empty());
+  assert (ths.empty());
+  allgh.erase (this);
 }
 
 
@@ -89,7 +91,7 @@ regrid (rregs const & superregs, mregs const & regs, bool const do_init)
 {
   DECLARE_CCTK_PARAMETERS;
     
-  static Carpet::Timer timer ("CarpetLib::gh::regrid");
+  static Timers::Timer timer ("CarpetLib::gh::regrid");
   timer.start();
   
   superregions = superregs;
@@ -233,11 +235,11 @@ regrid (rregs const & superregs, mregs const & regs, bool const do_init)
   
   
   // Regrid the other hierarchies
-  for (list<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
+  for (set<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
     (*t)->regrid();
   }
   
-  for (list<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
+  for (set<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
     (*d)->regrid(do_init);
   }
   
@@ -254,11 +256,11 @@ regrid_free (bool const do_init)
   old_global_components_.clear();
   old_local_components_.clear();
   
-  for (list<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
+  for (set<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
     (*t)->regrid_free();
   }
   
-  for (list<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
+  for (set<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
     (*d)->regrid_free(do_init);
   }
 }
@@ -275,7 +277,7 @@ recompose (int const rl,
   if (do_recompose) {
     
     // Recompose the other hierarchies
-    for (list<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
+    for (set<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
       (*d)->recompose (rl, do_prolongate);
     }
     
@@ -454,7 +456,7 @@ locate_position (rvect const & rpos,
   
   // Find associated dh
   assert (dhs.size() == 1);
-  dh const& dd = *dhs.front();
+  dh const& dd = **dhs.begin();
   
   // Try finer levels first
   for (rl = maxrl-1; rl >= minrl; --rl) {
@@ -515,7 +517,7 @@ locate_position (ivect const & ipos,
   
   // Find associated dh
   assert (dhs.size() == 1);
-  dh const& dd = *dhs.front();
+  dh const& dd = **dhs.begin();
   
   // Try finer levels first
   for (rl = maxrl-1; rl >= minrl; --rl) {
@@ -566,36 +568,36 @@ locate_position (ivect const & ipos,
 
 // Time hierarchy management
 
-gh::th_handle
+void
 gh::
-add (th * const t)
+insert (th * const t)
 {
-  return ths.insert(ths.end(), t);
+  ths.insert(t);
 }
 
 void
 gh::
-erase (th_handle const ti)
+erase (th * const t)
 {
-  ths.erase(ti);
+  ths.erase(t);
 }
 
 
 
 // Data hierarchy management
 
-gh::dh_handle
+void
 gh::
-add (dh * const d)
+insert (dh * const d)
 {
-  return dhs.insert(dhs.end(), d);
+  dhs.insert(d);
 }
 
 void
 gh::
-erase (dh_handle di)
+erase (dh * const d)
 {
-  dhs.erase (di);
+  dhs.erase(d);
 }
 
 
@@ -608,7 +610,6 @@ memory ()
   const
 {
   return
-    sizeof allghi +             // memoryof (allghi) +
     memoryof (reffacts) +
     memoryof (refcent) +
     memoryof (mgfact) +
@@ -630,8 +631,7 @@ gh::
 allmemory ()
 {
   size_t mem = memoryof(allgh);
-  for (list<gh*>::const_iterator
-         ghi = allgh.begin(); ghi != allgh.end(); ++ ghi)
+  for (set<gh*>::const_iterator ghi = allgh.begin(); ghi != allgh.end(); ++ ghi)
   {
     mem += memoryof(**ghi);
   }
@@ -692,7 +692,7 @@ output (ostream & os)
      << "dhs={";
   {
     bool isfirst = true;
-    for (list<dh*>::const_iterator
+    for (set<dh*>::const_iterator
            d = dhs.begin(); d != dhs.end(); ++ d, isfirst = false)
     {
       if (not isfirst) os << ",";
