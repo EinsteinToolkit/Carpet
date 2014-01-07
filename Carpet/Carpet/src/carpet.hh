@@ -84,6 +84,8 @@ namespace Carpet {
   // Error output
   void UnsupportedVarType (int vindex);
   
+  #define KNARFDEBL 0
+  #define KNARFDEB(l, ...) {if (KNARFDEBL>=l) {fprintf(stderr, __VA_ARGS__); }}
 } // namespace Carpet
 
 #endif // !defined(CARPET_HH)

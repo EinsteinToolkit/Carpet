@@ -20,7 +20,8 @@
 #include <TimerSet.hh>
 #include <TimerNode.hh>
 
-
+#undef KNARFDEBL
+#define KNARFDEBL 1
 
 namespace Carpet {
   
@@ -39,6 +40,7 @@ namespace Carpet {
   static void CallPostRecoverVariables (cGH * cctkGH);
   static void CallInitial (cGH * cctkGH);
   static void CallRestrict (cGH * cctkGH);
+  static void CallProlong (cGH * cctkGH);
   static void CallPostInitial (cGH * cctkGH);
   static void CallAnalysis (cGH * cctkGH, bool did_recover);
   
@@ -83,6 +85,13 @@ namespace Carpet {
     cctkGH->cctk_iteration = 0;
     cctkGH->cctk_time = global_time;
     cctkGH->cctk_delta_time = delta_time;
+
+    carpet_cctk_iteration = 0;
+    // TODO: use vector class for this
+    carpet_level_iteration = (int*)malloc(sizeof(int)*max_refinement_levels);
+    for (int i = 0; i < max_refinement_levels; ++i)
+      carpet_level_iteration[i] = 0;
+
     
     static Timer timer ("Initialise");
     timer.start();
@@ -119,6 +128,7 @@ namespace Carpet {
       // Calculate initial data
       
       CallInitial (cctkGH);
+      CallProlong (cctkGH);
       CallRestrict (cctkGH);
       CallPostInitial (cctkGH);
       print_internal_data ();
@@ -463,6 +473,39 @@ namespace Carpet {
   }
   
   
+void
+CallProlong (cGH * const cctkGH)
+{
+  DECLARE_CCTK_PARAMETERS;
+  DECLARE_CCTK_ARGUMENTS;
+
+  char const * const where = "Evolve::CallProlong";
+  static Timer timer ("CallProlongate");
+  timer.start();
+
+  for (int ml=mglevels-1; ml>=0; --ml) {
+
+    bool did_restrict = false;
+
+    for (int rl=reflevels-1; rl>=0; --rl) {
+      int const do_every =
+        ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
+
+      {
+        ENTER_GLOBAL_MODE (cctkGH, ml) {
+          ENTER_LEVEL_MODE (cctkGH, rl) {
+            BeginTimingLevel (cctkGH);
+            Waypoint ("Evolution/Prolong at iteration %d time %g",
+                      cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
+            EndTimingLevel (cctkGH);
+          } LEAVE_LEVEL_MODE;
+        } LEAVE_GLOBAL_MODE;
+      } // if do_every
+    }   // for rl
+  }
+  timer.stop();
+}
+
   
   void
   CallRestrict (cGH * const cctkGH)

@@ -100,6 +100,13 @@ namespace Carpet {
   // Current multigrid factor
   extern int mglevelfact;
   
+  // Carpet iteration counters
+  extern int carpet_cctk_iteration;
+  extern int *carpet_level_iteration;
+  extern int carpet_coarse_lvl;
+  extern int carpet_next_coarse_lvl;
+  extern int carpet_callfunction_dont_call;
+
   
   
   // Carpet's GH

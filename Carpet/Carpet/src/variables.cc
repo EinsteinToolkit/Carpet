@@ -58,6 +58,14 @@ namespace Carpet {
   int component;
   int local_component;
   int timelevel, timelevel_offset;
+
+  // Carpet iteration counters
+  int carpet_cctk_iteration;
+  int *carpet_level_iteration;
+  int carpet_coarse_lvl;
+  int carpet_next_coarse_lvl;
+  int carpet_callfunction_dont_call = 0;
+
   
   // Current refinement factors
   int timereflevelfact;

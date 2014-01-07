@@ -618,3 +618,8 @@ BOOLEAN adaptive_stepsize "Allow adaptive timestep sizes"
 BOOLEAN use_unusedpoints_mask "Turn on storage and usage of 'unusedpoints_mask'" STEERABLE=recover
 {
 } "no"
+
+BOOLEAN use_pamr "Try to parallelize among levels"
+{
+} "no"
+
