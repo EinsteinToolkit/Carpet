@@ -1,0 +1,10 @@
+Cactus Code Thorn HighOrderWaveTest
+Author(s)    : Roland Haas <rhaas@caltech.edu>
+Maintainer(s): Roland Haas <rhaas@caltech.edu>
+Licence      : GPL
+--------------------------------------------------------------------------
+
+1. Purpose
+
+Test Carpet's restriction with cell-centring and with higher-order
+restriction operators.

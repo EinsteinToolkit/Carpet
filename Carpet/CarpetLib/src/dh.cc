@@ -1055,10 +1055,17 @@ regrid (bool const do_init)
           int const oc = h.get_component(orl, olc);
           full_dboxes const& obox = full_olevel.AT(oc);
           
-          ibset needrecv = allrestricted & obox.owned;
-          if(use_higher_order_restriction) {
-            // NOTE: change in behaviour (affects only outer boundaries I think)!!!!
-            // NOTE: b/c of this we need a low-level sync after the restrict
+          ibset needrecv;
+          if (!use_higher_order_restriction) {
+            // Ghost zones: We can restrict into ghost zones if not
+            // using higher order restriction, which is probably much
+            // cheaper than performing a sync after restriction
+            needrecv = allrestricted & obox.exterior;
+          } else {
+            // We do not restrict into boundaries or ghost zones, but
+            // we require them. This means that we need to synchronize
+            // and apply boundary conditions after restricting on each
+            // level.
             needrecv = allrestricted & obox.interior;
           }
           // Cannot restrict into buffer zones
@@ -1072,7 +1079,7 @@ regrid (bool const do_init)
             // test in the actual operator. 
             int const shrink_by =
               use_higher_order_restriction and h.refcent == cell_centered ?
-              restriction_order_space/2  : 0;
+              restriction_order_space/2 : 0;
             ibbox const contracted_exterior = 
               box.exterior.expand(ivect(-shrink_by)).contracted_for(odomext);
             ibset const ovlp = needrecv & contracted_exterior;

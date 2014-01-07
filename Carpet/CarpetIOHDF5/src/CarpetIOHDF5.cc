@@ -1464,7 +1464,7 @@ static int WriteAttribute (hid_t const group,
   int error_count = 0;
   
   HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
-  HDF5_ERROR (H5Tset_size (datatype, strlen (svalue)));
+  HDF5_ERROR (H5Tset_size (datatype, strlen (svalue) + 1));
   HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
   HDF5_ERROR (attribute = H5Acreate (group, name, datatype,
                                      dataspace, H5P_DEFAULT));

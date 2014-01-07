@@ -136,7 +136,6 @@ int WriteVarUnchunked (const cGH* const cctkGH,
         // than recombining an HDF5 dataset on a disk file.
         HDF5_ERROR (memfile = H5Fcreate ("tempfile", H5F_ACC_EXCL, H5P_DEFAULT,
                                          plist));
-        HDF5_ERROR (H5Pclose (plist));
         HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
         HDF5_ERROR (memdataset = H5Dcreate (memfile, datasetname.str().c_str(),
                                          filedatatype, dataspace, H5P_DEFAULT));
@@ -148,23 +147,23 @@ int WriteVarUnchunked (const cGH* const cctkGH,
           } H5E_END_TRY;
         }
         // enable compression if requested
-        hid_t plist;
-        HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
+        hid_t plist_dataset;
+        HDF5_ERROR (plist_dataset = H5Pcreate (H5P_DATASET_CREATE));
         const int compression_lvl = request->compression_level >= 0 ?
                                     request->compression_level :
                                     compression_level;
         if (compression_lvl) {
-          HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
-          HDF5_ERROR (H5Pset_deflate (plist, compression_lvl));
+          HDF5_ERROR (H5Pset_chunk (plist_dataset, group.dim, shape));
+          HDF5_ERROR (H5Pset_deflate (plist_dataset, compression_lvl));
         }
         // enable checksums if requested
         if (use_checksums) {
-          HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
-          HDF5_ERROR (H5Pset_filter (plist, H5Z_FILTER_FLETCHER32, 0, 0, NULL));
+          HDF5_ERROR (H5Pset_chunk (plist_dataset, group.dim, shape));
+          HDF5_ERROR (H5Pset_filter (plist_dataset, H5Z_FILTER_FLETCHER32, 0, 0, NULL));
         }
         HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
-                                         filedatatype, dataspace, plist));
-        HDF5_ERROR (H5Pclose (plist));
+                                         filedatatype, dataspace, plist_dataset));
+        HDF5_ERROR (H5Pclose (plist_dataset));
       }
 
       // Loop over all components
@@ -740,7 +739,7 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
   HDF5_ERROR (H5Aclose (attr));
 
   HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
-  HDF5_ERROR (H5Tset_size (datatype, strlen (fullname)));
+  HDF5_ERROR (H5Tset_size (datatype, strlen (fullname) + 1));
   HDF5_ERROR (attr = H5Acreate (dataset, "name", datatype,
                                 dataspace, H5P_DEFAULT));
   HDF5_ERROR (H5Awrite (attr, datatype, fullname));

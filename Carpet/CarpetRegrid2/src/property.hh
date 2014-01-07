@@ -112,6 +112,18 @@ namespace CarpetRegrid2 {
                        vector<ibset>& regions, int rl);
   };
   
+  // Make the boxes parity symmetric
+  class parsym: public property {
+    ibset symmetrised_regions (gh const& hh, dh const& dd,
+                               level_boundary const& bnd,
+                               vector<ibset> const& regions, int rl);
+    bool test_impl (gh const& hh, dh const& dd,
+                    level_boundary const& bnd,
+                    vector<ibset> const& regions, int rl);
+    void enforce_impl (gh const& hh, dh const& dd,
+                       level_boundary const& bnd,
+                       vector<ibset>& regions, int rl);
+  };
   
   
   // Make the boxes rotating-180 symmetric

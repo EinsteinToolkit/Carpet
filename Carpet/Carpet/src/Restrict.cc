@@ -69,19 +69,9 @@ namespace Carpet {
       RestrictGroups (cctkGH, groups);
       timer.stop();
     }
-
-    // Synchronise
-    // TODO: Why? Restricted grid functions need to have boundary
-    // conditions applied in postrestrict anyway, so this should not
-    // be necessary.
-#if 0
-    {
-      static Timers::Timer timer ("RestrictSync");
-      timer.start();
-      SyncGroups (cctkGH, groups);
-      timer.stop();
-    }
-#endif
+    
+    // Note: Carpet used to call SyncGroups here. This is now done in
+    // Evolve.cc.
   }
   
 

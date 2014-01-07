@@ -60,7 +60,7 @@ CartGrid3D::avoid_origin = no
 ActiveThorns = "CarpetRegrid"
 
 CarpetRegrid::refinement_levels = 3
-CarpetRegrid::refined_regions = manual-coordinate-list
+CarpetRegrid::refined_regions = "manual-coordinate-list"
 CarpetRegrid::smart_outer_boundaries = yes
 CarpetRegrid::coordinates = "
         [ [ ([-0.4,-0.4,-0.4]:[+0.4,+0.4,+0.4]:[0.0500,0.0500,0.0500]) ],
@@ -85,7 +85,7 @@ MoL::ODE_Method = RK3
 
 ActiveThorns = "WaveMoL"
 
-WaveMoL::num_timelevels = 3
+#WaveMoL::num_timelevels = 3
 
 
 

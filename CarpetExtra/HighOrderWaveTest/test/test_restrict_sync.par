@@ -1,0 +1,157 @@
+
+################################################################################
+# Active thorns
+################################################################################
+
+ActiveThorns = "
+  Boundary
+  Carpet
+  CarpetIOASCII
+  CarpetIOBasic
+  CarpetIOScalar
+  CarpetInterp
+  CarpetLib
+  CarpetReduce
+  CarpetRegrid2
+  CartGrid3D
+  CoordBase
+  CoordGauge
+  IOUtil
+  InitBase
+  LoopControl
+  MoL
+  Slab
+  SymBase
+  SystemStatistics
+  Time
+  WaveMoL
+  IDWaveMoL
+  ReflectionSymmetry
+"
+
+################################################################################
+# Grid structure
+################################################################################
+
+CartGrid3D::type                        = "coordbase"
+Carpet::domain_from_coordbase           = yes
+CoordBase::domainsize                   = "minmax"
+
+CoordBase::xmax                         = 3
+CoordBase::ymax                         = +0.5
+CoordBase::zmax                         = 3
+CoordBase::xmin                         = -3
+CoordBase::ymin                         = -0.5
+CoordBase::zmin                         = 0.0
+CoordBase::dx                           = 0.5
+CoordBase::dy                           = 0.5
+CoordBase::dz                           = 0.5
+
+# needs to be wide enough for restriction stencil
+CoordBase::boundary_size_x_lower        = 3
+CoordBase::boundary_size_y_lower        = 3
+CoordBase::boundary_size_z_lower        = 3
+CoordBase::boundary_size_x_upper        = 3
+CoordBase::boundary_size_y_upper        = 3
+CoordBase::boundary_size_z_upper        = 3
+
+CoordBase::boundary_staggered_x_upper   = yes
+CoordBase::boundary_staggered_y_upper   = yes
+CoordBase::boundary_staggered_z_upper   = yes
+CoordBase::boundary_staggered_x_lower   = yes
+CoordBase::boundary_staggered_y_lower   = yes
+CoordBase::boundary_staggered_z_lower   = yes
+
+ReflectionSymmetry::reflection_upper_z  = yes
+ReflectionSymmetry::avoid_origin_z      = no
+
+Driver::ghost_size                      = 3
+
+Time::timestep_method                   = "given"
+Time::timestep                          = 0.25
+
+################################################################################
+# Mesh refinement
+################################################################################
+
+Carpet::max_refinement_levels           = 5
+Carpet::max_timelevels                  = 3
+
+CarpetRegrid2::num_centres              = 1
+CarpetRegrid2::num_levels_1             = 3
+CarpetRegrid2::radius_1             [1] = 16
+CarpetRegrid2::radius_1             [2] = 8
+
+Carpet::use_buffer_zones                = yes
+CarpetRegrid2::ensure_proper_nesting    = yes
+CarpetRegrid2::snap_to_coarse           = yes
+
+Carpet::prolongation_order_space        = 4
+Carpet::prolongation_order_time         = 2
+CarpetLib::use_higher_order_restriction = yes
+CarpetLib::restriction_order_space      = 3
+Carpet::no_split_direction              = 2 # avoid empty line confusing test system
+
+Carpet::refinement_centering            = "cell"
+
+CarpetRegrid2::regrid_every             = 0
+
+################################################################################
+# Initial data
+################################################################################
+
+idwavemol::initial_data = "gaussian"
+wavemol::bound = "flat"
+
+Carpet::init_fill_timelevels            = yes
+InitBase::initial_data_setup_method     = "init_single_level"
+
+################################################################################
+# Time integration
+################################################################################
+
+MoL::ODE_Method                         = "rk4"
+MoL::MoL_Intermediate_Steps             = 4
+MoL::MoL_Num_Scratch_Levels             = 1
+
+################################################################################
+# Correctness checking
+################################################################################
+
+Carpet::poison_new_timelevels           = yes
+CarpetLib::poison_new_memory            = yes
+Carpet::check_for_poison                = no
+
+################################################################################
+# Output
+################################################################################
+
+IO::out_dir                             = $parfile
+IOScalar::one_file_per_group            = yes
+IOASCII::one_file_per_group             = no
+IO::parfile_write                       = no
+IO::out_fileinfo                        = "none"
+
+IOASCII::out1D_every                    = 1
+IOASCII::out1D_x                        = no
+IOASCII::out1D_y                        = no
+IOASCII::out1D_z                        = yes
+IOASCII::out1D_d                        = no
+#IOASCII::out1D_xline_z                  = 0.5
+
+IOASCII::output_ghost_points            = no
+CarpetIOASCII::compact_format           = yes
+
+IOASCII::out1D_vars                     = "
+wavemol::phi
+"
+
+Cactus::highlight_warning_messages          = no
+
+################################################################################
+# Run termination
+################################################################################
+
+Cactus::terminate                               = iteration
+Cactus::cctk_itlast                             = 16
+

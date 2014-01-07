@@ -580,7 +580,121 @@ namespace CarpetRegrid2 {
     }
   }
   
+  //////////////////////////////////////////////////////////////////////////////
+  // Make the boxes  parity symmetric
+  //////////////////////////////////////////////////////////////////////////////
   
+  ibset parsym::
+  symmetrised_regions (gh const& hh, dh const& dd,
+                       level_boundary const& bnd,
+                       vector<ibset> const& regions, int const rl)
+  {
+    ibbox const& baseextent = hh.baseextent(0,rl);
+    
+    ibset symmetrised = regions.at(rl);
+    for (ibset::const_iterator
+           ibb = regions.at(rl).begin(); ibb != regions.at(rl).end(); ++ ibb)
+    {
+      ibbox const& bb = *ibb;
+      
+      bvect const lower_is_outside_lower =
+        bb.lower() - bnd.min_bnd_dist_away[0] * bb.stride() <=
+        bnd.level_physical_ilower;
+      
+      // Treat z direction
+      int const dir = 2;
+      if (lower_is_outside_lower[dir]) {
+        ivect const ilo = bb.lower();
+        ivect const iup = bb.upper();
+        ivect const istr = bb.stride();
+        assert (istr[0] == istr[1]);
+        
+        // Origin
+        assert (hh.refcent == vertex_centered or all (istr % 2 == 0));
+        rvect const axis ( (bnd.physical_lower[0] + bnd.physical_upper[0]) / 2,
+                          (bnd.physical_lower[1] + bnd.physical_upper[1]) / 2,
+                          bnd.physical_lower[2]); 
+        ivect const iaxis0 = rpos2ipos (axis, bnd.origin, bnd.scale, hh, rl);
+        assert (all ((iaxis0 - baseextent.lower()) % istr == 0));
+        ivect const iaxis1 = rpos2ipos1 (axis, bnd.origin, bnd.scale, hh, rl);
+        assert (all ((iaxis1 - baseextent.lower()) % istr == 0));
+        ivect const offset = iaxis1 - iaxis0;
+        assert (all (offset % istr == 0));
+        if (hh.refcent == vertex_centered) {
+          assert (all (offset >= 0 and offset < 2*istr));
+          assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == 0));
+        } else {
+          // The offset may be negative because both boundaries are
+          // shifted inwards by 1/2 grid spacing, and therefore iaxis0
+          // < iaxis1 + istr
+          assert (all (offset >= -istr and offset < istr));
+          assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == istr));
+          assert (all (istr % 2 == 0));
+        }
+        ivect const iaxis = (iaxis0 + iaxis1 - offset) / 2;
+        ivect const neg_ilo = (2*iaxis+offset) - ilo;
+        ivect const neg_iup = (2*iaxis+offset) - iup;
+        
+        // Rotate 180 degrees about z axis
+        ivect const new_ilo (neg_iup[0], neg_iup[1], neg_iup[2]);
+        ivect const new_iup (neg_ilo[0], neg_ilo[1], neg_ilo[2]);
+        ivect const new_istr (istr);
+        
+        ibbox const new_bb (new_ilo, new_iup, new_istr);
+        // Will be clipped later
+        // assert (new_bb.is_contained_in (baseextent));
+        
+        // symmetrised |= new_bb & baseextent;
+        symmetrised |= new_bb;
+      }
+    }
+    
+    return symmetrised;
+  }
+  
+  bool parsym::
+  test_impl (gh const& hh, dh const& dd,
+             level_boundary const& bnd,
+             vector<ibset> const& regions, int const rl)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (not symmetry_parity) return true;
+    
+    ibset const symmetrised = symmetrised_regions (hh, dd, bnd, regions, rl);
+    
+    // We cannot test for equality, since the difference may be
+    // outside of the domain (and hence irrelevant)
+    // return regions.AT(rl) == symmetrised;
+    
+    // Test whether any part of the difference (i.e. that part of the
+    // level that would be added by symmetrising) is inside the
+    // domain. If the difference is outside, we can safely ignore it.
+    ibbox const& baseextent = hh.baseextent(0,rl);
+    ibset const difference = symmetrised - regions.AT(rl);
+    return (difference & baseextent).empty();
+  }
+  
+  void parsym::
+  enforce_impl (gh const& hh, dh const& dd,
+                level_boundary const& bnd,
+                vector<ibset>& regions, int const rl)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    assert (symmetry_parity);
+    
+    if (veryverbose) {
+      cout << "Refinement level " << rl << ": making regions parity symmetric...\n";
+    }
+    
+    regions.AT(rl) = symmetrised_regions (hh, dd, bnd, regions, rl);
+    
+    if (veryverbose) {
+      cout << "   New regions are " << regions.at(rl) << "\n";
+    }
+  }
+ 
   
   //////////////////////////////////////////////////////////////////////////////
   // Make the boxes periodic in one direction

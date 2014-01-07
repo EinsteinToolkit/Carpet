@@ -513,22 +513,40 @@ CallProlong (cGH * const cctkGH)
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {
-
+      
       for (int rl=reflevels-2; rl>=0; --rl) {
         ENTER_GLOBAL_MODE (cctkGH, ml) {
           ENTER_LEVEL_MODE (cctkGH, rl) {
             BeginTimingLevel (cctkGH);
-                    
+            
             Waypoint ("Initialisation/Restrict at iteration %d time %g",
                       cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
-          
+            
             Restrict (cctkGH);
-
+            
+            if (use_higher_order_restriction) {
+              do_early_global_mode = false;
+              do_late_global_mode = false;
+              do_early_meta_mode = false;
+              do_late_meta_mode = false;
+              do_global_mode = false;
+              do_meta_mode = false;
+              
+              Waypoint ("Initialisation/PostRestrict (intermediate) at iteration %d time %g",
+                        cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
+              
+              ScheduleTraverse (where, "CCTK_POSTRESTRICTINITIAL", cctkGH);
+              
+              if (init_fill_timelevels) {
+                FillTimeLevels (cctkGH);
+              }
+            }
+            
             EndTimingLevel (cctkGH);
           } LEAVE_LEVEL_MODE;
         } LEAVE_GLOBAL_MODE;
       } // for rl
-
+      
       bool have_done_global_mode = false;
       bool have_done_early_global_mode = false;
       bool have_done_late_global_mode = false;

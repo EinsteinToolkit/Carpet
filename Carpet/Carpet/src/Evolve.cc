@@ -505,8 +505,34 @@ namespace Carpet {
                         cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
               
               Restrict (cctkGH);
-              
               did_restrict = true;
+              
+              if (use_higher_order_restriction) {
+                do_early_global_mode = false;
+                do_late_global_mode = false;
+                do_early_meta_mode = false;
+                do_late_meta_mode = false;
+                do_global_mode = false;
+                do_meta_mode = false;
+                
+                if (use_tapered_grids and reflevel > 0) {
+                  int const parent_do_every =
+                    ipow(mgfact, mglevel) *
+                    (maxtimereflevelfact / timereffacts.AT(reflevel-1));
+                  bool const parent_is_active =
+                    (cctkGH->cctk_iteration-1) % parent_do_every == 0;
+                  do_taper = not parent_is_active;
+                }
+                
+                // TODO: disable prolongation (but not
+                // synchronization)
+                Waypoint ("Evolution/PostRestrict (intermediate) at iteration %d time %g",
+                          cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
+                
+                ScheduleTraverse (where, "CCTK_POSTRESTRICT", cctkGH);
+                
+                do_taper = false;
+              }
               
               EndTimingLevel (cctkGH);
             } LEAVE_LEVEL_MODE;
@@ -529,8 +555,6 @@ namespace Carpet {
               ENTER_LEVEL_MODE (cctkGH, rl) {
                 BeginTimingLevel (cctkGH);
                 
-                // do_early_global_mode = reflevel==reflevels-2;
-                // do_late_global_mode = not have_done_late_global_mode;
                 do_early_global_mode = not have_done_early_global_mode;
                 do_late_global_mode = reflevel==reflevels-1;
                 do_early_meta_mode =
