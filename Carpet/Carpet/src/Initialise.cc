@@ -476,7 +476,7 @@ CallProlong (cGH * const cctkGH)
   DECLARE_CCTK_ARGUMENTS;
 
   char const * const where = "Evolve::CallProlong";
-  static Timer timer ("CallProlongate");
+  static Timers::Timer timer ("CallProlongate");
   timer.start();
 
   for (int ml=mglevels-1; ml>=0; --ml) {
