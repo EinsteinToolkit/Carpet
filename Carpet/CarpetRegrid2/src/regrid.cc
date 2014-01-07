@@ -846,42 +846,83 @@ namespace CarpetRegrid2 {
       
       // Make multiprocessor aware
       bool any_level_did_change = false;
-      for (int rl = 0; rl < maxrl; ++ rl) {
-        bool level_did_change = false;
-        for (int m = 0; m < maps; ++ m) {
-          level_did_change = level_did_change or
-            int(old_superregsss.at(m).size()) <= rl or
-            superregsss.at(m).at(rl) != old_superregsss.at(m).at(rl);
-        }
-        any_level_did_change = any_level_did_change or level_did_change;
-        
-        if (level_did_change) {
-          // The level changed: perform domain decomposition
-          
-          vector <vector <region_t> > superregss (maps);
+      // Distribute levels among processes as well, 'faking' maps
+      if (rg2_pamr)
+      {
+        // TODO: Check if something changed and do nothing if not
+        any_level_did_change = true;
+        vector <vector <region_t> > superregss (maps*2);
+        // decompose all but the finest as usual
+        for (int rl = 0; rl < maxrl-1; ++ rl) {
           for (int m = 0; m < maps; ++ m) {
             superregss.at(m) = superregsss.at(m).at(rl);
+            superregss.at(maps+m) = superregsss.at(m).at(maxrl-1);
           }
-          vector <vector <region_t> > regss (maps);
-          SplitRegionsMaps (cctkGH, superregss, regss);
-          
+          // now decompose the finest level separately
           for (int m = 0; m < maps; ++ m) {
+            const int newmap = maps+m;
+            superregss.at(newmap) = superregsss.at(m).at(maxrl-1);
+            // We have to fake the 'map' members of the regions
+            for (uint c = 0; c < superregss.at(newmap).size(); ++ c)
+            {
+              superregss.at(newmap).AT(c).map = newmap;
+            }
+          }
+          vector <vector <region_t> > regss (maps*2);
+          SplitRegionsMaps (cctkGH, superregss, regss);
+          for (int m = 0; m < maps; ++ m) {
+            const int newmap = maps+m;
+            for (uint c = 0; c < superregss.at(newmap).size(); ++ c)
+            {
+              superregss.at(newmap).AT(c).map = m;
+              regss.at(newmap).AT(c).map = m;
+            }
             superregsss.at(m).at(rl) = superregss.at(m);
             regsss.at(m).at(rl) = regss.at(m);
+            superregsss.at(m).at(maxrl-1) = superregss.at(newmap);
+            regsss.at(m).at(maxrl-1) = regss.at(newmap);
           }
-          
-        } else {
-          // The level did not actually change: re-use the old domain
-          // decomposition
-          
+        }
+      }
+      else
+      {
+        for (int rl = 0; rl < maxrl; ++ rl) {
+          bool level_did_change = false;
           for (int m = 0; m < maps; ++ m) {
-            superregsss.at(m).at(rl).swap(old_superregsss.at(m).at(rl));
-            int const ml = 0;
-            regsss.at(m).at(rl).swap(old_regssss.at(m).at(ml).at(rl));
+            level_did_change = level_did_change or
+              int(old_superregsss.at(m).size()) <= rl or
+              superregsss.at(m).at(rl) != old_superregsss.at(m).at(rl);
           }
+          any_level_did_change = any_level_did_change or level_did_change;
           
-        } // if level did change
-      } // for rl
+          if (level_did_change) {
+            // The level changed: perform domain decomposition
+            
+            vector <vector <region_t> > superregss (maps);
+            for (int m = 0; m < maps; ++ m) {
+              superregss.at(m) = superregsss.at(m).at(rl);
+            }
+            vector <vector <region_t> > regss (maps);
+            SplitRegionsMaps (cctkGH, superregss, regss);
+            
+            for (int m = 0; m < maps; ++ m) {
+              superregsss.at(m).at(rl) = superregss.at(m);
+              regsss.at(m).at(rl) = regss.at(m);
+            }
+            
+          } else {
+            // The level did not actually change: re-use the old domain
+            // decomposition
+            
+            for (int m = 0; m < maps; ++ m) {
+              superregsss.at(m).at(rl).swap(old_superregsss.at(m).at(rl));
+              int const ml = 0;
+              regsss.at(m).at(rl).swap(old_regssss.at(m).at(ml).at(rl));
+            }
+            
+          } // if level did change
+        } // for rl
+      } // else pamr
       
       // Make multigrid aware
       MakeMultigridBoxesMaps (cctkGH, regsss, regssss);
