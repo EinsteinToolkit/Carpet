@@ -66,11 +66,10 @@ namespace Carpet {
     return retval;
   }
 
-
   // synchronises ghostzones and prolongates boundaries of a set of groups
   //
   // returns 0 for success and -1 if the set contains a group with no storage
-  int SyncProlongateGroups (const cGH* cctkGH, const vector<int>& groups,
+  int SyncProlongateGroups_ (const cGH* cctkGH, const vector<int>& groups,
                             cFunctionData const* function_data)
   {
     int retval = 0;
@@ -145,6 +144,23 @@ namespace Carpet {
       
       // prolongate boundaries
       bool const local_do_prolongate = do_prolongate and not do_taper;
+
+      // PTODO: Is this necessary?
+      if(use_psamr and carpet_cctk_iteration>0)
+      {
+        if(reflevel>0 and (sync_during_time_integration or local_do_prolongate))
+        {
+          static Timers::Timer timer("Sync");
+          timer.start();
+          reflevel--;
+          SyncGroups(cctkGH, goodgroups);
+          timer.stop();
+          reflevel++;
+        }
+        // PTODO: Whose phone number is this? Why isn't the barrier in the if?
+        Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
+      }
+
       if (local_do_prolongate) {
         static Timers::Timer timer ("Prolongate");
         timer.start();
@@ -183,6 +199,31 @@ namespace Carpet {
     }
     
     return retval;
+  }
+
+  int SyncProlongateGroups (const cGH* cctkGH, const vector<int>& groups,
+                            cFunctionData const* function_data)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    // PTODO: Why check iteration?
+    if (use_psamr and carpet_cctk_iteration > 0)
+    {
+      int save_reflevel = reflevel;
+      reflevel = reflevels-1;
+      // Prolongate the finest grid
+      int retval = SyncProlongateGroups_(cctkGH, groups, function_data);
+      reflevel = save_reflevel;
+
+      if(carpet_next_coarse_lvl <= 0)
+        return retval;
+
+      reflevel = - carpet_next_coarse_lvl;
+      // Prolongate one of the coarse grids
+      retval = SyncProlongateGroups(cctkGH, groups, function_data);
+      reflevel = save_reflevel;
+      return retval;
+    }
+    return SyncProlongateGroups_(cctkGH, groups, function_data);
   }
 
   // Prolongate the boundaries of all CCTK_GF groups in the given set

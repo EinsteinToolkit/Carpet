@@ -105,7 +105,8 @@ namespace Carpet {
   extern int *carpet_level_iteration;
   extern int carpet_coarse_lvl;
   extern int carpet_next_coarse_lvl;
-  extern int carpet_callfunction_dont_call;
+  //extern int carpet_callfunction_dont_call;
+  extern bool psamr_pseudo_evolve;
 
   
   

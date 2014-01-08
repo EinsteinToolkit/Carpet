@@ -47,9 +47,8 @@ namespace Carpet {
     CCTK_ATTRIBUTE_PURE;
   int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data);
   
-  void Restrict (const cGH* cgh);
-  
-  
+  void Restrict (const cGH* cgh, bool only_sync);
+  void ProlongateBoundaries(const cGH* cgh);
   
   // Multi-Model
   void

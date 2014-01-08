@@ -40,7 +40,7 @@ namespace Carpet {
   static void CallPostRecoverVariables (cGH * cctkGH);
   static void CallInitial (cGH * cctkGH);
   static void CallRestrict (cGH * cctkGH);
-  static void CallProlong (cGH * cctkGH);
+  static void CallInitTimes (cGH * cctkGH);
   static void CallPostInitial (cGH * cctkGH);
   static void CallAnalysis (cGH * cctkGH, bool did_recover);
   
@@ -87,8 +87,8 @@ namespace Carpet {
     cctkGH->cctk_delta_time = delta_time;
 
     carpet_cctk_iteration = 0;
-    // TODO: use vector class for this
-    carpet_level_iteration = (int*)malloc(sizeof(int)*max_refinement_levels);
+    // PTODO: use vector class for this
+    carpet_level_iteration = new int[max_refinement_levels];
     for (int i = 0; i < max_refinement_levels; ++i)
       carpet_level_iteration[i] = 0;
 
@@ -128,7 +128,7 @@ namespace Carpet {
       // Calculate initial data
       
       CallInitial (cctkGH);
-      CallProlong (cctkGH);
+      CallInitTimes (cctkGH);
       CallRestrict (cctkGH);
       CallPostInitial (cctkGH);
       print_internal_data ();
@@ -469,37 +469,25 @@ namespace Carpet {
   }
   
   
+// Do we need this?
 void
-CallProlong (cGH * const cctkGH)
+CallInitTimes (cGH * const cctkGH)
 {
   DECLARE_CCTK_PARAMETERS;
   DECLARE_CCTK_ARGUMENTS;
 
-  char const * const where = "Evolve::CallProlong";
-  static Timers::Timer timer ("CallProlongate");
-  timer.start();
-
   for (int ml=mglevels-1; ml>=0; --ml) {
 
-    bool did_restrict = false;
-
     for (int rl=reflevels-1; rl>=0; --rl) {
-      int const do_every =
-        ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
-
-      {
-        ENTER_GLOBAL_MODE (cctkGH, ml) {
-          ENTER_LEVEL_MODE (cctkGH, rl) {
-            BeginTimingLevel (cctkGH);
-            Waypoint ("Evolution/Prolong at iteration %d time %g",
-                      cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
-            EndTimingLevel (cctkGH);
-          } LEAVE_LEVEL_MODE;
-        } LEAVE_GLOBAL_MODE;
-      } // if do_every
-    }   // for rl
+      ENTER_GLOBAL_MODE (cctkGH, ml) {
+        ENTER_LEVEL_MODE (cctkGH, rl) {
+          //PTODO: Do we need these?
+          //BeginTimingLevel (cctkGH);
+          //EndTimingLevel (cctkGH);
+        } LEAVE_LEVEL_MODE;
+      } LEAVE_GLOBAL_MODE;
+    }
   }
-  timer.stop();
 }
 
   
@@ -522,7 +510,7 @@ CallProlong (cGH * const cctkGH)
             Waypoint ("Initialisation/Restrict at iteration %d time %g",
                       cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
             
-            Restrict (cctkGH);
+            Restrict (cctkGH,false);
             
             if (use_higher_order_restriction) {
               do_early_global_mode = false;

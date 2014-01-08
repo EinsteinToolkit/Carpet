@@ -2029,7 +2029,8 @@ namespace Carpet {
         vector<vector<region_t> > regss(1);
         
         // Distribute onto the processors
-        SplitRegions (cctkGH, superregsss.AT(m).AT(rl), regss.AT(rl));
+        if(superregsss.AT(m).size())
+          SplitRegions (cctkGH, superregsss.AT(m).AT(rl), regss.AT(rl));
         
         // Create all multigrid levels
         MakeMultigridBoxes (cctkGH, m, regss, regssss.AT(m));

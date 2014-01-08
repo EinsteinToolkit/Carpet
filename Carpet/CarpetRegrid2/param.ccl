@@ -807,6 +807,6 @@ CCTK_REAL radius_rel_change_threshold_10 "Minimum change in radius to trigger a 
   0.0:* :: ""
 } 0.0
 
-CCTK_BOOLEAN rg2_pamr "PAMR in CarpetRegrid2"
+CCTK_BOOLEAN rg2_psamr "PAMR in CarpetRegrid2"
 {
 } "no"

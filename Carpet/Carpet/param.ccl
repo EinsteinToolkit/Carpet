@@ -607,7 +607,7 @@ BOOLEAN use_unusedpoints_mask "Turn on storage and usage of 'unusedpoints_mask'"
 {
 } "no"
 
-BOOLEAN use_pamr "Try to parallelize among levels"
+BOOLEAN use_psamr "Parallelize the AMR algorithm itself"
 {
 } "no"
 

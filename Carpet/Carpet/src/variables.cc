@@ -64,8 +64,8 @@ namespace Carpet {
   int *carpet_level_iteration;
   int carpet_coarse_lvl;
   int carpet_next_coarse_lvl;
-  int carpet_callfunction_dont_call = 0;
-
+  //int carpet_callfunction_dont_call = 0;
+  bool psamr_pseudo_evolve = false;
   
   // Current refinement factors
   int timereflevelfact;

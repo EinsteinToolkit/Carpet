@@ -861,7 +861,7 @@ namespace CarpetRegrid2 {
       // Make multiprocessor aware
       bool any_level_did_change = false;
       // Distribute levels among processes as well, 'faking' maps
-      if (rg2_pamr)
+      if (rg2_psamr)
       {
         // TODO: Check if something changed and do nothing if not
         any_level_did_change = true;
@@ -936,7 +936,7 @@ namespace CarpetRegrid2 {
             
           } // if level did change
         } // for rl
-      } // else pamr
+      } // else psamr
       
       // Make multigrid aware
       MakeMultigridBoxesMaps (cctkGH, regsss, regssss);

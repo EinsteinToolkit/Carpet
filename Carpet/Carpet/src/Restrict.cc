@@ -24,7 +24,7 @@ namespace Carpet {
   static void RestrictGroups (const cGH* cctkGH, const vector<int>& groups);
   
   
-  void Restrict (const cGH* cctkGH)
+  void Restrict (const cGH* cctkGH, bool only_sync)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -66,8 +66,16 @@ namespace Carpet {
     {
       static Timers::Timer timer ("Restrict");
       timer.start();
-      RestrictGroups (cctkGH, groups);
+      if(!only_sync)
+        RestrictGroups (cctkGH, groups);
       timer.stop();
+    }
+    if(use_psamr)
+    {
+      // PTODO: Whose phone number is this?
+      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
+      SyncGroups (cctkGH, groups);
+      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
     }
     
     // Note: Carpet used to call SyncGroups here. This is now done in

@@ -67,7 +67,7 @@ methodoflines::ode_method = "icn"
 
 cactus::cctk_full_warnings = "yes"
 
-carpet::use_pamr = "yes"
+carpet::use_psamr = "yes"
 #carpet::processor_topology = "manual"
 #carpet::regrid_in_level_mode = "no"
 #carpet::processor_topology_3d_x = 1
@@ -75,7 +75,7 @@ carpet::use_pamr = "yes"
 #carpet::processor_topology_3d_z = 1
 
 #carpet::recompose_verbose = "yes"
-carpetregrid2::rg2_pamr = "yes"
+carpetregrid2::rg2_psamr = "yes"
 
 carpet::grid_structure_filename = "grid.dat"
 carpet::grid_coordinates_filename = "coordinates.dat"

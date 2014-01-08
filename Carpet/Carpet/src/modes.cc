@@ -321,6 +321,8 @@ namespace Carpet {
     spacereflevelfact = spacereffacts.AT (reflevel);
     ivect_ref(cctkGH->cctk_levfac) = spacereflevelfact;
     cctkGH->cctk_timefac = timereflevelfact;
+    if(use_psamr)
+      cctkGH->cctk_iteration = carpet_level_iteration[reflevel];
     
     // Set number of time levels
     for (int group=0; group<CCTK_NumGroups(); ++group) {

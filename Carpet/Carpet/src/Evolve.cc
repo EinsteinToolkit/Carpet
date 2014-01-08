@@ -23,7 +23,7 @@
 #include <th.hh>
 
 #include <carpet.hh>
-
+#define PSAMR_SKIPSTEP (-9999)
 
 
 namespace Carpet {
@@ -36,9 +36,10 @@ namespace Carpet {
   
   static void AdvanceTime (cGH * cctkGH);
   static void CallRegrid (cGH * cctkGH);
-  static void CallEvol (cGH * cctkGH);
-  static void CallRestrict (cGH * cctkGH);
-  static void CallAnalysis (cGH * cctkGH);
+  static void CallEvol (cGH * cctkGH, int lvl);
+  static void CallProlong (cGH * cctkGH, int next_lvl);
+  static void CallRestrict (cGH * cctkGH, int next_lvl);
+  static void CallAnalysis (cGH * cctkGH, int next_lvl);
   
   static void print_internal_data ();
   
@@ -46,7 +47,106 @@ namespace Carpet {
   (char const * where, char const * name, cGH * cctkGH);
   static void OutputGH (char const * where, cGH * cctkGH);
   
+  void AdvanceTimePSAMR (cGH * const cctkGH, int lvl);
+
+  void
+  AdvanceTimePSAMR (cGH * const cctkGH, int lvl)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    DECLARE_CCTK_ARGUMENTS;
+    
+    static Timers::Timer timer ("AdvanceTime");
+    timer.start();
+    
+    Checkpoint ("AdvanceTime");
+    
+    // We need to advance the iteration counters of multiple levels here, as all
+    // processes need to know which iterations other processes are currently
+    // on.
+    // Advance the time of the finest grid every iteration
+    carpet_level_iteration[reflevels-1] += 1<<(max_refinement_levels-reflevels);
+    // If the coarse grid is evolved, advance its time
+    if (lvl != PSAMR_SKIPSTEP and lvl != reflevels) {
+      carpet_level_iteration[lvl] += 1<<(max_refinement_levels-lvl-1);
+    }
+    // Don't change times if an iteration is to be skipped
+    if (lvl == PSAMR_SKIPSTEP) {
+      timer.stop();
+      return;
+    }
+
+    assert(lvl >= 0);
+    assert(lvl < max_refinement_levels);
+
+    cctkGH->cctk_iteration = carpet_level_iteration[lvl];
   
+    if (not adaptive_stepsize) {
+      // Avoid accumulation of errors
+      global_time = cctk_initial_time
+        + cctkGH->cctk_iteration * delta_time / maxtimereflevelfact;
+      cctkGH->cctk_time = global_time;
+    } else {
+      // Take varying step sizes into account
+      cctkGH->cctk_time += cctkGH->cctk_delta_time;
+      delta_time = cctkGH->cctk_delta_time;
+      global_time = cctkGH->cctk_time;
+    }
+    
+    if ((cctkGH->cctk_iteration-1)
+        % (maxtimereflevelfact / timereffacts.AT(reflevels-1)) == 0) {
+      Waypoint ("Evolving iteration %d at t=%g",
+                cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
+    }
+    timer.stop();
+  }
+  
+  
+ 
+  void EvolvePSAMR(cGH * cctkGH);
+  void EvolvePSAMR(cGH * cctkGH)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    DECLARE_CCTK_ARGUMENTS;
+    while (not do_terminate (cctkGH)) {
+    //while (carpet_cctk_iteration<10) {
+      fprintf(stderr, "%d %d ******************************************************\n",
+              CCTK_MyProc(NULL), carpet_cctk_iteration);
+      // increment internal iteration counter. This counts actual iterations.
+      // cctkGH->cctk_iteration is used for the iteration counter of the
+      // schemes themselfes
+      ++carpet_cctk_iteration;
+      // Calculate which level should be evolved (other than the finest, which
+      // is always evolved)
+      int coarse_lvl = max_refinement_levels-2-int(log2(carpet_cctk_iteration & (-carpet_cctk_iteration)));
+      // 'lvl' might be negative. In this case, there shouldn't be anything
+      // evolved this step. However, we need to call deeper nevertheless
+      // because of global functions, io-processes, ect.
+      if (coarse_lvl < 0)
+        coarse_lvl = PSAMR_SKIPSTEP;
+      carpet_coarse_lvl = coarse_lvl;
+      // It is also handy to know what will come next - which level will be evolved next,
+      // so we evaluate that here as well
+      int next_lvl = max_refinement_levels-2-int(log2((carpet_cctk_iteration+1) & (-carpet_cctk_iteration-1)));
+      int lvl = coarse_lvl;
+      if (next_lvl < 0)
+        next_lvl = PSAMR_SKIPSTEP;
+      carpet_next_coarse_lvl = next_lvl;
+      // Intentionally pass in the lvl of the coarser grids - on all processes
+      AdvanceTimePSAMR(cctkGH, lvl);
+      KNARFDEB(1, "KNARF iterations, proc %d: cit: %d, it(l0): %d, it(l1): %d\n", CCTK_MyProc(NULL), carpet_cctk_iteration, carpet_level_iteration[0], carpet_level_iteration[1]);
+      // Always evolve the finest grid where this is local
+      if (arrdata.AT(0).AT(0).hh->local_components(reflevels-1))
+        lvl = reflevels - 1;
+//      fprintf(stderr, "KNARF evolve lvl %d on proc %d at internal iteration %d\n", lvl, CCTK_MyProc(NULL), carpet_cctk_iteration);
+      CallEvol (cctkGH, lvl);
+//      fprintf(stderr, "KNARF restrict lvl %d on proc %d at internal iteration %d, %g\n", lvl, CCTK_MyProc(NULL), carpet_cctk_iteration, tt->get_time(0, 0, 0));
+      //CallProlong (cctkGH, next_lvl);
+      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
+      CallRestrict (cctkGH, next_lvl);
+//      fprintf(stderr, "KNARF analysis lvl %d on proc %d at internal iteration %d\n", lvl, CCTK_MyProc(NULL), carpet_cctk_iteration-1);
+      CallAnalysis (cctkGH, next_lvl);
+    }
+  }
   
   int
   Evolve (tFleshConfig * const fc)
@@ -62,68 +162,73 @@ namespace Carpet {
     BeginTimingEvolution (cctkGH);
     static Timers::Timer timer ("Evolve");
     timer.start();
-    while (not do_terminate (cctkGH)) {
-      
-      AdvanceTime (cctkGH);
-      {
-        int const do_every = maxtimereflevelfact / timereffacts.AT(reflevels-1);
-        if ((cctkGH->cctk_iteration - 1) % do_every == 0) {
-          ENTER_GLOBAL_MODE (cctkGH, 0) {
-            BEGIN_REFLEVEL_LOOP (cctkGH) {
-              CallRegrid (cctkGH);
-            } END_REFLEVEL_LOOP;
-          } LEAVE_GLOBAL_MODE;
-        }
-      }
-      CallEvol (cctkGH);
-      CallRestrict (cctkGH);
-      CallAnalysis (cctkGH);
-      print_internal_data ();
-      
-      // Print timer values
-      {
-        Timers::Timer timer("PrintTimers");
-        timer.start();
-        int const do_every = maxtimereflevelfact / timereffacts.AT(reflevels-1);
-        if (output_timers_every > 0 and
-            cctkGH->cctk_iteration % output_timers_every == 0 and
-            cctkGH->cctk_iteration % do_every == 0)
-        {
-          Timers::CactusTimerSet::writeData (cctkGH, timer_file);
-        }
+    if(use_psamr) {
+      EvolvePSAMR(cctkGH);
+    } else {
+      // PTODO: Move to EvolveSAMR
+      while (not do_terminate (cctkGH)) {
 
-        if (output_timer_tree_every > 0 and
-            cctkGH->cctk_iteration % output_timer_tree_every == 0 and
-            cctkGH->cctk_iteration % do_every == 0)
+        AdvanceTime (cctkGH);
         {
-          Timers::Timer::outputTree("Evolve");
-        }
-        timer.stop();
-      }
-      
-      // Ensure that all levels have consistent times
-      {
-        Timers::Timer timer("CheckLevelTimes");
-        timer.start();
-        CCTK_REAL const eps =
-          pow(numeric_limits<CCTK_REAL>::epsilon(), CCTK_REAL(0.75));
-        assert (fabs (cctkGH->cctk_time - global_time) <= eps * global_time);
-        for (int ml=0; ml<mglevels; ++ml) {
-          for (int rl=0; rl<reflevels; ++rl) {
-            int const do_every =
-              ipow (mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
-            if (cctkGH->cctk_iteration % do_every == 0) {
-              // assert (fabs (leveltimes.AT(ml).AT(rl) - global_time) <=
-              //         eps * global_time);
-              assert (fabs (tt->get_time(ml,rl,0) - global_time) <=
-                      eps * global_time);
-            }
+          int const do_every = maxtimereflevelfact / timereffacts.AT(reflevels-1);
+          if ((cctkGH->cctk_iteration - 1) % do_every == 0) {
+            ENTER_GLOBAL_MODE (cctkGH, 0) {
+              BEGIN_REFLEVEL_LOOP (cctkGH) {
+                CallRegrid (cctkGH);
+              } END_REFLEVEL_LOOP;
+            } LEAVE_GLOBAL_MODE;
           }
         }
-        timer.stop();
-      }
-      
-    } // end main loop
+        CallEvol (cctkGH,-1);
+        CallRestrict (cctkGH,-1);
+        CallAnalysis (cctkGH,-1);
+        print_internal_data ();
+
+        // Print timer values
+        {
+          Timers::Timer timer("PrintTimers");
+          timer.start();
+          int const do_every = maxtimereflevelfact / timereffacts.AT(reflevels-1);
+          if (output_timers_every > 0 and
+              cctkGH->cctk_iteration % output_timers_every == 0 and
+              cctkGH->cctk_iteration % do_every == 0)
+          {
+            Timers::CactusTimerSet::writeData (cctkGH, timer_file);
+          }
+
+          if (output_timer_tree_every > 0 and
+              cctkGH->cctk_iteration % output_timer_tree_every == 0 and
+              cctkGH->cctk_iteration % do_every == 0)
+          {
+            Timers::Timer::outputTree("Evolve");
+          }
+          timer.stop();
+        }
+
+        // Ensure that all levels have consistent times
+        {
+          Timers::Timer timer("CheckLevelTimes");
+          timer.start();
+          CCTK_REAL const eps =
+            pow(numeric_limits<CCTK_REAL>::epsilon(), CCTK_REAL(0.75));
+          assert (fabs (cctkGH->cctk_time - global_time) <= eps * global_time);
+          for (int ml=0; ml<mglevels; ++ml) {
+            for (int rl=0; rl<reflevels; ++rl) {
+              int const do_every =
+                ipow (mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
+              if (cctkGH->cctk_iteration % do_every == 0) {
+                // assert (fabs (leveltimes.AT(ml).AT(rl) - global_time) <=
+                //         eps * global_time);
+                assert (fabs (tt->get_time(ml,rl,0) - global_time) <=
+                    eps * global_time);
+              }
+            }
+          }
+          timer.stop();
+        }
+
+      } // end main loop
+    }
     timer.stop();
     
     Waypoint ("Done with evolution loop");
@@ -392,8 +497,11 @@ namespace Carpet {
   
   
   
+  // lvl is for PSAMR only. It is the
+  // level that's supposed to be evolved
+  // on the coarse grid.
   void
-  CallEvol (cGH * const cctkGH)
+  CallEvol (cGH * const cctkGH,int lvl)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -409,7 +517,7 @@ namespace Carpet {
       for (int rl=0; rl<reflevels; ++rl) {
         int const do_every
           = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
-        if ((cctkGH->cctk_iteration-1) % do_every == 0) {
+        if (use_psamr or (cctkGH->cctk_iteration-1) % do_every == 0) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
               BeginTimingLevel (cctkGH);
@@ -434,36 +542,54 @@ namespace Carpet {
               }
               
               // Advance times
-              CycleTimeLevels (cctkGH);
+              if (not use_psamr or rl == reflevels-1 or rl == carpet_coarse_lvl)
+              {
+                CycleTimeLevels (cctkGH);
+              }
               if (not adaptive_stepsize) {
-                cctkGH->cctk_time
-                  = (global_time
-                     - delta_time / maxtimereflevelfact
-                     + delta_time * mglevelfact / timereflevelfact);
+                // PTODO: time = last_complete_timestep_time + something
+                if(use_psamr)
+                  cctkGH->cctk_time = cctk_initial_time
+                    + carpet_level_iteration[rl] * delta_time /maxtimereflevelfact;
+                else
+                  cctkGH->cctk_time
+                    = (global_time
+                      - delta_time / maxtimereflevelfact
+                      + delta_time * mglevelfact / timereflevelfact);
               }
               tt->set_time (mglevel, reflevel, timelevel, cctkGH->cctk_time);
-              
-              Waypoint ("Evolution I at iteration %d time %g%s%s%s",
-                        cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
-                        (do_global_mode ? " (global)" : ""),
-                        (do_meta_mode ? " (meta)" : ""),
-                        (do_taper ? " (tapering)" : ""));
-              
-              // Checking
-              CalculateChecksums (cctkGH, allbutcurrenttime);
-              Poison (cctkGH, currenttimebutnotifonly);
-              
-              // Evolve
-              ScheduleTraverse (where, "CCTK_PRESTEP", cctkGH);
-              ScheduleTraverse (where, "CCTK_EVOL", cctkGH);
-              
-              // Checking
-              PoisonCheck (cctkGH, currenttime);
-              
-              // Timing statistics
-              StepTimingEvolution (cctkGH);
-              
-              do_taper = false;
+              if(not use_psamr or rl == lvl) {
+
+                Waypoint ("Evolution I at iteration %d time %g%s%s%s",
+                    cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""),
+                    (do_taper ? " (tapering)" : ""));
+
+                // Checking
+                CalculateChecksums (cctkGH, allbutcurrenttime);
+                Poison (cctkGH, currenttimebutnotifonly);
+
+                // Evolve
+                ScheduleTraverse (where, "CCTK_PRESTEP", cctkGH);
+                ScheduleTraverse (where, "CCTK_EVOL", cctkGH);
+
+                // Checking
+                PoisonCheck (cctkGH, currenttime);
+
+                // Timing statistics
+                StepTimingEvolution (cctkGH);
+
+                do_taper = false;
+              }
+              // Do 'Pseudo' evolution when the coarse levels skip a step
+              if(use_psamr and rl == 0 and lvl == PSAMR_SKIPSTEP)
+              {
+                psamr_pseudo_evolve = true;
+                ScheduleTraverse(where,"CCTK_PRESTEP",cctkGH);
+                ScheduleTraverse(where,"CCTK_EVOL",cctkGH);
+                psamr_pseudo_evolve = false;
+              }
               
               EndTimingLevel (cctkGH);
             } LEAVE_LEVEL_MODE;
@@ -478,12 +604,53 @@ namespace Carpet {
     timer.stop();
   }
   
-  
-  
+  // PTODO: Prolongation everyting seems excessive 
   void
-  CallRestrict (cGH * const cctkGH)
+  CallProlong (cGH * const cctkGH, int const next_lvl)
   {
     DECLARE_CCTK_PARAMETERS;
+    DECLARE_CCTK_ARGUMENTS;
+    
+    char const * const where = "Evolve::CallProlong";
+    static Timers::Timer timer (where);
+    timer.start();
+    
+    for (int ml=mglevels-1; ml>=0; --ml) {
+      
+      bool did_restrict = false;
+      
+      for (int rl=reflevels-1; rl>=0; --rl) {
+        int const do_every =
+          ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
+
+        if ( ( use_psamr && next_lvl == rl) ||
+             (!use_psamr && (cctkGH->cctk_iteration % do_every == 0)) ) {
+          ENTER_GLOBAL_MODE (cctkGH, ml) {
+            ENTER_LEVEL_MODE (cctkGH, rl) {
+              BeginTimingLevel (cctkGH);
+              
+              Waypoint ("Evolution/Prolong at iteration %d time %g",
+                        cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
+              
+              ProlongateBoundaries (cctkGH);
+//              fprintf(stderr, "KNARF RESTRICt lvl %d on proc %d\n", rl, CCTK_MyProc(NULL));
+              
+              did_restrict = true;
+              
+              EndTimingLevel (cctkGH);
+            } LEAVE_LEVEL_MODE;
+          } LEAVE_GLOBAL_MODE;
+        } // if do_every
+      }   // for rl
+    }
+    timer.stop();
+  }
+  
+  void
+  CallRestrict (cGH * const cctkGH, int next_lvl)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    DECLARE_CCTK_ARGUMENTS;
     
     char const * const where = "Evolve::CallRestrict";
     static Timers::Timer timer ("CallRestrict");
@@ -496,7 +663,7 @@ namespace Carpet {
       for (int rl=reflevels-2; rl>=0; --rl) {
         int const do_every =
           ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
-        if (cctkGH->cctk_iteration % do_every == 0) {
+        if (use_psamr or cctkGH->cctk_iteration % do_every == 0) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
               BeginTimingLevel (cctkGH);
@@ -504,7 +671,11 @@ namespace Carpet {
               Waypoint ("Evolution/Restrict at iteration %d time %g",
                         cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
               
-              Restrict (cctkGH);
+              // PTODO: Can the sync be removed? Or a reduced set of things?
+              const bool only_sync =
+                use_psamr and carpet_level_iteration[rl]!=carpet_level_iteration[rl+1];
+              Restrict (cctkGH, only_sync);
+
               did_restrict = true;
               
               if (use_higher_order_restriction) {
@@ -550,7 +721,8 @@ namespace Carpet {
         for (int rl=0; rl<reflevels; ++rl) {
           int const do_every =
             ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
-          if (cctkGH->cctk_iteration % do_every == 0) {
+          if ( ( use_psamr and next_lvl == rl) or
+               (!use_psamr and (cctkGH->cctk_iteration % do_every == 0)) ) {
             ENTER_GLOBAL_MODE (cctkGH, ml) {
               ENTER_LEVEL_MODE (cctkGH, rl) {
                 BeginTimingLevel (cctkGH);
@@ -594,9 +766,11 @@ namespace Carpet {
           } // if do_every
         }   // for rl
         
-        if (have_done_anything) assert (have_done_global_mode);
-        if (have_done_anything) assert (have_done_early_global_mode);
-        if (have_done_anything) assert (have_done_late_global_mode);
+        if(not use_psamr) {
+          if (have_done_anything) assert (have_done_global_mode);
+          if (have_done_anything) assert (have_done_early_global_mode);
+          if (have_done_anything) assert (have_done_late_global_mode);
+        }
         
       } // if did_restrict
       
@@ -608,7 +782,7 @@ namespace Carpet {
   
   
   void
-  CallAnalysis (cGH * const cctkGH)
+  CallAnalysis (cGH * const cctkGH, int next_lvl)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -626,7 +800,7 @@ namespace Carpet {
       for (int rl=0; rl<reflevels; ++rl) {
         int const do_every
           = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
-        if (cctkGH->cctk_iteration % do_every == 0) {
+        if (use_psamr or (cctkGH->cctk_iteration % do_every == 0)) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
               BeginTimingLevel (cctkGH);
@@ -667,29 +841,33 @@ namespace Carpet {
                 ScheduleTraverse (where, "CCTK_POSTRESTRICT", cctkGH);
               }
 #endif
-              
-              // Poststep
-              ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
-              
-              // Checking
-              PoisonCheck (cctkGH, currenttime);
-              CalculateChecksums (cctkGH, currenttime);
-              
-              // Checkpoint
-              ScheduleTraverse (where, "CCTK_CHECKPOINT", cctkGH);
-              
-              // Analysis
-              in_analysis_bin = true;
-              ScheduleTraverse (where, "CCTK_ANALYSIS", cctkGH);
-              in_analysis_bin = false;
-              
-              if (do_late_global_mode) {
-                // Timing statistics
-                UpdateTimingStats (cctkGH);
+              if(not use_psamr or (rl == reflevels-1 or rl == next_lvl)) {
+
+                // Poststep
+                ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
+
+                // Checking
+                PoisonCheck (cctkGH, currenttime);
+                CalculateChecksums (cctkGH, currenttime);
+
+                // Checkpoint
+                ScheduleTraverse (where, "CCTK_CHECKPOINT", cctkGH);
+
+                // Analysis
+                in_analysis_bin = true;
+                ScheduleTraverse (where, "CCTK_ANALYSIS", cctkGH);
+                in_analysis_bin = false;
+
+                if (do_late_global_mode) {
+                  // Timing statistics
+                  UpdateTimingStats (cctkGH);
+                }
               }
               
               // Output
-              OutputGH (where, cctkGH);
+              if(not use_psamr or (rl == reflevels-1 or rl == next_lvl)) {
+                OutputGH (where, cctkGH);
+              }
               
               // Checking
               CheckChecksums (cctkGH, alltimes);

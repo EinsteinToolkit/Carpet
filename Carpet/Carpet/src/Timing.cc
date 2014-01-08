@@ -423,7 +423,8 @@ namespace Carpet {
     static size_t num_samples = 0;
     // static CCTK_REAL last_physical_time;
     static CCTK_REAL last_time_evolution;
-    assert (cctk_iteration > last_iteration); // expect progress
+    if(not use_psamr)
+      assert (cctk_iteration > last_iteration); // expect progress
     
     // Calculate elapsed physical time
     CCTK_REAL const physical_time = cctkGH->cctk_time - initial_phystime;

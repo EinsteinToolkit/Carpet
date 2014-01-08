@@ -1193,6 +1193,10 @@ namespace Carpet {
     if (superregs.size() == 0) {
       return;
     }
+
+    // PTODO: We believe we aren't using this
+    if(use_psamr)
+      abort();
     
     const int nprocs = CCTK_nProcs (cctkGH);
     
