@@ -361,7 +361,7 @@ namespace Carpet {
     if(psamr_pseudo_evolve)
     {
         psamr_skip = true;
-        // TODO: Figure out the real reason to skip a function
+        // PTODO: Figure out the real reason to skip a function
         // here. Things in global mode?
         if(
             CCTK_EQUALS(attribute->routine, "MoL_StartLoop") or
