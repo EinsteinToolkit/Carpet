@@ -867,16 +867,11 @@ namespace CarpetRegrid2 {
         any_level_did_change = true;
         vector <vector <region_t> > superregss (maps*2);
         // decompose all but the finest as usual
-        for (int rl = 0; rl < maxrl-1; ++ rl) {
-          for (int m = 0; m < maps; ++ m) {
-            superregss.at(m) = superregsss.at(m).at(rl);
-            superregss.at(maps+m) = superregsss.at(m).at(maxrl-1);
-          }
-          // now decompose the finest level separately
+        for (int rl = 0; rl < maxrl; ++ rl) {
           for (int m = 0; m < maps; ++ m) {
             const int newmap = maps+m;
-            superregss.at(newmap) = superregsss.at(m).at(maxrl-1);
-            // We have to fake the 'map' members of the regions
+            superregss.at(m) = superregsss.at(m).at(rl);
+            superregss.at(newmap) = superregsss.at(m).at(rl);
             for (uint c = 0; c < superregss.at(newmap).size(); ++ c)
             {
               superregss.at(newmap).AT(c).map = newmap;
@@ -900,15 +895,18 @@ namespace CarpetRegrid2 {
             {
               // KNARF  =0 should be =m
               superregss.at(newmap).AT(c).map = 0;
-              }
+            }
             for (uint c = 0; c < regss.at(newmap).size(); ++ c)
             {
               regss.at(newmap).AT(c).map = 0;
             }
+            if (rl < maxrl-1) {
             superregsss.at(m).at(rl) = superregss.at(m);
             regsss.at(m).at(rl) = regss.at(m);
-            superregsss.at(m).at(maxrl-1) = superregss.at(newmap);
-            regsss.at(m).at(maxrl-1) = regss.at(newmap);
+            } else {
+            superregsss.at(m).at(rl) = superregss.at(newmap);
+            regsss.at(m).at(rl) = regss.at(newmap);
+            }
           }
           cout << "KNARF RRRRRRRRRRRRRRR" << regss << "\n";
         }
