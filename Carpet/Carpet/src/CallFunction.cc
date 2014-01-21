@@ -20,6 +20,7 @@
 
 #include "adler32.hh"
 
+//#undef KNARFDEBL
 //#define KNARFDEBL 2
 
 namespace Carpet {

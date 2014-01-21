@@ -150,7 +150,7 @@ namespace Carpet {
       CallEvol (cctkGH, lvl);
 //      fprintf(stderr, "KNARF restrict lvl %d on proc %d at internal iteration %d, %g\n", lvl, CCTK_MyProc(NULL), carpet_cctk_iteration, tt->get_time(0, 0, 0));
       //CallProlong (cctkGH, next_lvl);
-      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
+      //Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
       CallRestrict (cctkGH, next_lvl);
 //      fprintf(stderr, "KNARF analysis lvl %d on proc %d at internal iteration %d\n", lvl, CCTK_MyProc(NULL), carpet_cctk_iteration-1);
       CallAnalysis (cctkGH, next_lvl);
