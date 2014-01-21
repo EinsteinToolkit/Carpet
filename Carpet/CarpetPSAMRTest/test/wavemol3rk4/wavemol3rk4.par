@@ -44,13 +44,14 @@ CoordBase::boundary_shiftout_z_upper    = 1
 driver::ghost_size = 1
 time::dtfac = 0.5
 
-carpet::max_refinement_levels = 2
+carpet::max_refinement_levels = 3
 carpetregrid2::num_centres = 1
-carpetregrid2::num_levels_1 = 2
-carpetregrid2::radius_1[1]=0.2
+carpetregrid2::num_levels_1 = 3
+carpetregrid2::radius_1[1]=0.25
+carpetregrid2::radius_1[2]=0.125
 carpet::domain_from_coordbase="yes"
 
-cactus::cctk_itlast = 10
+cactus::cctk_itlast = 20
 
 #iobasic::outInfo_every = 4
 #iobasic::outInfo_vars = "wavemol::phi"
@@ -63,7 +64,10 @@ IO::out_dir = $parfile
 IO::out_fileinfo = "none"
 
 # Method of Lines (MoL)
-methodoflines::ode_method = "icn"
+methodoflines::ode_method = "rk4"
+MoL::MoL_Intermediate_Steps = 4
+MoL::MoL_Num_Scratch_Levels = 1
+
 
 cactus::cctk_full_warnings = "yes"
 
@@ -85,4 +89,6 @@ carpet::grid_coordinates_filename = "coordinates.dat"
 
 grid::set_coordinate_ranges_on = "all maps"
 
-carpet::use_buffer_zones = "yes"
+#carpet::use_buffer_zones = "yes"
+#carpetioascii::output_all_timelevels = "yes"
+
