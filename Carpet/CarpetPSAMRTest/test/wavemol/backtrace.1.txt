@@ -1,0 +1,26 @@
+Backtrace from rank 1 pid 16389:
+1. CarpetLib::signal_handler(int)   [./exe/cactus_sim(_ZN9CarpetLib14signal_handlerEi+0xeb) [0x140db2b]]
+2. /lib/x86_64-linux-gnu/libc.so.6(+0x324f0) [0x7f839e18a4f0]
+3. /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x35) [0x7f839e18a475]
+4. /lib/x86_64-linux-gnu/libc.so.6(abort+0x180) [0x7f839e18d6f0]
+5. /lib/x86_64-linux-gnu/libc.so.6(__assert_fail+0xf1) [0x7f839e183621]
+6. ggf::ref_bnd_prolongate_all(comm_state&, int, int, int, double)   [./exe/cactus_sim(_ZN3ggf22ref_bnd_prolongate_allER10comm_stateiiid+0x359) [0x1451579]]
+7. ./exe/cactus_sim() [0x13a81a8]
+8. Carpet::SyncProlongateGroups_(_cGH const*, std::vector<int, std::allocator<int> > const&, cFunctionData const*)   [./exe/cactus_sim(_ZN6Carpet21SyncProlongateGroups_EPK4_cGHRKSt6vectorIiSaIiEEPK13cFunctionData+0x3d0) [0x13a9380]]
+9. ./exe/cactus_sim() [0x13fbce2]
+a. Carpet::CallFunction(void*, cFunctionData*, void*)   [./exe/cactus_sim(_ZN6Carpet12CallFunctionEPvP13cFunctionDataS0_+0x1a2e) [0x13fd9ee]]
+b. ./exe/cactus_sim() [0x56d8d0]
+c. ./exe/cactus_sim() [0x572e8a]
+d. ./exe/cactus_sim() [0x572de5]
+e. ./exe/cactus_sim(CCTKi_DoScheduleTraverse+0x9f) [0x57312f]
+f. ./exe/cactus_sim() [0x56d425]
+10. ./exe/cactus_sim(CCTK_ScheduleTraverse+0x89) [0x56e689]
+11. ./exe/cactus_sim() [0x13aee7c]
+12. Carpet::Initialise(tFleshConfig*)   [./exe/cactus_sim(_ZN6Carpet10InitialiseEP12tFleshConfig+0xf12) [0x13b0d42]]
+13. ./exe/cactus_sim(main+0x33) [0x561b03]
+14. /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xfd) [0x7f839e176ead]
+15. ./exe/cactus_sim() [0x569b61]
+
+The hexadecimal addresses in this backtrace can also be interpreted
+with a debugger (e.g. gdb), or with the 'addr2line' (or 'gaddr2line')
+command line tool: 'addr2line -e cactus_sim <address>'.

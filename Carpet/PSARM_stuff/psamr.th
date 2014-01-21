@@ -1,0 +1,428 @@
+# This file was automatically generated using the GetComponents script.
+
+!CRL_VERSION = 1.0
+
+
+# Component list: thornlists/psamr.par
+
+
+!DEFINE ROOT = CPSAMR
+!DEFINE ARR  = $ROOT/arrangements
+!DEFINE COMPONENTLIST_TARGET = $ROOT/thornlists/
+
+
+
+# A note on OpenCL:
+
+# The thorns supporting and using OpenCL are working and are part of
+# the Einstein Toolkit. However, these thorns are currently commented
+# out in this thorn list because most machines do not have OpenCL
+# libraries installed, and there is no good, free OpenCL
+# implementation yet which could be shipped with Cactus.
+
+# If you want to experiment with OpenCL and use these thorns (or look
+# at their documentation), then uncomment these thorns in this thorn
+# list, and use GetComponents to download these thorns.
+
+# You have to uncomment these thorns (not here, but further below):
+#   - CactusExamples/WaveToyOpenCL
+#   - CactusUtils/OpenCLRunTime
+#   - CactusUtils/Accelerator
+#   - ExternalLibraries/OpenCL
+#   - McLachlan/ML_WaveToy_CL
+
+# To download these thorns via GetComponents, use then the following
+# command (on the same system where you originally used
+# GetComponents):
+
+#   cd Cactus (or whatever your source tree is called)
+#   bin/GetComponents --update --root=. manifest/einsteintoolkit.th
+
+
+
+# This thorn list
+!TARGET   = $ROOT
+!TYPE     = svn
+!AUTH_URL = https://svn.einsteintoolkit.org/$1/trunk
+!URL      = http://svn.einsteintoolkit.org/$1/trunk
+!CHECKOUT = manifest
+
+# Cactus Flesh
+!TARGET   = $ROOT
+!TYPE     = svn
+!AUTH_URL = https://svn.cactuscode.org/flesh/trunk
+!URL      = http://svn.cactuscode.org/flesh/trunk
+!CHECKOUT = Cactus
+!NAME     = .
+
+# Simulation Factory
+!TARGET   = $ROOT
+!TYPE     = svn
+!URL      = https://svn.cct.lsu.edu/repos/numrel/$1/trunk
+!CHECKOUT = simfactory2
+!NAME     = simfactory
+
+# Example parameter files
+!TARGET   = $ROOT
+!TYPE     = svn
+!AUTH_URL = https://svn.einsteintoolkit.org/cactus/EinsteinExamples/trunk/$1
+!URL      = http://svn.einsteintoolkit.org/cactus/EinsteinExamples/trunk/$1
+!CHECKOUT = par
+
+# Various Cactus utilities
+!TARGET   = $ROOT
+!TYPE     = svn
+!AUTH_URL = https://svn.cactuscode.org/Utilities/trunk
+!URL      = http://svn.cactuscode.org/Utilities/trunk
+!CHECKOUT = .
+!NAME     = utils
+
+# The GetComponents script
+!TARGET   = $ROOT/bin
+!TYPE     = git
+!URL      = git://github.com/gridaphobe/CRL.git
+!AUTH_URL = git@github.com:gridaphobe/CRL.git
+!CHECKOUT = GetComponents
+
+
+
+# Cactus thorns
+!TARGET   = $ARR
+!TYPE     = svn
+!AUTH_URL = https://svn.cactuscode.org/arrangements/$1/$2/trunk
+!URL      = http://svn.cactuscode.org/arrangements/$1/$2/trunk
+!CHECKOUT =
+CactusBase/Boundary
+CactusBase/CartGrid3D
+CactusBase/CoordBase
+CactusBase/Fortran
+CactusBase/InitBase
+CactusBase/IOASCII
+CactusBase/IOBasic
+CactusBase/IOUtil
+CactusBase/SymBase
+CactusBase/Time
+
+CactusConnect/HTTPD
+CactusConnect/HTTPDExtra
+CactusConnect/Socket
+
+CactusDoc/CoreDoc
+
+CactusElliptic/EllBase
+#CactusElliptic/EllPETSc
+CactusElliptic/EllSOR
+
+CactusExamples/DemoInterp
+CactusExamples/FleshInfo
+CactusExamples/HelloWorld
+CactusExamples/IDWaveMoL
+CactusExamples/SampleBoundary
+CactusExamples/SampleIO
+CactusExamples/TimerInfo
+CactusExamples/WaveMoL
+CactusExamples/WaveToy1DF77
+CactusExamples/WaveToy2DF77
+#CactusExamples/WaveToyOpenCL
+
+CactusIO/IOJpeg
+
+CactusNumerical/Cartoon2D
+CactusNumerical/Dissipation
+CactusNumerical/InterpToArray
+CactusNumerical/LocalInterp
+CactusNumerical/LocalReduce
+CactusNumerical/MoL
+CactusNumerical/Noise
+CactusNumerical/Norms
+CactusNumerical/Periodic
+CactusNumerical/ReflectionSymmetry
+CactusNumerical/RotatingSymmetry180
+CactusNumerical/RotatingSymmetry90
+CactusNumerical/Slab
+CactusNumerical/SlabTest
+CactusNumerical/SpaceMask
+CactusNumerical/SphericalSurface
+
+CactusPUGH/PUGH
+CactusPUGH/PUGHInterp
+CactusPUGH/PUGHReduce
+CactusPUGH/PUGHSlab
+
+CactusPUGHIO/IOHDF5
+CactusPUGHIO/IOHDF5Util
+
+#CactusTest/TestAllTypes
+CactusTest/TestArrays
+CactusTest/TestComplex
+CactusTest/TestCoordinates
+CactusTest/TestFortranCrayPointers
+CactusTest/TestFortranDependencies1
+CactusTest/TestFortranDependencies2
+CactusTest/TestFpointerNULL
+CactusTest/TestFreeF90
+CactusTest/TestGlobalReduce
+CactusTest/TestInclude1
+CactusTest/TestInclude2
+CactusTest/TestLocalReduce
+CactusTest/TestLoop
+CactusTest/TestMath
+CactusTest/TestPar
+CactusTest/TestReduce
+CactusTest/TestSchedule
+CactusTest/TestStrings
+CactusTest/TestTable
+CactusTest/TestTimers
+CactusTest/TestTypes
+
+#CactusUtils/Accelerator
+CactusUtils/Formaline
+CactusUtils/NaNChecker
+CactusUtils/Nice
+CactusUtils/NoMPI
+#CactusUtils/OpenCLRunTime
+CactusUtils/TerminationTrigger
+CactusUtils/TimerReport
+
+CactusWave/IDScalarWave
+CactusWave/IDScalarWaveC
+CactusWave/IDScalarWaveCXX
+CactusWave/IDScalarWaveElliptic
+CactusWave/WaveBinarySource
+CactusWave/WaveToyC
+CactusWave/WaveToyCXX
+CactusWave/WaveToyExtra
+CactusWave/WaveToyF77
+CactusWave/WaveToyF90
+CactusWave/WaveToyFreeF90
+
+
+
+# The Einstein Toolkit
+!TARGET   = $ARR
+!TYPE     = svn
+!AUTH_URL = https://svn.einsteintoolkit.org/cactus/$1/$2/trunk
+!URL      = http://svn.einsteintoolkit.org/cactus/$1/$2/trunk
+!CHECKOUT =
+EinsteinAnalysis/ADMAnalysis
+EinsteinAnalysis/ADMConstraints # deprecated, use ML_ADMConstraints
+EinsteinAnalysis/AHFinder
+EinsteinAnalysis/AHFinderDirect
+EinsteinAnalysis/CalcK
+EinsteinAnalysis/EHFinder
+EinsteinAnalysis/Extract
+EinsteinAnalysis/Hydro_Analysis
+EinsteinAnalysis/Multipole
+EinsteinAnalysis/WeylScal4
+
+EinsteinBase/ADMBase
+EinsteinBase/ADMCoupling # deprecated 
+EinsteinBase/ADMMacros # to be deprecated, don't use for new code
+EinsteinBase/Constants
+EinsteinBase/CoordGauge
+EinsteinBase/EOS_Base
+EinsteinBase/HydroBase
+EinsteinBase/StaticConformal
+EinsteinBase/TmunuBase
+
+EinsteinEOS/EOS_Hybrid
+EinsteinEOS/EOS_IdealFluid
+EinsteinEOS/EOS_Omni
+EinsteinEOS/EOS_Polytrope
+
+EinsteinEvolve/GRHydro
+EinsteinEvolve/NewRad
+
+EinsteinInitialData/DistortedBHIVP
+EinsteinInitialData/Exact
+EinsteinInitialData/GRHydro_InitData
+EinsteinInitialData/Hydro_InitExcision
+EinsteinInitialData/IDAnalyticBH
+EinsteinInitialData/IDAxiBrillBH
+EinsteinInitialData/IDAxiOddBrillBH
+EinsteinInitialData/IDBrillData
+EinsteinInitialData/IDConstraintViolate
+EinsteinInitialData/IDFileADM
+EinsteinInitialData/IDLinearWaves
+EinsteinInitialData/Meudon_Bin_BH
+EinsteinInitialData/Meudon_Bin_NS
+EinsteinInitialData/Meudon_Mag_NS
+EinsteinInitialData/NoExcision
+EinsteinInitialData/RotatingDBHIVP
+EinsteinInitialData/TOVSolver
+EinsteinInitialData/TwoPunctures
+
+EinsteinUtils/SetMask_SphericalSurface
+EinsteinUtils/TGRtensor
+
+PITTNullCode/NullConstr
+PITTNullCode/NullDecomp
+PITTNullCode/NullEvolve
+PITTNullCode/NullExact
+PITTNullCode/NullGrid
+PITTNullCode/NullInterp
+PITTNullCode/NullNews
+PITTNullCode/NullPsiInt
+PITTNullCode/NullSHRExtract
+PITTNullCode/NullVars
+PITTNullCode/SphericalHarmonicDecomp
+PITTNullCode/SphericalHarmonicRecon
+
+!TARGET   = $ARR
+!TYPE     = git
+!AUTH_URL = git@github.com:rhaas80/Outflow.git
+!URL      = git://github.com/rhaas80/Outflow.git
+!REPO_PATH= ../$2
+!CHECKOUT = 
+EinsteinAnalysis/Outflow
+
+!TARGET   = $ARR
+!TYPE     = git
+!AUTH_URL = git@github.com:barrywardell/EinsteinExact
+!URL      = git://github.com/barrywardell/EinsteinExact
+!REPO_PATH= $2
+!CHECKOUT = EinsteinExact/doc EinsteinExact/m EinsteinExact/tests
+EinsteinExact/EinsteinExact_Test
+EinsteinExact/GaugeWave
+EinsteinExact/KerrSchild
+EinsteinExact/Minkowski
+EinsteinExact/ModifiedSchwarzschildBL
+EinsteinExact/ShiftedGaugeWave
+EinsteinExact/Vaidya2
+
+
+# Additional Cactus thorns
+!TARGET   = $ARR
+!TYPE     = svn
+!AUTH_URL = https://svn.cactuscode.org/projects/$1/$2/trunk
+!URL      = http://svn.cactuscode.org/projects/$1/$2/trunk
+!CHECKOUT =
+ExternalLibraries/BLAS
+ExternalLibraries/FFTW3
+ExternalLibraries/GSL
+ExternalLibraries/HDF5
+ExternalLibraries/hwloc
+ExternalLibraries/LAPACK
+ExternalLibraries/libjpeg
+ExternalLibraries/LORENE
+ExternalLibraries/MPI
+#ExternalLibraries/OpenCL
+ExternalLibraries/OpenSSL
+#ExternalLibraries/PETSc
+ExternalLibraries/zlib
+
+TAT/TATelliptic
+#TAT/TATPETSc
+
+# Boost library (http://www.boost.org/)
+# Boost is a high quality library that extends and anticipates C++ language
+# development. It is very useful for many C++ projects.
+#!TARGET   = $ARR
+#!TYPE     = git
+#!AUTH_URL = git@github.com:dradice/Boost.git
+#!URL      = git://github.com/dradice/Boost.git
+#!REPO_PATH = ../$2
+#!CHECKOUT =
+#ExternalLibraries/Boost
+
+
+# Various thorns from the AEI
+!TARGET   = $ARR
+!TYPE     = svn
+!AUTH_URL = https://svn.aei.mpg.de/numrel/$1/$2/trunk
+!URL      = http://svn.aei.mpg.de/numrel/$1/$2/trunk
+!CHECKOUT =
+AEIThorns/ADMMass
+AEIThorns/AEILocalInterp
+AEIThorns/PunctureTracker
+AEIThorns/SystemStatistics
+AEIThorns/Trigger
+
+
+
+# Various thorns from LSU
+!TARGET   = $ARR
+!TYPE     = svn
+!URL      = https://svn.cct.lsu.edu/repos/numrel/$1/$2/trunk
+!CHECKOUT =
+LSUThorns/PeriodicCarpet
+LSUThorns/QuasiLocalMeasures
+LSUThorns/SummationByParts
+LSUThorns/Vectors
+
+
+
+# From Kranc (required e.g. by McLachlan)
+!TARGET   = $ARR
+!TYPE     = git
+!AUTH_URL = git@github.com:ianhinder/Kranc.git
+!URL      = git://github.com/ianhinder/Kranc.git
+!REPO_PATH= Auxiliary/Cactus
+!CHECKOUT =
+KrancNumericalTools/GenericFD
+
+
+
+# McLachlan, the spacetime code
+!TARGET   = $ARR
+!TYPE     = git
+!AUTH_URL = carpetgit@carpetcode.org:McLachlan
+!URL      = git://carpetcode.org/McLachlan
+!REPO_PATH= $2
+!CHECKOUT = McLachlan/doc McLachlan/m McLachlan/par
+McLachlan/ML_ADMConstraints
+McLachlan/ML_ADMQuantities
+McLachlan/ML_BSSN
+McLachlan/ML_BSSN_Helper
+McLachlan/ML_BSSN_Test
+McLachlan/ML_CCZ4
+McLachlan/ML_CCZ4_Helper
+McLachlan/ML_CCZ4_Test
+McLachlan/ML_WaveToy
+#McLachlan/ML_WaveToy_CL
+McLachlan/ML_WaveToy_Test
+
+
+
+# Carpet, the AMR driver
+!TARGET   = $ARR
+!TYPE     = git
+!AUTH_URL = carpetgit@carpetcode.org:carpet
+!URL      = git://carpetcode.org/carpet
+!REPO_BRANCH = psamr
+!CHECKOUT = Carpet/doc
+Carpet/Carpet
+Carpet/CarpetEvolutionMask
+Carpet/CarpetIOASCII
+Carpet/CarpetIOBasic
+Carpet/CarpetIOHDF5
+Carpet/CarpetIOScalar
+Carpet/CarpetInterp
+Carpet/CarpetInterp2
+Carpet/CarpetLib
+Carpet/CarpetMask
+Carpet/CarpetReduce
+Carpet/CarpetRegrid
+Carpet/CarpetRegrid2
+Carpet/CarpetSlab
+Carpet/CarpetTracker
+Carpet/CycleClock
+Carpet/LoopControl
+Carpet/Timers
+Carpet/CarpetPSAMRTest
+
+CarpetExtra/CarpetIntegrateTest
+CarpetExtra/CarpetProlongateTest
+CarpetExtra/CarpetRegridTest
+CarpetExtra/HighOrderWaveTest
+CarpetExtra/ReductionTest
+CarpetExtra/ReductionTest2
+CarpetExtra/ReductionTest3
+CarpetExtra/RegridSyncTest
+CarpetExtra/TestCarpetGridInfo
+CarpetExtra/TestLoopControl
+
+# Private thorns
+!TARGET   = $ARR
+!TYPE     = ignore
+!CHECKOUT = 
