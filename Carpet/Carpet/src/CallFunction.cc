@@ -20,7 +20,7 @@
 
 #include "adler32.hh"
 
-#define KNARFDEBL 2
+//#define KNARFDEBL 2
 
 namespace Carpet {
   
@@ -360,19 +360,20 @@ namespace Carpet {
     bool psamr_skip = false;
     if(psamr_pseudo_evolve)
     {
-        psamr_skip = true;
-        // PTODO: Figure out the real reason to skip a function
-        // here. Things in global mode?
-        if(
-            CCTK_EQUALS(attribute->routine, "MoL_StartLoop") or
-            CCTK_EQUALS(attribute->routine, "MoL_SetCounter") or
-            CCTK_EQUALS(attribute->routine, "MoL_FinishLoop") or
-            CCTK_EQUALS(attribute->routine, "MoL_DecrementCounter"))
-        {
-            psamr_skip = false;
-        }
+      psamr_skip = true;
+      // PTODO: Figure out the real reason to skip a function
+      // here. Things in global mode?
+      if (
+          CCTK_EQUALS(attribute->routine, "MoL_StartLoop") or
+          CCTK_EQUALS(attribute->routine, "MoL_SetCounter") or
+          CCTK_EQUALS(attribute->routine, "MoL_FinishLoop") or
+          CCTK_EQUALS(attribute->routine, "MoL_DecrementCounter")
+         )
+      {
+        psamr_skip = false;
+      }
     }
-    int const skip = psamr_skip or CallBeforeRoutines (cctkGH, function, attribute, data);
+    int const skip = CallBeforeRoutines (cctkGH, function, attribute, data) or psamr_skip;
     if (not skip) {
       Timers::Timer timer(attribute->routine);
       

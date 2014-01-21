@@ -17,8 +17,8 @@
 
 #include <carpet.hh>
 
-#undef KNARFDEBL
-#define KNARFDEBL 1
+//#undef KNARFDEBL
+//#define KNARFDEBL 2
 
 namespace Carpet {
 
@@ -149,11 +149,13 @@ namespace Carpet {
       // PTODO: Is this necessary?
       if(use_psamr and carpet_cctk_iteration>0)
       {
-        if(reflevel>0 and (sync_during_time_integration or local_do_prolongate))
+        // PTODO KNARF: remove comment
+        if(/*reflevel>0 and */(sync_during_time_integration or local_do_prolongate))
         {
           static Timers::Timer timer("Sync");
           timer.start();
           reflevel--;
+          KNARFDEB(2, "KNARF preprolongate sync lvl %d on proc %d\n", reflevel, CCTK_MyProc(NULL));
           SyncGroups(cctkGH, goodgroups);
           timer.stop();
           reflevel++;
@@ -169,6 +171,8 @@ namespace Carpet {
         ProlongateGroupBoundaries (cctkGH, goodgroups);
         timer.stop();
       }
+      else
+        KNARFDEB(2, "KNARF skip prolongate lvl %d on proc %d\n", reflevel, CCTK_MyProc(NULL));
 
       // This was found to be necessary on Hopper, otherwise memory
       // seems to be overwritten while prolongating/syncronizing. It
@@ -194,6 +198,7 @@ namespace Carpet {
       if (sync_during_time_integration or local_do_prolongate) {
         static Timers::Timer timer ("Sync");
         timer.start();
+        KNARFDEB(2, "KNARF postprolongate sync lvl %d on proc %d\n", reflevel, CCTK_MyProc(NULL));
         SyncGroups (cctkGH, goodgroups);
         timer.stop();
       }
@@ -208,7 +213,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     // PTODO: Why check iteration?
-    if (use_psamr and carpet_cctk_iteration > 0)
+    if (use_psamr and carpet_cctk_iteration != 0)
     {
       int save_reflevel = reflevel;
       reflevel = reflevels-1;
@@ -216,15 +221,23 @@ namespace Carpet {
       int retval = SyncProlongateGroups_(cctkGH, groups, function_data);
       reflevel = save_reflevel;
 
-      if(carpet_next_coarse_lvl <= 0)
+      if (carpet_next_coarse_lvl < 0)
         return retval;
-
-      reflevel = - carpet_next_coarse_lvl;
-      // Prolongate one of the coarse grids
-      retval = SyncProlongateGroups(cctkGH, groups, function_data);
+      if (carpet_next_coarse_lvl > 0)
+      {
+        reflevel = carpet_next_coarse_lvl;
+        // Prolongate one of the coarse grids
+        retval = SyncProlongateGroups(cctkGH, groups, function_data);
+        reflevel = save_reflevel;
+        // PTODO: We want to synchronize 'reflevel' as well - or do we?
+        SyncGroups(cctkGH, groups);
+      }
+      else
+      {
+        reflevel = 0;
+        SyncGroups(cctkGH, groups);
+      }
       reflevel = save_reflevel;
-      // We want to synchronize 'reflevel' as well
-      SyncGroups(cctkGH, groups);
       return retval;
     }
     return SyncProlongateGroups_(cctkGH, groups, function_data);
@@ -236,14 +249,17 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    if (reflevel == 0) return;
+    // use the current time here (which may be modified by the user)
+    CCTK_REAL time = cctkGH->cctk_time;
+
+    if (use_psamr)
+      time = cctk_initial_time + carpet_level_iteration[reflevel] * delta_time / maxtimereflevelfact;
+    if (reflevel == 0)
+      return;
     
     Checkpoint ("ProlongateGroups");
 
     assert (groups.size() > 0);
-
-    // use the current time here (which may be modified by the user)
-    const CCTK_REAL time = cctkGH->cctk_time;
 
     static vector<Timers::Timer*> timers;
     if (timers.empty()) {
@@ -302,6 +318,8 @@ namespace Carpet {
     Checkpoint ("SyncGroups");
 
     assert (groups.size() > 0);
+
+    KNARFDEB(1, "KNARF SYNC, rl %d\n", reflevel);
     
     if (CCTK_IsFunctionAliased("Accelerator_PreSync")) {
       Accelerator_PreSync(cctkGH, &groups.front(), groups.size());

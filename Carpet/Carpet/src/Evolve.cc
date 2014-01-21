@@ -524,8 +524,10 @@ namespace Carpet {
       bool have_done_anything = false;
       
       for (int rl=0; rl<reflevels; ++rl) {
-        int const do_every
-          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
+        // KNARF: undo this comment (don't care about use_psamr here)
+        //int const do_every
+        int const do_every = use_psamr ? 1 :
+            ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
         if (use_psamr or (cctkGH->cctk_iteration-1) % do_every == 0) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
@@ -807,8 +809,10 @@ namespace Carpet {
       bool have_done_anything = false;
       
       for (int rl=0; rl<reflevels; ++rl) {
-        int const do_every
-          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
+        // KNARF: undo this comment (remove check on use_psamr)
+        //int const do_every
+        int const do_every = use_psamr ? 1 :
+            ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
         if (use_psamr or (cctkGH->cctk_iteration % do_every == 0)) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {

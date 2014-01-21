@@ -720,12 +720,12 @@ namespace Carpet {
       do_truncate = false;
       struct stat fileinfo;
       if (IO_TruncateOutputFiles (cctkGH)
-	  or stat(filename, &fileinfo)!=0) {
-	file.open (filename, ios::out | ios::trunc);
-	assert (file.good());
-	file << "# grid structure" << eol
-	     << "# format: map reflevel component mglevel   processor bounding-box is-outer-boundary" << eol;
-	assert (file.good());
+          or stat(filename, &fileinfo)!=0) {
+       file.open (filename, ios::out | ios::trunc);
+       assert (file.good());
+       file << "# grid structure" << eol
+            << "# format: map reflevel component mglevel   processor bounding-box is-outer-boundary" << eol;
+       assert (file.good());
       }
     }
     if (not file.is_open()) {
@@ -789,12 +789,12 @@ namespace Carpet {
       do_truncate = false;
       struct stat fileinfo;
       if (IO_TruncateOutputFiles (cctkGH)
-	  or stat(filename, &fileinfo)!=0) {
-	file.open (filename, ios::out | ios::trunc);
-	assert (file.good());
-	file << "# grid coordinates" << eol
-	     << "# format: map reflevel region mglevel   bounding-box" << eol;
-	assert (file.good());
+          or stat(filename, &fileinfo)!=0) {
+        file.open (filename, ios::out | ios::trunc);
+        assert (file.good());
+        file << "# grid coordinates" << eol
+             << "# format: map reflevel region mglevel   bounding-box" << eol;
+        assert (file.good());
       }
     }
     if (not file.is_open()) {
@@ -1198,7 +1198,7 @@ namespace Carpet {
     if(use_psamr)
       abort();
     
-    const int nprocs = CCTK_nProcs (cctkGH);
+   int nprocs = CCTK_nProcs (cctkGH);
     
     assert (superregs.size() == 1);
     
@@ -1213,14 +1213,27 @@ namespace Carpet {
        processor_topology_3d_y, 
        processor_topology_3d_z);
     assert (all (nprocs_dir > 0));
-    if (prod (nprocs_dir) != nprocs) {
+    // TODO: use deepest current level here, not maximum
+    if (use_psamr)
+    {
+      if (nprocs % max_refinement_levels)
+      {
+        CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
+                                "The specified processor topology [%d,%d,%d] currently requires a multiple of %d processors for %d levels, but there are %d processors.",
+                    nprocs_dir[0], nprocs_dir[1], nprocs_dir[2],
+                    prod (nprocs_dir) * max_refinement_levels, max_refinement_levels,
+                    nprocs);
+      }
+      nprocs /= max_refinement_levels;
+    }
+    if (prod (nprocs_dir) != nprocs and !use_psamr) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
 		  "The specified processor topology [%d,%d,%d] requires %d processors, but there are %d processors",
                   nprocs_dir[0], nprocs_dir[1], nprocs_dir[2],
                   prod (nprocs_dir),
                   nprocs);
     }
-    assert (prod (nprocs_dir) == nprocs);
+    //assert (prod (nprocs_dir) == nprocs);
     
     regs.resize (nprocs);
     const ivect cstr = rstr0;
@@ -1234,19 +1247,19 @@ namespace Carpet {
     vector<int> boundsz(nprocs_dir[2]);
     vector<ipfulltree *> subtreesz(nprocs_dir[2]+1);
     for (int k=0; k<nprocs_dir[2]; ++k) {
-      vector<int> boundsy(nprocs_dir[2]);
+      vector<int> boundsy(nprocs_dir[1]);
       vector<ipfulltree *> subtreesy(nprocs_dir[2]+1);
       for (int j=0; j<nprocs_dir[1]; ++j) {
-        vector<int> boundsx(nprocs_dir[2]);
+        vector<int> boundsx(nprocs_dir[0]);
         vector<ipfulltree *> subtreesx(nprocs_dir[2]+1);
-	for (int i=0; i<nprocs_dir[0]; ++i) {
+        for (int i=0; i<nprocs_dir[0]; ++i) {
           
-	  const int c = i + nprocs_dir[0] * (j + nprocs_dir[1] * k);
-	  const ivect ipos (i, j, k);
-	  ivect clb = rlb0 + step *  ipos;
-	  ivect cub = rlb0 + step * (ipos+1);
-// 	  clb = min (clb, rub);
-// 	  cub = min (cub, rub);
+          const int c = i + nprocs_dir[0] * (j + nprocs_dir[1] * k);
+          const ivect ipos (i, j, k);
+          ivect clb = rlb0 + step *  ipos;
+          ivect cub = rlb0 + step * (ipos+1);
+//          clb = min (clb, rub);
+//          cub = min (cub, rub);
           for (int d=0; d<dim; ++d) {
             if (ipos[d]<rem[d]) {
               clb[d] += cstr[d] * ipos[d];
@@ -1256,9 +1269,9 @@ namespace Carpet {
               cub[d] += cstr[d] * rem[d];
             }
           }
-	  assert (all (clb >= 0));
-	  assert (all (clb <= cub));
-	  assert (all (cub <= rub0));
+          assert (all (clb >= 0));
+          assert (all (clb <= cub));
+          assert (all (cub <= rub0));
           assert (all (not (ipos==0) or clb==rlb0));
           assert (all (not (ipos==nprocs_dir-1) or cub==rub0));
           region_t & reg  = regs.AT(c);
@@ -1266,21 +1279,21 @@ namespace Carpet {
           b2vect   & obnd = reg.outer_boundaries;
           int      & proc = reg.processor;
           ext = ibbox(clb, cub-cstr, cstr);
-	  obnd = obnd0;
+          obnd = obnd0;
           obnd[0] &= clb == rlb0;
           obnd[1] &= cub == rub0;
           proc = c;
           
           pseudoregion_t preg (reg.extent, c);
           subtreesx.AT(i) = new ipfulltree (preg);
-	}
-        boundsx.AT(nprocs_dir[0]) = rub0[0] + rstr0[0];
+        }
+        boundsx.AT(nprocs_dir[0]-1) = rub0[0] + rstr0[0];
         subtreesy.AT(j) = new ipfulltree (0, boundsx, subtreesx);
       }
-      boundsy.AT(nprocs_dir[1]) = rub0[1] + rstr0[1];
+      boundsy.AT(nprocs_dir[1]-1) = rub0[1] + rstr0[1];
       subtreesz.AT(k) = new ipfulltree (1, boundsy, subtreesy);
     }
-    boundsz.AT(nprocs_dir[2]) = rub0[2] + rstr0[2];
+    boundsz.AT(nprocs_dir[2]-1) = rub0[2] + rstr0[2];
     
     assert (superregs.AT(0).processors == NULL);
     superregs.AT(0).processors = new ipfulltree (2, boundsz, subtreesz);

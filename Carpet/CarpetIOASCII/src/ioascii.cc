@@ -777,10 +777,8 @@ namespace CarpetIOASCII {
       free (fullname);
       return true;
     }
-    //PTODO: Probably want this assert back
-    //if(not use_psamr)
-    if(false)
-      assert (last_output < cctkGH->cctk_iteration);
+    //if (not use_psamr)
+    //  assert (last_output < cctkGH->cctk_iteration);
     last_output = cctkGH->cctk_iteration;
     
     return false;

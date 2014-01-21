@@ -88,6 +88,13 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
 
     static vector<Timers::Timer*> timers;
+
+    if (use_psamr)
+    {
+      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
+      SyncGroups (cctkGH, groups);
+      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
+    }
     if (timers.empty()) {
       timers.push_back(new Timers::Timer("comm_state[0].create"));
       for (astate state = static_cast<astate>(0);
@@ -125,6 +132,14 @@ namespace Carpet {
     } // for state
     (*ti)->stop();
     ++ti; assert(ti == timers.end());
+
+    if (use_psamr)
+    {
+      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
+      SyncGroups (cctkGH, groups);
+      Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
+    }
+
   }
 
 } // namespace Carpet
