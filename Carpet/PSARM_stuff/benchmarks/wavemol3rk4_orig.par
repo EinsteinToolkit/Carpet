@@ -60,7 +60,7 @@ carpetregrid2::radius_1[9]=0.0009765625
 carpet::domain_from_coordbase="yes"
 
 # coarse: 512
-cactus::cctk_itlast = 512
+cactus::cctk_itlast = 1024
 
 iobasic::outInfo_every = 512
 iobasic::outInfo_vars = "wavemol::phi"
