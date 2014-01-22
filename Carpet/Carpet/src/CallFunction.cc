@@ -359,20 +359,15 @@ namespace Carpet {
                 attribute->where,
                 attribute->thorn, attribute->routine);
     bool psamr_skip = false;
-    if(psamr_pseudo_evolve)
+    // PTODO: Figure out the real reason to skip a function
+    // here. Things in global mode?
+    if ( psamr_pseudo_evolve and
+         !CCTK_EQUALS(attribute->routine, "MoL_StartLoop") and
+         !CCTK_EQUALS(attribute->routine, "MoL_SetCounter") and
+         !CCTK_EQUALS(attribute->routine, "MoL_FinishLoop") and
+         !CCTK_EQUALS(attribute->routine, "MoL_DecrementCounter") )
     {
       psamr_skip = true;
-      // PTODO: Figure out the real reason to skip a function
-      // here. Things in global mode?
-      if (
-          CCTK_EQUALS(attribute->routine, "MoL_StartLoop") or
-          CCTK_EQUALS(attribute->routine, "MoL_SetCounter") or
-          CCTK_EQUALS(attribute->routine, "MoL_FinishLoop") or
-          CCTK_EQUALS(attribute->routine, "MoL_DecrementCounter")
-         )
-      {
-        psamr_skip = false;
-      }
     }
     int const skip = CallBeforeRoutines (cctkGH, function, attribute, data) or psamr_skip;
     if (not skip) {

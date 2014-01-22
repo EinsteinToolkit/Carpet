@@ -108,9 +108,6 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     DECLARE_CCTK_ARGUMENTS;
     while (not do_terminate (cctkGH)) {
-    //while (carpet_cctk_iteration<10) {
-      fprintf(stderr, "%d %d ******************************************************\n",
-              CCTK_MyProc(NULL), carpet_cctk_iteration);
       // increment internal iteration counter. This counts actual iterations.
       // cctkGH->cctk_iteration is used for the iteration counter of the
       // schemes themselfes
@@ -143,16 +140,12 @@ namespace Carpet {
       //KNARFDEB(1, "KNARF 6 %d\n", arrdata.AT(0).AT(0).hh->local_components(reflevels-1));
       //if (arrdata.AT(0).AT(0).hh->local_components(reflevels-1))
       //if (!arrdata.AT(0).AT(0).hh->local_components(0))
-      // TODO: This is definately a very, very, very evil hack, and only works in some cases
+      // PTODO: This is definately a very, very, very evil hack, and only works in some cases
       if (CCTK_MyProc(NULL) >= (CCTK_nProcs(NULL)/2))
         lvl = reflevels - 1;
-//      fprintf(stderr, "KNARF evolve lvl %d on proc %d at internal iteration %d\n", lvl, CCTK_MyProc(NULL), carpet_cctk_iteration);
       CallEvol (cctkGH, lvl);
-//      fprintf(stderr, "KNARF restrict lvl %d on proc %d at internal iteration %d, %g\n", lvl, CCTK_MyProc(NULL), carpet_cctk_iteration, tt->get_time(0, 0, 0));
       //CallProlong (cctkGH, next_lvl);
-      //Carpet::NamedBarrier(cctkGH, 8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
       CallRestrict (cctkGH, next_lvl);
-//      fprintf(stderr, "KNARF analysis lvl %d on proc %d at internal iteration %d\n", lvl, CCTK_MyProc(NULL), carpet_cctk_iteration-1);
       CallAnalysis (cctkGH, next_lvl);
     }
   }
@@ -171,7 +164,7 @@ namespace Carpet {
     BeginTimingEvolution (cctkGH);
     static Timers::Timer timer ("Evolve");
     timer.start();
-    if(use_psamr) {
+    if (use_psamr) {
       EvolvePSAMR(cctkGH);
     } else {
       // PTODO: Move to EvolveSAMR
@@ -506,11 +499,10 @@ namespace Carpet {
   
   
   
-  // lvl is for PSAMR only. It is the
-  // level that's supposed to be evolved
+  // lvl is for PSAMR only. It is the level that's supposed to be evolved
   // on the coarse grid.
   void
-  CallEvol (cGH * const cctkGH,int lvl)
+  CallEvol (cGH * const cctkGH, int lvl)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -524,10 +516,8 @@ namespace Carpet {
       bool have_done_anything = false;
       
       for (int rl=0; rl<reflevels; ++rl) {
-        // KNARF: undo this comment (don't care about use_psamr here)
-        //int const do_every
-        int const do_every = use_psamr ? 1 :
-            ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
+        int const do_every
+          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
         if (use_psamr or (cctkGH->cctk_iteration-1) % do_every == 0) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
@@ -644,7 +634,6 @@ namespace Carpet {
                         cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
               
               ProlongateBoundaries (cctkGH);
-//              fprintf(stderr, "KNARF RESTRICt lvl %d on proc %d\n", rl, CCTK_MyProc(NULL));
               
               did_restrict = true;
               
@@ -809,10 +798,8 @@ namespace Carpet {
       bool have_done_anything = false;
       
       for (int rl=0; rl<reflevels; ++rl) {
-        // KNARF: undo this comment (remove check on use_psamr)
-        //int const do_every
-        int const do_every = use_psamr ? 1 :
-            ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
+        int const do_every
+          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
         if (use_psamr or (cctkGH->cctk_iteration % do_every == 0)) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
@@ -854,7 +841,7 @@ namespace Carpet {
                 ScheduleTraverse (where, "CCTK_POSTRESTRICT", cctkGH);
               }
 #endif
-              if(not use_psamr or (rl == reflevels-1 or rl == next_lvl)) {
+              if (not use_psamr or (rl == reflevels-1 or rl == next_lvl)) {
 
                 // Poststep
                 ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
@@ -878,7 +865,7 @@ namespace Carpet {
               }
               
               // Output
-              if(not use_psamr or (rl == reflevels-1 or rl == next_lvl)) {
+              if (not use_psamr or (rl == reflevels-1 or rl == next_lvl)) {
                 OutputGH (where, cctkGH);
               }
               

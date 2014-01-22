@@ -908,7 +908,6 @@ namespace CarpetRegrid2 {
             regsss.at(m).at(rl) = regss.at(newmap);
             }
           }
-          cout << "KNARF RRRRRRRRRRRRRRR" << regss << "\n";
         }
       }
       else

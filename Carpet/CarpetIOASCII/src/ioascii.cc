@@ -777,6 +777,8 @@ namespace CarpetIOASCII {
       free (fullname);
       return true;
     }
+    // PTODO: We have to disable this for PSAMR, but right now we don't have
+    // access to this parameter
     //if (not use_psamr)
     //  assert (last_output < cctkGH->cctk_iteration);
     last_output = cctkGH->cctk_iteration;

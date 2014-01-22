@@ -67,6 +67,7 @@ namespace Carpet {
     return retval;
   }
 
+
   // synchronises ghostzones and prolongates boundaries of a set of groups
   //
   // returns 0 for success and -1 if the set contains a group with no storage
@@ -149,8 +150,7 @@ namespace Carpet {
       // PTODO: Is this necessary?
       if(use_psamr and carpet_cctk_iteration>0)
       {
-        // PTODO KNARF: remove comment
-        if(/*reflevel>0 and */(sync_during_time_integration or local_do_prolongate))
+        if(reflevel>0 and (sync_during_time_integration or local_do_prolongate))
         {
           static Timers::Timer timer("Sync");
           timer.start();
@@ -248,9 +248,9 @@ namespace Carpet {
     
     // use the current time here (which may be modified by the user)
     CCTK_REAL time = cctkGH->cctk_time;
-
     if (use_psamr)
       time = cctk_initial_time + carpet_level_iteration[reflevel] * delta_time / maxtimereflevelfact;
+
     if (reflevel == 0)
       return;
     
