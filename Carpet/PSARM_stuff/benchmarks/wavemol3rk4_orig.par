@@ -1,0 +1,91 @@
+############################################################
+#
+# gaussian.par
+#
+# A simple example parameter file for WaveMoL
+#
+############################################################
+
+ActiveThorns = "CoordBase SymBase NaNChecker CarpetReduce CartGrid3D Carpet CarpetLib Boundary CarpetIOBasic IOUtil CarpetIOASCII IDWaveMoL CarpetSlab WaveMoL Time MoL LocalReduce CarpetRegrid2 InitBase"
+
+idwavemol::initial_data = "gaussian"
+
+wavemol::bound = "radiation"
+
+InitBase::initial_data_setup_method="init_all_levels"
+MoL::initial_data_is_crap="yes"
+grid::domain = "full"
+grid::avoid_origin = "no"
+
+grid::type = "coordbase"
+CoordBase::xmin =  -0.5
+CoordBase::ymin =  -0.5
+CoordBase::zmin =  -0.5
+CoordBase::xmax =   0.5
+CoordBase::ymax =   0.5
+CoordBase::zmax =   0.5
+CoordBase::dx   =   0.02
+CoordBase::dy   =   0.02
+CoordBase::dz   =   0.02
+
+CoordBase::boundary_size_x_lower        = 1
+CoordBase::boundary_size_y_lower        = 1
+CoordBase::boundary_size_z_lower        = 1
+CoordBase::boundary_size_x_upper        = 1
+CoordBase::boundary_size_y_upper        = 1
+CoordBase::boundary_size_z_upper        = 1
+CoordBase::boundary_shiftout_x_lower    = 1
+CoordBase::boundary_shiftout_y_lower    = 1
+CoordBase::boundary_shiftout_z_lower    = 1
+CoordBase::boundary_shiftout_x_upper    = 1
+CoordBase::boundary_shiftout_y_upper    = 1
+CoordBase::boundary_shiftout_z_upper    = 1
+
+driver::ghost_size = 1
+time::dtfac = 0.5
+
+carpet::max_refinement_levels = 3
+carpetregrid2::num_centres = 1
+carpetregrid2::num_levels_1 = 3
+carpetregrid2::radius_1[1]=0.25
+carpetregrid2::radius_1[2]=0.125
+carpet::domain_from_coordbase="yes"
+
+cactus::cctk_itlast = 20
+
+iobasic::outInfo_every = 4
+iobasic::outInfo_vars = "wavemol::phi"
+
+ioascii::out1D_every = 1
+ioascii::out1D_vars = "wavemol::scalarevolvemol_scalar wavemol::energy"
+
+IO::out_dir = $parfile
+IO::out_fileinfo = "none"
+
+# Method of Lines (MoL)
+#methodoflines::ode_method = "icn"
+methodoflines::ode_method = "rk4"
+MoL::MoL_Intermediate_Steps = 4
+MoL::MoL_Num_Scratch_Levels = 1
+
+
+cactus::cctk_full_warnings = "yes"
+
+#carpet::use_pamr = "no"
+#carpet::processor_topology = "manual"
+#carpet::regrid_in_level_mode = "no"
+#carpet::processor_topology_3d_x = 1
+#carpet::processor_topology_3d_y = 1
+#carpet::processor_topology_3d_z = 1
+
+#carpet::recompose_verbose = "yes"
+
+carpet::grid_structure_filename = "grid.dat"
+carpet::grid_coordinates_filename = "coordinates.dat"
+
+#carpet::verbose = "yes"
+#carpet::veryverbose = "yes"
+
+#carpet::use_buffer_zones = "yes"
+
+#carpetioascii::output_all_timelevels = "yes"
