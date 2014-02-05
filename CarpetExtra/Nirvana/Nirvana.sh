@@ -55,6 +55,9 @@ NIRVANA_DIR=${INSTALL_DIR}
         
         echo "Nirvana: Building..."
         cd ${NAME}
+        for dir in $SYS_INC_DIRS; do
+            CPPFLAGS="$CPPFLAGS -I$dir"
+        done
         ${CXX} ${CPPFLAGS} ${CXXFLAGS} -c *.cc $(for dir in ${HDF5_INC_DIRS}; do echo -I${dir}; done)
         ${AR} ${ARFLAGS} libNirvana.a *.o
 	if [ ${USE_RANLIB} = 'yes' ]; then
