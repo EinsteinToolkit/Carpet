@@ -196,6 +196,24 @@ namespace Carpet {
     Checkpoint ("ProlongateGroups");
 
     assert (groups.size() > 0);
+    
+    // TODO: Transmit only the regions that are actually needed
+    if (CCTK_IsFunctionAliased("Accelerator_RequireValidData")) {
+      // TODO: Require only as many time levels as needed
+      // TODO: Handle time levels correctly
+      vector<CCTK_INT> vis, rls, tls;
+      for (size_t i=0; i<groups.size(); ++i) {
+        for (int tl=0; tl<timelevels; ++tl) {
+          vis.push_back(groups[i]);
+          rls.push_back(reflevel-1);
+          tls.push_back(tl);
+        }
+      }
+      const CCTK_INT on_device = 0;
+      Accelerator_RequireValidData
+        (cctkGH,
+         &vis.front(), &rls.front(), &tls.front(), vis.size(), on_device);
+    }
 
     // use the current time here (which may be modified by the user)
     const CCTK_REAL time = cctkGH->cctk_time;
@@ -246,6 +264,18 @@ namespace Carpet {
     }
     (*ti)->stop();
     ++ti; assert(ti == timers.end());
+    
+    // TODO: Transmit only the regions that were actually written
+    // (i.e. the buffer zones)
+    if (CCTK_IsFunctionAliased("Accelerator_NotifyDataModified")) {
+      // TODO: Handle time levels correctly
+      const vector<CCTK_INT> rls(groups.size(), reflevel);
+      const vector<CCTK_INT> tls(groups.size(), timelevel);
+      const CCTK_INT on_device = 0;
+      Accelerator_NotifyDataModified
+        (cctkGH,
+         &groups.front(), &rls.front(), &tls.front(), groups.size(), on_device);
+    }
   }
 
 
