@@ -260,12 +260,15 @@ namespace Carpet {
             const bool have_accel =
               CCTK_IsFunctionAliased("Accelerator_NotifyDataModified");
             vector<CCTK_INT> vis, rls, tls;
-	    for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+            const int varn = CCTK_NumVarsInGroupI(group);
+	    for (int var=0; var<varn; ++var) {
               arrdata.AT(group).AT(m).data.AT(var)->
                 fill_all (reflevel, mglevel);
               if (have_accel) {
-                for (int tl = 1; tl < arrdata.AT(group).AT(m).data.AT(var)->timelevels(mglevel,reflevel); tl++) {
-                  vis.push_back(CCTK_FirstVarIndexI(group) + var);
+                const int var0 = CCTK_FirstVarIndexI(group);
+                const int num_tl = arrdata.AT(group).AT(m).data.AT(var)->timelevels(mglevel,reflevel);
+                for (int tl = 1; tl < num_tl; tl++) {
+                  vis.push_back(var0 + var);
                   rls.push_back(reflevel);
                   tls.push_back(tl);
                 }
