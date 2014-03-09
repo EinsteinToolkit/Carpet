@@ -1258,7 +1258,7 @@ namespace Carpet {
       break;
     }
     case CCTK_DISTRIB_CONSTANT: {
-      int const d = gdata.dim==0 ? 0 : gdata.dim-1;
+      int const d = min (dim-1, gdata.dim);
       SplitRegions_AlongDir (cctkGH, superregs, regs, d);
       break;
     }
@@ -2233,7 +2233,7 @@ namespace Carpet {
       int const nprocs = CCTK_nProcs (cctkGH);
       
       // Find dimension which should be extended
-      int const d = gdata.dim==0 ? 0 : gdata.dim-1;
+      int const d = min(dim-1, gdata.dim);
       // Extend group sizes
       sizes[d] =
         (sizes[d] - (ghosts.AT(0)[0][d] + ghosts.AT(0)[1][d])) * nprocs
