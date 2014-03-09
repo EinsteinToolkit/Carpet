@@ -2235,9 +2235,8 @@ namespace Carpet {
       // Find dimension which should be extended
       int const d = min(dim-1, gdata.dim);
       // Extend group sizes
-      sizes[d] =
-        (sizes[d] - (ghosts.AT(0)[0][d] + ghosts.AT(0)[1][d])) * nprocs
-        + (ghosts.AT(0)[0][d] + ghosts.AT(0)[1][d]);
+      assert (sizes[d] < numeric_limits<int>::max() / nprocs);
+      sizes[d] *= nprocs;
       assert (sizes[d] >= 0);
       break;
     }
