@@ -434,7 +434,7 @@ namespace CarpetIOScalar {
             reductions_changed.at(n) = false;
           }
 
-          file << setprecision(15);
+          file << setprecision(out_precision);
           assert (file.good());
 
         } // if on the root processor
