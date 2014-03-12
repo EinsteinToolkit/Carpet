@@ -142,14 +142,15 @@ namespace Carpet {
   
   // Get pointer to grid variable for a specific map and refinement level
   CCTK_POINTER
-  Carpet_VarDataPtrI (CCTK_POINTER_TO_CONST const cctkGH,
+  Carpet_VarDataPtrI (CCTK_POINTER_TO_CONST const cctkGH_,
                       CCTK_INT const m,
                       CCTK_INT const rl,
                       CCTK_INT const c,
                       CCTK_INT const tl,
                       CCTK_INT const varindex)
   {
-    assert (cctkGH);
+    assert (cctkGH_);
+    cGH const * const cctkGH = static_cast <cGH const *> (cctkGH_);
     assert (varindex >= 0 and varindex < CCTK_NumVars());
     int const groupindex = CCTK_GroupIndexFromVarI (varindex);
     assert (groupindex >= 0);
@@ -165,7 +166,7 @@ namespace Carpet {
       assert (rl == 0);
       assert (c == CCTK_MyProc (NULL));
     }
-    int const maxtls = CCTK_MaxTimeLevelsGI (groupindex);
+    int const maxtls = CCTK_MaxActiveTimeLevelsGI (cctkGH, groupindex);
     assert (tl >= 0 and tl < maxtls);
     
     int const activetimelevels =

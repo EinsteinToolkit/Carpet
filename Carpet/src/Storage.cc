@@ -217,10 +217,27 @@ namespace Carpet {
                 arrdata.AT(group).AT(m).data.AT(var)->set_timelevels
                   (ml, rl, tls[n]);
                 
+                // Make room in CCTK grid hierarchy if we increase the number of
+                // timelevels beyond what was in interface.ccl
+                if (tls[n]>groupdata.AT(group).info.maxtimelevels) {
+                  // this needs to be realloc since we inherit the layout from Cactus'
+                  // default SetupGH routine
+                  void ** const temp =
+                    static_cast<void**>(realloc(cctkGH->data[varindex],
+                                        tls[n] * sizeof (void*)));
+                  assert (temp or tls[n]==0);
+                  for (int tl=groupdata.AT(group).info.maxtimelevels;
+                       tl<tls[n]; ++tl)
+                    temp[tl] = NULL;
+                  cctkGH->data[varindex] = temp;
+                  groupdata.AT(group).info.maxtimelevels = tls[n];
+                }
+      
                 // Set the data pointers for grid arrays
                 if (gp.grouptype != CCTK_GF) {
                   assert (rl==0 and m==0);
-                  for (int tl=0; tl<gp.numtimelevels; ++tl) {
+                  for (int tl=0; tl<groupdata.AT(group).info.maxtimelevels;
+                       ++tl) {
                     if (tl < groupdata.AT(group).activetimelevels.AT(ml).AT(rl)) {
                       ggf *const ff = arrdata.AT(group).AT(0).data.AT(var);
                       void *const ptr = ff->data_pointer(tl, 0, 0, 0)->storage();
@@ -254,6 +271,29 @@ namespace Carpet {
     
     return do_allow_past_timelevels ? 
       min_num_timelevels : min(1,min_num_timelevels);
+  }
+  
+  
+  
+  int
+  QueryMaxTimeLevels (const cGH*, int n_groups, const int* groups,
+                      int* status)
+  {
+    assert (status || n_groups == 0);
+    assert (groups || n_groups == 0);
+
+    for(int g = 0; g < n_groups; g++) {
+      if (groups[g] >= 0) {
+        status[g] = groupdata.AT(groups[g]).info.maxtimelevels;
+      } else {
+        CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "QueryMaxTimeLevels: Invalid group index %d given",
+                   groups[g]);
+        status[g] = -1;
+      }
+    }
+    
+    return 0;
   }
   
   
@@ -293,6 +333,7 @@ namespace Carpet {
   {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 and group<CCTK_NumGroups());
+    // TODO: decide whether to use CCTK_MaxActiveTimeLevelsGI
     const int tls = CCTK_MaxTimeLevelsGI(group);
     int status;
     GroupStorageIncrease (cctkGH, 1, &group, &tls, &status);

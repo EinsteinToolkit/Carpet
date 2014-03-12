@@ -35,6 +35,8 @@ namespace Carpet {
                             const int* timelevels, int* status);
   int GroupStorageDecrease (const cGH* cgh, int n_groups, const int* groups,
                             const int* timelevels, int* status);
+  int QueryMaxTimeLevels (const cGH* cgh, int n_groups, const int* groups,
+                          int* status);
   int Barrier (const cGH* cgh);
   int NamedBarrier (const cGH* cgh, unsigned int id, const char* name);
   int Exit (const cGH* cgh, int retval);
