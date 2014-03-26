@@ -1126,7 +1126,54 @@ transfer_prolongate (data const * const src,
     timer.stop (0);
     break;
   }
-    
+  case op_STAGGER011: {
+      static
+        void (* the_operators[]) (T const * restrict const src,
+                                  ivect3 const & restrict srcpadext,
+                                  ivect3 const & restrict srcext,
+                                  T * restrict const dst,
+                                  ivect3 const & restrict dstpadext,
+                                  ivect3 const & restrict dstext,
+                                  ibbox3 const & restrict srcbbox,
+                                  ibbox3 const & restrict dstbbox,
+                                  ibbox3 const & restrict srcregbbox,
+                                  ibbox3 const & restrict dstregbbox,
+                                  void * const extraargs) =
+        {
+          NULL,
+          & prolongate_3d_stagger011<T,1>,
+          NULL,
+          & prolongate_3d_stagger011<T,3>,
+          NULL,
+          & prolongate_3d_stagger011<T,5>,
+          NULL,
+          & prolongate_3d_stagger011<T,7>,
+        };
+
+    static Timer timer ("prolongate_STAGGER011");
+    timer.start ();
+         call_operator<T> (the_operators[order_space-2],
+                           static_cast <T const *> (src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast <T *> (this->storage()),
+                           this->padded_shape(), this->shape(),
+                           src->extent(),
+                           this->extent(),
+                           srcbox, dstbox, NULL);
+ 
+
+//            call_operator<T> (& prolongate_3d_stagger011,
+//                              static_cast <T const *> (src->storage()),
+//                              src->padded_shape(), src->shape(),
+//                              static_cast <T *> (this->storage()),
+//                              this->padded_shape(), this->shape(),
+//                              src->extent(),
+//                              this->extent(),
+//                              srcbox, dstbox, NULL);
+    timer.stop (0);
+  break;
+  } 
+
   default:
     CCTK_BUILTIN_UNREACHABLE();
   } // switch (transport_operator)
