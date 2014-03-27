@@ -18,7 +18,10 @@ enum operator_type
   op_WENO,                      // use WENO stencils (for hydro)
   op_TVD,                       // use TVD stencils (for hydro)
   op_Lagrange_monotone,         // monotone Lagrange interpolation (for hydro)
-  op_STAGGER011                 // use STAGGER011 stencils (for hydro)
+  op_STAGGER011,                 // use STAGGER011 stencils (for hydro)
+  op_STAGGER101,                 // use STAGGER101 stencils (for hydro)
+  op_STAGGER110,                 // use STAGGER110 stencils (for hydro)
+  op_STAGGER111                 // use STAGGER111 stencils (for hydro)
 };
 
 #endif // OPERATORS_HH
