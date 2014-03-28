@@ -1140,12 +1140,10 @@ transfer_prolongate (data const * const src,
                                   ibbox3 const & restrict dstregbbox,
                                   void * const extraargs) =
         {
-          NULL,
           & prolongate_3d_stagger011<T,2>,
-          NULL,
           & prolongate_3d_stagger011<T,3>,
-          NULL,
-          & prolongate_3d_stagger011<T,4>,
+          & prolongate_3d_stagger011<T,3>,
+          & prolongate_3d_stagger011<T,3>
         };
 
     static Timer timer ("prolongate_STAGGER011");
@@ -1176,12 +1174,10 @@ transfer_prolongate (data const * const src,
                                   ibbox3 const & restrict dstregbbox,
                                   void * const extraargs) =
         {
-          NULL,
           & prolongate_3d_stagger101<T,2>,
-          NULL,
           & prolongate_3d_stagger101<T,3>,
-          NULL,
-          & prolongate_3d_stagger101<T,4>,
+          & prolongate_3d_stagger101<T,3>,
+          & prolongate_3d_stagger101<T,3>
         };
 
     static Timer timer ("prolongate_STAGGER011");
@@ -1214,12 +1210,10 @@ transfer_prolongate (data const * const src,
                                   ibbox3 const & restrict dstregbbox,
                                   void * const extraargs) =
         {
-          NULL,
           & prolongate_3d_stagger110<T,2>,
-          NULL,
           & prolongate_3d_stagger110<T,3>,
-          NULL,
-          & prolongate_3d_stagger110<T,4>,
+          & prolongate_3d_stagger110<T,3>,
+          & prolongate_3d_stagger110<T,3>
         };
 
     static Timer timer ("prolongate_STAGGER011");
@@ -1252,12 +1246,10 @@ transfer_prolongate (data const * const src,
                                   ibbox3 const & restrict dstregbbox,
                                   void * const extraargs) =
         {
-          NULL,
           & prolongate_3d_stagger111<T,2>,
-          NULL,
           & prolongate_3d_stagger111<T,3>,
-          NULL,
-          & prolongate_3d_stagger111<T,4>,
+          & prolongate_3d_stagger111<T,3>,
+          & prolongate_3d_stagger111<T,3>
         };
 
     static Timer timer ("prolongate_STAGGER011");
