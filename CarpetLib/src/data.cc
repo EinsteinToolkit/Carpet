@@ -1351,6 +1351,54 @@ transfer_restrict (data const * const src,
   case op_WENO:
   case op_TVD:
   case op_Lagrange_monotone:
+  case op_STAGGER011:
+      assert (not slabinfo);
+      call_operator<T> (& restrict_3d_stagger011,
+                        static_cast <T const *> (src->storage()),
+                        src->padded_shape(), src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->padded_shape(), this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        srcregbox, dstregbox, NULL);
+      break;
+
+  case op_STAGGER101:
+      assert (not slabinfo);
+      call_operator<T> (& restrict_3d_stagger101,
+                        static_cast <T const *> (src->storage()),
+                        src->padded_shape(), src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->padded_shape(), this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        srcregbox, dstregbox, NULL);
+      break;
+
+  case op_STAGGER110:
+      assert (not slabinfo);
+      call_operator<T> (& restrict_3d_stagger110,
+                        static_cast <T const *> (src->storage()),
+                        src->padded_shape(), src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->padded_shape(), this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        srcregbox, dstregbox, NULL);
+      break;
+
+  case op_STAGGER111:
+      assert (not slabinfo);
+      call_operator<T> (& restrict_3d_stagger111,
+                        static_cast <T const *> (src->storage()),
+                        src->padded_shape(), src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->padded_shape(), this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        srcregbox, dstregbox, NULL);
+      break;
+
   case op_restrict:
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {

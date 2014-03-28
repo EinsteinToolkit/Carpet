@@ -431,8 +431,63 @@ namespace CarpetLib {
                         ibbox3 const & restrict srcregbbox,
                         ibbox3 const & restrict dstregbbox,
                         void * extraargs);
+
+  template <typename t>
+  void
+  restrict_3d_stagger011 (t const * restrict const src,
+                      ivect3 const & restrict srcpadext,
+                      ivect3 const & restrict srcext,
+                      t * restrict const dst,
+                      ivect3 const & restrict dstpadext,
+                      ivect3 const & restrict dstext,
+                      ibbox3 const & restrict srcbbox,
+                      ibbox3 const & restrict dstbbox,
+                      ibbox3 const & restrict srcregbbox,
+                      ibbox3 const & restrict dstregbbox,
+                      void * extraargs);
   
-  
+
+  template <typename t>
+  void
+  restrict_3d_stagger101 (t const * restrict const src,
+                      ivect3 const & restrict srcpadext,
+                      ivect3 const & restrict srcext,
+                      t * restrict const dst,
+                      ivect3 const & restrict dstpadext,
+                      ivect3 const & restrict dstext,
+                      ibbox3 const & restrict srcbbox,
+                      ibbox3 const & restrict dstbbox,
+                      ibbox3 const & restrict srcregbbox,
+                      ibbox3 const & restrict dstregbbox,
+                      void * extraargs);
+
+  template <typename t>
+  void
+  restrict_3d_stagger110 (t const * restrict const src,
+                      ivect3 const & restrict srcpadext,
+                      ivect3 const & restrict srcext,
+                      t * restrict const dst,
+                      ivect3 const & restrict dstpadext,
+                      ivect3 const & restrict dstext,
+                      ibbox3 const & restrict srcbbox,
+                      ibbox3 const & restrict dstbbox,
+                      ibbox3 const & restrict srcregbbox,
+                      ibbox3 const & restrict dstregbbox,
+                      void * extraargs);
+
+  template <typename t>
+  void
+  restrict_3d_stagger111 (t const * restrict const src,
+                      ivect3 const & restrict srcpadext,
+                      ivect3 const & restrict srcext,
+                      t * restrict const dst,
+                      ivect3 const & restrict dstpadext,
+                      ivect3 const & restrict dstext,
+                      ibbox3 const & restrict srcbbox,
+                      ibbox3 const & restrict dstbbox,
+                      ibbox3 const & restrict srcregbbox,
+                      ibbox3 const & restrict dstregbbox,
+                      void * extraargs);
   
 } // namespace CarpetLib
 
