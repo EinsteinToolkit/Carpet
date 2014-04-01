@@ -116,7 +116,7 @@ namespace CarpetLib {
     int const dstkoff = dstoff[2];
     
     
-    #include "coeffs_restrict.h"
+#include "coeffs_restrict.h"
     
     if (not use_loopcontrol_in_operators) {
       
@@ -126,15 +126,15 @@ namespace CarpetLib {
           for (int i=0; i<regiext; ++i) {
      	  dst[DSTIND3(i, j, k)] = typeprops<T>::fromreal (0);
 
-	  if(ORDER==2) {
-	    for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
+	  if(ORDER_STAG==2) {
+	    for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG+1;jj++) for(int kk=1;kk<=ORDER_STAG+1;kk++) {
 		  dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*coeff[kk] * src [SRCIND3(2*i-1+(ii-1), 2*j-1+(jj-1), 2*k-1+(kk-1))];
 		}
 	  }
 
-	  if(ORDER==3 || ORDER==4) {
-	    for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-		  dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*coeff[kk]*src [SRCIND3(2*i-2+(ii-1)+(4-ORDER), 2*j-2+(jj-1)+(4-ORDER), 2*k-2+(kk-1)+(4-ORDER))];
+	  if(ORDER_STAG==3 || ORDER_STAG==4) {
+	    for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG+1;jj++) for(int kk=1;kk<=ORDER_STAG+1;kk++) {
+		  dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*coeff[kk]*src [SRCIND3(2*i-2+(ii-1)+(4-ORDER_STAG), 2*j-2+(jj-1)+(4-ORDER_STAG), 2*k-2+(kk-1)+(4-ORDER_STAG))];
 		}
 	  }
             
@@ -152,15 +152,15 @@ namespace CarpetLib {
       {
        	  dst[DSTIND3(i, j, k)] = typeprops<T>::fromreal (0);
 
-	  if(ORDER==2) {
-	    for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
+	  if(ORDER_STAG==2) {
+	    for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG+1;jj++) for(int kk=1;kk<=ORDER_STAG+1;kk++) {
 		  dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*coeff[kk] * src [SRCIND3(2*i-1+(ii-1), 2*j-1+(jj-1), 2*k-1+(kk-1))];
 		}
 	  }
 
-	  if(ORDER==3 || ORDER==4) {
-	    for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-		  dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*coeff[kk]*src [SRCIND3(2*i-2+(ii-1)+(4-ORDER), 2*j-2+(jj-1)+(4-ORDER), 2*k-2+(kk-1)+(4-ORDER))];
+	  if(ORDER_STAG==3 || ORDER_STAG==4) {
+	    for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG+1;jj++) for(int kk=1;kk<=ORDER_STAG+1;kk++) {
+		  dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*coeff[kk]*src [SRCIND3(2*i-2+(ii-1)+(4-ORDER_STAG), 2*j-2+(jj-1)+(4-ORDER_STAG), 2*k-2+(kk-1)+(4-ORDER_STAG))];
 		}
 	  }
        
