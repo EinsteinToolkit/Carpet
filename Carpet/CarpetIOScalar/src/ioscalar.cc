@@ -74,7 +74,7 @@ namespace CarpetIOScalar {
   vector<int> last_output;
 
   /* CarpetScalar GH extension structure */
-  struct
+  static struct
   {
     /* list of variables to output */
     char *out_vars;
