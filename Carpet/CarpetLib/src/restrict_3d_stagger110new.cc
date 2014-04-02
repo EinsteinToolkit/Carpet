@@ -66,7 +66,7 @@ namespace CarpetLib {
       CCTK_WARN (0, "Internal error: region extent is empty");
     }
     
-    if (not regbbox.is_contained_in(srcbbox) or
+    if (not regbbox.expanded_for(srcbbox).expand(1,1).is_contained_in(srcbbox) or
         not regbbox.is_contained_in(dstbbox))
     {
       cerr << "srcbbox: " << srcbbox << endl
