@@ -699,7 +699,6 @@ transfer_time (vector <gdata const *> const & gsrcs,
     data const * const src = (data const *) gsrcs.AT(timelevel0);
     
     transfer_p_r (src, dstbox, srcbox, slabinfo, order_space);
-    
   } // if
 }
 
@@ -723,7 +722,7 @@ transfer_p_r (data const * const src,
             transport_operator != op_restrict);
     assert (not slabinfo);
     transfer_p_vc_cc (src, dstbox, srcbox, order_space);
-  } else if (all (src->extent().stride() < this->extent().stride())) {
+ } else if (all (src->extent().stride() < this->extent().stride())) {
     // Restrict
     assert (transport_operator != op_sync);
     transfer_restrict (src, dstbox, srcbox, slabinfo, order_space);
@@ -1588,6 +1587,10 @@ time_interpolate (vector <data *> const & srcs,
   switch (transport_operator) {
     
   case op_copy:
+  case op_STAGGER011:
+  case op_STAGGER101:
+  case op_STAGGER110:    
+  case op_STAGGER111:    
   case op_Lagrange: {
     static Timer timer ("time_interpolate_Lagrange");
     timer.start ();
