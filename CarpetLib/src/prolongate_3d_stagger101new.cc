@@ -104,7 +104,7 @@ namespace CarpetLib {
     
     
     
-    if (not regbbox.expand(offsetlo, offsethi).is_contained_in(srcbbox) or
+    if (not regbbox.expand(offsetlo, offsethi).expanded_for(srcbbox).expand(1,1).is_contained_in(srcbbox) or
         not regbbox                           .is_contained_in(dstbbox))
     {
       cerr << "ORDER=" << ORDER << "\n"
