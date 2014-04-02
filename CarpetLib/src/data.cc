@@ -1344,12 +1344,6 @@ transfer_restrict (data const * const src,
   
   switch (transport_operator) {
     
-  case op_copy:
-  case op_Lagrange:
-  case op_ENO:
-  case op_WENO:
-  case op_TVD:
-  case op_Lagrange_monotone:
   case op_STAGGER011:
       assert (not slabinfo);
       call_operator<T> (& restrict_3d_stagger011,
@@ -1398,6 +1392,12 @@ transfer_restrict (data const * const src,
                         srcregbox, dstregbox, NULL);
       break;
 
+  case op_copy:
+  case op_Lagrange:
+  case op_ENO:
+  case op_WENO:
+  case op_TVD:
+  case op_Lagrange_monotone:
   case op_restrict:
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
