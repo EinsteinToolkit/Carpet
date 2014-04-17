@@ -1179,7 +1179,7 @@ transfer_prolongate (data const * const src,
           & prolongate_3d_stagger101<T,3>
         };
 
-    static Timer timer ("prolongate_STAGGER011");
+    static Timer timer ("prolongate_STAGGER101");
     timer.start ();
          call_operator<T> (the_operators[order_space-2],
                            static_cast <T const *> (src->storage()),
@@ -1215,7 +1215,7 @@ transfer_prolongate (data const * const src,
           & prolongate_3d_stagger110<T,3>
         };
 
-    static Timer timer ("prolongate_STAGGER011");
+    static Timer timer ("prolongate_STAGGER110");
     timer.start ();
          call_operator<T> (the_operators[order_space-2],
                            static_cast <T const *> (src->storage()),
@@ -1251,7 +1251,7 @@ transfer_prolongate (data const * const src,
           & prolongate_3d_stagger111<T,3>
         };
 
-    static Timer timer ("prolongate_STAGGER011");
+    static Timer timer ("prolongate_STAGGER111");
     timer.start ();
          call_operator<T> (the_operators[order_space-2],
                            static_cast <T const *> (src->storage()),
