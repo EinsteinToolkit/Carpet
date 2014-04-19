@@ -728,7 +728,7 @@ transfer_p_r (data const * const src,
     assert (transport_operator != op_sync);
     transfer_restrict (src, dstbox, srcbox, slabinfo, order_space);
   } else {
-    CCTK_BUILTIN_UNREACHABLE();
+    assert(0);
   }
 }
 
@@ -875,7 +875,7 @@ transfer_prolongate (data const * const src,
       break;
     }
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     timer.stop (0);
     break;
@@ -956,7 +956,7 @@ transfer_prolongate (data const * const src,
       }
       break;
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     timer.stop (0);
   }
@@ -1007,7 +1007,7 @@ transfer_prolongate (data const * const src,
         break;
       }
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     timer.stop (0);
     break;
@@ -1046,7 +1046,7 @@ transfer_prolongate (data const * const src,
        break;
       }
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     timer.stop (0);
   }
@@ -1093,7 +1093,7 @@ transfer_prolongate (data const * const src,
       break;
     }
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     timer.stop (0);
     break;
@@ -1128,7 +1128,7 @@ transfer_prolongate (data const * const src,
   }
     
   default:
-    CCTK_BUILTIN_UNREACHABLE();
+    assert(0);
   } // switch (transport_operator)
   
 #elif CARPET_DIM == 4
@@ -1159,13 +1159,13 @@ transfer_prolongate (data const * const src,
       }
       break;
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     timer.stop (0);
     break;
   }
   default:
-    CCTK_BUILTIN_UNREACHABLE();
+    assert(0);
   } // switch (transport_operator)
   
 #else
@@ -1322,17 +1322,17 @@ transfer_restrict (data const * const src,
                                     dstbox,
                                     srcregbox, dstregbox, NULL);
       } else {
-        CCTK_BUILTIN_UNREACHABLE();
+        assert(0);
       }
       break;
     }
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     break;
     
   default:
-    CCTK_BUILTIN_UNREACHABLE();
+    assert(0);
   }
   
 #elif CARPET_DIM == 4
@@ -1354,12 +1354,12 @@ transfer_restrict (data const * const src,
                       srcregbox, dstregbox, NULL);
       break;
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     break;
     
   default:
-    CCTK_BUILTIN_UNREACHABLE();
+    assert(0);
   }
 
 #else
@@ -1479,7 +1479,7 @@ time_interpolate (vector <data *> const & srcs,
       break;
       
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     timer.stop (0);
     break;
@@ -1528,19 +1528,19 @@ time_interpolate (vector <data *> const & srcs,
       break;
       
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     timer.stop (0);
     break;
   }
     
   default:
-    CCTK_BUILTIN_UNREACHABLE();
+    assert(0);
   } // switch (transport_operator)
   
 #elif CARPET_DIM == 4
   
-  CCTK_BUILTIN_UNREACHABLE();
+  assert(0);
   
 #else
 #  error "Value for CARPET_DIM not supported"

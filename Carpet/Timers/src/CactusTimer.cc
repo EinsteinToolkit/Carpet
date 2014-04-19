@@ -170,7 +170,7 @@ namespace Timers {
       case val_int:    vals[i] = timer->vals[i].val.i; break;
       case val_long:   vals[i] = timer->vals[i].val.l; break;
       case val_double: vals[i] = timer->vals[i].val.d; break;
-      default: CCTK_BUILTIN_UNREACHABLE();
+      default: assert(0);
       }
     }
     

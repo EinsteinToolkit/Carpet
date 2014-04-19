@@ -288,7 +288,7 @@ class bboxset {
        },
        other);
 #else
-    CCTK_BUILTIN_UNREACHABLE();
+    assert(0);
 #endif
     assert(old_decoded_subsetr.empty());
     

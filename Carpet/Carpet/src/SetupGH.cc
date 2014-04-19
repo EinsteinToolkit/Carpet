@@ -775,7 +775,7 @@ namespace Carpet {
       refcentering = cell_centered;
       reffactdenom = 2;
     } else {
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     
     // Number of grid points
@@ -1155,7 +1155,7 @@ namespace Carpet {
       } // case scalar or array
         
       default:
-        CCTK_BUILTIN_UNREACHABLE();
+        assert(0);
       } // switch grouptype
       
       initialise_group_info (cctkGH, group, gdata);
@@ -1263,7 +1263,7 @@ namespace Carpet {
       break;
     }
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     
     // Add empty regions if there are fewer regions than processors
@@ -1703,7 +1703,7 @@ namespace Carpet {
               CCTK_ERROR ("The parameters CoordBase::boundary_staggered specify a non-staggered boundary.  Carpet does not support non-staggered boundaries when Carpet::max_refinement_levels > 1 with Carpet::centering = \"cell\"");
             }
           } else {
-            CCTK_BUILTIN_UNREACHABLE();
+            assert(0);
           }
         }
       }
@@ -1986,7 +1986,7 @@ namespace Carpet {
               break;
             }
             default:
-              CCTK_BUILTIN_UNREACHABLE();
+              assert(0);
             }
           }
         } else {
@@ -2099,7 +2099,7 @@ namespace Carpet {
     }
       
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     } // switch grouptype
   }
   
@@ -2242,7 +2242,7 @@ namespace Carpet {
     }
       
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     } // switch disttype
   }
     
@@ -2276,7 +2276,7 @@ namespace Carpet {
         num_array_vars.AT(gdata.dim) += gdata.numvars * gdata.numtimelevels;
         break;
       default:
-        CCTK_BUILTIN_UNREACHABLE();
+        assert(0);
       }
     } // for group
     
@@ -2328,7 +2328,7 @@ namespace Carpet {
       } else if (prolong_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
         // good -- do nothing
       } else {
-        CCTK_BUILTIN_UNREACHABLE();
+        assert(0);
       }
     }
     
@@ -2344,7 +2344,7 @@ namespace Carpet {
       } else if (prolong_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
         // do nothing
       } else {
-        CCTK_BUILTIN_UNREACHABLE();
+        assert(0);
       }
     }
     
@@ -2361,7 +2361,7 @@ namespace Carpet {
       } else if (prolong_param_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
         // do nothing
       } else {
-        CCTK_BUILTIN_UNREACHABLE();
+        assert(0);
       }
     }
     
@@ -2760,7 +2760,7 @@ namespace Carpet {
           CCTK_ERROR ("When Carpet::max_refinement_levels > 1, and when ReflectionSymmetry::symmetry_[xyz] = yes, then you have to set ReflectionSymmetry::avoid_origin_[xyz] = yes");
         }
       } else {
-        CCTK_BUILTIN_UNREACHABLE();
+        assert(0);
       }
     }
   }
