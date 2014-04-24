@@ -644,6 +644,14 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
          patch != file.patches.end();
          patch++) {
 
+      // skip all variables which aren't expected to be recovered
+      // this should only happen for variables whose checkpoint tag was changed
+      // between the code version used to write the checkpoint and the current
+      // one
+      if (not_checkpointed[patch->vindex]) {
+        continue;
+      }
+
       // only recover grid variables for the current mglevel/reflevel
       if (patch->mglevel != mglevel or patch->reflevel != reflevel) {
         continue;
