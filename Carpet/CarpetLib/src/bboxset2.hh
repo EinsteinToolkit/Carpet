@@ -1275,6 +1275,8 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
 #ifdef CARPET_DEBUG
     assert((*this & other).empty());
 #endif
+    // since the sets are disjoint, their symmetric difference is identical to
+    // their union.
     return *this ^ other;
   }
   
