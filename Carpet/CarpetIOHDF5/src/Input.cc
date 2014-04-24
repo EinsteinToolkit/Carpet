@@ -540,7 +540,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   // though the user gives a per-variable list.
   std::map<string, unsigned int> alias;
 #ifdef IOUTIL_IOGH_HAS_ALIAS
-  for (unsigned int vindex = 0; vindex < read_completely.size(); vindex++) {
+  for (unsigned int vindex = 0; vindex < numvars; vindex++) {
     if (ioUtilGH->alias && ioUtilGH->alias[vindex]) {
       string key(ioUtilGH->alias[vindex]);
       // the explicit cast avoids ambiguity in the overloaded function pointer
@@ -568,6 +568,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     }
   }
 
+  int metadata_idx = CCTK_VarIndex("Carpet::metadata");
   // loop over all input files of this set
   for (unsigned int i = 0; i < fileset->files.size(); i++) {
 
@@ -678,6 +679,8 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 
       // actually read the patch
       if (not read_completely.at(patch->vindex).at(patch->timelevel)) {
+        if(patch->vindex == metadata_idx)
+          std::cerr << "attempting to read " << CCTK_VarName(patch->vindex);
         error_count +=
           ReadVar (cctkGH, file, io_bytes, patch,
                    bboxes_read.at(patch->vindex).at(patch->timelevel),
@@ -762,7 +765,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
         char* fullname = CCTK_FullName (vindex);
         if (size == 0) {
           if (not_checkpointed[vindex]) {
-            CCTK_VWarn (4, __LINE__, __FILE__, CCTK_THORNSTRING,
+            CCTK_VWarn (4 - 2*(vindex == metadata_idx), __LINE__, __FILE__, CCTK_THORNSTRING,
                         "variable '%s' timelevel %d has not been read "
                         "(variable has option tag \"CHECKPOINT = 'no'\")",
                         fullname, tl);
@@ -826,6 +829,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
             if (read_completely[vindex][tl]) {
               int const gindex = CCTK_GroupIndexFromVarI (vindex);
               dosync.at(gindex) = true;
+              std::cout << "sync'ing " << CCTK_VarName(vindex) << ": " << vindex << ", " << gindex <<  "\n";
             }
           }
         }
@@ -840,6 +844,9 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
               for (int rl = 0; rl < ad.hh->reflevels(); ++ rl) {
                 for (size_t v = 0; v < ad.data.size(); ++ v) {
                   ggf * const gf = ad.data.at(v);
+                  if(group == metadata_idx) {
+                    std::cout << "doing sync for " << group << ": " << gf->varindex << ": " << gf << "\n";
+                  }
                   for (int tl = 0; tl < gf->timelevels (ml, rl); ++ tl) {
                     gf->sync_all (state, tl, rl, ml);
                   }
