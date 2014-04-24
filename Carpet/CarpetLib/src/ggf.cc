@@ -633,7 +633,8 @@ transfer_from_all (comm_state & state,
     
     // Source and destination data
     gdata * const dst =
-      lc1>=0 ? storage.AT(ml1).AT(rl1).AT(lc1).AT(tl1) : NULL;
+      lc1>=0 ? storage.AT(ml1).AT(rl1).AT(lc1).AT(tl1) :
+               new_typed_data ();
     cdata const & srcs = srcstorage.AT(ml2).AT(rl2);
     for (int i=0; i<(int)gsrcs.size(); ++i) {
       gsrcs.AT(i) = lc2>=0 ? srcs.AT(lc2).AT(tl2s.AT(i)) : NULL;
@@ -641,6 +642,9 @@ transfer_from_all (comm_state & state,
     
     dst->transfer_from
       (state, gsrcs, times, recv, send, slabinfo, p1, p2, time, pos, pot);
+
+    if (not(lc1>=0))
+      delete dst;
   }
   
   total.stop (0);
