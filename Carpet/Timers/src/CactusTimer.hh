@@ -60,8 +60,10 @@ namespace Timers {
   private:
     
     // Output (debug) messages that a timer is starting or stopping
+    void msgCreate() const;
     void msgStart() const;
     void msgStop() const;
+    void msgRead (double val) const;
   };
   
 } // namespace Timers

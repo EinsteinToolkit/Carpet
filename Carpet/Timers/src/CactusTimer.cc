@@ -35,6 +35,7 @@ namespace Timers {
     assert(handle >= 0);
     
     timerSet.add(this);
+    msgCreate ();
   }
 
   // Destroy a timer
@@ -48,7 +49,6 @@ namespace Timers {
   void CactusTimer::start ()
   {
     msgStart ();
-//    cout << "CactusTimer::start this = " << this << endl;
     running = true;
     CCTK_TimerStartI (handle);
   }
@@ -229,6 +229,14 @@ namespace Timers {
   }
 
   // Output (debug) messages that a timer is starting or stopping
+  void CactusTimer::msgCreate () const
+  {
+    DECLARE_CCTK_PARAMETERS;
+    if (verbose) {
+      CCTK_VInfo (CCTK_THORNSTRING, "Timer \"%s\" created", name().c_str());
+    }
+  }
+
   void CactusTimer::msgStart () const
   {
     DECLARE_CCTK_PARAMETERS;
@@ -242,6 +250,15 @@ namespace Timers {
     DECLARE_CCTK_PARAMETERS;
     if (verbose) {
       CCTK_VInfo (CCTK_THORNSTRING, "Timer \"%s\" stopping", name().c_str());
+    }
+  }
+
+  void CactusTimer::msgRead (double val) const
+  {
+    DECLARE_CCTK_PARAMETERS;
+    if (verbose) {
+      CCTK_VInfo (CCTK_THORNSTRING, "Timer \"%s\" read: %g",
+                  name().c_str(), val);
     }
   }
 
