@@ -79,24 +79,28 @@ namespace Timers {
   {
     DECLARE_CCTK_PARAMETERS;
 
+    const bool was_running = running;
+    if (was_running) stop();
+
     static cTimerData * timer = 0;
     if (not timer) timer = CCTK_TimerCreateData ();
     assert (timer);
-    CCTK_TimerI (handle, timer);
 
-    const bool was_running = running;
-    if (was_running) stop();
+    CCTK_TimerI (handle, timer);
     const cTimerVal* tv = CCTK_GetClockValue(xml_clock, timer);
-    if (was_running) start();
-    
+    double val;
     if (not tv) {
       CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Clock \"%s\" not found for timer #%d \"%s\"",
                  xml_clock, handle, CCTK_TimerName(handle));
-      return -1.0;
+      val = -1.0;
+    } else {
+      val = CCTK_TimerClockSeconds(tv);
     }
+    msgRead (val);
+    if (was_running) start();
 
-    return CCTK_TimerClockSeconds(tv);
+    return val;
   }
 
   void CactusTimer::getGlobalTime(double& avg, double& max)
