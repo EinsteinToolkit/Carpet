@@ -1,14 +1,12 @@
 #include <cctk.h>
 #include <unistd.h>
 #include <cassert>
-#include <iostream>
 using namespace std;
 
 extern "C"
 int TestTimers2_TestCactusTimers()
 {
   int handle = CCTK_TimerCreate("TestTimer");
-  cout << "handle = " << handle << endl;
   assert(handle >= 0);
   CCTK_TimerStartI(handle);
   unsigned int remaining = sleep(1);
@@ -22,7 +20,7 @@ int TestTimers2_TestCactusTimers()
   assert(tv);
   
   double val = CCTK_TimerClockSeconds(tv);
-  if (remaining ==0 && val < 0.5) {
+  if (remaining == 0 && val < 0.5) {
     CCTK_WARN(CCTK_WARN_ALERT, "Cactus timers don't work");
   }
   

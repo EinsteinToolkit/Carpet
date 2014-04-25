@@ -2,7 +2,6 @@
 #include <cctk.h>
 #include <unistd.h>
 #include <cassert>
-#include <iostream>
 using namespace std;
 
 extern "C"
