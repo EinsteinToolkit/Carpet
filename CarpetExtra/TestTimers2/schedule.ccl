@@ -1,0 +1,9 @@
+SCHEDULE TestTimers2_TestCactusTimers AT startup
+{
+  LANG: C
+} "Test the Cactus timers"
+
+SCHEDULE TestTimers2_TestTimers AT startup AFTER Timer_Startup
+{
+  LANG: C
+} "Test the timers"
