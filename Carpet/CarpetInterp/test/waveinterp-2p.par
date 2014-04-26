@@ -16,6 +16,8 @@ IO::parfile_write = "no"
 
 ActiveThorns = "InitBase LocalInterp AEILocalInterp LocalReduce"
 
+InitBase::initial_data_setup_method = "init_single_level"
+
 
 
 ActiveThorns = "Carpet CarpetLib CarpetInterp GSL LoopControl CarpetReduce CarpetSlab"
@@ -23,14 +25,13 @@ ActiveThorns = "Carpet CarpetLib CarpetInterp GSL LoopControl CarpetReduce Carpe
 Carpet::domain_from_coordbase = yes
 Carpet::max_refinement_levels = 20
 
-driver::ghost_size   = 2
+driver::ghost_size = 2
 
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time  = 2
 
-Carpet::convergence_level = 0
-
-Carpet::init_3_timelevels = yes
+#Carpet::init_3_timelevels = yes
+Carpet::init_each_timelevel = yes
 
 
 
@@ -87,6 +88,8 @@ ActiveThorns = "WaveMoL"
 
 #WaveMoL::num_timelevels = 3
 
+WaveMoL::bound = "flat"
+
 
 
 ActiveThorns = "IDWaveMoL"
@@ -137,6 +140,8 @@ IOScalar::outScalar_vars       = "
 
 
 ActiveThorns = "CarpetIOASCII"
+
+#IOASCII::output_all_timelevels = yes
 
 IOASCII::out0D_every = 1
 IOASCII::out0D_vars  = "
