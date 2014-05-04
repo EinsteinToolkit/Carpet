@@ -147,7 +147,7 @@ namespace Carpet {
         // dimension to nprocs elements. Here we undo this so that the user
         // code does not see this trick.
         if (gp.disttype == CCTK_DISTRIB_CONSTANT) {
-          int const dir = min (dim-1, gp.dim);
+          int const dir = min (dim-1, gp.dim==0 ? 1 : gp.dim);
           ivect & gsh = ivect_ref(info.gsh);
           ivect & lbnd = ivect_ref(info.lbnd);
           ivect & ubnd = ivect_ref(info.ubnd);
