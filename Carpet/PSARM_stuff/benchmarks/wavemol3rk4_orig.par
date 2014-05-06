@@ -18,15 +18,15 @@ grid::domain = "full"
 grid::avoid_origin = "no"
 
 grid::type = "coordbase"
-CoordBase::xmin =  -1.48
-CoordBase::ymin =  -1.48
-CoordBase::zmin =  -1.48
-CoordBase::xmax =   1.48
-CoordBase::ymax =   1.48
-CoordBase::zmax =   1.48
-CoordBase::dx   =   0.01
-CoordBase::dy   =   0.01
-CoordBase::dz   =   0.01
+CoordBase::xmin =  -.5
+CoordBase::ymin =  -.5
+CoordBase::zmin =  -.5
+CoordBase::xmax =   .5
+CoordBase::ymax =   .5
+CoordBase::zmax =   .5
+CoordBase::dx   =   0.005
+CoordBase::dy   =   0.005
+CoordBase::dz   =   0.005
 
 CoordBase::boundary_size_x_lower        = 1
 CoordBase::boundary_size_y_lower        = 1
@@ -46,7 +46,7 @@ time::dtfac = 0.5
 
 carpet::max_refinement_levels = 10
 carpetregrid2::num_centres = 1
-carpetregrid2::num_levels_1 = 10
+carpetregrid2::num_levels_1 = 8
 carpetregrid2::radius_1[1]=0.25
 carpetregrid2::radius_1[2]=0.125
 carpetregrid2::radius_1[3]=0.0625
