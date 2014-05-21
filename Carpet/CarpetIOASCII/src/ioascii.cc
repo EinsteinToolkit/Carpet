@@ -231,14 +231,19 @@ namespace CarpetIOASCII {
   template<int outdim>
   int IOASCII<outdim>::OutputGH (const cGH* const cctkGH)
   {
+    DECLARE_CCTK_PARAMETERS;
+
     ostringstream timer_name;
     timer_name << "OutputGH<" << outdim << ">";
     Timers::Timer timer(timer_name.str());
 
     timer.start();
-    for (int vi=0; vi<CCTK_NumVars(); ++vi) {
-      if (TimeToOutput(cctkGH, vi)) {
-	TriggerOutput(cctkGH, vi);
+    CheckSteerableParameters (cctkGH);
+    if (strcmp (my_out_vars, "")) {
+      for (int vi=0; vi<CCTK_NumVars(); ++vi) {
+        if (TimeToOutput(cctkGH, vi)) {
+	  TriggerOutput(cctkGH, vi);
+        }
       }
     }
     timer.stop();
@@ -259,8 +264,6 @@ namespace CarpetIOASCII {
     if (CCTK_GroupTypeFromVarI(vindex) != CCTK_GF and not do_global_mode) {
       return 0;
     }
-    
-    CheckSteerableParameters (cctkGH);
     
     // check if output for this variable was requested
     if (not requests.at(vindex)) {
