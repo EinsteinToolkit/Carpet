@@ -564,9 +564,16 @@ static int OutputGH (const cGH* const cctkGH)
 {
   static Timers::Timer timer ("OutputGH");
   timer.start();
-  for (int vindex = CCTK_NumVars () - 1; vindex >= 0; vindex--) {
-    if (TimeToOutput (cctkGH, vindex)) {
-      TriggerOutput (cctkGH, vindex);
+
+  CarpetIOHDF5GH *myGH =
+    (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
+  CheckSteerableParameters (cctkGH, myGH);
+
+  if (strcmp(myGH->out_vars,"")) {
+    for (int vindex = CCTK_NumVars () - 1; vindex >= 0; vindex--) {
+      if (TimeToOutput (cctkGH, vindex)) {
+        TriggerOutput (cctkGH, vindex);
+      }
     }
   }
   timer.stop();
@@ -589,7 +596,6 @@ static int TimeToOutput (const cGH* const cctkGH, const int vindex)
 
   CarpetIOHDF5GH *myGH =
     (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
-  CheckSteerableParameters (cctkGH, myGH);
 
   // check if output for this variable was requested
   if (not myGH->requests[vindex]) {
