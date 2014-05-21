@@ -165,9 +165,12 @@ namespace CarpetIOScalar {
   {
     static Timers::Timer timer ("OutputGH");
     timer.start();
-    for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
-      if (TimeToOutput(cctkGH, vindex)) {
-	TriggerOutput(cctkGH, vindex);
+    CheckSteerableParameters (cctkGH);
+    if (strcmp (IOparameters.out_vars, "")) {
+      for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
+        if (TimeToOutput(cctkGH, vindex)) {
+    	  TriggerOutput(cctkGH, vindex);
+        }
       }
     }
     timer.stop();
@@ -554,8 +557,6 @@ namespace CarpetIOScalar {
     assert (vindex>=0 and vindex<CCTK_NumVars());
 
     if (not do_global_mode) return 0;
-
-    CheckSteerableParameters (cctkGH);
 
     // check if output for this variable was requested
     if (not IOparameters.requests[vindex])
