@@ -52,6 +52,7 @@ namespace Carpet {
           switch (groupdata.AT(group).transport_operator) {
           case op_Lagrange:
           case op_ENO:
+          case op_ENOG2:
           case op_WENO:
           case op_Lagrange_monotone:
             if (activetimelevels > 1) {

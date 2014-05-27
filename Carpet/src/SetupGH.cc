@@ -2462,6 +2462,9 @@ namespace Carpet {
     } else if (CCTK_Equals(prolong_string, "ENO") and
                CCTK_Equals(eno_interpolation_type, "samples")) {
       return op_ENO;
+    } else if (CCTK_Equals(prolong_string, "ENOG2") and
+               CCTK_Equals(eno_interpolation_type, "samples")) {
+      return op_ENOG2;
     } else if (CCTK_Equals(prolong_string, "ENO") and
                CCTK_Equals(eno_interpolation_type, "averages")) {
       return op_ENOVOL;

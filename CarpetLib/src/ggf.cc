@@ -561,8 +561,12 @@ transfer_from_all (comm_state & state,
   assert (ml1>=0 and ml1<h.mglevels());
   assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   
-  srpvect const & psendrecvs = d.fast_boxes.AT(ml1).AT(rl1).*sendrecvs;
-  
+  // HACK HACK this is terrible
+  srpvect const & psendrecvs = (transport_operator == op_ENOG2 &&
+                                sendrecvs == & dh::fast_dboxes::fast_ref_bnd_prol_sendrecv) ? 
+    d.fast_boxes.AT(ml1).AT(rl1).fast_ref_bnd_prol2_sendrecv:
+    d.fast_boxes.AT(ml1).AT(rl1).*sendrecvs;
+
   // Return early if this communication does not concern us
   if (psendrecvs.empty()) return;
   

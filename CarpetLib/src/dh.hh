@@ -157,6 +157,7 @@ public:
     srpvect fast_ref_rest_sendrecv;
     srpvect fast_sync_sendrecv;
     srpvect fast_ref_bnd_prol_sendrecv;
+    srpvect fast_ref_bnd_prol2_sendrecv;
     
     // refluxing
     // vect<vect<srpvect,2>,dim> fast_ref_refl_sendrecv;
@@ -248,7 +249,7 @@ public:                         // should be readonly
   local_mboxes local_boxes;     // grid hierarchy [ml][rl][lc]
   level_mboxes level_boxes;     // grid hierarchy [ml][rl]
   fast_mboxes fast_boxes;       // grid hierarchy [ml][rl][p]
-  
+
 private:
 
   // this needs to be sorted by varindex so that when iterating through the

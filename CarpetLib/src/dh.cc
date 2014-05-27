@@ -572,7 +572,7 @@ regrid (bool const do_init)
       // All active points
       ibset& allactive = level_level.active;
       allactive = allowned - notactive;
-      
+
 #ifdef CARPET_DEBUG
       // All stepped buffer zones
       vector<ibset> allbuffers_stepped (num_substeps);
@@ -705,11 +705,12 @@ regrid (bool const do_init)
       static Timers::Timer timer_comm_refprol ("refprol");
       static Timers::Timer timer_comm_sync ("sync");
       static Timers::Timer timer_comm_refbndprol ("refbndprol");
+      static Timers::Timer timer_comm_refbndprol2 ("refbndprol2");
       timer_comm_mgrest.instantiate ();
       timer_comm_mgprol.instantiate ();
       timer_comm_refprol.instantiate ();
       timer_comm_sync.instantiate ();
-      timer_comm_refbndprol.instantiate ();
+      timer_comm_refbndprol2.instantiate ();
       
       for (int lc = 0; lc < h.local_components(rl); ++ lc) {
         int const c = h.get_component (rl, lc);
@@ -1010,6 +1011,91 @@ regrid (bool const do_init)
         } // if rl > 0
         
         timer_comm_refbndprol.stop();
+        
+        
+        
+        // Boundary prolongation with fewer ghosts:
+        
+        timer_comm_refbndprol2.start();
+        
+        if (rl > 0) {
+          int const orl = rl - 1;
+
+          // HACK HACK Take this out of here
+          ibset allprolonged2 = allactive.expand (i2vect(2) * 2);
+          
+#if 0
+          // Outer boundaries are not synchronised, since they cannot
+          // be filled by boundary prolongation either, and therefore
+          // the user code must set them anyway.
+          ibset needrecv = box.boundaries;
+#else
+          // Outer boundaries are synchronised for backward
+          // compatibility.
+          ibset needrecv = box.ghosts;
+#endif
+          
+          // Points which are synchronised need not be boundary
+          // prolongated
+          needrecv -= box.sync;
+          
+          // Outer boundary points cannot be boundary prolongated
+          needrecv &= box.communicated;
+          
+          // Prolongation must fill what cannot be synchronised, and
+          // also all buffer zones
+          needrecv += box.buffers;
+
+          // points that need to be filled in via prolongation if we had run
+          // with a different number of ghost points
+          needrecv &= allprolonged2;
+          
+          i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
+          
+          ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
+                    "Refinement factors must be integer multiples of each other");
+          i2vect const reffact =
+            i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
+          
+          for (int cc = 0; cc < h.components(orl); ++ cc) {
+            full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
+            
+            // See "refinement prolongation"
+            ibset const expanded_oactive
+              (obox.active.expanded_for (box.interior).expand
+               (h.refcent == vertex_centered ? reffact : reffact-1));
+            ibset const ovlp = needrecv & expanded_oactive;
+            
+            for (ibset::const_iterator
+                   ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
+            {
+              ibbox const & recv = * ri;
+              ibbox const send =
+                recv.expanded_for (obox.interior).expand (stencil_size);
+              ASSERT_c (send <= obox.exterior,
+                        "Boundary prolongation: Send region must be contained in exterior");
+              fast_level.fast_ref_bnd_prol2_sendrecv.push_back
+                (sendrecv_pseudoregion_t (send, cc, recv, c));
+              if (not on_this_proc (orl, cc)) {
+                fast_dboxes & fast_level_otherproc =
+                  fast_level_otherprocs.AT(this_proc(orl, cc));
+                fast_level_otherproc.fast_ref_bnd_prol2_sendrecv.push_back
+                  (sendrecv_pseudoregion_t (send, cc, recv, c));
+              }
+            }
+            
+            needrecv -= ovlp;
+            
+          } // for cc
+          
+          // All points must now have been received, either through
+          // synchronisation or through boundary prolongation
+          ASSERT_c (needrecv.empty(),
+                    "Synchronisation and boundary prolongation: All points must have been received");
+          
+        } // if rl > 0
+        
+        timer_comm_refbndprol2.stop();
         
       } // for lc
       
@@ -1930,6 +2016,12 @@ regrid (bool const do_init)
                             & fast_dboxes::fast_ref_bnd_prol_sendrecv);
         timer_bcast_comm_ref_bnd_prol.stop();
         
+        static Timers::Timer timer_bcast_comm_ref_bnd_prol2 ("ref_bnd_prol2");
+        timer_bcast_comm_ref_bnd_prol2.start();
+        broadcast_schedule (fast_level_otherprocs, fast_level,
+                            & fast_dboxes::fast_ref_bnd_prol2_sendrecv);
+        timer_bcast_comm_ref_bnd_prol2.stop();
+        
         if (rl > 0) {
           int const orl = rl - 1;
           fast_dboxes & fast_olevel = fast_boxes.AT(ml).AT(orl);
@@ -2370,6 +2462,7 @@ mpi_datatype (dh::fast_dboxes const &)
       ENTRY (dh::srpvect, fast_ref_rest_sendrecv),
       ENTRY (dh::srpvect, fast_sync_sendrecv),
       ENTRY (dh::srpvect, fast_ref_bnd_prol_sendrecv),
+      ENTRY (dh::srpvect, fast_ref_bnd_prol2_sendrecv),
       ENTRY (dh::srpvect, fast_old2new_sync_sendrecv),
       ENTRY (dh::srpvect, fast_old2new_ref_prol_sendrecv),
       ENTRY (dh::srpvect, fast_ref_refl_sendrecv_0_0),
@@ -2513,6 +2606,7 @@ memory ()
     memoryof (fast_ref_rest_sendrecv) +
     memoryof (fast_sync_sendrecv) +
     memoryof (fast_ref_bnd_prol_sendrecv) +
+    memoryof (fast_ref_bnd_prol2_sendrecv) +
     memoryof (fast_ref_refl_sendrecv_0_0) +
     memoryof (fast_ref_refl_sendrecv_0_1) +
     memoryof (fast_ref_refl_sendrecv_1_0) +
@@ -2723,6 +2817,9 @@ input (istream & is)
     consume (is, "fast_ref_bnd_prol_sendrecv:");
     is >> fast_ref_bnd_prol_sendrecv;
     skipws (is);
+    consume (is, "fast_ref_bnd_prol2_sendrecv:");
+    is >> fast_ref_bnd_prol2_sendrecv;
+    skipws (is);
     consume (is, "fast_old2new_sync_sendrecv:");
     is >> fast_old2new_sync_sendrecv;
     skipws (is);
@@ -2865,6 +2962,7 @@ output (ostream & os)
      << "   fast_ref_rest_sendrecv: " << fast_ref_rest_sendrecv << eol
      << "   fast_sync_sendrecv: " << fast_sync_sendrecv << eol
      << "   fast_ref_bnd_prol_sendrecv: " << fast_ref_bnd_prol_sendrecv << eol
+     << "   fast_ref_bnd_prol2_sendrecv: " << fast_ref_bnd_prol2_sendrecv << eol
      << "   fast_ref_refl_sendrecv_0_0: " << fast_ref_refl_sendrecv_0_0 << eol
      << "   fast_ref_refl_sendrecv_0_1: " << fast_ref_refl_sendrecv_0_1 << eol
      << "   fast_ref_refl_sendrecv_1_0: " << fast_ref_refl_sendrecv_1_0 << eol
