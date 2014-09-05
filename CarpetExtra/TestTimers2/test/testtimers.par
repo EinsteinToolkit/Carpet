@@ -1,0 +1,3 @@
+ActiveThorns = "IOUtil TestTimers2"
+
+Timers::verbose = yes

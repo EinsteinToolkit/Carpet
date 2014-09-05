@@ -524,7 +524,7 @@ CCTK_REAL ghost_zone_cost "Relative cost of ghost zones for 'recursive' load bal
 
 CCTK_REAL maximum_imbalance "Maximum load imbalance" STEERABLE=always
 {
-  (0.0:*) :: ""
+  (0.0:* :: ""
 } 0.1
 
 BOOLEAN same_number_of_components_on_each_process "Ensure that each process has the same number of components, adding empty dummy components if necessary" STEERABLE=always

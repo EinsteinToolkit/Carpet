@@ -143,8 +143,11 @@ namespace Carpet {
           = (ext.upper() - baseext.lower()) / ext.stride();
         ivect_ref(info.lsh) = ext.shape() / ext.stride();
         ivect_ref(info.ash) = pad_shape(ext);
+        // CCTK_DISTRIB_CONSTANT groups are handled by extending an extra
+        // dimension to nprocs elements. Here we undo this so that the user
+        // code does not see this trick.
         if (gp.disttype == CCTK_DISTRIB_CONSTANT) {
-          int const dir = gp.dim==0 ? 0 : gp.dim-1;
+          int const dir = min (dim-1, gp.dim==0 ? 1 : gp.dim);
           ivect & gsh = ivect_ref(info.gsh);
           ivect & lbnd = ivect_ref(info.lbnd);
           ivect & ubnd = ivect_ref(info.ubnd);

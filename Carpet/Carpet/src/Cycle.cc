@@ -257,16 +257,30 @@ namespace Carpet {
         case CCTK_GF:
           assert (reflevel>=0 and reflevel<reflevels);
           for (int m=0; m<(int)arrdata.AT(group).size(); ++m) {
-            for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-
-              if (CCTK_IsFunctionAliased("Accelerator_NotifyVariableWritten")) {
-                for (int tl = 1; tl < arrdata.AT(group).AT(m).data.AT(var)->timelevels(mglevel,reflevel); tl++) {
-                  Accelerator_NotifyVariableWritten(cctkGH, CCTK_FirstVarIndexI(group)+var, tl, 1 /* on host */);
-                }
-              }
-
+            const bool have_accel =
+              CCTK_IsFunctionAliased("Accelerator_NotifyDataModified");
+            vector<CCTK_INT> vis, rls, tls;
+            const int varn = CCTK_NumVarsInGroupI(group);
+            for (int var=0; var<varn; ++var) {
               arrdata.AT(group).AT(m).data.AT(var)->
                 fill_all (reflevel, mglevel);
+              if (have_accel) {
+                const int var0 = CCTK_FirstVarIndexI(group);
+                const int num_tl = arrdata.AT(group).AT(m).data.AT(var)->timelevels(mglevel,reflevel);
+                for (int tl = 1; tl < num_tl; tl++) {
+                  vis.push_back(var0 + var);
+                  rls.push_back(reflevel);
+                  tls.push_back(tl);
+                }
+              }
+            }
+            
+            if (have_accel) {
+              const CCTK_INT on_device = 0;
+              Accelerator_NotifyDataModified
+                (cctkGH,
+                 &vis.front(), &rls.front(), &rls.front(), vis.size(),
+                 on_device);
             }
           }
           break;

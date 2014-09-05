@@ -57,22 +57,22 @@ namespace CarpetIOFlexIOUtil {
       case CCTK_VARIABLE_CHAR:   retval = FLEXIO_CHAR; break;
       case CCTK_VARIABLE_INT:    retval = FLEXIO_INT; break;
       case CCTK_VARIABLE_REAL:   retval = FLEXIO_REAL; break;
-#ifdef CCTK_INT2
+#ifdef HAVE_CCTK_INT2
       case CCTK_VARIABLE_INT2:   retval = FLEXIO_INT2; break;
 #endif
-#ifdef CCTK_INT4
+#ifdef HAVE_CCTK_INT4
       case CCTK_VARIABLE_INT4:   retval = FLEXIO_INT4; break;
 #endif
-#ifdef CCTK_INT8
+#ifdef HAVE_CCTK_INT8
       case CCTK_VARIABLE_INT8:   retval = FLEXIO_INT8; break;
 #endif
-#ifdef CCTK_REAL4
+#ifdef HAVE_CCTK_REAL4
       case CCTK_VARIABLE_REAL4:  retval = FLEXIO_REAL4; break;
 #endif
-#ifdef CCTK_REAL8
+#ifdef HAVE_CCTK_REAL8
       case CCTK_VARIABLE_REAL8:  retval = FLEXIO_REAL8; break;
 #endif
-#ifdef CCTK_REAL16
+#ifdef HAVE_CCTK_REAL16
       case CCTK_VARIABLE_REAL16: retval = FLEXIO_REAL16; break;
 #endif
 	

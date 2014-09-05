@@ -571,7 +571,7 @@ namespace CarpetRegrid2 {
           case 7: mindist = movement_threshold_8; break;
           case 8: mindist = movement_threshold_9; break;
           case 9: mindist = movement_threshold_10; break;
-          default: CCTK_BUILTIN_UNREACHABLE();
+          default: assert(0);
           }
           do_recompose = dist2 > pow (mindist, 2);
           if (do_recompose) break;
@@ -603,7 +603,7 @@ namespace CarpetRegrid2 {
             case 7: mindrfac = radius_rel_change_threshold_8; break;
             case 8: mindrfac = radius_rel_change_threshold_9; break;
             case 9: mindrfac = radius_rel_change_threshold_10; break;
-            default: CCTK_BUILTIN_UNREACHABLE();
+            default: assert(0);
             }
             do_recompose = drfac > mindrfac;
             if (do_recompose) break;
@@ -771,7 +771,7 @@ namespace CarpetRegrid2 {
           case 7: mindist = movement_threshold_8; break;
           case 8: mindist = movement_threshold_9; break;
           case 9: mindist = movement_threshold_10; break;
-          default: CCTK_BUILTIN_UNREACHABLE();
+          default: assert(0);
           }
           do_recompose = dist2 > pow (mindist, 2);
           if (do_recompose) break;
@@ -803,7 +803,7 @@ namespace CarpetRegrid2 {
             case 7: mindrfac = radius_rel_change_threshold_8; break;
             case 8: mindrfac = radius_rel_change_threshold_9; break;
             case 9: mindrfac = radius_rel_change_threshold_10; break;
-            default: CCTK_BUILTIN_UNREACHABLE();
+            default: assert(0);
             }
             do_recompose = drfac > mindrfac;
             if (do_recompose) break;

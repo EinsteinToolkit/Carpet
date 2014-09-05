@@ -37,7 +37,8 @@ TEST test_o7
 
 TEST test_o9
 {
-  ABSTOL 5.0e-10
+  ABSTOL 1e-9
+  RELTOL 1e-11
 }
 
 TEST test_o11

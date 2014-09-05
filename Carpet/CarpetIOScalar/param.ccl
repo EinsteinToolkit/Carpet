@@ -35,6 +35,13 @@ STRING out_group_separator "String to separate group from variable name in file 
 
 
 
+INT out_precision "How many digits to output floating-point numbers with" STEERABLE = ALWAYS
+{
+  0:* :: "Number of precision digits"
+} 15
+
+
+
 CCTK_STRING outScalar_dir "Name of scalar output directory, overrides out_dir" STEERABLE = ALWAYS
 {
   "^$" :: "Empty: use IO::out_dir"

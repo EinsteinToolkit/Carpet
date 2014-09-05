@@ -288,7 +288,7 @@ class bboxset {
        },
        other);
 #else
-    CCTK_BUILTIN_UNREACHABLE();
+    assert(0);
 #endif
     assert(old_decoded_subsetr.empty());
     
@@ -1275,6 +1275,8 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
 #ifdef CARPET_DEBUG
     assert((*this & other).empty());
 #endif
+    // Since the sets are disjoint, their symmetric set union is
+    // identical to their symmetric difference.
     return *this ^ other;
   }
   

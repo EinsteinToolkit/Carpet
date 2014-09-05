@@ -74,7 +74,7 @@ namespace CarpetIOScalar {
   vector<int> last_output;
 
   /* CarpetScalar GH extension structure */
-  struct
+  static struct
   {
     /* list of variables to output */
     char *out_vars;
@@ -165,9 +165,12 @@ namespace CarpetIOScalar {
   {
     static Timers::Timer timer ("OutputGH");
     timer.start();
-    for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
-      if (TimeToOutput(cctkGH, vindex)) {
-	TriggerOutput(cctkGH, vindex);
+    CheckSteerableParameters (cctkGH);
+    if (strcmp (IOparameters.out_vars, "")) {
+      for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
+        if (TimeToOutput(cctkGH, vindex)) {
+    	  TriggerOutput(cctkGH, vindex);
+        }
       }
     }
     timer.stop();
@@ -434,7 +437,7 @@ namespace CarpetIOScalar {
             reductions_changed.at(n) = false;
           }
 
-          file << setprecision(15);
+          file << setprecision(out_precision);
           assert (file.good());
 
         } // if on the root processor
@@ -554,8 +557,6 @@ namespace CarpetIOScalar {
     assert (vindex>=0 and vindex<CCTK_NumVars());
 
     if (not do_global_mode) return 0;
-
-    CheckSteerableParameters (cctkGH);
 
     // check if output for this variable was requested
     if (not IOparameters.requests[vindex])

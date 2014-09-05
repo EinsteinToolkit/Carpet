@@ -29,7 +29,7 @@ char const * tostring (astate const & thestate)
   case state_do_some_work:       return "state_do_some_work";
   case state_empty_recv_buffers: return "state_empty_recv_buffers";
   case state_done:               return "state_done";
-  default: CCTK_BUILTIN_UNREACHABLE();
+  default: assert(0);
   }
   return NULL;
 }
@@ -505,13 +505,13 @@ void comm_state::step ()
     
     
   case state_done: {
-    CCTK_BUILTIN_UNREACHABLE();
+    assert(0);
   }
     
     
     
   default:
-    CCTK_BUILTIN_UNREACHABLE();
+    assert(0);
   }
   
   

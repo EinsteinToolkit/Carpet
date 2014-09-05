@@ -48,8 +48,9 @@ USES KEYWORD verbose
 private:
 
 
-
-BOOLEAN one_file_per_group "Write one file per group instead of per variable"
+# this affects a static variable (created_files in ioascii.cc) which controls
+# file truncation and thus it should not change during a single segment
+BOOLEAN one_file_per_group "Write one file per group instead of per variable" STEERABLE = RECOVER
 {
 } "no"
 
@@ -66,23 +67,23 @@ BOOLEAN output_all_timelevels "Output all timelevels instead of only the current
 
 
 
-BOOLEAN separate_grids "Separate grid levels in the output file by additional empty lines"
+BOOLEAN separate_grids "Separate grid levels in the output file by additional empty lines" STEERABLE = ALWAYS
 {
 } "yes"
 
-BOOLEAN separate_components "Separate grid components in the output file by additional empty lines"
+BOOLEAN separate_components "Separate grid components in the output file by additional empty lines" STEERABLE = ALWAYS
 {
 } "no"
 
 
 
-BOOLEAN compact_format "Use a more compact output format with fewer columns and lines"
+BOOLEAN compact_format "Use a more compact output format with fewer columns and lines" STEERABLE = ALWAYS
 {
 } "no"
 
 
 
-BOOLEAN use_grid_coordinates "Use grid coordinate grid functions to obtain coordinate locations"
+BOOLEAN use_grid_coordinates "Use grid coordinate grid functions to obtain coordinate locations" STEERABLE = ALWAYS
 {
 } "no"
 
@@ -381,23 +382,23 @@ CCTK_REAL out2D_yzplane_x "x coordinate for 2D planes in yz-direction" STEERABLE
 
 
 
-BOOLEAN output_symmetry_points "Output symmetry points (assuming that there are nghostzones symmetry points)"
+BOOLEAN output_symmetry_points "Output symmetry points (assuming that there are nghostzones symmetry points)" STEERABLE = ALWAYS
 {
 } "yes"
 
-BOOLEAN output_ghost_points "Output ghost points"
+BOOLEAN output_ghost_points "Output ghost points" STEERABLE = ALWAYS
 {
 } "yes"
 
-BOOLEAN output_boundary_points "Output outer boundary points (assuming that there are nghostzones boundary points)"
+BOOLEAN output_boundary_points "Output outer boundary points (assuming that there are nghostzones boundary points)" STEERABLE = ALWAYS
 {
 } "yes"
 
-BOOLEAN out3D_ghosts "Output ghost zones (DEPRECATED)"
+BOOLEAN out3D_ghosts "Output ghost zones (DEPRECATED)" STEERABLE = ALWAYS
 {
 } "yes"
 
-BOOLEAN out3D_outer_ghosts "Output outer boundary zones (assuming that there are nghostzones boundary points) (DEPRECATED)"
+BOOLEAN out3D_outer_ghosts "Output outer boundary zones (assuming that there are nghostzones boundary points) (DEPRECATED)" STEERABLE = ALWAYS
 {
 } "yes"
 

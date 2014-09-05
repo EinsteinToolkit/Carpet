@@ -35,6 +35,7 @@ namespace Timers {
     assert(handle >= 0);
     
     timerSet.add(this);
+    msgCreate ();
   }
 
   // Destroy a timer
@@ -48,7 +49,6 @@ namespace Timers {
   void CactusTimer::start ()
   {
     msgStart ();
-//    cout << "CactusTimer::start this = " << this << endl;
     running = true;
     CCTK_TimerStartI (handle);
   }
@@ -79,24 +79,28 @@ namespace Timers {
   {
     DECLARE_CCTK_PARAMETERS;
 
+    const bool was_running = running;
+    if (was_running) stop();
+
     static cTimerData * timer = 0;
     if (not timer) timer = CCTK_TimerCreateData ();
     assert (timer);
-    CCTK_TimerI (handle, timer);
 
-    const bool was_running = running;
-    if (was_running) stop();
+    CCTK_TimerI (handle, timer);
     const cTimerVal* tv = CCTK_GetClockValue(xml_clock, timer);
-    if (was_running) start();
-    
+    double val;
     if (not tv) {
       CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Clock \"%s\" not found for timer #%d \"%s\"",
                  xml_clock, handle, CCTK_TimerName(handle));
-      return -1.0;
+      val = -1.0;
+    } else {
+      val = CCTK_TimerClockSeconds(tv);
     }
+    msgRead (val);
+    if (was_running) start();
 
-    return CCTK_TimerClockSeconds(tv);
+    return val;
   }
 
   void CactusTimer::getGlobalTime(double& avg, double& max)
@@ -170,7 +174,7 @@ namespace Timers {
       case val_int:    vals[i] = timer->vals[i].val.i; break;
       case val_long:   vals[i] = timer->vals[i].val.l; break;
       case val_double: vals[i] = timer->vals[i].val.d; break;
-      default: CCTK_BUILTIN_UNREACHABLE();
+      default: assert(0);
       }
     }
     
@@ -229,6 +233,14 @@ namespace Timers {
   }
 
   // Output (debug) messages that a timer is starting or stopping
+  void CactusTimer::msgCreate () const
+  {
+    DECLARE_CCTK_PARAMETERS;
+    if (verbose) {
+      CCTK_VInfo (CCTK_THORNSTRING, "Timer \"%s\" created", name().c_str());
+    }
+  }
+
   void CactusTimer::msgStart () const
   {
     DECLARE_CCTK_PARAMETERS;
@@ -242,6 +254,15 @@ namespace Timers {
     DECLARE_CCTK_PARAMETERS;
     if (verbose) {
       CCTK_VInfo (CCTK_THORNSTRING, "Timer \"%s\" stopping", name().c_str());
+    }
+  }
+
+  void CactusTimer::msgRead (double val) const
+  {
+    DECLARE_CCTK_PARAMETERS;
+    if (verbose) {
+      CCTK_VInfo (CCTK_THORNSTRING, "Timer \"%s\" read: %g",
+                  name().c_str(), val);
     }
   }
 

@@ -49,7 +49,7 @@ namespace Timers {
   using namespace std;
 
   TimerNode::TimerNode(TimerTree *tree, const string& name):
-    d_name(name), d_parent(0), d_tree(tree), d_running(0), d_timer(0)
+    d_name(name), d_parent(0), d_tree(tree), d_running(false), d_timer(0)
   {
   }
 
@@ -60,7 +60,6 @@ namespace Timers {
     {
       delete iter->second;
     }
-    d_children.clear();
     delete d_timer;
   }
 
@@ -76,7 +75,10 @@ namespace Timers {
   void TimerNode::instantiate()
   {
     assert(!d_running);
-    d_parent = d_tree->current;
+    if (d_parent)
+      assert(d_parent == d_tree->current);
+    else
+      d_parent = d_tree->current;
     d_tree->current = this;
     if (!d_timer)
       d_timer = new CactusTimer(pathName());
@@ -88,7 +90,10 @@ namespace Timers {
     assert(!d_running);
     
     d_running = true;
-    d_parent = d_tree->current;
+    if (d_parent)
+      assert(d_parent == d_tree->current);
+    else
+      d_parent = d_tree->current;
     d_tree->current = this;
     if (!d_timer)
       d_timer = new CactusTimer(pathName());

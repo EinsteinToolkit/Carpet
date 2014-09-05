@@ -5,6 +5,8 @@
 
 //#include <cctk.h>
 
+#include <sstream>
+
 #ifdef HAVE_BACKTRACE
 
 // http://cairo.sourcearchive.com/documentation/1.9.4/backtrace-symbols_8c-source.html

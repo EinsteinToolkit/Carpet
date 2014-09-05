@@ -257,6 +257,34 @@ namespace Carpet {
     Checkpoint ("ProlongateGroups");
 
     assert (groups.size() > 0);
+    
+    // TODO: Transmit only the regions that are actually needed
+    if (CCTK_IsFunctionAliased("Accelerator_RequireValidData")) {
+      // TODO: Require only as many time levels as needed
+      // TODO: Handle time levels correctly
+      vector<CCTK_INT> vis, rls, tls;
+      for (int group = 0; group < (int)groups.size(); ++group) {
+        const int g = groups.AT(group);
+        const int grouptype = CCTK_GroupTypeI (g);
+        if (grouptype != CCTK_GF) {
+          continue;
+        }
+        const int num_tl = prolongation_order_time + 1;
+        const int var0 = CCTK_FirstVarIndexI(g);
+        const int varn = CCTK_NumVarsInGroupI(g);
+        for (int vi=var0; vi<var0+varn; ++vi) {
+          for (int tl=0; tl<num_tl; ++tl) {
+            vis.push_back(vi);
+            rls.push_back(reflevel-1);
+            tls.push_back(tl);
+          }
+        }
+      }
+      const CCTK_INT on_device = 0;
+      Accelerator_RequireValidData
+        (cctkGH,
+         &vis.front(), &rls.front(), &tls.front(), vis.size(), on_device);
+    }
 
     static vector<Timers::Timer*> timers;
     if (timers.empty()) {
@@ -304,6 +332,31 @@ namespace Carpet {
     }
     (*ti)->stop();
     ++ti; assert(ti == timers.end());
+    
+    // TODO: Transmit only the regions that were actually written
+    // (i.e. the buffer zones)
+    if (CCTK_IsFunctionAliased("Accelerator_NotifyDataModified")) {
+      // TODO: Handle time levels correctly
+      vector<CCTK_INT> vis, rls, tls;
+      for (int group = 0; group < (int)groups.size(); ++group) {
+        const int g = groups.AT(group);
+        const int grouptype = CCTK_GroupTypeI (g);
+        if (grouptype != CCTK_GF) {
+          continue;
+        }
+        const int var0 = CCTK_FirstVarIndexI(g);
+        const int varn = CCTK_NumVarsInGroupI(g);
+        for (int vi=var0; vi<var0+varn; ++vi) {
+          vis.push_back(vi);
+          rls.push_back(reflevel-1);
+          tls.push_back(timelevel);
+        }
+      }
+      const CCTK_INT on_device = 0;
+      Accelerator_NotifyDataModified
+        (cctkGH,
+         &vis.front(), &rls.front(), &tls.front(), vis.size(), on_device);
+    }
   }
 
 

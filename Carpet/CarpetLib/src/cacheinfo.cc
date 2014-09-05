@@ -1,6 +1,7 @@
 #include "cacheinfo.hh"
 
 #include <iostream>
+#include <sstream>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>

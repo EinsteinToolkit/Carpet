@@ -231,14 +231,19 @@ namespace CarpetIOASCII {
   template<int outdim>
   int IOASCII<outdim>::OutputGH (const cGH* const cctkGH)
   {
+    DECLARE_CCTK_PARAMETERS;
+
     ostringstream timer_name;
     timer_name << "OutputGH<" << outdim << ">";
     Timers::Timer timer(timer_name.str());
 
     timer.start();
-    for (int vi=0; vi<CCTK_NumVars(); ++vi) {
-      if (TimeToOutput(cctkGH, vi)) {
-	TriggerOutput(cctkGH, vi);
+    CheckSteerableParameters (cctkGH);
+    if (strcmp (my_out_vars, "")) {
+      for (int vi=0; vi<CCTK_NumVars(); ++vi) {
+        if (TimeToOutput(cctkGH, vi)) {
+	  TriggerOutput(cctkGH, vi);
+        }
       }
     }
     timer.stop();
@@ -259,8 +264,6 @@ namespace CarpetIOASCII {
     if (CCTK_GroupTypeFromVarI(vindex) != CCTK_GF and not do_global_mode) {
       return 0;
     }
-    
-    CheckSteerableParameters (cctkGH);
     
     // check if output for this variable was requested
     if (not requests.at(vindex)) {
@@ -986,19 +989,19 @@ namespace CarpetIOASCII {
       case 2: return out1D_z;
       case 3: return out1D_d;
       }
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
       
     case 2:
       if (dirs[0]==0 and dirs[1]==1) return out2D_xy;
       if (dirs[0]==0 and dirs[1]==2) return out2D_xz;
       if (dirs[0]==1 and dirs[1]==2) return out2D_yz;
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
       
     case 3:
       // Output is always requested (if switched on)
       return true;
     }
-    CCTK_BUILTIN_UNREACHABLE();
+    assert(0);
   }
   
 
@@ -1069,7 +1072,7 @@ namespace CarpetIOASCII {
         // the diagonal: we don't care about the offset
         break;
       default:
-        CCTK_BUILTIN_UNREACHABLE();
+        assert(0);
       }
       break;
       
@@ -1091,7 +1094,7 @@ namespace CarpetIOASCII {
                                    "out2D_yzplane_x",  "out_yzplane_x",
                                    out_yzplane_x);
       } else {
-        CCTK_BUILTIN_UNREACHABLE();
+        assert(0);
       }
       break;
       
@@ -1100,7 +1103,7 @@ namespace CarpetIOASCII {
       break;
       
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     
     return offset;
