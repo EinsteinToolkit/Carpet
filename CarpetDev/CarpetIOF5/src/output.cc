@@ -637,7 +637,7 @@ namespace CarpetIOF5 {
         // do nothing
         break;
       default:
-        CCTK_BUILTIN_UNREACHABLE();
+        assert(0);
       }
       
       // TODO: Do not output symmetry zones (unless requested by the
@@ -666,7 +666,7 @@ namespace CarpetIOF5 {
         } else if (var == v0+dim) {
           tensortype = tt_scalar;
         } else {
-          CCTK_BUILTIN_UNREACHABLE();
+          assert(0);
         }
         
       } else {
@@ -710,7 +710,7 @@ namespace CarpetIOF5 {
         switch (groupdata.vartype) {
         case CCTK_VARIABLE_INT:  type = H5T_NATIVE_INT;    break;
         case CCTK_VARIABLE_REAL: type = H5T_NATIVE_DOUBLE; break;
-        default: CCTK_BUILTIN_UNREACHABLE();
+        default: assert(0);
         }
         num_comps = 1;
         name = generate_fieldname(cctkGH, var, tensortype);
@@ -723,7 +723,7 @@ namespace CarpetIOF5 {
         case CCTK_VARIABLE_REAL:
           type = write_positions ? F5T_COORD3_DOUBLE : F5T_VEC3_DOUBLE;
           break;
-        default: CCTK_BUILTIN_UNREACHABLE();
+        default: assert(0);
         }
         num_comps = dim;
         // TODO: use generate_positionsname
@@ -757,7 +757,7 @@ namespace CarpetIOF5 {
         assert(not write_positions);
         switch (groupdata.vartype) {
         case CCTK_VARIABLE_REAL: type = F5T_METRIC33_DOUBLE; break;
-        default: CCTK_BUILTIN_UNREACHABLE();
+        default: assert(0);
         }
         num_comps = dim*(dim+1)/2;
         name = generate_fieldname(cctkGH, var, tensortype);
@@ -769,7 +769,7 @@ namespace CarpetIOF5 {
         assert(not write_positions);
         switch (groupdata.vartype) {
         case CCTK_VARIABLE_REAL: type = F5T_BIVEC3_DOUBLE; break;
-        default: CCTK_BUILTIN_UNREACHABLE();
+        default: assert(0);
         }
         num_comps = dim*dim;
         name = generate_fieldname(cctkGH, var, tensortype);
@@ -777,7 +777,7 @@ namespace CarpetIOF5 {
       }
         
       default:
-        CCTK_BUILTIN_UNREACHABLE();
+        assert(0);
       }
       
       cout << indent << "fieldname=" << name << "\n";
@@ -865,7 +865,7 @@ namespace CarpetIOF5 {
       }
         
       default:
-        CCTK_BUILTIN_UNREACHABLE();
+        assert(0);
       }
       
       // Dataset properties
@@ -955,7 +955,7 @@ namespace CarpetIOF5 {
           switch (vartype) {
           case CCTK_VARIABLE_INT:  delete[] (CCTK_INT  const*)data[d]; break;
           case CCTK_VARIABLE_REAL: delete[] (CCTK_REAL const*)data[d]; break;
-          default: CCTK_BUILTIN_UNREACHABLE();
+          default: assert(0);
           }
         }
         data[d] = NULL;

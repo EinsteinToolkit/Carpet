@@ -19,23 +19,23 @@
 /* define the IOFlexIO datatypes according to CCTK_??? datatypes */
 #define FLEXIO_CHAR    IObase::Char
 
-#ifdef  CCTK_INT2
+#ifdef  HAVE_CCTK_INT2
 #define FLEXIO_INT2    IObase::Int16
 #endif
-#ifdef  CCTK_INT4
+#ifdef  HAVE_CCTK_INT4
 #define FLEXIO_INT4    IObase::Int32
 #endif
-#ifdef  CCTK_INT8
+#ifdef  HAVE_CCTK_INT8
 #define FLEXIO_INT8    IObase::Int64
 #endif
 
-#ifdef  CCTK_REAL4
+#ifdef  HAVE_CCTK_REAL4
 #define FLEXIO_REAL4   IObase::Float32
 #endif
-#ifdef  CCTK_REAL8
+#ifdef  HAVE_CCTK_REAL8
 #define FLEXIO_REAL8   IObase::Float64
 #endif
-#ifdef  CCTK_REAL16
+#ifdef  HAVE_CCTK_REAL16
 #define FLEXIO_REAL16  -1
 #endif
 
@@ -89,13 +89,13 @@
 
    PUGH_MPI_REAL  is used for communicating reals of the generic CCTK_REAL type
    PUGH_MPI_REALn is used to explicitely communicate n-byte reals */
-#ifdef  CCTK_REAL4
+#ifdef  HAVE_CCTK_REAL4
 #define CARPET_MPI_REAL4  MPI_FLOAT
 #endif
-#ifdef  CCTK_REAL8
+#ifdef  HAVE_CCTK_REAL8
 #define CARPET_MPI_REAL8  MPI_DOUBLE
 #endif
-#ifdef  CCTK_REAL16
+#ifdef  HAVE_CCTK_REAL16
 #define CARPET_MPI_REAL16  (sizeof (CCTK_REAL16) == sizeof (long double) ?      \
                           MPI_LONG_DOUBLE : MPI_DATATYPE_NULL)
 #endif

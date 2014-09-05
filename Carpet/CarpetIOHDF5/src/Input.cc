@@ -644,6 +644,14 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
          patch != file.patches.end();
          patch++) {
 
+      // skip all variables which aren't expected to be recovered
+      // this should only happen for variables whose checkpoint tag was changed
+      // between the code version used to write the checkpoint and the current
+      // one
+      if (not_checkpointed[patch->vindex]) {
+        continue;
+      }
+
       // only recover grid variables for the current mglevel/reflevel
       if (patch->mglevel != mglevel or patch->reflevel != reflevel) {
         continue;
@@ -1398,16 +1406,26 @@ static int ReadVar (const cGH* const cctkGH,
     BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, group.grouptype) {
 
       // reset bounds for DISTRIB=CONST variables
+      // these are handled by extending an extra dimension to nprocs elements.
+      // All processes write the data of process zero into their checkpoint.
+      // Here we ensure that any copy is acceptable to be read in again by
+      // shifting the data that pretends to come from component 0 into out own
+      // component.
+      // We use the current array sizes so that the array size may change
+      // during recovery.
       if (group.disttype == CCTK_DISTRIB_CONSTANT) {
         assert (group.grouptype==CCTK_SCALAR or group.grouptype==CCTK_ARRAY);
-        const int newlower = lower[patch->rank-1] +
-          (upper[patch->rank-1]-lower[patch->rank-1]+1)*
-          (data.hh->processor(reflevel,component));
-        const int newupper = upper[patch->rank-1] +
-          (upper[patch->rank-1]-lower[patch->rank-1]+1)*
-          (data.hh->processor(reflevel,component));
-        lower[patch->rank-1] = newlower;
-        upper[patch->rank-1] = newupper;
+        const int dir = min (dim-1, patch->rank==0 ? 1 : patch->rank);
+        const ibbox& exterior_membox =
+          data.dd->light_boxes.at(mglevel).at(reflevel).at(component).exterior;
+        const ibbox& exterior0_membox =
+          data.dd->light_boxes.at(mglevel).at(reflevel).at(0).exterior;
+        const int newlower = lower[dir] +
+          (exterior_membox.lower()[dir] - exterior0_membox.lower()[dir]);
+        const int newupper = upper[dir] +
+          (exterior_membox.lower()[dir] - exterior0_membox.lower()[dir]);
+        lower[dir] = newlower;
+        upper[dir] = newupper;
       }
       const ibbox filebox(lower, upper, stride);
       // cout << "Found in file: " << filebox << endl;

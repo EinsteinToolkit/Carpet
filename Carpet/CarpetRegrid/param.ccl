@@ -386,15 +386,15 @@ CCTK_INT offset_firstlevel "First (lowest) refinement level that should have an 
 
 CCTK_REAL offsetx[10] "x-coordinate of offset" STEERABLE=always
 {
-  (*:*) :: ""
+  *:* :: ""
 } 0.0
 CCTK_REAL offsety[10] "y-coordinate of offset" STEERABLE=always
 {
-  (*:*) :: ""
+  *:* :: ""
 } 0.0
 CCTK_REAL offsetz[10] "z-coordinate of offset" STEERABLE=always
 {
-  (*:*) :: ""
+  *:* :: ""
 } 0.0
 
 PRIVATE:

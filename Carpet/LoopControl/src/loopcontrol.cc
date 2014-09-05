@@ -761,7 +761,7 @@ void lc_control_init(lc_control_t *restrict const control,
       break;
     }
     default:
-      CCTK_BUILTIN_UNREACHABLE();
+      assert(0);
     }
     
     // Determine loop params
@@ -935,7 +935,7 @@ void lc_control_init(lc_control_t *restrict const control,
         alignup(loopsize[d], control->coarse_loop.step.v[d]);
     }
   } else {
-    CCTK_BUILTIN_UNREACHABLE();
+    assert(0);
   }
   
   if (veryverbose) {

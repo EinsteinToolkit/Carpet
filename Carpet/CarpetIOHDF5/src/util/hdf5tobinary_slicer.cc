@@ -439,7 +439,7 @@ int main (int argc, char *const argv[])
       hid_t const outfile = H5Fcreate (filename, H5F_ACC_TRUNC,
                                        H5P_DEFAULT, H5P_DEFAULT);
       assert (outfile >= 0);
-      hsize_t const dims[3] = { datadims[2], datadims[1], datadims[0] };
+      hsize_t const dims[3] = { (hsize_t)datadims[2], (hsize_t)datadims[1], (hsize_t)datadims[0] };
       hid_t const dataspace = H5Screate_simple (3, dims, NULL);
       assert (dataspace >= 0);
       hid_t const dataset_properties = H5Pcreate (H5P_DATASET_CREATE);
@@ -475,9 +475,9 @@ int main (int argc, char *const argv[])
       assert (outfile >= 0);
       
       hsize_t const dims[4] =
-        { 0, datadims[2], datadims[1], datadims[0] };
+        { (hsize_t)0, (hsize_t)datadims[2], (hsize_t)datadims[1], (hsize_t)datadims[0] };
       hsize_t const maxdims[4] =
-        { H5S_UNLIMITED, datadims[2], datadims[1], datadims[0] };
+        { (hsize_t)H5S_UNLIMITED, (hsize_t)datadims[2], (hsize_t)datadims[1], (hsize_t)datadims[0] };
       hid_t const dataspace = H5Screate_simple (4, dims, maxdims);
       assert (dataspace >= 0);
       hid_t const dataset_properties = H5Pcreate (H5P_DATASET_CREATE);
@@ -487,7 +487,7 @@ int main (int argc, char *const argv[])
       // hsize_t const chunk_dims[4] =
       //   {1, datadims[2], datadims[1], datadims[0] };
       hsize_t const chunk_dims[4] =
-        {1, min(128,datadims[2]), min(128,datadims[1]), min(128,datadims[0]) };
+        {(hsize_t)1, (hsize_t)min(128,datadims[2]), (hsize_t)min(128,datadims[1]), (hsize_t)min(128,datadims[0]) };
       CHECK_HDF5 (H5Pset_chunk (dataset_properties, 4, chunk_dims));
       int const compression_level = 1;
       CHECK_HDF5 (H5Pset_deflate (dataset_properties, compression_level));
@@ -501,14 +501,14 @@ int main (int argc, char *const argv[])
       // dimensions
       
       hsize_t const extended_dims[4] =
-        { out_hdf5_4d_index+1, datadims[2], datadims[1], datadims[0] };
+        { (hsize_t)out_hdf5_4d_index+1, (hsize_t)datadims[2], (hsize_t)datadims[1], (hsize_t)datadims[0] };
       CHECK_HDF5 (H5Dextend (dataset, extended_dims));
       
       // for debugging only
       // CHECK_HDF5 (H5Fflush (outfile, H5F_SCOPE_GLOBAL));
       
       hsize_t const memory_dims[4] =
-        { 1, datadims[2], datadims[1], datadims[0] };
+        { (hsize_t)1, (hsize_t)datadims[2], (hsize_t)datadims[1], (hsize_t)datadims[0] };
       hid_t const memory_dataspace = H5Screate_simple (4, memory_dims, NULL);
       assert (memory_dataspace >= 0);
       
@@ -517,7 +517,7 @@ int main (int argc, char *const argv[])
       // hssize_t const file_offset[4] =
       //   { out_hdf5_4d_index, 0, 0, 0 };
       // CHECK_HDF5 (H5Soffset_simple (file_dataspace, file_offset));
-      hsize_t const file_offset[4] = { out_hdf5_4d_index, 0, 0, 0 };
+      hsize_t const file_offset[4] = { (hsize_t)out_hdf5_4d_index, (hsize_t)0, (hsize_t)0, (hsize_t)0 };
       CHECK_HDF5 (H5Sselect_hyperslab (file_dataspace, H5S_SELECT_SET,
                                        file_offset, NULL, memory_dims, NULL));
       
@@ -759,9 +759,9 @@ static void ReadPatch (const patch_t& patch, int last_iteration)
 
   // C order
   h5size_t slabstart[3] =
-    {patch.iorigin[2], patch.iorigin[1], patch.iorigin[0]};
-  hsize_t slabcount[3] = {patch.dims[0], patch.dims[1], patch.dims[2]};
-  hsize_t slabsize[3] = {datadims[2], datadims[1], datadims[0]};
+    {(hsize_t)patch.iorigin[2], (hsize_t)patch.iorigin[1], (hsize_t)patch.iorigin[0]};
+  hsize_t slabcount[3] = {(hsize_t)patch.dims[0], (hsize_t)patch.dims[1], (hsize_t)patch.dims[2]};
+  hsize_t slabsize[3] = {(hsize_t)datadims[2], (hsize_t)datadims[1], (hsize_t)datadims[0]};
   for (int d=0; d<3; ++d) {
     if (slab_coord[d] != PARAMETER_UNSET) {
       slabstart[2-d] = (h5size_t) ((slab_coord[d] - patch.origin[d]) /

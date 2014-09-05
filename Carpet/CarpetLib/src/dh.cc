@@ -1234,7 +1234,7 @@ regrid (bool const do_init)
               ibset all_fine_boundary_combined;
               for (int c = 0; c < h.components(rl); ++ c) {
                 full_dboxes const & box = full_level.AT(c);
-                all_fine_boundary_combined +=
+                all_fine_boundary_combined |=
                   box.exterior.shift(-idir,2) & all_fine_boundary[dir][face];
               } // for c
               ASSERT_rl (all_fine_boundary_combined == all_fine_boundary[dir][face],

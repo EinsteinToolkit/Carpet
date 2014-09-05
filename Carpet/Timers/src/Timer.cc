@@ -41,8 +41,8 @@ namespace Timers {
   /// never started.
   void Timer::instantiate()
   {
-    TimerNode *current_timer = d_tree->current;
     if (not d_tree->root) return; // do nothing if there is no root
+    TimerNode *current_timer = d_tree->current;
     assert(current_timer);
     current_timer->getChildTimer(name())->instantiate();
   }
@@ -51,8 +51,8 @@ namespace Timers {
   /// of the most recently started timer that has not been stopped.
   void Timer::start()
   {
-    TimerNode *current_timer = d_tree->current;
     if (not d_tree->root) return; // do nothing if there is no root
+    TimerNode *current_timer = d_tree->current;
     assert(current_timer);
     current_timer->getChildTimer(name())->start();
   }
@@ -60,13 +60,13 @@ namespace Timers {
   /// Stop the timer - it must be the most recently started timer
   void Timer::stop()
   {
-    TimerNode *current = d_tree->current;
     if (not d_tree->root) return; // do nothing if there is no root
-    if (current->getName() != name())
+    TimerNode *current_timer = d_tree->current;
+    if (current_timer->getName() != name())
       CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Trying to stop enclosing timer '%s' before enclosed time '%s'",
-                  name().c_str(), current->getName().c_str());
-    current->stop();
+                  "Trying to stop enclosing timer '%s' before enclosed timer '%s'",
+                  name().c_str(), current_timer->getName().c_str());
+    current_timer->stop();
   }
   
   /// Return the name of the timer
@@ -75,7 +75,8 @@ namespace Timers {
     return d_name;
   }
   
-  /// Return the current time of the timer as a double
+  /// Return the current time of the innermost currently running
+  /// (sic!) timer as a double
   double Timer::getTime()
   {
     return d_tree->current->getTime();

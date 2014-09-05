@@ -114,21 +114,21 @@ hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
     case CCTK_VARIABLE_CHAR:      retval = HDF5_CHAR; break;
 
     case CCTK_VARIABLE_INT:       retval = HDF5_INT; break;
-#ifdef CCTK_INT1
+#ifdef HAVE_CCTK_INT1
     case CCTK_VARIABLE_INT1:      retval = H5T_NATIVE_CHAR; break;
 #endif
-#ifdef CCTK_INT2
+#ifdef HAVE_CCTK_INT2
     case CCTK_VARIABLE_INT2:      retval = H5T_NATIVE_SHORT; break;
 #endif
-#ifdef CCTK_INT4
+#ifdef HAVE_CCTK_INT4
     case CCTK_VARIABLE_INT4:      retval = H5T_NATIVE_INT; break;
 #endif
-#ifdef CCTK_INT8
+#ifdef HAVE_CCTK_INT8
     case CCTK_VARIABLE_INT8:      retval = H5T_NATIVE_LLONG; break;
 #endif
 
     case CCTK_VARIABLE_REAL:      retval = HDF5_REAL;
-#ifdef CCTK_REAL4
+#ifdef HAVE_CCTK_REAL4
                                   if (single_precision) {
                                     retval = H5T_NATIVE_FLOAT;
                                   }
@@ -136,22 +136,22 @@ hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
                                   break;
 
     case CCTK_VARIABLE_COMPLEX:   retval = myGH->HDF5_COMPLEX;
-#ifdef CCTK_REAL4
+#ifdef HAVE_CCTK_REAL4
                                   if (single_precision) {
                                     retval = myGH->HDF5_COMPLEX8;
                                   }
 #endif
                                   break;
 
-#ifdef CCTK_REAL4
+#ifdef HAVE_CCTK_REAL4
     case CCTK_VARIABLE_REAL4:     retval = H5T_NATIVE_FLOAT; break;
     case CCTK_VARIABLE_COMPLEX8:  retval = myGH->HDF5_COMPLEX8; break;
 #endif
-#ifdef CCTK_REAL8
+#ifdef HAVE_CCTK_REAL8
     case CCTK_VARIABLE_REAL8:     retval = H5T_NATIVE_DOUBLE; break;
     case CCTK_VARIABLE_COMPLEX16: retval = myGH->HDF5_COMPLEX16; break;
 #endif
-#ifdef CCTK_REAL16
+#ifdef HAVE_CCTK_REAL16
     case CCTK_VARIABLE_REAL16:    retval = H5T_NATIVE_LDOUBLE; break;
     case CCTK_VARIABLE_COMPLEX32: retval = myGH->HDF5_COMPLEX32; break;
 #endif

@@ -440,18 +440,20 @@ DECLARE_OPERATOR_2_RET (operator>=, >=, bool)
 // Reduction operators
 
 // Identity
-#define id(x) (x)
+#define ID(x) (x)
 
-DECLARE_REDUCTION_OPERATOR_1_T_RET (all,true ,&=,id,bool,bool)
-DECLARE_REDUCTION_OPERATOR_1_T_RET (any,false,|=,id,bool,bool)
+DECLARE_REDUCTION_OPERATOR_1_T_RET (all,true ,&=,ID,bool,bool)
+DECLARE_REDUCTION_OPERATOR_1_T_RET (any,false,|=,ID,bool,bool)
 
-DECLARE_REDUCTION_FUNCTION_1 (maxval,a[0],max,id)
-DECLARE_REDUCTION_FUNCTION_1 (minval,a[0],min,id)
-DECLARE_REDUCTION_OPERATOR_1 (prod,1,*=,id)
-DECLARE_REDUCTION_OPERATOR_1 (sum,0,+=,id)
+DECLARE_REDUCTION_FUNCTION_1 (maxval,a[0],max,ID)
+DECLARE_REDUCTION_FUNCTION_1 (minval,a[0],min,ID)
+DECLARE_REDUCTION_OPERATOR_1 (prod,1,*=,ID)
+DECLARE_REDUCTION_OPERATOR_1 (sum,0,+=,ID)
 
-DECLARE_REDUCTION_OPERATOR_2 (dot  ,0,+=,*,id  )
+DECLARE_REDUCTION_OPERATOR_2 (dot  ,0,+=,*,ID  )
 DECLARE_REDUCTION_OPERATOR_2 (hypot,0,+=,*,sqrt)
+
+#undef ID
 
 /** Count the number of true (non-zero) elements in the vector.  */
 template<typename T,int D>

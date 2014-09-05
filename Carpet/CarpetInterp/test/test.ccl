@@ -1,3 +1,6 @@
+ABSTOL 1.0e-8
+RELTOL 1.0e+100
+
 TEST waveinterp-1p
 {
   NPROCS 1
