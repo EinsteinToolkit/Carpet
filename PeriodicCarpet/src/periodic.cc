@@ -166,6 +166,21 @@ periodic_carpet(cGH const *restrict const cctkGH,
       dh::light_cboxes const& light_level
         = dd.light_boxes.AT(mglevel).AT(reflevel);
       
+      // Interior of the domain with respect to periodic boundaries,
+      // i.e. periodic boundaries cut off, but all other boundaries
+      // still included
+      ibbox domain_perint;
+      {
+        ivect lo, hi, str;
+        for (int d=0; d<dim; ++d) {
+          ibbox const& dom = do_periodic[d] ? domain_active : domain_exterior;
+          lo[d] = dom.lower()[d];
+          hi[d] = dom.upper()[d];
+          str[d] = dom.stride()[d];
+        }
+        domain_perint = ibbox(lo, hi, str);
+      }
+      
       // CCTK_INT width[2*dim];
       // CCTK_INT is_internal[2*dim];
       // CCTK_INT is_staggered[2*dim];
@@ -241,12 +256,12 @@ periodic_carpet(cGH const *restrict const cctkGH,
             if (not do_periodic[d]) {
               slab.offset[d] = 0;
             } else {
-              assert((dst_bbox1.lower()[d] - domain_active.lower()[d]) %
-                     domain_active.stride()[d] == 0);
+              assert((dst_bbox1.lower()[d] - domain_perint.lower()[d]) %
+                     domain_perint.stride()[d] == 0);
               slab.offset[d] =
-                - rounddn(dst_bbox1.lower()[d] - domain_active.lower()[d],
-                        domain_active.shape()[d]) /
-                domain_active.stride()[d];
+                - rounddn(dst_bbox1.lower()[d] - domain_perint.lower()[d],
+                          domain_perint.shape()[d]) /
+                domain_perint.stride()[d];
             }
           }
           assert(not all(slab.offset == 0)); // this would be trivial
@@ -256,7 +271,7 @@ periodic_carpet(cGH const *restrict const cctkGH,
           
           // Ensure we copy from within the domain, not from boundary
           // points
-          ibbox const src_bbox = src_bbox1 & domain_active;
+          ibbox const src_bbox = src_bbox1 & domain_perint;
           assert(not src_bbox.empty());
           ibbox const dst_bbox = src_bbox.shift(-slab.offset);
           assert(dst_bbox.is_contained_in(dst_bbox1));
