@@ -1287,13 +1287,13 @@ namespace Carpet {
           pseudoregion_t preg (reg.extent, c);
           subtreesx.AT(i) = new ipfulltree (preg);
         }
-        boundsx.AT(nprocs_dir[0]-1) = rub0[0] + rstr0[0];
+        boundsx.AT(nprocs_dir[0]) = rub0[0] + rstr0[0];
         subtreesy.AT(j) = new ipfulltree (0, boundsx, subtreesx);
       }
-      boundsy.AT(nprocs_dir[1]-1) = rub0[1] + rstr0[1];
+      boundsy.AT(nprocs_dir[1]) = rub0[1] + rstr0[1];
       subtreesz.AT(k) = new ipfulltree (1, boundsy, subtreesy);
     }
-    boundsz.AT(nprocs_dir[2]-1) = rub0[2] + rstr0[2];
+    boundsz.AT(nprocs_dir[2]) = rub0[2] + rstr0[2];
     
     assert (superregs.AT(0).processors == NULL);
     superregs.AT(0).processors = new ipfulltree (2, boundsz, subtreesz);
