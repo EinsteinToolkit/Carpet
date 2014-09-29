@@ -1230,10 +1230,10 @@ namespace Carpet {
     vector<int> boundsz(nprocs_dir[2]);
     vector<ipfulltree *> subtreesz(nprocs_dir[2]+1);
     for (int k=0; k<nprocs_dir[2]; ++k) {
-      vector<int> boundsy(nprocs_dir[2]);
+      vector<int> boundsy(nprocs_dir[1]);
       vector<ipfulltree *> subtreesy(nprocs_dir[2]+1);
       for (int j=0; j<nprocs_dir[1]; ++j) {
-        vector<int> boundsx(nprocs_dir[2]);
+        vector<int> boundsx(nprocs_dir[0]);
         vector<ipfulltree *> subtreesx(nprocs_dir[2]+1);
 	for (int i=0; i<nprocs_dir[0]; ++i) {
           
