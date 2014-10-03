@@ -1,5 +1,0 @@
-# Interface definition for thorn IDSpaceTimeToy
-# $Header:$
-
-implements: idspacetimetoy
-inherits: spacetimetoy hydrotoy grid

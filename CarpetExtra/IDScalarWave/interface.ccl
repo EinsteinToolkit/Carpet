@@ -1,5 +1,0 @@
-# Interface definition for thorn IDScalarWave
-# $Header:$
-
-implements: idscalarwave
-inherits: wavetoy grid

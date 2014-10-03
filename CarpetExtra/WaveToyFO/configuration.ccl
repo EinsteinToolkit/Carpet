@@ -1,4 +1,0 @@
-# Configuration definition for thorn Carpet/WaveToyFO
-# $Header:$
-
-REQUIRES CartGrid3D TGRtensor
