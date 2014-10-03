@@ -1,9 +1,0 @@
-# Main make.code.defn file for thorn CarpetIOSer
-# $Header:$
-
-# Source files in this directory
-SRCS = ioser.cc
-
-# Subdirectories containing source files
-SUBDIRS = 
-

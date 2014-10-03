@@ -1,6 +1,0 @@
-# Interface definition for thorn IDScalarWave
-# $Header:$
-
-implements: idfoscalarwave
-inherits: fowavetoy grid
-

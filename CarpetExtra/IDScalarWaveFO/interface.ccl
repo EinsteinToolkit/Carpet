@@ -1,6 +1,0 @@
-# Interface definition for thorn IDScalarWaveFO
-# $Header:$
-
-IMPLEMENTS: IDScalarWaveFO
-
-INHERITS: Grid WaveToyFO

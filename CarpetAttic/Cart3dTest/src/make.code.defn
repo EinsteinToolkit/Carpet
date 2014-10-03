@@ -1,9 +1,0 @@
-# Main make.code.defn file for thorn Cart3dTest
-# $Header:$
-
-# Source files in this directory
-SRCS = Evolve.c Initial.c
-
-# Subdirectories containing source files
-SUBDIRS = 
-
