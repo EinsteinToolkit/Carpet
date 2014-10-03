@@ -1,8 +1,0 @@
-# Schedule definitions for thorn IDScalarWave
-# $Header:$
-
-schedule IDFOScalarWave_InitialData as FOWaveToy_InitialData at INITIAL
-{
-  STORAGE:       FOwavetoy::scalarevolve[3] FOwavetoy::scalarevolve_derivs[3]
-  LANG:          Fortran
-} "Initial data for 3D wave equation"

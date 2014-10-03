@@ -1,8 +1,0 @@
-# Interface definition for thorn CarpetIOSer
-# $Header:$
-
-implements: IOSer
-
-inherits: Hyperslab
-
-uses include header: carpet.hh

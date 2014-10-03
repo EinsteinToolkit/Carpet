@@ -1,9 +1,10 @@
-Cactus Code Arrangement Carpet
-Arrangement Author(s)     : Erik Schnetter <schnetter@cct.lsu.edu>
-Arrangement Maintainer(s) : Erik Schnetter <schnetter@cct.lsu.edu>
+Cactus Code Thorn Carpet
+Author(s)    : Erik Schnetter <schnetter@cct.lsu.edu>
+Maintainer(s): Erik Schnetter <schnetter@cct.lsu.edu>
+Licence      : GPLv2+
 --------------------------------------------------------------------------
 
-Purpose of the arrangement:
+1. Purpose
 
-This arrangement provides a parallel AMR (adaptive mesh refinement)
-driver.  See <http://www.carpetcode.org/> for more information.
+This thorn provides a parallel AMR (adaptive mesh refinement) driver
+with MPI.
