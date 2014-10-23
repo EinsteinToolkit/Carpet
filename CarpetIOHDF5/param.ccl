@@ -16,6 +16,7 @@ USES KEYWORD out_mode
 USES INT     out_timesteps_per_file
 USES KEYWORD out_save_parameters 
 USES BOOLEAN abort_on_io_errors 
+USES STRING  out_group_separator
 
 USES INT     checkpoint_every
 USES REAL    checkpoint_every_walltime_hours
@@ -119,11 +120,6 @@ CCTK_STRING out3D_vars "Variables to output in 3D HDF5 file format" STEERABLE = 
 {
   "" :: "List of group or variable names"
 } ""
-
-STRING out_group_separator "String to separate group from variable name in file name" STEERABLE = ALWAYS
-{
-  "" :: ""
-} "::"
 
 STRING out_extension "File extension to use for CarpetIOHDF5 output" STEERABLE = ALWAYS
 {

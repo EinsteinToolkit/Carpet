@@ -42,6 +42,7 @@ USES BOOLEAN new_filename_scheme
 USES BOOLEAN strict_io_parameter_check
 USES KEYWORD out_fileinfo
 USES KEYWORD verbose
+USES STRING out_group_separator
 
 
 
@@ -53,11 +54,6 @@ private:
 BOOLEAN one_file_per_group "Write one file per group instead of per variable" STEERABLE = RECOVER
 {
 } "no"
-
-STRING out_group_separator "String to separate group from variable name in file name" STEERABLE = ALWAYS
-{
-  "" :: ""
-} "::"
 
 
 
