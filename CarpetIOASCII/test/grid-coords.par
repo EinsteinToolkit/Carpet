@@ -13,7 +13,8 @@ ActiveThorns = "
    SymBase
 "
 
-IO::out_dir = $parfile
+IO::out_dir             = $parfile
+IO::out_group_separator = "-"
 
 Carpet::global_nx = 7
 Carpet::global_ny = 8

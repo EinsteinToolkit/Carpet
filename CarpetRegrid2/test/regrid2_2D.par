@@ -58,8 +58,9 @@ carpet::adaptive_stepsize = no
 Carpet::init_fill_timelevels = "yes"
 
 # the output dir will be named after the parameter file name
-IO::out_dir = $parfile
-IO::out_fileinfo="none"
+IO::out_dir             = $parfile
+IO::out_group_separator = "-"
+IO::out_fileinfo        = "none"
 
 IOASCII::out2D_every = 1
 IOASCII::out2D_xyplane_z =  0
