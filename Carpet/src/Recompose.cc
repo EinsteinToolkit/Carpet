@@ -83,6 +83,10 @@ namespace Carpet {
                                           region_t         & superreg,
                                           vector<region_t> & newregs);
   static void
+  SplitRegionsMaps_AsSpecified (cGH const * cctkGH,
+                                vector<vector<region_t> > & superregss,
+                                vector<vector<region_t> > & regss);
+  static void
   SplitRegions_AsSpecified (cGH const * cctkGH,
                             vector<region_t> & superregs,
                             vector<region_t> & regs);
@@ -1314,8 +1318,7 @@ namespace Carpet {
     } else if (CCTK_EQUALS (processor_topology, "balanced")) {
       SplitRegionsMaps_Balanced (cctkGH, superregss, regss);
     } else if (CCTK_EQUALS (processor_topology, "manual")) {
-      assert (0);
-//       SplitRegionsMaps_AsSpecified (cctkGH, superregss, regss);
+      SplitRegionsMaps_AsSpecified (cctkGH, superregss, regss);
     } else {
       assert (0);
     }
@@ -1942,6 +1945,20 @@ namespace Carpet {
   }
   
   
+  
+  static void
+  SplitRegionsMaps_AsSpecified (cGH const * cctkGH,
+                                vector<vector<region_t> > & superregss,
+                                vector<vector<region_t> > & regss)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    int const nmaps = superregss.size();
+    assert(nmaps == 1);         // for now
+    assert ((int)regss.size() == nmaps);
+    
+    SplitRegions_AsSpecified(cctkGH, superregss.AT(0), regss.AT(0));
+  }
   
   //////////////////////////////////////////////////////////////////////////////
   
