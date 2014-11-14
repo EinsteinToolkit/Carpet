@@ -1227,14 +1227,14 @@ namespace Carpet {
     const ivect step = locnp * cstr;
     assert (dim==3);
     
-    vector<int> boundsz(nprocs_dir[2]);
-    vector<ipfulltree *> subtreesz(nprocs_dir[2]+1);
+    vector<int> boundsz(nprocs_dir[2]+1);
+    vector<ipfulltree *> subtreesz(nprocs_dir[2]);
     for (int k=0; k<nprocs_dir[2]; ++k) {
-      vector<int> boundsy(nprocs_dir[1]);
-      vector<ipfulltree *> subtreesy(nprocs_dir[2]+1);
+      vector<int> boundsy(nprocs_dir[1]+1);
+      vector<ipfulltree *> subtreesy(nprocs_dir[1]);
       for (int j=0; j<nprocs_dir[1]; ++j) {
-        vector<int> boundsx(nprocs_dir[0]);
-        vector<ipfulltree *> subtreesx(nprocs_dir[2]+1);
+        vector<int> boundsx(nprocs_dir[0]+1);
+        vector<ipfulltree *> subtreesx(nprocs_dir[0]);
 	for (int i=0; i<nprocs_dir[0]; ++i) {
           
 	  const int c = i + nprocs_dir[0] * (j + nprocs_dir[1] * k);
