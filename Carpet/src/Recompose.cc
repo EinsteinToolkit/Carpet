@@ -83,6 +83,10 @@ namespace Carpet {
                                           region_t         & superreg,
                                           vector<region_t> & newregs);
   static void
+  SplitRegionsMaps_AsSpecified (cGH const * cctkGH,
+                                vector<vector<region_t> > & superregss,
+                                vector<vector<region_t> > & regss);
+  static void
   SplitRegions_AsSpecified (cGH const * cctkGH,
                             vector<region_t> & superregs,
                             vector<region_t> & regs);
@@ -1198,7 +1202,7 @@ namespace Carpet {
     if(use_psamr)
       abort();
     
-   int nprocs = CCTK_nProcs (cctkGH);
+    int nprocs = CCTK_nProcs (cctkGH);
     
     assert (superregs.size() == 1);
     
@@ -1233,7 +1237,8 @@ namespace Carpet {
                   prod (nprocs_dir),
                   nprocs);
     }
-    //assert (prod (nprocs_dir) == nprocs);
+    if (!use_psamr)
+      assert (prod (nprocs_dir) == nprocs);
     
     regs.resize (nprocs);
     const ivect cstr = rstr0;
@@ -1244,15 +1249,15 @@ namespace Carpet {
     const ivect step = locnp * cstr;
     assert (dim==3);
     
-    vector<int> boundsz(nprocs_dir[2]);
-    vector<ipfulltree *> subtreesz(nprocs_dir[2]+1);
+    vector<int> boundsz(nprocs_dir[2]+1);
+    vector<ipfulltree *> subtreesz(nprocs_dir[2]);
     for (int k=0; k<nprocs_dir[2]; ++k) {
-      vector<int> boundsy(nprocs_dir[1]);
-      vector<ipfulltree *> subtreesy(nprocs_dir[2]+1);
+      vector<int> boundsy(nprocs_dir[1]+1);
+      vector<ipfulltree *> subtreesy(nprocs_dir[1]);
       for (int j=0; j<nprocs_dir[1]; ++j) {
-        vector<int> boundsx(nprocs_dir[0]);
-        vector<ipfulltree *> subtreesx(nprocs_dir[2]+1);
-        for (int i=0; i<nprocs_dir[0]; ++i) {
+        vector<int> boundsx(nprocs_dir[0]+1);
+        vector<ipfulltree *> subtreesx(nprocs_dir[0]);
+	      for (int i=0; i<nprocs_dir[0]; ++i) {
           
           const int c = i + nprocs_dir[0] * (j + nprocs_dir[1] * k);
           const ivect ipos (i, j, k);
@@ -1331,8 +1336,7 @@ namespace Carpet {
     } else if (CCTK_EQUALS (processor_topology, "balanced")) {
       SplitRegionsMaps_Balanced (cctkGH, superregss, regss);
     } else if (CCTK_EQUALS (processor_topology, "manual")) {
-      assert (0);
-//       SplitRegionsMaps_AsSpecified (cctkGH, superregss, regss);
+      SplitRegionsMaps_AsSpecified (cctkGH, superregss, regss);
     } else {
       assert (0);
     }
@@ -1959,6 +1963,20 @@ namespace Carpet {
   }
   
   
+  
+  static void
+  SplitRegionsMaps_AsSpecified (cGH const * cctkGH,
+                                vector<vector<region_t> > & superregss,
+                                vector<vector<region_t> > & regss)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    int const nmaps = superregss.size();
+    assert(nmaps == 1);         // for now
+    assert ((int)regss.size() == nmaps);
+    
+    SplitRegions_AsSpecified(cctkGH, superregss.AT(0), regss.AT(0));
+  }
   
   //////////////////////////////////////////////////////////////////////////////
   

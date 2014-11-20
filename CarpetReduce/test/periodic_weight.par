@@ -77,7 +77,7 @@ Carpet::grid_coordinates_filename = "grid_coordinates.asc"
 
 #################################
 ActiveThorns = "AEILocalInterp"
-ActiveThorns = "BLAS LAPACK"
+#ActiveThorns = "BLAS LAPACK"
 ActiveThorns = "Fortran"
 ActiveThorns = "GenericFD"
 ActiveThorns = "HDF5"
@@ -99,7 +99,8 @@ ADMBase::initial_shift   = "zero"
 ADMBase::initial_dtlapse = "zero"
 ADMBase::initial_dtshift = "zero"
 
-IO::out_dir = $parfile
+IO::out_dir             = $parfile
+IO::out_group_separator = "-"
 
 #################################
 ActiveThorns = "CarpetIOBasic"

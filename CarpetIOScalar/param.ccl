@@ -10,9 +10,10 @@ USES KEYWORD out_criterion
 USES CCTK_INT out_every
 USES CCTK_REAL out_dt
 
-USES KEYWORD verbose
 USES BOOLEAN strict_io_parameter_check
+USES KEYWORD verbose
 USES KEYWORD out_fileinfo
+USES STRING out_group_separator
 
 
 
@@ -27,11 +28,6 @@ BOOLEAN one_file_per_group "Write one file per group instead of per variable"
 BOOLEAN all_reductions_in_one_file "Write all requested reductions in one file instead of per reduction"
 {
 } "no"
-
-STRING out_group_separator "String to separate group from variable name in file name" STEERABLE = ALWAYS
-{
-  "" :: ""
-} "::"
 
 
 

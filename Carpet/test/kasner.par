@@ -84,7 +84,7 @@ ActiveThorns = "SphericalSurface ADMBase"
 
 #################################
 ActiveThorns = "AEILocalInterp"
-ActiveThorns = "BLAS LAPACK"
+#ActiveThorns = "BLAS LAPACK"
 ActiveThorns = "Fortran"
 ActiveThorns = "GenericFD"
 ActiveThorns = "HDF5"
@@ -172,7 +172,8 @@ NaNChecker::check_vars  = "
 ActiveThorns = "CarpetIOBasic"
 #################################
 
-IO::out_dir = $parfile
+IO::out_dir             = $parfile
+IO::out_group_separator = "-"
 
 IOBasic::outInfo_every      = 1
 IOBasic::outInfo_reductions = "norm2"

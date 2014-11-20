@@ -34,10 +34,10 @@ InterpToArray::array3d_npoints_i = 5
 InterpToArray::array3d_npoints_j = 4
 InterpToArray::array3d_npoints_k = 3
 
-IOASCII::one_file_per_group  = yes
-IOASCII::out_group_separator = "."
-IOASCII::compact_format      = yes
 IO::out_every = 1
+IO::out_group_separator = "-"
+IOASCII::one_file_per_group  = yes
+IOASCII::compact_format = yes
 
 IOASCII::out0D_vars = "
    InterpToArray::scalars
