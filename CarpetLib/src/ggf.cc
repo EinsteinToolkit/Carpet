@@ -560,7 +560,7 @@ transfer_from_all (comm_state & state,
   assert (rl1>=0 and rl1<h.reflevels());
   assert (ml1>=0 and ml1<h.mglevels());
   assert (tl1>=0 and tl1<timelevels(ml1,rl1));
-  
+
   srpvect const & psendrecvs = d.fast_boxes.AT(ml1).AT(rl1).*sendrecvs;
   
   // Return early if this communication does not concern us
@@ -600,7 +600,7 @@ transfer_from_all (comm_state & state,
     transport_operator == op_copy ? 0 : prolongation_order_time;
   
   vector<const gdata*> gsrcs(tl2s.size());
-  
+
   // Walk all regions
   for (srpvect::const_iterator ipsendrecv = psendrecvs.begin();
        ipsendrecv!=psendrecvs.end(); ++ ipsendrecv)
@@ -639,7 +639,6 @@ transfer_from_all (comm_state & state,
       gsrcs.AT(i) = lc2>=0 ? srcs.AT(lc2).AT(tl2s.AT(i)) : NULL;
     }
     
-    //assert(dst != NULL);
     dst->transfer_from
       (state, gsrcs, times, recv, send, slabinfo, p1, p2, time, pos, pot);
   }
