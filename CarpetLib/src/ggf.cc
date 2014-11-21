@@ -639,7 +639,7 @@ transfer_from_all (comm_state & state,
       gsrcs.AT(i) = lc2>=0 ? srcs.AT(lc2).AT(tl2s.AT(i)) : NULL;
     }
     
-    assert(dst != NULL);
+    //assert(dst != NULL);
     dst->transfer_from
       (state, gsrcs, times, recv, send, slabinfo, p1, p2, time, pos, pot);
   }
