@@ -418,7 +418,8 @@ find_source_timelevel (vector <CCTK_REAL> const & times,
       ostringstream buf;
       buf << setprecision (17)
           << "Internal error: extrapolation in time.";
-      if (varindex >= 0) {
+      assert(this != 0);
+      if (this->varindex >= 0) {
         char * const fullname = CCTK_FullName (varindex);
         buf << "  variable=" << fullname;
         ::free (fullname);
