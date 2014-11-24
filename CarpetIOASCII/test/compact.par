@@ -35,8 +35,9 @@ InterpToArray::array3d_npoints_i = 5
 InterpToArray::array3d_npoints_j = 4
 InterpToArray::array3d_npoints_k = 3
 
-IOASCII::one_file_per_group = yes
-IOASCII::compact_format     = yes
+IOASCII::one_file_per_group  = yes
+IOASCII::compact_format      = yes
+IOASCII::output_ghost_points = no
 IO::out_every = 1
 
 IOASCII::out0D_vars = "
