@@ -702,7 +702,7 @@ namespace CarpetIOASCII {
             
             // Append EOL after every component
             if (dist::rank() == ioproc) {
-              if (separate_components) {
+              if (not omit_empty_lines and separate_components) {
                 assert (file.good());
                 file << eol;
               }
@@ -716,7 +716,7 @@ namespace CarpetIOASCII {
       
       // Append EOL after every complete set of components
       if (dist::rank() == ioproc) {
-        if (separate_grids and not compact_format) {
+        if (not omit_empty_lines and separate_grids and not compact_format) {
           assert (file.good());
           file << eol;
         }
@@ -1503,7 +1503,9 @@ namespace CarpetIOASCII {
           
           for (int d=0; d<outdim; ++d) {
             if ((*it)[d]!=(*ext.end())[d]) break;
-            if (not compact_format or ext.shape()[d] > ext.stride()[d]) {
+            if (not omit_empty_lines and
+                (not compact_format or ext.shape()[d] > ext.stride()[d]))
+            {
               // In the compact format, don't separate outputs that
               // consist of a single lines only
               os << eol;
@@ -1514,7 +1516,7 @@ namespace CarpetIOASCII {
         
       } else {
         
-        if (not compact_format) {
+        if (not omit_empty_lines and not compact_format) {
           os << "#" << eol;
         }
 	
@@ -1585,7 +1587,7 @@ namespace CarpetIOASCII {
           
         } else {
           
-          if (not compact_format) {
+          if (not omit_empty_lines and not compact_format) {
             os << "#" << eol;
           }
           
@@ -1593,7 +1595,9 @@ namespace CarpetIOASCII {
 	
       } // end for loop  
       
-      if (not compact_format or maxval(base.lower()) > minval(base.upper())) {
+      if (not omit_empty_lines and
+          (not compact_format or maxval(base.lower()) > minval(base.upper())))
+      {
         // In the compact format, don't separate outputs that consist
         // of a single lines only
         os << eol;

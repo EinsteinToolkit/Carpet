@@ -79,6 +79,12 @@ BOOLEAN compact_format "Use a more compact output format with fewer columns and 
 
 
 
+BOOLEAN omit_empty_lines "Do not output empty lines as separators" STEERABLE=always
+{
+} "no"
+
+
+
 BOOLEAN use_grid_coordinates "Use grid coordinate grid functions to obtain coordinate locations" STEERABLE = ALWAYS
 {
 } "no"
