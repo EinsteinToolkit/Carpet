@@ -22,7 +22,7 @@
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
-#include <CarpetTimers.hh>
+#include <Timer.hh>
 
 #include "iof5.hh"
 
@@ -166,7 +166,7 @@ namespace CarpetIOF5 {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    static Carpet::Timer timer("F5::OutputGH");
+    static Timers::Timer timer("F5::OutputGH");
     timer.start();
     
     enter_keep_file_open();
