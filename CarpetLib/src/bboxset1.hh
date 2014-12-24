@@ -1118,7 +1118,7 @@ template<typename T, int D>
 template<typename C>
 void bboxset<T,D>::serialise (C& out) const
 {
-  for (bboxset::const_iterator it = begin(); it != end(); ++it) {
+  for (const_iterator it = begin(); it != end(); ++it) {
     out.insert(out.end(), *it);
   }
 }

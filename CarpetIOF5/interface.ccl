@@ -6,7 +6,8 @@ INHERITS: grid
 
 USES INCLUDE: cacheinfo.hh
 USES INCLUDE: carpet.hh
-USES INCLUDE: CarpetTimers.hh
+
+USES INCLUDE: Timer.hh
 
 
 
