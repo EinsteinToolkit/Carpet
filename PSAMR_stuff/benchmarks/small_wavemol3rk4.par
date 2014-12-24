@@ -97,3 +97,5 @@ TimerReport::output_all_timers_together = yes
 TimerReport::output_all_timers_readable = yes
 TimerReport::n_top_timers               = 20
 
+Carpet::verbose=yes
+Carpet::veryverbose=yes

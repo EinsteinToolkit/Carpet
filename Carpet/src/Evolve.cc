@@ -676,7 +676,8 @@ namespace Carpet {
                 use_psamr and carpet_level_iteration[rl]!=carpet_level_iteration[rl+1];
               Restrict (cctkGH, only_sync);
 
-              did_restrict = true;
+              if (!only_sync) did_restrict = true;
+              else did_restrict=false;
               
               if (use_higher_order_restriction) {
                 do_early_global_mode = false;
