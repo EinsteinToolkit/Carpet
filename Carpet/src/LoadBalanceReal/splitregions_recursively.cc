@@ -238,8 +238,10 @@ namespace Carpet {
       ivect hi = ext.upper() + ext.stride();
       ivect str = ext.stride();
       // cut off outer boundaries
-      lo += ivect(superreg.outer_boundaries[0]) * granularity_boundary * str;
-      hi -= ivect(superreg.outer_boundaries[1]) * granularity_boundary * str;
+      lo += (ivect(superreg.outer_boundaries[0]) * int(granularity_boundary) *
+             str);
+      hi -= (ivect(superreg.outer_boundaries[1]) * int(granularity_boundary) *
+             str);
       // multiply stride by granularity
       str *= granularity;
       assert(all((hi-lo)%str==0));
@@ -296,11 +298,13 @@ namespace Carpet {
       ivect hi = ext.upper() + ext.stride();
       ivect str = ext.stride();
       // divide stride by granularity
-      assert(all(str%granularity==0));
+      assert(all(str%int(granularity)==0));
       str /= granularity;
       // add outer boundaries again
-      lo -= ivect(superreg.outer_boundaries[0]) * granularity_boundary * str;
-      hi += ivect(superreg.outer_boundaries[1]) * granularity_boundary * str;
+      lo -= (ivect(superreg.outer_boundaries[0]) * int(granularity_boundary) *
+             str);
+      hi += (ivect(superreg.outer_boundaries[1]) * int(granularity_boundary) *
+             str);
       ext = ibbox(lo, hi-str, str);
     }
     for (int r=0; r<nregs; ++r) {
@@ -310,11 +314,11 @@ namespace Carpet {
       ivect hi = ext.upper() + ext.stride();
       ivect str = ext.stride();
       // divide stride by granularity
-      assert(all(str%granularity==0));
-      str /= granularity;
+      assert(all(str%int(granularity)==0));
+      str /= int(granularity);
       // add outer boundaries again
-      lo -= ivect(reg.outer_boundaries[0]) * granularity_boundary * str;
-      hi += ivect(reg.outer_boundaries[1]) * granularity_boundary * str;
+      lo -= ivect(reg.outer_boundaries[0]) * int(granularity_boundary) * str;
+      hi += ivect(reg.outer_boundaries[1]) * int(granularity_boundary) * str;
       ext = ibbox(lo, hi-str, str);
     }
     

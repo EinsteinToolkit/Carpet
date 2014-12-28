@@ -2793,7 +2793,7 @@ namespace Carpet {
           any (any (ghosts.AT(rl) < i2vect (min_nghosts_restrict)))) {
         CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,
                      "There are not enough ghost zones for the desired restriction order on map %d, refinement level %d.  With a restriction order of %d, you need at least %d ghost zones.",
-                     m, rl, restriction_order_space, min_nghosts_restrict);
+                     m, rl, int(restriction_order_space), min_nghosts_restrict);
       }
     }
   }

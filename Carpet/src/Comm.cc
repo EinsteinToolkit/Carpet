@@ -312,7 +312,9 @@ namespace Carpet {
     assert (groups.size() > 0);
     
     if (CCTK_IsFunctionAliased("Accelerator_PreSync")) {
-      Accelerator_PreSync(cctkGH, &groups.front(), groups.size());
+      vector<CCTK_INT> groups_(groups.size());
+      for (size_t i=0; i<groups.size(); ++i) groups_[i] = groups[i];
+      Accelerator_PreSync(cctkGH, &groups_.front(), groups_.size());
     }
 
     static vector<Timers::Timer*> timers;
@@ -358,7 +360,9 @@ namespace Carpet {
     ++ti; assert(ti == timers.end());
     
     if (CCTK_IsFunctionAliased("Accelerator_PostSync")) {
-      Accelerator_PostSync(cctkGH, &groups.front(), groups.size());
+      vector<CCTK_INT> groups_(groups.size());
+      for (size_t i=0; i<groups.size(); ++i) groups_[i] = groups[i];
+      Accelerator_PostSync(cctkGH, &groups_.front(), groups_.size());
     }
   }
 
