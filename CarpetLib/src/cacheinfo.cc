@@ -49,9 +49,9 @@ pad_shape(vect<int,D> const& shape)
       if (CCTK_IsFunctionAliased("GetCacheInfo1")) {
         int const num_levels =
           GetCacheInfo1(NULL, NULL, NULL, NULL, NULL, NULL, 0);
-        vector<int> types    (num_levels);
-        vector<int> linesizes(num_levels);
-        vector<int> strides  (num_levels);
+        vector<CCTK_INT> types    (num_levels);
+        vector<CCTK_INT> linesizes(num_levels);
+        vector<CCTK_INT> strides  (num_levels);
         GetCacheInfo1(NULL, &types[0], NULL, &linesizes[0], &strides[0], NULL,
                       num_levels);
         cache_info.resize(num_levels);
