@@ -121,6 +121,7 @@ template void vect<CCTK_REAL,2>::output (ostream& os) const;
 template void vect<CCTK_REAL,dim>::output (ostream& os) const;
 template void vect<vect<bool,2>,dim>::output (ostream& os) const;
 template void vect<vect<int,2>,dim>::output (ostream& os) const;
+template void vect<vect<long,2>,dim>::output (ostream& os) const;
 template void vect<vect<bool,dim>,2>::output (ostream& os) const;
 template void vect<vect<int,dim>,2>::output (ostream& os) const;
 template void vect<vect<CCTK_REAL,dim>,2>::output (ostream& os) const;

@@ -49,15 +49,11 @@ extern "C" {
   } lc_vec_t;
   
   typedef struct {
-    int v[LC_DIM];
-  } lc_ivec_t;
-  
-  typedef struct {
     /* Traverse pos from min (inclusive) to max (exclusive) with a
        stride of step. Equivalently, traverse idx from 0 (inclusive)
        to count (exclusive). */
     lc_vec_t min, max, step, pos;
-    lc_ivec_t count, idx;
+    lc_vec_t count, idx;
   } lc_space_t;
   
   typedef struct {

@@ -490,9 +490,25 @@ namespace CarpetIOF5 {
       int const vartype = CCTK_VarTypeI(var);
       hid_t type;
       switch (vartype) {
-      case CCTK_VARIABLE_INT:  type = H5T_NATIVE_INT;    break;
-      case CCTK_VARIABLE_REAL: type = H5T_NATIVE_DOUBLE; break;
-      default: assert(0);
+      case CCTK_VARIABLE_INT:
+        switch (sizeof(CCTK_INT)) {
+        case 1: type = H5T_NATIVE_INT8; break;
+        case 2: type = H5T_NATIVE_INT16; break;
+        case 4: type = H5T_NATIVE_INT32; break;
+        case 8: type = H5T_NATIVE_INT64; break;
+        //case 16: type = H5T_NATIVE_INT128; break;
+        default: CCTK_ERROR("Unsupported CCTK_INT type");
+        }
+        break;
+      case CCTK_VARIABLE_REAL:
+        switch (sizeof(CCTK_REAL)) {
+        case 4: type = H5T_NATIVE_FLOAT; break;
+        case 8: type = H5T_NATIVE_DOUBLE; break;
+        case 16: type = H5T_NATIVE_LDOUBLE; break; // ???
+        default: CCTK_ERROR("Unsupported CCTK_REAL type");
+        }
+        break;
+      default: CCTK_ERROR("Unsupported type");
       }
       assert(type >= 0);
       assert(CCTK_VarTypeSize(vartype) == (int)H5Tget_size(type));

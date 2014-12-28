@@ -15,13 +15,9 @@ module loopcontrol_types
      CCTK_POINTER :: v(LC_DIM)
   end type lc_vec_t
   
-  type, bind(C) :: lc_ivec_t
-     integer :: v(LC_DIM)
-  end type lc_ivec_t
-  
   type, bind(C) :: lc_space_t
-     type(lc_vec_t)  :: min, max, step, pos
-     type(lc_ivec_t) :: count, idx
+     type(lc_vec_t) :: min, max, step, pos
+     type(lc_vec_t) :: count, idx
   end type lc_space_t
   
   type, bind(C) :: lc_control_t

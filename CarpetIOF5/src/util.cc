@@ -188,7 +188,7 @@ namespace CarpetIOF5 {
         ostringstream buf;
         buf << path << "/"
             << basename
-            << ".p" << setw(max(0, processor_digits - 4)) << setfill('0')
+            << ".p" << setw(max(0, int(processor_digits) - 4)) << setfill('0')
             << proc / 10000
             << "nnnn/";
         path = buf.str();
@@ -203,7 +203,7 @@ namespace CarpetIOF5 {
         ostringstream buf;
         buf << path << "/"
             << basename
-            << ".p" << setw(max(0, processor_digits - 2)) << setfill('0')
+            << ".p" << setw(max(0, int(processor_digits) - 2)) << setfill('0')
             << proc / 100
             << "nn/";
         path = buf.str();

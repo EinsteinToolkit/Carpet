@@ -131,7 +131,7 @@ namespace CarpetInterp2 {
   
   // A local location, given by map and local coordinates
   struct fasterp_llocs_t {
-    vector<int> maps;
+    vector<CCTK_INT> maps;
     vector<CCTK_REAL> coords[dim];
     fasterp_llocs_t (size_t const n)
     {

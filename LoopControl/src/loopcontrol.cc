@@ -137,8 +137,8 @@ struct lc_stats_t {
 // to the choices one can make to optimize. This loosely corresponds
 // to parameters of thorn LoopControl.
 struct lc_params_key_t {
-  lc_ivec_t tilesize;
-  lc_ivec_t loopsize;
+  lc_vec_t tilesize;
+  lc_vec_t loopsize;
   
   bool operator==(const lc_params_key_t& x) const
   {
@@ -154,7 +154,7 @@ struct lc_params_key_t {
 // need to be optimized separately. This corresponds to the
 // information passed to lc_control_init.
 struct lc_setup_key_t {
-  lc_ivec_t min, max, ash;
+  lc_vec_t min, max, ash;
   int num_coarse_threads, num_fine_threads;
   
   bool operator==(const lc_setup_key_t& x) const
@@ -282,12 +282,11 @@ namespace {
   
   void check_fortran_type_sizes()
   {
-    ptrdiff_t type_sizes[4];
+    ptrdiff_t type_sizes[3];
     CCTK_FNAME(lc_get_fortran_type_sizes) (type_sizes);
     assert(type_sizes[0] == sizeof(lc_vec_t));
-    assert(type_sizes[1] == sizeof(lc_ivec_t));
-    assert(type_sizes[2] == sizeof(lc_space_t));
-    assert(type_sizes[3] == sizeof(lc_control_t));
+    assert(type_sizes[1] == sizeof(lc_space_t));
+    assert(type_sizes[2] == sizeof(lc_control_t));
   }
   
   
@@ -349,17 +348,6 @@ namespace {
   
   
   ostream& operator<<(ostream& os, const lc_vec_t& x)
-  {
-    os << "[";
-    for (int d=0; d<LC_DIM; ++d) {
-      if (d>0) os << ",";
-      os << x.v[d];
-    }
-    os << "]";
-    return os;
-  }
-  
-  ostream& operator<<(ostream& os, const lc_ivec_t& x)
   {
     os << "[";
     for (int d=0; d<LC_DIM; ++d) {
@@ -445,7 +433,7 @@ namespace {
     }
   }
   
-  bool space_global2local(lc_space_t& space, int gidx)
+  bool space_global2local(lc_space_t& space, ptrdiff_t gidx)
   {
     assert(gidx >= 0);
     for (int d=0; d<LC_DIM; ++d) {
@@ -627,9 +615,9 @@ void lc_control_init(lc_control_t *restrict const control,
       if (CCTK_IsFunctionAliased("GetCacheInfo1")) {
         const int num_levels =
           GetCacheInfo1(NULL, NULL, NULL, NULL, NULL, NULL, 0);
-        vector<int> types    (num_levels);
-        vector<int> linesizes(num_levels);
-        vector<int> strides  (num_levels);
+        vector<CCTK_INT> types    (num_levels);
+        vector<CCTK_INT> linesizes(num_levels);
+        vector<CCTK_INT> strides  (num_levels);
         GetCacheInfo1(NULL, &types[0], NULL, &linesizes[0], &strides[0], NULL,
                       num_levels);
         for (int level=0; level<num_levels; ++level) {
@@ -729,12 +717,16 @@ void lc_control_init(lc_control_t *restrict const control,
     switch (choice) {
     case choice_set_default:
       // Set default
-      params_key.tilesize.v[0] = alignup(tilesize_i, int(tilesize_alignment));
+      params_key.tilesize.v[0] =
+        alignup(ptrdiff_t(tilesize_i), tilesize_alignment);
       params_key.tilesize.v[1] = tilesize_j;
       params_key.tilesize.v[2] = tilesize_k;
-      params_key.loopsize.v[0] = alignup(loopsize_i, params_key.tilesize.v[0]);
-      params_key.loopsize.v[1] = alignup(loopsize_j, params_key.tilesize.v[1]);
-      params_key.loopsize.v[2] = alignup(loopsize_k, params_key.tilesize.v[2]);
+      params_key.loopsize.v[0] =
+        alignup(ptrdiff_t(loopsize_i), params_key.tilesize.v[0]);
+      params_key.loopsize.v[1] =
+        alignup(ptrdiff_t(loopsize_j), params_key.tilesize.v[1]);
+      params_key.loopsize.v[2] =
+        alignup(ptrdiff_t(loopsize_k), params_key.tilesize.v[2]);
       break;
     case choice_keep_current:
       params_key = setup.current_params->key;
@@ -743,14 +735,14 @@ void lc_control_init(lc_control_t *restrict const control,
       params_key = setup.best_params->key;
       break;
     case choice_random_jump: {
-      const int tilesizes[LC_DIM] = {tilesize_i, tilesize_j, tilesize_k};
-      const int loopsizes[LC_DIM] = {loopsize_i, loopsize_j, loopsize_k};
+      const ptrdiff_t tilesizes[LC_DIM] = {tilesize_i, tilesize_j, tilesize_k};
+      const ptrdiff_t loopsizes[LC_DIM] = {loopsize_i, loopsize_j, loopsize_k};
       for (int d=0; d<LC_DIM; ++d) {
-        const int align = d==0 ? int(tilesize_alignment) : 1;
+        const ptrdiff_t align = d==0 ? int(tilesize_alignment) : 1;
         params_key.tilesize.v[d] =
           randomui(align, alignup(max_size_factor * tilesizes[d], align),
                    align);
-        const int tilesize = params_key.tilesize.v[d];
+        const ptrdiff_t tilesize = params_key.tilesize.v[d];
         params_key.loopsize.v[d] =
           randomui(tilesize, alignup(max_size_factor * loopsizes[d], tilesize),
                    tilesize);
@@ -1290,10 +1282,17 @@ void lc_statistics(CCTK_ARGUMENTS)
       const lc_setup_t& setup = *setup_i->second;
       fprintf(descrfile,
               "      setup=[%d,%d,%d]:[%d,%d,%d]/[%d,%d,%d] nt=%d/%d\n",
-              setup.key.min.v[0], setup.key.min.v[1], setup.key.min.v[2],
-              setup.key.max.v[0], setup.key.max.v[1], setup.key.max.v[2],
-              setup.key.ash.v[0], setup.key.ash.v[1], setup.key.ash.v[2],
-              setup.key.num_coarse_threads, setup.key.num_fine_threads);
+              int(setup.key.min.v[0]),
+              int(setup.key.min.v[1]),
+              int(setup.key.min.v[2]),
+              int(setup.key.max.v[0]),
+              int(setup.key.max.v[1]),
+              int(setup.key.max.v[2]),
+              int(setup.key.ash.v[0]),
+              int(setup.key.ash.v[1]),
+              int(setup.key.ash.v[2]),
+              int(setup.key.num_coarse_threads),
+              int(setup.key.num_fine_threads));
       double best_avg = numeric_limits<double>::max(), worst_avg = 0.0;
       vector<lc_params_t*> params_sorted;
       params_sorted.reserve(setup.params.size());
@@ -1311,12 +1310,12 @@ void lc_statistics(CCTK_ARGUMENTS)
         const lc_params_t& params = **params_i;
         fprintf(descrfile,
                 "         tilesize=[%d,%d,%d] loopsize=[%d,%d,%d]\n",
-                params.key.tilesize.v[0],
-                params.key.tilesize.v[1],
-                params.key.tilesize.v[2],
-                params.key.loopsize.v[0],
-                params.key.loopsize.v[1],
-                params.key.loopsize.v[2]);
+                int(params.key.tilesize.v[0]),
+                int(params.key.tilesize.v[1]),
+                int(params.key.tilesize.v[2]),
+                int(params.key.loopsize.v[0]),
+                int(params.key.loopsize.v[1]),
+                int(params.key.loopsize.v[2]));
         const lc_stats_t& stats = params.stats;
         fprintf(descrfile,
                 "            count=%g, avg/thread=%g s, avg/point=%g s%s%s\n",

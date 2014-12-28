@@ -267,10 +267,10 @@ namespace CarpetRegrid2 {
             ivect const istride = hh.baseextent(0,rl).stride();
             ivect const imin =
               rpos2ipos (rmin, bnd.origin, bnd.scale, hh, rl)
-              - boundary_shiftout * istride;
+              - int(boundary_shiftout) * istride;
             ivect const imax =
               rpos2ipos1 (rmax, bnd.origin, bnd.scale, hh, rl)
-              + boundary_shiftout * istride;
+              + int(boundary_shiftout) * istride;
             
             if (veryverbose) {
               cout << "Centre " << n+1 << " refinement level " << rl << ": integer region is (" << imin << ":" << imax << ")\n";
@@ -735,7 +735,7 @@ namespace CarpetRegrid2 {
           // When debugging, sneakily add a new level, but skip the
           // initial regrid, and the regrid before the first time step
           if (add_levels_automatically and cctk_iteration > 1) {
-            num_levels[n] = min (num_levels[n] + 1, maxreflevels);
+            num_levels[n] = min (int(num_levels[n] + 1), maxreflevels);
             CCTK_VInfo (CCTK_THORNSTRING,
                         "Increasing number of levels of centre %d to %d (it=%d)",
                         n + 1, 

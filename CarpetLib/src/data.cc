@@ -1281,7 +1281,7 @@ transfer_restrict (data const * const src,
             break;
           default:
             CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                        "There is no restriction stencil with restriction_order_space==%d", restriction_order_space);
+                        "There is no restriction stencil with restriction_order_space==%d", int(restriction_order_space));
             break;
           }
           break;
