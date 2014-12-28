@@ -154,7 +154,7 @@ namespace CarpetIOF5 {
           if (not output_ghost_points and slice_ipos[d] < 0) {
             // TODO: Don't output ghosts on refinement boundaries;
             // only output ghosts for inter-process boundaries
-            int const overlap = min(ughosts[d], minimum_component_overlap);
+            int const overlap = min(ughosts[d], int(minimum_component_overlap));
             imin[d] += lghosts[d];
             imax[d] -= ughosts[d] - overlap;
             lghosts[d] = 0;
@@ -708,9 +708,25 @@ namespace CarpetIOF5 {
         // Scalar field
         assert(not write_positions);
         switch (groupdata.vartype) {
-        case CCTK_VARIABLE_INT:  type = H5T_NATIVE_INT;    break;
-        case CCTK_VARIABLE_REAL: type = H5T_NATIVE_DOUBLE; break;
-        default: assert(0);
+        case CCTK_VARIABLE_INT:
+          switch (sizeof(CCTK_INT)) {
+          case 1: type = H5T_NATIVE_INT8; break;
+          case 2: type = H5T_NATIVE_INT16; break;
+          case 4: type = H5T_NATIVE_INT32; break;
+          case 8: type = H5T_NATIVE_INT64; break;
+            //case 16: type = H5T_NATIVE_INT128; break;
+          default: CCTK_ERROR("Unsupported CCTK_INT type");
+          }
+          break;
+        case CCTK_VARIABLE_REAL:
+          switch (sizeof(CCTK_REAL)) {
+          case 4: type = H5T_NATIVE_FLOAT; break;
+          case 8: type = H5T_NATIVE_DOUBLE; break;
+          case 16: type = H5T_NATIVE_LDOUBLE; break; // ???
+          default: CCTK_ERROR("Unsupported CCTK_REAL type");
+          }
+          break;
+        default: CCTK_ERROR("Unsupported type");
         }
         num_comps = 1;
         name = generate_fieldname(cctkGH, var, tensortype);
