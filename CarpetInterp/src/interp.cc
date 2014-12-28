@@ -113,7 +113,7 @@ namespace CarpetInterp {
                           int const N_dims,
                           vector<int> const & homecnts,
                           std::map<int, int> const & homecntsmap,
-                          vector<CCTK_INT> const & recvcnt,
+                          vector<int> const & recvcnt,
                           vector<CCTK_REAL*> const & coords,
                           vector<char*> const & outputs,
                           CCTK_INT* const per_proc_statuses,
@@ -1147,7 +1147,7 @@ namespace CarpetInterp {
 #pragma omp parallel for
     for (int n = 0; n < npoints; ++n) {
 
-      int & m = source_map.AT(n);
+      CCTK_INT & m = source_map.AT(n);
       int rl, c = -1;
       rvect pos;
       gh const * hh = NULL;
@@ -1279,7 +1279,7 @@ namespace CarpetInterp {
                           int const N_dims,
                           vector<int> const & homecnts,
                           std::map<int, int> const & homecntsmap,
-                          vector<CCTK_INT> const & recvcnt,
+                          vector<int> const & recvcnt,
                           vector<CCTK_REAL*> const & coords,
                           vector<char*> const & outputs,
                           CCTK_INT* const per_proc_statuses,
@@ -1635,7 +1635,7 @@ namespace CarpetInterp {
     const ibbox& baseext = vhh.AT(m)->baseextents.AT(mglevel).AT(rl);
     int const c = vhh.AT(m)->get_component(rl,lc);
     const ibbox& ext = vdd.AT(m)->light_boxes.AT(mglevel).AT(rl).AT(c).exterior;
-    ivect const lsh = ext.shape() / ext.stride();
+    // ivect const lsh = ext.shape() / ext.stride();
     for (int d = 0; d < N_dims; ++d) {
       // if (grouptype == CCTK_GF) {
       //   assert (maxspacereflevelfact[d] % cctkGH->cctk_levfac[d] == 0);
@@ -1729,10 +1729,8 @@ namespace CarpetInterp {
         (param_table_handle, &per_point_status.front(), "per_point_status");
       assert (ierr >= 0);
       
-      // vector<CCTK_INT> lsh(N_dims);
-      // for (int d=0; d<N_dims; ++d) {
-      //   lsh.AT(d) = coord_group_data.lsh[d];
-      // }
+      vector<CCTK_INT> lsh(N_dims);
+      for (int d=0; d<N_dims; ++d) lsh.AT(d) = (ext.shape() / ext.stride())[d];
       const int retval = CCTK_InterpLocalUniform
         (N_dims, local_interp_handle, param_table_handle,
          &lower[0], &delta[0],
