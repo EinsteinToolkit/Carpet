@@ -12,10 +12,8 @@ void CarpetRegrid_SetupGaussian(CCTK_ARGUMENTS)
 
   int i,j,k;
 
-  CCTK_REAL omega;
   int index;
-  CCTK_REAL X, Y, Z, R;
-  CCTK_REAL pi;
+  CCTK_REAL R;
 
   for(k=0; k<cctk_lsh[2]; k++)
     {
