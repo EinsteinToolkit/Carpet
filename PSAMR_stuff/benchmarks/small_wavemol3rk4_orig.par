@@ -44,7 +44,7 @@ CoordBase::boundary_shiftout_z_upper    = 1
 driver::ghost_size = 1
 time::dtfac = 0.5
 
-carpet::max_refinement_levels = 10
+carpet::max_refinement_levels = 8
 carpetregrid2::num_centres = 1
 carpetregrid2::num_levels_1 = 8
 carpetregrid2::radius_1[1]=0.25
@@ -94,5 +94,5 @@ TimerReport::output_all_timers_together = yes
 TimerReport::output_all_timers_readable = yes
 TimerReport::n_top_timers               = 20
 
-Carpet::verbose=yes
-Carpet::veryverbose=yes
+#Carpet::verbose=yes
+#Carpet::veryverbose=yes
