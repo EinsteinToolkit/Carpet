@@ -62,7 +62,7 @@ carpet::domain_from_coordbase="yes"
 # coarse: 512
 cactus::cctk_itlast = 1024
 
-iobasic::outInfo_every = 512
+iobasic::outInfo_every = 1
 iobasic::outInfo_vars = "wavemol::phi"
 
 ioascii::out1D_every = 1
