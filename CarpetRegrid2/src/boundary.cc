@@ -203,7 +203,7 @@ namespace CarpetRegrid2 {
                                 is_staggered, shiftout);
     
     boundary_staggering_mismatch =
-      xpose ((hh.refcent == vertex_centered) != (is_staggered == 0));
+      xpose ((hh.refcent == vertex_centered) != (iivect(is_staggered) == 0));
     // TODO: This is too strict
     assert (all (all (not boundary_staggering_mismatch)));
     
