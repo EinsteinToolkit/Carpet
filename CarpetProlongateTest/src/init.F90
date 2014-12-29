@@ -155,6 +155,7 @@ subroutine CarpetProlongateTest_Interp (CCTK_ARGUMENTS)
   CCTK_POINTER :: coords(3)
   integer      :: ninputs
   CCTK_INT     :: inputs(1)
+  integer      :: input ! CCTK_VarIndex needs an integer target
 
   integer      :: noutputs
   CCTK_INT     :: output_types(1)
@@ -197,7 +198,8 @@ subroutine CarpetProlongateTest_Interp (CCTK_ARGUMENTS)
   coords = (/ CCTK_PointerTo(interp_x), CCTK_PointerTo(interp_y), CCTK_PointerTo(interp_z) /)
   
   ninputs = 1
-  call CCTK_VarIndex(int(inputs(1)), "CarpetProlongateTest::u")
+  call CCTK_VarIndex(input, "CarpetProlongateTest::u")
+  inputs(1) = input
   if (any(inputs<0)) then
      call CCTK_WARN (0, "Could not obtain interpolation variable index")
   end if
