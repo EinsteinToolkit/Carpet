@@ -267,52 +267,77 @@ hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
   const CarpetIOHDF5GH *myGH =
     (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
 
+  if (single_precision) {
+    switch (cctk_type) {
+    case CCTK_VARIABLE_REAL: cctk_type = CCTK_VARIABLE_REAL4; break;
+    case CCTK_VARIABLE_COMPLEX: cctk_type = CCTK_VARIABLE_COMPLEX8; break;
+    default: break;             // do nothing
+    }
+  }
+
+  // Normalize the type
+  switch (cctk_type) {
+  case CCTK_VARIABLE_INT:
+#ifdef CCTK_INTEGER_PRECISION_1
+    cctk_type = CCTK_VARIABLE_INT1;
+#endif
+#ifdef CCTK_INTEGER_PRECISION_2
+    cctk_type = CCTK_VARIABLE_INT2;
+#endif
+#ifdef CCTK_INTEGER_PRECISION_4
+    cctk_type = CCTK_VARIABLE_INT4;
+#endif
+#ifdef CCTK_INTEGER_PRECISION_8
+    cctk_type = CCTK_VARIABLE_INT8;
+#endif
+#ifdef CCTK_INTEGER_PRECISION_16
+    cctk_type = CCTK_VARIABLE_INT16;
+#endif
+    break;
+  case CCTK_VARIABLE_REAL:
+#ifdef CCTK_REAL_PRECISION_4
+    cctk_type = CCTK_VARIABLE_REAL4;
+#endif
+#ifdef CCTK_REAL_PRECISION_8
+    cctk_type = CCTK_VARIABLE_REAL8;
+#endif
+#ifdef CCTK_REAL_PRECISION_16
+    cctk_type = CCTK_VARIABLE_REAL16;
+#endif
+    break;
+  case CCTK_VARIABLE_COMPLEX:
+#ifdef CCTK_REAL_PRECISION_4
+    cctk_type = CCTK_VARIABLE_COMPLEX8;
+#endif
+#ifdef CCTK_REAL_PRECISION_8
+    cctk_type = CCTK_VARIABLE_COMPLEX16;
+#endif
+#ifdef CCTK_REAL_PRECISION_16
+    cctk_type = CCTK_VARIABLE_COMPLEX32;
+#endif
+    break;
+  default:
+    // do nothing
+    break;
+  }
+
   switch (cctk_type) {
 
     case CCTK_VARIABLE_CHAR:      retval = HDF5_CHAR; break;
 
-    case CCTK_VARIABLE_INT:       retval = HDF5_INT; break;
-#ifdef HAVE_CCTK_INT1
-    case CCTK_VARIABLE_INT1:      retval = H5T_NATIVE_CHAR; break;
-#endif
-#ifdef HAVE_CCTK_INT2
-    case CCTK_VARIABLE_INT2:      retval = H5T_NATIVE_SHORT; break;
-#endif
-#ifdef HAVE_CCTK_INT4
-    case CCTK_VARIABLE_INT4:      retval = H5T_NATIVE_INT; break;
-#endif
-#ifdef HAVE_CCTK_INT8
-    case CCTK_VARIABLE_INT8:      retval = H5T_NATIVE_LLONG; break;
-#endif
+    case CCTK_VARIABLE_INT1:      retval = H5T_NATIVE_INT8; break;
+    case CCTK_VARIABLE_INT2:      retval = H5T_NATIVE_INT16; break;
+    case CCTK_VARIABLE_INT4:      retval = H5T_NATIVE_INT32; break;
+    case CCTK_VARIABLE_INT8:      retval = H5T_NATIVE_INT64; break;
+    // case CCTK_VARIABLE_INT16:     retval = H5T_NATIVE_INT128; break;
 
-    case CCTK_VARIABLE_REAL:      retval = HDF5_REAL;
-#ifdef HAVE_CCTK_REAL4
-                                  if (single_precision) {
-                                    retval = H5T_NATIVE_FLOAT;
-                                  }
-#endif
-                                  break;
-
-    case CCTK_VARIABLE_COMPLEX:   retval = myGH->HDF5_COMPLEX;
-#ifdef HAVE_CCTK_REAL4
-                                  if (single_precision) {
-                                    retval = myGH->HDF5_COMPLEX8;
-                                  }
-#endif
-                                  break;
-
-#ifdef HAVE_CCTK_REAL4
     case CCTK_VARIABLE_REAL4:     retval = H5T_NATIVE_FLOAT; break;
-    case CCTK_VARIABLE_COMPLEX8:  retval = myGH->HDF5_COMPLEX8; break;
-#endif
-#ifdef HAVE_CCTK_REAL8
     case CCTK_VARIABLE_REAL8:     retval = H5T_NATIVE_DOUBLE; break;
-    case CCTK_VARIABLE_COMPLEX16: retval = myGH->HDF5_COMPLEX16; break;
-#endif
-#ifdef HAVE_CCTK_REAL16
     case CCTK_VARIABLE_REAL16:    retval = H5T_NATIVE_LDOUBLE; break;
+
+    case CCTK_VARIABLE_COMPLEX8:  retval = myGH->HDF5_COMPLEX8; break;
+    case CCTK_VARIABLE_COMPLEX16: retval = myGH->HDF5_COMPLEX16; break;
     case CCTK_VARIABLE_COMPLEX32: retval = myGH->HDF5_COMPLEX32; break;
-#endif
 
     default: CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                          "Unsupported CCTK variable datatype %d", cctk_type);

@@ -2498,6 +2498,8 @@ namespace Carpet {
 #  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT4
 #elif CCTK_INTEGER_PRECISION_8
 #  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT8
+#elif CCTK_INTEGER_PRECISION_16
+#  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT16
 #else
 #  error "Unsupported default integer type"
 #endif
@@ -2569,6 +2571,9 @@ namespace Carpet {
 #endif
 #ifdef HAVE_CCTK_INT8
     case CCTK_VARIABLE_INT8:
+#endif
+#ifdef HAVE_CCTK_INT16
+    case CCTK_VARIABLE_INT16:
 #endif
       // This type is not supported, and cannot be.
       return false;

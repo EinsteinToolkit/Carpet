@@ -147,14 +147,17 @@ namespace CarpetIOF5 {
 #ifdef HAVE_CCTK_INT1
       CASE (CCTK_VARIABLE_INT1     , CCTK_INT1     );
 #endif
-#ifdef HAVE_CCTK_INT1
+#ifdef HAVE_CCTK_INT2
       CASE (CCTK_VARIABLE_INT2     , CCTK_INT2     );
 #endif
-#ifdef HAVE_CCTK_INT2
+#ifdef HAVE_CCTK_INT4
       CASE (CCTK_VARIABLE_INT4     , CCTK_INT4     );
 #endif
-#ifdef HAVE_CCTK_INT4
+#ifdef HAVE_CCTK_INT8
       CASE (CCTK_VARIABLE_INT8     , CCTK_INT8     );
+#endif
+#ifdef HAVE_CCTK_INT16
+      CASE (CCTK_VARIABLE_INT16    , CCTK_INT16    );
 #endif
       CASE (CCTK_VARIABLE_REAL     , CCTK_REAL     );
 #ifdef HAVE_CCTK_REAL4

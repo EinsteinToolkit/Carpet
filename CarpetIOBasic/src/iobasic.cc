@@ -725,6 +725,7 @@ namespace CarpetIOBasic {
     case CCTK_VARIABLE_INT2:
     case CCTK_VARIABLE_INT4:
     case CCTK_VARIABLE_INT8:
+    case CCTK_VARIABLE_INT16:
       isint = true;
       numcomps = 1;
       break;
