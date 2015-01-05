@@ -317,14 +317,25 @@ namespace CarpetLib {
 	 typedef coeffs1d<RT,ORDER,di,shift> lcoeffs;
 	 T lV = typeprops<T>::fromreal (0);
 	 T rV = typeprops<T>::fromreal (0);
-	 // compute undivided differences for left-shifted stencil
-	 for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
-	    lV += lcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
-	 }
-	 // compute undivided differences for right-shifted stencil
-	 for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
-	    rV += rcoeffs::diff(i) * f[i-rcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
-	 }
+         if (di == 0) {
+           // compute undivided differences for left-shifted stencil
+           for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
+              lV += lcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+           }
+           // compute undivided differences for right-shifted stencil
+           for (ptrdiff_t i=rcoeffs::imax-1; i>=rcoeffs::imin; --i) {
+              rV += rcoeffs::diff(i) * f[i-rcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+           }
+         } else {
+           // compute undivided differences for left-shifted stencil
+           for (ptrdiff_t i=lcoeffs::imax-1; i>=lcoeffs::imin; --i) {
+              lV += lcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+           }
+           // compute undivided differences for right-shifted stencil
+           for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
+              rV += rcoeffs::diff(i) * f[i-rcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+           }
+         }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
 	 if (lV*rV <= 0)
@@ -344,8 +355,14 @@ namespace CarpetLib {
             // TVD interpoloation/extrapolation
             //res = f[coeffs1::imin-coeffs1d<RT,ORDER,di>::minimin + (1-di)] + (2*di-1)*0.25*slope;
             
-            for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
-               res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
+            if(di == 0) {
+              for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+                 res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
+              }
+            } else {
+              for (ptrdiff_t i=coeffs1::imax-1; i>=coeffs1::imin; --i) {
+                 res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
+              }
             }
 	    break;
 	 }
@@ -353,21 +370,53 @@ namespace CarpetLib {
 	 if (fabs(lV) < fabs(rV)) {
 	    //cout << "left ";
 	    // use left-shifted stencil since it is smoother
-	    for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
-	       res += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
-	    }
-	 } else {
+            if (di == 0) {
+              for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
+                 res += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+              }
+            } else {
+              for (ptrdiff_t i=lcoeffs::imax-1; i>=lcoeffs::imin; --i) {
+                 res += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+              }
+            }
+	 } else if (fabs(lV) > fabs(rV)) {
 	    //cout << "right ";
 	    // use right-shifted stencil since it is smoother
-	    for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
-	       res += rcoeffs::get(i) * f[i-rcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
-	    }
-	 }
-	 
+            if (di == 0) {
+              for (ptrdiff_t i=rcoeffs::imax-1; i>=rcoeffs::imin; --i) {
+                 res += rcoeffs::get(i) * f[i-rcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+              }
+            } else {
+              for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
+                 res += rcoeffs::get(i) * f[i-rcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+              }
+            }
+	 } else {
+            // both are equally good, use average
+            T lres = typeprops<T>::fromreal (0);
+            T rres = typeprops<T>::fromreal (0);
+            if (di == 0) {
+              for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
+                 lres += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+              }
+              for (ptrdiff_t i=rcoeffs::imax-1; i>=rcoeffs::imin; --i) {
+                 rres += rcoeffs::get(i) * f[i-rcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+              }
+            } else {
+              for (ptrdiff_t i=lcoeffs::imax-1; i>=lcoeffs::imin; --i) {
+                 lres += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+              }
+              for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
+                 rres += rcoeffs::get(i) * f[i-rcoeffs::minimin]; //interp0<T,ORDER> (p + i*d1);
+              }
+            }
+            res = lres + rres;
+         }
 	 
        }
        break;
        case 3: {
+         assert(0 && "Only 2nd order symmetric ENO is supported");
 	 const int shiftleft  = -1;
 	 const int shiftright = +1;
 	 typedef coeffs1d<RT,ORDER,di,shiftleft>  lcoeffs;
@@ -455,8 +504,14 @@ namespace CarpetLib {
        
        res = 0;
        typedef coeffs1d<RT,1,di,0> coeffs1;
-       for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
-         res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
+       if(di == 0) {
+         for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+           res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
+         }
+       } else {
+         for (ptrdiff_t i=coeffs1::imax-1; i>=coeffs1::imin; --i) {
+           res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,di>::minimin];
+         }
        }
     }
 
@@ -522,14 +577,25 @@ namespace CarpetLib {
 	 //typedef coeffs1d<RT,ORDER,dj,shiftright> rcoeffs;
 	 T lV = typeprops<T>::fromreal (0);
 	 T rV = typeprops<T>::fromreal (0);
-	 // compute undivided differences for left-shifted stencil
-	 for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
-	    lV += lcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
-	 }
-	 // compute undivided differences for right-shifted stencil
-	 for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
-	    rV += rcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
-	 }
+         if (dj == 0) {
+           // compute undivided differences for left-shifted stencil
+           for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
+              lV += lcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
+           }
+           // compute undivided differences for right-shifted stencil
+           for (ptrdiff_t i=rcoeffs::imax-1; i>=rcoeffs::imin; --i) {
+              rV += rcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
+           }
+         } else {
+           // compute undivided differences for left-shifted stencil
+           for (ptrdiff_t i=lcoeffs::imax-1; i>=lcoeffs::imin; --i) {
+              lV += lcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
+           }
+           // compute undivided differences for right-shifted stencil
+           for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
+              rV += rcoeffs::diff(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
+           }
+         }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
 	 if (lV*rV <= 0)
@@ -551,8 +617,14 @@ namespace CarpetLib {
 	    // switch back to first order!
 	    res = 0;
             typedef coeffs1d<RT,1,dj,0> coeffs1;
-            for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
-               res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
+            if(dj == 0) {
+              for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+                 res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
+              }
+            } else {
+              for (ptrdiff_t i=coeffs1::imax-1; i>=coeffs1::imin; --i) {
+                 res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
+              }
             }
 	    break;
 	 }
@@ -562,15 +634,36 @@ namespace CarpetLib {
 	    for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
 	       res += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
 	    }
-	 } else {
+	 } else if(fabs(lV) > fabs(rV)) {
 	    // use right-shifted stencil since it is smoother
-	    for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
+	    for (ptrdiff_t i=rcoeffs::imax-1; i>=rcoeffs::imin; --i) {
 	       res += rcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
 	    }
-	 }
+	 } else {
+            // both are equally good, use average
+            T lres = typeprops<T>::fromreal (0);
+            T rres = typeprops<T>::fromreal (0);
+            if (dj == 0) {
+              for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
+                 lres += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
+              }
+              for (ptrdiff_t i=rcoeffs::imax-1; i>=rcoeffs::imin; --i) {
+                 rres += rcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
+              }
+            } else {
+              for (ptrdiff_t i=lcoeffs::imax-1; i>=lcoeffs::imin; --i) {
+                 lres += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
+              }
+              for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
+                 rres += rcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp1<T,ORDER,di> (p + i*d2, d1);
+              }
+            }
+            res = lres + rres;
+         }
        }
        break;
        case 3: {
+         assert(0 && "Only 2nd order symmetric ENO is supported");
 	 const int shiftleft  = -1;
 	 const int shiftright = +1;
 	 typedef coeffs1d<RT,ORDER,dj,shiftleft>  lcoeffs;
@@ -656,8 +749,14 @@ namespace CarpetLib {
        res = 0;
        // switch back to first order
        typedef coeffs1d<RT,1,dj,0> coeffs1;
-       for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
-          res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
+       if (dj == 0) {
+         for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+            res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
+         }
+       } else {
+         for (ptrdiff_t i=coeffs1::imax-1; i>=coeffs1::imin; --i) {
+            res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dj>::minimin];
+         }
        }
        
     }
@@ -726,14 +825,25 @@ namespace CarpetLib {
 	 typedef coeffs1d<RT,ORDER,dk,shift>  lcoeffs;
 	 T lV = typeprops<T>::fromreal (0);
 	 T rV = typeprops<T>::fromreal (0);
-	 // compute undivided differences for left-shifted stencil
-	 for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
-	    lV += lcoeffs::diff(i) * f[i-lcoeffs::minimin];   //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
-	 }
-	 // compute undivided differences for right-shifted stencil
-	 for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
-	    rV += rcoeffs::diff(i) * f[i-lcoeffs::minimin];  //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
-	 }
+         if (dk == 0) {
+           // compute undivided differences for left-shifted stencil
+           for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
+              lV += lcoeffs::diff(i) * f[i-lcoeffs::minimin];   //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+           }
+           // compute undivided differences for right-shifted stencil
+           for (ptrdiff_t i=rcoeffs::imax-1; i>=rcoeffs::imin; --i) {
+              rV += rcoeffs::diff(i) * f[i-lcoeffs::minimin];  //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+           }
+         } else {
+           // compute undivided differences for left-shifted stencil
+           for (ptrdiff_t i=lcoeffs::imax-1; i<lcoeffs::imin; --i) {
+              lV += lcoeffs::diff(i) * f[i-lcoeffs::minimin];   //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+           }
+           // compute undivided differences for right-shifted stencil
+           for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
+              rV += rcoeffs::diff(i) * f[i-lcoeffs::minimin];  //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+           }
+         }
 	 
 	 // check that divided differences do not change sign: if so go back to first order!
 	 if (lV*rV <= 0)
@@ -755,26 +865,65 @@ namespace CarpetLib {
 	    // switch back to first order!
 	    res = 0;
             typedef coeffs1d<RT,1,dk,0> coeffs1;
-            for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
-               res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
+            if (dk == 0) {
+              for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+                 res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
+              }
+            } else {
+              for (ptrdiff_t i=coeffs1::imax-1; i>=coeffs1::imin; --i) {
+                 res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
+              }
             }
 	    break;
 	 }
 	 
 	 if (fabs(lV) < fabs(rV)) {
 	    // use left-shifted stencil since it is smoother
-	    for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
-	       res += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
-	    }
-	 } else {
+            if (dk == 0) {
+              for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
+                 res += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+              }
+            } else {
+              for (ptrdiff_t i=lcoeffs::imax-1; i<lcoeffs::imin; --i) {
+                 res += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+              }
+            }
+	 } else if (fabs(lV) < fabs(rV)) {
 	    // use right-shifted stencil since it is smoother
-	    for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
-	       res += rcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
-	    }
-	 }
+            if (dk == 0) {
+              for (ptrdiff_t i=rcoeffs::imax-1; i>=rcoeffs::imin; --i) {
+                 res += rcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+              }
+            } else {
+              for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
+                 res += rcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+              }
+            }
+	 } else {
+            // both are equally good, use average
+            T lres = typeprops<T>::fromreal (0);
+            T rres = typeprops<T>::fromreal (0);
+            if (dk == 0) {
+              for (ptrdiff_t i=lcoeffs::imin; i<lcoeffs::imax; ++i) {
+                 lres += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+              }
+              for (ptrdiff_t i=rcoeffs::imax-1; i>=rcoeffs::imin; --i) {
+                 rres += rcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+              }
+            } else {
+              for (ptrdiff_t i=lcoeffs::imax-1; i<lcoeffs::imin; --i) {
+                 lres += lcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+              }
+              for (ptrdiff_t i=rcoeffs::imin; i<rcoeffs::imax; ++i) {
+                 rres += rcoeffs::get(i) * f[i-lcoeffs::minimin]; //interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+              }
+            }
+            res = lres + rres;
+         }
        }
        break;
        case 3: {
+         assert(0 && "Only 2nd order symmetric ENO is supported");
 	 const int shiftleft  = -1;
 	 const int shiftright = +1;
 	 typedef coeffs1d<RT,ORDER,dk,shiftleft>  lcoeffs;
@@ -859,8 +1008,14 @@ namespace CarpetLib {
        res = 0;
        // switch back to first order
        typedef coeffs1d<RT,1,dk,0> coeffs1;
-       for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
-          res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
+       if (dk == 0) {
+         for (ptrdiff_t i=coeffs1::imin; i<coeffs1::imax; ++i) {
+            res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
+         }
+       } else {
+         for (ptrdiff_t i=coeffs1::imax-1; i>=coeffs1::imin; --i) {
+            res += coeffs1::get(i) * f[i-coeffs1d<RT,ORDER,dk>::minimin];
+         }
        }
     }
     
