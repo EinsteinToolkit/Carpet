@@ -220,8 +220,14 @@ namespace CarpetLib {
     typedef typename typeprops<T>::real RT;
     typedef coeffs1d<RT,ORDER,di> coeffs;
     T res = typeprops<T>::fromreal (0);
-    for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
-      res += coeffs::get(i) * interp0<T,ORDER> (p + i*d1);
+    if(di == 0) {
+      for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
+        res += coeffs::get(i) * interp0<T,ORDER> (p + i*d1);
+      }
+    } else {
+      for (ptrdiff_t i=coeffs::imax-1; i>=coeffs::imin; --i) {
+        res += coeffs::get(i) * interp0<T,ORDER> (p + i*d1);
+      }
     }
     return res;
   }
@@ -238,8 +244,14 @@ namespace CarpetLib {
     typedef typename typeprops<T>::real RT;
     typedef coeffs1d<RT,ORDER,dj> coeffs;
     T res = typeprops<T>::fromreal (0);
-    for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
-      res += coeffs::get(i) * interp1<T,ORDER,di> (p + i*d2, d1);
+    if(dj == 0) {
+      for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
+        res += coeffs::get(i) * interp1<T,ORDER,di> (p + i*d2, d1);
+      }
+    } else {
+      for (ptrdiff_t i=coeffs::imax-1; i>=coeffs::imin; --i) {
+        res += coeffs::get(i) * interp1<T,ORDER,di> (p + i*d2, d1);
+      }
     }
     return res;
   }
@@ -257,8 +269,14 @@ namespace CarpetLib {
     typedef typename typeprops<T>::real RT;
     typedef coeffs1d<RT,ORDER,dk> coeffs;
     T res = typeprops<T>::fromreal (0);
-    for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
-      res += coeffs::get(i) * interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+    if(dk == 0) {
+      for (ptrdiff_t i=coeffs::imin; i<coeffs::imax; ++i) {
+        res += coeffs::get(i) * interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+      }
+    } else {
+      for (ptrdiff_t i=coeffs::imax-1; i>=coeffs::imin; --i) {
+        res += coeffs::get(i) * interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+      }
     }
     return res;
   }

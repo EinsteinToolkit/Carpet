@@ -139,14 +139,14 @@ namespace CarpetLib {
           // TODO: Introduce higher-order restriction operators (but
           // don't use these for hydro!)
           dst [DSTIND3(i, j, k)] =
-            + f1*f1*f1 * src [SRCIND3(2*i  , 2*j  , 2*k  )]
-            + f2*f1*f1 * src [SRCIND3(2*i+1, 2*j  , 2*k  )]
-            + f1*f2*f1 * src [SRCIND3(2*i  , 2*j+1, 2*k  )]
-            + f2*f2*f1 * src [SRCIND3(2*i+1, 2*j+1, 2*k  )]
-            + f1*f1*f2 * src [SRCIND3(2*i  , 2*j  , 2*k+1)]
-            + f2*f1*f2 * src [SRCIND3(2*i+1, 2*j  , 2*k+1)]
-            + f1*f2*f2 * src [SRCIND3(2*i  , 2*j+1, 2*k+1)]
-            + f2*f2*f2 * src [SRCIND3(2*i+1, 2*j+1, 2*k+1)];
+            + ((f1*f1*f1 * src [SRCIND3(2*i  , 2*j  , 2*k  )]
+            +   f2*f1*f1 * src [SRCIND3(2*i+1, 2*j  , 2*k  )])
+            +  (f1*f2*f1 * src [SRCIND3(2*i  , 2*j+1, 2*k  )]
+            +   f2*f2*f1 * src [SRCIND3(2*i+1, 2*j+1, 2*k  )]))
+            + ((f1*f1*f2 * src [SRCIND3(2*i  , 2*j  , 2*k+1)]
+            +   f2*f1*f2 * src [SRCIND3(2*i+1, 2*j  , 2*k+1)])
+            +  (f1*f2*f2 * src [SRCIND3(2*i  , 2*j+1, 2*k+1)]
+            +   f2*f2*f2 * src [SRCIND3(2*i+1, 2*j+1, 2*k+1)]));
           
         }
       }
@@ -164,14 +164,14 @@ namespace CarpetLib {
       // TODO: Introduce higher-order restriction operators (but
       // don't use these for hydro!)
       dst [DSTIND3(i, j, k)] =
-        + f1*f1*f1 * src [SRCIND3(2*i  , 2*j  , 2*k  )]
-        + f2*f1*f1 * src [SRCIND3(2*i+1, 2*j  , 2*k  )]
-        + f1*f2*f1 * src [SRCIND3(2*i  , 2*j+1, 2*k  )]
-        + f2*f2*f1 * src [SRCIND3(2*i+1, 2*j+1, 2*k  )]
-        + f1*f1*f2 * src [SRCIND3(2*i  , 2*j  , 2*k+1)]
-        + f2*f1*f2 * src [SRCIND3(2*i+1, 2*j  , 2*k+1)]
-        + f1*f2*f2 * src [SRCIND3(2*i  , 2*j+1, 2*k+1)]
-        + f2*f2*f2 * src [SRCIND3(2*i+1, 2*j+1, 2*k+1)];
+        + ((f1*f1*f1 * src [SRCIND3(2*i  , 2*j  , 2*k  )]
+        +   f2*f1*f1 * src [SRCIND3(2*i+1, 2*j  , 2*k  )])
+        +  (f1*f2*f1 * src [SRCIND3(2*i  , 2*j+1, 2*k  )]
+        +   f2*f2*f1 * src [SRCIND3(2*i+1, 2*j+1, 2*k  )]))
+        + ((f1*f1*f2 * src [SRCIND3(2*i  , 2*j  , 2*k+1)]
+        +   f2*f1*f2 * src [SRCIND3(2*i+1, 2*j  , 2*k+1)])
+        +  (f1*f2*f2 * src [SRCIND3(2*i  , 2*j+1, 2*k+1)]
+        +   f2*f2*f2 * src [SRCIND3(2*i+1, 2*j+1, 2*k+1)]));
       
     } CCTK_ENDLOOP3(restrict_3d_cc_rf2);
     
