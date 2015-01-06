@@ -46,7 +46,7 @@ time::dtfac = 0.5
 
 carpet::max_refinement_levels = 10
 carpetregrid2::num_centres = 1
-carpetregrid2::num_levels_1 = 8
+carpetregrid2::num_levels_1 = 10
 carpetregrid2::radius_1[1]=0.25
 carpetregrid2::radius_1[2]=0.125
 carpetregrid2::radius_1[3]=0.0625
@@ -65,7 +65,7 @@ cactus::cctk_itlast = 1024
 iobasic::outInfo_every = 512
 iobasic::outInfo_vars = "wavemol::phi"
 
-ioascii::out1D_every = 1
+ioascii::out1D_every = 512
 ioascii::out1D_vars = "wavemol::scalarevolvemol_scalar wavemol::energy"
 ioascii::out1D_criterion = "divisor"
 
