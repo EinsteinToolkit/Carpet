@@ -1439,25 +1439,20 @@ namespace CarpetReduce {
             }
             
             // Calculate interpolation weights
-            switch (num_tl) {
-            case 1:
-              // no interpolation
-              assert (fabs((time - times.AT(0)) / fabs(time + times.AT(0) + cgh->cctk_delta_time)) < 1e-12);
-              tfacs.AT(0) = 1.0;
-              break;
-            case 2:
-              // linear (2-point) interpolation
-              tfacs.AT(0) = (time - times.AT(1)) / (times.AT(0) - times.AT(1));
-              tfacs.AT(1) = (time - times.AT(0)) / (times.AT(1) - times.AT(0));
-              break;
-            case 3:
-              // quadratic (3-point) interpolation
-              tfacs.AT(0) = (time - times.AT(1)) * (time - times.AT(2)) / ((times.AT(0) - times.AT(1)) * (times.AT(0) - times.AT(2)));
-              tfacs.AT(1) = (time - times.AT(0)) * (time - times.AT(2)) / ((times.AT(1) - times.AT(0)) * (times.AT(1) - times.AT(2)));
-              tfacs.AT(2) = (time - times.AT(0)) * (time - times.AT(1)) / ((times.AT(2) - times.AT(0)) * (times.AT(2) - times.AT(1)));
-              break;
-            default:
-              assert (0);
+            if (num_tl == 1) {
+              assert (fabs((time - times.AT(0)) /
+                           fabs(time + times.AT(0) + cgh->cctk_delta_time)) <
+                      1e-12);
+            }
+            for (int n=0; n<num_tl; ++n) {
+              CCTK_REAL tmp = 1.0;
+              for (int tl=0; tl<num_tl; ++tl) {
+                // Lagrange polynomial interpolation
+                if (tl != n) {
+                  tmp *= (time - times.AT(tl)) / (times.AT(n) - times.AT(tl));
+                }
+              }
+              tfacs.AT(n) = tmp;
             }
             
           } else { // if not need_time_interp
