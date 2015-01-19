@@ -28,10 +28,12 @@
 #  undef CARPET_INT2
 #  undef CARPET_INT4
 #  undef CARPET_INT8
+#  undef CARPET_INT16
 #  define CARPET_INT1
 #  define CARPET_INT2
 #  define CARPET_INT4
 #  define CARPET_INT8
+#  define CARPET_INT16
 #endif
 
 #ifdef CARPET_ALL_REAL
@@ -59,6 +61,7 @@
     ! defined(CARPET_INT2)      &&              \
     ! defined(CARPET_INT4)      &&              \
     ! defined(CARPET_INT8)      &&              \
+    ! defined(CARPET_INT16)     &&              \
     ! defined(CARPET_REAL)      &&              \
     ! defined(CARPET_REAL4)     &&              \
     ! defined(CARPET_REAL8)     &&              \
@@ -90,6 +93,10 @@
 #  ifdef CCTK_INTEGER_PRECISION_8
 #    undef CARPET_INT8
 #    define CARPET_INT8
+#  endif
+#  ifdef CCTK_INTEGER_PRECISION_16
+#    undef CARPET_INT16
+#    define CARPET_INT16
 #  endif
 #endif
 #ifdef CARPET_REAL
@@ -152,6 +159,11 @@ TYPECASE(CCTK_VARIABLE_INT4, CCTK_INT4)
 #ifdef CARPET_INT8
 #  ifdef HAVE_CCTK_INT8
 TYPECASE(CCTK_VARIABLE_INT8, CCTK_INT8)
+#  endif
+#endif
+#ifdef CARPET_INT16
+#  ifdef HAVE_CCTK_INT16
+TYPECASE(CCTK_VARIABLE_INT16, CCTK_INT16)
 #  endif
 #endif
 
@@ -226,6 +238,7 @@ TYPECASE(CCTK_VARIABLE_COMPLEX32, CCTK_COMPLEX32)
 #undef CARPET_INT2
 #undef CARPET_INT4
 #undef CARPET_INT8
+#undef CARPET_INT16
 #undef CARPET_REAL
 #undef CARPET_REAL4
 #undef CARPET_REAL8

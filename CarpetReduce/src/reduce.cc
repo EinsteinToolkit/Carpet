@@ -220,6 +220,26 @@ namespace CarpetReduce {
   }
 #endif
   
+#ifdef HAVE_CCTK_INT16
+  template<> inline CCTK_INT16 mysqr (CCTK_INT16 const x)
+  {
+    // prevent overflow
+    return 0;
+  }
+  
+  template<> inline CCTK_INT16 mysqrabs (CCTK_INT16 const x)
+  {
+    // prevent overflow
+    return 0;
+  }
+  
+  template<> inline CCTK_INT16 mysqrt (CCTK_INT16 const x)
+  {
+    // return static_cast<CCTK_INT16> (sqrt (static_cast<CCTK_REAL> (x)));
+    return 0;
+  }
+#endif
+  
   
   
   // Overload the above helper functions and types for complex values

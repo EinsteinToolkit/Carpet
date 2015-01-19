@@ -229,6 +229,11 @@ inline const char * typestring (const CCTK_INT8&)
 { return "CCTK_INT8"; }
 #endif
 
+#ifdef HAVE_CCTK_INT16
+inline const char * typestring (const CCTK_INT16&)
+{ return "CCTK_INT16"; }
+#endif
+
 #ifdef HAVE_CCTK_REAL4
 inline const char * typestring (const CCTK_REAL4&)
 { return "CCTK_REAL4"; }

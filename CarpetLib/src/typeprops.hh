@@ -59,6 +59,9 @@ static inline int specific_cactus_type (int const vartype)
 #ifdef CCTK_INTEGER_PRECISION_8
     return CCTK_VARIABLE_INT8;
 #endif
+#ifdef CCTK_INTEGER_PRECISION_16
+    return CCTK_VARIABLE_INT16;
+#endif
     return -1;
   case CCTK_VARIABLE_REAL:
 #ifdef CCTK_REAL_PRECISION_4
