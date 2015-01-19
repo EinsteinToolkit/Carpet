@@ -19,6 +19,21 @@
 
 
 
+// Disable bboxset2 if C++11 is not supported
+#if !defined(HAVE_CCTK_CXX_AUTO_SPECIFIER) ||   \
+  !defined(HAVE_CCTK_CXX_LAMBDA) ||             \
+  !defined(HAVE_CCTK_CXX_RANGE_BASED_FOR)
+#  undef CARPET_DISABLE_BBOXSET2
+#  define CARPET_DISABLE_BBOXSET2
+#endif
+
+#ifndef CARPET_DISABLE_BBOXSET2
+#  define CARPET_ENABLE_BBOXSET2
+#  define CARPET_USE_BBOXSET2
+#endif
+
+
+
 using namespace std;
 
 // TODO: autoconf these
