@@ -1,6 +1,7 @@
 #ifndef BBOXSET1_HH
 #define BBOXSET1_HH
 
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <list>
@@ -643,6 +644,9 @@ void bboxset<T,D>::normalize ()
     assert (invariant());
   }
   
+  // Sort bboxes lexicographically
+  sort (bs.begin(), bs.end(), less<bbox<T,D> >());
+
   size_type const newsize = this->size();
   
   // Can't use operators on *this since these would call normalize again
