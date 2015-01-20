@@ -1464,15 +1464,15 @@ namespace CarpetReduce {
                            fabs(time + times.AT(0) + cgh->cctk_delta_time)) <
                       1e-12);
             }
-            for (int n=0; n<num_tl; ++n) {
+            for (int tl=0; tl<num_tl; ++tl) {
               CCTK_REAL tmp = 1.0;
-              for (int tl=0; tl<num_tl; ++tl) {
+              for (int n=0; n<num_tl; ++n) {
                 // Lagrange polynomial interpolation
-                if (tl != n) {
-                  tmp *= (time - times.AT(tl)) / (times.AT(n) - times.AT(tl));
+                if (n != tl) {
+                  tmp *= (time - times.AT(n)) / (times.AT(tl) - times.AT(n));
                 }
               }
-              tfacs.AT(n) = tmp;
+              tfacs.AT(tl) = tmp;
             }
             
           } else { // if not need_time_interp
