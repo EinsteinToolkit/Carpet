@@ -279,7 +279,7 @@ namespace Carpet {
               const CCTK_INT on_device = 0;
               Accelerator_NotifyDataModified
                 (cctkGH,
-                 &vis.front(), &rls.front(), &rls.front(), vis.size(),
+                 &vis.front(), &rls.front(), &tls.front(), vis.size(),
                  on_device);
             }
           }
