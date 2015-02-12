@@ -200,13 +200,15 @@ inline T align_up(T const x, T const align)
 
 
 
-// Useful helper
+// Useful helpers
 template<class T>
 inline T square (const T x) { return x*x; }
 
-// Another useful helper
 template<class T>
 T ipow (T x, int y) CCTK_ATTRIBUTE_CONST;
+
+template<class T>
+int ilog (T b, T x) CCTK_ATTRIBUTE_CONST;
 
 
 

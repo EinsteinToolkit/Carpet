@@ -45,6 +45,22 @@ T ipow (T const x, int const y)
     return ipow_helper(x, y);
 }
 
+template<class T>
+int ilog (T const b, T const x)
+{
+  assert (b > T(1));
+  int r = 0;
+  T y(1);
+  // TODO: This algorithm is slow; use a more clever one
+  while (y < x) {
+    y *= b;
+    ++r;
+  }
+  assert ((x < b && r == 0) || (x >= b && ipow(b, r) <= x));
+  assert (ipow(b, r+1) > x);
+  return r;
+}
+
 
 
 // Access to CarpetLib parameters
@@ -350,6 +366,8 @@ template int ipow (int x, int y);
 template CCTK_REAL ipow (CCTK_REAL x, int y);
 //template vect<int,dim> ipow (vect<int,dim> x, int y);
 template vect<CCTK_REAL,dim> ipow (vect<CCTK_REAL,dim> x, int y);
+template int ilog (int x, int y);
+template int ilog (CCTK_REAL x, CCTK_REAL y);
 
 template size_t memoryof (rvect const & v);
 //template size_t memoryof (list<ibbox> const & l);
