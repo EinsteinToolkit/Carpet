@@ -23,6 +23,9 @@
 #if !defined(HAVE_CCTK_CXX_AUTO_SPECIFIER) ||   \
   !defined(HAVE_CCTK_CXX_LAMBDA) ||             \
   !defined(HAVE_CCTK_CXX_RANGE_BASED_FOR)
+#  ifndef CARPET_DISABLE_BBOXSET2
+#    define CARPET_WARN_DISABLE_BBOXSET2
+#  endif
 #  undef CARPET_DISABLE_BBOXSET2
 #  define CARPET_DISABLE_BBOXSET2
 #endif
