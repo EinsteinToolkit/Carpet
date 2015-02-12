@@ -786,19 +786,19 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     // Round down to nearest multiple of out_timesteps_per_file
     int const iter =
       cctk_iteration / out_timesteps_per_file * out_timesteps_per_file;
-    char buffer[32];
-    snprintf (buffer, sizeof (buffer), ".iter_%d", iter);
-    filename.append (buffer);
+    ostringstream buffer;
+    buffer << ".iter_" << iter;
+    filename.append (buffer.str());
   }
   if (not (CCTK_EQUALS (out_mode, "onefile") or
            request->out_unchunked or
            groupdata.disttype == CCTK_DISTRIB_CONSTANT or
            dist::size() == 1)) {
-    char buffer[32];
+    ostringstream buffer;
     ioproc = dist::rank();
     nioprocs = dist::size();
-    snprintf (buffer, sizeof (buffer), ".file_%d", ioproc);
-    filename.append (buffer);
+    buffer << ".file_" << ioproc;
+    filename.append (buffer.str());
   }
 
   string base_filename(filename);
