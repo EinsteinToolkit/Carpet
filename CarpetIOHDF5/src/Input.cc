@@ -580,12 +580,14 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       assert(not file.indexfilename);
       file.indexfilename = 
         IOUtil_AssembleFilename (NULL, fileset->basefilename.c_str(),
-                                 "", ".idx.h5", called_from, file_idx, 0);
+                                 "", ".idx.h5", called_from,
+                                 file_idx, fileset->nioprocs, 0);
       assert (file.indexfilename);
 
       file.filename =
         IOUtil_AssembleFilename (NULL, fileset->basefilename.c_str(),
-                                 "", ".h5", called_from, file_idx, 0);
+                                 "", ".h5", called_from,
+                                 file_idx, fileset->nioprocs, 0);
       assert (file.filename);
     }
     if (file.patches.size() == 0) {
@@ -893,11 +895,13 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   // (note that dist::rank() cannot be called yet during RECOVER_PARAMETERS)
   fileset.first_ioproc = CCTK_MyProc (cctkGH);
   file.filename = IOUtil_AssembleFilename (NULL, basefilename, "", ".h5",
-                                           called_from, fileset.first_ioproc, 0);
+                                           called_from, fileset.first_ioproc,
+                                           CCTK_nProcs (cctkGH), 0);
   assert (file.filename);
   file.indexfilename = IOUtil_AssembleFilename (NULL, basefilename, "",
                                                 ".idx.h5", called_from,
-                                                fileset.first_ioproc, 0);
+                                                fileset.first_ioproc,
+                                                CCTK_nProcs (cctkGH), 0);
   assert (file.indexfilename);
 
   // close all dangling HDF5 objects when file is closed
@@ -917,11 +921,13 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     free (file.filename);
     fileset.first_ioproc = 0;
     file.filename = IOUtil_AssembleFilename (NULL, basefilename, "", ".h5",
-                                             called_from, fileset.first_ioproc, 0);
+                                             called_from, fileset.first_ioproc,
+                                             CCTK_nProcs (cctkGH), 0);
     assert (file.filename);
     file.indexfilename = IOUtil_AssembleFilename (NULL, basefilename, "", 
                                                   ".idx.h5", called_from,
-                                                  fileset.first_ioproc, 0);
+                                                  fileset.first_ioproc,
+                                                  CCTK_nProcs (cctkGH), 0);
     assert (file.indexfilename);
     H5E_BEGIN_TRY {
       filenames.push_back (string (file.filename));
@@ -935,11 +941,13 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     free (file.indexfilename);
     free (file.filename);
     file.filename = IOUtil_AssembleFilename (NULL, basefilename, "", ".h5",
-                                             called_from, fileset.first_ioproc, 1);
+                                             called_from, fileset.first_ioproc,
+                                             CCTK_nProcs (cctkGH), 1);
     assert (file.filename);
     file.indexfilename = IOUtil_AssembleFilename (NULL, basefilename, "",
                                                   ".idx.h5", called_from,
-                                                  fileset.first_ioproc, 1);
+                                                  fileset.first_ioproc,
+                                                  CCTK_nProcs (cctkGH), 1);
     assert (file.indexfilename);
     H5E_BEGIN_TRY {
       filenames.push_back (string (file.filename));

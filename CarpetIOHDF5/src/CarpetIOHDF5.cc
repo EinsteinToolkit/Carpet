@@ -981,17 +981,17 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
   }
   char *filename =
     IOUtil_AssembleFilename (cctkGH, NULL, "", ".h5",
-                             called_from, ioproc, not parallel_io);
+                             called_from, ioproc, nioprocs, not parallel_io);
   char *tempname =
     IOUtil_AssembleFilename (cctkGH, NULL, ".tmp", ".h5",
-                             called_from, ioproc, not parallel_io);
+                             called_from, ioproc, nioprocs, not parallel_io);
 
   char *index_tempname =
     IOUtil_AssembleFilename (cctkGH, NULL, ".tmp", ".idx.h5",
-                             called_from, ioproc, not parallel_io);
+                             called_from, ioproc, nioprocs, not parallel_io);
   char *index_filename =
     IOUtil_AssembleFilename (cctkGH, NULL, "", ".idx.h5",
-                             called_from, ioproc, not parallel_io);
+                             called_from, ioproc, nioprocs, not parallel_io);
 
   hid_t file = -1;
   hid_t index_file = -1;
