@@ -25,10 +25,10 @@ Carpet::max_refinement_levels    = 4
 CarpetRegrid::refinement_levels  = 4
 
 # Output
-IO::out_dir                 = $parfile
-IO::processes_per_directory = 2
-IO::out_fileinfo            = "none"
-IO::parfile_write           = "no"
+IO::out_dir                = $parfile
+IO::max_entries_per_subdir = 2
+IO::out_fileinfo           = "none"
+IO::parfile_write          = "no"
 
 IOBasic::outInfo_every         = 1
 IOBasic::outInfo_vars          = "wavetoy::phi"

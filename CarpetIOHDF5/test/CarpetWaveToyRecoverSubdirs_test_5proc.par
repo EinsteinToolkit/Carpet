@@ -7,9 +7,9 @@ Cactus::cctk_itlast = 128
 IO::out_dir = $parfile
 
 # Recovery
-IO::recover_dir             = "../../../arrangements/Carpet/CarpetIOHDF5/test"
-IO::recover                 = "manual"
-IO::recover_file            = "CarpetWaveToyCheckpointSubdirs_test.it_64"
-IO::processes_per_directory = 2
+IO::recover_dir            = "../../../arrangements/Carpet/CarpetIOHDF5/test"
+IO::recover                = "manual"
+IO::recover_file           = "CarpetWaveToyCheckpointSubdirs_test.it_64"
+IO::max_entries_per_subdir = 2
 
 IOHDF5::checkpoint = "no"

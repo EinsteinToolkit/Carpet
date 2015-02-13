@@ -78,11 +78,11 @@ IOBasic::outInfo_every = 1
 IOBasic::outInfo_vars  = "wavetoy::phi"
 
 # Checkpoint
-IO::checkpoint_dir          = $parfile
-IO::processes_per_directory = 2
-IO::checkpoint_every        = 12
-IO::checkpoint_keep         = 2
-#IO::verbose                 = "full"
+IO::checkpoint_dir         = $parfile
+IO::checkpoint_every       = 12
+IO::checkpoint_keep        = 2
+IO::max_entries_per_subdir = 2
+#IO::verbose            = "full"
 
 IOHDF5::checkpoint = "yes"
 IO::recover = "no"
