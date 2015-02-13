@@ -12,3 +12,8 @@ TEST CarpetWaveToyRecover_test_4proc
 {
   NPROCS 4
 }
+
+TEST CarpetWaveToyRecoverSubdirs_test_5proc
+{
+  NPROCS 5
+}
