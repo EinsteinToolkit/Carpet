@@ -355,7 +355,7 @@ namespace CarpetRegrid2 {
   symmetrised_regions (gh const& hh, dh const& dd, level_boundary const& bnd,
                        vector<ibset> const& regions, int const rl)
   {
-    // ibbox const& baseextent = hh.baseextent(0,rl);
+    ibbox const& baseextent = hh.baseextent(0,rl);
     
     ibset symmetrised = regions.at(rl);
     for (ibset::const_iterator
@@ -373,19 +373,31 @@ namespace CarpetRegrid2 {
           ivect const ilo = bb.lower();
           ivect const iup = bb.upper();
           ivect const istr = bb.stride();
+          assert (istr[0] == istr[1]);
           
           // Origin
+          // TODO: ignore z direction below
+          assert (hh.refcent == vertex_centered or all (istr % 2 == 0));
           rvect const axis (bnd.physical_lower[0],
                             bnd.physical_lower[1],
                             bnd.physical_lower[2]); // z component is unused
           ivect const iaxis0 = rpos2ipos (axis, bnd.origin, bnd.scale, hh, rl);
-          assert (all (iaxis0 % istr == 0));
+          assert (all ((iaxis0 - baseextent.lower()) % istr == 0));
           ivect const iaxis1 = rpos2ipos1 (axis, bnd.origin, bnd.scale, hh, rl);
-          assert (all (iaxis1 % istr == 0));
+          assert (all ((iaxis1 - baseextent.lower()) % istr == 0));
           ivect const offset = iaxis1 - iaxis0;
           assert (all (offset % istr == 0));
-          assert (all (offset >= 0 and offset < 2*istr));
-          assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == 0));
+          if (hh.refcent == vertex_centered) {
+            assert (all (offset >= 0 and offset < 2*istr));
+            assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == 0));
+          } else {
+            // The offset may be negative because both boundaries are
+            // shifted inwards by 1/2 grid spacing, and therefore
+            // iaxis0 < iaxis1 + istr
+            assert (all (offset >= -istr and offset < istr));
+            assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == istr));
+            assert (all (istr % 2 == 0));
+          }
           ivect const iaxis = (iaxis0 + iaxis1 - offset) / 2;
           // negated (reflected) domain boundaries
           ivect const neg_ilo = (2*iaxis+offset) - ilo;
@@ -495,6 +507,7 @@ namespace CarpetRegrid2 {
         assert (istr[0] == istr[1]);
         
         // Origin
+        // TODO: ignore z direction below
         assert (hh.refcent == vertex_centered or all (istr % 2 == 0));
         rvect const axis (bnd.physical_lower[0],
                           (bnd.physical_lower[1] + bnd.physical_upper[1]) / 2,
@@ -517,6 +530,7 @@ namespace CarpetRegrid2 {
           assert (all (istr % 2 == 0));
         }
         ivect const iaxis = (iaxis0 + iaxis1 - offset) / 2;
+          // negated (reflected) domain boundaries
         ivect const neg_ilo = (2*iaxis+offset) - ilo;
         ivect const neg_iup = (2*iaxis+offset) - iup;
         
