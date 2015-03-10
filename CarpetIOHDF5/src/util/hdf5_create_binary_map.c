@@ -248,20 +248,20 @@ static herr_t CopyObject (hid_t from,
 
     char vname[1024];
     int map;
-    int mglevel;
+    int mglevel = 0;
     int reflevel;
     int timestep;
     int timelevel;
     int component;
     int rank;
     int iorigin[3];
-    int ioffset[3];
-    int ioffsetdenom[3];   
-    double origin[3];
-    double delta[3];
+    int ioffset[3] = {0,0,0};
+    int ioffsetdenom[3] = {1,1,1};
+    double origin[3] = {0.,0.,0.};
+    double delta[3] = {0.,0.,0.};
     double time;
-    int nghosts[3];
-    int bbox[6];
+    int nghosts[3] = {0,0,0};
+    int bbox[6] = {0,0,0,0,0,0};
 
     rank = H5Sget_simple_extent_ndims (dataspace);
     assert(rank <= 3);
