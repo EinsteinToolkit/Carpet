@@ -3,6 +3,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <map>
+#include <memory>
 #include <vector>
 
 #include <cctk.h>
@@ -25,9 +27,21 @@ namespace Carpet {
 
 
 
-  static void ProlongateGroupBoundaries (const cGH* cctkGH,
-                                         const vector<int>& groups);
+  // Split-phase communication
+  struct transaction_t {
+    int reflevel;
+    vector<int> groups;
+    comm_state state;
+    transaction_t(): reflevel(-1) {}
+  };
 
+  vector<std::map<int, shared_ptr<transaction_t> > > transactions;
+
+
+
+  static void ProlongateGroupBoundaries (const cGH* cctkGH,
+                                         const vector<int>& groups,
+                                         phase_t phase);
 
   // Carpet's overload function for CCTK_SyncGroupsByDirI()
   // which synchronises a set of groups given by their indices.
@@ -38,7 +52,8 @@ namespace Carpet {
   int SyncGroupsByDirI (const cGH* cctkGH,
                         int num_groups,
                         const int *groups,
-                        const int *directions)
+                        const int *directions,
+                        phase_t phase)
   {
     int group, retval = 0;
     vector<int> groups_set;
@@ -57,7 +72,7 @@ namespace Carpet {
     }
 
     if (groups_set.size() > 0) {
-      retval = SyncProlongateGroups (cctkGH, groups_set);
+      retval = SyncProlongateGroups (cctkGH, groups_set, NULL, phase);
       if (retval == 0) {
         retval = groups_set.size();
       }
@@ -66,12 +81,37 @@ namespace Carpet {
     return retval;
   }
 
+  int SyncGroupsByDirI (const cGH* cctkGH,
+                        int num_groups,
+                        const int *groups,
+                        const int *directions)
+  {
+    return SyncGroupsByDirI (cctkGH, num_groups, groups, directions, phase_all);
+  }
+
+  int SyncGroupsBeginByDirI (const cGH* cctkGH,
+                             int num_groups,
+                             const int *groups,
+                             const int *directions)
+  {
+    return SyncGroupsByDirI (cctkGH, num_groups, groups, directions,
+                             phase_begin);
+  }
+
+  int SyncGroupsEndByDirI (const cGH* cctkGH,
+                           int num_groups,
+                           const int *groups,
+                           const int *directions)
+  {
+    return SyncGroupsByDirI (cctkGH, num_groups, groups, directions, phase_end);
+  }
+
 
   // synchronises ghostzones and prolongates boundaries of a set of groups
   //
   // returns 0 for success and -1 if the set contains a group with no storage
   int SyncProlongateGroups (const cGH* cctkGH, const vector<int>& groups,
-                            cFunctionData const* function_data)
+                            cFunctionData const* function_data, phase_t phase)
   {
     int retval = 0;
     DECLARE_CCTK_PARAMETERS;
@@ -148,7 +188,7 @@ namespace Carpet {
       if (local_do_prolongate) {
         static Timers::Timer timer ("Prolongate");
         timer.start();
-        ProlongateGroupBoundaries (cctkGH, goodgroups);
+        ProlongateGroupBoundaries (cctkGH, goodgroups, phase);
         timer.stop();
       }
 
@@ -176,7 +216,7 @@ namespace Carpet {
       if (sync_during_time_integration or local_do_prolongate) {
         static Timers::Timer timer ("Sync");
         timer.start();
-        SyncGroups (cctkGH, goodgroups);
+        SyncGroups (cctkGH, goodgroups, phase);
         timer.stop();
       }
       
@@ -187,7 +227,8 @@ namespace Carpet {
 
   // Prolongate the boundaries of all CCTK_GF groups in the given set
   static void ProlongateGroupBoundaries (const cGH* cctkGH,
-                                         const vector<int>& groups)
+                                         const vector<int>& groups,
+                                         phase_t phase)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -303,7 +344,8 @@ namespace Carpet {
 
 
   // synchronises a set of groups
-  void SyncGroups (const cGH* cctkGH, const vector<int>& groups)
+  void SyncGroups (const cGH* cctkGH, const vector<int>& groups,
+                   phase_t phase)
   {
     DECLARE_CCTK_PARAMETERS;
 
@@ -311,7 +353,34 @@ namespace Carpet {
 
     assert (groups.size() > 0);
     
-    if (CCTK_IsFunctionAliased("Accelerator_PreSync")) {
+    // Create the transaction if necessary
+    shared_ptr<transaction_t> tp = nullptr;
+    if (phase == phase_begin) {
+      // Enlarge the data structure if necessary
+      if (transactions.size() < reflevels)
+        transactions.resize(reflevels);
+      // Ensure the groups are sorted
+      for (size_t group=1; group<groups.size(); ++group)
+        assert (groups.at(group) > groups.at(group-1));
+      // Ensure this transaction is not yet outstanding
+      assert (transactions.at(reflevel).count(groups.at(0)) == 0);
+      // Create the transaction
+      tp = make_shared<transaction_t>();
+      tp->reflevel = reflevel;
+      tp->groups = groups;
+      // Store the transaction
+      transactions.at(reflevel)[groups.at(0)] = tp;
+    } else if (phase == phase_end) {
+      assert (transactions.size() >= reflevels);
+      assert (transactions.at(reflevel).count(groups.at(0)) == 1);
+      tp = transactions.at(reflevel)[groups.at(0)];
+      assert (tp->groups.size() == groups.size());
+      assert(tp->reflevel == reflevel);
+      for (size_t group=0; group<groups.size(); ++group)
+        assert(tp->groups.at(group) == groups.at(group));
+    }
+
+    if (phase != phase_end && CCTK_IsFunctionAliased("Accelerator_PreSync")) {
       vector<CCTK_INT> groups_(groups.size());
       for (size_t i=0; i<groups.size(); ++i) groups_[i] = groups[i];
       Accelerator_PreSync(cctkGH, &groups_.front(), groups_.size());
@@ -335,10 +404,20 @@ namespace Carpet {
       }
     }
     
+    // Ensure we begin the second phase in the same state we finished
+    // the first phase
+    if (phase == phase_end)
+      assert(tp->state.thestate == state_do_some_work);
+    if (phase == phase_all)
+      tp = make_shared<transaction_t>();
+
     vector<Timers::Timer*>::iterator ti = timers.begin();
     (*ti)->start();
-    for (comm_state state; not state.done(); state.step()) {
+    for (comm_state& state = tp->state; not state.done(); state.step()) {
       (*ti)->stop(); ++ti; (*ti)->start();
+      // Interrupt the communication loop if we are using split-phase
+      // communication
+      if (phase == phase_begin && state.thestate == state_do_some_work) break;
       for (int group = 0; group < (int)groups.size(); ++group) {
         const int g = groups.AT(group);
         const int grouptype = CCTK_GroupTypeI (g);
@@ -349,8 +428,8 @@ namespace Carpet {
         const int tl = active_tl > 1 ? timelevel : 0;
         for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
           for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
-            arrdesc& array = arrdata.AT(g).AT(m);
-            array.data.AT(v)->sync_all (state, tl, rl, ml);
+              arrdesc& array = arrdata.AT(g).AT(m);
+              array.data.AT(v)->sync_all (state, tl, rl, ml);
           }
         }
       }
@@ -358,12 +437,25 @@ namespace Carpet {
     }
     (*ti)->stop();
     ++ti; assert(ti == timers.end());
+
+    if (phase == phase_all)
+      tp = nullptr;
+    if (phase == phase_begin)
+      assert(tp->state.thestate == state_do_some_work);
     
-    if (CCTK_IsFunctionAliased("Accelerator_PostSync")) {
+    if (phase != phase_begin &&
+        CCTK_IsFunctionAliased("Accelerator_PostSync"))
+    {
       vector<CCTK_INT> groups_(groups.size());
       for (size_t i=0; i<groups.size(); ++i) groups_[i] = groups[i];
       Accelerator_PostSync(cctkGH, &groups_.front(), groups_.size());
     }
+
+    // Destroy the transaction if necessary
+    if (phase == phase_end) {
+      transactions.at(reflevel).erase(groups.at(0));
+    }
+
   }
 
 

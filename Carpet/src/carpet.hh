@@ -44,9 +44,14 @@ namespace Carpet {
   void UncycleTimeLevels (cGH* cgh);
   void FlipTimeLevels (cGH* cgh);
   void FillTimeLevels (const cGH* cgh);
-  void SyncGroups (const cGH* cgh, const vector<int>& groups);
+
+  // Split-phase communication
+  enum phase_t {phase_begin, phase_end, phase_all};
+  void SyncGroups (const cGH* cgh, const vector<int>& groups,
+                   phase_t phase = phase_all);
   int  SyncProlongateGroups (const cGH* cgh, const vector<int>& groups,
-                             cFunctionData const* function_data = NULL);
+                             cFunctionData const* function_data = NULL,
+                             phase_t phase = phase_all);
  
   // Sanity checks
   enum checktimes { currenttime,
