@@ -11,7 +11,6 @@
 
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
-#include "order_restrict.h"
 
 using namespace std;
 
@@ -34,7 +33,7 @@ namespace CarpetLib {
   
   template <typename T>
   void
-  restrict_3d_stagger101 (T const * restrict const src,
+  restrict_3d_stagger110 (T const * restrict const src,
                    ivect3 const & restrict srcpadext,
                    ivect3 const & restrict srcext,
                    T * restrict const dst,
@@ -53,17 +52,17 @@ namespace CarpetLib {
     if (any (srcbbox.stride() >= regbbox.stride() or
              dstbbox.stride() != regbbox.stride()))
     {
-      CCTK_WARN (0, "Internal error: strides disagree");
+      CCTK_ERROR ("Internal error: strides disagree");
     }
     
     if (any (reffact2 * srcbbox.stride() != dstbbox.stride())) {
-      CCTK_WARN (0, "Internal error: destination strides are not twice the source strides");
+      CCTK_ERROR ("Internal error: destination strides are not twice the source strides");
     }
     
     // This could be handled, but is likely to point to an error
     // elsewhere
     if (regbbox.empty()) {
-      CCTK_WARN (0, "Internal error: region extent is empty");
+      CCTK_ERROR ("Internal error: region extent is empty");
     }
     
     if (not regbbox.expanded_for(srcbbox).expand(1,1).is_contained_in(srcbbox) or
@@ -72,7 +71,7 @@ namespace CarpetLib {
       cerr << "srcbbox: " << srcbbox << endl
            << "dstbbox: " << dstbbox << endl
            << "regbbox: " << regbbox << endl;
-      CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
+      CCTK_ERROR ("Internal error: region extent is not contained in array extent");
     }
 
     if (not support_staggered_operators) {
@@ -120,7 +119,7 @@ namespace CarpetLib {
     int const dstkoff = dstoff[2];
     
     
-     #include "coeffs_restrict.h"
+#include "coeffs_restrict_3d_stagger.hh"
     
     if (not use_loopcontrol_in_operators) {
       
@@ -130,22 +129,21 @@ namespace CarpetLib {
           for (int i=0; i<regiext; ++i) {
 
           dst[DSTIND3(i, j, k)] = typeprops<T>::fromreal (0);
+          if(ORDER_STAG==2) {
+            for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG+1;jj++) {
+                dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*src [SRCIND3(2*i-1+(ii-1), 2*j-1+(jj-1), 2*k)];
+              }
+          }
 
-	  if(ORDER_STAG==2) {
-	    for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG+1;jj++) {
-		dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*src [SRCIND3(2*i-1+(ii-1), 2*j, 2*k-1+(jj-1))];
-	      }
-	  }
-
-	  if(ORDER_STAG==3) {
-	    for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG;jj++) for(int kk=1;kk<=ORDER_STAG+1;kk++) {
-		  dst[DSTIND3(i, j, k)] += coeff[ii]*coeff_i[jj]*coeff[kk]*src [SRCIND3(2*i-1+(ii-1), 2*j-1+(jj-1), 2*k-1+(kk-1))];
-		}
-	  }
+          if(ORDER_STAG==3) {
+            for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG+1;jj++) for(int kk=1;kk<=ORDER_STAG;kk++) {
+                dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*coeff_i[kk]*src [SRCIND3(2*i-1+(ii-1), 2*j-1+(jj-1), 2*k-1+(kk-1))];
+              }
+          }
 
           if(ORDER_STAG==4) {
             for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG+1;jj++) for(int kk=1;kk<=ORDER_STAG+1;kk++) {
-                dst[DSTIND3(i, j, k)] += coeff[ii]*coeff_i[jj]*coeff[kk]*src [SRCIND3(2*i-2+(ii-1), 2*j-2+(jj-1), 2*k-2+(kk-1))];
+                dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*coeff_i[kk]*src [SRCIND3(2*i-2+(ii-1), 2*j-2+(jj-1), 2*k-2+(kk-1))];
               }
           }
           }
@@ -156,32 +154,29 @@ namespace CarpetLib {
       
       // Loop over coarse region
 #pragma omp parallel
-      CCTK_LOOP3(restrict_3d_stagger101,
+      CCTK_LOOP3(restrict_3d_stagger110,
                  i,j,k, 0,0,0, regiext,regjext,regkext,
                  dstipadext,dstjpadext,dstkpadext)
       {
+             dst[DSTIND3(i, j, k)] = typeprops<T>::fromreal (0);
+          if(ORDER_STAG==2) {
+            for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG+1;jj++) {
+                dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*src [SRCIND3(2*i-1+(ii-1), 2*j-1+(jj-1), 2*k)];
+              }
+          }
 
-           dst[DSTIND3(i, j, k)] = typeprops<T>::fromreal (0);
-
-	  if(ORDER_STAG==2) {
-	    for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG+1;jj++) {
-		dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*src [SRCIND3(2*i-1+(ii-1), 2*j, 2*k-1+(jj-1))];
-	      }
-	  }
-
-	  if(ORDER_STAG==3) {
-	    for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG;jj++) for(int kk=1;kk<=ORDER_STAG+1;kk++) {
-		  dst[DSTIND3(i, j, k)] += coeff[ii]*coeff_i[jj]*coeff[kk]*src [SRCIND3(2*i-1+(ii-1), 2*j-1+(jj-1), 2*k-1+(kk-1))];
-		}
-	  }
+          if(ORDER_STAG==3) {
+            for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG+1;jj++) for(int kk=1;kk<=ORDER_STAG;kk++) {
+                dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*coeff_i[kk]*src [SRCIND3(2*i-1+(ii-1), 2*j-1+(jj-1), 2*k-1+(kk-1))];
+              }
+          }
 
           if(ORDER_STAG==4) {
             for(int ii=1;ii<=ORDER_STAG+1;ii++) for(int jj=1;jj<=ORDER_STAG+1;jj++) for(int kk=1;kk<=ORDER_STAG+1;kk++) {
-                dst[DSTIND3(i, j, k)] += coeff[ii]*coeff_i[jj]*coeff[kk]*src [SRCIND3(2*i-2+(ii-1), 2*j-2+(jj-1), 2*k-2+(kk-1))];
+                dst[DSTIND3(i, j, k)] += coeff[ii]*coeff[jj]*coeff_i[kk]*src [SRCIND3(2*i-2+(ii-1), 2*j-2+(jj-1), 2*k-2+(kk-1))];
               }
           }
-       
-      } CCTK_ENDLOOP3(restrict_3d_stagger101);
+      } CCTK_ENDLOOP3(restrict_3d_stagger110);
       
     }
     
@@ -192,7 +187,7 @@ namespace CarpetLib {
 #define TYPECASE(N,T)                                   \
   template                                              \
   void                                                  \
-  restrict_3d_stagger101 (T const * restrict const src,        \
+  restrict_3d_stagger110 (T const * restrict const src, \
                    ivect3 const & restrict srcpadext,   \
                    ivect3 const & restrict srcext,      \
                    T * restrict const dst,              \

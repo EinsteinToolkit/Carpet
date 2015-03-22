@@ -11,7 +11,6 @@
 
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
-#include "order_restrict.h"
 
 using namespace std;
 
@@ -53,17 +52,17 @@ namespace CarpetLib {
     if (any (srcbbox.stride() >= regbbox.stride() or
              dstbbox.stride() != regbbox.stride()))
     {
-      CCTK_WARN (0, "Internal error: strides disagree");
+      CCTK_ERROR ("Internal error: strides disagree");
     }
     
     if (any (reffact2 * srcbbox.stride() != dstbbox.stride())) {
-      CCTK_WARN (0, "Internal error: destination strides are not twice the source strides");
+      CCTK_ERROR ("Internal error: destination strides are not twice the source strides");
     }
     
     // This could be handled, but is likely to point to an error
     // elsewhere
     if (regbbox.empty()) {
-      CCTK_WARN (0, "Internal error: region extent is empty");
+      CCTK_ERROR ("Internal error: region extent is empty");
     }
     
     if (not regbbox.expanded_for(srcbbox).expand(1,1).is_contained_in(srcbbox) or
@@ -72,7 +71,7 @@ namespace CarpetLib {
       cerr << "srcbbox: " << srcbbox << endl
            << "dstbbox: " << dstbbox << endl
            << "regbbox: " << regbbox << endl;
-      CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
+      CCTK_ERROR ("Internal error: region extent is not contained in array extent");
     }
 
     if (not support_staggered_operators) {
@@ -120,7 +119,7 @@ namespace CarpetLib {
     int const dstkoff = dstoff[2];
     
     
-#include "coeffs_restrict.h"
+#include "coeffs_restrict_3d_stagger.hh"
     
     if (not use_loopcontrol_in_operators) {
       
@@ -129,7 +128,6 @@ namespace CarpetLib {
         for (int j=0; j<regjext; ++j) {
           for (int i=0; i<regiext; ++i) {
            
-//            dst [DSTIND3(i, j, k)] = src [SRCIND3(2*i, 2*j, 2*k)];
           dst[DSTIND3(i, j, k)] = typeprops<T>::fromreal (0);
 
           if(ORDER_STAG==2) {
@@ -165,7 +163,6 @@ namespace CarpetLib {
                  dstipadext,dstjpadext,dstkpadext)
       {
         
-//        dst [DSTIND3(i, j, k)] = src [SRCIND3(2*i, 2*j, 2*k)];
            dst[DSTIND3(i, j, k)] = typeprops<T>::fromreal (0);
 
           if(ORDER_STAG==2) {
@@ -198,7 +195,7 @@ namespace CarpetLib {
 #define TYPECASE(N,T)                                   \
   template                                              \
   void                                                  \
-  restrict_3d_stagger011 (T const * restrict const src,        \
+  restrict_3d_stagger011 (T const * restrict const src, \
                    ivect3 const & restrict srcpadext,   \
                    ivect3 const & restrict srcext,      \
                    T * restrict const dst,              \

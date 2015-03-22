@@ -8,7 +8,6 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "vectors.h"
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
@@ -34,11 +33,11 @@ namespace CarpetLib {
 #define DSTOFF3(i,j,k)                          \
   offset3 (i, j, k,                             \
            dstiext, dstjext, dstkext)
- 
+  
   
   template <typename T, int ORDER>
   void
-  prolongate_3d_stagger111 (T const * restrict const src,
+  prolongate_3d_stagger110 (T const * restrict const src,
                      ivect3 const & restrict srcpadext,
                      ivect3 const & restrict srcext,
                      T * restrict const dst,
@@ -54,35 +53,30 @@ namespace CarpetLib {
 
     assert (not extraargs);
     
-//    static_assert (ORDER>=0 and ORDER % 2 == 1,
-//                   "ORDER must be non-negative and odd");
-    
-    typedef typename typeprops<T>::real RT;
-    
     if (any (srcbbox.stride() <= regbbox.stride() or
              dstbbox.stride() != regbbox.stride()))
     {
-      CCTK_WARN (0, "Internal error: strides disagree");
+      CCTK_ERROR ("Internal error: strides disagree");
     }
     
     if (any (srcbbox.stride() != reffact2 * dstbbox.stride())) {
-      CCTK_WARN (0, "Internal error: source strides are not twice the destination strides");
+      CCTK_ERROR ("Internal error: source strides are not twice the destination strides");
     }
     
     if (any (srcbbox.lower() % srcbbox.stride() != 0)) {
-      CCTK_WARN (0, "Internal error: source bbox is not aligned with vertices");
+      CCTK_ERROR ("Internal error: source bbox is not aligned with vertices");
     }
     if (any (dstbbox.lower() % dstbbox.stride() != 0)) {
-      CCTK_WARN (0, "Internal error: destination bbox is not aligned with vertices");
+      CCTK_ERROR ("Internal error: destination bbox is not aligned with vertices");
     }
     if (any (regbbox.lower() % regbbox.stride() != 0)) {
-      CCTK_WARN (0, "Internal error: prolongation region bbox is not aligned with vertices");
+      CCTK_ERROR ("Internal error: prolongation region bbox is not aligned with vertices");
     }
     
     // This could be handled, but is likely to point to an error
     // elsewhere
     if (regbbox.empty()) {
-      CCTK_WARN (0, "Internal error: region extent is empty");
+      CCTK_ERROR ("Internal error: region extent is empty");
     }
 
     if (not support_staggered_operators) {
@@ -118,7 +112,7 @@ namespace CarpetLib {
            << "dstbbox=" << dstbbox << "\n"
            << "regbbox.expand=" << regbbox.expand(offsetlo, offsethi) << "\n"
            << "srcbbox=" << srcbbox << "\n";
-      CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
+      CCTK_ERROR ("Internal error: region extent is not contained in array extent");
     }
     
     
@@ -163,13 +157,7 @@ namespace CarpetLib {
     
     
     
-    // size_t const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
-    size_t const srcdi = 1;
-    assert (srcdi == SRCOFF3(1,0,0) - SRCOFF3(0,0,0));
-    size_t const srcdj = SRCOFF3(0,1,0) - SRCOFF3(0,0,0);
-    size_t const srcdk = SRCOFF3(0,0,1) - SRCOFF3(0,0,0);
-    
-#include "coeffs_prolong.h"
+#include "coeffs_prolongate_3d_stagger.hh"
 
     // Loop over fine region
     // Label scheme: l 8 fk fj fi
@@ -203,22 +191,24 @@ namespace CarpetLib {
     
     // kernel
   l8000:
-    // Unstaggered, 5th-order code, where source and destination points overlap:
-    //dst[DSTIND3(id,jd,kd)] = src[SRCIND3(is,js,ks)];
-
-    // Staggered code, where source and destination are off by 1/4 of a gridpoint, in all directions:
-    // Interpolate to (is-1/4, js-1/4, ks-1/4), where is,js,ks is a point on the COARSE grid, since our points are all cell-centered
+    // Interpolate to (is-1/4, js-1/4, ks) 
     dst[DSTIND3(id,jd,kd)] = typeprops<T>::fromreal (0);
     if(ORDER<=2) {
-      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[1][jj]*coeff[1][kk]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks-1+(kk-1))];
-	}
+      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) {
+	  dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[1][jj]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks)];
+        }
     }
-    if(ORDER==3 || ORDER==4) {
-      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[1][jj]*coeff[1][kk]*src[SRCIND3(is-2+(ii-1),js-2+(jj-1),ks-2+(kk-1))];
-	  }
+    if(ORDER==3) {
+      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER;kk++) {
+            dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[1][jj]*coeff[4][kk]*src[SRCIND3(is-2+(ii-1),js-2+(jj-1),ks-1+(kk-1))];
+          }
     }
+    if(ORDER==4) {
+      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
+            dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[1][jj]*coeff[4][kk]*src[SRCIND3(is-2+(ii-1),js-2+(jj-1),ks-2+(kk-1))];
+          }
+    }
+
 
     i = i+1;
     id = id+1;
@@ -227,18 +217,22 @@ namespace CarpetLib {
     
     // kernel
   l8001:
-    // Staggered code, where source and destination are off by 1/4 of a gridpoint, in all directions.
-    // Interpolate to (is+1/4,js-1/4,ks-1/4), where is,js,ks is a point on the COARSE grid, since our points are all cell-centered
+    // Interpolate to (is+1/4,js-1/4,ks)
     dst[DSTIND3(id,jd,kd)] = typeprops<T>::fromreal (0);
     if(ORDER<=2) {
-      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[1][jj]*coeff[1][kk]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks-1+(kk-1))];
-	  }
+      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) {
+	  dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[1][jj]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks)];
+        }
     }
-    if(ORDER==3 || ORDER==4) {
+    if(ORDER==3) {
+      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER;kk++) {
+            dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[1][jj]*coeff[4][kk]*src[SRCIND3(is-2+(ii-1)+(4-ORDER),js-2+(jj-1),ks-1+(kk-1))];
+          }
+    }
+    if(ORDER==4) {
       for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[1][jj]*coeff[1][kk]*src[SRCIND3(is-2+(ii-1)+(4-ORDER),js-2+(jj-1),ks-2+(kk-1))];
-	  }
+            dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[1][jj]*coeff[4][kk]*src[SRCIND3(is-2+(ii-1)+(4-ORDER),js-2+(jj-1),ks-2+(kk-1))];
+          }
     }
 
     i = i+1;
@@ -264,19 +258,22 @@ namespace CarpetLib {
     
     // kernel
   l8010:
-    // Staggered code, where source and destination are off by 1/4 of a gridpoint, in all directions:
-    // WAS: Interpolate to (is,js+1/4,ks-1/4)
-    // Interpolate to (is-1/4,js+1/4,ks-1/4)
+    // Interpolate to (is-1/4,js+1/4,ks)
     dst[DSTIND3(id,jd,kd)] = typeprops<T>::fromreal (0);
     if(ORDER<=2) {
-      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[2][jj]*coeff[1][kk]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks-1+(kk-1))];
-	  }
+      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) {
+	  dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[2][jj]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks)];
+        }
     }
-    if(ORDER==3 || ORDER==4) {
+    if(ORDER==3) {
+      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER;kk++) {
+            dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[2][jj]*coeff[4][kk]*src[SRCIND3(is-2+(ii-1),js-2+(jj-1)+(4-ORDER),ks-1+(kk-1))];
+          }
+    }
+    if(ORDER==4) {
       for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[2][jj]*coeff[1][kk]*src[SRCIND3(is-2+(ii-1),js-2+(jj-1)+(4-ORDER),ks-2+(kk-1))];
-	  }
+            dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[2][jj]*coeff[4][kk]*src[SRCIND3(is-2+(ii-1),js-2+(jj-1)+(4-ORDER),ks-2+(kk-1))];
+          }
     }
 
     i = i+1;
@@ -286,19 +283,22 @@ namespace CarpetLib {
     
     // kernel
   l8011:
-    // Staggered code, where source and destination are off by 1/4 of a gridpoint, in all directions:
-    // WAS: Interpolate to (is+1/2,js+1/4,ks-1/4)
-    // Interpolate to (is+1/4,js+1/4,ks-1/4)
+    // Interpolate to (is+1/4,js+1/4,ks)
     dst[DSTIND3(id,jd,kd)] = typeprops<T>::fromreal (0);
     if(ORDER<=2) {
-      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[2][jj]*coeff[1][kk]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks-1+(kk-1))];
-	  }      
+      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) {
+	  dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[2][jj]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks)];
+        }
     }
-    if(ORDER==3 || ORDER==4) {
+    if(ORDER==3) {
+      for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER;kk++) {
+            dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[2][jj]*coeff[4][kk]*src[SRCIND3(is-2+(ii-1)+(4-ORDER),js-2+(jj-1)+(4-ORDER),ks-1+(kk-1))];
+          }
+    }
+    if(ORDER==4) {
       for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[2][jj]*coeff[1][kk]*src[SRCIND3(is-2+(ii-1)+(4-ORDER),js-2+(jj-1)+(4-ORDER),ks-2+(kk-1))];
-	  }
+            dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[2][jj]*coeff[4][kk]*src[SRCIND3(is-2+(ii-1)+(4-ORDER),js-2+(jj-1)+(4-ORDER),ks-2+(kk-1))];
+          }
     }
 
     i = i+1;
@@ -340,19 +340,17 @@ namespace CarpetLib {
     
     // kernel
   l8100:
-    // Staggered code, where source and destination are off by 1/4 of a gridpoint, in all directions:
-    // WAS: Interpolate to (is,js-1/4,ks+1/4)
-    // Interpolate to (is-1/4,js-1/4,ks+1/4)
+    // Interpolate to (is-1/4,js-1/4,ks+1/2)
     dst[DSTIND3(id,jd,kd)] = typeprops<T>::fromreal (0);
     if(ORDER<=2) {
       for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[1][jj]*coeff[2][kk]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks-1+(kk-1))];
-	  }
+	    dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[1][jj]*coeff[3][kk]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks-1+(kk-1))];
+          }
     }
     if(ORDER==3 || ORDER==4) {
       for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[1][jj]*coeff[2][kk]*src[SRCIND3(is-2+(ii-1),js-2+(jj-1),ks-2+(kk-1)+(4-ORDER))];
-	  }
+	    dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[1][jj]*coeff[3][kk]*src[SRCIND3(is-2+(ii-1),js-2+(jj-1),ks-2+(kk-1)+(4-ORDER))];
+          }
     }
 
     i = i+1;
@@ -362,19 +360,17 @@ namespace CarpetLib {
     
     // kernel
   l8101:
-    // Staggered code, where source and destination are off by 1/4 of a gridpoint, in all directions:
-    // WAS: Interpolate to (is+1/2,js-1/4,ks+1/4)
-    // Interpolate to (is+1/4,js-1/4,ks+1/4)
+    // Interpolate to (is+1/4,js-1/4,ks+1/2)
     dst[DSTIND3(id,jd,kd)] = typeprops<T>::fromreal (0);
     if(ORDER<=2) {
       for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[1][jj]*coeff[2][kk]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks-1+(kk-1))];
-	  }
+	    dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[1][jj]*coeff[3][kk]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks-1+(kk-1))];
+          }
     }
     if(ORDER==3 || ORDER==4) {
       for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[1][jj]*coeff[2][kk]*src[SRCIND3(is-2+(ii-1)+(4-ORDER),js-2+(jj-1),ks-2+(kk-1)+(4-ORDER))];
-	  }
+	    dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[1][jj]*coeff[3][kk]*src[SRCIND3(is-2+(ii-1)+(4-ORDER),js-2+(jj-1),ks-2+(kk-1)+(4-ORDER))];
+          }
     }
 
     i = i+1;
@@ -400,18 +396,16 @@ namespace CarpetLib {
     
     // kernel
   l8110:
-    // Staggered code, where source and destination are off by 1/4 of a gridpoint, in all directions:
-    // WAS: Interpolate to (is,js+1/4,ks+1/4)
-    // Interpolate to (is-1/4,js+1/4,ks+1/4)
+    // Interpolate to (is-1/4,js+1/4,ks+1/2)
     dst[DSTIND3(id,jd,kd)] = typeprops<T>::fromreal (0);
     if(ORDER<=2) {
       for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[2][jj]*coeff[2][kk]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks-1+(kk-1))];
-	}
+	    dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[2][jj]*coeff[3][kk]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks-1+(kk-1))];
+          }
     }
     if(ORDER==3 || ORDER==4) {
       for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[2][jj]*coeff[2][kk]*src[SRCIND3(is-2+(ii-1),js-2+(jj-1)+(4-ORDER),ks-2+(kk-1)+(4-ORDER))];
+	    dst[DSTIND3(id,jd,kd)] += coeff[1][ii]*coeff[2][jj]*coeff[3][kk]*src[SRCIND3(is-2+(ii-1),js-2+(jj-1)+(4-ORDER),ks-2+(kk-1)+(4-ORDER))];
 	  }
     }
 
@@ -422,18 +416,16 @@ namespace CarpetLib {
     
     // kernel
   l8111:
-    // Staggered code, where source and destination are off by 1/4 of a gridpoint, in all directions:
-    // WAS: Interpolate to (is+1/2,js+1/4,ks+1/4)
-    // Interpolate to (is+1/4,js+1/4,ks+1/4)
+    // Interpolate to (is+1/4,js+1/4,ks+1/2)
     dst[DSTIND3(id,jd,kd)] = typeprops<T>::fromreal (0);
     if(ORDER<=2) {
       for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[2][jj]*coeff[2][kk]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks-1+(kk-1))];
-	  }      
+	    dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[2][jj]*coeff[3][kk]*src[SRCIND3(is-1+(ii-1),js-1+(jj-1),ks-1+(kk-1))];
+          }
     }
     if(ORDER==3 || ORDER==4) {
       for(int ii=1;ii<=ORDER+1;ii++) for(int jj=1;jj<=ORDER+1;jj++) for(int kk=1;kk<=ORDER+1;kk++) {
-	    dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[2][jj]*coeff[2][kk]*src[SRCIND3(is-2+(ii-1)+(4-ORDER),js-2+(jj-1)+(4-ORDER),ks-2+(kk-1)+(4-ORDER))];
+	    dst[DSTIND3(id,jd,kd)] += coeff[2][ii]*coeff[2][jj]*coeff[3][kk]*src[SRCIND3(is-2+(ii-1)+(4-ORDER),js-2+(jj-1)+(4-ORDER),ks-2+(kk-1)+(4-ORDER))];
 	  }
     }
 
@@ -461,14 +453,14 @@ namespace CarpetLib {
     
     // end k loop
   l9:;
-
+    
   }
   
 #define TYPECASE(N,T)                                           \
                                                                 \
   template                                                      \
   void                                                          \
-  prolongate_3d_stagger111<T,2> (T const * restrict const src,         \
+  prolongate_3d_stagger110<T,2> (T const * restrict const src,  \
                           ivect3 const & restrict srcpadext,    \
                           ivect3 const & restrict srcext,       \
                           T * restrict const dst,               \
@@ -482,7 +474,7 @@ namespace CarpetLib {
                                                                 \
   template                                                      \
   void                                                          \
-  prolongate_3d_stagger111<T,3> (T const * restrict const src,         \
+  prolongate_3d_stagger110<T,3> (T const * restrict const src,  \
                           ivect3 const & restrict srcpadext,    \
                           ivect3 const & restrict srcext,       \
                           T * restrict const dst,               \
@@ -496,7 +488,7 @@ namespace CarpetLib {
                                                                 \
   template                                                      \
   void                                                          \
-  prolongate_3d_stagger111<T,4> (T const * restrict const src,         \
+  prolongate_3d_stagger110<T,4> (T const * restrict const src,  \
                           ivect3 const & restrict srcpadext,    \
                           ivect3 const & restrict srcext,       \
                           T * restrict const dst,               \
@@ -506,7 +498,7 @@ namespace CarpetLib {
                           ibbox3 const & restrict dstbbox,      \
                           ibbox3 const & restrict,              \
                           ibbox3 const & restrict regbbox,      \
-                          void * extraargs);                    \
+                          void * extraargs);                    
 
 #define CARPET_NO_INT
 #include "typecase.hh"

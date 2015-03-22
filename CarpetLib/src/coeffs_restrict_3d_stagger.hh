@@ -21,6 +21,8 @@
       double f2 = 9.0/16.0;  // 2*i   on fine grid
       double f3 = -1.0/16.0; // 2*i+1 on fine grid
 */
+
+#define ORDER_STAG 3
     
 double coeff[10];
 double coeff_i[10];
