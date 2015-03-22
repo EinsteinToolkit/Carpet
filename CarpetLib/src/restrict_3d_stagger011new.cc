@@ -74,8 +74,12 @@ namespace CarpetLib {
            << "regbbox: " << regbbox << endl;
       CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
     }
-    
-    
+
+    if (not support_staggered_operators) {
+      CCTK_ERROR ("When using staggered restriction and prolongation operators you need to set CarpetLib::support_staggered_operators");
+    }
+
+
     
     ivect3 const regext = regbbox.shape() / regbbox.stride();
     assert (all ((regbbox.lower() - srcbbox.lower()) % srcbbox.stride() == 0));

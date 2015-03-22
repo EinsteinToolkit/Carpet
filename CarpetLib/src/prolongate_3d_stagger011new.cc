@@ -49,6 +49,8 @@ namespace CarpetLib {
                      ibbox3 const & restrict regbbox,
                      void * extraargs)
   {
+    DECLARE_CCTK_PARAMETERS;
+
     assert (not extraargs);
     
 //    static_assert (ORDER>=0 and ORDER % 2 == 1,
@@ -80,6 +82,10 @@ namespace CarpetLib {
     // elsewhere
     if (regbbox.empty()) {
       CCTK_WARN (0, "Internal error: region extent is empty");
+    }
+
+    if (not support_staggered_operators) {
+      CCTK_ERROR ("When using staggered restriction and prolongation operators you need to set CarpetLib::support_staggered_operators");
     }
     
     
