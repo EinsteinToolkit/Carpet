@@ -354,7 +354,7 @@ namespace Carpet {
     assert (groups.size() > 0);
     
     // Create the transaction if necessary
-    shared_ptr<transaction_t> tp = nullptr;
+    shared_ptr<transaction_t> tp;
     if (phase == phase_begin) {
       // Enlarge the data structure if necessary
       if (transactions.size() < reflevels)
@@ -439,7 +439,7 @@ namespace Carpet {
     ++ti; assert(ti == timers.end());
 
     if (phase == phase_all)
-      tp = nullptr;
+      tp.reset();
     if (phase == phase_begin)
       assert(tp->state.thestate == state_do_some_work);
     
