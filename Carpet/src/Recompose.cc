@@ -871,7 +871,9 @@ namespace Carpet {
           rvect const rdelta = rvect (ext.stride()) / scale;
           
           rbbox const rb (rlower, rupper, rdelta);
-          file << m << " " << ml << " " << rl << " " << c << "   " << std::setprecision(19) << rb << eol;
+          const std::streamsize oldprecision = file.precision(19);
+          file << m << " " << ml << " " << rl << " " << c << "   " << rb << eol;
+          file.precision(oldprecision);
           ++c;
         }
       }
