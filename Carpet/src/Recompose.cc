@@ -604,7 +604,7 @@ namespace Carpet {
       const ios_base::fmtflags oldflags = cout.flags();
       cout.setf (ios::fixed);
       for (int ml=0; ml<hh.mglevels(); ++ml) {
-        CCTK_REAL coarsevolume = 0;
+        CCTK_REAL CCTK_ATTRIBUTE_UNUSED coarsevolume = 0;
         for (int rl=0; rl<hh.reflevels(); ++rl) {
           
           const CCTK_REAL basevolume = hh.baseextents.AT(0).AT(0).size();
