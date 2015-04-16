@@ -19,6 +19,10 @@ Carpet::max_refinement_levels = 3
 Carpet::use_buffer_zones = "yes"
 Carpet::num_integrator_substeps = 2
 
+Carpet::ghost_size = 3
+Carpet::prolongation_order_space = 5
+Carpet::prolongation_order_time = 2
+
 Carpet::domain_from_coordbase = "yes"
 CartGrid3D::type = "coordbase"
 CoordBase::xmin = -0.5
@@ -27,9 +31,9 @@ CoordBase::ymin = -0.5
 CoordBase::ymax = +0.5
 CoordBase::zmin = -0.5
 CoordBase::zmax = +0.5
-CoordBase::dx = 0.1
-CoordBase::dy = 0.1
-CoordBase::dz = 0.1
+CoordBase::dx = 1./16.
+CoordBase::dy = 1./16.
+CoordBase::dz = 1./16.
 
 
 CarpetRegrid2::num_centres = 1
