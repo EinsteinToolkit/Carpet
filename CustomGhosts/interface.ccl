@@ -1,0 +1,13 @@
+# Interface definition for thorn CustomGhosts
+implements: CustomGhosts
+
+CCTK_INT FUNCTION                         \
+    GetRefinementLevel                    \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION GetRefinementLevel
+
+CCTK_REAL regular TYPE=GF TIMELEVELS=3 tags="ProlongationOperator='ENO'" \
+"a grid function using the normal number of ghost zones"
+
+CCTK_REAL custom TYPE=GF TIMELEVELS=3 tags="ProlongationOperator='ENO2'" \
+"a grid function using the custom number of ghost zones"

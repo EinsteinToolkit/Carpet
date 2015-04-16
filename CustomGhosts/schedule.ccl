@@ -1,0 +1,16 @@
+# Schedule definitions for thorn CustomGhosts
+
+
+STORAGE: custom[3] regular[3]
+
+schedule CustomGhosts_Initialize IN CCTK_INITIAL
+{
+  LANG: C
+} "initialize custom grid function"
+
+schedule CustomGhosts_Sync IN CCTK_POSTINITIAL
+{
+  LANG: C
+  OPTIONS: level
+  SYNC: custom regular
+} "sync grid functions"

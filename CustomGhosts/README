@@ -1,0 +1,10 @@
+Cactus Code Thorn CustomGhosts
+Author(s)    : Roland Haas <rhaas@aei.mpg.de>
+Maintainer(s): Roland Haas <rhaas@aei.mpg.de>
+Licence      : public domain
+--------------------------------------------------------------------------
+
+1. Purpose
+
+A test thorn that only tests uses different numbers of ghost zones and buffer
+zones for different grid functions

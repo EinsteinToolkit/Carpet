@@ -1,0 +1,45 @@
+ActiveThorns = "
+  SymBase
+  InitBase
+  CoordBase
+  CarpetRegrid2
+  CarpetIOASCII
+  CartGrid3D
+  CoordBase
+  CustomGhosts
+"
+
+Cactus::terminate = "iteration"
+Cactus::cctk_itlast = 0
+
+InitBase::initial_data_setup_method = "init_single_level"
+Carpet::init_each_timelevel = "yes"
+
+Carpet::max_refinement_levels = 3
+Carpet::use_buffer_zones = "yes"
+Carpet::num_integrator_substeps = 2
+
+Carpet::domain_from_coordbase = "yes"
+CartGrid3D::type = "coordbase"
+CoordBase::xmin = -0.5
+CoordBase::xmax = +0.5
+CoordBase::ymin = -0.5
+CoordBase::ymax = +0.5
+CoordBase::zmin = -0.5
+CoordBase::zmax = +0.5
+CoordBase::dx = 0.1
+CoordBase::dy = 0.1
+CoordBase::dz = 0.1
+
+
+CarpetRegrid2::num_centres = 1
+CarpetRegrid2::num_levels_1 = 3
+CarpetRegrid2::radius_1[1] = 0.25
+CarpetRegrid2::radius_1[2] = 0.125
+
+IO::out_dir = "$parfile"
+IOASCII::out2d_every = 1
+IOASCII::out2d_xy = "yes"
+IOASCII::out2d_xz = "no"
+IOASCII::out2d_yz = "no"
+IOASCII::out2d_vars = "CustomGhosts::regular CustomGhosts::custom"
