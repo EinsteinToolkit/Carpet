@@ -72,6 +72,15 @@ namespace Carpet {
     return reflevels;
   }
 
+  // Get current local component
+  extern "C"
+  CCTK_INT Carpet_GetLocalComponent (CCTK_POINTER_TO_CONST const cctkGH)
+  {
+    assert (reflevel >= 0);
+    assert (map >= 0);
+    return local_component;
+  }
+
   // Get number of local components
   extern "C"
   CCTK_INT Carpet_GetLocalComponents (CCTK_POINTER_TO_CONST const cctkGH)
