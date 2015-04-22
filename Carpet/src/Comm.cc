@@ -146,10 +146,26 @@ namespace Carpet {
       // prolongate boundaries
       bool const local_do_prolongate = do_prolongate and not do_taper;
       if (local_do_prolongate) {
+        if (sync_barriers)
+        {
+          static Timers::Timer barrier_timer ("PreProlongateBarrier");
+          barrier_timer.start();
+          CCTK_Barrier(cctkGH);
+          barrier_timer.stop();
+        }
+
         static Timers::Timer timer ("Prolongate");
         timer.start();
         ProlongateGroupBoundaries (cctkGH, goodgroups);
         timer.stop();
+
+        if (sync_barriers)
+        {
+          static Timers::Timer barrier_timer ("PostProlongateBarrier");
+          barrier_timer.start();
+          CCTK_Barrier(cctkGH);
+          barrier_timer.stop();
+        }
       }
 
       // This was found to be necessary on Hopper, otherwise memory
@@ -164,22 +180,29 @@ namespace Carpet {
                            8472211063, "CARPET_MPI_BARRIER_PROLONGATE_SYNC");
 #endif
 
-      if (sync_barriers)
-      {
-        static Timers::Timer barrier_timer ("ProlongateSyncBarrier");
-        barrier_timer.start();
-        CCTK_Barrier(cctkGH);
-        barrier_timer.stop();
-      }
-
       // synchronise ghostzones
       if (sync_during_time_integration or local_do_prolongate) {
+        if (sync_barriers)
+        {
+          static Timers::Timer barrier_timer ("PreSyncBarrier");
+          barrier_timer.start();
+          CCTK_Barrier(cctkGH);
+          barrier_timer.stop();
+        }
+
         static Timers::Timer timer ("Sync");
         timer.start();
         SyncGroups (cctkGH, goodgroups);
         timer.stop();
+
+        if (sync_barriers)
+        {
+          static Timers::Timer barrier_timer ("PostSyncBarrier");
+          barrier_timer.start();
+          CCTK_Barrier(cctkGH);
+          barrier_timer.stop();
+        }
       }
-      
     }
     
     return retval;
