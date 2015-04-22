@@ -1053,8 +1053,6 @@ regrid (bool const do_init)
           // had run with a different number of ghost points
           needrecv &= allprolonged2;
           
-          i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
-          
           ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
                     "Refinement factors must be integer multiples of each other");
           i2vect const reffact =
@@ -1074,7 +1072,7 @@ regrid (bool const do_init)
             {
               ibbox const & recv = * ri;
               ibbox const send =
-                recv.expanded_for (obox.interior).expand (stencil_size);
+                recv.expanded_for (obox.interior).expand (special_stencil_size);
               ASSERT_c (send <= obox.exterior,
                         "Boundary prolongation: Send region must be contained in exterior");
               fast_level.fast_ref_bnd_prol2_sendrecv.push_back
