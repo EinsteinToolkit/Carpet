@@ -1021,9 +1021,12 @@ regrid (bool const do_init)
         if (rl > 0) {
           int const orl = rl - 1;
 
-          // HACK HACK Take this out of here
-          ibset allprolonged2 = allactive.expand (i2vect(2) * 2);
-          
+          // This should be consistent with sync2 above
+          i2vect const special_stencil_size = i2vect (2);
+          int const num_special_substeps = 2;
+          ibset const allprolonged2 =
+            allactive.expand (special_stencil_size * num_special_substeps);
+
 #if 0
           // Outer boundaries are not synchronised, since they cannot
           // be filled by boundary prolongation either, and therefore
@@ -1046,8 +1049,8 @@ regrid (bool const do_init)
           // also all buffer zones
           needrecv += box.buffers;
 
-          // points that need to be filled in via prolongation if we had run
-          // with a different number of ghost points
+          // Points that need to be filled in via prolongation if we
+          // had run with a different number of ghost points
           needrecv &= allprolonged2;
           
           i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
