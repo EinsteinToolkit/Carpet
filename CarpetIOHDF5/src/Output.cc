@@ -450,9 +450,9 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
             shape[group.dim-1-d]  = processor_component->padded_shape()[d];
             assert (all (processor_component->shape() ==
                          bbox.shape() / bbox.stride()));
-            num_elems *= shape[group.dim-1-d];
             hyperslab_start[group.dim-1-d] = 0;
             hyperslab_count[group.dim-1-d] = processor_component->shape()[d];
+            num_elems *= hyperslab_count[group.dim-1-d];
           }
 
           // Write the component as an individual dataset
@@ -647,9 +647,9 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
         shape[group.dim-1-d]  = processor_component->padded_shape()[d];
         assert (all (processor_component->shape() ==
                      bbox.shape() / bbox.stride()));
-        num_elems *= shape[group.dim-1-d];
         hyperslab_start[group.dim-1-d] = 0;
         hyperslab_count[group.dim-1-d] = processor_component->shape()[d];
+        num_elems *= hyperslab_count[group.dim-1-d];
       }
 
       // Write the component as an individual dataset
