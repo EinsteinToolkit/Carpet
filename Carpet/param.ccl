@@ -382,7 +382,7 @@ BOOLEAN schedule_barriers "Insert barriers between scheduled items, so that time
 {
 } "no"
 
-BOOLEAN sync_barriers "Insert barriers before syncs, so that the sync timer is more reliable" STEERABLE=always
+BOOLEAN sync_barriers "Insert barriers before and after syncs, so that the sync timer is more reliable (slows down execution)" STEERABLE=always
 {
 } "no"
 
