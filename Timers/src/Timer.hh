@@ -51,7 +51,7 @@ namespace Timers {
     
   public:
     
-    Timer(std::string name, int tree=0);
+    Timer(std::string name, int tree=0, bool trace=false);
     ~Timer();
 
     void instantiate();
@@ -67,6 +67,7 @@ namespace Timers {
     
     std::string d_name;
     TimerTree *d_tree;
+    int vt_state_handle;
   };
   
 } // namespace Timers
@@ -77,13 +78,13 @@ namespace Timers {
   
 #define TIMING_BEGIN(name)                      \
   do {                                          \
-    static Timers::timer(name);                 \
+    static Timers::Timer timer(name);           \
     timer.start();                              \
     {
 
 #define TIMING_END                              \
     }                                           \
     timer.stop();                               \
-  } while (0)
+  } while (0);
 
 #endif // TIMER_HH
