@@ -444,23 +444,24 @@ namespace Carpet {
     if (sync_barriers) {
       // Create an ID that is almost unique for this scheduled
       // function call
-      stringstream buf;
-      buf << cctkGH->cctk_iteration << "\n";
-      buf << attribute->meta
-          << attribute->meta_early
-          << attribute->meta_late
-          << attribute->global
-          << attribute->global_early
-          << attribute->global_late
-          << attribute->level
-          << attribute->singlemap
-          << attribute->local << "\n";
-      buf << attribute->where << "\n";
-      buf << attribute->thorn << "\n";
-      buf << attribute->routine << " sync\n";
-      string const str = buf.str();
-      int const id = adler32(str.c_str(), str.length());
-      static Timers::Timer barrier_timer  ("sync_barrier");
+      // stringstream buf;
+      // buf << cctkGH->cctk_iteration << "\n";
+      // buf << attribute->meta
+      //     << attribute->meta_early
+      //     << attribute->meta_late
+      //     << attribute->global
+      //     << attribute->global_early
+      //     << attribute->global_late
+      //     << attribute->level
+      //     << attribute->singlemap
+      //     << attribute->local << "\n";
+      // buf << attribute->where << "\n";
+      // buf << attribute->thorn << "\n";
+      // buf << attribute->routine << " sync\n";
+      // string const str = buf.str();
+      // int const id = adler32(str.c_str(), str.length());
+      int const id = 101;
+      static Timers::Timer barrier_timer  ("pre_sync_barrier");
       barrier_timer.start();
       Carpet::NamedBarrier (NULL, id, "Carpet::Sync");
       barrier_timer.stop();
