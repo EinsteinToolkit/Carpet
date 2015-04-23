@@ -149,20 +149,20 @@ namespace Carpet {
       if (local_do_prolongate) {
         if (sync_barriers)
         {
-          static Timers::Timer barrier_timer ("PreProlongateBarrier");
+          static Timers::Timer barrier_timer ("PreProlongateBarrier", 0, true);
           barrier_timer.start();
           CCTK_Barrier(cctkGH);
           barrier_timer.stop();
         }
 
-        static Timers::Timer timer ("Prolongate");
+        static Timers::Timer timer ("Prolongate", 0, true);
         timer.start();
         ProlongateGroupBoundaries (cctkGH, goodgroups);
         timer.stop();
 
         if (sync_barriers)
         {
-          static Timers::Timer barrier_timer ("PostProlongateBarrier");
+          static Timers::Timer barrier_timer ("PostProlongateBarrier", 0 , true);
           barrier_timer.start();
           CCTK_Barrier(cctkGH);
           barrier_timer.stop();
@@ -185,20 +185,20 @@ namespace Carpet {
       if (sync_during_time_integration or local_do_prolongate) {
         if (sync_barriers)
         {
-          static Timers::Timer barrier_timer ("PreSyncBarrier");
+          static Timers::Timer barrier_timer ("PreSyncBarrier", 0, true);
           barrier_timer.start();
           CCTK_Barrier(cctkGH);
           barrier_timer.stop();
         }
 
-        static Timers::Timer timer ("Sync");
+        static Timers::Timer timer ("Sync", 0, true);
         timer.start();
         SyncGroups (cctkGH, goodgroups);
         timer.stop();
 
         if (sync_barriers)
         {
-          static Timers::Timer barrier_timer ("PostSyncBarrier");
+          static Timers::Timer barrier_timer ("PostSyncBarrier", 0, true);
           barrier_timer.start();
           CCTK_Barrier(cctkGH);
           barrier_timer.stop();
@@ -252,7 +252,7 @@ namespace Carpet {
     // poison target region
 #ifdef CARPET_DEBUG
     {
-    Timers::Timer timer("PoisonProlongatedGroupBoundaries");
+    Timers::Timer timer("PoisonProlongatedGroupBoundaries", 0, true);
     timer.start();
     // TODO: handle case where no GF is present more effiiently
     int const carpetlib_poison_value = int(get_poison_value());
@@ -334,19 +334,19 @@ namespace Carpet {
 
     static vector<Timers::Timer*> timers;
     if (timers.empty()) {
-      timers.push_back(new Timers::Timer("comm_state[0].create"));
+      timers.push_back(new Timers::Timer("prol_comm_state[0].create", 0, true));
       for (astate state = static_cast<astate>(0);
            state != state_done;
            state = static_cast<astate>(static_cast<int>(state)+1))
       {
         ostringstream name1;
-        name1 << "comm_state[" << timers.size() << "]"
+        name1 << "prol_comm_state[" << timers.size() << "]"
               << "." << tostring(state) << ".user";
-        timers.push_back(new Timers::Timer(name1.str()));
+        timers.push_back(new Timers::Timer(name1.str(), 0, true));
         ostringstream name2;
-        name2 << "comm_state[" << timers.size() << "]"
+        name2 << "prol_comm_state[" << timers.size() << "]"
               << "." << tostring(state) << ".step";
-        timers.push_back(new Timers::Timer(name2.str()));
+        timers.push_back(new Timers::Timer(name2.str(), 0, true));
       }
     }
     
@@ -423,19 +423,19 @@ namespace Carpet {
 
     static vector<Timers::Timer*> timers;
     if (timers.empty()) {
-      timers.push_back(new Timers::Timer("comm_state[0].create"));
+      timers.push_back(new Timers::Timer("sync_comm_state[0].create", 0, true));
       for (astate state = static_cast<astate>(0);
            state != state_done;
            state = static_cast<astate>(static_cast<int>(state)+1))
       {
         ostringstream name1;
-        name1 << "comm_state[" << timers.size() << "]"
+        name1 << "sync_comm_state[" << timers.size() << "]"
               << "." << tostring(state) << ".user";
-        timers.push_back(new Timers::Timer(name1.str()));
+        timers.push_back(new Timers::Timer(name1.str(), 0, true));
         ostringstream name2;
-        name2 << "comm_state[" << timers.size() << "]"
+        name2 << "sync_comm_state[" << timers.size() << "]"
               << "." << tostring(state) << ".step";
-        timers.push_back(new Timers::Timer(name2.str()));
+        timers.push_back(new Timers::Timer(name2.str(), 0, true));
       }
     }
     
