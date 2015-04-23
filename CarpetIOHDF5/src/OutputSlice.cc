@@ -1363,9 +1363,7 @@ namespace CarpetIOHDF5 {
     // enable compression and checksums if requested
     hid_t plist;
     HDF5_ERROR(plist = H5Pcreate(H5P_DATASET_CREATE));
-    if (compression_level) {
-      HDF5_ERROR(H5Pset_deflate(plist, compression_level));
-    }
+    // enable checksums if requested
     if (use_checksums) {
       HDF5_ERROR(H5Pset_filter(plist, H5Z_FILTER_FLETCHER32, 0, 0, 0));
     }
@@ -1402,10 +1400,12 @@ namespace CarpetIOHDF5 {
       const int rank = outdim > 0 ? outdim : 1;
       vector<hsize_t> mem_shape(dim);
       vector<hsize_t> slice_shape(rank, 1);
+      hsize_t num_elems = 1;
       for (int d = 0; d < dim; d++) {
         mem_shape[dim-1-d] = data_ext.shape()[d] / data_ext.stride()[d];
         if (d < outdim) {
           slice_shape[outdim-1-d] = ext.shape()[d] / ext.stride()[d];
+          num_elems *= slice_shape[outdim-1-d];
         }
       }
 
@@ -1427,6 +1427,10 @@ namespace CarpetIOHDF5 {
       for (int d = 0; d < dim; d++) {
         slice_start[dim-1-d] = slice_lower[d];
         slice_count[dim-1-d] = slice_upper[d] - slice_lower[d] + 1;
+      }
+      const hsize_t size = num_elems*H5Tget_size(slice_type);
+      if (compression_level and size > hsize_t(minimum_size_for_compression)) {
+        HDF5_ERROR(H5Pset_deflate(plist, compression_level));
       }
       if (compression_level or use_checksums) {
         HDF5_ERROR(H5Pset_chunk(plist, slice_shape.size(), &slice_shape[0]));
@@ -1589,6 +1593,10 @@ namespace CarpetIOHDF5 {
       }
       assert(offset == npoints);
 
+      const hsize_t size = npoints*H5Tget_size(slice_type);
+      if (compression_level and size > hsize_t(minimum_size_for_compression)) {
+        HDF5_ERROR(H5Pset_deflate(plist, compression_level));
+      }
       if (compression_level or use_checksums) {
         HDF5_ERROR(H5Pset_chunk(plist, 1, &npoints));
       }
