@@ -699,7 +699,6 @@ transfer_time (vector <gdata const *> const & gsrcs,
     data const * const src = (data const *) gsrcs.AT(timelevel0);
     
     transfer_p_r (src, dstbox, srcbox, slabinfo, order_space);
-    
   } // if
 }
 
@@ -1126,7 +1125,146 @@ transfer_prolongate (data const * const src,
     timer.stop (0);
     break;
   }
-    
+  case op_STAGGER011: {
+      static
+        void (* the_operators[]) (T const * restrict const src,
+                                  ivect3 const & restrict srcpadext,
+                                  ivect3 const & restrict srcext,
+                                  T * restrict const dst,
+                                  ivect3 const & restrict dstpadext,
+                                  ivect3 const & restrict dstext,
+                                  ibbox3 const & restrict srcbbox,
+                                  ibbox3 const & restrict dstbbox,
+                                  ibbox3 const & restrict srcregbbox,
+                                  ibbox3 const & restrict dstregbbox,
+                                  void * const extraargs) =
+        {
+          & prolongate_3d_stagger011<T,2>,
+          & prolongate_3d_stagger011<T,3>,
+          & prolongate_3d_stagger011<T,3>,
+          & prolongate_3d_stagger011<T,3>
+        };
+
+    static Timer timer ("prolongate_STAGGER011");
+    timer.start ();
+         call_operator<T> (the_operators[order_space-2],
+                           static_cast <T const *> (src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast <T *> (this->storage()),
+                           this->padded_shape(), this->shape(),
+                           src->extent(),
+                           this->extent(),
+                           srcbox, dstbox, NULL);
+    timer.stop (0);
+  break;
+  } 
+
+  case op_STAGGER101: {
+      static
+        void (* the_operators[]) (T const * restrict const src,
+                                  ivect3 const & restrict srcpadext,
+                                  ivect3 const & restrict srcext,
+                                  T * restrict const dst,
+                                  ivect3 const & restrict dstpadext,
+                                  ivect3 const & restrict dstext,
+                                  ibbox3 const & restrict srcbbox,
+                                  ibbox3 const & restrict dstbbox,
+                                  ibbox3 const & restrict srcregbbox,
+                                  ibbox3 const & restrict dstregbbox,
+                                  void * const extraargs) =
+        {
+          & prolongate_3d_stagger101<T,2>,
+          & prolongate_3d_stagger101<T,3>,
+          & prolongate_3d_stagger101<T,3>,
+          & prolongate_3d_stagger101<T,3>
+        };
+
+    static Timer timer ("prolongate_STAGGER101");
+    timer.start ();
+         call_operator<T> (the_operators[order_space-2],
+                           static_cast <T const *> (src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast <T *> (this->storage()),
+                           this->padded_shape(), this->shape(),
+                           src->extent(),
+                           this->extent(),
+                           srcbox, dstbox, NULL);
+    timer.stop (0);
+  break;
+  } 
+
+
+
+  case op_STAGGER110: {
+      static
+        void (* the_operators[]) (T const * restrict const src,
+                                  ivect3 const & restrict srcpadext,
+                                  ivect3 const & restrict srcext,
+                                  T * restrict const dst,
+                                  ivect3 const & restrict dstpadext,
+                                  ivect3 const & restrict dstext,
+                                  ibbox3 const & restrict srcbbox,
+                                  ibbox3 const & restrict dstbbox,
+                                  ibbox3 const & restrict srcregbbox,
+                                  ibbox3 const & restrict dstregbbox,
+                                  void * const extraargs) =
+        {
+          & prolongate_3d_stagger110<T,2>,
+          & prolongate_3d_stagger110<T,3>,
+          & prolongate_3d_stagger110<T,3>,
+          & prolongate_3d_stagger110<T,3>
+        };
+
+    static Timer timer ("prolongate_STAGGER110");
+    timer.start ();
+         call_operator<T> (the_operators[order_space-2],
+                           static_cast <T const *> (src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast <T *> (this->storage()),
+                           this->padded_shape(), this->shape(),
+                           src->extent(),
+                           this->extent(),
+                           srcbox, dstbox, NULL);
+    timer.stop (0);
+  break;
+  } 
+
+
+
+  case op_STAGGER111: {
+      static
+        void (* the_operators[]) (T const * restrict const src,
+                                  ivect3 const & restrict srcpadext,
+                                  ivect3 const & restrict srcext,
+                                  T * restrict const dst,
+                                  ivect3 const & restrict dstpadext,
+                                  ivect3 const & restrict dstext,
+                                  ibbox3 const & restrict srcbbox,
+                                  ibbox3 const & restrict dstbbox,
+                                  ibbox3 const & restrict srcregbbox,
+                                  ibbox3 const & restrict dstregbbox,
+                                  void * const extraargs) =
+        {
+          & prolongate_3d_stagger111<T,2>,
+          & prolongate_3d_stagger111<T,3>,
+          & prolongate_3d_stagger111<T,3>,
+          & prolongate_3d_stagger111<T,3>
+        };
+
+    static Timer timer ("prolongate_STAGGER111");
+    timer.start ();
+         call_operator<T> (the_operators[order_space-2],
+                           static_cast <T const *> (src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast <T *> (this->storage()),
+                           this->padded_shape(), this->shape(),
+                           src->extent(),
+                           this->extent(),
+                           srcbox, dstbox, NULL);
+    timer.stop (0);
+  break;
+  } 
+
   default:
     assert(0);
   } // switch (transport_operator)
@@ -1206,6 +1344,54 @@ transfer_restrict (data const * const src,
   
   switch (transport_operator) {
     
+  case op_STAGGER011:
+      assert (not slabinfo);
+      call_operator<T> (& restrict_3d_stagger011,
+                        static_cast <T const *> (src->storage()),
+                        src->padded_shape(), src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->padded_shape(), this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        srcregbox, dstregbox, NULL);
+      break;
+
+  case op_STAGGER101:
+      assert (not slabinfo);
+      call_operator<T> (& restrict_3d_stagger101,
+                        static_cast <T const *> (src->storage()),
+                        src->padded_shape(), src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->padded_shape(), this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        srcregbox, dstregbox, NULL);
+      break;
+
+  case op_STAGGER110:
+      assert (not slabinfo);
+      call_operator<T> (& restrict_3d_stagger110,
+                        static_cast <T const *> (src->storage()),
+                        src->padded_shape(), src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->padded_shape(), this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        srcregbox, dstregbox, NULL);
+      break;
+
+  case op_STAGGER111:
+      assert (not slabinfo);
+      call_operator<T> (& restrict_3d_stagger111,
+                        static_cast <T const *> (src->storage()),
+                        src->padded_shape(), src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->padded_shape(), this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        srcregbox, dstregbox, NULL);
+      break;
+
   case op_copy:
   case op_Lagrange:
   case op_ENO:
@@ -1401,6 +1587,10 @@ time_interpolate (vector <data *> const & srcs,
   switch (transport_operator) {
     
   case op_copy:
+  case op_STAGGER011:
+  case op_STAGGER101:
+  case op_STAGGER110:    
+  case op_STAGGER111:    
   case op_Lagrange: {
     static Timer timer ("time_interpolate_Lagrange");
     timer.start ();
