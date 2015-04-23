@@ -131,6 +131,11 @@ public:
     ibset sync;                 // filled by synchronisation
     ibset bndref;               // filled by boundary prolongation
     
+    // for fixed 2 ghost zones
+    ibset buffers2;             // buffer zones
+    ibset sync2;                // filled by synchronisation
+    ibset bndref2;              // filled by boundary prolongation
+
     // For Cactus: (these are like boundary or owned, but include the
     // outer boundary)
     ibset ghosts;               // ghost zones, as seen from Cactus
@@ -157,6 +162,7 @@ public:
     srpvect fast_ref_rest_sendrecv;
     srpvect fast_sync_sendrecv;
     srpvect fast_ref_bnd_prol_sendrecv;
+    srpvect fast_sync2_sendrecv;
     srpvect fast_ref_bnd_prol2_sendrecv;
     
     // refluxing
