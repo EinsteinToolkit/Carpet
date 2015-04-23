@@ -131,15 +131,32 @@ public:
     ibset sync;                 // filled by synchronisation
     ibset bndref;               // filled by boundary prolongation
     
-    // for fixed 2 ghost zones
-    ibset buffers2;             // buffer zones
-    ibset sync2;                // filled by synchronisation
-    ibset bndref2;              // filled by boundary prolongation
-
     // For Cactus: (these are like boundary or owned, but include the
     // outer boundary)
     ibset ghosts;               // ghost zones, as seen from Cactus
     ibbox interior;             // interior (without ghost zones)
+    
+    // For fixed 2 ghost zones:
+    ibset exterior2;
+    
+    // is_outer_boundary2 = is_outer_boundary
+    ibset outer_boundaries2;
+    ibset communicated2;
+    
+    ibset boundaries2;
+    ibset owned2;
+    
+    ibset buffers2;
+    // overlaps2 = overlaps
+    // active2 = active
+    
+    ibset sync2;
+    ibset bndref2;
+    
+    ibset ghosts2;
+    ibset interior2;
+    
+    full_dboxes();
     
     bool operator== (full_dboxes const & b) const CCTK_MEMBER_ATTRIBUTE_PURE;
     bool operator!= (full_dboxes const & b) const

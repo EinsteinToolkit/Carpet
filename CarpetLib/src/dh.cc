@@ -27,6 +27,19 @@ set<dh*> dh::alldh;
 
 
 
+// Exchange lo and hi
+static b2vect exchange_lohi (const b2vect& x)
+{
+  return b2vect (x[1], x[0]);
+}
+
+static i2vect exchange_lohi (const i2vect& x)
+{
+  return i2vect (x[1], x[0]);
+}
+
+
+
 // Indexing over neighbours
 
 static int num_nbs ()
@@ -326,6 +339,7 @@ regrid (bool const do_init)
       i2vect const ghost_width2 = min (stencil_size2, ghost_width);
       i2vect const buffer_width2 =
         min ((num_substeps2 - 1) * ghost_width2, buffer_width);
+      int const prolongation_order_space2 = 3; // really ENO, of course
       
       
       
@@ -341,7 +355,7 @@ regrid (bool const do_init)
       
       i2vect const & boundary_width = h.boundary_width;
       ASSERT_rl (all (all (boundary_width >= 0)),
-                 "The gh boundary widths must not be negative");
+                 "The boundary widths must not be negative");
       
       ibbox const domain_active = domain_exterior.expand (- boundary_width);
       // Variables may have size zero
@@ -368,7 +382,6 @@ regrid (bool const do_init)
         // Interior:
         
         ibbox & intr = box.interior;
-        intr = ibbox::poison();
         
         // The interior of the grid has the extent as specified by the
         // regridding thorn
@@ -410,10 +423,9 @@ regrid (bool const do_init)
         // Exterior:
         
         ibbox & extr = box.exterior;
-        extr = ibbox::poison();
         
         ASSERT_c (all (all (ghost_width >= 0)),
-                  "The gh ghost widths must not be negative");
+                  "The ghost widths must not be negative");
         extr = intr.expand (i2vect (not is_outer_boundary) * ghost_width);
         
         // (The exterior must not be empty)
@@ -430,7 +442,6 @@ regrid (bool const do_init)
         // Cactus ghost zones (which include outer boundaries):
         
         ibset & ghosts = box.ghosts;
-        ghosts = ibset::poison();
         
         ghosts = extr - intr;
         
@@ -445,7 +456,6 @@ regrid (bool const do_init)
         // Communicated region:
         
         ibbox & comm = box.communicated;
-        comm = ibbox::poison();
         
         comm = extr.expand (i2vect (is_outer_boundary) * (- boundary_width));
         
@@ -464,7 +474,6 @@ regrid (bool const do_init)
         // Outer boundary:
         
         ibset & outer_boundaries = box.outer_boundaries;
-        outer_boundaries = ibset::poison();
         
         outer_boundaries = extr - comm;
         
@@ -478,7 +487,6 @@ regrid (bool const do_init)
         // Owned region:
         
         ibbox & owned = box.owned;
-        owned = ibbox::poison();
         
         owned = intr.expand (i2vect (is_outer_boundary) * (- boundary_width));
         
@@ -506,7 +514,6 @@ regrid (bool const do_init)
         // boundaries):
         
         ibset & boundaries = box.boundaries;
-        boundaries = ibset::poison();
         
         boundaries = comm - owned;
         
@@ -541,7 +548,8 @@ regrid (bool const do_init)
       ibset const notowned = domain_enlarged - allowned;
       
       // All not-active points
-      ibset const notactive = notowned.expand (buffer_width + overlap_width);
+      ibset const notactive =
+        notowned.expand (exchange_lohi (buffer_width + overlap_width));
       
       // All not-active points, in stages
       int const num_substeps =
@@ -570,11 +578,8 @@ regrid (bool const do_init)
 #endif
       
       // All buffer zones
-      //ibset const allbuffers = allowned & notowned.expand (buffer_width);
-      ibset& allbuffers = level_level.buffers;
+      ibset & allbuffers = level_level.buffers;
       allbuffers = allowned & notowned.expand (buffer_width);
-      ibset const allbuffers2 =
-        allbuffers - notowned.expand (buffer_width - buffer_width2);
       
       // All overlap zones
       ibset const alloverlaps = (allowned & notactive) - allbuffers;
@@ -582,7 +587,7 @@ regrid (bool const do_init)
       // All active points
       ibset& allactive = level_level.active;
       allactive = allowned - notactive;
-
+      
 #ifdef CARPET_DEBUG
       // All stepped buffer zones
       vector<ibset> allbuffers_stepped (num_substeps);
@@ -598,6 +603,18 @@ regrid (bool const do_init)
                    "The stepped buffer zones must be equal to the buffer zones");
       }
 #endif
+      
+      // For 2 ghosts: Reduce buffer size, then recalculate other
+      // quantities from this
+      ibset const notowned2 = notowned.expand (buffer_width - buffer_width2);
+      ibset const allbuffers2 = allbuffers - notowned2;
+      ASSERT_rl (allbuffers2 <= allbuffers, "Buffer zones must be consistent");
+      ibset const allowned2 = allactive + alloverlaps + allbuffers2;
+      ASSERT_rl (allowned2 <= allowned, "Owned regions must be consistent");
+      ASSERT_rl (allowned2 <= domain_active,
+                 "The owned regions must be contained in the active part of the domain");
+      
+      
       
       // Overlap zones and buffer zones must be in the active part of
       // the domain
@@ -616,6 +633,15 @@ regrid (bool const do_init)
       ASSERT_rl (allactive + alloverlaps + allbuffers == allowned,
                  "The active points, the overlap points, and buffer points together must be exactly the owned region");
       
+      ASSERT_rl (allbuffers2 <= domain_active,
+                 "The buffer zones must be in the active part of the domain");
+      ASSERT_rl ((allactive & allbuffers2).empty(), 
+                 "The active points and the buffer zones cannot overlap");
+      ASSERT_rl ((alloverlaps & allbuffers2).empty(), 
+                 "The overlap zones and the buffer zones cannot overlap");
+      ASSERT_rl (allactive + alloverlaps + allbuffers2 == allowned2,
+                 "The active points, the overlap points, and buffer points together must be exactly the owned region");
+      
       
       
       for (int c = 0; c < h.components(rl); ++ c) {
@@ -623,7 +649,6 @@ regrid (bool const do_init)
         
         // Buffer zones:
         box.buffers = box.owned & allbuffers;
-        box.buffers2 = box.owned & allbuffers2;
         
         // Overlap zones:
         box.overlaps = box.owned & alloverlaps;
@@ -632,6 +657,58 @@ regrid (bool const do_init)
         box.active = box.owned & allactive;
         ASSERT_c (box.active == box.owned - (box.buffers + box.overlaps),
                   "The active region must equal the owned region minus the (buffer zones plus overlap zones)");
+        
+        
+        
+        // Buffer zones:
+        box.buffers2 = box.buffers & allbuffers2;
+        
+        // Owned region:
+        box.owned2 = box.active + box.overlaps + box.buffers2;
+        ASSERT_c (box.owned2 <= box.owned,
+                  "The owned region must be consistent");
+        ASSERT_c (box.active == box.owned2 - (box.buffers2 + box.overlaps),
+                  "The active region must equal the owned region minus the (buffer zones plus overlap zones)");
+        
+        // Interior:
+        box.interior2 =
+          box.owned2.expand (i2vect (box.is_outer_boundary) * boundary_width);
+        ASSERT_c (box.interior2 <= box.interior,
+                  "The interior region must be consistent");
+        
+        // Exterior:
+        box.exterior2 =
+          box.interior2.expand (i2vect (not box.is_outer_boundary) *
+                                ghost_width2);
+        ASSERT_c (box.exterior2 <= box.exterior,
+                  "The exterior region must be consistent");
+        
+        // Cactus ghost zones (which include outer boundaries):
+        box.ghosts2 = box.exterior2 - box.interior2;
+        ASSERT_c (box.ghosts2 <= domain_exterior,
+                  "The ghost zones must be contained in the domain");
+        
+        // Communicated region:
+        {
+          ibset const not_exterior2 = domain_enlarged - box.exterior2;
+          ibset const not_communicated2 =
+            not_exterior2.
+            expand (i2vect (exchange_lohi (box.is_outer_boundary)) *
+                    boundary_width);
+          box.communicated2 = domain_enlarged - not_communicated2;
+        }
+        ASSERT_c (box.communicated2 <= domain_active,
+                  "The communicated region must be contained in the active part of the domain");
+        
+        // Outer boundary:
+        box.outer_boundaries2 = box.exterior2 - box.communicated2;
+        ASSERT_c (box.outer_boundaries2 <= domain_boundary,
+                  "The outer boundary must be contained in the outer boundary of the domain");
+        
+        // Boundaries:
+        box.boundaries2 = box.communicated2 - box.owned2;
+        ASSERT_c (box.boundaries2 <= domain_active,
+                  "The boundary must be contained in the active part of the domain");
       } // for c
       
       for (int lc = 0; lc < h.local_components(rl); ++ lc) {
@@ -700,6 +777,34 @@ regrid (bool const do_init)
         ASSERT_c ((box.interior | box.ghosts) == box.exterior,
                   "Consistency check");
         
+        ASSERT_c ((box.active & box.buffers2).empty(),
+                  "Consistency check");
+        ASSERT_c ((box.overlaps & box.buffers2).empty(),
+                  "Consistency check");
+        ASSERT_c ((box.active | box.overlaps | box.buffers2) == box.owned2,
+                  "Consistency check");
+        
+        ASSERT_c ((box.owned2 & box.boundaries2).empty(),
+                  "Consistency check");
+        ASSERT_c ((box.owned2 | box.boundaries2) == box.communicated2,
+                  "Consistency check");
+        
+        ASSERT_c ((box.communicated2 & box.outer_boundaries2).empty(),
+                  "Consistency check");
+        ASSERT_c ((box.communicated2 | box.outer_boundaries2) == box.exterior2,
+                  "Consistency check");
+        
+        if (! (box.boundaries2 <= box.ghosts2)) {
+          cout << "box=" << box << "\n";
+        }
+        ASSERT_c (box.boundaries2 <= box.ghosts2,
+                  "Consistency check");
+        
+        ASSERT_c ((box.interior2 & box.ghosts2).empty(),
+                  "Consistency check");
+        ASSERT_c ((box.interior2 | box.ghosts2) == box.exterior2,
+                  "Consistency check");
+        
       } // for c
       
       timer_test.stop();
@@ -722,6 +827,8 @@ regrid (bool const do_init)
       timer_comm_mgprol.instantiate ();
       timer_comm_refprol.instantiate ();
       timer_comm_sync.instantiate ();
+      timer_comm_sync2.instantiate ();
+      timer_comm_refbndprol.instantiate ();
       timer_comm_refbndprol2.instantiate ();
       
       for (int lc = 0; lc < h.local_components(rl); ++ lc) {
@@ -904,6 +1011,7 @@ regrid (bool const do_init)
 #endif
           
           ibset & sync = box.sync;
+          sync = ibset();
           
           for (int cc = 0; cc < h.components(rl); ++ cc) {
             full_dboxes const & obox = full_level.AT(cc);
@@ -958,22 +1066,23 @@ regrid (bool const do_init)
           // Outer boundaries are not synchronised, since they cannot
           // be filled by boundary prolongation either, and therefore
           // the user code must set them anyway.
-          ibset needrecv = box.boundaries;
+          ibset needrecv = box.boundaries2;
 #else
           // Outer boundaries are synchronised for backward
           // compatibility.
-          ibset needrecv = box.ghosts;
+          ibset needrecv = box.ghosts2;
 #endif
           
           ibset & sync2 = box.sync2;
+          sync2 = ibset();
           
           for (int cc = 0; cc < h.components(rl); ++ cc) {
             full_dboxes const & obox = full_level.AT(cc);
             
 #if 0
-            ibset const ovlp = needrecv & obox.owned;
+            ibset const ovlp = needrecv & obox.owned2;
 #else
-            ibset const ovlp = needrecv & obox.interior;
+            ibset const ovlp = needrecv & obox.interior2;
 #endif
             
             if (cc == c) {
@@ -986,12 +1095,12 @@ regrid (bool const do_init)
             {
               ibbox const & recv = * ri;
               ibbox const & send = recv;
-              fast_level.fast_sync_sendrecv.push_back
+              fast_level.fast_sync2_sendrecv.push_back
                 (sendrecv_pseudoregion_t (send, cc, recv, c));
               if (not on_this_proc (rl, cc)) {
                 fast_dboxes & fast_level_otherproc =
                   fast_level_otherprocs.AT(this_proc(rl, cc));
-                fast_level_otherproc.fast_sync_sendrecv.push_back
+                fast_level_otherproc.fast_sync2_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
               }
             }
@@ -1037,6 +1146,7 @@ regrid (bool const do_init)
           needrecv += box.buffers;
           
           ibset & bndref = box.bndref;
+          bndref = ibset();
           
           i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
           
@@ -1099,11 +1209,11 @@ regrid (bool const do_init)
           // Outer boundaries are not synchronised, since they cannot
           // be filled by boundary prolongation either, and therefore
           // the user code must set them anyway.
-          ibset needrecv = box.boundaries;
+          ibset needrecv = box.boundaries2;
 #else
           // Outer boundaries are synchronised for backward
           // compatibility.
-          ibset needrecv = box.ghosts;
+          ibset needrecv = box.ghosts2;
 #endif
           
           // Points which are synchronised need not be boundary
@@ -1111,14 +1221,17 @@ regrid (bool const do_init)
           needrecv -= box.sync2;
           
           // Outer boundary points cannot be boundary prolongated
-          needrecv &= box.communicated;
+          needrecv &= box.communicated2;
           
           // Prolongation must fill what cannot be synchronised, and
           // also all buffer zones
           needrecv += box.buffers2;
           
           ibset & bndref2 = box.bndref2;
+          bndref2 = ibset();
           
+          i2vect const stencil_size = i2vect (prolongation_order_space2 / 2);
+
           ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
                     "Refinement factors must be integer multiples of each other");
           i2vect const reffact =
@@ -1138,8 +1251,13 @@ regrid (bool const do_init)
             {
               ibbox const & recv = * ri;
               ibbox const send =
-                recv.expanded_for (obox.interior).expand (stencil_size2);
-              ASSERT_c (send <= obox.exterior,
+                recv.expanded_for (obox.interior).expand (stencil_size);
+              if (! (send <= obox.exterior2)) {
+                cout << "send=" << send << "\n"
+                     << "recv=" << recv << "\n"
+                     << "obox.exterior2=" << obox.exterior2 << "\n";
+              }
+              ASSERT_c (send <= obox.exterior2,
                         "Boundary prolongation: Send region must be contained in exterior");
               fast_level.fast_ref_bnd_prol2_sendrecv.push_back
                 (sendrecv_pseudoregion_t (send, cc, recv, c));
@@ -2440,6 +2558,36 @@ erase (ggf * const f)
 
 
 
+// Constructors
+
+dh::full_dboxes::full_dboxes ():
+  exterior (ibbox::poison()),
+  outer_boundaries (ibset::poison()),
+  communicated (ibbox::poison()),
+  boundaries (ibset::poison()),
+  owned (ibbox::poison()),
+  buffers (ibset::poison()),
+  overlaps (ibset::poison()),
+  active (ibset::poison()),
+  sync (ibset::poison()),
+  bndref (ibset::poison()),
+  ghosts (ibset::poison()),
+  interior (ibbox::poison()),
+  exterior2 (ibset::poison()),
+  outer_boundaries2 (ibset::poison()),
+  communicated2 (ibset::poison()),
+  boundaries2 (ibset::poison()),
+  owned2 (ibset::poison()),
+  buffers2 (ibset::poison()),
+  sync2 (ibset::poison()),
+  bndref2 (ibset::poison()),
+  ghosts2 (ibset::poison()),
+  interior2 (ibset::poison())
+{
+}
+
+
+
 // Equality
 
 bool
@@ -2458,11 +2606,19 @@ operator== (full_dboxes const & b) const
     active           == b.active           and
     sync             == b.sync             and
     bndref           == b.bndref           and
-    buffers2         == b.buffers2         and
-    sync2            == b.sync2            and
-    bndref2          == b.bndref2          and
     ghosts           == b.ghosts           and
-    interior         == b.interior;
+    interior         == b.interior         and
+    
+    exterior2         == b.exterior2         and
+    outer_boundaries2 == b.outer_boundaries2 and
+    communicated2     == b.communicated2     and
+    boundaries2       == b.boundaries2       and
+    owned2            == b.owned2            and
+    buffers2          == b.buffers2          and
+    sync2             == b.sync2             and
+    bndref2           == b.bndref2           and
+    ghosts2           == b.ghosts2           and
+    interior2         == b.interior2;
 }
 
 
@@ -2662,11 +2818,19 @@ memory ()
     memoryof (active) +
     memoryof (sync) +
     memoryof (bndref) +
+    memoryof (ghosts) +
+    memoryof (interior) +
+    
+    memoryof (exterior2) +
+    memoryof (outer_boundaries2) +
+    memoryof (communicated2) +
+    memoryof (boundaries2) +
+    memoryof (owned2) +
     memoryof (buffers2) +
     memoryof (sync2) +
     memoryof (bndref2) +
-    memoryof (ghosts) +
-    memoryof (interior);
+    memoryof (ghosts2) +
+    memoryof (interior2);
 }
 
 size_t
@@ -2852,6 +3016,27 @@ input (istream & is)
     consume (is, "bndref:");
     is >> bndref;
     skipws (is);
+    consume (is, "ghosts:");
+    is >> ghosts;
+    skipws (is);
+    consume (is, "interior:");
+    is >> interior;
+    skipws (is);
+    consume (is, "exterior2:");
+    is >> exterior2;
+    skipws (is);
+    consume (is, "outer_boundaries2:");
+    is >> outer_boundaries2;
+    skipws (is);
+    consume (is, "communicated2:");
+    is >> communicated2;
+    skipws (is);
+    consume (is, "boundaries2:");
+    is >> boundaries2;
+    skipws (is);
+    consume (is, "owned2:");
+    is >> owned2;
+    skipws (is);
     consume (is, "buffers2:");
     is >> buffers2;
     skipws (is);
@@ -2861,11 +3046,11 @@ input (istream & is)
     consume (is, "bndref2:");
     is >> bndref2;
     skipws (is);
-    consume (is, "ghosts:");
-    is >> ghosts;
+    consume (is, "ghosts2:");
+    is >> ghosts2;
     skipws (is);
-    consume (is, "interior:");
-    is >> interior;
+    consume (is, "interior2:");
+    is >> interior2;
     skipws (is);
     consume (is, "}");
   } catch (input_error & err) {
@@ -3031,11 +3216,18 @@ output (ostream & os)
      << "   active: " << active << eol
      << "   sync: " << sync << eol
      << "   bndref: " << bndref << eol
+     << "   ghosts: " << ghosts << eol
+     << "   interior: " << interior << eol
+     << "   exterior2: " << exterior2 << eol
+     << "   outer_boundaries2: " << outer_boundaries2 << eol
+     << "   communicated2: " << communicated2 << eol
+     << "   boundaries2: " << boundaries2 << eol
+     << "   owned2: " << owned2 << eol
      << "   buffers2: " << buffers2 << eol
      << "   sync2: " << sync2 << eol
      << "   bndref2: " << bndref2 << eol
-     << "   ghosts: " << ghosts << eol
-     << "   interior: " << interior << eol
+     << "   interior2: " << interior2 << eol
+     << "   ghosts2: " << ghosts2 << eol
      << "}" << eol;
   return os;
 }
