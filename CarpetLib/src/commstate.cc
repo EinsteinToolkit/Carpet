@@ -194,9 +194,11 @@ void comm_state::step ()
           // internal consistency checking
           if (poison_new_memory) {
             memset (&procbuf.sendbufbase.front(), poison_value,
-                    procbuf.sendbufsize * datatypesize * message_size_multiplier);
+                    procbuf.sendbufsize * datatypesize *
+                    message_size_multiplier);
             memset (&procbuf.recvbufbase.front(), poison_value,
-                    procbuf.recvbufsize * datatypesize * message_size_multiplier);
+                    procbuf.recvbufsize * datatypesize *
+                    message_size_multiplier);
           }
           procbuf.sendbuf = &procbuf.sendbufbase.front();
           procbuf.recvbuf = &procbuf.recvbufbase.front();
