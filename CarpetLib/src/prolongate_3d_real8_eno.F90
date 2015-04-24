@@ -36,6 +36,10 @@ function eno1d(q)
   parameter (half = one / two)
   CCTK_REAL8 :: diffleft, diffright
 
+  ! this is faster if a hardware blend instruction can be used
+#ifdef HAVE_BLEND
+  CCTK_REAL8 :: eno1dleft, eno1dright, eno1dcentral
+
 !!$  Directly find the second undivided differences
 !!$  We need to pick between discrete values at
 !!$  1 2 3 4 for the interpolation between 2 and 3.
@@ -43,19 +47,14 @@ function eno1d(q)
   diffleft  = q(1) + q(3) - two * q(2)
   diffright = q(2) + q(4) - two * q(3)
 
-  if ( abs(diffleft) .lt. abs(diffright) ) then
-
 !!$      Apply the left quadratic
-
-    eno1d = eighth * (-q(1) + six * q(2) + three * q(3))
-    
-  else
+  eno1dleft  = eighth * (-q(1) + six * q(2) + three * q(3))
 
 !!$      Apply the right quadratic
+  eno1dright = eighth * (three * q(2) + six * q(3) - q(4))
 
-    eno1d = eighth * (three * q(2) + six * q(3) - q(4))
-    
-  end if
+!!$      Not reasonable. Linear interpolation
+  eno1dcentral = half * (q(2) + q(3))
 
 !!$    Check that the quadratic is reasonable:
 !!$    Check 1: interpolated value between
@@ -66,14 +65,72 @@ function eno1d(q)
   if ( ((eno1d-q(2)) * (q(3)-eno1d) .lt. zero) &
        .or. &
        (diffleft*diffright .le. zero) ) then
-      
-!!$      Not reasonable. Linear interpolation
 
-    eno1d = half * (q(2) + q(3))
+    eno1d = eno1dcentral
+
+  else
+
+      if ( abs(diffleft) .lt. abs(diffright) ) then
+
+        eno1d = eno1dleft
+
+      else
+
+        eno1d = eno1dright
+
+      end if
 
   end if
+  !this will always work
+#else
+!!$  Directly find the second undivided differences
+!!$  We need to pick between discrete values at
+!!$  1 2 3 4 for the interpolation between 2 and 3.
+
+  diffleft  = q(1) + q(3) - two * q(2)
+  diffright = q(2) + q(4) - two * q(3)
+
+  eno1d = iflt(abs(diffleft) - abs(diffright), &
+ !!$      Apply the left quadratic
+               eighth * (-q(1) + six * q(2) + three * q(3)), &
+ !!$      Apply the right quadratic
+               eighth * (three * q(2) + six * q(3) - q(4)))
+
+
+!!$    Check that the quadratic is reasonable:
+!!$    Check 1: interpolated value between
+!!$             values at interpolation points
+!!$    Check 2: sign of the curvature of the interpolating
+!!$             polynomial does not change.
+
+  ! ( ((eno1d-q(2)) * (q(3)-eno1d) .lt. zero) &
+  !    .or. &
+  !   (diffleft*diffright .lt. zero) )
+
+  eno1d = iflt(MIN((eno1d-q(2)) * (q(3)-eno1d), diffleft*diffright), &
+  !!$      Not reasonable. Linear interpolation
+           half * (q(2) + q(3)), &
+  !!$ reasonable
+           eno1d)
+
+contains
+  function iflt(cond, ifpart, elsepart)
+    implicit none
+    CCTK_REAL8 :: iflt, ifpart, elsepart
+    CCTK_REAL8 :: cond
+    CCTK_REAL8 :: weight
+    CCTK_REAL8 :: one, half
+    parameter (one = 1)
+    parameter (half = one / 2)
+
+    weight = half-DSIGN(half, cond)
+
+    iflt = weight * ifpart + (one - weight) * elsepart
+  end function
+#endif
   
 end function eno1d
+
 
 subroutine prolongate_3d_real8_eno ( &
      src, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext, &
