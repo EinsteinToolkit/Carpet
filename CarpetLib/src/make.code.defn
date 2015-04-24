@@ -39,9 +39,17 @@ SRCS =	backtrace.cc				\
 	restrict_3d_cc_o3_rf2.cc		\
 	restrict_3d_cc_o5_rf2.cc		\
 	restrict_3d_rf2.cc			\
+	restrict_3d_stagger011.cc		\
+	restrict_3d_stagger101.cc		\
+	restrict_3d_stagger110.cc		\
+	restrict_3d_stagger111.cc		\
 	restrict_3d_vc_rf2.cc			\
 	restrict_3d_dgfe_rf2.cc			\
 	restrict_4d_rf2.cc			\
+	prolongate_3d_stagger011.cc		\
+	prolongate_3d_stagger101.cc		\
+	prolongate_3d_stagger110.cc		\
+	prolongate_3d_stagger111.cc		\
 	prolongate_3d_rf2.cc			\
 	prolongate_3d_cc_rf2.cc			\
 	prolongate_3d_cc_eno_rf2.cc		\

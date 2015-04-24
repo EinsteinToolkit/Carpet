@@ -2474,6 +2474,14 @@ namespace Carpet {
       return op_TVD;
     } else if (CCTK_Equals(prolong_string, "Lagrange_monotone")) {
       return op_Lagrange_monotone;
+    } else if (CCTK_Equals(prolong_string, "STAGGER011")) {
+      return op_STAGGER011;
+    } else if (CCTK_Equals(prolong_string, "STAGGER101")) {
+      return op_STAGGER101;
+    } else if (CCTK_Equals(prolong_string, "STAGGER110")) {
+      return op_STAGGER110;
+    } else if (CCTK_Equals(prolong_string, "STAGGER111")) {
+      return op_STAGGER111;
     } else {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VError (__LINE__, __FILE__, CCTK_THORNSTRING,

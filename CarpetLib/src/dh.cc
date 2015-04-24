@@ -1328,7 +1328,8 @@ regrid (bool const do_init)
           full_dboxes const& obox = full_olevel.AT(oc);
           
           ibset needrecv;
-          if (!use_higher_order_restriction) {
+          if (not use_higher_order_restriction and
+              not support_staggered_operators) {
             // Ghost zones: We can restrict into ghost zones if not
             // using higher order restriction, which is probably much
             // cheaper than performing a sync after restriction
@@ -1349,9 +1350,13 @@ regrid (bool const do_init)
             // If we make a mistake expanding the domain of dependence here, it
             // _should_ be caught be by the expand()ed is_contained_in(srcbbox)
             // test in the actual operator. 
-            int const shrink_by =
-              use_higher_order_restriction and h.refcent == cell_centered ?
-              restriction_order_space/2 : 0;
+            int shrink_by;
+            if (use_higher_order_restriction and h.refcent == cell_centered)
+              shrink_by = restriction_order_space/2;
+            else if (support_staggered_operators)
+              shrink_by = 2; // RH: not sure why 2 is required
+            else
+              shrink_by = 0;
             ibbox const contracted_exterior = 
               box.exterior.expand(ivect(-shrink_by)).contracted_for(odomext);
             ibset const ovlp = needrecv & contracted_exterior;

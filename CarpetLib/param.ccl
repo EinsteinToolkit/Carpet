@@ -58,6 +58,10 @@ INT restriction_order_space "Order of restriction operator to use with use_highe
   5 :: "fifth order accurate restriction for grid functions where prolongation is not (W)ENO"
 } 3
 
+BOOLEAN support_staggered_operators "Provide one extra ghost point during restriction for staggered operators - EXPERIMENTAL"
+{
+} "no"
+
 
 
 private:
