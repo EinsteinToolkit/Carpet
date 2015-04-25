@@ -90,43 +90,91 @@ function eno1d(q)
   diffleft  = q(1) + q(3) - two * q(2)
   diffright = q(2) + q(4) - two * q(3)
 
-  eno1d = iflt(abs(diffleft) - abs(diffright), &
- !!$      Apply the left quadratic
-               eighth * (-q(1) + six * q(2) + three * q(3)), &
- !!$      Apply the right quadratic
-               eighth * (three * q(2) + six * q(3) - q(4)))
-
-
 !!$    Check that the quadratic is reasonable:
 !!$    Check 1: interpolated value between
 !!$             values at interpolation points
 !!$    Check 2: sign of the curvature of the interpolating
 !!$             polynomial does not change.
 
-  ! ( ((eno1d-q(2)) * (q(3)-eno1d) .lt. zero) &
-  !    .or. &
-  !   (diffleft*diffright .lt. zero) )
+  ! The following is equivalent to:
+  !   if( abs(diffleft) .lt. abs(diffright) ) then
+  !!$      Apply the left quadratic
+  !   else
+  !!$      Apply the right quadratic
+  !   end if
 
-  eno1d = iflt(MIN((eno1d-q(2)) * (q(3)-eno1d), diffleft*diffright), &
-  !!$      Not reasonable. Linear interpolation
-           half * (q(2) + q(3)), &
-  !!$ reasonable
-           eno1d)
+  eno1d = ifthenelse(LT(abs(diffleft) - abs(diffright)), &
+ !!$      Apply the left quadratic
+            eighth * (-q(1) + six * q(2) + three * q(3)), &
+ !!$      Apply the right quadratic
+            eighth * (three * q(2) + six * q(3) - q(4)) &
+          )
 
+  ! The following is equivalent to:
+  ! if( ((eno1d-q(2)) * (q(3)-eno1d) .ge. zero) &
+  !    .and. &
+  !   (diffleft*diffright .gt. zero) ) then
+  !!$     Reasonable.
+  ! else
+  !!$     Not reasonable. Linear interpolation
+  ! end if
+  eno1d = ifthenelse(GE((eno1d-q(2)) * (q(3)-eno1d))*GT(diffleft*diffright), &
+  !!$     Reasonable.
+            eno1d, &
+  !!$     Not reasonable. Linear interpolation
+            half * (q(2) + q(3)) &
+          )
+                   
 contains
-  function iflt(cond, ifpart, elsepart)
+  function ifthenelse(weight, ifpart, elsepart)
     implicit none
-    CCTK_REAL8 :: iflt, ifpart, elsepart
-    CCTK_REAL8 :: cond
-    CCTK_REAL8 :: weight
-    CCTK_REAL8 :: one, half
+    CCTK_REAL8 :: ifthenelse, weight, ifpart, elsepart
+    CCTK_REAL8 :: one
     parameter (one = 1)
-    parameter (half = one / 2)
 
-    weight = half-DSIGN(half, cond)
-
-    iflt = weight * ifpart + (one - weight) * elsepart
+    ifthenelse = weight * ifpart + (one - weight) * elsepart
   end function
+  function LT(cond)
+    implicit none
+    CCTK_REAL8 :: LT, cond
+    CCTK_REAL8 :: one, half
+    parameter (one = 1, half = one / 2)
+
+    LT = half - DSIGN(half, cond)
+  end function
+  function LE(cond)
+    implicit none
+    CCTK_REAL8 :: LE, cond
+    CCTK_REAL8 :: one, half
+    parameter (one = 1, half = one / 2)
+
+    LE = half + DSIGN(half, -cond)
+  end function
+  function GT(cond)
+    implicit none
+    CCTK_REAL8 :: GT, cond
+    CCTK_REAL8 :: one, half
+    parameter (one = 1, half = one / 2)
+
+    GT = half - DSIGN(half, -cond)
+  end function
+  function GE(cond)
+    implicit none
+    CCTK_REAL8 :: GE, cond
+    CCTK_REAL8 :: one, half
+    parameter (one = 1, half = one / 2)
+
+    GE = half + DSIGN(half, cond)
+  end function
+  function NEGATE(weight)
+    implicit none
+    CCTK_REAL8 :: NEGATE, weight
+    CCTK_REAL8 :: one
+    parameter (one = 1)
+
+    NEGATE = one - weight
+  end function
+
 #endif
   
 end function eno1d
