@@ -187,6 +187,96 @@ subroutine prolongate_3d_real8_eno ( &
 
   implicit none
 
+  integer ORDER
+  parameter (ORDER = 2)
+
+  integer srcipadext, srcjpadext, srckpadext
+  integer srciext, srcjext, srckext
+  CCTK_REAL8 src(srcipadext,srcjpadext,srckpadext)
+  integer dstipadext, dstjpadext, dstkpadext
+  integer dstiext, dstjext, dstkext
+  CCTK_REAL8 dst(dstipadext,dstjpadext,dstkpadext)
+!!$     bbox(:,1) is lower boundary (inclusive)
+!!$     bbox(:,2) is upper boundary (inclusive)
+!!$     bbox(:,3) is stride
+  integer srcbbox(3,3), dstbbox(3,3), regbbox(3,3)
+  integer ghostedbbox(3,3)
+
+
+  CCTK_REAL8 enotmp1(dstipadext, srcjpadext, srckpadext)
+  integer enotmp1bbox(3,3)
+  integer enotmp1ipadext, enotmp1jpadext, enotmp1kpadext
+  integer enotmp1iext, enotmp1jext, enotmp1kext
+
+  CCTK_REAL8 enotmp2(dstipadext, dstjpadext+2*(ORDER/2+1), srckpadext)
+  integer enotmp2bbox(3,3)
+  integer enotmp2ipadext, enotmp2jpadext, enotmp2kpadext
+  integer enotmp2iext, enotmp2jext, enotmp2kext
+
+  integer d
+
+  ! reg extended to have sufficiently many ghosts for later interpolation
+  ! this assumes a refinement factor of 2
+  ghostedbbox = regbbox
+  do d = 1, 3
+    if (mod((regbbox(d,1) - srcbbox(d,1)), srcbbox(d,3)) .ne. 0) then
+      ghostedbbox(d,1) = regbbox(d,1) - (ORDER+1)*regbbox(d,3)
+    else
+      ghostedbbox(d,1) = regbbox(d,1) - ORDER*regbbox(d,3)
+    end if
+    if (mod((regbbox(d,2) - srcbbox(d,2)), srcbbox(d,3)) .ne. 0) then
+      ghostedbbox(d,2) = regbbox(d,2) + (ORDER+1)*regbbox(d,3)
+    else
+      ghostedbbox(d,2) = regbbox(d,2) + ORDER*regbbox(d,3)
+    end if
+  end do
+  ghostedbbox(:,3) = srcbbox(:,3)
+
+  ! first interpolate in x only
+  enotmp1bbox(1,:) = regbbox(1,:)
+  enotmp1bbox(2,:) = ghostedbbox(2,:)
+  enotmp1bbox(3,:) = ghostedbbox(3,:)
+  enotmp1ipadext = SIZE(enotmp1, 1)
+  enotmp1jpadext = SIZE(enotmp1, 2)
+  enotmp1kpadext = SIZE(enotmp1, 3)
+  enotmp1iext = (enotmp1bbox(1,2) - enotmp1bbox(1,1)) / enotmp1bbox(1,3) + 1
+  enotmp1jext = (enotmp1bbox(2,2) - enotmp1bbox(2,1)) / enotmp1bbox(2,3) + 1
+  enotmp1kext = (enotmp1bbox(3,2) - enotmp1bbox(3,1)) / enotmp1bbox(3,3) + 1
+  call prolongate_3d_real8_eno_int ( &
+     src, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext, &
+     enotmp1, enotmp1ipadext, enotmp1jpadext, enotmp1kpadext, enotmp1iext, enotmp1jext, enotmp1kext, &
+     srcbbox, enotmp1bbox, enotmp1bbox)
+
+  ! interpolate in y only
+  enotmp2bbox(1,:) = regbbox(1,:)
+  enotmp2bbox(2,:) = regbbox(2,:)
+  enotmp2bbox(3,:) = ghostedbbox(3,:)
+  enotmp2ipadext = SIZE(enotmp2, 1)
+  enotmp2jpadext = SIZE(enotmp2, 2)
+  enotmp2kpadext = SIZE(enotmp2, 3)
+  enotmp2iext = (enotmp2bbox(1,2) - enotmp2bbox(1,1)) / enotmp2bbox(1,3) + 1
+  enotmp2jext = (enotmp2bbox(2,2) - enotmp2bbox(2,1)) / enotmp2bbox(2,3) + 1
+  enotmp2kext = (enotmp2bbox(3,2) - enotmp2bbox(3,1)) / enotmp2bbox(3,3) + 1
+  call prolongate_3d_real8_eno_int ( &
+     enotmp1, enotmp1ipadext, enotmp1jpadext, enotmp1kpadext, enotmp1iext, enotmp1jext, enotmp1kext, &
+     enotmp2, enotmp2ipadext, enotmp2jpadext, enotmp2kpadext, enotmp2iext, enotmp2jext, enotmp2kext, &
+     enotmp1bbox, enotmp2bbox, enotmp2bbox)
+
+  ! interpolate in z and copy to target
+  call prolongate_3d_real8_eno_int ( &
+     enotmp2, enotmp2ipadext, enotmp2jpadext, enotmp2kpadext, enotmp2iext, enotmp2jext, enotmp2kext, &
+     dst, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext, &
+     enotmp2bbox, dstbbox, regbbox)
+
+end subroutine prolongate_3d_real8_eno
+
+subroutine prolongate_3d_real8_eno_int ( &
+     src, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext, &
+     dst, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext, &
+     srcbbox, dstbbox, regbbox)
+
+  implicit none
+
   CCTK_REAL8 one
   parameter (one = 1)
 
@@ -231,7 +321,7 @@ subroutine prolongate_3d_real8_eno ( &
          .or. regbbox(d,3).eq.0) then
       call CCTK_WARN (0, "Internal error: stride is zero")
     end if
-    if (srcbbox(d,3).le.regbbox(d,3) &
+    if (srcbbox(d,3).lt.regbbox(d,3) &
          .or. dstbbox(d,3).ne.regbbox(d,3)) then
       call CCTK_WARN (0, "Internal error: strides disagree")
     end if
@@ -250,18 +340,18 @@ subroutine prolongate_3d_real8_eno ( &
     regkext = (regbbox(d,2) - regbbox(d,1)) / regbbox(d,3) + 1
     dstkfac = srcbbox(d,3) / dstbbox(d,3)
     srckoff = (regbbox(d,1) - srcbbox(d,1)) / dstbbox(d,3)
-    offsetlo = regbbox(d,3)
+    offsetlo = 3*regbbox(d,3)
     if (mod(srckoff + 0, dstkfac).eq.0) then
       offsetlo = 0
-      if (regkext.gt.1) then
-        offsetlo = regbbox(d,3)
+      if (regkext.gt.1 .and. dstkfac .ne. 1) then
+        offsetlo = 2*regbbox(d,3)
       end if
     end if
-    offsethi = regbbox(d,3)
+    offsethi = 3*regbbox(d,3)
     if (mod(srckoff + regkext-1, dstkfac).eq.0) then
       offsethi = 0
-      if (regkext.gt.1) then
-        offsethi = regbbox(d,3)
+      if (regkext.gt.1 .and. dstkfac .ne. 1) then
+        offsethi = 2*regbbox(d,3)
       end if
     end if
     if (regbbox(d,1)-offsetlo.lt.srcbbox(d,1) &
@@ -332,56 +422,11 @@ subroutine prolongate_3d_real8_eno ( &
           dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
                eno1d(src(i0+1,j0:j0+3,k0+1))
 
-        case (11)
-!!$          Interpolate only in x and y
-
-          do jj = 0, 3
-            tmp2(jj) = eno1d(src(i0:i0+3,j0+jj,k0+1))
-          end do
-
-          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
-               eno1d(tmp2(0:3))
-
         case (100)
 !!$          Interpolate only in z
 
           dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
                eno1d(src(i0+1,j0+1,k0:k0+3))
-
-        case (101)
-!!$          Interpolate only in x and z
-
-          do kk = 0, 3
-            tmp2(kk) = eno1d(src(i0:i0+3,j0+1,k0+kk))
-          end do
-
-          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
-               eno1d(tmp2(0:3))
-
-        case (110)
-!!$          Interpolate only in y and z
-
-          do kk = 0, 3
-            tmp2(kk) = eno1d(src(i0+1,j0:j0+3,k0+kk))
-          end do
-
-          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
-               eno1d(tmp2(0:3))
-
-        case (111)
-!!$          Interpolate in all of x, y, and z
-
-          do jj = 0, 3
-            do kk = 0, 3
-              tmp1(jj,kk) = eno1d(src(i0:i0+3,j0+jj,k0+kk))
-            end do
-          end do
-          do ii = 0, 3
-            tmp2(ii) = eno1d(tmp1(0:3,ii))
-          end do
-          
-          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
-               eno1d(tmp2(0:3))
 
         case default
           call CCTK_ERROR("Internal error in ENO prolongation. Should only be used with refinement factor 2!")
@@ -391,4 +436,4 @@ subroutine prolongate_3d_real8_eno ( &
     end do
   end do
 
-end subroutine prolongate_3d_real8_eno
+end subroutine prolongate_3d_real8_eno_int
