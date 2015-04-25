@@ -242,7 +242,7 @@ subroutine prolongate_3d_real8_eno ( &
   enotmp1iext = (enotmp1bbox(1,2) - enotmp1bbox(1,1)) / enotmp1bbox(1,3) + 1
   enotmp1jext = (enotmp1bbox(2,2) - enotmp1bbox(2,1)) / enotmp1bbox(2,3) + 1
   enotmp1kext = (enotmp1bbox(3,2) - enotmp1bbox(3,1)) / enotmp1bbox(3,3) + 1
-  call prolongate_3d_real8_eno_int ( &
+  call prolongate_3d_real8_eno_int_I ( &
      src, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext, &
      enotmp1, enotmp1ipadext, enotmp1jpadext, enotmp1kpadext, enotmp1iext, enotmp1jext, enotmp1kext, &
      srcbbox, enotmp1bbox, enotmp1bbox)
@@ -257,20 +257,21 @@ subroutine prolongate_3d_real8_eno ( &
   enotmp2iext = (enotmp2bbox(1,2) - enotmp2bbox(1,1)) / enotmp2bbox(1,3) + 1
   enotmp2jext = (enotmp2bbox(2,2) - enotmp2bbox(2,1)) / enotmp2bbox(2,3) + 1
   enotmp2kext = (enotmp2bbox(3,2) - enotmp2bbox(3,1)) / enotmp2bbox(3,3) + 1
-  call prolongate_3d_real8_eno_int ( &
+  call prolongate_3d_real8_eno_int_J ( &
      enotmp1, enotmp1ipadext, enotmp1jpadext, enotmp1kpadext, enotmp1iext, enotmp1jext, enotmp1kext, &
      enotmp2, enotmp2ipadext, enotmp2jpadext, enotmp2kpadext, enotmp2iext, enotmp2jext, enotmp2kext, &
      enotmp1bbox, enotmp2bbox, enotmp2bbox)
 
   ! interpolate in z and copy to target
-  call prolongate_3d_real8_eno_int ( &
+  call prolongate_3d_real8_eno_int_K ( &
      enotmp2, enotmp2ipadext, enotmp2jpadext, enotmp2kpadext, enotmp2iext, enotmp2jext, enotmp2kext, &
      dst, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext, &
      enotmp2bbox, dstbbox, regbbox)
 
 end subroutine prolongate_3d_real8_eno
 
-subroutine prolongate_3d_real8_eno_int ( &
+! three copies of the same type of routine, interpolating in x, y, z respectively
+subroutine prolongate_3d_real8_eno_int_I ( &
      src, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext, &
      dst, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext, &
      srcbbox, dstbbox, regbbox)
@@ -302,12 +303,8 @@ subroutine prolongate_3d_real8_eno_int ( &
 
   integer i, j, k
   integer i0, j0, k0
-  integer fi, fj, fk
-  integer ii, jj, kk
+  integer fi
   integer d
-
-  CCTK_REAL8, dimension(0:3,0:3) :: tmp1
-  CCTK_REAL8, dimension(0:3) :: tmp2
 
   external eno1d
   CCTK_REAL8 eno1d
@@ -379,6 +376,10 @@ subroutine prolongate_3d_real8_eno_int ( &
   dstjfac = srcbbox(2,3) / dstbbox(2,3)
   dstkfac = srcbbox(3,3) / dstbbox(3,3)
 
+  if(dstifac .ne. 2 .or. dstjfac .ne. 1 .or. dstkfac .ne. 1) then
+    call CCTK_ERROR("Internal error: only refinement factor 2 is supported")
+  end if
+
   srcioff = (regbbox(1,1) - srcbbox(1,1)) / dstbbox(1,3)
   srcjoff = (regbbox(2,1) - srcbbox(2,1)) / dstbbox(2,3)
   srckoff = (regbbox(3,1) - srcbbox(3,1)) / dstbbox(3,3)
@@ -389,51 +390,321 @@ subroutine prolongate_3d_real8_eno_int ( &
 
 !!$     Loop over fine region
 
-  !$omp parallel do collapse(3) private(i,j,k, i0,fi,j0,fj,k0,fk, tmp1,tmp2, ii,jj,kk)
+  !$omp parallel do collapse(3) private(i,j,k, i0,fi,j0,k0)
   do k = 0, regkext-1
     do j = 0, regjext-1
       do i = 0, regiext-1
-         
-        i0 = (srcioff + i) / dstifac
-        fi = mod(srcioff + i, dstifac)
-        j0 = (srcjoff + j) / dstjfac
-        fj = mod(srcjoff + j, dstjfac)
-        k0 = (srckoff + k) / dstkfac
-        fk = mod(srckoff + k, dstkfac)
+
+        i0 = (srcioff + i) / 2 ! optimized to right shift
+        fi = mod(srcioff + i, 2)
+        j0 = (srcjoff + j)
+        k0 = (srckoff + k)
 
 !!$        Where is the fine grid point w.r.t the coarse grid?
-
-        select case (fi + 10*fj + 100*fk)
-        case (0)
+        if(fi .eq. 0) then
 !!$            On a coarse grid point exactly!
-
           dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
                src(i0+1,j0+1,k0+1)
-
-        case (1)
+        else
 !!$          Interpolate only in x
-
           dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
                eno1d(src(i0:i0+3,j0+1,k0+1))
-
-        case (10)
-!!$          Interpolate only in y
-
-          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
-               eno1d(src(i0+1,j0:j0+3,k0+1))
-
-        case (100)
-!!$          Interpolate only in z
-
-          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
-               eno1d(src(i0+1,j0+1,k0:k0+3))
-
-        case default
-          call CCTK_ERROR("Internal error in ENO prolongation. Should only be used with refinement factor 2!")
-        end select
+        end if
 
       end do
     end do
   end do
 
-end subroutine prolongate_3d_real8_eno_int
+end subroutine prolongate_3d_real8_eno_int_I
+
+subroutine prolongate_3d_real8_eno_int_J ( &
+     src, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext, &
+     dst, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext, &
+     srcbbox, dstbbox, regbbox)
+
+  implicit none
+
+  CCTK_REAL8 one
+  parameter (one = 1)
+
+  integer srcipadext, srcjpadext, srckpadext
+  integer srciext, srcjext, srckext
+  CCTK_REAL8 src(srcipadext,srcjpadext,srckpadext)
+  integer dstipadext, dstjpadext, dstkpadext
+  integer dstiext, dstjext, dstkext
+  CCTK_REAL8 dst(dstipadext,dstjpadext,dstkpadext)
+!!$     bbox(:,1) is lower boundary (inclusive)
+!!$     bbox(:,2) is upper boundary (inclusive)
+!!$     bbox(:,3) is stride
+  integer srcbbox(3,3), dstbbox(3,3), regbbox(3,3)
+
+  integer offsetlo, offsethi
+
+  integer regiext, regjext, regkext
+
+  integer dstifac, dstjfac, dstkfac
+
+  integer srcioff, srcjoff, srckoff
+  integer dstioff, dstjoff, dstkoff
+
+  integer i, j, k
+  integer i0, j0, k0
+  integer fj
+  integer d
+
+  external eno1d
+  CCTK_REAL8 eno1d
+
+  CCTK_REAL8 half, zero
+  parameter (half = 0.5)
+  parameter (zero = 0)
+
+  do d=1,3
+    if (srcbbox(d,3).eq.0 .or. dstbbox(d,3).eq.0 &
+         .or. regbbox(d,3).eq.0) then
+      call CCTK_WARN (0, "Internal error: stride is zero")
+    end if
+    if (srcbbox(d,3).lt.regbbox(d,3) &
+         .or. dstbbox(d,3).ne.regbbox(d,3)) then
+      call CCTK_WARN (0, "Internal error: strides disagree")
+    end if
+    if (mod(srcbbox(d,3), dstbbox(d,3)).ne.0) then
+      call CCTK_WARN (0, "Internal error: destination strides are not integer multiples of the source strides")
+    end if
+    if (mod(srcbbox(d,1), srcbbox(d,3)).ne.0 &
+         .or. mod(dstbbox(d,1), dstbbox(d,3)).ne.0 &
+         .or. mod(regbbox(d,1), regbbox(d,3)).ne.0) then
+      call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
+    end if
+    if (regbbox(d,1).gt.regbbox(d,2)) then
+!!$     This could be handled, but is likely to point to an error elsewhere
+      call CCTK_WARN (0, "Internal error: region extent is empty")
+    end if
+    regkext = (regbbox(d,2) - regbbox(d,1)) / regbbox(d,3) + 1
+    dstkfac = srcbbox(d,3) / dstbbox(d,3)
+    srckoff = (regbbox(d,1) - srcbbox(d,1)) / dstbbox(d,3)
+    offsetlo = 3*regbbox(d,3)
+    if (mod(srckoff + 0, dstkfac).eq.0) then
+      offsetlo = 0
+      if (regkext.gt.1 .and. dstkfac .ne. 1) then
+        offsetlo = 2*regbbox(d,3)
+      end if
+    end if
+    offsethi = 3*regbbox(d,3)
+    if (mod(srckoff + regkext-1, dstkfac).eq.0) then
+      offsethi = 0
+      if (regkext.gt.1 .and. dstkfac .ne. 1) then
+        offsethi = 2*regbbox(d,3)
+      end if
+    end if
+    if (regbbox(d,1)-offsetlo.lt.srcbbox(d,1) &
+         .or. regbbox(d,2)+offsethi.gt.srcbbox(d,2) &
+         .or. regbbox(d,1).lt.dstbbox(d,1) &
+         .or. regbbox(d,2).gt.dstbbox(d,2)) then
+      call CCTK_WARN (0, "Internal error: region extent is not contained in array extent")
+    end if
+  end do
+
+  if (srciext.ne.(srcbbox(1,2)-srcbbox(1,1))/srcbbox(1,3)+1 &
+       .or. srcjext.ne.(srcbbox(2,2)-srcbbox(2,1))/srcbbox(2,3)+1 &
+       .or. srckext.ne.(srcbbox(3,2)-srcbbox(3,1))/srcbbox(3,3)+1 &
+       .or. dstiext.ne.(dstbbox(1,2)-dstbbox(1,1))/dstbbox(1,3)+1 &
+       .or. dstjext.ne.(dstbbox(2,2)-dstbbox(2,1))/dstbbox(2,3)+1 &
+       .or. dstkext.ne.(dstbbox(3,2)-dstbbox(3,1))/dstbbox(3,3)+1) then
+    call CCTK_WARN (0, "Internal error: array sizes don't agree with bounding boxes")
+  end if
+
+  regiext = (regbbox(1,2) - regbbox(1,1)) / regbbox(1,3) + 1
+  regjext = (regbbox(2,2) - regbbox(2,1)) / regbbox(2,3) + 1
+  regkext = (regbbox(3,2) - regbbox(3,1)) / regbbox(3,3) + 1
+
+  dstifac = srcbbox(1,3) / dstbbox(1,3)
+  dstjfac = srcbbox(2,3) / dstbbox(2,3)
+  dstkfac = srcbbox(3,3) / dstbbox(3,3)
+
+  if(dstifac .ne. 1 .or. dstjfac .ne. 2 .or. dstkfac .ne. 1) then
+    call CCTK_ERROR("Internal error: only refinement factor 2 is supported")
+  end if
+
+  srcioff = (regbbox(1,1) - srcbbox(1,1)) / dstbbox(1,3)
+  srcjoff = (regbbox(2,1) - srcbbox(2,1)) / dstbbox(2,3)
+  srckoff = (regbbox(3,1) - srcbbox(3,1)) / dstbbox(3,3)
+
+  dstioff = (regbbox(1,1) - dstbbox(1,1)) / dstbbox(1,3)
+  dstjoff = (regbbox(2,1) - dstbbox(2,1)) / dstbbox(2,3)
+  dstkoff = (regbbox(3,1) - dstbbox(3,1)) / dstbbox(3,3)
+
+!!$     Loop over fine region
+
+  !$omp parallel do collapse(3) private(i,j,k, i0,j0,fj)
+  do k = 0, regkext-1
+    do j = 0, regjext-1
+      do i = 0, regiext-1
+
+        i0 = (srcioff + i)
+        j0 = (srcjoff + j) / 2
+        fj = mod(srcjoff + j, 2)
+        k0 = (srckoff + k)
+
+!!$        Where is the fine grid point w.r.t the coarse grid?
+        if(fj .eq. 0) then
+!!$            On a coarse grid point exactly!
+          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
+               src(i0+1,j0+1,k0+1)
+        else
+!!$          Interpolate only in y
+          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
+               eno1d(src(i0+1,j0:j0+3,k0+1))
+        end if
+
+      end do
+    end do
+  end do
+
+end subroutine prolongate_3d_real8_eno_int_J
+
+subroutine prolongate_3d_real8_eno_int_K ( &
+     src, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext, &
+     dst, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext, &
+     srcbbox, dstbbox, regbbox)
+
+  implicit none
+
+  CCTK_REAL8 one
+  parameter (one = 1)
+
+  integer srcipadext, srcjpadext, srckpadext
+  integer srciext, srcjext, srckext
+  CCTK_REAL8 src(srcipadext,srcjpadext,srckpadext)
+  integer dstipadext, dstjpadext, dstkpadext
+  integer dstiext, dstjext, dstkext
+  CCTK_REAL8 dst(dstipadext,dstjpadext,dstkpadext)
+!!$     bbox(:,1) is lower boundary (inclusive)
+!!$     bbox(:,2) is upper boundary (inclusive)
+!!$     bbox(:,3) is stride
+  integer srcbbox(3,3), dstbbox(3,3), regbbox(3,3)
+
+  integer offsetlo, offsethi
+
+  integer regiext, regjext, regkext
+
+  integer dstifac, dstjfac, dstkfac
+
+  integer srcioff, srcjoff, srckoff
+  integer dstioff, dstjoff, dstkoff
+
+  integer i, j, k
+  integer i0, j0, k0
+  integer fk
+  integer d
+
+  external eno1d
+  CCTK_REAL8 eno1d
+
+  CCTK_REAL8 half, zero
+  parameter (half = 0.5)
+  parameter (zero = 0)
+
+  do d=1,3
+    if (srcbbox(d,3).eq.0 .or. dstbbox(d,3).eq.0 &
+         .or. regbbox(d,3).eq.0) then
+      call CCTK_WARN (0, "Internal error: stride is zero")
+    end if
+    if (srcbbox(d,3).lt.regbbox(d,3) &
+         .or. dstbbox(d,3).ne.regbbox(d,3)) then
+      call CCTK_WARN (0, "Internal error: strides disagree")
+    end if
+    if (mod(srcbbox(d,3), dstbbox(d,3)).ne.0) then
+      call CCTK_WARN (0, "Internal error: destination strides are not integer multiples of the source strides")
+    end if
+    if (mod(srcbbox(d,1), srcbbox(d,3)).ne.0 &
+         .or. mod(dstbbox(d,1), dstbbox(d,3)).ne.0 &
+         .or. mod(regbbox(d,1), regbbox(d,3)).ne.0) then
+      call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
+    end if
+    if (regbbox(d,1).gt.regbbox(d,2)) then
+!!$     This could be handled, but is likely to point to an error elsewhere
+      call CCTK_WARN (0, "Internal error: region extent is empty")
+    end if
+    regkext = (regbbox(d,2) - regbbox(d,1)) / regbbox(d,3) + 1
+    dstkfac = srcbbox(d,3) / dstbbox(d,3)
+    srckoff = (regbbox(d,1) - srcbbox(d,1)) / dstbbox(d,3)
+    offsetlo = 3*regbbox(d,3)
+    if (mod(srckoff + 0, dstkfac).eq.0) then
+      offsetlo = 0
+      if (regkext.gt.1 .and. dstkfac .ne. 1) then
+        offsetlo = 2*regbbox(d,3)
+      end if
+    end if
+    offsethi = 3*regbbox(d,3)
+    if (mod(srckoff + regkext-1, dstkfac).eq.0) then
+      offsethi = 0
+      if (regkext.gt.1 .and. dstkfac .ne. 1) then
+        offsethi = 2*regbbox(d,3)
+      end if
+    end if
+    if (regbbox(d,1)-offsetlo.lt.srcbbox(d,1) &
+         .or. regbbox(d,2)+offsethi.gt.srcbbox(d,2) &
+         .or. regbbox(d,1).lt.dstbbox(d,1) &
+         .or. regbbox(d,2).gt.dstbbox(d,2)) then
+      call CCTK_WARN (0, "Internal error: region extent is not contained in array extent")
+    end if
+  end do
+
+  if (srciext.ne.(srcbbox(1,2)-srcbbox(1,1))/srcbbox(1,3)+1 &
+       .or. srcjext.ne.(srcbbox(2,2)-srcbbox(2,1))/srcbbox(2,3)+1 &
+       .or. srckext.ne.(srcbbox(3,2)-srcbbox(3,1))/srcbbox(3,3)+1 &
+       .or. dstiext.ne.(dstbbox(1,2)-dstbbox(1,1))/dstbbox(1,3)+1 &
+       .or. dstjext.ne.(dstbbox(2,2)-dstbbox(2,1))/dstbbox(2,3)+1 &
+       .or. dstkext.ne.(dstbbox(3,2)-dstbbox(3,1))/dstbbox(3,3)+1) then
+    call CCTK_WARN (0, "Internal error: array sizes don't agree with bounding boxes")
+  end if
+
+  regiext = (regbbox(1,2) - regbbox(1,1)) / regbbox(1,3) + 1
+  regjext = (regbbox(2,2) - regbbox(2,1)) / regbbox(2,3) + 1
+  regkext = (regbbox(3,2) - regbbox(3,1)) / regbbox(3,3) + 1
+
+  dstifac = srcbbox(1,3) / dstbbox(1,3)
+  dstjfac = srcbbox(2,3) / dstbbox(2,3)
+  dstkfac = srcbbox(3,3) / dstbbox(3,3)
+
+  if(dstifac .ne. 1 .or. dstjfac .ne. 1 .or. dstkfac .ne. 2) then
+    call CCTK_ERROR("Internal error: only refinement factor 2 is supported")
+  end if
+
+  srcioff = (regbbox(1,1) - srcbbox(1,1)) / dstbbox(1,3)
+  srcjoff = (regbbox(2,1) - srcbbox(2,1)) / dstbbox(2,3)
+  srckoff = (regbbox(3,1) - srcbbox(3,1)) / dstbbox(3,3)
+
+  dstioff = (regbbox(1,1) - dstbbox(1,1)) / dstbbox(1,3)
+  dstjoff = (regbbox(2,1) - dstbbox(2,1)) / dstbbox(2,3)
+  dstkoff = (regbbox(3,1) - dstbbox(3,1)) / dstbbox(3,3)
+
+!!$     Loop over fine region
+
+  !$omp parallel do collapse(3) private(i,j,k, i0,j0,k0,fk)
+  do k = 0, regkext-1
+    do j = 0, regjext-1
+      do i = 0, regiext-1
+
+        i0 = (srcioff + i)
+        j0 = (srcjoff + j)
+        k0 = (srckoff + k) / 2
+        fk = mod(srckoff + k, 2)
+
+!!$        Where is the fine grid point w.r.t the coarse grid?
+        if(fk .eq. 0) then
+!!$            On a coarse grid point exactly!
+          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
+               src(i0+1,j0+1,k0+1)
+        else
+!!$          Interpolate only in z
+          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
+               eno1d(src(i0+1,j0+1,k0:k0+3))
+        end if
+
+      end do
+    end do
+  end do
+
+end subroutine prolongate_3d_real8_eno_int_K
