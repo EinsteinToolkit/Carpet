@@ -6,7 +6,7 @@
 #include <Timer.hh>
 #include <TimerTree.hh>
 
-#ifdef HAVE_VT
+#ifdef HAVE_CAPABILITY_VT
 #include "VT.h"
 #endif
 
@@ -30,7 +30,7 @@ namespace Timers {
   Timer::Timer(string name_p, int tree, bool trace):
     d_name(name_p), d_tree(tree==0 ? &main_timer_tree : &mode_timer_tree)
   {
-    #ifdef HAVE_VT
+    #ifdef HAVE_CAPABILITY_VT
     if(trace)
       VT_funcdef(name().c_str(), VT_NOCLASS, &vt_state_handle);
     else
@@ -63,7 +63,7 @@ namespace Timers {
     TimerNode *current_timer = d_tree->current;
     assert(current_timer);
     current_timer->getChildTimer(name())->start();
-    #ifdef HAVE_VT
+    #ifdef HAVE_CAPABILITY_VT
     if (vt_state_handle != -1)
       VT_begin(vt_state_handle);
     #endif
@@ -79,7 +79,7 @@ namespace Timers {
                   "Trying to stop enclosing timer '%s' before enclosed timer '%s'",
                   name().c_str(), current_timer->getName().c_str());
     current_timer->stop();
-    #ifdef HAVE_VT
+    #ifdef HAVE_CAPABILITY_VT
     if (vt_state_handle != -1)
       VT_end(vt_state_handle);
     #endif
