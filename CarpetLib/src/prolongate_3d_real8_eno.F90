@@ -304,6 +304,7 @@ subroutine prolongate_3d_real8_eno_int ( &
   integer i0, j0, k0
   integer fi, fj, fk
   integer ii, jj, kk
+  integer refi, refj, refk
   integer d
 
   CCTK_REAL8, dimension(0:3,0:3) :: tmp1
@@ -360,6 +361,9 @@ subroutine prolongate_3d_real8_eno_int ( &
          .or. regbbox(d,2).gt.dstbbox(d,2)) then
       call CCTK_WARN (0, "Internal error: region extent is not contained in array extent")
     end if
+    if(dstkfac .ne. 2 .and. dstkfac .ne. 1) then
+      call CCTK_WARN (0, "Internal error: only refinement factor 2 is supported for ENO.")
+    endif
   end do
 
   if (srciext.ne.(srcbbox(1,2)-srcbbox(1,1))/srcbbox(1,3)+1 &
@@ -379,6 +383,10 @@ subroutine prolongate_3d_real8_eno_int ( &
   dstjfac = srcbbox(2,3) / dstbbox(2,3)
   dstkfac = srcbbox(3,3) / dstbbox(3,3)
 
+  if(dstifac .eq. 2) then ; refi = 1 ; else ; refi = 0 ; end if
+  if(dstjfac .eq. 2) then ; refj = 1 ; else ; refj = 0 ; end if
+  if(dstkfac .eq. 2) then ; refk = 1 ; else ; refk = 0 ; end if
+
   srcioff = (regbbox(1,1) - srcbbox(1,1)) / dstbbox(1,3)
   srcjoff = (regbbox(2,1) - srcbbox(2,1)) / dstbbox(2,3)
   srckoff = (regbbox(3,1) - srcbbox(3,1)) / dstbbox(3,3)
@@ -390,17 +398,16 @@ subroutine prolongate_3d_real8_eno_int ( &
 !!$     Loop over fine region
 
   !$omp parallel do collapse(3) private(i,j,k, i0,fi,j0,fj,k0,fk, tmp1,tmp2, ii,jj,kk)
+  k0 = srckoff / dstkfac
+  fk = mod(srckoff, dstkfac)
   do k = 0, regkext-1
+    j0 = srcjoff / dstjfac
+    fj = mod(srcjoff, dstjfac)
     do j = 0, regjext-1
+      i0 = srcioff / dstifac
+      fi = mod(srcioff, dstifac)
       do i = 0, regiext-1
          
-        i0 = (srcioff + i) / dstifac
-        fi = mod(srcioff + i, dstifac)
-        j0 = (srcjoff + j) / dstjfac
-        fj = mod(srcjoff + j, dstjfac)
-        k0 = (srckoff + k) / dstkfac
-        fk = mod(srckoff + k, dstkfac)
-
 !!$        Where is the fine grid point w.r.t the coarse grid?
 
         select case (fi + 10*fj + 100*fk)
@@ -427,13 +434,16 @@ subroutine prolongate_3d_real8_eno_int ( &
 
           dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
                eno1d(src(i0+1,j0+1,k0:k0+3))
-
-        case default
-          call CCTK_ERROR("Internal error in ENO prolongation. Should only be used with refinement factor 2!")
         end select
 
+        fi = refi - fi  ! alternate between exact and interpolation when refined
+        i0 = i0 + 1 - fi ! coarse grid steps with half the speed of fine one
       end do
+      fj = refj - fj
+      j0 = j0 + 1 - fj
     end do
+    fk = refk - fk
+    k0 = k0 + 1 - fk
   end do
 
 end subroutine prolongate_3d_real8_eno_int
