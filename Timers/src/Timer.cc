@@ -6,7 +6,9 @@
 #include <Timer.hh>
 #include <TimerTree.hh>
 
-
+#ifdef HAVE_CAPABILITY_VT
+#include "VT.h"
+#endif
 
 namespace Timers {
   
@@ -25,9 +27,15 @@ namespace Timers {
   
   /// Create a timer with a given name, but do not start it, and do
   /// not associate it with a point in the timer hierarchy.
-  Timer::Timer(string name_p, int tree):
+  Timer::Timer(string name_p, int tree, bool trace):
     d_name(name_p), d_tree(tree==0 ? &main_timer_tree : &mode_timer_tree)
   {
+    #ifdef HAVE_CAPABILITY_VT
+    if(trace)
+      VT_funcdef(name().c_str(), VT_NOCLASS, &vt_state_handle);
+    else
+      vt_state_handle = -1;
+    #endif
   }
   
   /// Destroy the timer
@@ -55,6 +63,10 @@ namespace Timers {
     TimerNode *current_timer = d_tree->current;
     assert(current_timer);
     current_timer->getChildTimer(name())->start();
+    #ifdef HAVE_CAPABILITY_VT
+    if (vt_state_handle != -1)
+      VT_begin(vt_state_handle);
+    #endif
   }
   
   /// Stop the timer - it must be the most recently started timer
@@ -67,6 +79,10 @@ namespace Timers {
                   "Trying to stop enclosing timer '%s' before enclosed timer '%s'",
                   name().c_str(), current_timer->getName().c_str());
     current_timer->stop();
+    #ifdef HAVE_CAPABILITY_VT
+    if (vt_state_handle != -1)
+      VT_end(vt_state_handle);
+    #endif
   }
   
   /// Return the name of the timer
