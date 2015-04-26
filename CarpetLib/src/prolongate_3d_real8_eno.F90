@@ -303,7 +303,6 @@ subroutine prolongate_3d_real8_eno_int_I ( &
 
   integer i, j, k
   integer i0, j0, k0
-  integer fi
   integer d
 
   external eno1d
@@ -388,32 +387,57 @@ subroutine prolongate_3d_real8_eno_int_I ( &
   dstjoff = (regbbox(2,1) - dstbbox(2,1)) / dstbbox(2,3)
   dstkoff = (regbbox(3,1) - dstbbox(3,1)) / dstbbox(3,3)
 
-!!$     Loop over fine region
+!!$     Loop over fine region, try to be kind to branch prediction
 
-  !$omp parallel do collapse(3) private(i,j,k, i0,fi,j0,k0)
-  do k = 0, regkext-1
-    do j = 0, regjext-1
-      do i = 0, regiext-1
+  if(mod(srcioff, 2) .eq. 0) then ! initially aligned
+    !$omp parallel do collapse(3) private(i,j,k, i0,j0,k0)
+    do k = 0, regkext-1
+      do j = 0, regjext-1
+        do i = 0, regiext-1, 2
 
-        i0 = (srcioff + i) / 2 ! optimized to right shift
-        fi = mod(srcioff + i, 2)
-        j0 = (srcjoff + j)
-        k0 = (srckoff + k)
+          i0 = (srcioff + i) / 2 ! optimized to right shift
+          j0 = (srcjoff + j)
+          k0 = (srckoff + k)
 
-!!$        Where is the fine grid point w.r.t the coarse grid?
-        if(fi .eq. 0) then
-!!$            On a coarse grid point exactly!
+  !!$            On a coarse grid point exactly!
           dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
                src(i0+1,j0+1,k0+1)
-        else
-!!$          Interpolate only in x
-          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
+          if (i .ge. regiext-1) then ! skip last point if total is odd
+            cycle
+          end if
+  !!$          Interpolate only in x
+          dst (dstioff+i+2, dstjoff+j+1, dstkoff+k+1) = &
                eno1d(src(i0:i0+3,j0+1,k0+1))
-        end if
 
+        end do
       end do
     end do
-  end do
+  else ! initially needs interpolation
+    !$omp parallel do collapse(3) private(i,j,k, i0,j0,k0)
+    do k = 0, regkext-1
+      do j = 0, regjext-1
+        do i = 0, regiext-1, 2
+
+          i0 = (srcioff + i) / 2 ! optimized to right shift
+          j0 = (srcjoff + j)
+          k0 = (srckoff + k)
+
+  !!$          Interpolate only in x
+          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
+               eno1d(src(i0:i0+3,j0+1,k0+1))
+          if (i .ge. regiext-1) then ! skip last point if total is odd
+            cycle
+          end if
+  !!$            On a coarse grid point exactly!
+  !!$ since srcoff / 2 was odd and i increases by 2 each iteration
+  !!$ (scroff + i + 1) is even and we need to increase i0
+          dst (dstioff+i+2, dstjoff+j+1, dstkoff+k+1) = &
+               src(i0+2,j0+1,k0+1)
+
+        end do
+      end do
+    end do
+  end if
 
 end subroutine prolongate_3d_real8_eno_int_I
 
