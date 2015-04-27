@@ -560,26 +560,40 @@ subroutine prolongate_3d_real8_eno_int_J ( &
 
 !!$     Loop over fine region
 
-  !$omp parallel do collapse(3) private(i,j,k, i0,j0,fj)
+!!$        Where is the fine grid point w.r.t the coarse grid?
+  fj = mod(srcjoff, 2)
+
+!!$            On a coarse grid point exactly!
+  !$omp parallel do collapse(2) private(i,j,k, i0,j0)
   do k = 0, regkext-1
-    do j = 0, regjext-1
+    do j = fj, regjext-1,2
+      !$omp simd
       do i = 0, regiext-1
 
         i0 = (srcioff + i)
         j0 = (srcjoff + j) / 2
-        fj = mod(srcjoff + j, 2)
         k0 = (srckoff + k)
 
-!!$        Where is the fine grid point w.r.t the coarse grid?
-        if(fj .eq. 0) then
-!!$            On a coarse grid point exactly!
-          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
-               src(i0+1,j0+1,k0+1)
-        else
+        dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
+             src(i0+1,j0+1,k0+1)
+
+      end do
+    end do
+  end do
+
 !!$          Interpolate only in y
-          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
-               eno1d(src(i0+1,j0:j0+3,k0+1))
-        end if
+  !$omp parallel do collapse(2) private(i,j,k, i0,j0)
+  do k = 0, regkext-1
+    do j = 1-fj, regjext-1,2
+      !$omp simd
+      do i = 0, regiext-1
+
+        i0 = (srcioff + i)
+        j0 = (srcjoff + j) / 2
+        k0 = (srckoff + k)
+
+        dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
+             eno1d(src(i0+1,j0:j0+3,k0+1))
 
       end do
     end do
@@ -706,26 +720,40 @@ subroutine prolongate_3d_real8_eno_int_K ( &
 
 !!$     Loop over fine region
 
-  !$omp parallel do collapse(3) private(i,j,k, i0,j0,k0,fk)
-  do k = 0, regkext-1
+!!$        Where is the fine grid point w.r.t the coarse grid?
+  fk = mod(srckoff, 2)
+
+!!$            On a coarse grid point exactly!
+  !$omp parallel do collapse(2) private(i,j,k, i0,j0,k0)
+  do k = fk, regkext-1,2
     do j = 0, regjext-1
+      !$omp simd
       do i = 0, regiext-1
 
         i0 = (srcioff + i)
         j0 = (srcjoff + j)
         k0 = (srckoff + k) / 2
-        fk = mod(srckoff + k, 2)
 
-!!$        Where is the fine grid point w.r.t the coarse grid?
-        if(fk .eq. 0) then
-!!$            On a coarse grid point exactly!
-          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
-               src(i0+1,j0+1,k0+1)
-        else
+        dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
+             src(i0+1,j0+1,k0+1)
+
+      end do
+    end do
+  end do
+
 !!$          Interpolate only in z
-          dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
-               eno1d(src(i0+1,j0+1,k0:k0+3))
-        end if
+  !$omp parallel do collapse(2) private(i,j,k, i0,j0,k0)
+  do k = 1-fk, regkext-1,2
+    do j = 0, regjext-1
+      !$omp simd
+      do i = 0, regiext-1
+
+        i0 = (srcioff + i)
+        j0 = (srcjoff + j)
+        k0 = (srckoff + k) / 2
+
+        dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = &
+             eno1d(src(i0+1,j0+1,k0:k0+3))
 
       end do
     end do
