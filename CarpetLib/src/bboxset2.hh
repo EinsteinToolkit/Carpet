@@ -420,7 +420,8 @@ public:
   T chi_size() const;
   
   /** Number of elements */
-  T size() const;
+  typedef typename bbox::size_type size_type;
+  size_type size() const;
   
   /** Container (min and max) */
   bbox container() const;
@@ -1101,17 +1102,17 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   
   /** Number of elements */
   template<typename T, int D>
-  T bboxset<T,D>::size() const
+  typename bboxset<T,D>::size_type bboxset<T,D>::size() const
   {
     assert(not is_poison());
-    T total_size = 0;           // accumulated total number of points
+    size_type total_size = 0;   // accumulated total number of points
     T old_pos = numeric_limits<T>::min(); // location of last subset
-    T old_subset_size = 0;      // number of points in the last subset
+    size_t old_subset_size = 0; // number of points in the last subset
 #ifndef CARPET_AVOID_LAMBDA
     traverse_subsets
       ([&](const T& pos, const bboxset1& subset)
        {
-         const T subset_size = subset.size();
+         const size_type subset_size = subset.size();
          total_size += (pos - old_pos) * old_subset_size;
          old_pos = pos;
          old_subset_size = subset_size;
@@ -1121,7 +1122,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
       (const T& pos(_1);
        const bboxset1& subset(_2);
        {
-         const T subset_size = subset.size();
+         const size_type subset_size = subset.size();
          total_size += (pos - old_pos) * old_subset_size;
          old_pos = pos;
          old_subset_size = subset_size;
