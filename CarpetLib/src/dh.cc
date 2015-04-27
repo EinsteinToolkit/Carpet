@@ -1230,7 +1230,9 @@ regrid (bool const do_init)
           
           ibset & bndref2 = box.bndref2;
           
-          i2vect const stencil_size = i2vect (prolongation_order_space2 / 2);
+          i2vect const stencil_size =
+            min (i2vect (prolongation_order_space2 / 2),
+                 i2vect (prolongation_stencil_size(rl)));
 
           ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
                     "Refinement factors must be integer multiples of each other");
