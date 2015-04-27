@@ -93,7 +93,7 @@ periodic_carpet(cGH const *restrict const cctkGH,
                  int const size,
                  CCTK_INT const *restrict const stencil,
                  CCTK_INT const do_periodic[3],
-                 int const *restrict const vars,
+                 CCTK_INT const *restrict const vars,
                  int const nvars)
 {
   DECLARE_CCTK_PARAMETERS;
@@ -394,7 +394,7 @@ BndPeriodicCarpetVI(CCTK_POINTER_TO_CONST const cctkGH_,
                      CCTK_INT const vi)
 {
   cGH const *restrict const cctkGH = static_cast<cGH const*>(cctkGH_);
-  int const vi1 = vi;
+  CCTK_INT const vi1 = vi;
   periodic_carpet(cctkGH, size, stencil, do_periodic, &vi1, 1);
   return 0;
 }
@@ -406,7 +406,7 @@ BndPeriodicCarpetVN(CCTK_POINTER_TO_CONST const cctkGH_,
                      CCTK_INT const do_periodic[3],
                      char const *restrict const vn)
 {
-  int const vi = CCTK_VarIndex(vn);
+  CCTK_INT const vi = CCTK_VarIndex(vn);
   assert(vi>=0 and vi<CCTK_NumVars());
   BndPeriodicCarpetVI(cctkGH_, size, stencil, do_periodic, vi);
   return 0;
@@ -421,7 +421,7 @@ BndPeriodicCarpetGI(CCTK_POINTER_TO_CONST const cctkGH_,
 {
   cGH const *restrict const cctkGH = static_cast<cGH const*>(cctkGH_);
   int const nvars = CCTK_NumVarsInGroupI(gi);
-  vector<int> vis(nvars);
+  vector<CCTK_INT> vis(nvars);
   int const v0 = CCTK_FirstVarIndexI(gi);
   for (int vi=0; vi<nvars; ++vi) vis.at(vi) = v0+vi;
   periodic_carpet(cctkGH, size, stencil, do_periodic, &vis.front(), nvars);
@@ -496,10 +496,10 @@ PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS)
   assert(nvars>=0);
   if (nvars==0) return;
   
-  vector<int> indices(nvars);
-  vector<int> faces(nvars);
-  vector<int> widths(nvars);
-  vector<int> tables(nvars);
+  vector<CCTK_INT> indices(nvars);
+  vector<CCTK_INT> faces(nvars);
+  vector<CCTK_INT> widths(nvars);
+  vector<CCTK_INT> tables(nvars);
   int const iret = Boundary_SelectedGVs
     (cctkGH, nvars,
      &indices.front(), &faces.front(), &widths.front(), &tables.front(), 0);
