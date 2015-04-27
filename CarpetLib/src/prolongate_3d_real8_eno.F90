@@ -389,7 +389,6 @@ subroutine prolongate_3d_real8_eno_int ( &
 
 !!$     Loop over fine region
 
-  !$omp parallel do collapse(3) private(i,j,k, i0,fi,j0,fj,k0,fk, tmp1,tmp2, ii,jj,kk)
   do k = 0, regkext-1
     do j = 0, regjext-1
       do i = 0, regiext-1
