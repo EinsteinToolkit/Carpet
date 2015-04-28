@@ -203,17 +203,20 @@ subroutine prolongate_3d_real8_eno ( &
   integer ghostedbbox(3,3)
 
 
-  CCTK_REAL8 enotmp1(dstipadext, srcjpadext, srckpadext)
+  CCTK_REAL8, allocatable :: enotmp1(:,:,:)
   integer enotmp1bbox(3,3)
   integer enotmp1ipadext, enotmp1jpadext, enotmp1kpadext
   integer enotmp1iext, enotmp1jext, enotmp1kext
 
-  CCTK_REAL8 enotmp2(dstipadext, dstjpadext+2*(ORDER/2+1), srckpadext)
+  CCTK_REAL8, allocatable :: enotmp2(:,:,:)
   integer enotmp2bbox(3,3)
   integer enotmp2ipadext, enotmp2jpadext, enotmp2kpadext
   integer enotmp2iext, enotmp2jext, enotmp2kext
 
   integer d
+
+  allocate (enotmp1(dstipadext, srcjpadext, srckpadext))
+  allocate (enotmp2(dstipadext, dstjpadext, srckpadext))
 
   ! reg extended to have sufficiently many ghosts for later interpolation
   ! this assumes a refinement factor of 2
@@ -390,7 +393,6 @@ subroutine prolongate_3d_real8_eno_int_I ( &
 !!$     Loop over fine region, try to be kind to branch prediction
 
   if(mod(srcioff, 2) .eq. 0) then ! initially aligned
-    !$omp parallel do collapse(3) private(i,j,k, i0,j0,k0)
     do k = 0, regkext-1
       do j = 0, regjext-1
         do i = 0, regiext-1, 2
@@ -413,7 +415,6 @@ subroutine prolongate_3d_real8_eno_int_I ( &
       end do
     end do
   else ! initially needs interpolation
-    !$omp parallel do collapse(3) private(i,j,k, i0,j0,k0)
     do k = 0, regkext-1
       do j = 0, regjext-1
         do i = 0, regiext-1, 2
@@ -564,7 +565,6 @@ subroutine prolongate_3d_real8_eno_int_J ( &
   fj = mod(srcjoff, 2)
 
 !!$            On a coarse grid point exactly!
-  !$omp parallel do collapse(2) private(i,j,k, i0,j0)
   do k = 0, regkext-1
     do j = fj, regjext-1,2
       !$omp simd
@@ -582,7 +582,6 @@ subroutine prolongate_3d_real8_eno_int_J ( &
   end do
 
 !!$          Interpolate only in y
-  !$omp parallel do collapse(2) private(i,j,k, i0,j0)
   do k = 0, regkext-1
     do j = 1-fj, regjext-1,2
       !$omp simd
@@ -724,7 +723,6 @@ subroutine prolongate_3d_real8_eno_int_K ( &
   fk = mod(srckoff, 2)
 
 !!$            On a coarse grid point exactly!
-  !$omp parallel do collapse(2) private(i,j,k, i0,j0,k0)
   do k = fk, regkext-1,2
     do j = 0, regjext-1
       !$omp simd
@@ -742,7 +740,6 @@ subroutine prolongate_3d_real8_eno_int_K ( &
   end do
 
 !!$          Interpolate only in z
-  !$omp parallel do collapse(2) private(i,j,k, i0,j0,k0)
   do k = 1-fk, regkext-1,2
     do j = 0, regjext-1
       !$omp simd

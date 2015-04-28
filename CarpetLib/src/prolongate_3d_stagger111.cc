@@ -29,10 +29,10 @@ namespace CarpetLib {
           dstiext, dstjext, dstkext)
 #define SRCOFF3(i,j,k)                          \
   offset3 (i, j, k,                             \
-           srciext, srcjext, srckext)
+           srcipadext, srcjpadext, srckpadext)
 #define DSTOFF3(i,j,k)                          \
   offset3 (i, j, k,                             \
-           dstiext, dstjext, dstkext)
+           dstipadext, dstjpadext, dstkpadext)
  
   
   template <typename T, int ORDER>

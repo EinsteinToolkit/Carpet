@@ -1120,6 +1120,7 @@ regrid (bool const do_init)
         
         timer_comm_refbndprol.start();
         
+        box.bndref = ibset();
         if (rl > 0) {
           int const orl = rl - 1;
           
@@ -1146,7 +1147,6 @@ regrid (bool const do_init)
           needrecv += box.buffers;
           
           ibset & bndref = box.bndref;
-          bndref = ibset();
           
           i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
           
@@ -1202,6 +1202,7 @@ regrid (bool const do_init)
         
         timer_comm_refbndprol2.start();
         
+        box.bndref2 = ibset();
         if (rl > 0) {
           int const orl = rl - 1;
 
@@ -1228,9 +1229,10 @@ regrid (bool const do_init)
           needrecv += box.buffers2;
           
           ibset & bndref2 = box.bndref2;
-          bndref2 = ibset();
           
-          i2vect const stencil_size = i2vect (prolongation_order_space2 / 2);
+          i2vect const stencil_size =
+            min (i2vect (prolongation_order_space2 / 2),
+                 i2vect (prolongation_stencil_size(rl)));
 
           ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
                     "Refinement factors must be integer multiples of each other");

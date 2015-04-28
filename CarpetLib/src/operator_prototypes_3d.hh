@@ -20,15 +20,15 @@ namespace CarpetLib {
   
   
   static inline
-  size_t
-  index3 (size_t const i, size_t const j, size_t const k,
-          size_t const padexti, size_t const padextj, size_t const padextk,
-          size_t const exti, size_t const extj, size_t const extk)
+  ptrdiff_t
+  index3 (ptrdiff_t i, ptrdiff_t j, ptrdiff_t k,
+          ptrdiff_t padexti, ptrdiff_t padextj, ptrdiff_t padextk,
+          ptrdiff_t exti, ptrdiff_t extj, ptrdiff_t extk)
   {
 #ifdef CARPET_DEBUG
-    assert (static_cast <ptrdiff_t> (i) >= 0 and i < exti);
-    assert (static_cast <ptrdiff_t> (j) >= 0 and j < extj);
-    assert (static_cast <ptrdiff_t> (k) >= 0 and k < extk);
+    assert (i >= 0 and i < exti);
+    assert (j >= 0 and j < extj);
+    assert (k >= 0 and k < extk);
 #endif
     
     return i + padexti * (j + padextj * k);
@@ -37,11 +37,11 @@ namespace CarpetLib {
   
   
   static inline
-  size_t
-  offset3 (size_t const i, size_t const j, size_t const k,
-          size_t const exti, size_t const extj, size_t const extk)
+  ptrdiff_t
+  offset3 (ptrdiff_t i, ptrdiff_t j, ptrdiff_t k,
+           ptrdiff_t padexti, ptrdiff_t padextj, ptrdiff_t padextk)
   {
-    return i + exti * (j + extj * k);
+    return i + padexti * (j + padextj * k);
   }
   
   

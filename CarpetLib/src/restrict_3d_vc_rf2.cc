@@ -28,10 +28,10 @@ namespace CarpetLib {
           dstiext, dstjext, dstkext)
 #define SRCOFF3(i,j,k)                                  \
   offset3 (srcioff + (i), srcjoff + (j), srckoff + (k), \
-          srciext, srcjext, srckext)
+           srcipadext, srcjpadext, srckpadext)
 #define DSTOFF3(i,j,k)                                  \
   offset3 (dstioff + (i), dstjoff + (j), dstkoff + (k), \
-          dstiext, dstjext, dstkext)
+           dstipadext, dstjpadext, dstkpadext)
   
   
   
