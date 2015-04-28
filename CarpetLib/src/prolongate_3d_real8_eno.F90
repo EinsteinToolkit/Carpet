@@ -203,17 +203,20 @@ subroutine prolongate_3d_real8_eno ( &
   integer ghostedbbox(3,3)
 
 
-  CCTK_REAL8 enotmp1(dstipadext, srcjpadext, srckpadext)
+  CCTK_REAL8, allocatable :: enotmp1(:,:,:)
   integer enotmp1bbox(3,3)
   integer enotmp1ipadext, enotmp1jpadext, enotmp1kpadext
   integer enotmp1iext, enotmp1jext, enotmp1kext
 
-  CCTK_REAL8 enotmp2(dstipadext, dstjpadext+2*(ORDER/2+1), srckpadext)
+  CCTK_REAL8, allocatable :: enotmp2(:,:,:)
   integer enotmp2bbox(3,3)
   integer enotmp2ipadext, enotmp2jpadext, enotmp2kpadext
   integer enotmp2iext, enotmp2jext, enotmp2kext
 
   integer d
+
+  allocate (enotmp1(dstipadext, srcjpadext, srckpadext))
+  allocate (enotmp2(dstipadext, dstjpadext, srckpadext))
 
   ! reg extended to have sufficiently many ghosts for later interpolation
   ! this assumes a refinement factor of 2
