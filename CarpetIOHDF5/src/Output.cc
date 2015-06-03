@@ -152,7 +152,8 @@ int WriteVarUnchunked (const cGH* const cctkGH,
         const int compression_lvl = request->compression_level >= 0 ?
                                     request->compression_level :
                                     compression_level;
-        if (compression_lvl) {
+        const hsize_t size = num_elems*H5Tget_size(filedatatype);
+        if (compression_lvl and size > hsize_t(minimum_size_for_compression)) {
           HDF5_ERROR (H5Pset_chunk (plist_dataset, group.dim, shape));
           HDF5_ERROR (H5Pset_deflate (plist_dataset, compression_lvl));
         }
@@ -442,6 +443,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           }
 
           hsize_t shape[dim];
+          hsize_t num_elems = 1;
           hsize_t hyperslab_start[dim], hyperslab_count[dim];
           for (int d = 0; d < group.dim; ++d) {
             assert (group.dim-1-d>=0 and group.dim-1-d<dim);
@@ -450,6 +452,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
                          bbox.shape() / bbox.stride()));
             hyperslab_start[group.dim-1-d] = 0;
             hyperslab_count[group.dim-1-d] = processor_component->shape()[d];
+            num_elems *= hyperslab_count[group.dim-1-d];
           }
 
           // Write the component as an individual dataset
@@ -459,7 +462,9 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           const int compression_lvl = request->compression_level >= 0 ?
                                       request->compression_level :
                                       compression_level;
-          if (compression_lvl) {
+          const hsize_t size = num_elems*H5Tget_size(filedatatype);
+          if (compression_lvl and
+              size > hsize_t(minimum_size_for_compression)) {
             HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
             HDF5_ERROR (H5Pset_deflate (plist, compression_lvl));
           }
@@ -635,6 +640,7 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
 
       // Get the shape of the HDF5 dataset (in Fortran index order)
       hsize_t shape[dim];
+      hsize_t num_elems = 1;
       hsize_t hyperslab_start[dim], hyperslab_count[dim];
       for (int d = 0; d < group.dim; ++d) {
         assert (group.dim-1-d>=0 and group.dim-1-d<dim);
@@ -643,6 +649,7 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
                      bbox.shape() / bbox.stride()));
         hyperslab_start[group.dim-1-d] = 0;
         hyperslab_count[group.dim-1-d] = processor_component->shape()[d];
+        num_elems *= hyperslab_count[group.dim-1-d];
       }
 
       // Write the component as an individual dataset
@@ -652,7 +659,8 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       const int compression_lvl = request->compression_level >= 0 ?
                                   request->compression_level :
                                   compression_level;
-      if (compression_lvl) {
+      const hsize_t size = num_elems*H5Tget_size(filedatatype);
+      if (compression_lvl and size > hsize_t(minimum_size_for_compression)) {
         HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
         HDF5_ERROR (H5Pset_deflate (plist, compression_lvl));
       }

@@ -472,6 +472,11 @@ INT compression_level "Compression level to use for writing HDF5 data" STEERABLE
   0:9 :: "Higher numbers compress better, a value of zero disables compression"
 } 0
 
+INT minimum_size_for_compression "Only compress datasets larger than this many bytes" STEERABLE = ALWAYS
+{
+  0:* :: "This should to be large enough so that compression gains outweigh the overhead"
+} 32768
+
 BOOLEAN use_checksums "Use checksums for the HDF5 data" STEERABLE = ALWAYS
 {
 } "no"

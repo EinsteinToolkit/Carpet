@@ -327,7 +327,6 @@ namespace CarpetIOScalar {
 
             if (do_truncate.at(n) and IO_TruncateOutputFiles (cctkGH)) {
               file.open (filename, ios::out | ios::trunc);
-              created_file = true;
             } else {
               file.open (filename, ios::out | ios::app);
             }
@@ -337,6 +336,10 @@ namespace CarpetIOScalar {
                           filename, varname);
             }
             assert (file.is_open());
+
+            // first time we open this file if do_truncate is true
+            // TODO: add the logic of DidOoutput from IOASCII
+            created_file = do_truncate.at(n);
             
             io_files += 1;
           }
