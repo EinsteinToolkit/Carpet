@@ -162,6 +162,12 @@ bool do_terminate(const cGH *cctkGH) {
         term = term_iter;
       } else if (CCTK_Equals(terminate, "time")) {
         term = term_time;
+        if (term) {
+          CCTK_VInfo(CCTK_THORNSTRING,
+                     "Terminating due to cctk_final_time at t = %f",
+                     cctkGH->cctk_time);
+        }
+
       } else if (CCTK_Equals(terminate, "runtime")) {
         term = term_runtime;
       } else if (CCTK_Equals(terminate, "any")) {
