@@ -648,7 +648,8 @@ namespace CarpetIOASCII {
                 size_t const memsize =
                   tmpdatas.at(n)->allocsize (data_ext, ioproc);
                 void * const memptr = pool.alloc (memsize);
-                tmpdatas.at(n)->allocate(data_ext, ioproc, memptr, memsize);
+                tmpdatas.at(n)->allocate(data_ext, i2vect(0), ioproc,
+                                         memptr, memsize);
               } // for n
               for (size_t n = 0; n < coords.size(); ++ n) {
                 const ggf* const ff =
@@ -657,7 +658,8 @@ namespace CarpetIOASCII {
                 size_t const memsize =
                   tmpcoords.at(n)->allocsize (data_ext, ioproc);
                 void * const memptr = pool.alloc (memsize);
-                tmpcoords.at(n)->allocate(data_ext, ioproc, memptr, memsize);
+                tmpcoords.at(n)->allocate(data_ext, i2vect(0), ioproc,
+                                          memptr, memsize);
               } // for n
               
               for (comm_state state; not state.done(); state.step()) {

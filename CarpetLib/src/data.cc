@@ -466,7 +466,7 @@ data<T>::data (const int varindex_,
                const centering cent_, const operator_type transport_operator_,
                const int vectorlength_, const int vectorindex_,
                data* const vectorleader_,
-               const ibbox& extent_, const int proc_)
+               const ibbox& extent_, const i2vect& boundaries_, const int proc_)
   : gdata(varindex_, cent_, transport_operator_),
     _memory(NULL),
     vectorlength(vectorlength_), vectorindex(vectorindex_),
@@ -476,7 +476,7 @@ data<T>::data (const int varindex_,
   assert (vectorindex>=0 and vectorindex<vectorlength);
   assert ((vectorindex==0 and not vectorleader) or
           (vectorindex!=0 and vectorleader));
-  allocate(extent_, proc_);
+  allocate(extent_, boundaries_, proc_);
 }
 
 // Destructors
@@ -501,6 +501,7 @@ data<T>* data<T>::make_typed (const int varindex_,
 // Storage management
 template<typename T>
 void data<T>::allocate (const ibbox& extent_,
+                        const i2vect& boundaries_,
                         const int proc_,
                         void* const memptr,
                         size_t const memsize)
@@ -515,8 +516,12 @@ void data<T>::allocate (const ibbox& extent_,
   
   // data
   _extent = extent_;
+  _boundaries = boundaries_;
+  assert (all (all (boundaries_ >= 0)));
+  assert (all (boundaries_[0] + boundaries_[1] <= _extent.shape()));
   _shape = max (ivect(0), _extent.shape() / _extent.stride());
   _padded_shape = pad_shape(_shape);
+  int offset = pad_offset(_padded_shape, _boundaries);
   _stride[0] = 1;
   for (int d=1; d<dim; ++d) {
     _stride[d] = _stride[d-1] * _padded_shape[d-1];
@@ -527,7 +532,7 @@ void data<T>::allocate (const ibbox& extent_,
   if (dist::rank() == _proc) {
     if (vectorindex == 0) {
       assert (not vectorleader);
-      _memory = new mem<T> (vectorlength, _size, (T*)memptr, memsize);
+      _memory = new mem<T> (vectorlength, _size, offset, (T*)memptr, memsize);
     } else {
       assert (vectorleader);
       _memory = vectorleader->_memory;
@@ -675,7 +680,7 @@ transfer_time (vector <gdata const *> const & gsrcs,
     for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
       tmps.AT(tl) =
         new data (this->varindex, this->cent, this->transport_operator);
-      tmps.AT(tl)->allocate (dstbox, this->proc());
+      tmps.AT(tl)->allocate (dstbox, i2vect(0), this->proc());
       
       assert (gsrcs.AT(tl));
       // data const * const src = dynamic_cast <data const *> (gsrcs.AT(tl));

@@ -60,4 +60,8 @@ vect<int,D> pad_shape (bbox<int,D> const& extent) /*CCTK_ATTRIBUTE_PURE*/;
 template<int D>
 vect<int,D> pad_shape (vect<int,D> const& shape) /*CCTK_ATTRIBUTE_PURE*/;
 
+template<int D>
+int pad_offset (vect<int,D> const& padded_shape,
+                vect<vect<int,D>,2> const& boundaries) /*CCTK_ATTRIBUTE_PURE*/;
+
 #endif  // CACHEINFO_HH

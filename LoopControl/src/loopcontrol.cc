@@ -320,15 +320,15 @@ namespace {
   }
   
   template<typename T>
-  T alignup(const T i, const T j)
+  T alignup(const T i, const T j, const T m = T(0))
   {
-    return divup(i, j) * j;
+    return divup(i - m, j) * j + m;
   }
   
   template<typename T>
-  T aligndown(const T i, const T j)
+  T aligndown(const T i, const T j, const T m = T(0))
   {
-    return divdown(i, j) * j;
+    return divdown(i + j - m, j) * j - j + m;
   }
   
   // random uniform integer
@@ -601,9 +601,11 @@ void lc_control_init(lc_control_t *restrict const control,
                      ptrdiff_t imin, ptrdiff_t jmin, ptrdiff_t kmin,
                      ptrdiff_t imax, ptrdiff_t jmax, ptrdiff_t kmax,
                      ptrdiff_t iash, ptrdiff_t jash, ptrdiff_t kash,
-                     ptrdiff_t istr)
+                     ptrdiff_t istr, ptrdiff_t imod)
 {
   DECLARE_CCTK_PARAMETERS;
+  
+#error "TODO: consistency check istr, imod"
   
   // Get cache line size
   static ptrdiff_t max_cache_linesize = -1;
@@ -635,7 +637,7 @@ void lc_control_init(lc_control_t *restrict const control,
   if (align_with_cachelines) {
     tilesize_alignment =
       divup(max_cache_linesize, ptrdiff_t(sizeof(CCTK_REAL)));
-    tilesize_alignment = alignup(tilesize_alignment, istr);
+    tilesize_alignment = alignup(tilesize_alignment, istr, imod);
   }
   
 #pragma omp barrier
@@ -1115,16 +1117,18 @@ void lc_thread_step(lc_control_t *restrict const control)
 
 void lc_selftest_set(const lc_control_t *restrict control,
                      const ptrdiff_t imin, const ptrdiff_t imax,
-                     const ptrdiff_t istr,
+                     const ptrdiff_t istr, const ptrdiff_t imod,
                      const ptrdiff_t i0, const ptrdiff_t j, const ptrdiff_t k)
 {
   DECLARE_CCTK_PARAMETERS;
   assert(selftest);
   assert(imin>=0 and imin<imax and imax<=control->ash.v[0]);
   assert(istr>0);
+  assert(imod>=0 && imod<istr);
   assert(j>=0 and j<control->ash.v[1]);
   assert(k>=0 and k<control->ash.v[2]);
   assert(i0+istr-1>=control->overall.min.v[0] and i0<control->overall.max.v[0]);
+#error "TODO: imod here, and all below"
   if (imin>control->overall.min.v[0]) {
     const ptrdiff_t ipos_imin = ind(control->ash, imin,j,k);
     assert(ipos_imin % istr == 0);

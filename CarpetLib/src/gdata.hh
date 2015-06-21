@@ -67,13 +67,14 @@ protected:
   
   bool _has_storage;		// has storage associated (on some process)
   int _size;			// size (number of elements including padding)
-
+  
   int _proc;			// stored on process
   
   ivect _shape;                 // shape
   ivect _padded_shape, _stride; // allocated shape and index order
   
   ibbox _extent;		// bbox for all data
+  i2vect _boundaries;           // boundary (i.e. ghost) size
   
   bool comm_active;             // a communication is going on
   MPI_Request request;          // outstanding MPI request
@@ -100,7 +101,8 @@ public:
               const operator_type transport_operator = op_error) const = 0;
   
   // Storage management
-  virtual void allocate (const ibbox& extent, const int proc,
+  virtual void allocate (const ibbox& extent, const i2vect& boundaries,
+                         const int proc,
 			 void* const memptr = NULL, size_t const memsize = 0) =
     0;
   virtual void free () = 0;
@@ -158,6 +160,11 @@ public:
   const ibbox& extent () const {
     assert (_has_storage);
     return _extent;
+  }
+  
+  const i2vect& boundaries () const {
+    assert (_has_storage);
+    return _boundaries;
   }
   
   int elementsize () const {

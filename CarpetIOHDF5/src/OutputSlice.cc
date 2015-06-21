@@ -649,7 +649,8 @@ namespace CarpetIOHDF5 {
                 size_t const memsize =
                   tmpdatas.at(n)->allocsize (data_ext, ioproc);
                 void * const memptr = pool.alloc (memsize);
-                tmpdatas.at(n)->allocate(data_ext, ioproc, memptr, memsize);
+                tmpdatas.at(n)->allocate(data_ext, i2vect(0), ioproc,
+                                         memptr, memsize);
               } // for n
 
               for (comm_state state; not state.done(); state.step()) {

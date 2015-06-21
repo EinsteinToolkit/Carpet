@@ -50,7 +50,7 @@ class mem: public gmem
   size_t num_clients_;
   
 public:
-  mem (size_t vectorlength, size_t nelems,
+  mem (size_t vectorlength, size_t nelems, size_t offset,
        T * memptr = NULL, size_t memsize = 0);
   ~mem ();
   

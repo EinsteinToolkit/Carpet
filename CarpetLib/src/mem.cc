@@ -77,7 +77,7 @@ namespace {
 
 template<typename T>
 mem<T>::
-mem (size_t const vectorlength, size_t const nelems,
+mem (size_t const vectorlength, size_t const nelems, size_t const offset,
      T * const memptr, size_t const memsize)
   : storage_base_ (memptr),
     storage_ (memptr),
@@ -95,17 +95,20 @@ mem (size_t const vectorlength, size_t const nelems,
 #else
     size_t const vector_size = 1;
 #endif
-    size_t const canary = electric_fence ? 2*fence_width : 0;
     size_t const final_padding = vector_size - 1;
     size_t const max_cache_linesize = get_max_cache_linesize();
     size_t const alignment =
       align_up(max_cache_linesize, vector_size * sizeof (T));
     assert(alignment >= 1);
-    // Safety check
-    assert(alignment <= 1024);
+    assert(alignment <= 1024); // Safety check
+    size_t const byte_offset = offset * sizeof (T);
+    assert (byte_offset >= 0);
+    assert (byte_offset < alignment);
     
-    const size_t nbytes = (vectorlength * nelems + canary + final_padding) *
-                          sizeof (T);
+    size_t const canary = electric_fence ? fence_width : 0;
+    
+    const size_t nbytes =
+      (vectorlength * nelems + 2 * canary + final_padding) * sizeof (T);
     if (max_allowed_memory_MB > 0 and
         (total_allocated_bytes + nbytes > MEGA * max_allowed_memory_MB))
     {
@@ -135,8 +138,9 @@ mem (size_t const vectorlength, size_t const nelems,
     }
     
     storage_base_ = (T*)ptr;
-    storage_ = (T*)align_up(size_t(storage_base_ + canary/2), alignment);
-    assert(size_t(storage_) % alignment == 0);
+    storage_ =
+      (T*)align_up(size_t(storage_base_ + canary), alignment, byte_offset);
+    assert(size_t(storage_) % alignment == byte_offset);
     owns_storage_ = true;
     
     total_allocated_bytes += nbytes;
@@ -174,19 +178,19 @@ mem<T>::
     // do we really want this automated check in the destructor?
     // what if we are already terminating to to a failed fence check?
     if (electric_fence)
-      assert(is_fence_intact(0) && is_fence_intact(1) );
-    free(storage_base_);
+      assert (is_fence_intact(0) && is_fence_intact(1));
+    free (storage_base_);
     
 #if VECTORISE
     size_t const vector_size = CCTK_REAL_VEC_SIZE;
 #else
     size_t const vector_size = 1;
 #endif
-    size_t const canary = electric_fence ? 2*fence_width : 0;
+    size_t const canary = electric_fence ? fence_width : 0;
     size_t const final_padding = vector_size - 1;
     
     const size_t nbytes =
-      (vectorlength_ * nelems_ + canary + final_padding) * sizeof (T);
+      (vectorlength_ * nelems_ + 2 * canary + final_padding) * sizeof (T);
     total_allocated_bytes -= nbytes;
   }
   -- total_allocated_objects;
@@ -202,20 +206,21 @@ is_fence_intact (const int upperlower) const
   bool retval = true;
 
   if (owns_storage_) {
-    assert(storage_ and storage_base_);
+    assert (storage_ and storage_base_);
     if (electric_fence) {
       T worm;
       memset (&worm, poison_value, sizeof (T));
       if (upperlower) {
-        for(int i=0; i<fence_width; ++i) {
-          retval = retval &&
-                   (memcmp (&worm, storage_ + vectorlength_ * nelems_ + i,
-                            sizeof (T)) == 0);
+        for (int i=0; i<fence_width; ++i) {
+          retval =
+            retval &&
+            memcmp (&worm, storage_ + vectorlength_ * nelems_ + i,
+                    sizeof (T)) == 0;
         }
       } else {
-        for(int i=0; i<fence_width; ++i) {
-          retval = retval &&
-                   (memcmp (&worm, storage_ - 1 - i, sizeof (T)) == 0);
+        for (int i=0; i<fence_width; ++i) {
+          retval =
+            retval && memcmp (&worm, storage_ - 1 - i, sizeof (T)) == 0;
         }
       }
     }

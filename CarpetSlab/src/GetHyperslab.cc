@@ -172,7 +172,7 @@ namespace CarpetSlab {
     // Create collector data object
     void* myhdata = rank==collect_proc ? hdata : 0;
     gdata* const alldata = mydata->make_typed (-1, error_centered, op_sync);
-    alldata->allocate (hextent, collect_proc, myhdata);
+    alldata->allocate (hextent, i2vect(0), collect_proc, myhdata);
     
     // Done with the temporary stuff
     mydata = 0;
@@ -213,7 +213,8 @@ namespace CarpetSlab {
         if (proc != collect_proc) {
           void* myhdata = rank==proc ? hdata : 0;
           tmpdata.at(proc) = mydata->make_typed (-1, error_centered, op_sync);
-          tmpdata.at(proc)->allocate (alldata->extent(), proc, myhdata);
+          tmpdata.at(proc)->allocate (alldata->extent(), i2vect(0), proc,
+                                      myhdata);
         }
       }
       

@@ -154,8 +154,34 @@ pad_shape(vect<int,D> const& shape)
 
 
 
+template<int D>
+int pad_offset (vect<int,D> const& padded_shape,
+                vect<vect<int,D>,2> const& boundaries)
+{
+  assert (all (padded_shape >= 0));
+  assert (all (all (boundaries >= 0)));
+  
+  int offset = 0;
+#if VECTORISE && VECTORISE_ALIGNED_ARRAYS && VECTORISE_ALIGNED_INTERIOR
+  int stride = 1;
+  for (int d=0; d<D; ++d) {
+    offset += boundaries[0][d] * stride;
+    stride *= padded_shape[d];
+  }
+  offset %= CCTK_REAL_VEC_SIZE;
+#endif
+  return offset;
+}
+
+
+
 template vect<int,3> pad_shape(bbox<int,3> const& extent);
 template vect<int,3> pad_shape(vect<int,3> const& shape);
 
 template vect<int,4> pad_shape(bbox<int,4> const& extent);
 template vect<int,4> pad_shape(vect<int,4> const& shape);
+
+
+
+template int pad_offset (vect<int,3> const& padded_shape,
+                         vect<vect<int,3>,2> const& boundaries);

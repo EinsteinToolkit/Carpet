@@ -50,7 +50,7 @@ public:
         const centering cent, const operator_type transport_operator,
         const int vectorlength, const int vectorindex,
         data* const vectorleader,
-        const ibbox& extent, const int proc);
+        const ibbox& extent, const i2vect& boundaries, const int proc);
   
   // Destructors
   virtual ~data ();
@@ -61,7 +61,8 @@ public:
                             const operator_type transport_operator) const;
   
   // Storage management
-  virtual void allocate (const ibbox& extent, const int proc,
+  virtual void allocate (const ibbox& extent, const i2vect& boundaries,
+                         const int proc,
 			 void* const memptr = NULL, size_t const memsize = 0);
   virtual void free ();
   virtual size_t allocsize (const ibbox& extent, const int proc) const;

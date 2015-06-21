@@ -307,7 +307,7 @@ transfer_from (comm_state & state,
                                prod(pad_shape(dstbox)));
           gdata * const buf =
             src->make_typed (src->varindex, src->cent, src->transport_operator);
-          buf->allocate (dstbox, srcproc, sendbuf, sendbufsize);
+          buf->allocate (dstbox, i2vect(0), srcproc, sendbuf, sendbufsize);
           buf->transfer_from_innerloop
             (srcs, times, dstbox, srcbox, slabinfo,
              time, order_space, order_time);
@@ -324,7 +324,7 @@ transfer_from (comm_state & state,
             gdata * const buf =
               src->make_typed (src->varindex, src->cent,
                                src->transport_operator);
-            buf->allocate (srcbox, srcproc, sendbuf, sendbufsize);
+            buf->allocate (srcbox, i2vect(0), srcproc, sendbuf, sendbufsize);
             buf->copy_from_innerloop (srcs.AT(tl), srcbox, srcbox, NULL);
             delete buf;
             state.commit_send_space (src->c_datatype(), dstproc,
@@ -353,7 +353,7 @@ transfer_from (comm_state & state,
           void * const recvbuf =
             state.recv_buffer (c_datatype(), srcproc, prod(pad_shape(dstbox)));
           gdata * const buf = make_typed (varindex, cent, transport_operator);
-          buf->allocate (dstbox, dstproc, recvbuf, recvbufsize);
+          buf->allocate (dstbox, i2vect(0), dstproc, recvbuf, recvbufsize);
           state.commit_recv_space (c_datatype(), srcproc,
                                    prod(pad_shape(dstbox)));
           copy_from_innerloop (buf, dstbox, dstbox, NULL);
@@ -369,7 +369,7 @@ transfer_from (comm_state & state,
               state.recv_buffer (c_datatype(), srcproc,
                                  prod(pad_shape(srcbox)));
             gdata * const buf = make_typed (varindex, cent, transport_operator);
-            buf->allocate (srcbox, dstproc, recvbuf, recvbufsize);
+            buf->allocate (srcbox, i2vect(0), dstproc, recvbuf, recvbufsize);
             state.commit_recv_space
               (c_datatype(), srcproc, prod(pad_shape(srcbox)));
             bufs.AT(tl) = buf;
