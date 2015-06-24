@@ -734,6 +734,9 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
   assert (vdim>=0 and vdim<=dim);
   int error_count = 0;
 
+  bool is_scalar = CCTK_GroupTypeFromVarI (request->vindex) == CCTK_SCALAR;
+  bool is_gf = CCTK_GroupTypeFromVarI (request->vindex) == CCTK_GF;
+
   // Legacy arguments
   hid_t attr, dataspace, datatype;
   HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
@@ -782,7 +785,7 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
   HDF5_ERROR (H5Sclose (dataspace));
 
   // store cctk_bbox and cctk_nghostzones (for grid arrays only)
-  if (CCTK_GroupTypeFromVarI (request->vindex) != CCTK_SCALAR) {
+  if (!is_scalar) {
     vector<int> cctk_bbox(2*vdim);
     hsize_t size = cctk_bbox.size();
     HDF5_ERROR (dataspace = H5Screate_simple (1, &size, NULL));
@@ -872,30 +875,37 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
     HDF5_ERROR (H5Aclose (attr));
   }
 
-  ivect const ioffsetdenom = bbox.stride();
-  HDF5_ERROR (attr = H5Acreate (dataset, "ioffsetdenom", H5T_NATIVE_INT,
-                                dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ioffsetdenom[0]));
-  HDF5_ERROR (H5Aclose (attr));
-  ivect const ioffset =
-    ((bbox.lower() % bbox.stride()) + bbox.stride()) % bbox.stride();
-  HDF5_ERROR (attr = H5Acreate (dataset, "ioffset", H5T_NATIVE_INT,
-                                dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ioffset[0]));
-  HDF5_ERROR (H5Aclose (attr));
-  ivect const iorigin = (bbox.lower() - ioffset) / bbox.stride();
-  HDF5_ERROR (attr = H5Acreate (dataset, "iorigin", H5T_NATIVE_INT,
-                                dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &iorigin[0]));
-  HDF5_ERROR (H5Aclose (attr));
+  if (is_gf) {
+    ivect const ioffsetdenom = bbox.stride();
+    HDF5_ERROR (attr = H5Acreate (dataset, "ioffsetdenom", H5T_NATIVE_INT,
+                                  dataspace, H5P_DEFAULT));
+    HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ioffsetdenom[0]));
+    HDF5_ERROR (H5Aclose (attr));
+    ivect const ioffset =
+      ((bbox.lower() % bbox.stride()) + bbox.stride()) % bbox.stride();
+    HDF5_ERROR (attr = H5Acreate (dataset, "ioffset", H5T_NATIVE_INT,
+                                  dataspace, H5P_DEFAULT));
+    HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ioffset[0]));
+    HDF5_ERROR (H5Aclose (attr));
+    ivect const iorigin = (bbox.lower() - ioffset) / bbox.stride();
+    HDF5_ERROR (attr = H5Acreate (dataset, "iorigin", H5T_NATIVE_INT,
+                                  dataspace, H5P_DEFAULT));
+    HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &iorigin[0]));
+    HDF5_ERROR (H5Aclose (attr));
 
-  hsize_t shape[vdim];
-  for (int d = 0; d < vdim; ++d) {
-    assert (vdim-1-d>=0 and vdim-1-d<vdim);
-    shape[vdim-1-d]  = (bbox.shape() / bbox.stride())[d];
+    ostringstream buf;
+    buf << (vdd.at(Carpet::map)->
+            local_boxes.at(mglevel).at(refinementlevel).at(component).active);
+    WriteAttribute(dataset, "active", buf.str().c_str());
   }
 
   if (is_index) {
+    hsize_t shape[vdim];
+    for (int d = 0; d < vdim; ++d) {
+      assert (vdim-1-d>=0 and vdim-1-d<vdim);
+      shape[vdim-1-d]  = (bbox.shape() / bbox.stride())[d];
+    }
+
     HDF5_ERROR (attr = H5Acreate (dataset, "h5shape", H5T_NATIVE_HSIZE,
                                   dataspace, H5P_DEFAULT));
     HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_HSIZE, &shape[0]));
