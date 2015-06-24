@@ -149,6 +149,35 @@ namespace CarpetIOHDF5
                          const vector<hsize_t>& shape,
                          const bool is_index);
 
+  int WriteAttribute (hid_t const group,
+                      char const * const name,
+                      int const ivalue);
+  int WriteAttribute (hid_t const group,
+                      char const * const name,
+                      double const dvalue);
+  int WriteAttribute (hid_t const group,
+                      char const * const name,
+                      char const * const svalue);
+  int WriteAttribute (hid_t const group,
+                      char const * const name,
+                      int const * const ivalues,
+                      int const nvalues);
+  int WriteAttribute (hid_t const group,
+                      char const * const name,
+                      double const * const dvalues,
+                      int const nvalues);
+  int WriteAttribute (hid_t const group,
+                      char const * const name,
+                      char const * const * const svalues,
+                      int const nvalues);
+  int WriteAttribute (hid_t const group,
+                      char const * const name,
+                      hsize_t const * const svalues,
+                      int const nvalues);
+  int WriteLargeAttribute (hid_t const group,
+                           char const * const name,
+                           char const * const svalue);
+
   // returns an HDF5 datatype corresponding to the given CCTK datatype
   hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
                              int cctk_type,

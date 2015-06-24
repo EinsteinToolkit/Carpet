@@ -61,35 +61,6 @@ static void GetVarIndex (int vindex, const char* optstring, void* arg);
 static void CheckSteerableParameters (const cGH *const cctkGH,
                                       CarpetIOHDF5GH *myGH);
 
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           int const ivalue);
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           double const dvalue);
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           char const * const svalue);
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           int const * const ivalues,
-                           int const nvalues);
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           double const * const dvalues,
-                           int const nvalues);
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           char const * const * const svalues,
-                           int const nvalues);
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           hsize_t const * const svalues,
-                           int const nvalues);
-static int WriteLargeAttribute (hid_t const group,
-                                char const * const name,
-                                char const * const svalue);
-
 
 //////////////////////////////////////////////////////////////////////////////
 // public routines
@@ -396,6 +367,188 @@ int AddSliceAttributes(const cGH* const cctkGH,
   }
 
 
+  return error_count;
+}
+
+
+// Write an int attribute
+int WriteAttribute (hid_t const group,
+                    char const * const name,
+                    int const ivalue)
+{
+  hid_t dataspace, attribute;
+  int error_count = 0;
+  
+  HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
+  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_INT,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_INT, & ivalue));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
+}
+
+
+// Write a double attribute
+int WriteAttribute (hid_t const group,
+                    char const * const name,
+                    double const dvalue)
+{
+  hid_t dataspace, attribute;
+  int error_count = 0;
+  
+  HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
+  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_DOUBLE,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_DOUBLE, & dvalue));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
+}
+
+
+// Write a string attribute
+int WriteAttribute (hid_t const group,
+                    char const * const name,
+                    char const * const svalue)
+{
+  hid_t datatype, dataspace, attribute;
+  int error_count = 0;
+  
+  HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
+  HDF5_ERROR (H5Tset_size (datatype, strlen (svalue) + 1));
+  HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
+  HDF5_ERROR (attribute = H5Acreate (group, name, datatype,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, datatype, svalue));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  HDF5_ERROR (H5Tclose (datatype));
+  
+  return error_count;
+}
+
+
+// Write an array of int attributes
+int WriteAttribute (hid_t const group,
+                    char const * const name,
+                    int const * const ivalues,
+                    int const nvalues)
+{
+  hid_t dataspace, attribute;
+  int error_count = 0;
+  
+  hsize_t const size = nvalues;
+  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
+  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_INT,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_INT, ivalues));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
+}
+
+
+// Write an array of double attributes
+int WriteAttribute (hid_t const group,
+                    char const * const name,
+                    double const * const dvalues,
+                    int const nvalues)
+{
+  hid_t dataspace, attribute;
+  int error_count = 0;
+  
+  hsize_t const size = nvalues;
+  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
+  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_DOUBLE,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_DOUBLE, dvalues));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
+}
+
+
+// Write an array of hsize_t attributes
+int WriteAttribute (hid_t const group,
+                    char const * const name,
+                    hsize_t const * const svalues,
+                    int const nvalues)
+{
+  hid_t dataspace, attribute;
+  int error_count = 0;
+  
+  hsize_t const size = nvalues;
+  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
+  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_HSIZE,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_HSIZE, svalues));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
+}
+
+
+// Write an array of string attributes
+int WriteAttribute (hid_t const group,
+                    char const * const name,
+                    char const * const * const svalues,
+                    int const nvalues)
+{
+  hid_t datatype, dataspace, attribute;
+  int error_count = 0;
+  
+  size_t maxstrlen = 0;
+  for (int i=0; i<nvalues; ++i) {
+    maxstrlen = max (maxstrlen, strlen (svalues[i]));
+  }
+  vector<char> svalue (nvalues * (maxstrlen+1));
+  for (int i=0; i<nvalues; ++i) {
+    strncpy (&svalue.at(i*maxstrlen), svalues[i], maxstrlen+1);
+  }
+  
+  HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
+  HDF5_ERROR (H5Tset_size (datatype, maxstrlen + 1));
+  hsize_t const size = nvalues;
+  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
+  HDF5_ERROR (attribute = H5Acreate (group, name, datatype,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, datatype, &svalue.front()));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  HDF5_ERROR (H5Tclose (datatype));
+  
+  return error_count;
+}
+
+
+// Write a large string attribute
+int WriteLargeAttribute (hid_t const group,
+                         char const * const name,
+                         char const * const svalue)
+{
+  hid_t dataspace, dataset, datatype;
+  int error_count = 0;
+  
+  // Create a dataset, since the data may not fit into an attribute
+  hsize_t const size = strlen (svalue) + 1;
+  HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
+  HDF5_ERROR (H5Tset_size (datatype, size));
+
+  HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
+  HDF5_ERROR (dataset   = H5Dcreate (group, name, datatype,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Dwrite (dataset, datatype, H5S_ALL, H5S_ALL,
+                        H5P_DEFAULT, svalue));
+  HDF5_ERROR (H5Dclose (dataset));
+  HDF5_ERROR (H5Sclose (dataspace));
+  HDF5_ERROR (H5Tclose (datatype));
+  
   return error_count;
 }
 
@@ -1407,7 +1560,7 @@ int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
       grid_prolongation_orders.at(m) = vdd.at(m)->prolongation_orders_space;
     }
     vector <vector <vector <CCTK_REAL> > > grid_times (mglevels);
-    for  (int ml = 0; ml < mglevels; ++ ml) {
+    for (int ml = 0; ml < mglevels; ++ ml) {
       grid_times.at(ml).resize(vhh.at(0)->reflevels());
       for (int rl = 0; rl < vhh.at(0)->reflevels(); ++ rl) {
         grid_times.at(ml).at(rl).resize(tt->timelevels);
@@ -1445,188 +1598,6 @@ int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
   HDF5_ERROR (H5Gclose (group));
 
   return (error_count);
-}
-
-
-// Write an int attribute
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           int const ivalue)
-{
-  hid_t dataspace, attribute;
-  int error_count = 0;
-  
-  HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
-  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_INT,
-                                     dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_INT, & ivalue));
-  HDF5_ERROR (H5Aclose (attribute));
-  HDF5_ERROR (H5Sclose (dataspace));
-  
-  return error_count;
-}
-
-
-// Write a double attribute
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           double const dvalue)
-{
-  hid_t dataspace, attribute;
-  int error_count = 0;
-  
-  HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
-  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_DOUBLE,
-                                     dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_DOUBLE, & dvalue));
-  HDF5_ERROR (H5Aclose (attribute));
-  HDF5_ERROR (H5Sclose (dataspace));
-  
-  return error_count;
-}
-
-
-// Write a string attribute
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           char const * const svalue)
-{
-  hid_t datatype, dataspace, attribute;
-  int error_count = 0;
-  
-  HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
-  HDF5_ERROR (H5Tset_size (datatype, strlen (svalue) + 1));
-  HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
-  HDF5_ERROR (attribute = H5Acreate (group, name, datatype,
-                                     dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attribute, datatype, svalue));
-  HDF5_ERROR (H5Aclose (attribute));
-  HDF5_ERROR (H5Sclose (dataspace));
-  HDF5_ERROR (H5Tclose (datatype));
-  
-  return error_count;
-}
-
-
-// Write an array of int attributes
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           int const * const ivalues,
-                           int const nvalues)
-{
-  hid_t dataspace, attribute;
-  int error_count = 0;
-  
-  hsize_t const size = nvalues;
-  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
-  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_INT,
-                                     dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_INT, ivalues));
-  HDF5_ERROR (H5Aclose (attribute));
-  HDF5_ERROR (H5Sclose (dataspace));
-  
-  return error_count;
-}
-
-
-// Write an array of double attributes
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           double const * const dvalues,
-                           int const nvalues)
-{
-  hid_t dataspace, attribute;
-  int error_count = 0;
-  
-  hsize_t const size = nvalues;
-  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
-  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_DOUBLE,
-                                     dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_DOUBLE, dvalues));
-  HDF5_ERROR (H5Aclose (attribute));
-  HDF5_ERROR (H5Sclose (dataspace));
-  
-  return error_count;
-}
-
-
-// Write an array of hsize_t attributes
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           hsize_t const * const svalues,
-                           int const nvalues)
-{
-  hid_t dataspace, attribute;
-  int error_count = 0;
-  
-  hsize_t const size = nvalues;
-  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
-  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_HSIZE,
-                                     dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_HSIZE, svalues));
-  HDF5_ERROR (H5Aclose (attribute));
-  HDF5_ERROR (H5Sclose (dataspace));
-  
-  return error_count;
-}
-
-
-// Write an array of string attributes
-static int WriteAttribute (hid_t const group,
-                           char const * const name,
-                           char const * const * const svalues,
-                           int const nvalues)
-{
-  hid_t datatype, dataspace, attribute;
-  int error_count = 0;
-  
-  size_t maxstrlen = 0;
-  for (int i=0; i<nvalues; ++i) {
-    maxstrlen = max (maxstrlen, strlen (svalues[i]));
-  }
-  vector<char> svalue (nvalues * (maxstrlen+1));
-  for (int i=0; i<nvalues; ++i) {
-    strncpy (&svalue.at(i*maxstrlen), svalues[i], maxstrlen+1);
-  }
-  
-  HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
-  HDF5_ERROR (H5Tset_size (datatype, maxstrlen + 1));
-  hsize_t const size = nvalues;
-  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
-  HDF5_ERROR (attribute = H5Acreate (group, name, datatype,
-                                     dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attribute, datatype, &svalue.front()));
-  HDF5_ERROR (H5Aclose (attribute));
-  HDF5_ERROR (H5Sclose (dataspace));
-  HDF5_ERROR (H5Tclose (datatype));
-  
-  return error_count;
-}
-
-
-// Write a large string attribute
-static int WriteLargeAttribute (hid_t const group,
-                                char const * const name,
-                                char const * const svalue)
-{
-  hid_t dataspace, dataset, datatype;
-  int error_count = 0;
-  
-  // Create a dataset, since the data may not fit into an attribute
-  hsize_t const size = strlen (svalue) + 1;
-  HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
-  HDF5_ERROR (H5Tset_size (datatype, size));
-
-  HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
-  HDF5_ERROR (dataset   = H5Dcreate (group, name, datatype,
-                                     dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Dwrite (dataset, datatype, H5S_ALL, H5S_ALL,
-                        H5P_DEFAULT, svalue));
-  HDF5_ERROR (H5Dclose (dataset));
-  HDF5_ERROR (H5Sclose (dataspace));
-  HDF5_ERROR (H5Tclose (datatype));
-  
-  return error_count;
 }
 
 
