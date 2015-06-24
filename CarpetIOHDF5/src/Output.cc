@@ -25,7 +25,8 @@ using namespace Carpet;
 static int AddAttributes (const cGH *const cctkGH, const char *fullname,
                           int vdim, int refinementlevel,
                           const ioRequest* const request,
-                          const ibbox& bbox, hid_t dataset, bool is_index = false);
+                          const ibbox& bbox, hid_t dataset,
+                          bool is_index = false);
 
 
 int WriteVarUnchunked (const cGH* const cctkGH,
@@ -74,7 +75,10 @@ int WriteVarUnchunked (const cGH* const cctkGH,
   BEGIN_MAP_LOOP (cctkGH, group.grouptype) {
     // Collect the set of all components' bboxes
     ibset bboxes;
-    for (int c=0; c<arrdata.at(gindex).at(Carpet::map).hh->components(refinementlevel); ++c) {
+    for (int c=0;
+         c<arrdata.at(gindex).at(Carpet::map).hh->components(refinementlevel);
+         ++c)
+    {
       // Using "interior" removes ghost zones and refinement boundaries.
 #if 0
       bboxes += arrdata.at(gindex).at(Carpet::map).dd->
@@ -160,10 +164,12 @@ int WriteVarUnchunked (const cGH* const cctkGH,
         // enable checksums if requested
         if (use_checksums) {
           HDF5_ERROR (H5Pset_chunk (plist_dataset, group.dim, shape));
-          HDF5_ERROR (H5Pset_filter (plist_dataset, H5Z_FILTER_FLETCHER32, 0, 0, NULL));
+          HDF5_ERROR (H5Pset_filter (plist_dataset, H5Z_FILTER_FLETCHER32, 0, 0,
+                                     NULL));
         }
         HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
-                                         filedatatype, dataspace, plist_dataset));
+                                         filedatatype, dataspace,
+                                         plist_dataset));
         HDF5_ERROR (H5Pclose (plist_dataset));
       }
 
@@ -179,10 +185,12 @@ int WriteVarUnchunked (const cGH* const cctkGH,
         dh const * const dd = arrdata.at(gindex).at(Carpet::map).dd;
 #if 0
         ibbox const overlap = *bbox &
-          dd->light_boxes.at(mglevel).at(refinementlevel).at(component).interior;
+          dd->light_boxes.at(mglevel).at(refinementlevel).at(component).
+          interior;
 #endif
         ibbox const overlap = *bbox &
-          dd->light_boxes.at(mglevel).at(refinementlevel).at(component).exterior;
+          dd->light_boxes.at(mglevel).at(refinementlevel).at(component).
+          exterior;
 
         // Continue if this component is not part of this combination
         if (overlap.empty()) continue;
@@ -471,7 +479,8 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           // enable checksums if requested
           if (use_checksums) {
             HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
-            HDF5_ERROR (H5Pset_filter (plist, H5Z_FILTER_FLETCHER32, 0, 0, NULL));
+            HDF5_ERROR (H5Pset_filter (plist, H5Z_FILTER_FLETCHER32, 0, 0,
+                                       NULL));
           }
           HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
           HDF5_ERROR (H5Sselect_hyperslab (dataspace, H5S_SELECT_SET,
@@ -481,8 +490,10 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
                                            filedatatype, dataspace, plist));
 
           if (indexfile != -1) {
-            HDF5_ERROR (index_dataset = H5Dcreate (indexfile, datasetname.str().c_str(),
-                                                   filedatatype, dataspace, H5P_DEFAULT));
+            HDF5_ERROR (index_dataset = H5Dcreate (indexfile,
+                                                   datasetname.str().c_str(),
+                                                   filedatatype, dataspace,
+                                                   H5P_DEFAULT));
           }
 
           io_bytes +=
@@ -497,7 +508,8 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           HDF5_ERROR (H5Dclose (dataset));
 
           if (indexfile != -1) {
-            error_count += AddAttributes (cctkGH, fullname, group.dim,refinementlevel,
+            error_count += AddAttributes (cctkGH, fullname, group.dim,
+                                          refinementlevel,
                                           request, bbox, index_dataset, true);
             HDF5_ERROR (H5Dclose (index_dataset));
           }
@@ -677,8 +689,10 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
                                        filedatatype, dataspace, plist));
 
       if (indexfile != -1) {
-        HDF5_ERROR (index_dataset = H5Dcreate (indexfile, datasetname.str().c_str(),
-                                               filedatatype, dataspace, H5P_DEFAULT));
+        HDF5_ERROR (index_dataset = H5Dcreate (indexfile,
+                                               datasetname.str().c_str(),
+                                               filedatatype, dataspace,
+                                               H5P_DEFAULT));
       }
 
       io_bytes +=
@@ -687,12 +701,14 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       HDF5_ERROR (H5Sclose (dataspace));
       HDF5_ERROR (H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL,
                             H5P_DEFAULT, data));
-      error_count += AddAttributes (cctkGH, fullname, group.dim,refinementlevel,
+      error_count += AddAttributes (cctkGH, fullname, group.dim,
+                                    refinementlevel,
                                     request, bbox, dataset);
       HDF5_ERROR (H5Dclose (dataset));
 
       if (indexfile != -1) {
-        error_count += AddAttributes (cctkGH, fullname, group.dim,refinementlevel,
+        error_count += AddAttributes (cctkGH, fullname, group.dim,
+                                      refinementlevel,
                                       request, bbox, index_dataset, true);
         HDF5_ERROR (H5Dclose (index_dataset));
       }
@@ -840,7 +856,9 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
     }
     
     for (int d=0; d<dim; ++d) {
-        origin[d] = global_lower[d] + coord_delta[d] * (cctkGH->cctk_levoff[d] / cctkGH->cctk_levoffdenom[d] + pos[d]);
+        origin[d] = (global_lower[d] +
+                     coord_delta[d] * (cctkGH->cctk_levoff[d] /
+                                       cctkGH->cctk_levoffdenom[d] + pos[d]));
         delta[d] = coord_delta[d];
     }
 
