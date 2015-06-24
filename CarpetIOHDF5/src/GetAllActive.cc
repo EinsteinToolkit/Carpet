@@ -238,25 +238,25 @@ namespace CarpetIOHDF5 {
 #else
 
 #define ASSERT_rl(check, message)                                       \
-    do {                                                                  \
-      if (not (check)) {                                                  \
-        assert_error (#check, __FILE__, __LINE__, ml, rl, message);       \
-      }                                                                   \
-    } while (false)
+  do {                                                                  \
+    if (not (check)) {                                                  \
+      assert_error (#check, __FILE__, __LINE__, ml, rl, message);       \
+    }                                                                   \
+  } while (false)
 
 #define ASSERT_c(check, message)                                        \
-    do {                                                                  \
-      if (not (check)) {                                                  \
-        assert_error (#check, __FILE__, __LINE__, ml, rl, c, message);    \
-      }                                                                   \
-    } while (false)
+  do {                                                                  \
+    if (not (check)) {                                                  \
+      assert_error (#check, __FILE__, __LINE__, ml, rl, c, message);    \
+    }                                                                   \
+  } while (false)
 
 #define ASSERT_cc(check, message)                                       \
-    do {                                                                  \
-      if (not (check)) {                                                  \
-        assert_error (#check, __FILE__, __LINE__, ml, rl, c, cc, message); \
-      }                                                                   \
-    } while (false)
+  do {                                                                  \
+    if (not (check)) {                                                  \
+      assert_error (#check, __FILE__, __LINE__, ml, rl, c, cc, message); \
+    }                                                                   \
+  } while (false)
 
 #endif
 
