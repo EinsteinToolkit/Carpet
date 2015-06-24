@@ -1146,7 +1146,7 @@ static void ReadMetadata (fileset_t& fileset, const file_t& file)
     gs_buf >> fileset.grid_structure;
     skipws (gs_buf);
     consume (gs_buf, ",");
-    
+
     skipws (gs_buf);
     consume (gs_buf, "grid_times:");
     skipws (gs_buf);
