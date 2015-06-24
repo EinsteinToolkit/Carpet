@@ -511,6 +511,7 @@ template ostream& output (ostream& os, const vector<vector<dh::level_dboxes> > &
 template ostream& output (ostream& os, const vector<vector<region_t> >& v);
 template ostream& output (ostream& os, const vector<vector<vector<CCTK_REAL> > >& v);
 //template ostream& output (ostream& os, const vector<vector<vector<ibbox> > >& v);
+template ostream& output (ostream& os, const vector<vector<vector<ibset> > >& v);
 //template ostream& output (ostream& os, const vector<vector<vector<dh::fast_dboxes> > > & b);
 //template ostream& output (ostream& os, const vector<vector<vector<dh::full_dboxes> > > & b);
 //template ostream& output (ostream& os, const vector<vector<vector<dh::level_dboxes> > > & b);
