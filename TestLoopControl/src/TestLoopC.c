@@ -142,7 +142,7 @@ void TestLoopControlC(CCTK_ARGUMENTS)
     
     
   default:
-    CCTK_WARN(CCTK_WARN_ABORT, "cctk_dim out of range");
+    CCTK_ERROR("cctk_dim out of range");
     
   }
 }

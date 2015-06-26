@@ -1,6 +1,6 @@
 # Schedule definitions for thorn TestLoopControl
 
-STORAGE: csums fsums pointtypes
+STORAGE: csums cxxsums cxx2sums fsums pointtypes
 
 SCHEDULE TestLoopControlPointwise AT initial
 {
@@ -11,6 +11,16 @@ SCHEDULE TestLoopControlC AT initial
 {
   LANG: C
 } "Test loop iterators"
+
+SCHEDULE TestLoopControlCXXVectorized AT initial
+{
+  LANG: C
+} "Test loop iterators with vectorization"
+
+SCHEDULE TestLoopControlCXXVectorized2 AT initial
+{
+  LANG: C
+} "Test loop iterators with vectorization and aligned interior"
 
 SCHEDULE TestLoopControlFortran AT initial
 {

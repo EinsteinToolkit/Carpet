@@ -45,7 +45,7 @@ void TestLoopControlPointwise_All(CCTK_ARGUMENTS)
     }
   }
   if (num_errors > 0) {
-    CCTK_WARN(CCTK_WARN_ABORT, "TestLoopControlPointwise_All failed");
+    CCTK_ERROR("TestLoopControlPointwise_All failed");
   }
 }
 
@@ -103,7 +103,7 @@ void TestLoopControlPointwise_Int(CCTK_ARGUMENTS)
     }
   }
   if (num_errors > 0) {
-    CCTK_WARN(CCTK_WARN_ABORT, "TestLoopControlPointwise_Int failed");
+    CCTK_ERROR("TestLoopControlPointwise_Int failed");
   }
 }
 
@@ -171,7 +171,7 @@ void TestLoopControlPointwise_Bnd(CCTK_ARGUMENTS)
     }
   }
   if (num_errors > 0) {
-    CCTK_WARN(CCTK_WARN_ABORT, "TestLoopControlPointwise_Bnd failed");
+    CCTK_ERROR("TestLoopControlPointwise_Bnd failed");
   }
 }
 
@@ -263,7 +263,7 @@ void TestLoopControlPointwise_IntBnd(CCTK_ARGUMENTS)
     }
   }
   if (num_errors > 0) {
-    CCTK_WARN(CCTK_WARN_ABORT, "TestLoopControlPointwise_IntBnd failed");
+    CCTK_ERROR("TestLoopControlPointwise_IntBnd failed");
   }
 }
 
@@ -275,7 +275,7 @@ void TestLoopControlPointwise(CCTK_ARGUMENTS)
   DECLARE_CCTK_PARAMETERS;
   
   if (cctk_dim != 3) {
-    CCTK_WARN(CCTK_WARN_ABORT, "cctk_dim out of range");
+    CCTK_ERROR("cctk_dim out of range");
   }
   
   TestLoopControlPointwise_All(CCTK_PASS_CTOC);

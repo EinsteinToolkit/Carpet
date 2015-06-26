@@ -25,6 +25,16 @@ CCTK_REAL csums TYPE=scalar
   csum_all csum_int csum_bnd csum_intbnd
 } "Result values for C test cases"
 
+CCTK_REAL cxxsums TYPE=scalar
+{
+  cxxsum_all cxxsum_int cxxsum_bnd cxxsum_intbnd
+} "Result values for C++ test cases"
+
+CCTK_REAL cxx2sums TYPE=scalar
+{
+  cxx2sum_all cxx2sum_int cxx2sum_bnd cxx2sum_intbnd
+} "Result values for C++ test cases"
+
 CCTK_REAL fsums TYPE=scalar
 {
   fsum_all fsum_int fsum_bnd fsum_intbnd

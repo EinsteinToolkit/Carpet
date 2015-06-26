@@ -1,0 +1,30 @@
+ActiveThorns = "
+        Boundary
+        Carpet
+        CarpetReduce
+        CartGrid3D
+        CoordBase
+        CycleClock
+        CarpetIOASCII
+        IOUtil
+        LoopControl
+        SymBase
+        TestLoopControl
+        hwloc
+"
+
+Cactus::cctk_itlast = 0
+
+driver::global_nsize = 8
+
+IO::out_every     = 1
+IO::out_dir       = $parfile
+IO::out_fileinfo  = "none"
+IO::parfile_write = "no"
+
+IOASCII::out0D_vars = "
+        TestLoopControl::csums
+        TestLoopControl::cxxsums
+        TestLoopControl::cxx2sums
+        TestLoopControl::fsums
+"
