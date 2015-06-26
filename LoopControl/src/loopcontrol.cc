@@ -605,7 +605,8 @@ void lc_control_init(lc_control_t *restrict const control,
 {
   DECLARE_CCTK_PARAMETERS;
   
-#error "TODO: consistency check istr, imod"
+  lc_assert(istr>0);
+  lc_assert(imod>=0 && imod<istr);
   
   // Get cache line size
   static ptrdiff_t max_cache_linesize = -1;
@@ -637,7 +638,7 @@ void lc_control_init(lc_control_t *restrict const control,
   if (align_with_cachelines) {
     tilesize_alignment =
       divup(max_cache_linesize, ptrdiff_t(sizeof(CCTK_REAL)));
-    tilesize_alignment = alignup(tilesize_alignment, istr, imod);
+    tilesize_alignment = alignup(tilesize_alignment, istr);
   }
   
 #pragma omp barrier
@@ -860,6 +861,7 @@ void lc_control_init(lc_control_t *restrict const control,
   const ptrdiff_t loop_max[LC_DIM] = { imax, jmax, kmax };
   const ptrdiff_t ash[LC_DIM] = { iash, jash, kash };
   const ptrdiff_t vect_size[LC_DIM] = { istr, 1, 1 };
+  const ptrdiff_t vect_offs[LC_DIM] = { imod, 1, 1 };
   
   // Copy ash arguments
   for (int d=0; d<LC_DIM; ++d) {
@@ -885,7 +887,8 @@ void lc_control_init(lc_control_t *restrict const control,
 #if VECTORISE && VECTORISE_ALIGNED_ARRAYS
     // Move start to be aligned with vector size
     control->coarse_thread.min.v[d] =
-      aligndown(control->overall.min.v[d], vect_size[d]);
+      aligndown(control->overall.min.v[d], vect_size[d],
+                (vect_size[d] - vect_offs[d]) % vect_size[d]);
 #else
     control->coarse_thread.min.v[d] = control->overall.min.v[d];
 #endif
@@ -1128,7 +1131,6 @@ void lc_selftest_set(const lc_control_t *restrict control,
   assert(j>=0 and j<control->ash.v[1]);
   assert(k>=0 and k<control->ash.v[2]);
   assert(i0+istr-1>=control->overall.min.v[0] and i0<control->overall.max.v[0]);
-#error "TODO: imod here, and all below"
   if (imin>control->overall.min.v[0]) {
     const ptrdiff_t ipos_imin = ind(control->ash, imin,j,k);
     assert(ipos_imin % istr == 0);
@@ -1147,22 +1149,20 @@ void lc_selftest_set(const lc_control_t *restrict control,
       unsigned char& elt = control->selftest_array[ipos];
 #ifdef _CRAYC
       // Cray C++ compiler 8.1.2 segfaults on atomic
-#pragma omp critical(lc_selftest_set)
+#  pragma omp critical(lc_selftest_set)
       ++elt;
 #else
-#pragma omp atomic
+#  pragma omp atomic
       ++elt;
 #endif
       if (elt!=1) {
 #pragma omp critical
         {
-          fflush(stdout);
-          fprintf(stderr,
-                  "thread=%d/%d fine_thread=%d/%d ijk=[%td,%td,%td]\n",
-                  get_coarse_thread_num(), get_num_coarse_threads(),
-                  get_fine_thread_num(), get_num_fine_threads(),
-                  i,j,k);
-          assert(0);
+          CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                      "thread=%d/%d fine_thread=%d/%d ijk=[%td,%td,%td]\n",
+                      get_coarse_thread_num(), get_num_coarse_threads(),
+                      get_fine_thread_num(), get_num_fine_threads(),
+                      i,j,k);
         }
       }
     }
@@ -1394,13 +1394,13 @@ CCTK_FNAME(lc_control_init)(lc_control_t& restrict control,
                             const int& imin, const int& jmin, const int& kmin,
                             const int& imax, const int& jmax, const int& kmax,
                             const int& iash, const int& jash, const int& kash,
-                            const int& istr)
+                            const int& istr, const int& imod)
 {
   lc_control_init(&control, (lc_descr_t*)descr,
                   imin, jmin, kmin,
                   imax, jmax, kmax,
                   iash, jash, kash,
-                  istr);
+                  istr, imod);
 }
 
 extern "C" CCTK_FCALL

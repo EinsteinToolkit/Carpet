@@ -141,52 +141,29 @@ extern "C" {
        lc_dir##D<0 ? I+1 : lc_control.overall.max.v[D]-I;
   
 #if VECTORISE && VECTORISE_ALIGNED_ARRAYS
-#  if !VECTORISE_ALIGNED_INTERIOR
-  /* Arrays are aligned at their origin: fmin0 is the aligned loop
-     boundary; keep it, and set up imin to be the intended loop
-     boundary */
-#    define LC_ALIGN(i,j,k, vec_imin,vec_imax)                            \
+  /* Arrays are aligned: fmin0 is the aligned loop boundary; keep it,
+     and set up imin to be the intended loop boundary */
+#  define LC_ALIGN(i,j,k, vec_imin,vec_imax)                            \
   const ptrdiff_t vec_imin = lc_max(lc_control.overall.min.v[0], lc_fmin0); \
   const ptrdiff_t vec_imax = lc_fmax0;                                  \
-  lc_assert(lc_fmin0 >= 0);                                             \
+  lc_assert(lc_fmin0 > -lc_str0);                                       \
   lc_assert(lc_fmin0 < lc_fmax0);                                       \
   lc_assert(lc_fmax0 <= lc_control.overall.max.v[0]);                   \
   const ptrdiff_t lc_iminpos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);  \
-  const ptrdiff_t lc_iminoffset CCTK_ATTRIBUTE_UNUSED = lc_iminpos % lc_str0; \
+  const ptrdiff_t lc_iminoffset CCTK_ATTRIBUTE_UNUSED =                 \
+    (lc_iminpos + lc_str0) % lc_str0;                                   \
   const int lc_fmax0_is_outer = lc_fmax0 == lc_control.overall.max.v[0]; \
   const ptrdiff_t lc_imaxpos = lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);  \
   const ptrdiff_t lc_imaxoffset CCTK_ATTRIBUTE_UNUSED = lc_imaxpos % lc_str0; \
-  lc_assert(lc_iminoffset == 0);                                        \
-  if (!lc_fmax0_is_outer) lc_assert(lc_imaxoffset == 0);                \
+  lc_assert(lc_iminoffset == (lc_str0 - lc_mod0) % lc_str0);            \
+  if (!lc_fmax0_is_outer) {                                             \
+    lc_assert(lc_imaxoffset == (lc_str0 - lc_mod0) % lc_str0);          \
+  }                                                                     \
   lc_assert(vec_imin >= lc_control.overall.min.v[0]);                   \
   lc_assert(vec_imax <= lc_control.overall.max.v[0]);                   \
   lc_assert(vec_imin >= lc_fmin0);                                      \
   lc_assert(vec_imax <= lc_fmax0);                                      \
   lc_assert(vec_imin < vec_imax);
-#  else
-  /* Arrays are aligned at their first interior point: fmin0 is the
-     aligned loop boundary; keep it, and set up imin to be the
-     intended loop boundary */
-#    error "TODO"
-#    define LC_ALIGN(i,j,k, vec_imin,vec_imax)                            \
-  const ptrdiff_t vec_imin = lc_max(lc_control.overall.min.v[0], lc_fmin0); \
-  const ptrdiff_t vec_imax = lc_fmax0;                                  \
-  lc_assert(lc_fmin0 >= 0);                                             \
-  lc_assert(lc_fmin0 < lc_fmax0);                                       \
-  lc_assert(lc_fmax0 <= lc_control.overall.max.v[0]);                   \
-  const ptrdiff_t lc_iminpos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);  \
-  const ptrdiff_t lc_iminoffset CCTK_ATTRIBUTE_UNUSED = lc_iminpos % lc_str0; \
-  const int lc_fmax0_is_outer = lc_fmax0 == lc_control.overall.max.v[0]; \
-  const ptrdiff_t lc_imaxpos = lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);  \
-  const ptrdiff_t lc_imaxoffset CCTK_ATTRIBUTE_UNUSED = lc_imaxpos % lc_str0; \
-  lc_assert(lc_iminoffset == 0);                                        \
-  if (!lc_fmax0_is_outer) lc_assert(lc_imaxoffset == 0);                \
-  lc_assert(vec_imin >= lc_control.overall.min.v[0]);                   \
-  lc_assert(vec_imax <= lc_control.overall.max.v[0]);                   \
-  lc_assert(vec_imin >= lc_fmin0);                                      \
-  lc_assert(vec_imax <= lc_fmax0);                                      \
-  lc_assert(vec_imin < vec_imax);
-#  endif
 #else
   /* Arrays are not aligned: fine.min[0] and fine.max[0] are the
      intended loop boundaries; override fmin0 and fmax0 to be aligned,
@@ -221,7 +198,7 @@ extern "C" {
   
 #define LC_SELFTEST(i,j,k, vec_imin,vec_imax)                           \
   if (CCTK_BUILTIN_EXPECT(lc_control.selftest_array != NULL, 0)) {      \
-    lc_selftest_set(&lc_control, vec_imin,vec_imax, lc_str0, i,j,k);    \
+    lc_selftest_set(&lc_control, vec_imin,vec_imax, lc_str0,lc_mod0, i,j,k); \
   }
   
   
@@ -232,7 +209,8 @@ extern "C" {
                               imin_,jmin_,kmin_,                \
                               imax_,jmax_,kmax_,                \
                               iash_,jash_,kash_,                \
-                              vec_imin,vec_imax, istr_,imod_)   \
+                              vec_imin,vec_imax,                \
+                              istr_,imod_)                      \
   do {                                                          \
     typedef int lc_loop3vec_##name;                             \
                                                                 \
@@ -300,7 +278,8 @@ extern "C" {
                     imin,jmin,kmin,             \
                     imax,jmax,kmax,             \
                     iash,jash,kash,             \
-                    vec_imin,vec_imax, istr)    \
+                    vec_imin,vec_imax,          \
+                    istr)                       \
   LC_LOOP3STRMOD_NORMAL(name,                   \
                      i,j,k,                     \
                      lc_ni,lc_nj,lc_nk,         \
