@@ -1,0 +1,32 @@
+# Interface definition for thorn TestAlignedAlloc
+
+IMPLEMENTS: TestAlignedAlloc
+
+INHERITS: grid
+
+USES INCLUDE HEADER: loopcontrol.h
+USES INCLUDE HEADER: vectors.h
+
+
+
+# Convenient way to determine boundary sizes
+CCTK_INT FUNCTION GetBoundarySizesAndTypes \
+  (CCTK_POINTER_TO_CONST IN cctkGH, \
+   CCTK_INT IN size, \
+   CCTK_INT OUT ARRAY bndsize, \
+   CCTK_INT OUT ARRAY is_ghostbnd, \
+   CCTK_INT OUT ARRAY is_symbnd, \
+   CCTK_INT OUT ARRAY is_physbnd)
+REQUIRES FUNCTION GetBoundarySizesAndTypes
+
+
+
+CCTK_REAL vars0 TYPE=gf
+{
+  u0 ddu0
+} "Test grid functions"
+
+CCTK_REAL vars TYPE=gf
+{
+  u ddu
+} "Test grid functions"

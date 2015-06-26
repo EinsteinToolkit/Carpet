@@ -1,0 +1,13 @@
+# Schedule definitions for thorn TestAlignedAlloc
+
+STORAGE: vars0 vars
+
+SCHEDULE TestAlignedAlloc0 AT initial
+{
+  LANG: C
+} "Test vectorized loop iterators"
+
+SCHEDULE TestAlignedAlloc AT initial
+{
+  LANG: C
+} "Test vectorized loop iterators"

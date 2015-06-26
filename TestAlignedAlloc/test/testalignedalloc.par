@@ -1,0 +1,30 @@
+ActiveThorns = "
+        Boundary
+        Carpet
+        CarpetLib
+        CarpetReduce
+        CartGrid3D
+        CoordBase
+        CycleClock
+        CarpetIOASCII
+        IOUtil
+        LoopControl
+        SymBase
+        TestAlignedAlloc
+        Vectors
+        hwloc
+"
+
+Cactus::cctk_itlast = 0
+
+driver::global_nsize = 8
+
+IO::out_every     = 1
+IO::out_dir       = $parfile
+IO::out_fileinfo  = "none"
+IO::parfile_write = "no"
+
+IOASCII::out3D_vars = "
+        TestAlignedAlloc::vars
+        TestAlignedAlloc::vars0
+"

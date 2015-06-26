@@ -1,0 +1,7 @@
+# Main make.code.defn file for thorn TestAlignedAlloc
+
+# Source files in this directory
+SRCS = TestAlignedAlloc0.cc TestAlignedAlloc.cc
+
+# Subdirectories containing source files
+SUBDIRS = 
