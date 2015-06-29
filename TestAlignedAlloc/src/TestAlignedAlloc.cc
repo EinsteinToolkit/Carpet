@@ -12,6 +12,10 @@ using std::size_t;
 
 
 
+typedef vectype<CCTK_REAL> CCTK_VREAL;
+
+
+
 void TestAlignedAlloc(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
@@ -35,10 +39,10 @@ void TestAlignedAlloc(CCTK_ARGUMENTS)
     have_error = have_error ||
       ptrdiff_t(&u[ind3d]) % sizeof(CCTK_REAL_VEC) != 0;
     vec_store_partial_prepare(i, imin, imax);
-    const CCTK_REAL_VEC xl = vec_load(x[ind3d]);
-    const CCTK_REAL_VEC yl = vec_load(y[ind3d]);
-    const CCTK_REAL_VEC zl = vec_load(z[ind3d]);
-    const CCTK_REAL_VEC ul = ksqrt(xl*xl + yl*yl + zl*zl);
+    const CCTK_VREAL xl = CCTK_VREAL::load(x[ind3d]);
+    const CCTK_VREAL yl = CCTK_VREAL::load(y[ind3d]);
+    const CCTK_VREAL zl = CCTK_VREAL::load(z[ind3d]);
+    const CCTK_VREAL ul = sqrt(xl*xl + yl*yl + zl*zl);
     vec_store_nta_partial(u[ind3d], ul);
   } CCTK_ENDLOOP3STRMOD_ALL(all3);
   if (have_error) {
@@ -54,17 +58,17 @@ void TestAlignedAlloc(CCTK_ARGUMENTS)
       ptrdiff_t(&u[ind3d]) % sizeof(CCTK_REAL_VEC) != 0;
     assert(!have_error);
     vec_store_partial_prepare(i, imin, imax);
-    const CCTK_REAL_VEC rl = vec_load(r[ind3d]);
-    const CCTK_REAL_VEC rm0l = vec_loadu_maybe3(-1,0,0,r[ind3d-di]);
-    const CCTK_REAL_VEC rp0l = vec_loadu_maybe3(+1,0,0,r[ind3d+di]);
-    const CCTK_REAL_VEC rm1l = vec_loadu_maybe3(0,-1,0,r[ind3d-dj]);
-    const CCTK_REAL_VEC rp1l = vec_loadu_maybe3(0,+1,0,r[ind3d+dj]);
-    const CCTK_REAL_VEC rm2l = vec_loadu_maybe3(0,0,-1,r[ind3d-dk]);
-    const CCTK_REAL_VEC rp2l = vec_loadu_maybe3(0,0,+1,r[ind3d+dk]);
-    const CCTK_REAL_VEC dd0r = rm0l - 2*rl + rp0l;
-    const CCTK_REAL_VEC dd1r = rm1l - 2*rl + rp1l;
-    const CCTK_REAL_VEC dd2r = rm2l - 2*rl + rp2l;
-    const CCTK_REAL_VEC ddul = dd0r + dd1r + dd2r;
+    const CCTK_VREAL rl = vec_load(r[ind3d]);
+    const CCTK_VREAL rm0l = vec_loadu_maybe3(-1,0,0,r[ind3d-di]);
+    const CCTK_VREAL rp0l = vec_loadu_maybe3(+1,0,0,r[ind3d+di]);
+    const CCTK_VREAL rm1l = vec_loadu_maybe3(0,-1,0,r[ind3d-dj]);
+    const CCTK_VREAL rp1l = vec_loadu_maybe3(0,+1,0,r[ind3d+dj]);
+    const CCTK_VREAL rm2l = vec_loadu_maybe3(0,0,-1,r[ind3d-dk]);
+    const CCTK_VREAL rp2l = vec_loadu_maybe3(0,0,+1,r[ind3d+dk]);
+    const CCTK_VREAL dd0r = rm0l - CCTK_VREAL(2.0)*rl + rp0l;
+    const CCTK_VREAL dd1r = rm1l - CCTK_VREAL(2.0)*rl + rp1l;
+    const CCTK_VREAL dd2r = rm2l - CCTK_VREAL(2.0)*rl + rp2l;
+    const CCTK_VREAL ddul = dd0r + dd1r + dd2r;
     vec_store_nta_partial(ddu[ind3d], ddul);
   } CCTK_ENDLOOP3STRMOD_INT(int3);
   if (have_error) {
@@ -81,7 +85,7 @@ void TestAlignedAlloc(CCTK_ARGUMENTS)
       ptrdiff_t(&u[ind3d]) % sizeof(CCTK_REAL_VEC) != 0;
     assert(!have_error);
     vec_store_partial_prepare(i, imin, imax);
-    const CCTK_REAL_VEC ddul = vec_set1(0);
+    const CCTK_VREAL ddul = CCTK_VREAL(0.0);
     vec_store_nta_partial(ddu[ind3d], ddul);
   } CCTK_ENDLOOP3STRMOD_BND(bnd3);
   if (have_error) {
