@@ -2099,7 +2099,7 @@ void dh::recompose(int const rl, bool const do_prolongate) {
 
   if (combine_recompose) {
     // Recompose all grid functions of this refinement levels at once.
-    // This may be faster, but requires more memory.
+    // This may be faster, but requires more memory. This is the default.
     for (map<int, ggf *>::iterator f = gfs.begin(); f != gfs.end(); ++f) {
       f->second->recompose_allocate(rl);
     }
@@ -2124,7 +2124,7 @@ void dh::recompose(int const rl, bool const do_prolongate) {
     }
   } else {
     // Recompose the grid functions sequentially.  This may be slower,
-    // but requires less memory.  This is the default.
+    // but requires less memory.
     for (map<int, ggf *>::iterator f = gfs.begin(); f != gfs.end(); ++f) {
       f->second->recompose_allocate(rl);
 #if 0
