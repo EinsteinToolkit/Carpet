@@ -875,22 +875,23 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
     HDF5_ERROR (H5Aclose (attr));
   }
 
+  ivect const ioffset =
+    ((bbox.lower() % bbox.stride()) + bbox.stride()) % bbox.stride();
+  ivect const iorigin = (bbox.lower() - ioffset) / bbox.stride();
+  HDF5_ERROR (attr = H5Acreate (dataset, "iorigin", H5T_NATIVE_INT,
+                                dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &iorigin[0]));
+  HDF5_ERROR (H5Aclose (attr));
+
   if (is_gf) {
     ivect const ioffsetdenom = bbox.stride();
     HDF5_ERROR (attr = H5Acreate (dataset, "ioffsetdenom", H5T_NATIVE_INT,
                                   dataspace, H5P_DEFAULT));
     HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ioffsetdenom[0]));
     HDF5_ERROR (H5Aclose (attr));
-    ivect const ioffset =
-      ((bbox.lower() % bbox.stride()) + bbox.stride()) % bbox.stride();
     HDF5_ERROR (attr = H5Acreate (dataset, "ioffset", H5T_NATIVE_INT,
                                   dataspace, H5P_DEFAULT));
     HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ioffset[0]));
-    HDF5_ERROR (H5Aclose (attr));
-    ivect const iorigin = (bbox.lower() - ioffset) / bbox.stride();
-    HDF5_ERROR (attr = H5Acreate (dataset, "iorigin", H5T_NATIVE_INT,
-                                  dataspace, H5P_DEFAULT));
-    HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &iorigin[0]));
     HDF5_ERROR (H5Aclose (attr));
 
     ostringstream buf;
