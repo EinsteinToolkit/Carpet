@@ -183,7 +183,7 @@ namespace Timers {
     
     const int pcw = 6;
     const int tw = 8;
-    const int tnw = 40;         // timer name
+    const int tnw = 50;         // timer name
     const int vw = 9;           // clock values
     const streamsize oldprecision = out.precision();
     const ios_base::fmtflags oldflags = out.flags();
