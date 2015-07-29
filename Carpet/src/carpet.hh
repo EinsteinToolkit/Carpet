@@ -84,7 +84,7 @@ namespace Carpet {
   // Error output
   void UnsupportedVarType (int vindex);
   
-  #define KNARFDEBL 0
+  #define KNARFDEBL 2
   #define KNARFDEB(l, ...) {if (KNARFDEBL>=l) {fprintf(stderr, __VA_ARGS__); }}
 
   // Check for a map0group

@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+#include <sstream>
+#include <iterator>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
@@ -24,7 +26,11 @@ namespace Carpet {
 
   using namespace std;
 
-
+  static string intvectString(const vector<int> vect) {
+    std::stringstream result;
+    std::copy(vect.begin(), vect.end(), std::ostream_iterator<int>(result, " "));
+    return result.str();
+  }
 
   static void ProlongateGroupBoundaries (const cGH* cctkGH,
                                          const vector<int>& groups);
@@ -155,7 +161,8 @@ namespace Carpet {
           static Timers::Timer timer("Sync");
           timer.start();
           reflevel--;
-          KNARFDEB(2, "KNARF preprolongate sync lvl %d on proc %d\n", reflevel, CCTK_MyProc(NULL));
+          KNARFDEB(2, "KNARF preprolongate sync lvl %d on proc %d, groups: %s\n",
+                      reflevel, CCTK_MyProc(NULL), intvectString(goodgroups).c_str());
           SyncGroups(cctkGH, goodgroups);
           timer.stop();
           reflevel++;
@@ -167,6 +174,7 @@ namespace Carpet {
         timer.start();
         ProlongateGroupBoundaries (cctkGH, goodgroups);
         timer.stop();
+        KNARFDEB(2, "KNARF do prolongate lvl %d on proc %d\n", reflevel, CCTK_MyProc(NULL));
       }
       else
         KNARFDEB(2, "KNARF skip prolongate lvl %d on proc %d\n", reflevel, CCTK_MyProc(NULL));
@@ -195,7 +203,8 @@ namespace Carpet {
       if (sync_during_time_integration or local_do_prolongate) {
         static Timers::Timer timer ("Sync");
         timer.start();
-        KNARFDEB(2, "KNARF postprolongate sync lvl %d on proc %d\n", reflevel, CCTK_MyProc(NULL));
+        KNARFDEB(2, "KNARF postprolongate sync lvl %d on proc %d, groups: %s\n",
+                    reflevel, CCTK_MyProc(NULL), intvectString(goodgroups).c_str());
         SyncGroups (cctkGH, goodgroups);
         timer.stop();
       }
@@ -205,6 +214,7 @@ namespace Carpet {
     return retval;
   }
 
+  // KNARF TODO
   int SyncProlongateGroups (const cGH* cctkGH, const vector<int>& groups,
                             cFunctionData const* function_data)
   {
@@ -369,7 +379,8 @@ namespace Carpet {
 
     assert (groups.size() > 0);
 
-    KNARFDEB(1, "KNARF SYNC, rl %d\n", reflevel);
+    KNARFDEB(1, "KNARF SYNC, rl %d, proc %d, groups: %s\n", reflevel, CCTK_MyProc(NULL),
+                intvectString(groups).c_str());
     
     if (CCTK_IsFunctionAliased("Accelerator_PreSync")) {
       vector<CCTK_INT> groups_(groups.size());
