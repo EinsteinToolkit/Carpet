@@ -130,7 +130,7 @@ namespace Carpet {
           for (int var=0; var<nvar; ++var) {
             int const n = n0 + var;
             for (int tl=min_tl; tl<=max_tl; ++tl) {
-              memset (cctkGH->data[n][tl], poison_value, np*sz);
+              memset (cctkGH->data[n][tl], poison_value, size_t(np)*sz);
             } // for tl
           } // for var
           
