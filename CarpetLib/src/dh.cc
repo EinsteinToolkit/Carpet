@@ -2330,9 +2330,9 @@ mpi_datatype (dh::light_dboxes const &)
       ENTRY(int, exterior),
       ENTRY(int, owned),
       ENTRY(int, interior),
-      ENTRY(dh::light_dboxes::size_type, exterior_size),
-      ENTRY(dh::light_dboxes::size_type, owned_size),
-      ENTRY(dh::light_dboxes::size_type, active_size),
+      ENTRY(size_type, exterior_size),
+      ENTRY(size_type, owned_size),
+      ENTRY(size_type, active_size),
       {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}
     };
 #undef ENTRY

@@ -123,7 +123,6 @@ public:
   // Accessors
   bool empty () const { return bs.empty(); } // cost: O(1)
   // T size () const;
-  typedef typename box::size_type size_type;
   size_type size () const CCTK_MEMBER_ATTRIBUTE_PURE; // cost: O(n)
   int setsize () const { return bs.size(); } // cost: O(1)
   
@@ -659,7 +658,7 @@ void bboxset<T,D>::normalize ()
 // Accessors
 // cost: O(n)
 template<typename T, int D>
-typename bboxset<T,D>::size_type bboxset<T,D>::size () const
+size_type bboxset<T,D>::size () const
 {
   size_type s = 0;
   for (const_iterator bi=begin(), be=end(); bi!=be; ++bi) {

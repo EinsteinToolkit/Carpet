@@ -117,7 +117,6 @@ public:
   
   /** Return the size, which is the number of contained points.  */
   // T size () const;
-  typedef long long int size_type;
   size_type size () const CCTK_MEMBER_ATTRIBUTE_PURE;
   
   // Queries
