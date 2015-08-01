@@ -61,7 +61,7 @@ bool bbox<T,D>::is_poison () const
 
 // Accessors
 template<typename T, int D>
-typename bbox<T,D>::size_type bbox<T,D>::size () const {
+size_type bbox<T,D>::size () const {
   if (empty()) return 0;
   const vect<T,D> sh(shape()/stride());
 #ifndef CARPET_DEBUG

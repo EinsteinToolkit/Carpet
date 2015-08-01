@@ -11,12 +11,14 @@
 
 
 
-static ptrdiff_t next_power_of_2 (ptrdiff_t const x)
+template<typename T>
+static T next_power_of_2 (T const x)
   CCTK_ATTRIBUTE_UNUSED;
-static ptrdiff_t next_power_of_2 (ptrdiff_t const x)
+template<typename T>
+static T next_power_of_2 (T const x)
 {
   assert (x > 0);
-  ptrdiff_t res = 1;
+  T res = 1;
   while (res < x) {
     res *= 2;
     assert (res > 0);           // try to catch overflows
@@ -24,27 +26,33 @@ static ptrdiff_t next_power_of_2 (ptrdiff_t const x)
   return res;
 }
 
-static ptrdiff_t previous_power_of_2 (ptrdiff_t const x)
+template<typename T>
+static T previous_power_of_2 (T const x)
   CCTK_ATTRIBUTE_UNUSED;
-static ptrdiff_t previous_power_of_2 (ptrdiff_t const x)
+template<typename T>
+static T previous_power_of_2 (T const x)
 {
   return next_power_of_2(x/2+1);
 }
 
-static bool is_power_of_2 (ptrdiff_t const x)
+template<typename T>
+static bool is_power_of_2 (T const x)
   CCTK_ATTRIBUTE_UNUSED;
-static bool is_power_of_2 (ptrdiff_t const x)
+template<typename T>
+static bool is_power_of_2 (T const x)
 {
   return x == next_power_of_2(x);
 }
 
 #if 0
-static ptrdiff_t lcm (ptrdiff_t const x, ptrdiff_t const y)
+template<typename T>
+static T lcm (T const x, T const y)
   CCTK_ATTRIBUTE_UNUSED;
-static ptrdiff_t lcm (ptrdiff_t const x, ptrdiff_t const y)
+template<typename T>
+static T lcm (T const x, T const y)
 {
   assert (x > 0 && y > 0);
-  ptrdiff_t z = x;
+  T z = x;
   // TODO: improve LCM algorithm
   while (z % y != 0) z += x;
   assert (z % x == 0 && z % y == 0);

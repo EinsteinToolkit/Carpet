@@ -47,7 +47,6 @@ public:
     ibbox owned;                // evolved in time
     ibbox interior;             // owned, plus outer boundary
     // Region statistics:
-    typedef ibbox::size_type size_type;
     size_type exterior_size, owned_size, active_size;
     
     size_t memory () const CCTK_MEMBER_ATTRIBUTE_PURE;

@@ -67,9 +67,9 @@ pad_shape(vect<int,D> const& shape)
   }
   
   vect<int,D> padded_shape;
-  int accumulated_npoints = 1;
+  size_type accumulated_npoints = 1;
   for (int d=0; d<D; ++d) {
-    int npoints = shape[d];
+    size_type npoints = shape[d];
     
 #if VECTORISE && VECTORISE_ALIGNED_ARRAYS
     if (d == 0) {
@@ -98,7 +98,7 @@ pad_shape(vect<int,D> const& shape)
           } else {
             // The extent is at least one cache line long: round up to
             // the next full cache line
-            int total_npoints = npoints * accumulated_npoints;
+            size_type total_npoints = npoints * accumulated_npoints;
             total_npoints = align_up(total_npoints, linesize);
             assert(total_npoints % accumulated_npoints == 0);
             npoints = total_npoints / accumulated_npoints;
@@ -110,8 +110,8 @@ pad_shape(vect<int,D> const& shape)
             int const stride = cache_stride / sizeof(CCTK_REAL);
             if (npoints * accumulated_npoints % stride == 0) {
               assert(stride > linesize);
-              int total_npoints = npoints * accumulated_npoints;
-              total_npoints += max(linesize, accumulated_npoints);
+              size_type total_npoints = npoints * accumulated_npoints;
+              total_npoints += max(size_type(linesize), accumulated_npoints);
               assert(total_npoints % accumulated_npoints == 0);
               npoints = total_npoints / accumulated_npoints;
             }
@@ -124,7 +124,7 @@ pad_shape(vect<int,D> const& shape)
     padded_shape[d] = npoints;
     accumulated_npoints *= npoints;
   }
-  assert(prod(padded_shape) == accumulated_npoints);
+  assert(prod(vect<size_type,D>(padded_shape)) == accumulated_npoints);
   
   // self-check
   for (int d=0; d<D; ++d) {
@@ -137,11 +137,17 @@ pad_shape(vect<int,D> const& shape)
   }
   
   // Safety check
-  if (not (prod(padded_shape) <= 2 * prod(shape) + 1000)) {
-    cerr << "shape=" << shape << "   prod(shape)=" << prod(shape) << "\n"
-         << "padded_shape=" << padded_shape << "   prod(padded_shape)=" << prod(padded_shape) << "\n";
+  if (not (prod(vect<size_type,D>(padded_shape)) <=
+           2 * prod(vect<size_type,D>(shape)) + 1000))
+  {
+    cerr << "shape=" << shape << "   "
+         << "prod(shape)=" << prod(vect<size_type,D>(shape)) << "\n"
+         << "padded_shape=" << padded_shape << "   "
+         << "prod(padded_shape)=" << prod(vect<size_type,D>(padded_shape))
+         << "\n";
   }
-  assert(prod(padded_shape) <= 2 * prod(shape) + 1000);
+  assert(prod(vect<size_type,D>(padded_shape)) <=
+         2 * prod(vect<size_type,D>(shape)) + 1000);
   
   if (verbose) {
     ostringstream buf;

@@ -1,0 +1,15 @@
+ActiveThorns = "
+    Carpet
+    CarpetLib
+    CartGrid3D
+    CoordBase
+"
+
+# 65536^2 grid points requrie at least 8 processes to run, so that
+# each process has less than 2G grid points
+
+driver::global_nx = 65536
+driver::global_ny = 8192   # 65536
+driver::global_nz = 3
+
+Carpet::enable_no_storage = yes

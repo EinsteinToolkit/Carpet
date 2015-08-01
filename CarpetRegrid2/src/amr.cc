@@ -200,9 +200,9 @@ namespace CarpetRegrid2 {
                    << "   domain is " << baseext << "\n"
                    << "   next coarser level is " << regions.at(rl-1) << "\n";
             }
-            ibbox::size_type const nrefined = region.size();
-            ibbox::size_type const npoints = baseext.size();
-            ibbox::size_type const ncoarse =
+            size_type const nrefined = region.size();
+            size_type const npoints = baseext.size();
+            size_type const ncoarse =
               regions.at(rl-1).expanded_for(baseext).size();
             cout << "   refining "
                  << (100.0*nrefined/ncoarse) << "% of the next coarser level\n"
