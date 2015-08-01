@@ -76,7 +76,7 @@ pad_shape(vect<int,D> const& shape)
       // Pad array to a multiple of the vector size. Note that this is
       // a hard requirement, so that we can emit aligned load/store
       // operations.
-      npoints = align_up(npoints, CCTK_REAL_VEC_SIZE);
+      npoints = align_up(npoints, size_type(CCTK_REAL_VEC_SIZE));
     }
     
     if (pad_to_cachelines) {
@@ -99,7 +99,7 @@ pad_shape(vect<int,D> const& shape)
             // The extent is at least one cache line long: round up to
             // the next full cache line
             size_type total_npoints = npoints * accumulated_npoints;
-            total_npoints = align_up(total_npoints, linesize);
+            total_npoints = align_up(total_npoints, size_type(linesize));
             assert(total_npoints % accumulated_npoints == 0);
             npoints = total_npoints / accumulated_npoints;
           }
