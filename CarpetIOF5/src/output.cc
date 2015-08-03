@@ -255,7 +255,7 @@ namespace CarpetIOF5 {
               output_past_timelevels or output_all_timelevels ?
               (group_type == CCTK_GF ?
                timelevels :
-               CCTK_NumTimeLevelsI(group_index)) :
+               CCTK_MaxActiveTimeLevelsVI(cctkGH, group_index)) :
               1;
             for (timelevel=0; timelevel<max_tl; ++timelevel) {
               cctkGH->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
