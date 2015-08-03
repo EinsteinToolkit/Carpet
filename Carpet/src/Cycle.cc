@@ -86,7 +86,8 @@ namespace Carpet {
             case CCTK_SCALAR:
             case CCTK_ARRAY:
             if (do_global_mode) {
-              int const numtimelevels = CCTK_NumTimeLevelsI (group);
+              int const numtimelevels =
+                CCTK_MaxActiveTimeLevelsVI (cctkGH, group);
               int const firstvarindex = CCTK_FirstVarIndexI (group);
               for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
                 arrdata.AT(group).AT(0).data.AT(var)->cycle_all (0, mglevel);
@@ -156,7 +157,8 @@ namespace Carpet {
         case CCTK_SCALAR:
         case CCTK_ARRAY:
           if (do_global_mode) {
-            int const numtimelevels = CCTK_NumTimeLevelsI (group);
+            int const numtimelevels =
+              CCTK_MaxActiveTimeLevelsVI (cctkGH, group);
             int const firstvarindex = CCTK_FirstVarIndexI (group);
             for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
               arrdata.AT(group).AT(0).data.AT(var)->uncycle_all (0, mglevel);
@@ -216,7 +218,8 @@ namespace Carpet {
         case CCTK_SCALAR:
         case CCTK_ARRAY:
           if (do_global_mode) {
-            int const numtimelevels = CCTK_NumTimeLevelsI (group);
+            int const numtimelevels =
+              CCTK_MaxActiveTimeLevelsVI (cctkGH, group);
             int const firstvarindex = CCTK_FirstVarIndexI (group);
             for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
               arrdata.AT(group).AT(0).data.AT(var)->flip_all (0, mglevel);
