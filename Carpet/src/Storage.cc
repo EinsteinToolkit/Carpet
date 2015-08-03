@@ -334,7 +334,7 @@ namespace Carpet {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 and group<CCTK_NumGroups());
     // TODO: decide whether to use CCTK_MaxActiveTimeLevelsGI
-    const int tls = CCTK_MaxTimeLevelsGI(group);
+    const int tls = CCTK_DeclaredTimeLevelsGI(group);
     int status;
     GroupStorageIncrease (cctkGH, 1, &group, &tls, &status);
     // Return whether storage was allocated previously
