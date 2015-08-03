@@ -217,7 +217,7 @@ namespace CarpetIOScalar {
     assert (n0>=0 and n0<CCTK_NumVars());
     const int var = n - n0;
     assert (var>=0 and var<CCTK_NumVarsInGroupI(group));
-    const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
+    const int num_tl = CCTK_MaxActiveTimeLevelsVI(cctkGH, n);
     assert (num_tl>=1);
 
     // Check for storage
