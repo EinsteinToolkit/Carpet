@@ -38,7 +38,7 @@ namespace Carpet {
   
   int
   GroupStorageCrease (const cGH* cctkGH, int n_groups, const int* groups,
-                      const int* tls, int* status,
+                      const int* requested_tls, int* status,
                       const bool inc)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -46,7 +46,7 @@ namespace Carpet {
     assert (cctkGH);
     assert (n_groups >= 0);
     assert (groups);
-    assert (tls);
+    assert (requested_tls);
     for (int n=0; n<n_groups; ++n) {
       if (groups[n] < 0 or groups[n] >= CCTK_NumGroups()) {
         CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -57,6 +57,22 @@ namespace Carpet {
       // TODO: tls[n] can also be -1; in that case, all time
       // levels should be activated / deactivated
       assert (tls[n] >= 0);
+    }
+
+    // sanitize list of requested timelevels
+    std::vector<int> tls(n_groups);
+    for (int n=0; n<n_groups; ++n) {
+      int ntls = requested_tls[n];
+      int const declared_tls = CCTK_DeclaredTimeLevelsGI(groups[n]);
+      if(inc and ntls > 1 and ntls > declared_tls) {
+        char* groupname = CCTK_GroupName(groups[n]);
+        CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Attempting to activate %d timelevels for group '%s' which only has a single timelevel declared in interface.ccl. Please declared at least 2 timelevels in interface.ccl to allow more timelevels to be created at runtime.",
+                    ntls, groupname);
+        free (groupname);
+        ntls = declared_tls;
+      }
+      tls.at(n) = ntls;
     }
     
 #ifdef REQUIREMENTS_HH
