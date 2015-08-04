@@ -54,9 +54,7 @@ namespace Carpet {
         return -1;
       }
       assert (groups[n] >= 0 and groups[n] < CCTK_NumGroups());
-      // TODO: tls[n] can also be -1; in that case, all time
-      // levels should be activated / deactivated
-      assert (tls[n] >= 0);
+      assert (requested_tls[n] >= 0 or requested_tls[n] == -1);
     }
 
     // sanitize list of requested timelevels
@@ -64,12 +62,15 @@ namespace Carpet {
     for (int n=0; n<n_groups; ++n) {
       int ntls = requested_tls[n];
       int const declared_tls = CCTK_DeclaredTimeLevelsGI(groups[n]);
-      if(inc and ntls > 1 and ntls > declared_tls) {
+      if(inc and declared_tls < 2 and ntls > declared_tls) {
         char* groupname = CCTK_GroupName(groups[n]);
         CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Attempting to activate %d timelevels for group '%s' which only has a single timelevel declared in interface.ccl. Please declared at least 2 timelevels in interface.ccl to allow more timelevels to be created at runtime.",
                     ntls, groupname);
-        free (groupname);
+        free(groupname);
+        ntls = declared_tls;
+      }
+      if(ntls == -1) {
         ntls = declared_tls;
       }
       tls.at(n) = ntls;
