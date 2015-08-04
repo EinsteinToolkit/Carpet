@@ -83,6 +83,11 @@ const int dim = CARPET_DIM;
 
 
 
+// A type for counting grid points (should be at least 64 bits)
+typedef long long int size_type;
+
+
+
 // Begin a new line without flushing the output buffer
 char const * const eol = "\n";
 

@@ -1,0 +1,19 @@
+ActiveThorns = "
+    Carpet
+    CarpetLib
+    CartGrid3D
+    CoordBase
+    IOUtil
+"
+
+# 65536^2 grid points require at least 8 processes to run, so that
+# each process has less than 2G grid points. 65536*8192 grid points
+# can run on a single process.
+
+driver::global_nx = 65536
+driver::global_ny = 8192   # 65536
+driver::global_nz = 3
+
+Carpet::enable_no_storage = yes
+
+IO::out_dir = $parfile

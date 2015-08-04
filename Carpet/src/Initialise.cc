@@ -104,6 +104,11 @@ namespace Carpet {
     
     CallSetup (cctkGH);
     
+    if (enable_no_storage) {
+      CCTK_INFO ("Carpet completed its internal setup, and would now normally go on to allocate memory.  Since the parameter Carpet::enable_no_storage has been set, Carpet will exit instead.");
+      CCTK_Exit (const_cast<cGH*> (cctkGH), 0);
+    }
+    
     if (fc->recovered) {
       // Read data from a checkpoint file
       
@@ -1085,15 +1090,13 @@ namespace Carpet {
           Requirements::Regrid(reflevels);
 #endif
           for (int rl=0; rl<reflevels; ++rl) {
-            if (not enable_no_storage) {
-              Recompose (cctkGH, rl, prolongate_initial_data);
+            Recompose (cctkGH, rl, prolongate_initial_data);
 #ifdef REQUIREMENTS_HH
-              Requirements::Recompose(cctkGH->cctk_iteration, rl,
-                                      prolongate_initial_data ?
-                                      Requirements::valid::interior :
-                                      Requirements::valid::nowhere);
+            Requirements::Recompose(cctkGH->cctk_iteration, rl,
+                                    prolongate_initial_data ?
+                                    Requirements::valid::interior :
+                                    Requirements::valid::nowhere);
 #endif
-            }
           } // for rl
 #ifdef REQUIREMENTS_HH
           Requirements::RegridFree();

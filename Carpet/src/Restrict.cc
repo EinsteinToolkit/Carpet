@@ -79,6 +79,34 @@ namespace Carpet {
   static void RestrictGroups (const cGH* cctkGH, const vector<int>& groups) {
     DECLARE_CCTK_PARAMETERS;
 
+    // TODO: Transmit only the regions that are actually needed
+    if (CCTK_IsFunctionAliased("Accelerator_RequireValidData")) {
+      vector<CCTK_INT> vis, rls, tls;
+      for (int group = 0; group < (int)groups.size(); ++group) {
+        const int g = groups.AT(group);
+        const int active_tl = CCTK_ActiveTimeLevelsGI (cctkGH, g);
+        assert (active_tl>=0);
+        const int tl = active_tl > 1 ? timelevel : 0;
+        for (int m=0; m<(int)arrdata.AT(g).size(); ++m) {
+          const int var0 = CCTK_FirstVarIndexI(g);
+          const int varn = CCTK_NumVarsInGroupI(g);
+          for (int vi=var0; vi<var0+varn; ++vi) {
+            vis.push_back(vi);
+            rls.push_back(reflevel);
+            tls.push_back(tl);
+
+            vis.push_back(vi);
+            rls.push_back(reflevel+1);
+            tls.push_back(tl);
+          }
+        }
+      }
+      const CCTK_INT on_device = 0;
+      Accelerator_RequireValidData
+        (cctkGH,
+         &vis.front(), &rls.front(), &tls.front(), vis.size(), on_device);
+    }
+
     static vector<Timers::Timer*> timers;
     if (timers.empty()) {
       timers.push_back(new Timers::Timer("comm_state[0].create"));
@@ -117,6 +145,30 @@ namespace Carpet {
     } // for state
     (*ti)->stop();
     ++ti; assert(ti == timers.end());
+
+    // TODO: Transmit only the regions that are actually needed
+    if (CCTK_IsFunctionAliased("Accelerator_NotifyDataModified")) {
+      vector<CCTK_INT> vis, rls, tls;
+      for (int group = 0; group < (int)groups.size(); ++group) {
+        const int g = groups.AT(group);
+        const int active_tl = CCTK_ActiveTimeLevelsGI (cctkGH, g);
+        assert (active_tl>=0);
+        const int tl = active_tl > 1 ? timelevel : 0;
+        for (int m=0; m<(int)arrdata.AT(g).size(); ++m) {
+          const int var0 = CCTK_FirstVarIndexI(g);
+          const int varn = CCTK_NumVarsInGroupI(g);
+          for (int vi=var0; vi<var0+varn; ++vi) {
+            vis.push_back(vi);
+            rls.push_back(reflevel);
+            tls.push_back(tl);
+          }
+        }
+      }
+      const CCTK_INT on_device = 0;
+      Accelerator_NotifyDataModified
+        (cctkGH,
+         &vis.front(), &rls.front(), &tls.front(), vis.size(), on_device);
+    }
   }
 
 } // namespace Carpet

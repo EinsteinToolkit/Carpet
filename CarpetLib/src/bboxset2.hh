@@ -420,7 +420,6 @@ public:
   T chi_size() const;
   
   /** Number of elements */
-  typedef typename bbox::size_type size_type;
   size_type size() const;
   
   /** Container (min and max) */
@@ -1102,7 +1101,7 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
   
   /** Number of elements */
   template<typename T, int D>
-  typename bboxset<T,D>::size_type bboxset<T,D>::size() const
+  size_type bboxset<T,D>::size() const
   {
     assert(not is_poison());
     size_type total_size = 0;   // accumulated total number of points

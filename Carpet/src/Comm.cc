@@ -231,10 +231,14 @@ namespace Carpet {
         if (grouptype != CCTK_GF) {
           continue;
         }
+
         const int num_tl = prolongation_order_time + 1;
         const int var0 = CCTK_FirstVarIndexI(g);
         const int varn = CCTK_NumVarsInGroupI(g);
         for (int vi=var0; vi<var0+varn; ++vi) {
+          vis.push_back(vi);
+          rls.push_back(reflevel);
+          tls.push_back(timelevel);
           for (int tl=0; tl<num_tl; ++tl) {
             vis.push_back(vi);
             rls.push_back(reflevel-1);
@@ -313,7 +317,7 @@ namespace Carpet {
         const int varn = CCTK_NumVarsInGroupI(g);
         for (int vi=var0; vi<var0+varn; ++vi) {
           vis.push_back(vi);
-          rls.push_back(reflevel-1);
+          rls.push_back(reflevel);
           tls.push_back(timelevel);
         }
       }
