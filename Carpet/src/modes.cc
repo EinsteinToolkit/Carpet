@@ -178,17 +178,16 @@ namespace Carpet {
         if (numvars>0) {
           const int firstvar = CCTK_FirstVarIndexI (group);
           assert (firstvar>=0);
-          const int max_tl = CCTK_MaxTimeLevelsGI (group);
-          assert (max_tl>=0);
+          // TODO: modify flesh to allow changing max_tl
           const int active_tl = info.activetimelevels;
-          assert (active_tl>=0 and active_tl<=max_tl);
+          assert (active_tl>=0);
           
           assert (arrdata.AT(group).AT(m).hh->is_local(rl,c));
           
           for (int var=0; var<numvars; ++var) {
             assert (firstvar+var<CCTK_NumVars());
             ggf * const ff = arrdata.AT(group).AT(m).data.AT(var);
-            for (int tl=0; tl<max_tl; ++tl) {
+            for (int tl=0; tl< info.maxtimelevels; ++tl) {
               if (ff and tl<active_tl) {
                 int const lc = 0;
                 gdata * const data = ff->data_pointer (tl, rl, lc, ml);
@@ -270,7 +269,7 @@ namespace Carpet {
         if (numvars>0) {
           const int firstvar = CCTK_FirstVarIndexI (group);
           assert (firstvar>=0);
-          const int max_tl = CCTK_MaxTimeLevelsGI (group);
+          const int max_tl = groupdata.AT(group).info.maxtimelevels;
           assert (max_tl>=0);
           
           assert (group<(int)arrdata.size());
@@ -652,11 +651,10 @@ namespace Carpet {
             if (numvars>0) {
               const int firstvar = CCTK_FirstVarIndexI (group);
               assert (firstvar>=0);
-              const int max_tl = CCTK_MaxTimeLevelsGI (group);
-              assert (max_tl>=0);
+              // TODO: Modify flesh so the max_tl can be updated
               const int active_tl =
                 groupdata.AT(group).activetimelevels.AT(mglevel).AT(reflevel);
-              assert (active_tl>=0 and active_tl<=max_tl);
+              assert (active_tl>=0);
               int available_tl;
               int tl_offset;
               if (active_tl == 0) {
@@ -685,7 +683,7 @@ namespace Carpet {
               for (int var=0; var<numvars; ++var) {
                 assert (firstvar+var<CCTK_NumVars());
                 ggf * const ff = arrdata.AT(group).AT(map).data.AT(var);
-                for (int tl=0; tl<max_tl; ++tl) {
+                for (int tl=0; tl< info.maxtimelevels; ++tl) {
                   if (ff and tl<available_tl) {
                     gdata * const data =
                       ff->data_pointer
@@ -770,13 +768,14 @@ namespace Carpet {
             if (numvars>0) {
               const int firstvar = CCTK_FirstVarIndexI (group);
               assert (firstvar>=0);
-              const int max_tl = CCTK_MaxTimeLevelsGI (group);
-              assert (max_tl>=0);
+              const int active_tl =
+                groupdata.AT(group).activetimelevels.AT(mglevel).AT(reflevel);
+              assert (active_tl>=0);
               
               assert (group<(int)arrdata.size());
               for (int var=0; var<numvars; ++var) {
                 assert (firstvar+var<CCTK_NumVars());
-                for (int tl=0; tl<max_tl; ++tl) {
+                for (int tl=0; tl<active_tl; ++tl) {
                   cctkGH->data[firstvar+var][tl] = NULL;
                 }
               }

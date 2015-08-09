@@ -541,7 +541,7 @@ namespace CarpetIOHDF5 {
     const int ml = groupdata.grouptype == CCTK_GF ? mglevel : 0;
     const int rl = groupdata.grouptype == CCTK_GF ? reflevel : 0;
 
-    const int num_tl = CCTK_NumTimeLevelsFromVarI (vindex);
+    const int num_tl = CCTK_MaxActiveTimeLevelsVI (cctkGH, vindex);
     assert (num_tl >= 1);
 
     const int numvars = one_file_per_group ?
