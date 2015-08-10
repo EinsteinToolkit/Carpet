@@ -8,7 +8,7 @@ ActiveThorns = "CoordBase SymBase InitBase time carpet carpetlib carpetregrid GS
 # CarpetEvolutionMask 
 
 carpetevolutionmask::verbose = "yes"
-carpetevolutionmask::enforce_vars = "ml_bssn::gt11 ml_bssn::At11 ml_bssn::phiW"
+carpetevolutionmask::enforce_vars = "ml_bssn::gt11 ml_bssn::At11 ml_bssn::cf"
 carpetevolutionmask::enforce_mask = "no"
 carpetevolutionmask::writeNaNs = "no"
 
@@ -126,7 +126,7 @@ carpetioascii::out3D_vars = "ml_bssn::gt11 carpetevolutionmask::evolution_mask"
 
 
 IOScalar::outScalar_every      =  4
-IOScalar::outScalar_vars       = "ml_bssn::gt11 ml_bssn::At11 ml_bssn::phiW ml_bssn::trK ml_bssn::Xt1 admbase::gxx admbase::kxx admbase::alp"
+IOScalar::outScalar_vars       = "ml_bssn::gt11 ml_bssn::At11 ml_bssn::cf ml_bssn::trK ml_bssn::Xt1 admbase::gxx admbase::kxx admbase::alp"
 IOScalar::outScalar_reductions = "count minimum maximum average norm1 norm2 norm_inf"
 
 
