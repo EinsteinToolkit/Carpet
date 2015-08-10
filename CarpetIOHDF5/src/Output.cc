@@ -829,10 +829,10 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
                              coord_handles, "COORDINATES") >= 0) {
 #if 0                           // dh::dbases
     const ibbox& baseext =
-      vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
+      vdd.at(Carpet::map)->bases.at(mglevel).at(refinementlevel).exterior;
 #endif
     const ibbox& baseext =
-      vhh.at(Carpet::map)->baseextents.at(mglevel).at(reflevel);
+      vhh.at(Carpet::map)->baseextents.at(mglevel).at(refinementlevel);
 
     const ivect pos = (bbox.lower() - baseext.lower()) / bbox.stride();
 
@@ -896,7 +896,8 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
 
     ostringstream buf;
     buf << (vdd.at(Carpet::map)->
-            local_boxes.at(mglevel).at(refinementlevel).at(component).active);
+            local_boxes.at(mglevel).at(refinementlevel).at(local_component).
+            active);
     WriteAttribute(dataset, "active", buf.str().c_str());
   }
 
