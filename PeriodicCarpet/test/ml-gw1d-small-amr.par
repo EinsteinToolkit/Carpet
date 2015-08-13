@@ -59,7 +59,7 @@ IOASCII::out1D_vars         = "
         ADMBase::curv
         ADMBase::lapse
         ADMBase::shift
-        ML_BSSN::ML_confac
+        ML_BSSN::ML_log_confac
         ML_BSSN::ML_metric
         ML_BSSN::ML_trace_curv
         ML_BSSN::ML_curv
@@ -164,7 +164,7 @@ ML_BSSN::BetaDriver      = 1.0
 
 ML_BSSN::my_boundary_condition = "Minkowski"
 
-ML_BSSN::ML_confac_bound     = "none"
+ML_BSSN::ML_log_confac_bound     = "none"
 ML_BSSN::ML_metric_bound     = "none"
 ML_BSSN::ML_Gamma_bound      = "none"
 ML_BSSN::ML_trace_curv_bound = "none"
@@ -181,7 +181,7 @@ Dissipation::vars = "
 	ML_BSSN::ML_Gamma
   	ML_BSSN::ML_lapse
   	ML_BSSN::ML_shift
-  	ML_BSSN::ML_confac
+  	ML_BSSN::ML_log_confac
   	ML_BSSN::ML_metric
   	ML_BSSN::ML_trace_curv
   	ML_BSSN::ML_curv
