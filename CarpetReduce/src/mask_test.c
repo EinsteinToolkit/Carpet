@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdbool.h>
 
 
 
@@ -122,7 +123,8 @@ MaskBase_TestMask (CCTK_ARGUMENTS)
                   "Additional excised volume: %.17g", (double)*excised_cells);
     }
     
-    int const there_is_a_problem =
+    bool const there_is_a_problem =
+      !isfinite(sum_weight) || !isfinite(domain_volume) ||
       fabs(sum_weight - domain_volume) > 1.0e-12 * (sum_weight + domain_volume);
     
     if (there_is_a_problem) {
