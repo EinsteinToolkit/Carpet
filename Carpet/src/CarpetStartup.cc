@@ -52,6 +52,7 @@ namespace Carpet {
     CCTK_OverloadDisableGroupStorage (DisableGroupStorage); 
     CCTK_OverloadGroupStorageIncrease (GroupStorageIncrease);
     CCTK_OverloadGroupStorageDecrease (GroupStorageDecrease); 
+    CCTK_OverloadQueryMaxTimeLevels(QueryMaxTimeLevels);
     CCTK_OverloadEnableGroupComm (EnableGroupComm);
     CCTK_OverloadDisableGroupComm (DisableGroupComm);
     CCTK_OverloadBarrier (Barrier);

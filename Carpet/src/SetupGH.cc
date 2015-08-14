@@ -1107,6 +1107,9 @@ namespace Carpet {
         for (int ml=0; ml<mglevels; ++ml) {
           groupdata.AT(group).activetimelevels.AT(ml).resize(1);
         }
+
+        // Initial maximum number of timelevels from interface.ccl
+        groupdata.AT(group).info.maxtimelevels = gdata.numtimelevels;
         
         // Grid function groups use the global grid descriptors
         arrdata.AT(group).resize(maps);
@@ -1131,6 +1134,9 @@ namespace Carpet {
         for (int ml=0; ml<mglevels; ++ml) {
           groupdata.AT(group).activetimelevels.AT(ml).resize(1);
         }
+        
+        // Initial maximum number of timelevels from interface.ccl
+        groupdata.AT(group).info.maxtimelevels = gdata.numtimelevels;
         
         // Use only one map for grid arrays
         arrdata.AT(group).resize(1);

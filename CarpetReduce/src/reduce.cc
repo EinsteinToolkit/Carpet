@@ -1394,7 +1394,7 @@ namespace CarpetReduce {
               // Are there enough time levels?
               int const active_tl = CCTK_ActiveTimeLevelsVI(cgh, vi);
               if (active_tl < num_tl) {
-                int const max_tl = CCTK_MaxTimeLevelsVI(vi);
+                int const max_tl = CCTK_MaxActiveTimeLevelsVI(cgh, vi);
                 if (max_tl == 1 and active_tl == 1) {
                   static vector<bool> have_warned;
                   if (have_warned.empty()) {

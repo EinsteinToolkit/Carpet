@@ -121,7 +121,7 @@ namespace Carpet {
                   assert (0);
                 }
                 
-                const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
+                const int num_tl = CCTK_MaxActiveTimeLevelsVI(cgh, n0);
                 assert (num_tl>0);
                 const int min_tl = min_timelevel(where, num_tl, persistent);
                 const int max_tl = max_timelevel(where, num_tl, persistent);
@@ -206,7 +206,7 @@ namespace Carpet {
                   assert (0);
                 }
                 
-                const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
+                const int num_tl = CCTK_MaxActiveTimeLevelsVI(cgh, n0);
                 assert (num_tl>0);
                 const int min_tl = min_timelevel(where, num_tl, persistent);
                 const int max_tl = max_timelevel(where, num_tl, persistent);
