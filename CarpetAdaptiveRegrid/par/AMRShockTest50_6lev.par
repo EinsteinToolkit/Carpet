@@ -70,7 +70,7 @@ time::dtfac 				= 	0.2
 ActiveThorns = "carpetioascii iobasic"
 
 IO::out_fileinfo			=	"none"
-IO::out_dir 				= 	$.
+IO::out_dir 				= 	"."
 
 IOBasic::outInfo_every 			= 	1
 IOBasic::outInfo_vars 			= 	"whisky::rho"
