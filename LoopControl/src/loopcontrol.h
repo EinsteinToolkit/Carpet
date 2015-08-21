@@ -140,6 +140,7 @@ extern "C" {
       CCTK_BUILTIN_EXPECT(lc_dir##D==0, 1) ? 0 :                \
        lc_dir##D<0 ? I+1 : lc_control.overall.max.v[D]-I;
   
+// This cannot handle strides with an offset
 #if VECTORISE && VECTORISE_ALIGNED_ARRAYS
   /* Arrays are aligned: fmin0 is the aligned loop boundary; keep it,
      and set up imin to be the intended loop boundary */
@@ -151,14 +152,12 @@ extern "C" {
   lc_assert(lc_fmax0 <= lc_control.overall.max.v[0]);                   \
   const ptrdiff_t lc_iminpos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);  \
   const ptrdiff_t lc_iminoffset CCTK_ATTRIBUTE_UNUSED =                 \
-    (lc_iminpos + lc_str0) % lc_str0;                                   \
+    (lc_iminpos + lc_str0 + lc_off0) % lc_str0;                         \
   const int lc_fmax0_is_outer = lc_fmax0 == lc_control.overall.max.v[0]; \
   const ptrdiff_t lc_imaxpos = lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);  \
   const ptrdiff_t lc_imaxoffset CCTK_ATTRIBUTE_UNUSED = lc_imaxpos % lc_str0; \
-  lc_assert(lc_iminoffset == (lc_str0 - lc_mod0) % lc_str0);            \
-  if (!lc_fmax0_is_outer) {                                             \
-    lc_assert(lc_imaxoffset == (lc_str0 - lc_mod0) % lc_str0);          \
-  }                                                                     \
+  lc_assert(lc_iminoffset == lc_off0 % lc_str0);                        \
+  if (!lc_fmax0_is_outer) lc_assert(lc_imaxoffset == lc_off0 % lc_str0); \
   lc_assert(vec_imin >= lc_control.overall.min.v[0]);                   \
   lc_assert(vec_imax <= lc_control.overall.max.v[0]);                   \
   lc_assert(vec_imin >= lc_fmin0);                                      \
@@ -181,9 +180,9 @@ extern "C" {
   const int lc_fmin0_is_outer = lc_fmin0 == lc_control.overall.min.v[0]; \
   const int lc_fmax0_is_outer = lc_fmax0 == lc_control.overall.max.v[0]; \
   const ptrdiff_t lc_iminpos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);  \
-  const ptrdiff_t lc_iminoffset = lc_iminpos % lc_str0;                 \
+  const ptrdiff_t lc_iminoffset = (lc_iminpos + lc_off0) % lc_str0;     \
   const ptrdiff_t lc_imaxpos = lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);  \
-  const ptrdiff_t lc_imaxoffset = lc_imaxpos % lc_str0;                 \
+  const ptrdiff_t lc_imaxoffset = (lc_imaxpos + lc_off0) % lc_str0;     \
   lc_fmin0 -= lc_iminoffset;                                            \
   if (!lc_fmax0_is_outer) lc_fmax0 -= lc_imaxoffset;                    \
   lc_assert(lc_fmin0 < lc_fmax0);                                       \
@@ -198,12 +197,12 @@ extern "C" {
   
 #define LC_SELFTEST(i,j,k, vec_imin,vec_imax)                           \
   if (CCTK_BUILTIN_EXPECT(lc_control.selftest_array != NULL, 0)) {      \
-    lc_selftest_set(&lc_control, vec_imin,vec_imax, lc_str0,lc_mod0, i,j,k); \
+    lc_selftest_set(&lc_control, vec_imin,vec_imax, lc_str0,lc_off0, i,j,k); \
   }
   
   
   
-#define LC_LOOP3STRMOD_NORMAL(name,                             \
+#define LC_LOOP3STROFF_NORMAL(name,                             \
                               i,j,k, ni,nj,nk,                  \
                               idir_,jdir_,kdir_,                \
                               imin_,jmin_,kmin_,                \
@@ -223,7 +222,7 @@ extern "C" {
     const ptrdiff_t lc_ash2 CCTK_ATTRIBUTE_UNUSED = (kash_);    \
                                                                 \
     const ptrdiff_t lc_str0 CCTK_ATTRIBUTE_UNUSED = (istr_);    \
-    const ptrdiff_t lc_mod0 CCTK_ATTRIBUTE_UNUSED = (imod_);    \
+    const ptrdiff_t lc_off0 CCTK_ATTRIBUTE_UNUSED = (imod_);    \
                                                                 \
     static struct lc_descr_t* lc_descr = NULL;                  \
     lc_descr_init(&lc_descr, #name, __FILE__, __LINE__);        \
@@ -233,7 +232,7 @@ extern "C" {
                     (imin_), (jmin_), (kmin_),                  \
                     (imax_), (jmax_), (kmax_),                  \
                     lc_ash0, lc_ash1, lc_ash2,                  \
-                    lc_str0, lc_mod0);                          \
+                    lc_str0, lc_off0);                          \
                                                                 \
     /* Multithreading */                                        \
     for (lc_thread_init(&lc_control);                           \
@@ -260,7 +259,7 @@ extern "C" {
           LC_SELFTEST(i,j,k, vec_imin,vec_imax)                 \
           {
         
-#define LC_ENDLOOP3STRMOD_NORMAL(name)                                  \
+#define LC_ENDLOOP3STROFF_NORMAL(name)                                  \
           }                     /* body */                              \
         }}}}}}                  /* fine */                              \
       }}}                       /* coarse */                            \
@@ -280,7 +279,7 @@ extern "C" {
                     iash,jash,kash,             \
                     vec_imin,vec_imax,          \
                     istr)                       \
-  LC_LOOP3STRMOD_NORMAL(name,                   \
+  LC_LOOP3STROFF_NORMAL(name,                   \
                      i,j,k,                     \
                      lc_ni,lc_nj,lc_nk,         \
                      0,0,0,                     \
@@ -290,7 +289,7 @@ extern "C" {
                      vec_imin,vec_imax,         \
                      istr,0)
 #define LC_ENDLOOP3VEC(name)                    \
-  LC_ENDLOOP3STRMOD_NORMAL(name)
+  LC_ENDLOOP3STROFF_NORMAL(name)
 
 #define LC_LOOP3(name,                          \
                  i,j,k,                         \
@@ -309,12 +308,12 @@ extern "C" {
   
   
 /* Replace CCTK_LOOP macros */
-#if !defined CCTK_LOOP3STRMOD_NORMAL || !defined CCTK_ENDLOOP3STRMOD_NORMAL
+#if !defined CCTK_LOOP3STROFF_NORMAL || !defined CCTK_ENDLOOP3STROFF_NORMAL
 #  error "internal error"
 #endif
-#undef CCTK_LOOP3STRMOD_NORMAL
-#undef CCTK_ENDLOOP3STRMOD_NORMAL
-#define CCTK_LOOP3STRMOD_NORMAL(name,                   \
+#undef CCTK_LOOP3STROFF_NORMAL
+#undef CCTK_ENDLOOP3STROFF_NORMAL
+#define CCTK_LOOP3STROFF_NORMAL(name,                   \
                                 i,j,k, ni,nj,nk,        \
                                 idir,jdir,kdir,         \
                                 imin,jmin,kmin,         \
@@ -322,7 +321,7 @@ extern "C" {
                                 iash,jash,kash,         \
                                 vec_imin,vec_imax,      \
                                 istr,imod)              \
-  LC_LOOP3STRMOD_NORMAL(name,                           \
+  LC_LOOP3STROFF_NORMAL(name,                           \
                         i,j,k, ni,nj,nk,                \
                         idir,jdir,kdir,                 \
                         imin,jmin,kmin,                 \
@@ -330,8 +329,8 @@ extern "C" {
                         iash,jash,kash,                 \
                         vec_imin,vec_imax,              \
                         istr,imod)
-#define CCTK_ENDLOOP3STRMOD_NORMAL(name)        \
-  LC_ENDLOOP3STRMOD_NORMAL(name)
+#define CCTK_ENDLOOP3STROFF_NORMAL(name)        \
+  LC_ENDLOOP3STROFF_NORMAL(name)
   
   
   

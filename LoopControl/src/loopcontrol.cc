@@ -601,12 +601,12 @@ void lc_control_init(lc_control_t *restrict const control,
                      ptrdiff_t imin, ptrdiff_t jmin, ptrdiff_t kmin,
                      ptrdiff_t imax, ptrdiff_t jmax, ptrdiff_t kmax,
                      ptrdiff_t iash, ptrdiff_t jash, ptrdiff_t kash,
-                     ptrdiff_t istr, ptrdiff_t imod)
+                     ptrdiff_t istr, ptrdiff_t ioff)
 {
   DECLARE_CCTK_PARAMETERS;
   
   lc_assert(istr>0);
-  lc_assert(imod>=0 && imod<istr);
+  lc_assert(ioff>=0 && ioff<istr);
   
   // Get cache line size
   static ptrdiff_t max_cache_linesize = -1;
@@ -861,7 +861,7 @@ void lc_control_init(lc_control_t *restrict const control,
   const ptrdiff_t loop_max[LC_DIM] = { imax, jmax, kmax };
   const ptrdiff_t ash[LC_DIM] = { iash, jash, kash };
   const ptrdiff_t vect_size[LC_DIM] = { istr, 1, 1 };
-  const ptrdiff_t vect_offs[LC_DIM] = { imod, 1, 1 };
+  const ptrdiff_t vect_offs[LC_DIM] = { ioff, 1, 1 };
   
   // Copy ash arguments
   for (int d=0; d<LC_DIM; ++d) {
@@ -1120,14 +1120,14 @@ void lc_thread_step(lc_control_t *restrict const control)
 
 void lc_selftest_set(const lc_control_t *restrict control,
                      const ptrdiff_t imin, const ptrdiff_t imax,
-                     const ptrdiff_t istr, const ptrdiff_t imod,
+                     const ptrdiff_t istr, const ptrdiff_t ioff,
                      const ptrdiff_t i0, const ptrdiff_t j, const ptrdiff_t k)
 {
   DECLARE_CCTK_PARAMETERS;
   assert(selftest);
   assert(imin>=0 and imin<imax and imax<=control->ash.v[0]);
   assert(istr>0);
-  assert(imod>=0 && imod<istr);
+  assert(ioff>=0 && ioff<istr);
   assert(j>=0 and j<control->ash.v[1]);
   assert(k>=0 and k<control->ash.v[2]);
   assert(i0+istr-1>=control->overall.min.v[0] and i0<control->overall.max.v[0]);
@@ -1394,13 +1394,13 @@ CCTK_FNAME(lc_control_init)(lc_control_t& restrict control,
                             const int& imin, const int& jmin, const int& kmin,
                             const int& imax, const int& jmax, const int& kmax,
                             const int& iash, const int& jash, const int& kash,
-                            const int& istr, const int& imod)
+                            const int& istr, const int& ioff)
 {
   lc_control_init(&control, (lc_descr_t*)descr,
                   imin, jmin, kmin,
                   imax, jmax, kmax,
                   iash, jash, kash,
-                  istr, imod);
+                  istr, ioff);
 }
 
 extern "C" CCTK_FCALL
