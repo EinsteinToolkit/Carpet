@@ -1,0 +1,4 @@
+TEST testalignedalloc
+{
+  NPROCS 1
+}
