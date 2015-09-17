@@ -1,0 +1,9 @@
+Cactus Code Thorn PeriodicCarpet
+Author(s)    : Erik Schnetter <eschnetter@perimeterinstitute.ca>
+Maintainer(s): Erik Schnetter <eschnetter@perimeterinstitute.ca>
+Licence      : GPL
+--------------------------------------------------------------------------
+
+1. Purpose
+
+Periodic boundary conditions using Carpet's communication routines.

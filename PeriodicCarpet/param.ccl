@@ -1,0 +1,21 @@
+# Parameter definitions for thorn PeriodicCarpet
+
+BOOLEAN verbose "Produce screen output while applying boundary conditions"
+{
+} "no"
+
+BOOLEAN periodic "Periodic boundary conditions in all directions"
+{
+} "no"
+
+BOOLEAN periodic_x "Periodic boundary conditions in x-direction"
+{
+} "no"
+
+BOOLEAN periodic_y "Periodic boundary conditions in y-direction"
+{
+} "no"
+
+BOOLEAN periodic_z "Periodic boundary conditions in z-direction"
+{
+} "no"
