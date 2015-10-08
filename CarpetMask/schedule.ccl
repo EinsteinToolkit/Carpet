@@ -25,6 +25,12 @@ SCHEDULE CarpetSurfaceSetup IN SetupIMask
   OPTIONS: global loop-local
 } "Set up the weight function for the excluded spherical surfaces"
 
+SCHEDULE CarpetBoxExcludedSetup IN SetupIMask
+{
+  LANG: C
+  OPTIONS: global loop-local
+} "Set up the weight function for the excluded boxes"
+
 
 
 

@@ -41,6 +41,46 @@ BOOLEAN exclude_exterior[10] "exclude the exterior of this radius, otherwise the
 } no
 
 
+# Exclude coordinate boxes
+
+CCTK_REAL box_excluded_centre_x[10] "x coordinate centre of excluded box" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL box_excluded_centre_y[10] "y coordinate centre of excluded box" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL box_excluded_centre_z[10] "z coordinate centre of excluded box" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL box_excluded_radius_x[10] "x coordinate radius of excluded box" STEERABLE=always
+{
+  -1.0  :: "do not exclude this box"
+  0.0:* :: ""
+} -1.0
+
+CCTK_REAL box_excluded_radius_y[10] "y coordinate radius of excluded box" STEERABLE=always
+{
+  -1.0  :: "do not exclude this box"
+  0.0:* :: ""
+} -1.0
+
+CCTK_REAL box_excluded_radius_z[10] "z coordinate radius of excluded box" STEERABLE=always
+{
+  -1.0  :: "do not exclude this box"
+  0.0:* :: ""
+} -1.0
+
+BOOLEAN box_exclude_exterior[10] "exclude the exterior of this box, otherwise the interior" STEERABLE=always
+{
+} "no"
+
+
 
 # Exclude spherical surfaces
 
