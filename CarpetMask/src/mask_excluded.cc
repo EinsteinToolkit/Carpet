@@ -1,4 +1,5 @@
 #include <cmath>
+#include <vector>
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
@@ -14,6 +15,9 @@ namespace CarpetMask {
 
 using namespace std;
 
+// Number of excluded regions which are defined in param.ccl
+int const num_excluded = 10;
+
 /**
  * Set the weight in the excluded regions to zero.
  */
@@ -21,6 +25,12 @@ using namespace std;
 void CarpetExcludedSetup(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
+
+  // Some state verbose output
+  static vector<int> last_output;
+  if (last_output.empty()) {
+    last_output.resize(num_excluded, -1);
+  }
 
   CCTK_INT *restrict const iweight = static_cast<CCTK_INT *>(
       CCTK_VarDataPtr(cctkGH, 0, "CarpetReduce::iweight"));
@@ -53,6 +63,17 @@ void CarpetExcludedSetup(CCTK_ARGUMENTS) {
       CCTK_REAL const r2 = pow(r0, 2);
 
       bool const exterior = exclude_exterior[n];
+
+      if (verbose) {
+        if (cctk_iteration > last_output.at(n)) {
+          last_output.at(n) = cctk_iteration;
+          CCTK_VInfo(CCTK_THORNSTRING, "Setting mask from excluded coordinate "
+                                       "spheres at [%g,%g,%g], with radius %g, "
+                                       "at iteration %d",
+                     double(x0), double(y0), double(z0), double(r0),
+                     int(cctk_iteration));
+        }
+      }
 
       CCTK_REAL local_excised = 0.0;
 #pragma omp parallel reduction(+ : local_excised)
