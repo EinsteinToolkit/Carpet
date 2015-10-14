@@ -3,9 +3,8 @@
 
 namespace CarpetMask {
 
-  extern "C" {
-    void
-    CarpetExcludedSetup (CCTK_ARGUMENTS);
-  }
-  
+extern "C" {
+void CarpetExcludedSetup(CCTK_ARGUMENTS);
+}
+
 } // namespace CarpetMask

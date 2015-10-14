@@ -7,6 +7,7 @@ ActiveThorns = "
         CarpetIOASCII
         CarpetIOBasic
         CarpetIOF5
+        CarpetIOHDF5
         CarpetIOScalar
         CarpetLib
         CarpetReduce
@@ -140,6 +141,17 @@ CarpetIOASCII::out1D_d            = no
 CarpetIOASCII::out1D_every        = 1024
 CarpetIOASCII::out1D_vars         = "
         grid::coordinates
+        ADMBase::metric
+        ADMBase::curv
+        ADMBase::lapse
+        ADMBase::shift
+        ADMBase::dtlapse
+        ADMBase::dtshift
+"
+
+CarpetIOHDF5::out_every          = 1024
+CarpetIOHDF5::one_file_per_group = yes
+CarpetIOHDF5::out_vars           = "
         ADMBase::metric
         ADMBase::curv
         ADMBase::lapse

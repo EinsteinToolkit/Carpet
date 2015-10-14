@@ -4,6 +4,7 @@ ActiveThorns = "
         Carpet
         CarpetInterp
         CarpetIOF5
+        CarpetIOHDF5
         CarpetLib
         CartGrid3D
         CoordBase
@@ -80,6 +81,18 @@ InterpToArray::parray3d_npoints_k =  8
 InterpToArray::parray3d_dx_i      =  0.05
 InterpToArray::parray3d_dy_j      =  0.05
 InterpToArray::parray3d_dz_k      =  0.05
+
+CarpetIOHDF5::out_every          = 2
+CarpetIOHDF5::one_file_per_group = yes
+CarpetIOHDF5::out_vars           = "
+        InterpToArray::scalars
+        InterpToArray::arrays1d
+        InterpToArray::arrays2d
+        InterpToArray::arrays3d
+        InterpToArray::parrays1d
+        InterpToArray::parrays2d
+        InterpToArray::parrays3d
+"
 
 CarpetIOF5::out_every = 2
 CarpetIOF5::out_vars  = "
