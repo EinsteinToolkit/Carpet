@@ -250,8 +250,7 @@ int WriteVarUnchunked (const cGH* const cctkGH,
               assert (group.dim-1-d>=0 and group.dim-1-d<dim);
               overlaporigin[group.dim-1-d] =
                 ((overlap.lower() - bbox->lower()) / overlap.stride())[d];
-              overlapshape[group.dim-1-d]  =
-                processor_component->padded_shape()[d];
+              overlapshape[group.dim-1-d]  = processor_component->shape()[d];
               assert (all (processor_component->shape() ==
                            overlap.shape() / overlap.stride()));
               hyperslab_start[group.dim-1-d] = 0;
