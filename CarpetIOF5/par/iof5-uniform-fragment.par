@@ -2,6 +2,7 @@ ActiveThorns = "
         Boundary
         Carpet
         CarpetIOF5
+        CarpetIOHDF5
         CarpetLib
         CartGrid3D
         CoordBase
@@ -37,6 +38,10 @@ CoordBase::zmax               = +1.0
 CoordBase::dx                 =  0.25
 CoordBase::dy                 =  0.25
 CoordBase::dz                 =  0.25
+
+CarpetIOHDF5::out_every          = 2
+CarpetIOHDF5::one_file_per_group = yes
+CarpetIOHDF5::out_vars           = "grid::coordinates"
 
 CarpetIOF5::fragment_contiguous_components = yes
 

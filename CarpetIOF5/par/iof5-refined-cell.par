@@ -2,6 +2,7 @@ ActiveThorns = "
         Boundary
         Carpet
         CarpetIOF5
+        CarpetIOHDF5
         CarpetLib
         CarpetRegrid2
         CartGrid3D
@@ -53,6 +54,10 @@ CarpetRegrid2::radius_1[1]    =  0.5
 CarpetRegrid2::radius_1[2]    =  0.2
 
 InitBase::initial_data_setup_method = "init_all_levels"
+
+CarpetIOHDF5::out_every          = 256
+CarpetIOHDF5::one_file_per_group = yes
+CarpetIOHDF5::out_vars           = "grid::coordinates"
 
 CarpetIOF5::out_every = 256
 CarpetIOF5::out_vars  = "grid::coordinates"
