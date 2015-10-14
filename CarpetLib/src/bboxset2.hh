@@ -1112,7 +1112,8 @@ inline ostream& operator<<(ostream& os, const bboxset<T,D>& bs)
       ([&](const T& pos, const bboxset1& subset)
        {
          const size_type subset_size = subset.size();
-         total_size += (pos - old_pos) * old_subset_size;
+         total_size +=
+           old_subset_size == 0 ? 0 : (pos - old_pos) * old_subset_size;
          old_pos = pos;
          old_subset_size = subset_size;
        });
