@@ -83,6 +83,9 @@ static hsize_t outrank = 0;
 // output file id
 static hid_t outfile = -1;
 
+// compression level
+static int compression_level = 0;
+
 /*****************************************************************************
  *************************     Function Prototypes   *************************
  *****************************************************************************/
@@ -119,6 +122,13 @@ int main (int argc, char *const argv[])
   for (i = 1; i < argc; i++) {
     if (strcmp (argv[i], "--help") == 0) {
       help = true; break;
+    } else if (strcmp (argv[i], "--compression-level") == 0) {
+      compression_level = atoi (argv[++i]);
+      if (compression_level < 0 or compression_level > 9){
+        cerr << "Error: invalid compression level'" << argv[i] << "' given"
+             << endl << endl;
+        return (-1);
+      }
     } else if (strcmp (argv[i], "--verbose") == 0) {
       verbose = true;
     } else if (strcmp (argv[i], "--out3d-cube") == 0) {
@@ -171,6 +181,7 @@ int main (int argc, char *const argv[])
          << indent << "[--match <regex string>]" << endl
          << indent << "[--timestep <cctk_time value>]" << endl
          << indent << "[--verbose]" << endl
+         << indent << "[--compression-level <integer between 0 and 9 inclusive>" << endl
          << indent << "<--out1d-line value value> | <--out2d-plane value> | <out3d-cube>" << endl
          << indent << "<hdf5_infiles> <hdf5_outfile>" << endl << endl
          << "  where" << endl
@@ -441,12 +452,23 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
   CHECK_HDF5 (H5Sclose (slabspace));
   CHECK_HDF5 (H5Sclose (dataspace));
 
+  // enable compression if requested
+  hid_t plist;
+  CHECK_HDF5 (plist = H5Pcreate (H5P_DATASET_CREATE));
+  const int compression_lvl = compression_level;
+
+  if (compression_lvl) {
+    CHECK_HDF5 (H5Pset_chunk (plist, outrank, outslabcount));
+    CHECK_HDF5 (H5Pset_deflate (plist, compression_lvl));
+  }
+
   CHECK_HDF5 (dataspace = H5Screate_simple (outrank, outslabcount, NULL));
   CHECK_HDF5 (dataset = H5Dcreate (outfile, datasetname,
-                                   datatype, dataspace, H5P_DEFAULT));
+                                   datatype, dataspace, plist));
   CHECK_HDF5 (H5Dwrite (dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                         data));
   delete[] data;
+  CHECK_HDF5 (H5Pclose (plist));
   CHECK_HDF5 (H5Tclose (datatype));
   CHECK_HDF5 (H5Sclose (dataspace));
 
