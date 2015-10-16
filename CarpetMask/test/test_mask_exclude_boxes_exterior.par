@@ -1,0 +1,94 @@
+ActiveThorns = "IOUtil Boundary CartGrid3D CoordBase SymBase MoL InitBase"
+ActiveThorns = "Carpet CarpetLib CarpetInterp GSL LoopControl CarpetReduce CarpetSlab"
+ActiveThorns = "SphericalSurface CarpetMask"
+
+#---Geometry---
+
+Carpet::convergence_level      = 0
+Carpet::domain_from_coordbase  = yes
+Carpet::ghost_size             = 3
+
+CartGrid3D::avoid_origin       = "no"
+CartGrid3D::type               = coordbase
+
+CoordBase::domainsize          = minmax
+CoordBase::spacing             = numcells
+
+CoordBase::boundary_shiftout_x_lower = 0
+CoordBase::boundary_shiftout_x_upper = 0
+CoordBase::boundary_size_x_lower = 3
+CoordBase::boundary_size_x_upper = 3
+CoordBase::boundary_staggered_x_lower = False
+CoordBase::boundary_staggered_x_upper = False
+CoordBase::ncells_x            = 40
+CoordBase::xmax                = 1
+CoordBase::xmin                = -1
+
+CoordBase::boundary_shiftout_y_lower = 0
+CoordBase::boundary_shiftout_y_upper = 0
+CoordBase::boundary_size_y_lower = 3
+CoordBase::boundary_size_y_upper = 3
+CoordBase::boundary_staggered_y_lower = False
+CoordBase::boundary_staggered_y_upper = False
+CoordBase::ncells_y            = 40
+CoordBase::ymax                = 1
+CoordBase::ymin                = -1
+
+CoordBase::boundary_shiftout_z_lower = 0
+CoordBase::boundary_shiftout_z_upper = 0
+CoordBase::boundary_size_z_lower = 3
+CoordBase::boundary_size_z_upper = 3
+CoordBase::boundary_staggered_z_lower = False
+CoordBase::boundary_staggered_z_upper = False
+CoordBase::ncells_z            = 40
+CoordBase::zmax                = 1
+CoordBase::zmin                = -1
+
+
+#---Evolution---
+
+Cactus::terminate              = iteration
+Cactus::cctk_itlast              = 2
+
+
+#---Exclude Boxed Regions---
+
+CarpetMask::box_excluded_centre_x[0] =  0.4
+CarpetMask::box_excluded_centre_y[0] =  0.1
+CarpetMask::box_excluded_centre_z[0] =  0.0
+CarpetMask::box_excluded_radius_x[0] =  0.2
+CarpetMask::box_excluded_radius_y[0] =  0.2
+CarpetMask::box_excluded_radius_z[0] =  0.2
+
+CarpetMask::box_excluded_centre_x[1] =  0.0
+CarpetMask::box_excluded_centre_y[1] =  0.0
+CarpetMask::box_excluded_centre_z[1] =  0.0
+CarpetMask::box_excluded_radius_x[1] =  0.71
+CarpetMask::box_excluded_radius_y[1] =  0.71
+CarpetMask::box_excluded_radius_z[1] =  0.71
+
+CarpetMask::box_exclude_exterior[1]  = "yes"
+
+CarpetMask::verbose              = "yes"
+
+#---Output---
+
+ActiveThorns = "CarpetIOASCII CarpetIOBasic"
+IO::out_dir                    = $parfile
+IO::parfile_write              = "no"
+IO::out_fileinfo               = "none"
+IOBasic::outInfo_every         = 1
+Cactus::cctk_full_warnings     = yes
+Carpet::print_timestats_every  = 0
+CarpetReduce::verbose = yes
+IOASCII::out1D_every              = 1
+IOASCII::out0D_every              = 1
+IOASCII::out1D_vars            = "CarpetReduce::weight"
+IOASCII::out0D_vars            = "CarpetReduce::weight"
+
+#ActiveThorns = "CarpetIOHDF5"
+
+#IOHDF5::out3D_every           = 1
+#IOHDF5::out3D_vars            = "CarpetReduce::weight"
+
+
