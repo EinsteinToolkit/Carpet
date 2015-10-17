@@ -1,0 +1,9 @@
+# Main make.code.defn file for thorn HydroToy
+# $Header:$
+
+# Source files in this directory
+SRCS = HydroToy.F77 InitSymBound.F77 Startup.F77
+
+# Subdirectories containing source files
+SUBDIRS = 
+

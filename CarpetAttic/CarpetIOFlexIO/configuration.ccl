@@ -1,0 +1,4 @@
+# Configuration definitions for thorn CarpetIOFlexIO
+# $Header:$
+
+Requires Thorns: Carpet CarpetLib FlexIO IOUtil

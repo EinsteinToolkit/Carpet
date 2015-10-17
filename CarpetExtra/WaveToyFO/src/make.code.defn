@@ -1,0 +1,9 @@
+# Main make.code.defn file for thorn WaveToyFO
+# $Header:$
+
+# Source files in this directory
+SRCS = boundaries.F77 calcrhs.F77 initsymbound.F77 registervars.F77 rhsboundaries.F77 startup.F77
+
+# Subdirectories containing source files
+SUBDIRS = 
+

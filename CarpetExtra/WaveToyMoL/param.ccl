@@ -1,0 +1,29 @@
+# Parameter definitions for thorn WaveToyMoL
+
+SHARES: MethodOfLines
+
+USES CCTK_INT MoL_Num_Evolved_Vars
+
+RESTRICTED:
+
+CCTK_INT WaveToyMoL_MaxNumEvolvedVars "The maximum number of evolved variables used by WaveMoL" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars
+{
+  2:2 :: ""
+} 2
+
+PRIVATE:
+
+STRING bound "Type of boundary condition to use"
+{
+  .* :: "must be a registered boundary condition"
+} "None"
+
+BOOLEAN estimate_error "Estimate the truncation error"
+{
+} "no"
+
+INT order "Finite differencing order"
+{
+  2 :: "second order"
+  4 :: "fourth order"
+} 2

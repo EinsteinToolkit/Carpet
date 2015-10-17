@@ -1,0 +1,7 @@
+Cactus Code Thorn IDScalarWave
+Authors    : Tom Goodale, Gabrielle Allen
+CVS info   : $Header:$
+--------------------------------------------------------------------------
+
+This thorns sets initial data for the first-order scalar wave equation evolver
+

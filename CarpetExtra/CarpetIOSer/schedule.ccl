@@ -1,0 +1,7 @@
+# Schedule definitions for thorn CarpetIOSer
+# $Header:$
+
+schedule CarpetIOSerStartup at STARTUP after IOUtil_Startup
+{
+  LANG: C
+} "Startup routine"

@@ -1,0 +1,32 @@
+# $Header:$
+
+# This thornlist is for using Carpet together with the standard Cactus
+# Wavetoy example.
+
+# arrangement/thorn                # implements (inherits) [friend] {shares}
+#
+CactusBase/Boundary                # boundary (grid) [ ] { }
+CactusBase/CartGrid3D              # grid ( ) [ ] {driver}
+#CactusBase/IOASCII                 # IOASCII (IO,hyperslab) [ ] {IO}
+CactusBase/IOBasic                 # IOBasic (IO) [ ] {IO}
+CactusBase/IOUtil                  # IO ( ) [ ] { }
+CactusBase/Time                    # time ( ) [ ] { }
+CactusConnect/HTTPD                # httpd ( ) [ ] {Cactus}
+CactusConnect/HTTPDExtra           # http_utils (httpd,IO) [ ] { }
+CactusUtils/NaNChecker             # NaNChecker ( ) [ ] { }
+CactusWave/IDScalarWave            # idscalarwave (wavetoy,grid) [ ] {grid}
+CactusWave/IDScalarWaveC           # idscalarwave (wavetoy,grid) [ ] {grid}
+CactusWave/IDScalarWaveCXX         # idscalarwave (wavetoy,grid) [ ] {grid}
+CactusWave/WaveBinarySource        # binarysource (wavetoy,grid,idscalarwave) [ ] { }
+CactusWave/WaveToyC                # wavetoy (Grid,Boundary) [ ] { }
+CactusWave/WaveToyCXX              # wavetoy (Grid,Boundary) [ ] { }
+CactusWave/WaveToyF77              # wavetoy (Grid,Boundary) [ ] { }
+Carpet/Carpet                      # driver (CarpetLib) [ ] {Cactus,IO}
+Carpet/CarpetIOASCII               # IOASCII (CarpetLib,driver,Hyperslab) [ ] {IO}
+Carpet/CarpetIOFlexIO              # IOFlexIO (CarpetLib,driver,Hyperslab) [ ] {IO}
+Carpet/CarpetLib                   # CarpetLib ( ) [ ] { }
+Carpet/CarpetReduce                # reduce (CarpetLib,driver) [ ] { }
+Carpet/CarpetRegrid                # CarpetRegrid (CarpetLib,driver) [ ] { }
+Carpet/CarpetSlab                  # Hyperslab (CarpetLib,driver) [ ] { }
+Carpet/CarpetTest                  # CarpetTest ( ) [ ] { }
+#Carpet/CartGrid3D                  # grid ( ) [ ] {driver}

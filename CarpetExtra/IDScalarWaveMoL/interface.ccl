@@ -1,0 +1,12 @@
+# Interface definition for thorn IDScalarWaveMoL
+
+IMPLEMENTS: IDScalarWaveMoL
+
+INHERITS: Grid WaveToyMoL
+
+
+
+CCTK_REAL scalarevolveerror TYPE=gf TAGS='tensortypealias="scalar"'
+{
+  phierror psierror
+} "Errors of the scalar field"

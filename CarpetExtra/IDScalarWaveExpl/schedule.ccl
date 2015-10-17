@@ -1,0 +1,8 @@
+# Schedule definitions for thorn IDScalarWaveExpl
+# $Header:$
+
+SCHEDULE IDScalarWaveExpl_InitialData AT initial
+{
+  LANG: Fortran
+  STORAGE: WaveToyExpl::scalarevolve[1]
+} "Initial data for the scalar field"

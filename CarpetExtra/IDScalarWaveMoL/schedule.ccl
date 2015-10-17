@@ -1,0 +1,16 @@
+# Schedule definitions for thorn IDScalarWaveMoL
+
+SCHEDULE IDScalarWaveMoL_InitialData AT initial
+{
+  LANG: Fortran
+  STORAGE: WaveToyMoL::scalarevolve[1]
+} "Initial data for the scalar field"
+
+
+
+SCHEDULE IDScalarWaveMoL_Errors AT analysis
+{
+  LANG: Fortran
+  STORAGE:  scalarevolveerror WaveToyMoL::scalarevolve[1]
+  TRIGGERS: scalarevolveerror
+} "Calculate errors of the scalar field"

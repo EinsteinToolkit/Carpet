@@ -1,0 +1,7 @@
+# Schedule definitions for thorn IDScalarWaveFO
+# $Header:$
+
+SCHEDULE IDScalarWaveFO_InitialData AT initial
+{
+  LANG: Fortran
+} "Initial data for the scalar field"

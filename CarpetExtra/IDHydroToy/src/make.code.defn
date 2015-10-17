@@ -1,0 +1,9 @@
+# Main make.code.defn file for thorn IDHydroToy
+# $Header:$
+
+# Source files in this directory
+SRCS = InitialData.F77 Startup.F77 erf.f77 gammln.f77 gammp.f77 gcf.f77 gser.f77
+
+# Subdirectories containing source files
+SUBDIRS = 
+

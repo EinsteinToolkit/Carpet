@@ -1,0 +1,68 @@
+# Schedule definitions for thorn WaveToyFO
+# $Header:$
+
+STORAGE: scalarevolve[3]
+STORAGE: scalarevolvedot
+
+
+
+SCHEDULE WaveToyFO_Startup AT startup
+{
+  LANG: Fortran
+} "Register banner"
+
+SCHEDULE WaveToyFO_InitSymBound AT basegrid
+{
+  LANG: Fortran
+  OPTIONS: global
+} "Schedule symmetries"
+
+SCHEDULE WaveToyFO_RegisterVars IN MoL_Register
+{
+  LANG: Fortran
+  OPTIONS: global
+} "Register variables for FO"
+
+
+
+SCHEDULE WaveToyFO_CalcRHS IN MoL_CalcRHS
+{
+  LANG: Fortran
+} "Calculate RHS for FO"
+
+SCHEDULE WaveToyFO_RHSBoundaries IN MoL_CalcRHS AFTER WaveToyFO_CalcRHS
+{
+  LANG: Fortran
+  SYNC: scalarevolvedot
+  OPTIONS: level
+} "Select RHS boundary conditions in FO"
+
+SCHEDULE GROUP ApplyBCs IN MoL_CalcRHS AFTER WaveToyFO_RHSBoundaries
+{
+} "Apply RHSboundary conditions in FO"
+
+
+
+SCHEDULE WaveToyFO_Boundaries IN MoL_PostStep
+{
+  LANG: Fortran
+  SYNC: scalarevolve
+  OPTIONS: level
+} "Select boundary conditions in FO"
+
+SCHEDULE GROUP ApplyBCs IN MoL_PostStep AFTER WaveToyFO_Boundaries
+{
+} "Apply boundary conditions in FO"
+
+
+
+SCHEDULE WaveToyFO_Boundaries AT POSTRESTRICT
+{
+  LANG: Fortran
+  SYNC: scalarevolve
+  OPTIONS: level
+} "Select boundary conditions after restricting"
+
+SCHEDULE GROUP ApplyBCs AT POSTRESTRICT AFTER WaveToyFO_Boundaries
+{
+} "Apply boundary conditions after restricting"

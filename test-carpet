@@ -1,0 +1,292 @@
+#! /bin/bash
+
+set -e
+
+mkdir test-Cactus
+pushd test-Cactus
+
+
+
+# Get Cactus
+cvs -z6 -d :pserver:cvs_anon@cvs.cactuscode.org:/cactusdevcvs checkout Cactus
+pushd Cactus
+
+
+
+pushd arrangements
+
+# Link to Carpet thorns
+ln -sf ../../../Carpet* .
+
+# Get arrangements
+for arr in CactusBase CactusBench CactusConnect CactusEinstein CactusElliptic CactusExamples CactusExternal CactusIO CactusPUGH CactusPUGHIO CactusTest CactusUtils CactusWave AlphaThorns BetaThorns; do
+    cvs -z6 -d :pserver:cvs_anon@cvs.cactuscode.org:/cactusdevcvs checkout $arr
+done
+for arr in TAT; do
+    cvs -z6 -d :pserver:cvs_anon@cvs.cactuscode.org:/arrangements checkout $arr
+done
+for arr in AEIThorns Excision; do
+    cvs -z6 -d :pserver:cvs_anon@cvs.aei.mpg.de:/numrelcvs checkout $arr
+done
+for thorn in AEIThorns/AHFinderDirect; do
+    pushd $thorn
+    cvs -z6 update -dPr Erik
+    popd
+done
+popd
+
+
+
+# Create a configuration
+cat > options <<EOF
+OPTIMISE = no
+DEBUG    = yes
+WARN     = yes
+
+MPI  = MPICH
+HDF5 = yes
+EOF
+echo yes | make einstein-config options=options
+cat > configs/einstein/ThornList <<EOF
+!DESC "All Einstein thorns"
+
+
+
+!REPOSITORY_TYPE pserver
+!REPOSITORY_LOCATION cvs.cactuscode.org
+!REPOSITORY_NAME /cactusdevcvs
+!REPOSITORY_USER cvs_anon
+
+AlphaThorns/MPIClock
+AlphaThorns/ResClock
+AlphaThorns/SysResClock
+
+BetaThorns/Cartoon2D
+
+CactusBase/Boundary
+CactusBase/CartGrid3D
+CactusBase/CoordBase
+CactusBase/IOASCII
+CactusBase/IOBasic
+CactusBase/IOUtil
+CactusBase/LocalInterp
+CactusBase/LocalReduce
+CactusBase/MoL
+CactusBase/SymBase
+CactusBase/Time
+
+CactusBench/BenchADM
+CactusBench/BenchIO
+
+CactusConnect/HTTPD
+CactusConnect/HTTPDExtra
+CactusConnect/Socket
+
+CactusEinstein/ADM
+CactusEinstein/ADMAnalysis
+CactusEinstein/ADMBase
+CactusEinstein/ADMConstraints
+CactusEinstein/ADMCoupling
+CactusEinstein/ADMMacros
+CactusEinstein/AHFinder
+CactusEinstein/CoordGauge
+CactusEinstein/EvolSimple
+CactusEinstein/Extract
+CactusEinstein/IDAnalyticBH
+CactusEinstein/IDAxiBrillBH
+CactusEinstein/IDBrillData
+CactusEinstein/IDLinearWaves
+CactusEinstein/IDSimple
+CactusEinstein/Maximal
+CactusEinstein/PsiKadelia
+CactusEinstein/SpaceMask
+CactusEinstein/StaticConformal
+CactusEinstein/TimeGeodesic
+
+CactusElliptic/EllBase
+CactusElliptic/EllPETSc
+CactusElliptic/EllSOR
+
+CactusExamples/DemoInterp
+CactusExamples/FleshInfo
+CactusExamples/HelloWorld
+CactusExamples/IDWaveMoL
+CactusExamples/SampleBoundary
+CactusExamples/SampleIO
+CactusExamples/TimerInfo
+CactusExamples/WaveMoL
+CactusExamples/WaveToy1DF77
+CactusExamples/WaveToy2DF77
+
+CactusExternal/FlexIO
+CactusExternal/jpeg6b
+
+CactusIO/IOJpeg
+
+CactusPUGH/PUGH
+CactusPUGH/PUGHInterp
+CactusPUGH/PUGHReduce
+CactusPUGH/PUGHSlab
+
+CactusPUGHIO/IOFlexIO
+CactusPUGHIO/IOHDF5
+CactusPUGHIO/IOHDF5Util
+CactusPUGHIO/IOPanda
+CactusPUGHIO/IOStreamedHDF5
+CactusPUGHIO/IsoSurfacer
+
+CactusTest/TestAllTypes
+CactusTest/TestArrays
+CactusTest/TestComplex
+CactusTest/TestCoordinates
+CactusTest/TestFortranDependencies1
+CactusTest/TestFortranDependencies2
+CactusTest/TestFpointerNULL
+CactusTest/TestFreeF90
+CactusTest/TestGlobalReduce
+CactusTest/TestInclude1
+CactusTest/TestInclude2
+CactusTest/TestLocalReduce
+CactusTest/TestReduce
+CactusTest/TestStrings
+CactusTest/TestTimers
+CactusTest/TestTypes
+
+CactusUtils/NaNChecker
+CactusUtils/TimerReport
+
+CactusWave/IDScalarWave
+CactusWave/IDScalarWaveC
+CactusWave/IDScalarWaveCXX
+CactusWave/IDScalarWaveElliptic
+CactusWave/WaveBinarySource
+CactusWave/WaveToyC
+CactusWave/WaveToyCXX
+CactusWave/WaveToyExtra
+CactusWave/WaveToyF77
+CactusWave/WaveToyF90
+CactusWave/WaveToyFreeF90
+
+
+
+!REPOSITORY_TYPE pserver
+!REPOSITORY_LOCATION cvs.cactuscode.org
+!REPOSITORY_NAME /arrangements
+!REPOSITORY_USER cvs_anon
+
+TAT/AdvectionToy
+TAT/CheckSync
+TAT/CheckTimestepSize
+TAT/FFTW
+TAT/IDSWTE
+TAT/IDSWTEF
+TAT/IDSWTEjacobian
+TAT/IDSWTEsimple
+TAT/IDSWTEsimpleFO
+TAT/IDScalarWaveStaggered
+TAT/MegaFlop
+TAT/NaNCatcher
+TAT/Periodic
+TAT/Slab
+TAT/SlabTest
+TAT/TATCG
+TAT/TATJacobi
+TAT/TATMG
+TAT/TATPETSc
+TAT/TATelliptic
+TAT/TGRtensor
+TAT/WaveToyStaggered
+
+
+
+!REPOSITORY_TYPE pserver
+!REPOSITORY_LOCATION cvs.aei.mpg.de
+!REPOSITORY_NAME /numrelcvs
+!REPOSITORY_USER cvs_anon
+
+AEIThorns/AEILocalInterp
+!REPOSITORY_TAG Erik
+AEIThorns/AHFinderDirect
+!REPOSITORY_TAG
+AEIThorns/BAM_Elliptic
+AEIThorns/BAM_VecLap
+AEIThorns/BSSN_MoL
+AEIThorns/CalcK
+AEIThorns/Dissipation
+# undeclared variables
+#AEIThorns/EHFinder
+AEIThorns/Exact
+AEIThorns/FiniteDifferencing
+AEIThorns/Fortran
+AEIThorns/HyperWave
+AEIThorns/HyperWave0
+AEIThorns/IDConstraintViolate
+AEIThorns/IDFileADM
+AEIThorns/IOAHFinderHDF5
+AEIThorns/Nice
+AEIThorns/Noise
+AEIThorns/SphericalSurface
+AEIThorns/TensorTypes
+# outdated
+#AEIThorns/TestInterpBase
+AEIThorns/TestInterpLocal_Large
+AEIThorns/TestInterpLocal_Small
+AEIThorns/TestInterpPUGH_Small
+# requires PBS
+#AEIThorns/TriggerTermination
+# does not compile with icc 7
+#AEIThorns/TSCClock
+
+Excision/LegoExcision
+Excision/SimpleExcision
+
+
+
+!REPOSITORY_TYPE pserver
+!REPOSITORY_LOCATION cvs.carpetcode.org
+!REPOSITORY_NAME /home/cvs/carpet
+!REPOSITORY_USER cvs_anon
+
+Carpet/Carpet
+Carpet/CarpetIOASCII
+Carpet/CarpetIOHDF5
+Carpet/CarpetIOScalar
+Carpet/CarpetInterp
+Carpet/CarpetLib
+Carpet/CarpetReduce
+Carpet/CarpetRegrid
+Carpet/CarpetSlab
+Carpet/CarpetTest
+
+CarpetDev/CarpetAdaptiveRegrid
+CarpetDev/CarpetCG
+CarpetDev/CarpetJacobi
+
+CarpetExtra/CarpetIntegrateTest
+CarpetExtra/CarpetRegridTest
+CarpetExtra/IDFOScalarWave
+CarpetExtra/IDScalarWaveExpl
+CarpetExtra/IDScalarWaveFO
+CarpetExtra/IDScalarWaveMoL
+CarpetExtra/FOWaveToyF77
+CarpetExtra/WaveToyExpl
+CarpetExtra/WaveToyFO
+CarpetExtra/WaveToyMoL
+EOF
+make -k einstein
+make -k einstein-utils
+
+
+
+# Run all test suites
+{
+    echo
+    echo 1
+    echo
+    echo E
+    echo Q
+} | make einstein-testsuite
+
+# Done
+popd
+popd

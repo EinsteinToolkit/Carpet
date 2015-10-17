@@ -1,0 +1,77 @@
+# Schedule definitions for thorn WaveToyExpl
+# $Header:$
+
+STORAGE: scalarevolve[3]
+STORAGE: scalarevolveint[3]
+
+
+
+SCHEDULE WaveToyExpl_Startup AT startup
+{
+  LANG: Fortran
+} "Register banner"
+
+SCHEDULE WaveToyExpl_InitSymBound AT basegrid
+{
+  LANG: Fortran
+  OPTIONS: global
+} "Schedule symmetries"
+
+
+
+SCHEDULE WaveToyExpl_IntInit AT postinitial
+{
+  LANG: Fortran
+} "Initialise intermediate variables"
+
+
+
+SCHEDULE WaveToyExpl_IntStep AT evol
+{
+  LANG: Fortran
+} "Calculate intermediate step"
+
+SCHEDULE WaveToyExpl_IntBoundaries AT evol AFTER WaveToyExpl_IntStep
+{
+  LANG: Fortran
+  SYNC: scalarevolveint
+} "Select boundary conditions after intermediate step"
+
+SCHEDULE GROUP ApplyBCs AS WaveToyExpl_ApplyIntBoundaries AT evol AFTER WaveToyExpl_IntBoundaries
+{
+} "Apply boundary conditions after intermediate step"
+
+
+
+SCHEDULE WaveToyExpl_FinalStep AT evol AFTER WaveToyExpl_ApplyIntBoundaries
+{
+  LANG: Fortran
+} "Calculate final step"
+
+SCHEDULE WaveToyExpl_FinalBoundaries AT evol AFTER WaveToyExpl_FinalStep
+{
+  LANG: Fortran
+  SYNC: scalarevolve
+} "Select boundary conditions after final step"
+
+SCHEDULE GROUP ApplyBCs AS WaveToyExpl_ApplyFinalBoundaries AT evol AFTER WaveToyExpl_FinalBoundaries
+{
+} "Apply boundary conditions after final step"
+
+
+
+SCHEDULE WaveToyExpl_IntBoundaries AT POSTRESTRICT
+{
+  LANG: Fortran
+  SYNC: scalarevolveint
+} "Select boundary conditions after restricting"
+
+SCHEDULE WaveToyExpl_FinalBoundaries AT POSTRESTRICT
+{
+  LANG: Fortran
+  SYNC: scalarevolve
+} "Select boundary conditions after restricting"
+
+SCHEDULE GROUP ApplyBCs AS WaveToyExpl_ApplyBoundaries AT POSTRESTRICT AFTER (WaveToyMoL_IntBoundaries, WaveToyMoL_FinalBoundaries)
+{
+} "Apply boundary conditions after restricting"

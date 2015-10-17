@@ -1,0 +1,14 @@
+# Interface definition for thorn Cart3dTest
+# $Header:$
+
+implements: Cart3dTest
+inherits: grid
+
+CCTK_REAL quantities type=GF
+{
+  s,
+  vx, vy, vz,
+  fxx, fxy, fxz, fyx, fyy, fyz, fzx, fzy, fzz,
+  txx, txy, txz, tyy, tyz, tzz,
+  ax, ay, az
+} "Some tensor quantities"

@@ -1,0 +1,6 @@
+# Interface definition for thorn IDScalarWaveExpl
+# $Header:$
+
+IMPLEMENTS: IDScalarWaveExpl
+
+INHERITS: Grid WaveToyExpl

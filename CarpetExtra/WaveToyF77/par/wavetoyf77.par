@@ -1,0 +1,40 @@
+# /*@@
+#   @file      wavetoyf77.par
+#   @date      2001-01-07
+#   @author    Erik Schnetter
+#   @desc
+#   Wavetoy parameter file demonstrating minimal evolution
+#   @enddesc
+# @@*/
+#
+# $Header:$
+
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
+
+Carpet::verbose			= no
+
+Time::dtfac			= 0.5
+
+Carpet::global_nx		= 21
+Carpet::global_ny		= 21
+Carpet::global_nz		= 21
+
+grid::type			= byrange
+grid::xyzmin			= -1.0
+grid::xyzmax			= +1.0
+
+grid::mode			= none
+
+WaveToy::bound			= zero
+
+IO::out_dir			= "wavetoyf77"
+
+IOBasic::outInfo_every		= 1
+#IOBasic::outInfo_vars		= "wavetoy::phi"
+
+#IOBasic::outScalar_every	= 1
+#IOBasic::outScalar_vars		= "wavetoy::phi"
+#IOBasic::outScalar_style	= gnuplot
+
+IOASCII::out1D_every		= 1
+IOASCII::out1D_vars		= "wavetoy::phi grid::coordinates"

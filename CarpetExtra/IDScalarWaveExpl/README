@@ -1,0 +1,10 @@
+CVS info   : $Header:$
+
+Cactus Code Thorn IDScalarWaveExpl
+Thorn Author(s)     : Erik Schnetter <schnetter@uni-tuebingen.de>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@uni-tuebingen.de>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+Create initial data for WaveToyExpl.

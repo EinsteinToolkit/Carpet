@@ -1,0 +1,70 @@
+# Parameter definitions for thorn IDScalarWaveMoL
+
+KEYWORD initial_data "Initial data"
+{
+  "plane wave"     :: "Plane wave"
+  "Gaussian pulse" :: "Gaussian pulse"
+  "Gaussian"       :: "Gaussian"
+  "level index"    :: "Fill the refinement levels with their level index (for testing)"
+} "plane wave"
+
+
+
+# Plane wave specification
+
+CCTK_REAL wave_number[3] "Wave number"
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL phase_offset[3] "Phase offset"
+{
+  *:* :: ""
+} 0.0
+
+
+
+# Gaussian pulse specification
+
+CCTK_REAL pulse_direction[3] "Pulse width"
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL pulse_offset[3] "Pulse offset"
+{
+  *:* :: ""
+} 0.0
+
+
+
+# Gaussian specification
+
+REAL radius "Radius"
+{
+  *:* :: ""
+} 0.0
+
+REAL sigma "Width"
+{
+  (0:* :: ""
+} 1.0
+
+REAL origin[3] "Origin"
+{
+  *:* :: ""
+} 0.0
+
+
+
+# Generic specifications
+
+CCTK_REAL time_offset "Time offset"
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL amplitude "Amplitude"
+{
+  *:* :: ""
+} 1.0

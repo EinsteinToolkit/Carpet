@@ -1,0 +1,37 @@
+# Interface definition for thorn WaveToyFO
+# $Header:$
+
+IMPLEMENTS: WaveToyFO
+
+INHERITS: grid
+
+
+
+CCTK_INT FUNCTION Boundary_SelectGroupForBC(CCTK_POINTER_TO_CONST IN GH, \
+  CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, \
+  CCTK_STRING IN group_name, CCTK_STRING IN bc_name)
+
+REQUIRES FUNCTION Boundary_SelectGroupForBC
+
+
+
+CCTK_INT FUNCTION MoLRegisterEvolvedGroup(CCTK_INT IN EvolvedIndex, \
+                                          CCTK_INT IN RHSIndex)
+
+REQUIRES FUNCTION MoLRegisterEvolvedGroup
+
+
+
+PUBLIC:
+
+CCTK_REAL scalarevolve TYPE=gf TIMELEVELS=3
+{
+  phi psix psiy psiz
+} "Scalar field"
+
+PRIVATE:
+
+CCTK_REAL scalarevolvedot TYPE=gf
+{
+  phidot psixdot psiydot psizdot
+} "Time derivative of the scalar field"

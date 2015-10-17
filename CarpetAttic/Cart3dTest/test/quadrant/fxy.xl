@@ -1,0 +1,34 @@
+# CART3DTEST::fxy x (fxy)
+#
+# iteration 0
+# time level 0   refinement level 0   component 0   multigrid level 0
+# column format: it tl rl c ml x y z data
+0 0 0 0 0 0 1 5 42000105
+0 0 0 0 0 1 1 5 42010105
+0 0 0 0 0 2 1 5 42020105
+0 0 0 0 0 3 1 5 42030105
+0 0 0 0 0 4 1 5 42040105
+0 0 0 0 0 5 1 5 42050105
+0 0 0 0 0 6 1 5 42060105
+0 0 0 0 0 7 1 5 42070105
+0 0 0 0 0 8 1 5 42080105
+0 0 0 0 0 9 1 5 42090105
+
+
+
+# iteration 1
+# time level 0   refinement level 0   component 0   multigrid level 0
+# column format: it tl rl c ml x y z data
+1 0 0 0 0 0 1 5 42000105
+1 0 0 0 0 1 1 5 42010105
+1 0 0 0 0 2 1 5 42020105
+1 0 0 0 0 3 1 5 42030105
+1 0 0 0 0 4 1 5 42040105
+1 0 0 0 0 5 1 5 42050105
+1 0 0 0 0 6 1 5 42060105
+1 0 0 0 0 7 1 5 42070105
+1 0 0 0 0 8 1 5 42080105
+1 0 0 0 0 9 1 5 42090105
+
+
+

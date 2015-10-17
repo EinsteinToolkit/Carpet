@@ -1,0 +1,23 @@
+#!/bin/bash
+# $Header:$
+
+# Call this script from the Cactus directory.  It compares a Carpet
+# ASCII testsuite output to PUGH ASCII testsuite output.
+
+for suite in $(ls TEST/carpet | grep -v log\$); do
+    
+    echo
+    echo "Case: $suite"
+    
+    for file in $(ls arrangements/AlphaThorns/Cart3dTest/test/$suite | grep -v CVS | grep -v \.dl\$ | grep -v \.gnuplot\$); do
+	
+	paste \
+	    <( awk 'NF==2 { print $2; }' arrangements/AlphaThorns/Cart3dTest/test/$suite/$file ) \
+	    <( awk 'NF==9 { print $9; }' TEST/carpet/$suite/$file ) \
+	| awk 'function abs(x) { return x>0?x:-x; } { diff=abs(($1-$2)/(abs($1)+abs($2)+1e-10))**2; if (diff>1e-10) { ++cnt; print l+0,$1,$2,diff; ++l; } } END { if (cnt>0) print "File '$file'",cnt+0,"differing lines"; }'
+	
+    done
+    
+done
+
+echo "Done."

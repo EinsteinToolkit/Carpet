@@ -1,0 +1,17 @@
+# Check Cartesian coordinates and symmetries
+# $Header:$
+
+ActiveThorns = "CarpetIOASCII IOBasic IOUtil Carpet CarpetLib CarpetSlab Cart3d Cart3dTest"
+
+cactus::cctk_itlast = 1
+
+grid::type = "byspacing"
+grid::mode_z = "periodic"
+
+driver::ghost_size_x = 0
+driver::ghost_size_y = 1
+driver::ghost_size_z = 2
+
+IO::out_dir = "periodic-z"
+IOASCII::out1D_vars = "grid::coordinates Cart3dTest::quantities"
+IOASCII::out1D_every = 1

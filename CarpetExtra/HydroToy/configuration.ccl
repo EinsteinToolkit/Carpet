@@ -1,0 +1,4 @@
+# Configuration definition for thorn Carpet/HydroToy
+# $Header:$
+
+REQUIRES Boundary Cart3d

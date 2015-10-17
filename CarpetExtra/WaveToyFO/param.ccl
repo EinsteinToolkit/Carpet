@@ -1,0 +1,20 @@
+# Parameter definitions for thorn WaveToyFO
+# $Header:$
+
+SHARES: MethodOfLines
+
+USES CCTK_INT MoL_Num_Evolved_Vars
+
+RESTRICTED:
+
+CCTK_INT WaveToyMoL_MaxNumEvolvedVars "The maximum number of evolved variables used by WaveMoL" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars
+{
+  4:4 :: ""
+} 4
+
+PRIVATE:
+
+STRING bound "Type of boundary condition to use"
+{
+  .* :: "must be a registered boundary condition"
+} "None"

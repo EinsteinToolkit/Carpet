@@ -1,0 +1,67 @@
+# Schedule definitions for thorn WaveToyMoL
+
+STORAGE: scalarevolve[3]
+STORAGE: scalarevolvedot
+
+
+
+SCHEDULE WaveToyMol_Startup AT startup
+{
+  LANG: Fortran
+  OPTIONS: meta
+} "Register banner"
+
+SCHEDULE WaveToyMoL_InitSymBound AT basegrid
+{
+  LANG: Fortran
+  OPTIONS: meta
+} "Schedule symmetries"
+
+SCHEDULE WaveToyMoL_RegisterVars IN MoL_Register
+{
+  LANG: Fortran
+  OPTIONS: meta
+} "Register variables for MoL"
+
+
+
+SCHEDULE WaveToyMoL_CalcRHS IN MoL_CalcRHS
+{
+  LANG: Fortran
+} "Calculate RHS for MoL"
+
+SCHEDULE WaveToyMoL_Boundaries IN MoL_PostStep
+{
+  LANG: Fortran
+  OPTIONS: level
+  SYNC: scalarevolve
+} "Select boundary conditions in MoL"
+
+SCHEDULE GROUP ApplyBCs IN MoL_PostStep AFTER WaveToyMoL_Boundaries
+{
+} "Apply boundary conditions in MoL"
+
+
+
+if (estimate_error)
+{
+  
+  STORAGE: scalarevolveerrorestimate
+
+  SCHEDULE WaveToyMoL_EstimateError AT poststep
+  {
+    LANG: Fortran
+  } "Estimate the truncation error"
+  
+  SCHEDULE WaveToyMoL_EstimateErrorBoundaries AT poststep AFTER WaveToyMoL_EstimateError
+  {
+    LANG: Fortran
+    OPTIONS: level
+    SYNC: scalarevolveerrorestimate
+  } "Select boundary conditions for the truncation error"
+  
+  SCHEDULE GROUP ApplyBCs AT poststep AFTER WaveToyMoL_EstimateError
+  {
+  } "Apply boundary conditions"
+  
+}

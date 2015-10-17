@@ -1,0 +1,40 @@
+# $Header:$
+
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Slab Carpet CarpetIOASCII CarpetIOFlexIO FlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
+
+Carpet::poison_new_timelevels	= yes
+Carpet::check_for_poison	= yes
+Carpet::checksum_timelevels	= yes
+
+Cactus::terminate		= time
+Cactus::cctk_final_time		= 10.0
+ 
+Time::dtfac			= 0.5
+
+driver::global_nsize		= 35
+
+Carpet::max_refinement_levels	= 4
+
+CarpetRegrid::refinement_levels	= 3
+
+grid::type			= byspacing
+grid::dxyz			= 0.0625
+grid::avoid_origin		= no
+
+IO::out_dir			= "wavetoyf77_excision_rl3"
+
+IOBasic::outinfo_every		= 8
+IOBasic::outinfo_vars		= "wavetoy::phi"
+
+IOBasic::outScalar_every	= 8
+IOBasic::outScalar_vars		= "wavetoy::phi"
+IOBasic::outScalar_style	= gnuplot
+
+IOASCII::out1D_every		= 8
+IOASCII::out1D_vars		= "wavetoy::phi"
+
+WaveToyF77::bound		= radiation
+WaveToyF77::excision_bound	= 1/r
+WaveToyF77::excision_radius	= 0.25
+
+IDScalarWave::initial_data	= 1/r

@@ -1,0 +1,32 @@
+# $Header:$
+
+# This thornlist is for using Carpet together with the Carpet versions
+# of Wavetoy.
+
+# arrangement/thorn                # implements (inherits) [friend] {shares}
+#
+AlphaThorns/Cart3d                 # grid (hyperslab) [ ] { }
+CactusBase/Boundary                # boundary (grid) [ ] { }
+#CactusBase/CartGrid3D              # grid ( ) [ ] {driver}
+#CactusBase/IOASCII                 # IOASCII (IO,hyperslab) [ ] {IO}
+CactusBase/IOBasic                 # IOBasic (IO) [ ] {IO}
+CactusBase/IOUtil                  # IO ( ) [ ] { }
+CactusBase/Time                    # time ( ) [ ] { }
+CactusConnect/HTTPD                # httpd ( ) [ ] {Cactus}
+CactusConnect/HTTPDExtra           # http_utils (httpd,IO) [ ] { }
+CactusUtils/NaNChecker             # NaNChecker ( ) [ ] { }
+Carpet/Carpet                      # driver (CarpetLib) [ ] {Cactus}
+Carpet/CarpetIOASCII               # IOASCII (CarpetLib,driver,Hyperslab) [ ] {IO}
+Carpet/CarpetIOFlexIO              # IOFlexIO (CarpetLib,driver,Hyperslab) [ ] {IO}
+Carpet/CarpetLib                   # CarpetLib ( ) [ ] { }
+Carpet/CarpetReduce                # reduce (CarpetLib,driver) [ ] { }
+Carpet/CarpetRegrid                # CarpetRegrid (CarpetLib,Carpet) [ ] { }
+Carpet/CarpetSlab                  # Hyperslab (CarpetLib,driver) [ ] { }
+Carpet/CarpetTest                  # CarpetTest ( ) [ ] { }
+Carpet/Cart3dTest                  # Cart3dTest (grid) [ ] { }
+Carpet/HydroToy                    # hydrotoy (boundary,grid) [ ] { }
+Carpet/IDHydroToy                  # idhydrotoy (hydrotoy,grid) [ ] {grid}
+Carpet/IDScalarWave                # idscalarwave (wavetoy,grid) [ ] {grid}
+Carpet/IDSpaceTimeToy              # idspacetimetoy (spacetimetoy,hydrotoy,grid) [ ] {grid,hydrotoy}
+Carpet/SpaceTimeToy                # spacetimetoy (hydrotoy,boundary,grid) [ ] {hydrotoy}
+Carpet/WaveToyF77                  # wavetoy (boundary,grid) [ ] { }
