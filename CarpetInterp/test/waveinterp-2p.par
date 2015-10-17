@@ -1,0 +1,157 @@
+Cactus::cctk_run_title     = "WaveToy Interpolation Test"
+Cactus::cctk_full_warnings = yes
+
+Cactus::terminate       = time
+Cactus::cctk_final_time = 0.1
+
+
+
+ActiveThorns = "IOUtil"
+
+IO::out_dir       = $parfile
+IO::out_fileinfo  = "none"
+IO::parfile_write = "no"
+
+
+
+ActiveThorns = "InitBase LocalInterp AEILocalInterp LocalReduce"
+
+InitBase::initial_data_setup_method = "init_single_level"
+
+
+
+ActiveThorns = "Carpet CarpetLib CarpetInterp GSL LoopControl CarpetReduce CarpetSlab"
+
+Carpet::domain_from_coordbase = yes
+Carpet::max_refinement_levels = 20
+
+driver::ghost_size = 2
+
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time  = 2
+
+#Carpet::init_3_timelevels = yes
+Carpet::init_each_timelevel = yes
+
+
+
+ActiveThorns = "NaNChecker"
+
+
+
+ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
+
+CoordBase::domainsize = minmax
+
+CoordBase::xmin = -1.0
+CoordBase::ymin = -1.0
+CoordBase::zmin = -1.0
+CoordBase::xmax =  1.0
+CoordBase::ymax =  1.0
+CoordBase::zmax =  1.0
+CoordBase::dx   =  0.1
+CoordBase::dy   =  0.1
+CoordBase::dz   =  0.1
+
+CartGrid3D::type         = coordbase
+CartGrid3D::avoid_origin = no
+
+
+
+ActiveThorns = "CarpetRegrid"
+
+CarpetRegrid::refinement_levels = 3
+CarpetRegrid::refined_regions = "manual-coordinate-list"
+CarpetRegrid::smart_outer_boundaries = yes
+CarpetRegrid::coordinates = "
+        [ [ ([-0.4,-0.4,-0.4]:[+0.4,+0.4,+0.4]:[0.0500,0.0500,0.0500]) ],
+          [ ([-0.2,-0.2,-0.2]:[+0.2,+0.2,+0.2]:[0.0250,0.0250,0.0250]) ],
+          [ ([-0.1,-0.1,-0.1]:[+0.1,+0.1,+0.1]:[0.0125,0.0125,0.0125]) ] ]
+"
+CarpetRegrid::keep_same_grid_structure = yes
+
+
+
+ActiveThorns = "Time"
+
+Time::dtfac = 0.25
+
+
+
+ActiveThorns = "MoL"
+
+MoL::ODE_Method = RK3
+
+
+
+ActiveThorns = "WaveMoL"
+
+#WaveMoL::num_timelevels = 3
+
+WaveMoL::bound = "flat"
+
+
+
+ActiveThorns = "IDWaveMoL"
+
+IDWaveMoL::initial_data = plane
+IDWaveMoL::slopet       = 1.0
+
+
+
+ActiveThorns = "InterpToArray"
+
+InterpToArray::narrays1d = 3
+
+InterpToArray::array1d_vars      [0] = "WaveMoL::phi"
+InterpToArray::array1d_timederivs[0] = 0
+
+InterpToArray::array1d_vars      [1] = "WaveMoL::phi"
+InterpToArray::array1d_timederivs[1] = 1
+
+InterpToArray::array1d_vars      [2] = "WaveMoL::phi"
+InterpToArray::array1d_timederivs[2] = 2
+
+InterpToArray::array1d_npoints_i = 10
+InterpToArray::array1d_dx_i      =  0.1
+
+
+
+ActiveThorns = "CarpetIOBasic"
+
+IOBasic::outInfo_every      = 1
+IOBasic::outInfo_reductions = "norm2"
+IOBasic::outInfo_vars       = "
+        WaveMoL::phi
+        WaveMoL::phit
+        WaveMoL::phix
+"
+
+
+ActiveThorns = "CarpetIOScalar"
+
+IOScalar::outScalar_every      = 1
+IOScalar::outScalar_reductions = "count minimum maximum average norm1 norm2 norm_inf"
+IOScalar::outScalar_vars       = "
+        WaveMoL::scalarevolvemol_scalar
+        WaveMoL::scalarevolvemol_vector
+"
+
+
+
+ActiveThorns = "CarpetIOASCII"
+
+#IOASCII::output_all_timelevels = yes
+
+IOASCII::out0D_every = 1
+IOASCII::out0D_vars  = "
+        WaveMoL::scalarevolvemol_scalar
+        WaveMoL::scalarevolvemol_vector
+"
+
+IOASCII::out1D_every = 1
+IOASCII::out1D_vars  = "
+        WaveMoL::scalarevolvemol_scalar
+        WaveMoL::scalarevolvemol_vector
+        InterpToArray::arrays1d
+"

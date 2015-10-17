@@ -1,8 +1,0 @@
-# Schedule definitions for thorn CarpetEFenceTest
-
-STORAGE: sheep
-
-schedule CarpetEFenceTest_BreachFence AT CCTK_INITIAL
-{
-  LANG: C
-} "breach fence"

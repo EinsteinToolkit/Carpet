@@ -1,5 +1,0 @@
-# Interface definition for thorn IDHydroToy
-# $Header:$
-
-implements: idhydrotoy
-inherits: hydrotoy grid

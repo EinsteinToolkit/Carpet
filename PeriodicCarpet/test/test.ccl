@@ -1,0 +1,13 @@
+TEST ml-gw1d-small
+{
+  NPROCS 2
+  ABSTOL 2.0e-12 ^H\..*\.asc$
+}
+
+TEST ml-gw1d-small-amr
+{
+  NPROCS 2
+  # ABSTOL 5.0e-12 ^H\..*\.asc$
+  # RELTOL 1.0 ^M\..*\.asc$
+  # RELTOL 1.0 ^cXt[123]\..*\.asc$
+}

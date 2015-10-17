@@ -1,0 +1,47 @@
+NPROCS 2
+
+TEST test_interp
+{
+  NPROCS 1
+}
+
+TEST test_cc_tvd
+{
+  NPROCS 1
+}
+
+TEST test_cc_tvd_hi
+{
+  NPROCS 1
+}
+
+TEST test_cc_tvd_x
+{
+  NPROCS 1
+}
+
+TEST test_cc_tvd_y
+{
+  NPROCS 1
+}
+
+TEST test_cc_tvd_z
+{
+  NPROCS 1
+}
+
+TEST test_o7
+{
+  ABSTOL 2.0e-11
+}
+
+TEST test_o9
+{
+  ABSTOL 1e-9
+  RELTOL 1e-11
+}
+
+TEST test_o11
+{
+  ABSTOL 3.0e-8
+}

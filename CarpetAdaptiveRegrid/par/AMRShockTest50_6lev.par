@@ -1,0 +1,113 @@
+!DESC "AMR shocktube, RK3, Marquina, PPM, Ideal Gas"
+
+ActiveThorns = "symbase ioutil carpet carpetlib carpetadaptiveregrid carpetreduce carpetslab"
+
+cactus::terminate = "time"
+cactus::cctk_final_time = 0.05
+
+driver::ghost_size			=	3
+
+carpet::prolongation_order_space	=	3
+carpet::prolongation_order_time		=	2
+carpet::init_3_timelevels		=	"yes"
+
+ActiveThorns = "CoordBase cartgrid3d boundary"
+
+grid::type                              = "coordbase"
+grid::domain = "full"
+grid::avoid_origin = "no"
+
+coordbase::xmin =  -0.5
+coordbase::xmax =   0.5 
+coordbase::ymin =   0.0
+coordbase::ymax =   0.0 
+coordbase::zmin =   0.0
+coordbase::zmax =   0.0 
+
+coordbase::boundary_size_x_lower = 3
+coordbase::boundary_shiftout_x_lower = 1
+coordbase::boundary_size_x_upper = 3
+coordbase::boundary_shiftout_x_upper = 1
+coordbase::boundary_size_y_lower = 3
+coordbase::boundary_shiftout_y_lower = 1
+coordbase::boundary_size_y_upper = 3
+coordbase::boundary_shiftout_y_upper = 1
+coordbase::boundary_size_z_lower = 3
+coordbase::boundary_shiftout_z_lower = 1
+coordbase::boundary_size_z_upper = 3
+coordbase::boundary_shiftout_z_upper = 1
+
+coordbase::dx = 0.02
+coordbase::dy = 0.02
+coordbase::dz = 0.02
+
+carpet::domain_from_coordbase = "yes"
+carpet::max_refinement_levels		=	6
+
+carpetadaptiveregrid::max_error = 1.e-1
+carpetadaptiveregrid::pad = 6
+carpetadaptiveregrid::min_width = 4
+carpetadaptiveregrid::error_var = "whisky::DiffRho"
+carpetadaptiveregrid::regrid_every = 16
+
+#carpetadaptiveregrid::verbose = yes
+#carpetadaptiveregrid::veryverbose = yes
+#carpet::verbose = yes
+#carpet::veryverbose = yes
+
+carpetadaptiveregrid::refinement_levels = 6
+carpetadaptiveregrid::coordinates = "
+[ [ ([-0.150000,0.0,0.0]:[0.150000,0.0,0.0]:[0.010000,0.010000,0.010000]) ],
+  [ ([-0.075000,0.0,0.0]:[0.075000,0.0,0.0]:[0.005000,0.005000,0.005000]) ],
+  [ ([-0.037500,0.0,0.0]:[0.037500,0.0,0.0]:[0.002500,0.002500,0.002500]) ],
+  [ ([-0.018750,0.0,0.0]:[0.018750,0.0,0.0]:[0.001250,0.001250,0.001250]) ],
+  [ ([-0.009375,0.0,0.0]:[0.009375,0.0,0.0]:[0.000625,0.000625,0.000625]) ] ]"
+
+ActiveThorns = "time"
+
+time::dtfac 				= 	0.2
+
+ActiveThorns = "carpetioascii iobasic"
+
+IO::out_fileinfo			=	"none"
+IO::out_dir 				= 	"."
+
+IOBasic::outInfo_every 			= 	1
+IOBasic::outInfo_vars 			= 	"whisky::rho"
+
+IOASCII::out1D_every 			= 	32
+IOASCII::out1D_vars 			= 	"whisky::whisky_prim_scalar_var whisky::whisky_prim_vector_var whisky::whisky_cons_scalar_var whisky::whisky_cons_vector_var whisky::diffrho"
+IOASCII::out1D_y			=	"no"
+IOASCII::out1D_z			=	"no"
+
+ActiveThorns = "nanchecker mol"
+
+methodoflines::ode_method 		= 	"rk3"
+mol::disable_prolongation		=	"no"
+
+ActiveThorns = "ADMBase StaticConformal SpaceMask CoordGauge ADMMacros ADMCoupling"
+
+ADMBase::evolution_method		=	"none"
+ADMBase::initial_shift			=	"none"
+ADMBase::metric_type			= 	"physical"
+
+spacemask::use_mask			=	"yes"
+
+ActiveThorns = "eos_base eos_ideal_fluid eos_polytrope"
+
+EOS_Ideal_Fluid::eos_ideal_fluid_gamma	=	1.66666666666666
+
+ActiveThorns = "whisky"
+
+whisky::riemann_solver			=	"Marquina"
+whisky::whisky_eos_type			=	"General"
+whisky::whisky_eos_table		=	"Ideal_Fluid"
+whisky::whisky_stencil			=	3
+whisky::recon_method			=	"ppm"
+whisky::bound				=	"flat"
+
+ActiveThorns = "whisky_init_data"
+
+whisky_init_data::whisky_initial_data	=	"shocktube"
+whisky_init_data::shocktube_type	=	"xshock"
+whisky_init_data::shock_case		=	"Simple"

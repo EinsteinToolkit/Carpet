@@ -1,0 +1,459 @@
+# Parameter definitions for thorn CarpetRegrid
+
+
+
+BOOLEAN verbose "Print screen output while running"
+{
+} "no"
+
+BOOLEAN veryverbose "Print much screen output while running"
+{
+} "no"
+
+
+
+CCTK_INT refinement_levels "Number of refinement levels (including the base level)" STEERABLE=always
+{
+  1:* :: "must be positive, and must not be larger than Carpet::max_refinement_levels"
+} 1
+
+
+
+CCTK_INT regrid_every "Regrid every n time steps" STEERABLE=always
+{
+  -1   :: "regrid never"
+   0   :: "regrid during initial data calculation only"
+   1:* :: "regrid every n time steps"
+} 0
+
+
+
+KEYWORD activate_levels_on_regrid "Whether to activate or deactivate new levels on regridding" STEERABLE=always
+{
+  "none"     :: "Do not activate or deactivate any levels"
+  "fixed"    :: "Activate or deactivate a fixed number of levels"
+  "function" :: "Activate or deactivate a variable number of levels, determined by a user-specified function.  When this option is used, the parameters num_new_levels and activate_next have no effect and should not be set."
+} "none"
+
+CCTK_INT num_new_levels "When regridding, activate this many new levels (if possible).  Note that this will steer the parameter refinement_levels." STEERABLE=always
+{
+  : :: "Number of new levels to activate (negative numbers deactivate)"
+} 0
+
+CCTK_INT activate_next "The next iteration at which new levels should be activated" STEERABLE=always
+{
+  0: :: "Note that this parameter is steered when new levels are activated"
+} 1
+
+BOOLEAN keep_same_grid_structure "Do not allow the grid structure to change; only allow levels to be switched on or off" STEERABLE=always
+{
+} "no"
+
+
+
+KEYWORD refined_regions "Regions where the grid is refined" STEERABLE=always
+{
+  "none"                   :: "Don't refine"
+  "centre"                 :: "Refine around the centre of the grid only"
+  "manual-gridpoints"      :: "Refine the regions specified by integer grid points l[123]i[xyz]{min,max}"
+  "manual-coordinates"     :: "Refine the regions specified by coordinates l[123][xyz]{min,max}"
+  "manual-gridpoint-list"  :: "Refine the regions specified by integer grid points in the parameter 'gridpoints'"
+  "manual-coordinate-list" :: "Refine the regions specified by coordinates in the parameter 'coordinates'"
+  "moving"                 :: "Refine a moving region"
+  "automatic"              :: "Refine automatically"
+} "centre"
+
+
+
+BOOLEAN smart_outer_boundaries "Use the CoordBase interface for outer boundaries" STEERABLE=always
+{
+} no
+
+BOOLEAN merge_overlapping_components "Merge overlapping components" STEERABLE=always
+{
+} no
+
+BOOLEAN tracking "Enable tracking" STEERABLE=always
+{
+} no
+
+
+
+
+# Region specifications for centre refinement
+
+BOOLEAN symmetry_x "Refine the lower half in x-direction" STEERABLE=always
+{
+} "no"
+BOOLEAN symmetry_y "Refine the lower half in y-direction" STEERABLE=always
+{
+} "no"
+BOOLEAN symmetry_z "Refine the lower half in z-direction" STEERABLE=always
+{
+} "no"
+
+
+
+# Region specifications for moving boxes
+
+KEYWORD moving_trajectory "Type of trajectory" STEERABLE=always
+{
+  "point"  :: "Do not move"
+  "circle" :: "Move in a circle"
+} "point"
+
+CCTK_REAL moving_region_radius "Radius of the moving region (on the first refined level)" STEERABLE=always
+{
+  (0: :: ""
+} 1.0
+
+CCTK_REAL moving_centre_x "x-coordinate of the centre" STEERABLE=always
+{
+  : :: ""
+} 0.0
+
+CCTK_REAL moving_centre_y "y-coordinate of the centre" STEERABLE=always
+{
+  : :: ""
+} 0.0
+
+CCTK_REAL moving_centre_z "z-coordinate of the centre" STEERABLE=always
+{
+  : :: ""
+} 0.0
+
+CCTK_REAL moving_circle_radius "Radius of the circle" STEERABLE=always
+{
+  0: :: ""
+} 1.0
+
+CCTK_REAL moving_circle_frequency "Angular frequency on the circle" STEERABLE=always
+{
+  0: :: ""
+} 1.0
+
+
+
+# Region specifications for manual gridpoint refinement
+
+CCTK_INT l1ixmin "Lower boundary of level 1 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_INT l1iymin "Lower boundary of level 1 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_INT l1izmin "Lower boundary of level 1 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+
+CCTK_INT l1ixmax "Upper boundary of level 1 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_INT l1iymax "Upper boundary of level 1 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_INT l1izmax "Upper boundary of level 1 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+
+
+
+CCTK_INT l2ixmin "Lower boundary of level 2 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_INT l2iymin "Lower boundary of level 2 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_INT l2izmin "Lower boundary of level 2 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+
+CCTK_INT l2ixmax "Upper boundary of level 2 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_INT l2iymax "Upper boundary of level 2 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_INT l2izmax "Upper boundary of level 2 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+
+
+
+CCTK_INT l3ixmin "Lower boundary of level 3 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_INT l3iymin "Lower boundary of level 3 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_INT l3izmin "Lower boundary of level 3 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+
+CCTK_INT l3ixmax "Upper boundary of level 3 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_INT l3iymax "Upper boundary of level 3 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_INT l3izmax "Upper boundary of level 3 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+
+
+
+# Region specifications for manual coordinate refinement
+
+CCTK_REAL l1xmin "Lower boundary of level 1 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_REAL l1ymin "Lower boundary of level 1 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_REAL l1zmin "Lower boundary of level 1 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+
+CCTK_REAL l1xmax "Upper boundary of level 1 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_REAL l1ymax "Upper boundary of level 1 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_REAL l1zmax "Upper boundary of level 1 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+
+
+
+CCTK_REAL l2xmin "Lower boundary of level 2 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_REAL l2ymin "Lower boundary of level 2 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_REAL l2zmin "Lower boundary of level 2 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+
+CCTK_REAL l2xmax "Upper boundary of level 2 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_REAL l2ymax "Upper boundary of level 2 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_REAL l2zmax "Upper boundary of level 2 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+
+
+
+CCTK_REAL l3xmin "Lower boundary of level 3 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_REAL l3ymin "Lower boundary of level 3 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_REAL l3zmin "Lower boundary of level 3 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+
+CCTK_REAL l3xmax "Upper boundary of level 3 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_REAL l3ymax "Upper boundary of level 3 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_REAL l3zmax "Upper boundary of level 3 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+
+
+
+# Refinement criteria for manual-gridpoint-list
+
+CCTK_STRING gridpoints "List of bounding box gridpoints" STEERABLE=always
+{
+# We want the string to contain a list of bboxes.  Each bbox contains
+# three vectors specifying the lower bound, upper bound, and stride.
+# (The upper bound is inclusive.  All values are nonnegative integers.)
+# The syntax for vectors, bboxes, and lists is described below.
+# All spaces are optional.
+
+# Almost human readable explanation follows.
+# The specification is hierarchical.
+
+# The following definitions are generic:
+# VECT2(x) := "[ x, x ]"
+#    two x, separated by commas, enclosed in square brackets
+# VECT3(x) := "[ x, x, x ]"
+#    three x, separated by commas, enclosed in square brackets
+# LIST(x) := "[ {{ x, }* x}? ]"
+#    zero or more x, separated by commas, enclosed in square brackets
+
+# A domain is built up as follows:
+# REGION   := VECT3(VECT2(double))
+# REFLEVEL := LIST(REGION)
+# DOMAIN   := LIST(REFLEVEL)
+
+  "^$" :: "leave empty for no refinement"
+  ".*" :: "[ [ ([<imin>,<jmin>,<kmin>]:[<imax>,<jmax>,<kmax>]:[<istride>,<jstride>,<kstride>]), ... ], ... ]"
+} ""
+
+
+
+# Refinement criteria for manual-coordinate-list
+
+CCTK_STRING coordinates "List of bounding box coordinates" STEERABLE=always
+{
+# We want the string to contain a list of bboxes.  Each bbox contains
+# three vectors specifying the lower bound, upper bound, and stride.
+# (The upper bound is inclusive.  All values are nonnegative integers.)
+# The syntax for vectors, bboxes, and lists is described below.
+# All spaces are optional.
+
+# Almost human readable explanation follows.
+# The specification is hierarchical.
+
+# The following definitions are generic:
+# VECT2(x) := "[ x, x ]"
+#    two x, separated by commas, enclosed in square brackets
+# VECT3(x) := "[ x, x, x ]"
+#    three x, separated by commas, enclosed in square brackets
+# LIST(x) := "[ {{ x, }* x}? ]"
+#    zero or more x, separated by commas, enclosed in square brackets
+
+# A domain is built up as follows:
+# REGION   := VECT3(VECT2(double))
+# REFLEVEL := LIST(REGION)
+# DOMAIN   := LIST(REFLEVEL)
+
+  "^$" :: "leave empty for no refinement"
+  ".*" :: "[ [ ([<xmin>,<ymin>,<zmin>]:[<xmax>,<ymax>,<zmax>]:[<xstride>,<ystride>,<zstride>]), ... ], ... ]"
+} ""
+
+
+
+# Offsets for manual-coordinate-list
+
+RESTRICTED:
+
+CCTK_INT num_offsets "Number of given offsets" STEERABLE=always
+{
+  0:10 :: ""
+} 0
+
+CCTK_INT offset_firstlevel "First (lowest) refinement level that should have an offset applied" STEERABLE=always
+{
+  1:* :: ""
+} 1
+
+CCTK_REAL offsetx[10] "x-coordinate of offset" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+CCTK_REAL offsety[10] "y-coordinate of offset" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+CCTK_REAL offsetz[10] "z-coordinate of offset" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+PRIVATE:
+
+
+
+# Outer boundaries for manual-gridpoint-list and manual-coordinate-list
+
+CCTK_STRING outerbounds "Outer boundaries" STEERABLE=always
+{
+  "^$" :: "leave empty for no outer boundaries"
+
+# Each vector element is 0 or 1,
+# where 0 is handled by synchronisation or prolongation,
+# and 1 stands for a user-supplied ("outer") boundary condition.
+
+# BND := " [ 0 , 0 ]"
+# VECT := " [ BND , BND , BND ]"
+# LIST := " [{{VECT ,}*VECT}? ]"
+
+# Almost human readable explanation follows.
+# The specification is hierarchical.
+
+# The following definitions are generic:
+# VECT2(x) := "[ x, x ]"
+#    two x, separated by commas, enclosed in square brackets
+# VECT3(x) := "[ x, x, x ]"
+#    three x, separated by commas, enclosed in square brackets
+# LIST(x) := "[ {{ x, }* x}? ]"
+#    zero or more x, separated by commas, enclosed in square brackets
+
+# A domain is built up as follows:
+# REGION   := VECT3(VECT2(double))
+# REFLEVEL := LIST(REGION)
+# DOMAIN   := LIST(REFLEVEL)
+
+  ".*" :: "[ [ [[?,?],[?,?],[?,?]], ... ], ...]"
+} ""
+
+
+
+# Refinement criteria for automatic refining
+
+CCTK_INT minwidth "Minimum width of refined region" STEERABLE=always
+{
+  1:* :: "must be positive"
+} 8
+
+CCTK_REAL minfraction "Minimum fraction of points in need of refinement in a refined region" STEERABLE=always
+{
+  0:1 :: "must be positive and less than one"
+} 0.75
+
+CCTK_REAL maxerror "Maximum allowed error for non-refined grid points" STEERABLE=always
+{
+  *:* :: "everything goes"
+} 1.0
+
+CCTK_STRING errorvar "Name of grid function that contains the error" STEERABLE=always
+{
+  ".*" :: "must be the name of a grid function"
+} ""

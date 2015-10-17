@@ -1,0 +1,72 @@
+# Test for trivial domain in z-direction
+ActiveThorns = "CoordBase CartGrid3D SymBase InitBase IOUtil Carpet CarpetIOASCII CarpetLib LoopControl"
+
+#----------------------------------------------------
+# Flesh and CCTK parameters
+#----------------------------------------------------
+
+# flesh
+Cactus::cctk_run_title = "Test Run"
+Cactus::cctk_show_schedule = "yes"
+Cactus::cctk_itlast = 0
+Cactus::allow_mixeddim_gfs = "yes"
+
+# CartGrid3D
+CartGrid3D::type = "coordbase"
+CartGrid3D::avoid_origin = "no"
+CoordBase::domainsize = "minmax"
+CoordBase::spacing    = "gridspacing"
+CoordBase::xmin =   0
+CoordBase::xmax =  20
+CoordBase::ymin =   0
+CoordBase::ymax =  20
+CoordBase::zmin =   0
+CoordBase::zmax =   0
+CoordBase::dx   =   1
+CoordBase::dy   =   1
+
+CoordBase::boundary_size_x_lower     = 3
+CoordBase::boundary_size_x_upper     = 3
+CoordBase::boundary_size_y_lower     = 3
+CoordBase::boundary_size_y_upper     = 3
+CoordBase::boundary_size_z_lower     = 0
+CoordBase::boundary_size_z_upper     = 0
+CoordBase::boundary_shiftout_x_lower = 1
+CoordBase::boundary_shiftout_x_upper = 1
+CoordBase::boundary_shiftout_y_lower = 1
+CoordBase::boundary_shiftout_y_upper = 1
+CoordBase::boundary_shiftout_z_lower = 1
+CoordBase::boundary_shiftout_z_upper = 1
+
+ActiveThorns = "CarpetRegrid2"
+Carpet::max_refinement_levels = 3
+CarpetRegrid2::regrid_every =   0
+CarpetRegrid2::num_centres  =   1
+CarpetRegrid2::num_levels_1 =   3
+
+CarpetRegrid2::radius_1[1]  =   5
+CarpetRegrid2::radius_1[2]  =   2.5
+CarpetRegrid2::position_x_1 =  10
+CarpetRegrid2::position_y_1 =  10
+
+# Carpet
+Carpet::domain_from_coordbase = "yes"
+Carpet::ghost_size_x = 3
+Carpet::ghost_size_y = 3
+Carpet::ghost_size_z = 1
+carpet::adaptive_stepsize = no
+Carpet::init_fill_timelevels = "yes"
+
+# the output dir will be named after the parameter file name
+IO::out_dir             = $parfile
+IO::out_group_separator = "-"
+IO::out_fileinfo        = "none"
+
+IOASCII::out2D_every = 1
+IOASCII::out2D_xyplane_z =  0
+IOASCII::out2D_xzplane_y = 10
+IOASCII::out2D_yzplane_x = 10
+IOASCII::one_file_per_group = "yes"
+IOASCII::out2D_vars = "Grid::coordinates"
+IOASCII::output_ghost_points = "no"
+

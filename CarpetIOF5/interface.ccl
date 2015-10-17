@@ -1,0 +1,54 @@
+# Interface definition for thorn CarpetIOF5
+
+IMPLEMENTS: CarpetIOF5
+
+INHERITS: grid
+
+USES INCLUDE: cacheinfo.hh
+USES INCLUDE: carpet.hh
+
+USES INCLUDE: Timer.hh
+
+
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this configuration
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueConfigID (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION UniqueConfigID
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this build
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueBuildID (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION UniqueBuildID
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this simulation
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueSimulationID (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION UniqueSimulationID
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this run
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueRunID (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION UniqueRunID
+
+
+
+# Check whether existing output files should be truncated or not
+CCTK_INT FUNCTION IO_TruncateOutputFiles (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION IO_TruncateOutputFiles
+
+
+
+# The setup of the system
+CCTK_INT FUNCTION MultiPatch_GetSystemSpecification \
+    (CCTK_INT OUT maps)
+USES FUNCTION MultiPatch_GetSystemSpecification
+
+
+
+CCTK_INT this_iteration        TYPE=scalar
+CCTK_INT next_output_iteration TYPE=scalar
