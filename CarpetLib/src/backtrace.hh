@@ -2,10 +2,9 @@
 #define BACKTRACE_HH
 
 namespace CarpetLib {
-  
-  void request_backtraces();
-  
+
+void request_backtraces();
+
 } // namespace CarpetLib
 
-
-#endif  // #ifndef BACKTRACE_HH
+#endif // #ifndef BACKTRACE_HH

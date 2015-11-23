@@ -5,14 +5,14 @@
 
 #ifdef __cplusplus
 namespace CarpetAdaptiveRegrid {
-  extern "C" {
+extern "C" {
 #endif
-    
-    /* Scheduled functions */
-    void CarpetAdaptiveregridParamcheck (CCTK_ARGUMENTS);
+
+/* Scheduled functions */
+void CarpetAdaptiveregridParamcheck(CCTK_ARGUMENTS);
 
 #ifdef __cplusplus
-  } /* extern "C" */
+} /* extern "C" */
 } /* namespace CarpetAdaptiveregrid */
 #endif
 

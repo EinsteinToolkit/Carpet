@@ -5,24 +5,22 @@
 #include <assert.h>
 #include <math.h>
 
-void CoM2_Local(CCTK_ARGUMENTS)
-{
+void CoM2_Local(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
-  int i,j,k,index;
+  int i, j, k, index;
 
   int nx = cctk_lsh[0];
   int ny = cctk_lsh[1];
   int nz = cctk_lsh[2];
 
-  for (k=0;k<nz;k++)
-    for (j=0;j<ny;j++)
-      for (i=0;i<nx;i++) {
+  for (k = 0; k < nz; k++)
+    for (j = 0; j < ny; j++)
+      for (i = 0; i < nx; i++) {
 
-	index = CCTK_GFINDEX3D(cctkGH,i,j,k);
+        index = CCTK_GFINDEX3D(cctkGH, i, j, k);
 
-	redvar[index] = 0.45e0;
-
+        redvar[index] = 0.45e0;
       }
 }

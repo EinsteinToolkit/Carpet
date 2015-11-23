@@ -5,15 +5,15 @@
 
 #ifdef __cplusplus
 namespace CarpetRegrid {
-  extern "C" {
+extern "C" {
 #endif
-    
-    /* Scheduled functions */
-    int CarpetRegridStartup ();
-    void CarpetRegridParamcheck (CCTK_ARGUMENTS);
+
+/* Scheduled functions */
+int CarpetRegridStartup();
+void CarpetRegridParamcheck(CCTK_ARGUMENTS);
 
 #ifdef __cplusplus
-  } /* extern "C" */
+} /* extern "C" */
 } /* namespace CarpetRegrid */
 #endif
 

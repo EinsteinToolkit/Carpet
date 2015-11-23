@@ -3,14 +3,14 @@
 
 #ifdef __cplusplus
 namespace CarpetInterp {
-  extern "C" {
+extern "C" {
 #endif
-  
-    /* Scheduled functions */
-    int CarpetInterpStartup (void);
-    
+
+/* Scheduled functions */
+int CarpetInterpStartup(void);
+
 #ifdef __cplusplus
-  } /* extern "C" */
+} /* extern "C" */
 } /* namespace CarpetInterp */
 #endif
 

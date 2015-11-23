@@ -10,12 +10,8 @@
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 #include "carpet.hh"
 
-
-
-
 // CarpetIONirvana GH extension structure
-typedef struct
-{
+typedef struct {
   // default number of times to output
   int out_every_default;
 
@@ -26,18 +22,18 @@ typedef struct
   int stop_on_parse_errors;
 
   // I/O request description list (for all variables)
-  vector<ioRequest*> requests;
+  vector<ioRequest *> requests;
 
   // directory in which to output
   char *out_dir;
 
   // ring buffer for list of successfully created cp files
-  int    checkpoint_keep;
-  int    cp_filename_index;
+  int checkpoint_keep;
+  int cp_filename_index;
   char **cp_filename_list;
 
   // list of recovery files to remove
-  int    recovery_num_filenames;
+  int recovery_num_filenames;
   char **recovery_filename_list;
 
   // iteration number of the last checkpoint
@@ -45,28 +41,21 @@ typedef struct
 
   // hdf5 datatype for complex variables; to be set at run time
   hid_t HDF5_COMPLEX, HDF5_COMPLEX8, HDF5_COMPLEX16, HDF5_COMPLEX32;
-  
+
 } CarpetIONirvanaGH;
 
+namespace CarpetIONirvana {
 
-namespace CarpetIONirvana
-{
+// worker routines to write a single variable
+int WriteVar(const cGH *const cctkGH, const string &filename, const int filenum,
+             CCTK_REAL &io_bytes, const ioRequest *const request);
 
-  // worker routines to write a single variable
-  int WriteVar (const cGH* const cctkGH,
-                const string& filename,
-                const int filenum,
-                CCTK_REAL & io_bytes,
-                const ioRequest* const request);
+// returns an HDF5 datatype corresponding to the given CCTK datatype
+hid_t CCTKtoHDF5_Datatype(const cGH *const cctkGH, int cctk_type,
+                          bool single_precision);
 
-  // returns an HDF5 datatype corresponding to the given CCTK datatype
-  hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
-                             int cctk_type,
-                             bool single_precision);
-
-
-  // Everything is a class template, so that it can easily be
-  // instantiated for all output dimensions
+// Everything is a class template, so that it can easily be
+// instantiated for all output dimensions
 
 /*  template<int outdim>
   struct IONirvana {
@@ -116,23 +105,23 @@ namespace CarpetIONirvana
     static ivect GetOutputOffset (const cGH* cctkGH, int m,
                                   const vect<int,outdim>& dirs);
 
-  };*/                            // struct IONirvana
+  };*/ // struct IONirvana
 
-  // scheduled routines (must be declared as C according to schedule.ccl)
-  extern "C" {
+// scheduled routines (must be declared as C according to schedule.ccl)
+extern "C" {
 
-    int CarpetIONirvana_RecoverParameters (void);
-    int CarpetIONirvana_SetNumRefinementLevels (void);
-    int CarpetIONirvana_Startup (void);
-    void CarpetIONirvana_Init (CCTK_ARGUMENTS);
-    void CarpetIONirvana_InitCheckpointingIntervals (CCTK_ARGUMENTS);
-    void CarpetIONirvana_RecoverGridStructure (CCTK_ARGUMENTS);
-    void CarpetIONirvana_CloseFiles (CCTK_ARGUMENTS);
-    void CarpetIONirvana_InitialDataCheckpoint (CCTK_ARGUMENTS);
-    void CarpetIONirvana_EvolutionCheckpoint (CCTK_ARGUMENTS);
-    void CarpetIONirvana_TerminationCheckpoint (CCTK_ARGUMENTS);
+int CarpetIONirvana_RecoverParameters(void);
+int CarpetIONirvana_SetNumRefinementLevels(void);
+int CarpetIONirvana_Startup(void);
+void CarpetIONirvana_Init(CCTK_ARGUMENTS);
+void CarpetIONirvana_InitCheckpointingIntervals(CCTK_ARGUMENTS);
+void CarpetIONirvana_RecoverGridStructure(CCTK_ARGUMENTS);
+void CarpetIONirvana_CloseFiles(CCTK_ARGUMENTS);
+void CarpetIONirvana_InitialDataCheckpoint(CCTK_ARGUMENTS);
+void CarpetIONirvana_EvolutionCheckpoint(CCTK_ARGUMENTS);
+void CarpetIONirvana_TerminationCheckpoint(CCTK_ARGUMENTS);
 
-  } // extern "C"
+} // extern "C"
 
 } // namespace CarpetIONirvana
 

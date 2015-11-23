@@ -4,10 +4,8 @@
 #include "CarpetIOHDF5.hh"
 #include "SocketUtils.h"
 
-
 // CarpetIOStreamed GH extension structure
-typedef struct
-{
+typedef struct {
   // port for clients to connect to
   unsigned int port;
 
@@ -27,21 +25,19 @@ typedef struct
   int stop_on_parse_errors;
 
   // I/O request description list (for all variables)
-  vector<ioRequest*> requests;
+  vector<ioRequest *> requests;
 
 } CarpetIOStreamedHDF5GH;
 
+namespace CarpetIOStreamedHDF5 {
+// scheduled routines (must be declared as C according to schedule.ccl)
+extern "C" {
 
-namespace CarpetIOStreamedHDF5
-{ 
-  // scheduled routines (must be declared as C according to schedule.ccl)
-  extern "C" {
+void CarpetIOStreamedHDF5_Startup(void);
+void CarpetIOStreamedHDF5_Init(const cGH *const);
+void CarpetIOStreamedHDF5_Terminate(const cGH *const);
 
-    void CarpetIOStreamedHDF5_Startup (void);
-    void CarpetIOStreamedHDF5_Init (const cGH* const);
-    void CarpetIOStreamedHDF5_Terminate (const cGH* const);
-
-  } // extern "C"
+} // extern "C"
 
 } // namespace CarpetIOStreamedHDF5
 

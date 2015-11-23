@@ -19,18 +19,18 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
+
 #include "cycle.h"
-  
+
 #ifdef HAVE_TICK_COUNTER
-  double seconds_per_tick(void);
-  void measure_tick(void);
+double seconds_per_tick(void);
+void measure_tick(void);
 #else
-#  warning "tick counter not available"
+#warning "tick counter not available"
 #endif
-  
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* CYCLECLOCK_H */
+#endif /* CYCLECLOCK_H */

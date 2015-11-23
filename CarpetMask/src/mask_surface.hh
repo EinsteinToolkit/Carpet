@@ -3,11 +3,9 @@
 
 namespace CarpetMask {
 
-  extern "C" {
-    void
-    CarpetSurfaceParamCheck (CCTK_ARGUMENTS);
-    void
-    CarpetSurfaceSetup (CCTK_ARGUMENTS);
-  }
-  
+extern "C" {
+void CarpetSurfaceParamCheck(CCTK_ARGUMENTS);
+void CarpetSurfaceSetup(CCTK_ARGUMENTS);
+}
+
 } // namespace CarpetMask

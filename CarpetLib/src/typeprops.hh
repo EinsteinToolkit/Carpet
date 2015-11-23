@@ -3,48 +3,39 @@
 
 #include <cctk.h>
 
-
-
-template <typename T>
-struct typeprops {
+template <typename T> struct typeprops {
   typedef T complex;
   typedef T real;
   // Create a complex number from a real number
-  static inline complex const& fromreal (real const& x) { return x; }
+  static inline complex const &fromreal(real const &x) { return x; }
 };
 
 #ifdef HAVE_CCTK_COMPLEX8
-template <>
-struct typeprops <CCTK_COMPLEX8> {
+template <> struct typeprops<CCTK_COMPLEX8> {
   typedef CCTK_COMPLEX8 complex;
   typedef CCTK_REAL4 real;
-  static inline complex fromreal (real const x) { return CCTK_Cmplx8 (x, 0); }
+  static inline complex fromreal(real const x) { return CCTK_Cmplx8(x, 0); }
 };
 #endif
 
 #ifdef HAVE_CCTK_COMPLEX16
-template <>
-struct typeprops <CCTK_COMPLEX16> {
+template <> struct typeprops<CCTK_COMPLEX16> {
   typedef CCTK_COMPLEX16 complex;
   typedef CCTK_REAL8 real;
-  static inline complex fromreal (real const x) { return CCTK_Cmplx16 (x, 0); }
+  static inline complex fromreal(real const x) { return CCTK_Cmplx16(x, 0); }
 };
 #endif
 
 #ifdef HAVE_CCTK_COMPLEX32
-template <>
-struct typeprops <CCTK_COMPLEX32> {
+template <> struct typeprops<CCTK_COMPLEX32> {
   typedef CCTK_COMPLEX32 complex;
   typedef CCTK_REAL16 real;
-  static inline complex fromreal (real const x) { return CCTK_Cmplx32 (x, 0); }
+  static inline complex fromreal(real const x) { return CCTK_Cmplx32(x, 0); }
 };
 #endif
 
-
-
 // Return the specific Cactus variable type for a Cactus variable type
-static inline int specific_cactus_type (int const vartype)
-{
+static inline int specific_cactus_type(int const vartype) {
   switch (vartype) {
   case CCTK_VARIABLE_INT:
 #ifdef CCTK_INTEGER_PRECISION_1
@@ -88,7 +79,5 @@ static inline int specific_cactus_type (int const vartype)
   }
   return vartype;
 }
-
-
 
 #endif // #ifndef TYPEPROPS_HH

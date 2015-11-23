@@ -6,11 +6,9 @@
 #include <cstdlib>
 
 namespace Carpet {
-  
-  unsigned long
-  adler32(char const *const data, // location of the data
-          std::size_t const len); // length of the data in bytes
-  
+
+unsigned long adler32(char const *const data, // location of the data
+                      std::size_t const len); // length of the data in bytes
 }
 
-#endif  // #ifndef ADLER32_HH
+#endif // #ifndef ADLER32_HH

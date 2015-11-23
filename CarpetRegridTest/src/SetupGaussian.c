@@ -4,32 +4,26 @@
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
 
-
-void CarpetRegrid_SetupGaussian(CCTK_ARGUMENTS)
-{
+void CarpetRegrid_SetupGaussian(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
   DECLARE_CCTK_ARGUMENTS;
 
-  int i,j,k;
+  int i, j, k;
 
   int index;
   CCTK_REAL R;
 
-  for(k=0; k<cctk_lsh[2]; k++)
-    {
-      for(j=0; j<cctk_lsh[1]; j++)
-	{
-	  for(i=0; i<cctk_lsh[0]; i++)
-	    {
-	      index =  CCTK_GFINDEX3D(cctkGH,i,j,k);
+  for (k = 0; k < cctk_lsh[2]; k++) {
+    for (j = 0; j < cctk_lsh[1]; j++) {
+      for (i = 0; i < cctk_lsh[0]; i++) {
+        index = CCTK_GFINDEX3D(cctkGH, i, j, k);
 
-	      R = r[index];
+        R = r[index];
 
-	      phi[index] = amplitude*exp( - pow( (R - radius) / sigma, 2.0 ) );
-	    }
-	}
+        phi[index] = amplitude * exp(-pow((R - radius) / sigma, 2.0));
+      }
     }
+  }
 
-  CCTK_VInfo(CCTK_THORNSTRING,"Gaussian initial data have been set.");
-
+  CCTK_VInfo(CCTK_THORNSTRING, "Gaussian initial data have been set.");
 }

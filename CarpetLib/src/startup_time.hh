@@ -1,6 +1,5 @@
 namespace CarpetLib {
-  
-  void
-  output_startup_time ();
-  
+
+void output_startup_time();
+
 } // namespace CarpetLib

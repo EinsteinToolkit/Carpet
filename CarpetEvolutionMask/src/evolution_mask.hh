@@ -3,9 +3,8 @@
 
 namespace CarpetEvolutionMask {
 
-  extern "C" {
-    void
-    CarpetEvolutionMaskSetup (CCTK_ARGUMENTS);
-  }
-  
+extern "C" {
+void CarpetEvolutionMaskSetup(CCTK_ARGUMENTS);
+}
+
 } // namespace CarpetEovlutionMask

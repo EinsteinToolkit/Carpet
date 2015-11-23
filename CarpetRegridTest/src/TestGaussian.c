@@ -4,38 +4,34 @@
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
 
-
-void CarpetRegrid_TestGaussian(CCTK_ARGUMENTS)
-{
+void CarpetRegrid_TestGaussian(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
   DECLARE_CCTK_ARGUMENTS;
 
-  int i,j,k;
+  int i, j, k;
 
   int index;
   CCTK_REAL X, Y, Z, R;
 
+  for (k = 0; k < cctk_lsh[2]; k++) {
+    for (j = 0; j < cctk_lsh[1]; j++) {
+      for (i = 0; i < cctk_lsh[0]; i++) {
+        index = CCTK_GFINDEX3D(cctkGH, i, j, k);
 
-  for(k=0; k<cctk_lsh[2]; k++)
-    {
-      for(j=0; j<cctk_lsh[1]; j++)
-	{
-	  for(i=0; i<cctk_lsh[0]; i++)
-	    {
-	      index =  CCTK_GFINDEX3D(cctkGH,i,j,k);
+        X = x[index];
+        Y = y[index];
+        Z = z[index];
 
-	      X = x[index];
-	      Y = y[index];
-	      Z = z[index];
+        R = sqrt(X * X + Y * Y + Z * Z);
 
-	      R = sqrt(X*X + Y*Y + Z*Z);
-
-	      phi_error[index] = phi[index] - amplitude*exp( - pow( (R - radius) / sigma, 2.0 ) );
-	      phi_relerror[index] = phi_error[index]  / (amplitude*exp( - pow( (R - radius) / sigma, 2.0 ) ) );
-	    }
-	}
+        phi_error[index] =
+            phi[index] - amplitude * exp(-pow((R - radius) / sigma, 2.0));
+        phi_relerror[index] =
+            phi_error[index] /
+            (amplitude * exp(-pow((R - radius) / sigma, 2.0)));
+      }
     }
+  }
 
   /*  CCTK_VInfo(CCTK_THORNSTRING,"Performed CarpetRegridTest"); */
-
 }
