@@ -97,7 +97,7 @@ void *IOHDF5<outdim>::SetupGH(tFleshConfig *const fc, const int convLevel,
   dummy = &dummy;
 
   if (not CCTK_Equals(verbose, "none")) {
-    CCTK_VInfo(CCTK_THORNSTRING,
+    CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                "I/O Method 'IOHDF5_%dD' registered: "
                "%dD AMR output of grid variables to HDF5 files",
                outdim, outdim);
@@ -601,9 +601,22 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
             } // for n
 
             for (comm_state state; not state.done(); state.step()) {
-              for (size_t n = 0; n < datas.size(); ++n) {
-                tmpdatas.at(n)->copy_from(state, datas.at(n), data_ext,
-                                          data_ext, NULL, ioproc, proc);
+              int c_offset = 0;
+              for (ibset::const_iterator ext = exts.begin(); ext != exts.end();
+                   ++ext, ++c_offset) {
+                const ivect &org = offsets1[c_offset];
+                ivect lo(org), hi(org);
+                for (int d = 0; d < outdim; ++d) {
+                  lo[dirs[d]] = ext->lower()[dirs[d]];
+                  hi[dirs[d]] = ext->upper()[dirs[d]];
+                }
+                const ibbox outext(lo, hi, ext->stride());
+                if (outext.intersects(*ext)) {
+                  for (size_t n = 0; n < datas.size(); ++n) {
+                    tmpdatas.at(n)->copy_from(state, datas.at(n), outext,
+                                              outext, NULL, ioproc, proc);
+                  }
+                }
               }
             }
 
@@ -618,10 +631,23 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
             int c_offset = 0;
             for (ibset::const_iterator ext = exts.begin(); ext != exts.end();
                  ++ext, ++c_offset) {
-              error_count += WriteHDF5(
-                  cctkGH, file, index_file, tmpdatas, *ext, vindex,
-                  offsets1[c_offset], dirs, rl, ml, m, c, c_base + c_offset, tl,
-                  coord_time, coord_lower[c_offset], coord_upper[c_offset]);
+              const ivect &org = offsets1[c_offset];
+              ivect org1(org);
+              for (int d = 0; d < outdim; ++d)
+                org1[dirs[d]] = ext->lower()[d];
+              ivect lo(org), hi(org);
+              for (int d = 0; d < outdim; ++d) {
+                lo[dirs[d]] = ext->lower()[dirs[d]];
+                hi[dirs[d]] = ext->upper()[dirs[d]];
+              }
+              const ibbox outext(lo, hi, ext->stride());
+              if (outext.intersects(*ext)) {
+                error_count +=
+                    WriteHDF5(cctkGH, file, index_file, tmpdatas, *ext, vindex,
+                              offsets1[c_offset], dirs, rl, ml, m, c,
+                              c_base + c_offset, tl, coord_time,
+                              coord_lower[c_offset], coord_upper[c_offset]);
+              }
             }
           }
 
@@ -639,7 +665,7 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
 
     error_count += CloseFile(cctkGH, file, index_file);
     if (error_count > 0 and abort_on_io_errors) {
-      CCTK_WARN(0, "Aborting simulation due to previous I/O errors");
+      CCTK_ERROR("Aborting simulation due to previous I/O errors");
     }
 
   } // for m
@@ -1213,6 +1239,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
     output_bbox_overlaps_data_extent = gfext.contains(org1);
 
   } else {
+    assert(0);
 
     gh const &hh = *vhh.at(m);
     ibbox const &base = hh.baseextents.at(mglevel).at(reflevel);
@@ -1231,6 +1258,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
   }
   // Shortcut if there is nothing to output
   if (not output_bbox_overlaps_data_extent) {
+    assert(0);
     return 0;
   }
 
@@ -1429,6 +1457,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
     HDF5_ERROR(H5Sclose(slice_space));
 
   } else { // taking care of the diagonal
+    assert(0);
 
     const ivect lo = gfext.lower();
     const ivect up = gfext.upper();
