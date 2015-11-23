@@ -64,13 +64,13 @@ void copy_3d(T const *restrict const src, ivect3 const &restrict srcpadext,
   if (not srcregbbox.is_contained_in(srcbbox) or
       not dstregbbox.is_contained_in(dstbbox)) {
     {
-      cout << "copy_3d.cc:" << endl
+      cerr << "copy_3d.cc:" << endl
            << "srcbbox=" << srcbbox << endl
            << "dstbbox=" << dstbbox << endl
            << "srcregbbox=" << srcregbbox << endl
            << "dstregbbox=" << dstregbbox << endl;
       if (slabinfo) {
-        cout << "slabinfo=" << *slabinfo << endl;
+        cerr << "slabinfo=" << *slabinfo << endl;
       }
       CCTK_WARN(
           0, "Internal error: region extent is not contained in array extent");
