@@ -152,6 +152,7 @@ CarpetIOASCII::out1D_vars         = "
 CarpetIOHDF5::out_every          = 1024
 CarpetIOHDF5::one_file_per_group = yes
 CarpetIOHDF5::out_vars           = "
+        grid::coordinates
         ADMBase::metric
         ADMBase::curv
         ADMBase::lapse
