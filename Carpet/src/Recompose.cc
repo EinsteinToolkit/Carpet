@@ -286,9 +286,11 @@ void RegridMap(cGH const *const cctkGH, int const m,
   // Regrid
   vhh.AT(m)->regrid(superregss, regsss, do_init);
 
-  // Output grid structure to screen
-  OutputSuperregions(cctkGH, m, *vhh.AT(m), superregss);
-  OutputGrids(cctkGH, m, *vhh.AT(m), *vdd.AT(m));
+  if (print_grid_info) {
+    // Output grid structure to screen
+    OutputSuperregions(cctkGH, m, *vhh.AT(m), superregss);
+    OutputGrids(cctkGH, m, *vhh.AT(m), *vdd.AT(m));
+  }
 
   // Write grid structure to file
   OutputGridStructure(cctkGH, m, regsss);

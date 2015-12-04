@@ -401,6 +401,10 @@ INT print_timestats_every "Print interesting timing statistics periodically" STE
   1:* :: "report every so many iterations"
 } 0
 
+BOOLEAN print_grid_info "Print information about the grids on regridding" STEERABLE=always
+{
+} yes
+
 INT output_timers_every "Print detailed statistics periodically" STEERABLE=always
 {
   -1  :: "don't report"
