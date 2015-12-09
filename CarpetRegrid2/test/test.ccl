@@ -3,3 +3,12 @@ TEST regrid2_2D
   NPROCS 1
 }
 
+TEST regrid2_2cen
+{
+  NPROCS 1
+}
+
+TEST regrid2_2cen_minfrac
+{
+  NPROCS 1
+}
