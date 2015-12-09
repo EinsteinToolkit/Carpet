@@ -936,14 +936,20 @@ template <typename T, int D> size_type bboxset<T, D>::size() const {
 #ifndef CARPET_AVOID_LAMBDA
   traverse_subsets([&](const T &pos, const bboxset1 &subset) {
     const size_type subset_size = subset.size();
-    total_size += old_subset_size == 0 ? 0 : (pos - old_pos) * old_subset_size;
+    if (old_subset_size > 0) {
+      assert((pos - old_pos) % stride[D - 1] == 0);
+      total_size += (pos - old_pos) / stride[D - 1] * old_subset_size;
+    }
     old_pos = pos;
     old_subset_size = subset_size;
   });
 #else
   TRAVERSE_SUBSETS1(const T &pos(_1); const bboxset1 &subset(_2); {
     const size_type subset_size = subset.size();
-    total_size += (pos - old_pos) * old_subset_size;
+    if (old_subset_size > 0) {
+      assert((pos - old_pos) % stride[D - 1] == 0);
+      total_size += (pos - old_pos) / stride[D - 1] * old_subset_size;
+    }
     old_pos = pos;
     old_subset_size = subset_size;
   });
