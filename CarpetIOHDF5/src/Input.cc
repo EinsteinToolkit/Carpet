@@ -983,7 +983,7 @@ static list<fileset_t>::iterator OpenFileSet(const cGH *const cctkGH,
 
     HDF5_ERROR(dataset = H5Dopen(file.file, METADATA_GROUP "/" ALL_PARAMETERS));
     HDF5_ERROR(datatype = H5Dget_type(dataset));
-    HDF5_ERROR(old_data = H5Tequal(datatype, H5T_NATIVE_CHAR));
+    HDF5_ERROR(old_data = 0 == H5Tdetect_class(datatype, H5T_STRING));
     if (old_data) {
       hid_t dataspace;
       HDF5_ERROR(dataspace = H5Dget_space(dataset));
@@ -1085,7 +1085,7 @@ static void ReadMetadata(fileset_t &fileset, const file_t &file) {
     size_t len;
 
     HDF5_ERROR(datatype = H5Dget_type(dataset));
-    HDF5_ERROR(old_data = H5Tequal(datatype, H5T_NATIVE_CHAR));
+    HDF5_ERROR(old_data = 0 == H5Tdetect_class(datatype, H5T_STRING));
     if (old_data) {
       hid_t dataspace;
       HDF5_ERROR(dataspace = H5Dget_space(dataset));
