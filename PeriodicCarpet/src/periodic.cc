@@ -143,7 +143,6 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
 
     // Loop over all components and find out how to fill their
     // periodic boundaries
-    BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
 
       gh const &hh = *vhh.at(Carpet::map);
       ibbox const &domain_exterior = hh.baseextent(mglevel, reflevel);
@@ -202,7 +201,6 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
       //   assert(fabs(npoints[d] - rnpoints) < 0.01);
       // }
 
-      BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
         DECLARE_CCTK_ARGUMENTS;
 
         // Exterior of this component
@@ -299,10 +297,6 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
           assert(src_bset.empty());
 
         } // while dst_bset
-      }
-      END_LOCAL_COMPONENT_LOOP;
-    }
-    END_LOCAL_MAP_LOOP;
 
     // Tell the source processes what they have to send
     {
