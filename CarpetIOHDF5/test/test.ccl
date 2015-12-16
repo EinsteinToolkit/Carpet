@@ -8,7 +8,7 @@ TEST CarpetWaveToyNewRecover_test_1proc
   NPROCS 1
 }
 
-TEST CarpetWaveToyRecover_test__newcp_1proc
+TEST CarpetWaveToyRecover_test_newcp_1proc
 {
   NPROCS 1
 }
