@@ -35,7 +35,7 @@ InterpToArray::array3d_npoints_j = 4
 InterpToArray::array3d_npoints_k = 3
 
 IOHDF5::one_file_per_group  = yes
-IOHDF5::out_group_separator = "."
+IO::out_group_separator = "."
 IO::out_every = 1
 
 IOHDF5::out0D_vars = "

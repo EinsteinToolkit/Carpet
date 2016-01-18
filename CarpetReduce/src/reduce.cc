@@ -550,7 +550,10 @@ struct average : reduction {
       accum += accum2;
       cnt += cnt2;
     }
-    static inline void finalise(T &accum, const T &cnt) { accum /= cnt; }
+    static inline void finalise(T &accum, const T &cnt) {
+      if (cnt != T(0))
+        accum /= cnt;
+    }
   };
   MPI_Op mpi_op() const { return dist::mpi_sum; }
 };
@@ -575,7 +578,10 @@ struct norm1 : reduction {
       accum += accum2;
       cnt += cnt2;
     }
-    static inline void finalise(T &accum, const T &cnt) { accum /= cnt; }
+    static inline void finalise(T &accum, const T &cnt) {
+      if (cnt != T(0))
+        accum /= cnt;
+    }
   };
   MPI_Op mpi_op() const { return dist::mpi_sum; }
 };
@@ -601,7 +607,8 @@ struct norm2 : reduction {
       cnt += cnt2;
     }
     static inline void finalise(T &accum, const T &cnt) {
-      accum = CarpetReduce::mysqrt(accum / cnt);
+      if (cnt != T(0))
+        accum = CarpetReduce::mysqrt(accum / cnt);
     }
   };
   MPI_Op mpi_op() const { return dist::mpi_sum; }
