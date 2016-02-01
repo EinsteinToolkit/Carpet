@@ -21,12 +21,12 @@ PeriodicCarpet_Interpolate (CCTK_POINTER_TO_CONST restrict const cctkGH,
                             CCTK_INT const coord_system_handle,
                             CCTK_INT const N_interp_points,
                             CCTK_INT const interp_coords_type,
-                            CCTK_POINTER_TO_CONST restrict const interp_coords[],
+                            CCTK_POINTER_TO_CONST const interp_coords[],
                             CCTK_INT const N_input_arrays,
                             CCTK_INT const input_array_indices[],
                             CCTK_INT const N_output_arrays,
                             CCTK_INT const output_array_types[],
-                            CCTK_POINTER restrict const output_arrays[],
+                            CCTK_POINTER const output_arrays[],
                             CCTK_INT const faces)
 {
   DECLARE_CCTK_PARAMETERS;
