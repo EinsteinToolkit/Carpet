@@ -1484,10 +1484,10 @@ void WriteASCII(ostream &os, vector<gdata *> const &gfdatas,
 }
 
 // Explicit instantiation for all output dimensions
-template class IOASCII<0>;
-template class IOASCII<1>;
-template class IOASCII<2>;
-template class IOASCII<3>;
+template struct IOASCII<0>;
+template struct IOASCII<1>;
+template struct IOASCII<2>;
+template struct IOASCII<3>;
 
 template void WriteASCII(ostream &os, vector<gdata *> const &gfdatas,
                          const bbox<int, dim> &gfext, const int vi,
