@@ -91,18 +91,18 @@ region_t region_t::split(CCTK_REAL const ratio_new_over_old) {
   ivect const lo = extent.lower();
   ivect const up = extent.upper();
   ivect const str = extent.stride();
-  ivect const cut = lo + str * ivect::dir(idir) * keep_np;
+  ivect const locut = lo + str * ivect::dir(idir) * keep_np;
+  ivect const upcut = up - str * ivect::dir(idir) * new_np;
 
   // Copy the region
   region_t newreg = *this;
   // Set new extents
-  extent = ibbox(lo, cut - str, str);
-  newreg.extent = ibbox(cut, up, str);
+  extent = ibbox(lo, upcut, str);
+  newreg.extent = ibbox(locut, up, str);
+
   // Mark cutting boundary as not outer boundary
   outer_boundaries[idir][1] = false;
   newreg.outer_boundaries[idir][0] = false;
-
-  assert(not processors);
 
   return newreg;
 }
