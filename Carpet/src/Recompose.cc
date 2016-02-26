@@ -1359,7 +1359,8 @@ static void SplitRegionsMaps_Automatic_Recursively(bvect const &dims,
     CCTK_REAL totalcost = 1;
     for (int d = 0; d < dim; ++d) {
       if (not dims[d]) {
-        ++alldims;
+        if (d < 2)
+          ++alldims;
         CCTK_REAL const thiscost = rcost[d];
         // Prefer to split in the z direction
         // (Choose this dimension even if it is slightly worse than
@@ -1368,6 +1369,7 @@ static void SplitRegionsMaps_Automatic_Recursively(bvect const &dims,
           mydim = d;
           mycost = thiscost;
         }
+        if (d < 2)
         totalcost *= thiscost;
       }
     }
