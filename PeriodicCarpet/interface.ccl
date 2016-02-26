@@ -21,6 +21,45 @@ CCTK_INT FUNCTION                               \
          CCTK_INT IN ARRAY symmetry_zone_width)
 REQUIRES FUNCTION SymmetryRegisterGrid
 
+CCTK_INT FUNCTION                                           \
+    SymmetryRegisterGridInterpolator                        \
+        (CCTK_POINTER IN cctkGH,                            \
+         CCTK_INT IN sym_handle,                            \
+         CCTK_INT CCTK_FPOINTER IN symmetry_interpolate     \
+             (CCTK_POINTER_TO_CONST IN cctkGH,              \
+              CCTK_INT IN N_dims,                           \
+              CCTK_INT IN local_interp_handle,              \
+              CCTK_INT IN param_table_handle,               \
+              CCTK_INT IN coord_system_handle,              \
+              CCTK_INT IN N_interp_points,                  \
+              CCTK_INT IN interp_coords_type,               \
+              CCTK_POINTER_TO_CONST ARRAY IN interp_coords, \
+              CCTK_INT IN N_input_arrays,                   \
+              CCTK_INT ARRAY IN input_array_indices,        \
+              CCTK_INT IN N_output_arrays,                  \
+              CCTK_INT ARRAY IN output_array_types,         \
+              CCTK_POINTER ARRAY IN output_arrays,          \
+              CCTK_INT IN faces))
+REQUIRES FUNCTION SymmetryRegisterGridInterpolator
+
+CCTK_INT FUNCTION                                           \
+    SymmetryInterpolateFaces                                \
+        (CCTK_POINTER_TO_CONST IN cctkGH,                   \
+         CCTK_INT IN N_dims,                                \
+         CCTK_INT IN local_interp_handle,                   \
+         CCTK_INT IN param_table_handle,                    \
+         CCTK_INT IN coord_system_handle,                   \
+         CCTK_INT IN N_interp_points,                       \
+         CCTK_INT IN interp_coords_type,                    \
+         CCTK_POINTER_TO_CONST ARRAY IN interp_coords,      \
+         CCTK_INT IN N_input_arrays,                        \
+         CCTK_INT ARRAY IN input_array_indices,             \
+         CCTK_INT IN N_output_arrays,                       \
+         CCTK_INT ARRAY IN output_array_types,              \
+         CCTK_POINTER ARRAY IN output_arrays,               \
+         CCTK_INT IN faces)
+REQUIRES FUNCTION SymmetryInterpolateFaces
+
 CCTK_INT FUNCTION                               \
     Boundary_SelectedGVs                        \
         (CCTK_POINTER_TO_CONST IN GH,           \

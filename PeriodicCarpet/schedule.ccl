@@ -9,11 +9,9 @@ SCHEDULE PeriodicCarpet_ParamCheck AT paramcheck
 SCHEDULE PeriodicCarpet_RegisterBC IN SymmetryRegister
 {
   LANG: C
-  OPTIONS: level
 } "Register periodic boundary conditions"
 
 SCHEDULE PeriodicCarpet_ApplyBC IN BoundaryConditions
 {
   LANG: C
-  OPTIONS: level
 } "Apply periodic boundary conditions"
