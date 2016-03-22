@@ -160,10 +160,10 @@ void CarpetSurfaceSetup(CCTK_ARGUMENTS) {
             assert(not isnan(phi));
             assert(phi >= 0);
             assert(phi < 2 * M_PI);
-            int const a = floor((theta - theta0) / dtheta + 0.5);
+            int const a = lrint((theta - theta0) / dtheta);
             assert(a >= 0);
             assert(a < ntheta);
-            int const b = floor((phi - phi0) / dphi + 0.5);
+            int const b = lrint((phi - phi0) / dphi);
             assert(b >= 0);
             assert(b < nphi);
 
