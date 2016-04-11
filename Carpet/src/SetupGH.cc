@@ -150,7 +150,7 @@ void *SetupGH(tFleshConfig *const fc, int const convLevel, cGH *const cctkGH) {
                  "CACTUS_NUM_PROCS is not set.");
     } else {
       if (cactus_num_procs != nprocs) {
-        CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+        CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                    "The environment variable CACTUS_NUM_PROCS is set to %d, "
                    "but there are %d MPI processes. This may indicate a severe "
                    "problem with the MPI startup mechanism.",
@@ -161,7 +161,7 @@ void *SetupGH(tFleshConfig *const fc, int const convLevel, cGH *const cctkGH) {
 #else
     CCTK_VInfo(CCTK_THORNSTRING, "MPI is disabled");
     if (CACTUS_NUM_PROCS and cactus_num_procs != nprocs) {
-      CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Although MPI is disabled, the environment variable "
                  "CACTUS_NUM_PROCS is set to %d. This may indicate a severe "
                  "problem with the Cactus startup mechanism.",
@@ -189,7 +189,7 @@ void *SetupGH(tFleshConfig *const fc, int const convLevel, cGH *const cctkGH) {
                  "CACTUS_NUM_THREADS is not set.");
     } else {
       if (cactus_num_threads != mynthreads) {
-        CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+        CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                    "The environment variable CACTUS_NUM_THREADS is set to %d, "
                    "but there are %d threads on this process. This may "
                    "indicate a severe problem with the OpenMP startup "
@@ -219,7 +219,7 @@ void *SetupGH(tFleshConfig *const fc, int const convLevel, cGH *const cctkGH) {
                  num_threads);
     }
     if (CACTUS_NUM_THREADS and cactus_num_threads != mynthreads) {
-      CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Although OpenMP is disabled, the environment variable "
                  "CACTUS_NUM_THREADS is set to %d. This may indicate a severe "
                  "problem with the Cactus startup mechanism.",
