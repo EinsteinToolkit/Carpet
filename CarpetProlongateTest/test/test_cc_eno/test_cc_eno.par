@@ -22,11 +22,11 @@ ActiveThorns = "Carpet CarpetLib CarpetInterp CarpetReduce"
 Carpet::domain_from_coordbase = yes
 Carpet::max_refinement_levels = 10
 
-driver::ghost_size           = 1
+driver::ghost_size           = 2
 Carpet::use_buffer_zones     = yes
 Carpet::refinement_centering = "cell"
 
-Carpet::prolongation_order_space = 1
+Carpet::prolongation_order_space = 2
 Carpet::prolongation_order_time  = 2
 
 # Restriction introduces an error that we do not want to test here
@@ -98,7 +98,7 @@ CarpetProlongateTest::power_x = 1
 CarpetProlongateTest::power_y = 1
 CarpetProlongateTest::power_z = 1
 
-CarpetProlongateTest::prolongation = "TVD"
+CarpetProlongateTest::prolongation = "eno"
 
 
 
