@@ -162,7 +162,7 @@ ActiveThorns = "CarpetIOBasic"
 #################################
 
 IO::out_dir             = $parfile
-IO::out_group_separator = "-"
+IO::out_fileinfo = "none"
 
 IOBasic::outInfo_every      = 1
 IOBasic::outInfo_reductions = "norm2"

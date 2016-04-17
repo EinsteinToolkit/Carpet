@@ -11,6 +11,7 @@ ActiveThorns = "
 "
 
 IO::out_dir = $parfile
+IO::out_fileinfo = "none"
 
 InterpToArray::nparrays1d         = 1
 InterpToArray::parray1d_npoints_i = 1
