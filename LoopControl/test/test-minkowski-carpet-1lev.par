@@ -12,6 +12,7 @@ ActiveThorns = "CycleClock Fortran hwloc MPI"
 ActiveThorns = "IOUtil"
 
 IO::out_dir = $parfile
+IO::out_fileinfo = "none"
 
 
 
