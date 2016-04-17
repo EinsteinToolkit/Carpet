@@ -150,6 +150,7 @@ ActiveThorns = "CarpetIOASCII"
 #############################################
 
 IO::out_dir = $parfile
+IO::out_fileinfo = "none"
 IO::parfile_write             = "no"
 IOASCII::one_file_per_group = yes
 

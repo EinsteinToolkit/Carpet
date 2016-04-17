@@ -46,6 +46,7 @@ ActiveThorns = "
 # output
 
 IO::out_dir = $parfile
+IO::out_fileinfo = "none"
 
 IOBasic::outInfo_every = 1
 IOBasic::outInfo_vars = "
