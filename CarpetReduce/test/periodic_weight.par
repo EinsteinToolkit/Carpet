@@ -100,7 +100,7 @@ ADMBase::initial_dtlapse = "zero"
 ADMBase::initial_dtshift = "zero"
 
 IO::out_dir             = $parfile
-IO::out_group_separator = "-"
+IO::out_fileinfo = "none"
 
 #################################
 ActiveThorns = "CarpetIOBasic"
