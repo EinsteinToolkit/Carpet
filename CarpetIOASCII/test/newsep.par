@@ -14,6 +14,8 @@ ActiveThorns = "
 "
 
 IO::out_dir = $parfile
+IO::out_fileinfo = "none"
+IO::out_group_separator = "-"
 
 Carpet::global_nx = 7
 Carpet::global_ny = 8
@@ -35,7 +37,6 @@ InterpToArray::array3d_npoints_j = 4
 InterpToArray::array3d_npoints_k = 3
 
 IO::out_every = 1
-IO::out_group_separator = "-"
 IOASCII::one_file_per_group  = yes
 IOASCII::compact_format = yes
 

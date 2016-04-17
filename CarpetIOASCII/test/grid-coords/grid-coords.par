@@ -14,6 +14,7 @@ ActiveThorns = "
 "
 
 IO::out_dir = $parfile
+IO::out_fileinfo = "none"
 
 Carpet::global_nx = 7
 Carpet::global_ny = 8
