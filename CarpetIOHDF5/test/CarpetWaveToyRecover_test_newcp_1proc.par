@@ -5,6 +5,7 @@ Cactus::cctk_itlast = 128
 
 # Output
 IO::out_dir = $parfile
+IO::out_fileinfo = "none"
 
 # Recovery
 IO::recover_dir  = "../../../arrangements/Carpet/CarpetIOHDF5/test"
