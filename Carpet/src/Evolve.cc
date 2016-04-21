@@ -249,11 +249,10 @@ void CallRegrid(cGH *const cctkGH) {
   do_early_meta_mode = true;
   do_late_meta_mode = true;
 
+  // Preregrid
   Waypoint("Preregrid at iteration %d time %g%s%s", cctkGH->cctk_iteration,
            (double)cctkGH->cctk_time, (do_global_mode ? " (global)" : ""),
            (do_meta_mode ? " (meta)" : ""));
-
-  // Preregrid
   ScheduleTraverse(where, "CCTK_PREREGRID", cctkGH);
 
   // Regrid
@@ -287,8 +286,8 @@ void CallRegrid(cGH *const cctkGH) {
 #endif
 
         // Carpet assumes that a regridding operation always changes
-        // "level N and all finer levels" so we should call
-        // POSTREGRID on all finer levels
+        // "level N and all finer levels" so we should call POSTREGRID
+        // on all finer levels
         if (did_any_recompose or (did_remove_level and rl == reflevels - 1)) {
           BEGIN_MGLEVEL_LOOP(cctkGH) {
             ENTER_LEVEL_MODE(cctkGH, rl) {
