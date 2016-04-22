@@ -1382,6 +1382,50 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
         iorigin[d] = (iorigin[d] - ioffset[d]) / gfext.stride()[dirs[d]];
       }
     }
+    string active;
+    {
+      // Determine extent of hyperslab that is output
+      std::cout << "gfext=" << gfext << "\n";
+      ivect lo = gfext.lower();
+      ivect up = gfext.upper();
+      ivect str = gfext.stride();
+      std::cout << "outdim=" << outdim << "\n";
+      std::cout << "dirs=" << dirs << "\n";
+      for (int d = 0; d < dim; ++d) {
+        bool isoutdir = false;
+        for (int e = 0; e < outdim; ++e)
+          isoutdir |= d == dirs[e];
+        if (!isoutdir) {
+          lo[d] = org[d];
+          up[d] = org[d];
+        }
+      }
+      const ibbox outputslab(lo, up, str);
+      std::cout << "outputslab=" << outputslab << "\n";
+      // Intersect active region with this hyperslab
+      const int lc = vhh.at(m)->get_local_component(rl, c);
+      const ibset &active0 = vdd.at(m)->local_boxes.at(ml).at(rl).at(lc).active;
+      std::cout << "active0=" << active0 << "\n";
+      const ibset active1 = active0 & outputslab;
+      std::cout << "active1=" << active1 << "\n";
+      // Reduce dimensionality of active region
+      bboxset<int, outdim> active2;
+      for (ibset::const_iterator bi = active1.begin(), be = active1.end();
+           bi != be; ++bi) {
+        const ibbox &box0 = *bi;
+        const vect<int, outdim> lo = box0.lower()[dirs];
+        const vect<int, outdim> up = box0.upper()[dirs];
+        const vect<int, outdim> str = box0.stride()[dirs];
+        const ::bbox<int, outdim> box(lo, up, str);
+        active2 += box;
+      }
+      std::cout << "active2=" << active2 << "\n";
+      ostringstream buf;
+      buf << active2;
+      active = buf.str();
+      std::cout << "active=" << active << "\n";
+    }
+
     // store cctk_bbox and cctk_nghostzones (for grid arrays only)
     if (groupdata.grouptype != CCTK_SCALAR) {
       const b2vect obnds = vhh.at(m)->outer_boundaries(rl, c);
@@ -1438,13 +1482,14 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
                           gfdatas[n]->storage()));
       error_count += AddSliceAttributes(
           cctkGH, fullname, rl, ml, m, tl, origin, delta, iorigin, ioffset,
-          ioffsetdenom, bbox, nghostzones, dataset, slice_shape, false);
+          ioffsetdenom, bbox, nghostzones, active, dataset, slice_shape, false);
       HDF5_ERROR(H5Dclose(dataset));
 
       if (indexfile != -1) {
         error_count += AddSliceAttributes(
             cctkGH, fullname, rl, ml, m, tl, origin, delta, iorigin, ioffset,
-            ioffsetdenom, bbox, nghostzones, index_dataset, slice_shape, true);
+            ioffsetdenom, bbox, nghostzones, active, index_dataset, slice_shape,
+            true);
         HDF5_ERROR(H5Dclose(index_dataset));
       }
       free(fullname);

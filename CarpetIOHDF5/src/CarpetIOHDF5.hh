@@ -120,8 +120,9 @@ int AddSliceAttributes(const cGH *const cctkGH, const char *const fullname,
                        const vector<double> &delta, const vector<int> &iorigin,
                        const vector<int> &ioffset,
                        const vector<int> &ioffsetdenom, const vector<int> &bbox,
-                       const vector<int> &nghostzones, hid_t &dataset,
-                       const vector<hsize_t> &shape, const bool is_index);
+                       const vector<int> &nghostzones, const string &active,
+                       hid_t &dataset, const vector<hsize_t> &shape,
+                       const bool is_index);
 
 int WriteAttribute(hid_t const group, char const *const name, int const ivalue);
 int WriteAttribute(hid_t const group, char const *const name,
