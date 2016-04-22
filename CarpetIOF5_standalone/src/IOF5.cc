@@ -405,6 +405,7 @@ void WriteParameters(F5::file_t &file) {
     assert(properties >= 0);
     check(not H5Pset_chunk(properties, 1, &size));
     if (compression_level > 0) {
+      check(not H5Pset_shuffle(properties));
       check(not H5Pset_deflate(properties, compression_level));
     }
     if (write_checksum) {
