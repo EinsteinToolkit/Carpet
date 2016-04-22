@@ -1385,12 +1385,9 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
     string active;
     {
       // Determine extent of hyperslab that is output
-      std::cout << "gfext=" << gfext << "\n";
       ivect lo = gfext.lower();
       ivect up = gfext.upper();
       ivect str = gfext.stride();
-      std::cout << "outdim=" << outdim << "\n";
-      std::cout << "dirs=" << dirs << "\n";
       for (int d = 0; d < dim; ++d) {
         bool isoutdir = false;
         for (int e = 0; e < outdim; ++e)
@@ -1401,13 +1398,10 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
         }
       }
       const ibbox outputslab(lo, up, str);
-      std::cout << "outputslab=" << outputslab << "\n";
       // Intersect active region with this hyperslab
       const int lc = vhh.at(m)->get_local_component(rl, c);
       const ibset &active0 = vdd.at(m)->local_boxes.at(ml).at(rl).at(lc).active;
-      std::cout << "active0=" << active0 << "\n";
       const ibset active1 = active0 & outputslab;
-      std::cout << "active1=" << active1 << "\n";
       // Reduce dimensionality of active region
       bboxset<int, outdim> active2;
       for (ibset::const_iterator bi = active1.begin(), be = active1.end();
@@ -1419,11 +1413,9 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
         const ::bbox<int, outdim> box(lo, up, str);
         active2 += box;
       }
-      std::cout << "active2=" << active2 << "\n";
       ostringstream buf;
       buf << active2;
       active = buf.str();
-      std::cout << "active=" << active << "\n";
     }
 
     // store cctk_bbox and cctk_nghostzones (for grid arrays only)
