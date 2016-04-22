@@ -226,7 +226,7 @@ typedef unsigned long long ticks;
 
 static __inline__ ticks getticks(void) {
   ticks a, d;
-  asm volatile("rdtsc" : "=a"(a), "=d"(d));
+  __asm__ volatile("rdtsc" : "=a"(a), "=d"(d));
   return a | (d << 32);
 }
 
