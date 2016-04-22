@@ -156,6 +156,7 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
         const hsize_t size = num_elems * H5Tget_size(filedatatype);
         if (compression_lvl and size > hsize_t(minimum_size_for_compression)) {
           HDF5_ERROR(H5Pset_chunk(plist_dataset, group.dim, shape));
+          HDF5_ERROR(H5Pset_shuffle(plist_dataset));
           HDF5_ERROR(H5Pset_deflate(plist_dataset, compression_lvl));
         }
         // enable checksums if requested
@@ -482,6 +483,7 @@ int WriteVarChunkedSequential(const cGH *const cctkGH, hid_t outfile,
           if (compression_lvl and
               size > hsize_t(minimum_size_for_compression)) {
             HDF5_ERROR(H5Pset_chunk(plist, group.dim, shape));
+            HDF5_ERROR(H5Pset_shuffle(plist));
             HDF5_ERROR(H5Pset_deflate(plist, compression_lvl));
           }
           // enable checksums if requested
@@ -690,6 +692,7 @@ int WriteVarChunkedParallel(const cGH *const cctkGH, hid_t outfile,
       const hsize_t size = num_elems * H5Tget_size(filedatatype);
       if (compression_lvl and size > hsize_t(minimum_size_for_compression)) {
         HDF5_ERROR(H5Pset_chunk(plist, group.dim, shape));
+        HDF5_ERROR(H5Pset_shuffle(plist));
         HDF5_ERROR(H5Pset_deflate(plist, compression_lvl));
       }
       // enable checksums if requested
