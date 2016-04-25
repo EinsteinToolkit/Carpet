@@ -905,7 +905,7 @@ void fasterp_eno2_src_loc_t::output(ostream &os) const {
     if (d > 0)
       os << ",";
     os << "[";
-    for (int n = 0; n <= max_order; ++n) {
+    for (int n = 0; n <= 1; ++n) {
       if (n > 0)
         os << ",";
       os << coeffs[d][n];
