@@ -494,6 +494,7 @@ static herr_t ProcessDataset(hid_t group, const char *datasetname,
 
   if (compression_lvl) {
     CHECK_HDF5(H5Pset_chunk(plist, outrank, outslabcount));
+    CHECK_HDF5(H5Pset_shuffle(plist));
     CHECK_HDF5(H5Pset_deflate(plist, compression_lvl));
   }
 

@@ -1346,6 +1346,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
     }
     const hsize_t size = num_elems * H5Tget_size(slice_type);
     if (compression_level and size > hsize_t(minimum_size_for_compression)) {
+      HDF5_ERROR(H5Pset_shuffle(plist));
       HDF5_ERROR(H5Pset_deflate(plist, compression_level));
     }
     if (compression_level or use_checksums) {
@@ -1547,6 +1548,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
 
     const hsize_t size = npoints * H5Tget_size(slice_type);
     if (compression_level and size > hsize_t(minimum_size_for_compression)) {
+      HDF5_ERROR(H5Pset_shuffle(plist));
       HDF5_ERROR(H5Pset_deflate(plist, compression_level));
     }
     if (compression_level or use_checksums) {

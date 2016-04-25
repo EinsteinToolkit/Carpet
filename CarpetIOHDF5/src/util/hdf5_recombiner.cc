@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
   assert(output_properties >= 0);
   check(not H5Pset_chunk(output_properties, dim + 1, chunk_size));
   if (compression_level > 0) {
+    check(not H5Pset_shuffle(output_properties));
     check(not H5Pset_deflate(output_properties, compression_level));
   }
   if (write_checksum) {

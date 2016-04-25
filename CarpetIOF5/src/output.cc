@@ -867,6 +867,7 @@ private:
       indent_t indent2;
       cout << indent2 << "using chunk size " << ci.ilen << " "
            << "(" << prod(ci.ilen) << ")\n";
+      FAILWARN(H5Pset_shuffle(prop));
       FAILWARN(H5Pset_deflate(prop, compression_level));
     }
     // Enable checksums if requested

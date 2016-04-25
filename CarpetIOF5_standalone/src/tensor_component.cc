@@ -52,7 +52,10 @@ tensor_component_t::tensor_component_t(data_region_t &data_region,
     assert(not herr);
   }
   if (compression_level > 0) {
-    herr_t const herr = H5Pset_deflate(m_properties, compression_level);
+    herr_t herr;
+    herr = H5Pset_shuffle(m_properties);
+    assert(not herr);
+    const herr = H5Pset_deflate(m_properties, compression_level);
     assert(not herr);
   }
   if (write_checksum) {

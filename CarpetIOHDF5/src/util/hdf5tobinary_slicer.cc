@@ -515,6 +515,7 @@ int main(int argc, char *const argv[]) {
                                      (hsize_t)min(128, datadims[0])};
       CHECK_HDF5(H5Pset_chunk(dataset_properties, 4, chunk_dims));
       int const compression_level = 1;
+      CHECK_HDF5(H5Pset_shuffle(dataset_properties));
       CHECK_HDF5(H5Pset_deflate(dataset_properties, compression_level));
       hid_t const dataset = file_is_new
                                 ? H5Dcreate(outfile, "data", out_type,
