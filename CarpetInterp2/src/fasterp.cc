@@ -426,8 +426,7 @@ void fasterp_src_loc_t::interpolate(ivect const &ash,
     break;
   default:
     // Add higher orders here as desired
-    CCTK_WARN(CCTK_WARN_ABORT,
-              "Interpolation orders larger than 11 are not yet implemented");
+    CCTK_ERROR("Interpolation orders larger than 11 are not yet implemented");
     assert(0);
   }
 }
@@ -894,8 +893,7 @@ void fasterp_eno2_src_loc_t::interpolate(
     break;
   default:
     // Add higher orders here as desired
-    CCTK_WARN(CCTK_WARN_ABORT,
-              "Interpolation orders other than 2 don't make sense for eno2");
+    CCTK_ERROR("Interpolation orders other than 2 don't make sense for eno2");
     assert(0);
   }
 }
@@ -1003,15 +1001,15 @@ void fasterp_setup_gen_t<FASTERP>::setup(cGH const *restrict const cctkGH,
                int(locations.size()));
 
   if (order < 0) {
-    CCTK_WARN(CCTK_WARN_ABORT, "Interpolation order must be non-negative");
+    CCTK_ERROR("Interpolation order must be non-negative");
   }
   if (order > max_order) {
-    CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Interpolation order cannot be larger than max_order=%d; "
-               "order=%d was requested.  "
-               "(You can increase the compile time constant max_order "
-               "in thorn CarpetInterp2.)",
-               max_order, order);
+    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                "Interpolation order cannot be larger than max_order=%d; "
+                "order=%d was requested.  "
+                "(You can increase the compile time constant max_order "
+                "in thorn CarpetInterp2.)",
+                max_order, order);
   }
 
   // Some global properties
@@ -1094,7 +1092,7 @@ void fasterp_setup_gen_t<FASTERP>::setup(cGH const *restrict const cctkGH,
             << "delta=" << delta << "\n"
             << "idelta=" << idelta << "\n"
             << "hh=" << *hh << "\n";
-        CCTK_WARN(CCTK_WARN_ABORT, msg.str().c_str());
+        CCTK_ERROR(msg.str().c_str());
       }
     }
     assert(rl >= 0 and c >= 0);
@@ -1393,10 +1391,10 @@ void fasterp_setup_gen_t<FASTERP>::setup(cGH const *restrict const cctkGH,
       int const ierr =
           sloc.calc_stencil(iloc, send_comp.ash, CI2C(send_comp.lsh, ) order);
       if (ierr) {
-        CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                   "Could not determine valid interpolation stencil for point "
-                   "%d on map %d, refinement level %d, component %d",
-                   n, iloc.mrc.m, iloc.mrc.rl, iloc.mrc.c);
+        CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Could not determine valid interpolation stencil for point "
+                    "%d on map %d, refinement level %d, component %d",
+                    n, iloc.mrc.m, iloc.mrc.rl, iloc.mrc.c);
       }
       send_comp.locs.push_back(sloc);
     }
@@ -1474,7 +1472,7 @@ void fasterp_setup_gen_t<FASTERP>::setup(cGH const *restrict const cctkGH,
       }
     }
     if (error) {
-      CCTK_WARN(CCTK_WARN_ABORT, "Internal error in interpolation setup");
+      CCTK_ERROR("Internal error in interpolation setup");
     }
   }
 #endif
@@ -1499,14 +1497,15 @@ void fasterp_setup_gen_t<FASTERP>::interpolate(
   // Check regridding epoch
   if (outofdate()) {
     if (reflevel == -1) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "The Carpet grid structure was changed since this "
-                 "fasterp_setup was created");
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The Carpet grid structure was changed since this "
+                  "fasterp_setup was created");
     } else {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "The Carpet grid structure on level %d was changed since this "
-                 "fasterp_setup was created",
-                 reflevel);
+      CCTK_VError(
+          __LINE__, __FILE__, CCTK_THORNSTRING,
+          "The Carpet grid structure on level %d was changed since this "
+          "fasterp_setup was created",
+          reflevel);
     }
   }
 
