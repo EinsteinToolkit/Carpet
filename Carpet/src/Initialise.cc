@@ -922,7 +922,7 @@ void CallRegridRecoverLevel(cGH *const cctkGH) {
   // Regrid
   Checkpoint("Regrid");
   int const oldreflevels = reflevels;
-  bool const did_regrid = Regrid(cctkGH, true, prolongate_initial_data);
+  bool const did_regrid = Regrid(cctkGH, false, true);
   bool const did_remove_level = reflevels < oldreflevels;
   assert(not did_remove_level or did_regrid);
 
@@ -940,21 +940,19 @@ void CallRegridRecoverLevel(cGH *const cctkGH) {
 
       for (int rl = 0; rl < reflevels; ++rl) {
 
-        bool did_recompose = false;
-        did_recompose = Recompose(cctkGH, rl, prolongate_initial_data);
+        bool const did_recompose =
+          Recompose(cctkGH, rl, true);
         did_any_recompose = did_any_recompose or did_recompose;
 #ifdef REQUIREMENTS_HH
         Requirements::Recompose(cctkGH->cctk_iteration, rl,
                                 not did_recompose
                                     ? Requirements::valid::everywhere
-                                    : prolongate_initial_data
-                                          ? Requirements::valid::interior
-                                          : Requirements::valid::nowhere);
+                                    : Requirements::valid::interior);
 #endif
 
-        // Carpet assumes that a regridding operation always changes "level N
-        // and all finer levels" so we should call POSTREGRID on all finer
-        // levels
+        // Carpet assumes that a regridding operation always changes
+        // "level N and all finer levels" so we should call POSTREGRID
+        // on all finer levels
         if (did_any_recompose or (did_remove_level and rl == reflevels - 1)) {
           BEGIN_MGLEVEL_LOOP(cctkGH) {
             ENTER_LEVEL_MODE(cctkGH, rl) {
@@ -986,6 +984,11 @@ void CallRegridRecoverLevel(cGH *const cctkGH) {
                 ScheduleTraverse(where, "CCTK_POSTREGRID", cctkGH);
               }
               END_TIMELEVEL_LOOP;
+
+              if (output_after_regridding) {
+                // Output
+                OutputGH(where, cctkGH);
+              }
 
               EndTimingLevel(cctkGH);
             }
