@@ -257,7 +257,7 @@ void TestLoopControlPointwise_IntBnd(CCTK_ARGUMENTS) {
   }
 }
 
-void TestLoopControlPointwise(CCTK_ARGUMENTS) {
+extern "C" void TestLoopControlPointwise(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
