@@ -303,6 +303,13 @@ PROVIDES FUNCTION GetRefinementLevels \
     LANGUAGE C
 
 CCTK_INT FUNCTION                         \
+    GetMaxRefinementLevels                \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+PROVIDES FUNCTION GetMaxRefinementLevels \
+    WITH Carpet_GetMaxRefinementLevels   \
+    LANGUAGE C
+
+CCTK_INT FUNCTION                         \
     GetLocalComponent                     \
         (CCTK_POINTER_TO_CONST IN cctkGH)
 PROVIDES FUNCTION GetLocalComponent \

@@ -63,6 +63,12 @@ Carpet_GetRefinementLevels(CCTK_POINTER_TO_CONST const cctkGH) {
   return reflevels;
 }
 
+// Get maximum number of refinement levels
+extern "C" CCTK_INT
+Carpet_GetMaxRefinementLevels(CCTK_POINTER_TO_CONST const cctkGH) {
+  return maxreflevels;
+}
+
 // Get current local component
 extern "C" CCTK_INT
 Carpet_GetLocalComponent(CCTK_POINTER_TO_CONST const cctkGH) {
