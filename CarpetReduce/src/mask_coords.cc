@@ -10,7 +10,7 @@
 
 #include "bits.h"
 
-void CoordBase_SetupMask(CCTK_ARGUMENTS) {
+extern "C" void CoordBase_SetupMask(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
@@ -49,14 +49,14 @@ void CoordBase_SetupMask(CCTK_ARGUMENTS) {
       is_periodic[2 * d + f] = 0;
     }
   }
-  CCTK_INT const *const periodic =
-      CCTK_ParameterGet("periodic", "PeriodicCarpet", NULL);
-  CCTK_INT const *const periodic_x =
-      CCTK_ParameterGet("periodic_x", "PeriodicCarpet", NULL);
-  CCTK_INT const *const periodic_y =
-      CCTK_ParameterGet("periodic_x", "PeriodicCarpet", NULL);
-  CCTK_INT const *const periodic_z =
-      CCTK_ParameterGet("periodic_x", "PeriodicCarpet", NULL);
+  CCTK_INT const *const periodic = static_cast<CCTK_INT const *>(
+      CCTK_ParameterGet("periodic", "PeriodicCarpet", NULL));
+  CCTK_INT const *const periodic_x = static_cast<CCTK_INT const *>(
+      CCTK_ParameterGet("periodic_x", "PeriodicCarpet", NULL));
+  CCTK_INT const *const periodic_y = static_cast<CCTK_INT const *>(
+      CCTK_ParameterGet("periodic_x", "PeriodicCarpet", NULL));
+  CCTK_INT const *const periodic_z = static_cast<CCTK_INT const *>(
+      CCTK_ParameterGet("periodic_x", "PeriodicCarpet", NULL));
   is_periodic[0] = is_periodic[1] =
       (periodic && *periodic) || (periodic_x && *periodic_x);
   is_periodic[2] = is_periodic[3] =

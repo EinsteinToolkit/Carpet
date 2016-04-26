@@ -6,23 +6,22 @@
 
 #include "bits.h"
 
-void MaskBase_InitMask(CCTK_ARGUMENTS) {
+extern "C" void MaskBase_SetMask(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
-  /* Initialise the weight to 1 everywhere */
   if (verbose) {
     int const reflevel = GetRefinementLevel(cctkGH);
-    CCTK_VInfo(CCTK_THORNSTRING, "Initialising weight to 1 on level %d",
-               reflevel);
+    CCTK_VInfo(CCTK_THORNSTRING, "Finalise the weight on level %d", reflevel);
   }
 
   unsigned const bits = BMSK(cctk_dim);
-  unsigned const allbits = BMSK(bits) - 1;
+  CCTK_REAL const factor = 1.0 / bits;
 #pragma omp parallel
-  CCTK_LOOP3_ALL(MaskBase_InitMask, cctkGH, i, j, k) {
+  CCTK_LOOP3_ALL(MaskBase_SetMask, cctkGH, i, j, k) {
     int const ind = CCTK_GFINDEX3D(cctkGH, i, j, k);
-    iweight[ind] = allbits;
+    weight[ind] = factor * BCNT(iweight[ind]);
+    one[ind] = 1.0;
   }
-  CCTK_ENDLOOP3_ALL(MaskBase_InitMask);
+  CCTK_ENDLOOP3_ALL(MaskBase_SetMask);
 }

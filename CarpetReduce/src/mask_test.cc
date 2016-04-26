@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <math.h>
 
-void MaskBase_TestMask(CCTK_ARGUMENTS) {
+extern "C" void MaskBase_TestMask(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 

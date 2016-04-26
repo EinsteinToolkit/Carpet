@@ -2,7 +2,7 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 
-void MaskBase_AllocateMask(CCTK_ARGUMENTS) {
+extern "C" void MaskBase_AllocateMask(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
