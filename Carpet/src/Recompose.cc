@@ -343,9 +343,9 @@ void PostRegrid(cGH const *const cctkGH) {
   // }
 
   ++regridding_epoch;
-  // Mark all vanished levels as changed
-  for (int rl = reflevels; rl < int(level_regridding_epochs.size()); ++rl) {
-    ++level_regridding_epochs.at(rl);
+  // Remove levels that vanished
+  if (int(level_regridding_epochs.size()) > reflevels) {
+    level_regridding_epochs.resize(reflevels);
   }
   // Insert entries for new levels
   if (int(level_regridding_epochs.size()) < reflevels) {
