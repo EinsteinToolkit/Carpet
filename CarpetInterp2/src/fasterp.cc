@@ -298,8 +298,40 @@ void fasterp_src_loc_t::interpolate(ivect const &ash,
 #endif
 
   for (size_t v = 0; v < varptrs.size(); ++v) {
-    vals[v] = 0.0;
-  }
+    CCTK_REAL tmp = 0.0;
+    const CCTK_REAL *restrict const varptr = &varptrs.AT(v)[ind3d];
+
+    for (size_t k = 0; k <= O2; ++k) {
+      CCTK_REAL const coeff_k = O2 == 0 ? 1.0 : coeffs[2][k];
+      for (size_t j = 0; j <= O1; ++j) {
+        CCTK_REAL const coeff_jk = coeff_k * (O1 == 0 ? 1.0 : coeffs[1][j]);
+#ifdef __GCC__
+        size_t const alignment = __BIGGEST_ALIGNMENT__;
+#else
+        size_t const alignment = 64;
+#endif
+        CCTK_REAL buffer[O0 + 1] __attribute__((__aligned__(alignment)));
+#ifdef __INTEL_COMPILER
+#pragma vector always
+#else
+#pragma omp simd
+#endif
+        for (size_t i = 0; i <= O0; ++i) {
+          buffer[i] = varptr[i * di + j * dj + k * dk];
+        }
+#ifdef __INTEL_COMPILER
+#pragma vector always
+#else
+#pragma omp simd
+#endif
+        for (size_t i = 0; i <= O0; ++i) {
+          CCTK_REAL const coeff_ijk = coeff_jk * (O0 == 0 ? 1.0 : coeffs[0][i]);
+          tmp += coeff_ijk * buffer[i];
+        }
+      }
+    }
+    vals[v] = tmp;
+  } // for v
 
   for (size_t k = 0; k <= O2; ++k) {
     assert(O2 == 0 or coeffs[2][k] != poison);
