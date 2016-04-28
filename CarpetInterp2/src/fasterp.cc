@@ -305,12 +305,11 @@ void fasterp_src_loc_t::interpolate(ivect const &ash,
       CCTK_REAL const coeff_k = O2 == 0 ? 1.0 : coeffs[2][k];
       for (size_t j = 0; j <= O1; ++j) {
         CCTK_REAL const coeff_jk = coeff_k * (O1 == 0 ? 1.0 : coeffs[1][j]);
-#ifdef __GCC__
-        size_t const alignment = __BIGGEST_ALIGNMENT__;
-#else
-        size_t const alignment = 64;
+#ifndef __BIGGEST_ALIGNMENT__    // this is a GCC extension
+#define __BIGGEST_ALIGNMENT__ 64 // a guess
 #endif
-        CCTK_REAL buffer[O0 + 1] __attribute__((__aligned__(alignment)));
+        CCTK_REAL buffer[O0 + 1]
+            __attribute__((__aligned__(__BIGGEST_ALIGNMENT__)));
 #ifdef __INTEL_COMPILER
 #pragma vector always
 #else
