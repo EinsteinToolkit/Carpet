@@ -41,18 +41,18 @@ void copy_3d(T const *restrict const src, ivect3 const &restrict srcpadext,
            << "dstbbox=" << dstbbox << endl
            << "srcregbbox=" << srcregbbox1 << endl
            << "dstregbbox=" << dstregbbox << endl;
-      CCTK_WARN(0, "Internal error: strides disagree");
+      CCTK_ERROR("Internal error: strides disagree");
     }
   }
 
   if (any(srcbbox.stride() != dstbbox.stride())) {
-    CCTK_WARN(0, "Internal error: strides disagree");
+    CCTK_ERROR("Internal error: strides disagree");
   }
 
   // This could be handled, but is likely to point to an error
   // elsewhere
   if (dstregbbox.empty()) {
-    CCTK_WARN(0, "Internal error: region extent is empty");
+    CCTK_ERROR("Internal error: region extent is empty");
   }
 
   ibbox const srcregbbox =
@@ -72,8 +72,8 @@ void copy_3d(T const *restrict const src, ivect3 const &restrict srcpadext,
       if (slabinfo) {
         cerr << "slabinfo=" << *slabinfo << endl;
       }
-      CCTK_WARN(
-          0, "Internal error: region extent is not contained in array extent");
+      CCTK_ERROR(
+          "Internal error: region extent is not contained in array extent");
     }
   }
 
