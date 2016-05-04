@@ -321,7 +321,7 @@ void fasterp_src_loc_t::interpolate(ivect const &ash,
 #ifdef __INTEL_COMPILER
 #pragma vector always
 #else
-#pragma omp simd
+#pragma omp simd reduction(+ : tmp)
 #endif
         for (size_t i = 0; i <= O0; ++i) {
           CCTK_REAL const coeff_ijk = coeff_jk * (O0 == 0 ? 1.0 : coeffs[0][i]);
