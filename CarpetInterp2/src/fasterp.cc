@@ -332,24 +332,6 @@ void fasterp_src_loc_t::interpolate(ivect const &ash,
     vals[v] = tmp;
   } // for v
 
-  for (size_t k = 0; k <= O2; ++k) {
-    assert(O2 == 0 or coeffs[2][k] != poison);
-    CCTK_REAL const coeff_k = (O2 == 0 ? 1.0 : coeffs[2][k]);
-    for (size_t j = 0; j <= O1; ++j) {
-      assert(O1 == 0 or coeffs[1][j] != poison);
-      CCTK_REAL const coeff_jk = coeff_k * (O1 == 0 ? 1.0 : coeffs[1][j]);
-      for (size_t i = 0; i <= O0; ++i) {
-        assert(O0 == 0 or coeffs[0][i] != poison);
-        CCTK_REAL const coeff_ijk = coeff_jk * (O0 == 0 ? 1.0 : coeffs[0][i]);
-
-        for (size_t v = 0; v < varptrs.size(); ++v) {
-          vals[v] +=
-              coeff_ijk * varptrs.AT(v)[ind3d + i * di + j * dj + k * dk];
-
-        } // for v
-      }
-    }
-  }
 #ifdef CARPETINTERP2_CHECK
 #if 0
     for (size_t v=0; v<varptrs.size(); ++v) {
