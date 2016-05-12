@@ -633,6 +633,8 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
                  ++ext, ++c_offset) {
               const ivect &org = offsets1[c_offset];
               ivect org1(org);
+              // Note: The following loop cannot handle diagonal HDF5 output,
+              // since this sets dirs[0]=dim.
               for (int d = 0; d < outdim; ++d)
                 org1[dirs[d]] = ext->lower()[d];
               ivect lo(org), hi(org);
@@ -1401,7 +1403,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
       const ibbox outputslab(lo, up, str);
       // Intersect active region with this hyperslab
       const int lc = vhh.at(m)->get_local_component(rl, c);
-      const ibset &active0 = vdd.at(m)->local_boxes.at(ml).at(rl).at(lc).active;
+      const ibset &active0 = vdd.at(m)->level_boxes.at(ml).at(rl).active;
       const ibset active1 = active0 & outputslab;
       // Reduce dimensionality of active region
       bboxset<int, outdim> active2;

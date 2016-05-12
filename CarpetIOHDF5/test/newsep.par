@@ -46,6 +46,7 @@ IOHDF5::out0D_vars = "
    InterpToArray::arrays3d
    grid::r
 "
+IOHDF5::out1D_d = no
 IOHDF5::out1D_vars = "
    InterpToArray::arrays1d
    InterpToArray::arrays2d
