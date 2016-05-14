@@ -16,6 +16,10 @@
 #include <omp.h>
 #endif
 
+#ifdef HAVE_CAPABILITY_FunHPC
+#include <qthread/future.hpp>
+#endif
+
 #include "bbox.hh"
 #include "bboxset.hh"
 #include "cacheinfo.hh"
@@ -96,7 +100,48 @@ call_operator(void (*the_operator)(
     }
     assert(alldstregbboxes == ibset(dstregbbox));
 #endif
+  } else if (use_funhpc) {
+#ifdef HAVE_CAPABILITY_FunHPC
+    vector<qthread::future<void> > fs;
+#ifdef CARPET_DEBUG
+    ibset alldstregbboxes;
 #endif
+    const ivect3 &str = dstregbbox.stride();
+    ivect3 npoints = dstregbbox.shape() / str;
+    for (int k = 0; k < npoints[2]; k += funhpc_blocksize) {
+      for (int j = 0; j < npoints[1]; j += funhpc_blocksize) {
+        for (int i = 0; i < npoints[0]; i += funhpc_blocksize) {
+          ivect3 lo(i, j, k);
+          ivect3 up = lo + ivect3(funhpc_blocksize - 1);
+          ibbox3 mydstregbbox(
+              dstregbbox.lower() + lo * str,
+              min(dstregbbox.upper(), dstregbbox.lower() + up * str), str);
+          assert(!mydstregbbox.empty());
+#ifdef CARPET_DEBUG
+          alldstregbboxes += mydstregbbox;
+#endif
+          fs.push_back(qthread::async(qthread::launch::async, the_operator, src,
+                                      srcpadext, srcext, dst, dstpadext, dstext,
+                                      srcbbox, dstbbox, srcregbbox,
+                                      mydstregbbox, extraargs));
+        }
+      }
+    }
+#ifdef CARPET_DEBUG
+    if (not(alldstregbboxes == ibset(dstregbbox))) {
+      cout << "alldstregbboxes=" << alldstregbboxes << endl
+           << "dstregbbox=" << dstregbbox << endl;
+    }
+    assert(alldstregbboxes == ibset(dstregbbox));
+#endif
+    for (auto &f : fs)
+      f.wait();
+#else
+    CCTK_ERROR("Cannot have CarpetLib::use_funhpc=yes without FunHPC");
+#endif
+  } else { // serial
+    (*the_operator)(src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox,
+                    dstbbox, srcregbbox, dstregbbox, extraargs);
   }
 }
 

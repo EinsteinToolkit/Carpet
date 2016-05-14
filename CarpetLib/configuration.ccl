@@ -9,6 +9,10 @@ PROVIDES CarpetLib
 # TODO: make Vectors optional
 REQUIRES MPI Vectors
 
+OPTIONAL FunHPC
+{
+}
+
 OPTIONAL Boost CycleClock LoopControl
 {
 }

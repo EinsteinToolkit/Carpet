@@ -47,6 +47,15 @@ BOOLEAN use_openmp "Use OpenMP to parallelize AMR operators" STEERABLE=always
 {
 } "yes"
 
+BOOLEAN use_funhpc "Use FunHPC to parallelize AMR operators" STEERABLE=always
+{
+} "no"
+
+INT funhpc_blocksize "Block size for FunHPC parallelization" STEERABLE=always
+{
+  1:* :: ""
+} 8
+
 
 
 restricted:
