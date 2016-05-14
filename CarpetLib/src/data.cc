@@ -52,11 +52,7 @@ call_operator(void (*the_operator)(
   if (use_loopcontrol_in_operators) {
     (*the_operator)(src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox,
                     dstbbox, srcregbbox, dstregbbox, extraargs);
-  } else {
-#ifndef _OPENMP
-    (*the_operator)(src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox,
-                    dstbbox, srcregbbox, dstregbbox, extraargs);
-#else
+  } else if (use_openmp) {
 #ifdef CARPET_DEBUG
     ibset alldstregbboxes;
 #endif
@@ -120,54 +116,59 @@ call_operator(void (*the_operator)(
               ibbox4 const &restrict srcbbox, ibbox4 const &restrict dstbbox,
               ibbox4 const &restrict srcregbbox,
               ibbox4 const &restrict dstregbbox, void *const extraargs) {
-#ifndef _OPENMP
-  (*the_operator)(src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox,
-                  dstbbox, srcregbbox, dstregbbox, extraargs);
-#else
-#if !defined(NDEBUG) && !defined(CARPET_OPTIMISE)
-  ibset4 alldstregbboxes;
+  DECLARE_CCTK_PARAMETERS;
+
+  if (use_loopcontrol_in_operators) {
+    (*the_operator)(src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox,
+                    dstbbox, srcregbbox, dstregbbox, extraargs);
+  } else if (use_openmp) {
+#ifdef CARPET_DEBUG
+    ibset4 alldstregbboxes;
 #endif
 #pragma omp parallel
-  {
-    int const num_threads = omp_get_num_threads();
-    int const thread_num = omp_get_thread_num();
-    // Parallelise in z direction
-    // int const dir = 2;
-    // Parallelise along longest extent
-    int const dir = maxloc(dstregbbox.shape());
-    int const stride = dstregbbox.stride()[dir];
-    int const first_point = dstregbbox.lower()[dir];
-    int const last_point = dstregbbox.upper()[dir] + stride;
-    int const num_points = last_point - first_point;
-    assert(num_points >= 0);
-    assert(num_points % stride == 0);
-    int const my_num_points =
-        (num_points / stride + num_threads - 1) / num_threads * stride;
-    int const my_first_point =
-        min(last_point, first_point + thread_num * my_num_points);
-    int const my_last_point = min(last_point, my_first_point + my_num_points);
-    assert(my_last_point >= my_first_point);
-    ibbox4 const mydstregbbox(
-        dstregbbox.lower().replace(dir, my_first_point),
-        dstregbbox.upper().replace(dir, my_last_point - stride),
-        dstregbbox.stride());
-    if (not mydstregbbox.empty()) {
-      (*the_operator)(src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox,
-                      dstbbox, srcregbbox, mydstregbbox, extraargs);
-#if !defined(NDEBUG) && !defined(CARPET_OPTIMISE)
+    {
+      int const num_threads = omp_get_num_threads();
+      int const thread_num = omp_get_thread_num();
+      // Parallelise in z direction
+      // int const dir = 2;
+      // Parallelise along longest extent
+      int const dir = maxloc(dstregbbox.shape());
+      int const stride = dstregbbox.stride()[dir];
+      int const first_point = dstregbbox.lower()[dir];
+      int const last_point = dstregbbox.upper()[dir] + stride;
+      int const num_points = last_point - first_point;
+      assert(num_points >= 0);
+      assert(num_points % stride == 0);
+      int const my_num_points =
+          (num_points / stride + num_threads - 1) / num_threads * stride;
+      int const my_first_point =
+          min(last_point, first_point + thread_num * my_num_points);
+      int const my_last_point = min(last_point, my_first_point + my_num_points);
+      assert(my_last_point >= my_first_point);
+      ibbox4 const mydstregbbox(
+          dstregbbox.lower().replace(dir, my_first_point),
+          dstregbbox.upper().replace(dir, my_last_point - stride),
+          dstregbbox.stride());
+      if (not mydstregbbox.empty()) {
+        (*the_operator)(src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox,
+                        dstbbox, srcregbbox, mydstregbbox, extraargs);
+#ifdef CARPET_DEBUG
 #pragma omp critical
-      alldstregbboxes += mydstregbbox;
+        alldstregbboxes += mydstregbbox;
 #endif
+      }
     }
-  }
-#if !defined(NDEBUG) && !defined(CARPET_OPTIMISE)
-  if (not(alldstregbboxes == ibset4(dstregbbox))) {
-    cout << "alldstregbboxes=" << alldstregbboxes << endl
-         << "dstregbbox=" << dstregbbox << endl;
-  }
-  assert(alldstregbboxes == ibset4(dstregbbox));
+#ifdef CARPET_DEBUG
+    if (not(alldstregbboxes == ibset4(dstregbbox))) {
+      cout << "alldstregbboxes=" << alldstregbboxes << endl
+           << "dstregbbox=" << dstregbbox << endl;
+    }
+    assert(alldstregbboxes == ibset4(dstregbbox));
 #endif
-#endif
+  } else { // serial
+    (*the_operator)(src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox,
+                    dstbbox, srcregbbox, dstregbbox, extraargs);
+  }
 }
 
 // Fortran wrappers

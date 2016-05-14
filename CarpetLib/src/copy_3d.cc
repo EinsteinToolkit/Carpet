@@ -30,6 +30,8 @@ void copy_3d(T const *restrict const src, ivect3 const &restrict srcpadext,
              ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
              ibbox3 const &restrict srcregbbox1,
              ibbox3 const &restrict dstregbbox, void *extraargs) {
+  DECLARE_CCTK_PARAMETERS;
+
   islab const *restrict const slabinfo = static_cast<islab const *>(extraargs);
 
   if (any(srcbbox.stride() != dstregbbox.stride() or
@@ -113,13 +115,24 @@ void copy_3d(T const *restrict const src, ivect3 const &restrict srcpadext,
   ptrdiff_t const dstjoff = dstoff[1];
   ptrdiff_t const dstkoff = dstoff[2];
 
-// Loop over region
+  // Loop over region
+  if (use_openmp) {
 #pragma omp parallel for collapse(3)
-  for (int k = 0; k < regkext; ++k) {
-    for (int j = 0; j < regjext; ++j) {
-      for (int i = 0; i < regiext; ++i) {
+    for (int k = 0; k < regkext; ++k) {
+      for (int j = 0; j < regjext; ++j) {
+        for (int i = 0; i < regiext; ++i) {
 
-        dst[DSTIND3(i, j, k)] = src[SRCIND3(i, j, k)];
+          dst[DSTIND3(i, j, k)] = src[SRCIND3(i, j, k)];
+        }
+      }
+    }
+  } else {
+    for (int k = 0; k < regkext; ++k) {
+      for (int j = 0; j < regjext; ++j) {
+        for (int i = 0; i < regiext; ++i) {
+
+          dst[DSTIND3(i, j, k)] = src[SRCIND3(i, j, k)];
+        }
       }
     }
   }

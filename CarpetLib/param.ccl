@@ -43,6 +43,10 @@ BOOLEAN use_loopcontrol_in_operators "Use LoopControl to parallelize AMR operato
 {
 } "no"
 
+BOOLEAN use_openmp "Use OpenMP to parallelize AMR operators" STEERABLE=always
+{
+} "yes"
+
 
 
 restricted:
