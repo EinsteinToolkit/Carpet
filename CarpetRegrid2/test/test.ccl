@@ -12,3 +12,8 @@ TEST regrid2_2cen_minfrac
 {
   NPROCS 1
 }
+
+TEST regrid2_granularity
+{
+  NPROCS 2
+}
