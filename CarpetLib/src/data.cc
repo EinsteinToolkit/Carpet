@@ -96,7 +96,6 @@ call_operator(void (*the_operator)(
     }
     assert(alldstregbboxes == ibset(dstregbbox));
 #endif
-#endif
   }
 }
 
