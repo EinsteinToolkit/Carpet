@@ -18,7 +18,7 @@
 // Similarly for f(x) = k x^2 and f(x) = k x^3, so we have a cubic polynomial
 // fit
 
-double coeff[10][10];
+T coeff[10][10];
 
 if (ORDER == 2) {
   coeff[1][1] = 5.0 / 32.0;  // i-1

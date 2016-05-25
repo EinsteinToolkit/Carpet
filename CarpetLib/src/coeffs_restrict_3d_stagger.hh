@@ -30,8 +30,8 @@
 
 #define ORDER_STAG 3
 
-double coeff[10];
-double coeff_i[10];
+T coeff[10];
+T coeff_i[10];
 // 2ND ORDER_STAG:
 if (ORDER_STAG == 2) {
   // interpolate to point 2*i+1/2, using points 2*i-1,2*i,2*i+1
