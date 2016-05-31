@@ -35,8 +35,7 @@ void CarpetMaskSetup(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
 
   if (not is_singlemap_mode()) {
-    CCTK_WARN(CCTK_WARN_ABORT,
-              "This routine may only be called in singlemap mode");
+    CCTK_ERROR("This routine may only be called in singlemap mode");
   }
 
   dh const &dd = *vdd.AT(Carpet::map);
