@@ -10,6 +10,9 @@ schedule CarpetReduceStartup at STARTUP
 # Should this move to a new thorn MaskBase?
 STORAGE: weight
 STORAGE: excised_cells
+if (debug_iweight) {
+  STORAGE: iweight
+}
 
 
 
