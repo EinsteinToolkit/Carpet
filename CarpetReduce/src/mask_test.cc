@@ -119,6 +119,8 @@ extern "C" void MaskBase_TestMask(CCTK_ARGUMENTS) {
     }
   }
 
-  CCTK_DisableGroupStorage(cctkGH, "CarpetReduce::iweight");
-  CCTK_DisableGroupStorage(cctkGH, "CarpetReduce::one");
+  if (!debug_iweight) {
+    CCTK_DisableGroupStorage(cctkGH, "CarpetReduce::iweight");
+    CCTK_DisableGroupStorage(cctkGH, "CarpetReduce::one");
+  }
 }
