@@ -1411,10 +1411,12 @@ void dh::regrid(bool const do_init) {
 
           switch (h.refcent) {
           case vertex_centered:
+            fboxes |= domain_boundary;
             for (int d = 0; d < dim; ++d) {
               ivect const dir = ivect::dir(d);
               fboxes = fboxes.shift(-dir) & fboxes & fboxes.shift(+dir);
             }
+            fboxes -= domain_boundary;
             for (int d = 0; d < dim; ++d) {
               // Calculate the boundary in direction d
               ivect const dir = ivect::dir(d);
