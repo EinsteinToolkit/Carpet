@@ -3,8 +3,8 @@
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
-#include <cctk_Parameters.h>
 #include <cctk_Functions.h>
+#include <cctk_Parameters.h>
 
 #include <loopcontrol.h>
 
@@ -179,6 +179,8 @@ extern "C" void CoordBase_SetupMask(CCTK_ARGUMENTS) {
             }
 
             /* Loop over the points next to boundary */
+            /* Set up a bit mask that keeps the upper (f==0) or lower (f==1)
+               half of the bits in each direction d */
             unsigned const bits = BMSK(cctk_dim);
             unsigned bmask = 0;
             for (unsigned b = 0; b < bits; ++b) {

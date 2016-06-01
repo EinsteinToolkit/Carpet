@@ -54,6 +54,11 @@ void CarpetMaskSetup(CCTK_ARGUMENTS) {
     // fine_active regions to zero, and set the weight on the
     // boundary of the not_active and fine_active regions to 1/2.
 
+    // All regions and boundaries are masking out convex shapes, i.e.
+    // the remaining grid points from a concave shape. That is, each
+    // masking step removes 1/8, 1/4, or 1/2 of a cell (in three
+    // dimensions).
+
     dh::local_dboxes const &local_box =
         dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component);
 
@@ -71,39 +76,35 @@ void CarpetMaskSetup(CCTK_ARGUMENTS) {
       ibset const &boxes = local_box.prolongation_boundary.AT(neighbour);
       ibset const &cfboxes = local_box.restriction_boundary.AT(neighbour);
 
-      if (verbose) {
-        ostringstream buf;
-        buf << "Setting boundary " << shift << ": prolongation region "
-            << boxes;
-        CCTK_INFO(buf.str().c_str());
-      }
-      if (verbose) {
-        ostringstream buf;
-        buf << "Setting boundary " << shift << ": restriction region "
-            << cfboxes;
-        CCTK_INFO(buf.str().c_str());
-      }
-
-      // Set up a bit mask that keeps the upper (when dir[d]=-1) or
-      // lower (when dir[d]=+1) half of the bits in each direction d
+      // Set up a bit mask that keeps the lower (when dir[d]=-1) or
+      // upper (when dir[d]=+1) half of the bits in each direction d
       unsigned const bits = BMSK(dim);
       unsigned bmask = 0;
       for (int d = 0; d < dim; ++d) {
         for (unsigned b = 0; b < bits; ++b) {
           if ((shift[d] == -1 and BGET(b, d) == 0) or
-              (shift[d] == +1 and BGET(b, d) == 1)) {
+              (shift[d] == +1 and BGET(b, d) != 0)) {
             bmask = BSET(bmask, b);
           }
         }
       }
 
-      // Handle prolongation region
+      // Handle prolongation region (region that is prolongated from
+      // the next coarser level)
+
+      if (verbose) {
+        ostringstream buf;
+        buf << "Setting boundary " << shift << ": level " << reflevel
+            << " prolongation region " << boxes << " to bmask 0x" << hex
+            << bmask << dec;
+        CCTK_INFO(buf.str().c_str());
+      }
+
       LOOP_OVER_BSET(cctkGH, boxes, box, imin, imax) {
         if (verbose) {
           ostringstream buf;
-          buf << "Setting prolongation region " << imin << ":"
-              << imax - ivect(1) << " on level " << reflevel << " boundary "
-              << shift << " to bmask " << bmask;
+          buf << "  Setting prolongation box " << imin << ":"
+              << imax - ivect(1);
           CCTK_INFO(buf.str().c_str());
         }
 #pragma omp parallel
@@ -117,13 +118,21 @@ void CarpetMaskSetup(CCTK_ARGUMENTS) {
       }
       END_LOOP_OVER_BSET;
 
-      // Handle restricted region
+      // Handle restriction region (region that is restricted from the
+      // next finer level)
+
+      if (verbose) {
+        ostringstream buf;
+        buf << "Setting boundary " << shift << ": level " << reflevel
+            << " restriction region " << cfboxes << " to bmask 0x" << hex
+            << bmask << dec;
+        CCTK_INFO(buf.str().c_str());
+      }
+
       LOOP_OVER_BSET(cctkGH, cfboxes, box, imin, imax) {
         if (verbose) {
           ostringstream buf;
-          buf << "Setting restricted region " << imin << ":" << imax - ivect(1)
-              << " on level " << reflevel << " boundary " << shift
-              << " to bmask " << bmask;
+          buf << "  Setting restriction box " << imin << ":" << imax - ivect(1);
           CCTK_INFO(buf.str().c_str());
         }
 #pragma omp parallel
