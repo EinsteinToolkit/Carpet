@@ -152,7 +152,7 @@ void IOASCII<outdim>::CheckSteerableParameters(const cGH *const cctkGH) {
     // create the output directory
     const int result = IOUtil_CreateDirectory(cctkGH, my_out_dir, 0, 0);
     if (result < 0) {
-      CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Problem creating %dD-output directory '%s'", outdim,
                  my_out_dir);
     } else if (result > 0 and CCTK_Equals(verbose, "full")) {
@@ -345,7 +345,7 @@ static void GetVarIndex(const int vindex, const char *const optstring,
                         void *const arg) {
   if (optstring) {
     char *const fullname = CCTK_FullName(vindex);
-    CCTK_VWarn(2, __LINE__, __FILE__, CCTK_THORNSTRING,
+    CCTK_VWarn(CCTK_WARN_COMPLAIN, __LINE__, __FILE__, CCTK_THORNSTRING,
                "Option string '%s' will be ignored for ASCII output of "
                "variable '%s'",
                optstring, fullname);
@@ -364,7 +364,7 @@ int IOASCII<outdim>::OutputVarAs(const cGH *const cctkGH,
   int vindex = -1;
 
   if (CCTK_TraverseString(varname, GetVarIndex, &vindex, CCTK_VAR) < 0) {
-    CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
+    CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                "error while parsing variable name '%s' (alias name '%s')",
                varname, alias);
     return -1;
@@ -377,7 +377,7 @@ int IOASCII<outdim>::OutputVarAs(const cGH *const cctkGH,
   if (not(is_level_mode() or (is_singlemap_mode() and maps == 1) or
           (is_local_mode() and maps == 1 and
            vhh.at(Carpet::map)->local_components(reflevel) == 1))) {
-    CCTK_WARN(1, "OutputVarAs must be called in level mode");
+    CCTK_WARN(CCTK_WARN_ALERT, "OutputVarAs must be called in level mode");
     return -1;
   }
 
@@ -398,7 +398,7 @@ int IOASCII<outdim>::OutputVarAs(const cGH *const cctkGH,
     }
 
     if (outdim > groupdata.dim) {
-      CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Cannot produce %dD ASCII output file '%s' for variable '%s' "
                  "because it has only %d dimensions",
                  outdim, alias, varname, groupdata.dim);
@@ -409,7 +409,7 @@ int IOASCII<outdim>::OutputVarAs(const cGH *const cctkGH,
     if (not CCTK_QueryGroupStorageI(cctkGH, group)) {
       // This may be okay if storage is e.g. scheduled only in the
       // analysis bin
-      CCTK_VWarn(4, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWarn(CCTK_WARN_DEBUG, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Cannot output variable '%s' because it has no storage",
                  varname);
       return 0;
@@ -773,9 +773,9 @@ void IOASCII<outdim>::OpenFile(const cGH *const cctkGH, const int m,
     file.open(filename, ios::out | (truncate_file ? ios::trunc : ios::app));
     if (not file.good()) {
       char *const fullname = CCTK_FullName(vindex);
-      CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Could not open output file '%s' for variable '%s'", filename,
-                 fullname);
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Could not open output file '%s' for variable '%s'", filename,
+                  fullname);
       free(fullname);
     }
     io_files += 1;
@@ -802,7 +802,7 @@ void IOASCII<outdim>::OpenFile(const cGH *const cctkGH, const int m,
         want_parfilename = true;
         want_other = true;
       } else {
-        CCTK_WARN(0, "internal error");
+        CCTK_ERROR("internal error");
       }
 
       file << "# " << outdim << "D ASCII output created by CarpetIOASCII"
@@ -1030,18 +1030,18 @@ ibbox GetOutputBBox(const cGH *const cctkGH, const int group, const int rl,
   if (grouptype == CCTK_GF and groupdim == cctkGH->cctk_dim) {
     symtable = SymmetryTableHandleForGrid(cctkGH);
     if (symtable < 0)
-      CCTK_WARN(0, "internal error");
+      CCTK_ERROR("internal error");
   } else {
     symtable = SymmetryTableHandleForGI(cctkGH, group);
     if (symtable < 0)
-      CCTK_WARN(0, "internal error");
+      CCTK_ERROR("internal error");
   }
 
   CCTK_INT symbnd[2 * dim];
   int const ierr =
       Util_TableGetIntArray(symtable, 2 * groupdim, symbnd, "symmetry_handle");
   if (ierr != 2 * groupdim)
-    CCTK_WARN(0, "internal error");
+    CCTK_ERROR("internal error");
 
   bool is_symbnd[2 * dim];
   for (int d = 0; d < 2 * groupdim; ++d) {
