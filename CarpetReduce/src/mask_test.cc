@@ -64,6 +64,8 @@ extern "C" void MaskBase_TestMask(CCTK_ARGUMENTS) {
       CCTK_REAL exterior_max[cctk_dim];
       CCTK_REAL spacing[cctk_dim];
 
+      /* TODO: This requires that the domain was set up via CoordBase, not via
+       * grid. Check this, and don't output any warnings if so. */
       if (CCTK_IsFunctionAliased("MultiPatch_GetDomainSpecification")) {
         int const ierr = MultiPatch_GetDomainSpecification(
             m, cctk_dim, physical_min, physical_max, interior_min, interior_max,
@@ -117,6 +119,8 @@ extern "C" void MaskBase_TestMask(CCTK_ARGUMENTS) {
     }
   }
 
-  CCTK_DisableGroupStorage(cctkGH, "CarpetReduce::iweight");
-  CCTK_DisableGroupStorage(cctkGH, "CarpetReduce::one");
+  if (!debug_iweight) {
+    CCTK_DisableGroupStorage(cctkGH, "CarpetReduce::iweight");
+    CCTK_DisableGroupStorage(cctkGH, "CarpetReduce::one");
+  }
 }
