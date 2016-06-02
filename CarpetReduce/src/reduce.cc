@@ -8,10 +8,10 @@
 #include <cfloat>
 #include <climits>
 #include <cmath>
+#include <complex>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <complex>
 #include <limits>
 #include <vector>
 
@@ -1276,8 +1276,7 @@ int ReduceGVs(const cGH *const cgh, const int proc, const int num_outvals,
 
   // can't have meta mode
   if (is_meta_mode()) {
-    CCTK_WARN(CCTK_WARN_ABORT,
-              "Grid variable reductions are not possible in meta mode");
+    CCTK_ERROR("Grid variable reductions are not possible in meta mode");
   }
 
   // local mode may be trouble
@@ -1356,8 +1355,8 @@ int ReduceGVs(const cGH *const cgh, const int proc, const int num_outvals,
 
   for (int n = 0; n < num_invars; ++n) {
     if ((CCTK_GroupTypeFromVarI(invars[n]) != CCTK_GF) != reduce_arrays) {
-      CCTK_WARN(CCTK_WARN_ABORT, "Cannot (yet) reduce grid functions and grid "
-                                 "arrays/scalars at the same time");
+      CCTK_ERROR("Cannot (yet) reduce grid functions and grid arrays/scalars "
+                 "at the same time");
     }
   }
 

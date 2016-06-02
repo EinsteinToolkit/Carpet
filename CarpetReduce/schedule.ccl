@@ -33,8 +33,7 @@ SCHEDULE GROUP MaskBase_SetupMask AT post_recover_variables
 
 SCHEDULE GROUP MaskBase_SetupMaskAll IN MaskBase_SetupMask
 {
-  STORAGE: iweight
-  STORAGE: one
+  # Note: Storage for iweight and one is managed manually
 } "Set up the weight function"
 
 

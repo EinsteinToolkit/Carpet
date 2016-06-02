@@ -7,12 +7,12 @@
 
 #include <Timer.hh>
 
-#include "mpi_string.hh"
 #include "bbox.hh"
 #include "bboxset.hh"
 #include "defs.hh"
 #include "dist.hh"
 #include "ggf.hh"
+#include "mpi_string.hh"
 #include "timestat.hh"
 #include "vect.hh"
 
@@ -1341,8 +1341,6 @@ void dh::regrid(bool const do_init) {
 
       for (int lc = 0; lc < h.local_components(rl); ++lc) {
         local_dboxes &local_box = local_level.AT(lc);
-        local_box.prolongation_boundary.clear();
-        local_box.restriction_boundary.clear();
         local_box.prolongation_boundary.resize(num_nbs());
         local_box.restriction_boundary.resize(num_nbs());
       }
@@ -1387,9 +1385,6 @@ void dh::regrid(bool const do_init) {
           CCTK_INFO(buf.str().c_str());
         }
 
-        // ibset test_boxes;
-        // ibset test_cfboxes;
-
         for (int neighbour = 0; neighbour < num_nbs(); ++neighbour) {
           ivect const shift = ind2nb(neighbour);
 
@@ -1411,10 +1406,12 @@ void dh::regrid(bool const do_init) {
 
           switch (h.refcent) {
           case vertex_centered:
+            fboxes |= domain_boundary;
             for (int d = 0; d < dim; ++d) {
               ivect const dir = ivect::dir(d);
               fboxes = fboxes.shift(-dir) & fboxes & fboxes.shift(+dir);
             }
+            fboxes -= domain_boundary;
             for (int d = 0; d < dim; ++d) {
               // Calculate the boundary in direction d
               ivect const dir = ivect::dir(d);
@@ -1459,8 +1456,6 @@ void dh::regrid(bool const do_init) {
 
           ibbox const &odomext = h.baseextent(ml, orl);
           ibset const cfboxes = fboxes.contracted_for(odomext);
-          // test_boxes   |= boxes;
-          // test_cfboxes |= cfboxes;
 
           if (verbose) {
             ostringstream buf;
@@ -2184,11 +2179,11 @@ MPI_Datatype mpi_datatype(dh::light_dboxes const &) {
     static dh::light_dboxes s;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type),         /* count elements */                 \
-        (char *) & s.name - (char *) & s, /* offsetof doesn't work (why?) */   \
-        dist::mpi_datatype<type>(),       /* find MPI datatype */              \
-        STRINGIFY(name),                  /* field name */                     \
-        STRINGIFY(type),                  /* type name */                      \
+    sizeof s.name / sizeof(type),     /* count elements */                     \
+        (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */       \
+        dist::mpi_datatype<type>(),   /* find MPI datatype */                  \
+        STRINGIFY(name),              /* field name */                         \
+        STRINGIFY(type),              /* type name */                          \
   }
     dist::mpi_struct_descr_t const descr[] = {
         ENTRY(int, exterior),
@@ -2222,11 +2217,11 @@ MPI_Datatype mpi_datatype(dh::fast_dboxes const &) {
     static dh::fast_dboxes s;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type),         /* count elements */                 \
-        (char *) & s.name - (char *) & s, /* offsetof doesn't work (why?) */   \
-        dist::mpi_datatype<type>(),       /* find MPI datatype */              \
-        STRINGIFY(name),                  /* field name */                     \
-        STRINGIFY(type),                  /* type name */                      \
+    sizeof s.name / sizeof(type),     /* count elements */                     \
+        (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */       \
+        dist::mpi_datatype<type>(),   /* find MPI datatype */                  \
+        STRINGIFY(name),              /* field name */                         \
+        STRINGIFY(type),              /* type name */                          \
   }
     dist::mpi_struct_descr_t const descr[] = {
         ENTRY(dh::srpvect, fast_mg_rest_sendrecv),
