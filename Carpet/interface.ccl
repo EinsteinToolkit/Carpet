@@ -255,6 +255,15 @@ CCTK_INT FUNCTION Accelerator_RequireValidData          \
    CCTK_INT              IN on_device)
 USES FUNCTION Accelerator_RequireValidData
 
+CCTK_INT FUNCTION Accelerator_RequireInvalidData          \
+  (CCTK_POINTER_TO_CONST IN cctkGH,                     \
+   CCTK_INT ARRAY        IN variables,                  \
+   CCTK_INT ARRAY        IN rls,                        \
+   CCTK_INT ARRAY        IN tls,                        \
+   CCTK_INT              IN nvariables,                 \
+   CCTK_INT              IN on_device)
+USES FUNCTION Accelerator_RequireInvalidData
+
 
 
 # Access coordinate information (on the coarse level)

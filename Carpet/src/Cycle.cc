@@ -235,6 +235,7 @@ void FlipTimeLevels(cGH *const cctkGH) {
 void FillTimeLevels(const cGH *const cctkGH) {
   Checkpoint("FillTimeLevels");
   assert(is_level_mode());
+  return;
 
   for (int group = 0; group < CCTK_NumGroups(); ++group) {
     if (CCTK_QueryGroupStorageI(cctkGH, group)) {
@@ -247,6 +248,7 @@ void FillTimeLevels(const cGH *const cctkGH) {
               CCTK_IsFunctionAliased("Accelerator_NotifyDataModified");
           vector<CCTK_INT> vis, rls, tls;
           const int varn = CCTK_NumVarsInGroupI(group);
+
           for (int var = 0; var < varn; ++var) {
             arrdata.AT(group).AT(m).data.AT(var)->fill_all(reflevel, mglevel);
             if (have_accel) {
@@ -260,6 +262,16 @@ void FillTimeLevels(const cGH *const cctkGH) {
                 tls.push_back(tl);
               }
             }
+          }
+
+          if (have_accel) {
+            const CCTK_INT on_device = 0;
+            Accelerator_RequireInvalidData(cctkGH, &vis.front(), &rls.front(),
+                                           &tls.front(), vis.size(), on_device);
+          }
+
+          for (int var = 0; var < varn; ++var) {
+            arrdata.AT(group).AT(m).data.AT(var)->fill_all(reflevel, mglevel);
           }
 
           if (have_accel) {
