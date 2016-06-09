@@ -86,6 +86,9 @@ int CallFunction(void *function,           ///< the function to call
     }
   }
 
+  // Filled in by PreSyncGroups
+  // TODO: Hack CallScheduledFunction
+  // to call the boundary routines
   std::set<int> pregroups;
 
   if (attribute->meta or attribute->meta_early or attribute->meta_late or
