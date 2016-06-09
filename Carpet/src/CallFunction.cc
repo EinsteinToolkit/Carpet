@@ -46,6 +46,8 @@ inline void tolower(std::string& s) {
 
 void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups);
 
+void PostSyncGroups(cFunctionData *attribute, vector<int> const &sync_groups);
+
 /// Traverse one function on all components of one refinement level
 /// of one multigrid level.
 int CallFunction(void *function,           ///< the function to call
@@ -224,6 +226,7 @@ int CallFunction(void *function,           ///< the function to call
               SyncGroupsInScheduleBlock(attribute, cctkGH, sync_groups,
                                         sync_timer);
             }
+            PostSyncGroups(attribute,sync_groups);
           }
           END_REFLEVEL_LOOP;
         }
@@ -241,6 +244,7 @@ int CallFunction(void *function,           ///< the function to call
               SyncGroupsInScheduleBlock(attribute, cctkGH, sync_groups,
                                         sync_timer);
             }
+            PostSyncGroups(attribute,sync_groups);
           }
           END_REFLEVEL_LOOP;
         }
@@ -255,13 +259,17 @@ int CallFunction(void *function,           ///< the function to call
               SyncGroupsInScheduleBlock(attribute, cctkGH, sync_groups,
                                         sync_timer);
             }
+            PostSyncGroups(attribute,sync_groups);
           }
           END_REFLEVEL_LOOP;
         }
         END_GLOBAL_MODE;
       } else {
         BEGIN_GLOBAL_MODE(cctkGH) {
-          PreSyncGroups(attribute,cctkGH,pregroups);
+          BEGIN_REFLEVEL_LOOP(cctkGH) {
+            PreSyncGroups(attribute,cctkGH,pregroups);
+          }
+          END_REFLEVEL_LOOP;
           CallScheduledFunction("Global mode", function, attribute, data,
                                 user_timer);
           if (not sync_groups.empty()) {
@@ -271,6 +279,10 @@ int CallFunction(void *function,           ///< the function to call
             }
             END_REFLEVEL_LOOP;
           }
+          BEGIN_REFLEVEL_LOOP(cctkGH) {
+            PostSyncGroups(attribute,sync_groups);
+          }
+          END_REFLEVEL_LOOP;
         }
         END_GLOBAL_MODE;
       }
@@ -302,6 +314,7 @@ int CallFunction(void *function,           ///< the function to call
     if (not sync_groups.empty()) {
       SyncGroupsInScheduleBlock(attribute, cctkGH, sync_groups, sync_timer);
     }
+    PostSyncGroups(attribute,sync_groups);
 
   } else if (attribute->singlemap) {
     // Single map operation: call once per refinement level and map
@@ -326,6 +339,7 @@ int CallFunction(void *function,           ///< the function to call
     if (not sync_groups.empty()) {
       SyncGroupsInScheduleBlock(attribute, cctkGH, sync_groups, sync_timer);
     }
+    PostSyncGroups(attribute,sync_groups);
 
   } else {
     // Local operation: call once per component
@@ -342,6 +356,7 @@ int CallFunction(void *function,           ///< the function to call
     if (not sync_groups.empty()) {
       SyncGroupsInScheduleBlock(attribute, cctkGH, sync_groups, sync_timer);
     }
+    PostSyncGroups(attribute,sync_groups);
   }
 
   if (schedule_barriers) {
@@ -446,13 +461,10 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
   CallAfterRoutines(cctkGH, function, attribute, data);
 }
 
-void PostSyncGroups(cFunctionData *attribute, vector<int> const &sync_groups);
-
 void SyncGroupsInScheduleBlock(cFunctionData *attribute, cGH *cctkGH,
                                vector<int> const &sync_groups,
                                Timers::Timer &sync_timer) {
   DECLARE_CCTK_PARAMETERS;
-  PostSyncGroups(attribute,sync_groups);
 
   if (sync_barriers) {
     // Create an ID that is almost unique for this scheduled

@@ -132,6 +132,28 @@ void PostSyncGroups(cFunctionData *attribute, vector<int> const &sync_groups) {
   r += "::";
   r += attribute->routine;
   current_routine = "";
+  std::map<int,int>& writes_m = writes[r];
+  for(auto i = writes_m.begin();i != writes_m.end(); ++i) {
+    int vi = i->first;
+    //access_allowed[r].insert(vi);
+    int wh = valid_k[vi];
+    int wh_before = wh;
+    if(i->second == WH_EVERYWHERE) {
+      wh = i->second;
+    } else if(i->second == WH_INTERIOR) {
+      wh = i->second;
+    } else {
+      wh |= i->second;
+    }
+    #if 1
+    if(wh_before != 0 && wh != wh_before) 
+    {
+      std::cerr << "UPGRADE: " << CCTK_FullName(vi) << " from " << wstr(wh_before) << " to " << wstr(wh) << " using " << wstr(i->second) << " in " << r << std::endl;
+    }
+    #endif
+    valid_k[vi] = wh;
+    where_k[vi] = r;
+  }
   for(auto g = sync_groups.begin();g != sync_groups.end();++g) {
     int gi = *g;
     int i0 = CCTK_FirstVarIndexI(gi);
@@ -181,7 +203,12 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
         }
       }
     }
+    for(auto i = writes_m.begin();i != writes_m.end(); ++i) {
+      int vi = i->first;
+      access_allowed[r].insert(vi);
+    }
   }
+  #if 0
   for(auto i = writes_m.begin();i != writes_m.end(); ++i) {
     int vi = i->first;
     access_allowed[r].insert(vi);
@@ -194,19 +221,28 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
     } else {
       wh |= i->second;
     }
-    #if 0
     if(wh_before != 0 && wh != wh_before) 
     {
       std::cerr << "UPGRADE: " << CCTK_FullName(vi) << " from " << wstr(wh_before) << " to " << wstr(wh) << " using " << wstr(i->second) << " in " << r << std::endl;
     }
-    #endif
     valid_k[vi] = wh;
     where_k[vi] = r;
   }
+  #endif
   if(pregroups.size()>0) {
     std::vector<int> sync_groups;
     for(auto i=pregroups.begin();i != pregroups.end();++i) {
-      sync_groups.push_back(*i);
+      int gi = *i;
+      sync_groups.push_back(gi);
+      int i0 = CCTK_FirstVarIndexI(gi);
+      int iN = i0+CCTK_NumVarsInGroupI(gi);
+      for(int vi=i0;vi<iN;vi++) {
+        if((valid_k[vi] & WH_INTERIOR) == WH_INTERIOR) {
+          std::cerr << "SYNC of invalid variable " << CCTK_FullName(vi) << " after " << r << std::endl;
+          assert(false);
+        }
+        valid_k[vi] = WH_EVERYWHERE;
+      }
     }
     SyncProlongateGroups(cctkGH, sync_groups, attribute);
   }
