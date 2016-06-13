@@ -97,7 +97,7 @@ void *IOHDF5<outdim>::SetupGH(tFleshConfig *const fc, const int convLevel,
   dummy = &dummy;
 
   if (not CCTK_Equals(verbose, "none")) {
-    CCTK_VInfo(CCTK_THORNSTRING,
+    CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
                "I/O Method 'IOHDF5_%dD' registered: "
                "%dD AMR output of grid variables to HDF5 files",
                outdim, outdim);
@@ -639,7 +639,7 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
 
     error_count += CloseFile(cctkGH, file, index_file);
     if (error_count > 0 and abort_on_io_errors) {
-      CCTK_WARN(0, "Aborting simulation due to previous I/O errors");
+      CCTK_ERROR("Aborting simulation due to previous I/O errors");
     }
 
   } // for m
