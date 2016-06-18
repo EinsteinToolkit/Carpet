@@ -97,7 +97,7 @@ void *IOHDF5<outdim>::SetupGH(tFleshConfig *const fc, const int convLevel,
   dummy = &dummy;
 
   if (not CCTK_Equals(verbose, "none")) {
-    CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+    CCTK_VInfo(CCTK_THORNSTRING,
                "I/O Method 'IOHDF5_%dD' registered: "
                "%dD AMR output of grid variables to HDF5 files",
                outdim, outdim);
