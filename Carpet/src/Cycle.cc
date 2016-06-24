@@ -15,6 +15,8 @@
 
 namespace Carpet {
 
+void cycle_rdwr(const cGH *cctkGH);
+
 using namespace std;
 
 void CycleTimeLevels(cGH *const cctkGH) {
@@ -112,6 +114,7 @@ void CycleTimeLevels(cGH *const cctkGH) {
   if (CCTK_IsFunctionAliased("Accelerator_Cycle")) {
     Accelerator_Cycle(cctkGH);
   }
+  cycle_rdwr(cctkGH);
 
   if (errors > 0) {
     CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
