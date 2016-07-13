@@ -172,19 +172,17 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
     ++real_N_input_arrays;
 
     const int group = CCTK_GroupIndexFromVarI(vindex);
-    if (group < 0) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "input array variable %d = %d is not a valid "
-                 "variable index",
-                 n, vindex);
-    }
+    if (group < 0)
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "input array variable %d = %d is not a valid "
+                  "variable index",
+                  n, vindex);
     const int gtype = CCTK_GroupTypeI(group);
-    if (gtype != CCTK_GF and gtype != CCTK_ARRAY) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "input array variable %d is not of type CCTK_GF or "
-                 "CCTK_ARRY",
-                 n);
-    }
+    if (gtype != CCTK_GF and gtype != CCTK_ARRAY)
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "input array variable %d is not of type CCTK_GF or "
+                  "CCTK_ARRY",
+                  n);
     if (coord_group < 0) {
       coord_group = group;
       CCTK_GroupDynamicData(cctkGH, coord_group, &coord_group_data);
@@ -198,12 +196,11 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
           memcmp(gdata.lbnd, coord_group_data.lbnd, size) or
           memcmp(gdata.ubnd, coord_group_data.ubnd, size) or
           memcmp(gdata.bbox, coord_group_data.bbox, 2 * size) or
-          memcmp(gdata.nghostzones, coord_group_data.nghostzones, size)) {
-        CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                   "input array variable %d has different layout than "
-                   "the underlying coordinate system",
-                   n);
-      }
+          memcmp(gdata.nghostzones, coord_group_data.nghostzones, size))
+        CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                    "input array variable %d has different layout than "
+                    "the underlying coordinate system",
+                    n);
     }
   }
   if (real_N_input_arrays == 0) {
@@ -216,19 +213,16 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
   assert(N_output_arrays > 0);
   const int output_array_type = output_array_type_codes[0];
   for (int n = 1; n < N_output_arrays; n++) {
-    if (output_array_type != output_array_type_codes[n]) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Currently all output arrays have to have the same datatype. "
-                 "Array 0 has type '%s' but array %d has type '%s'",
-                 CCTK_VarTypeName(output_array_type), n,
-                 CCTK_VarTypeName(output_array_type_codes[n]));
-    }
+    if (output_array_type != output_array_type_codes[n])
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Currently all output arrays have to have the same datatype. "
+                  "Array 0 has type '%s' but array %d has type '%s'",
+                  CCTK_VarTypeName(output_array_type), n,
+                  CCTK_VarTypeName(output_array_type_codes[n]));
   }
 
-  if (is_meta_mode()) {
-    CCTK_WARN(CCTK_WARN_ABORT,
-              "It is not possible to interpolate in meta mode");
-  }
+  if (is_meta_mode())
+    CCTK_ERROR("It is not possible to interpolate in meta mode");
 
   // Multiple convergence levels are not supported
   assert(mglevels == 1);
@@ -240,11 +234,9 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
     assert(N_interp_points == 0 or coords_list[d]);
   }
 
-  if (interp_coords_type_code != CCTK_VARIABLE_REAL) {
-    CCTK_WARN(CCTK_WARN_ABORT,
-              "CarpetInterp does not support interpolation "
-              "coordinates other than datatype CCTK_VARIABLE_REAL");
-  }
+  if (interp_coords_type_code != CCTK_VARIABLE_REAL)
+    CCTK_ERROR("CarpetInterp does not support interpolation "
+               "coordinates other than datatype CCTK_VARIABLE_REAL");
 
   assert(N_output_arrays >= 0);
   if (N_interp_points > 0) {
@@ -624,15 +616,12 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
   }
 #include "typecase.hh"
 #undef TYPECASE
-    default: {
-      CCTK_WARN(CCTK_WARN_ABORT, "invalid datatype");
-      abort();
+    default:
+      CCTK_ERROR("invalid datatype");
     }
-    }
-    if (datatype == MPI_DATATYPE_NULL) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "MPI datatype for Cactus datatype %d is not defined", vtype);
-    }
+    if (datatype == MPI_DATATYPE_NULL)
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "MPI datatype for Cactus datatype %d is not defined", vtype);
     MPI_Datatype vdatatype;
     MPI_Type_vector(1, N_output_arrays, 0, datatype, &vdatatype);
     MPI_Type_commit(&vdatatype);
@@ -1058,12 +1047,12 @@ static void map_points(cGH const *const cctkGH, int const coord_system_handle,
                                ml, minrl, maxrl, rl2, c2);
           if (rl2 != rl or c2 != c) {
 #pragma omp critical
-            CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                       "Inconsistent search result from find_location_tree for "
-                       "interpolation point #%d at [%g,%g,%g] of patch #%d is "
-                       "not on any component",
-                       n, (double)pos[0], (double)pos[1], (double)pos[2],
-                       (int)m);
+            CCTK_VError(
+                __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Inconsistent search result from find_location_tree for "
+                "interpolation point #%d at [%g,%g,%g] of patch #%d is "
+                "not on any component",
+                n, (double)pos[0], (double)pos[1], (double)pos[2], (int)m);
           }
         }
       }
@@ -1522,11 +1511,11 @@ static void interpolate_single_component(
             groupdata.AT(gi).activetimelevels.AT(mglevel).AT(rl);
         if (active_tl <= my_tl) {
           char *const fullname = CCTK_FullName(vi);
-          CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                     "Grid function \"%s\" has only %d active time levels on "
-                     "refinement level %d; this is not enough for time "
-                     "interpolation",
-                     fullname, active_tl, rl);
+          CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Grid function \"%s\" has only %d active time levels on "
+                      "refinement level %d; this is not enough for time "
+                      "interpolation",
+                      fullname, active_tl, rl);
           free(fullname);
         }
 
@@ -1541,11 +1530,9 @@ static void interpolate_single_component(
     tmp_output_arrays[tl].resize(N_output_arrays);
     for (int j = 0; j < N_output_arrays; ++j) {
       if (need_time_interp.AT(j)) {
-        if (output_array_type_codes[j] != CCTK_VARIABLE_REAL) {
-          CCTK_WARN(CCTK_WARN_ABORT,
-                    "time interpolation into output arrays of datatype "
-                    "other than CCTK_VARIABLE_REAL is not supported");
-        }
+        if (output_array_type_codes[j] != CCTK_VARIABLE_REAL)
+          CCTK_ERROR("time interpolation into output arrays of datatype "
+                     "other than CCTK_VARIABLE_REAL is not supported");
         tmp_output_arrays[tl][j] = new CCTK_REAL[npoints];
       } else {
         const int vartypesize = CCTK_VarTypeSize(output_array_type_codes[j]);
@@ -1566,10 +1553,9 @@ static void interpolate_single_component(
         npoints, CCTK_VARIABLE_REAL, tmp_coords, N_input_arrays, &lsh[0],
         &input_array_type_codes.front(), &input_arrays.front(), N_output_arrays,
         output_array_type_codes, &tmp_output_arrays[tl].front());
-    if (retval) {
+    if (retval)
       CCTK_VWarn(CCTK_WARN_DEBUG, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "The local interpolator returned the error code %d", retval);
-    }
 
     overall_retval = min(overall_retval, (CCTK_INT)retval);
     for (int n = 0; n < (int)per_point_status.size(); n++) {
@@ -1609,7 +1595,7 @@ static void interpolate_single_component(
       }
 
       for (int tl = 0; tl < max_num_tl; ++tl) {
-        delete[](CCTK_REAL *)tmp_output_arrays[tl][j];
+        delete[](CCTK_REAL *) tmp_output_arrays[tl][j];
       }
 
     } // if need_time_interp
