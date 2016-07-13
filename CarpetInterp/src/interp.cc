@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <vector>
 
@@ -44,15 +45,17 @@ using namespace Carpet;
 // Return a unique index for component c on reflevel rl, map m and processor p
 #define component_idx(p, m, rl, c)                                             \
   component_idx_(p, m, rl, c, minrl, maxrl, maxncomps)
-static inline int component_idx_(int const p, int const m, int const rl,
-                                 int const c, int const minrl, int const maxrl,
-                                 int const maxncomps) {
+static inline size_type component_idx_(int const p, int const m, int const rl,
+                                       int const c, int const minrl,
+                                       int const maxrl, int const maxncomps) {
   assert(p >= 0 and p < dist::size());
   assert(m >= 0 and m < maps);
   assert(rl >= minrl and rl < maxrl);
   assert(c >= 0 and c < maxncomps);
-  int const local_idx = ((rl - minrl) * maps + m) * maxncomps + c;
-  int const global_idx = p * (maxrl - minrl) * maps * maxncomps + local_idx;
+  size_type const local_idx =
+      (size_type(rl - minrl) * maps + m) * maxncomps + c;
+  size_type const global_idx =
+      size_type(p) * (maxrl - minrl) * maps * maxncomps + local_idx;
   return global_idx;
 }
 
@@ -73,7 +76,7 @@ static void map_points(cGH const *const cctkGH, int const coord_system_handle,
                        void const *const coords_list[],
                        CCTK_REAL const *const coords, vector<int> &procs,
                        vector<int> &sendcnt, vector<int> &rlev,
-                       vector<int> &home, std::map<int, int> &homecntsmap,
+                       vector<int> &home, std::map<size_type, int> &homecntsmap,
                        vector<int> &homecnts);
 
 static void interpolate_components(
@@ -81,7 +84,7 @@ static void interpolate_components(
     int const coord_group, int const minrl, int const maxrl,
     int const maxncomps, bool const want_global_mode,
     int const prolongation_order_time, int const N_dims,
-    vector<int> const &homecnts, std::map<int, int> const &homecntsmap,
+    vector<int> const &homecnts, std::map<size_type, int> const &homecntsmap,
     vector<int> const &recvcnt, vector<CCTK_REAL *> const &coords,
     vector<char *> const &outputs, CCTK_INT *const per_proc_statuses,
     CCTK_INT *const per_proc_retvals, vector<CCTK_INT> const &operand_indices,
@@ -169,19 +172,17 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
     ++real_N_input_arrays;
 
     const int group = CCTK_GroupIndexFromVarI(vindex);
-    if (group < 0) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "input array variable %d = %d is not a valid "
-                 "variable index",
-                 n, vindex);
-    }
+    if (group < 0)
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "input array variable %d = %d is not a valid "
+                  "variable index",
+                  n, vindex);
     const int gtype = CCTK_GroupTypeI(group);
-    if (gtype != CCTK_GF and gtype != CCTK_ARRAY) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "input array variable %d is not of type CCTK_GF or "
-                 "CCTK_ARRY",
-                 n);
-    }
+    if (gtype != CCTK_GF and gtype != CCTK_ARRAY)
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "input array variable %d is not of type CCTK_GF or "
+                  "CCTK_ARRY",
+                  n);
     if (coord_group < 0) {
       coord_group = group;
       CCTK_GroupDynamicData(cctkGH, coord_group, &coord_group_data);
@@ -195,12 +196,11 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
           memcmp(gdata.lbnd, coord_group_data.lbnd, size) or
           memcmp(gdata.ubnd, coord_group_data.ubnd, size) or
           memcmp(gdata.bbox, coord_group_data.bbox, 2 * size) or
-          memcmp(gdata.nghostzones, coord_group_data.nghostzones, size)) {
-        CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                   "input array variable %d has different layout than "
-                   "the underlying coordinate system",
-                   n);
-      }
+          memcmp(gdata.nghostzones, coord_group_data.nghostzones, size))
+        CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                    "input array variable %d has different layout than "
+                    "the underlying coordinate system",
+                    n);
     }
   }
   if (real_N_input_arrays == 0) {
@@ -213,19 +213,16 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
   assert(N_output_arrays > 0);
   const int output_array_type = output_array_type_codes[0];
   for (int n = 1; n < N_output_arrays; n++) {
-    if (output_array_type != output_array_type_codes[n]) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Currently all output arrays have to have the same datatype. "
-                 "Array 0 has type '%s' but array %d has type '%s'",
-                 CCTK_VarTypeName(output_array_type), n,
-                 CCTK_VarTypeName(output_array_type_codes[n]));
-    }
+    if (output_array_type != output_array_type_codes[n])
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Currently all output arrays have to have the same datatype. "
+                  "Array 0 has type '%s' but array %d has type '%s'",
+                  CCTK_VarTypeName(output_array_type), n,
+                  CCTK_VarTypeName(output_array_type_codes[n]));
   }
 
-  if (is_meta_mode()) {
-    CCTK_WARN(CCTK_WARN_ABORT,
-              "It is not possible to interpolate in meta mode");
-  }
+  if (is_meta_mode())
+    CCTK_ERROR("It is not possible to interpolate in meta mode");
 
   // Multiple convergence levels are not supported
   assert(mglevels == 1);
@@ -237,11 +234,9 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
     assert(N_interp_points == 0 or coords_list[d]);
   }
 
-  if (interp_coords_type_code != CCTK_VARIABLE_REAL) {
-    CCTK_WARN(CCTK_WARN_ABORT,
-              "CarpetInterp does not support interpolation "
-              "coordinates other than datatype CCTK_VARIABLE_REAL");
-  }
+  if (interp_coords_type_code != CCTK_VARIABLE_REAL)
+    CCTK_ERROR("CarpetInterp does not support interpolation "
+               "coordinates other than datatype CCTK_VARIABLE_REAL");
 
   assert(N_output_arrays >= 0);
   if (N_interp_points > 0) {
@@ -313,7 +308,7 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
   vector<int> dstprocs(N_interp_points); // which processor owns point n
   vector<int> rlev(N_interp_points);     // refinement level of point n
   vector<int> home(N_interp_points);     // component of point n
-  std::map<int, int> homecntsmap;        // components hash map
+  std::map<size_type, int> homecntsmap;  // components hash map
   vector<int> allhomecnts;               // number of points in component
                                          // homecntsmap.find(c)
   int const ndims = have_source_map ? N_dims + 1 : N_dims;
@@ -376,15 +371,15 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
     vector<int> tmpcnts(allhomecnts.size());
 #pragma omp parallel for
     for (int n = 0; n < N_interp_points; n++) {
-      int const cidx = component_idx(dstprocs.AT(n), source_map.AT(n),
-                                     rlev.AT(n), home.AT(n));
-      std::map<int, int>::const_iterator it = homecntsmap.find(cidx);
+      size_type const cidx = component_idx(dstprocs.AT(n), source_map.AT(n),
+                                           rlev.AT(n), home.AT(n));
+      std::map<size_type, int>::const_iterator it = homecntsmap.find(cidx);
       assert(it != homecntsmap.end());
       int const idx = it->second;
       assert(idx < (int)totalhomecnts.size());
       int mytmpcnt;
-#pragma omp critical
-      { mytmpcnt = tmpcnts.AT(idx)++; }
+#pragma omp atomic capture
+      mytmpcnt = tmpcnts.AT(idx)++;
       indices.AT(n) = totalhomecnts.AT(idx) + mytmpcnt;
     }
     assert(tmpcnts == allhomecnts);
@@ -422,7 +417,7 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
         assert(recvdispl.AT(n) + recvcnt.AT(n) <= recvbufsize);
       }
     }
-#ifndef _NDEBUG
+#ifdef CARPET_DEBUG
 #pragma omp parallel for
     for (int i = 0; i < (int)tmp.size(); ++i) {
       tmp.AT(i) = poison;
@@ -446,7 +441,7 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
 
       MPI_Type_free(&vdatatype);
     }
-#ifndef _NDEBUG
+#ifdef CARPET_DEBUG
     {
       vector<bool> filled(N_points_local, false);
       for (int n = 0; n < (int)dist::size(); ++n) {
@@ -621,15 +616,12 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
   }
 #include "typecase.hh"
 #undef TYPECASE
-    default: {
-      CCTK_WARN(CCTK_WARN_ABORT, "invalid datatype");
-      abort();
+    default:
+      CCTK_ERROR("invalid datatype");
     }
-    }
-    if (datatype == MPI_DATATYPE_NULL) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "MPI datatype for Cactus datatype %d is not defined", vtype);
-    }
+    if (datatype == MPI_DATATYPE_NULL)
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "MPI datatype for Cactus datatype %d is not defined", vtype);
     MPI_Datatype vdatatype;
     MPI_Type_vector(1, N_output_arrays, 0, datatype, &vdatatype);
     MPI_Type_commit(&vdatatype);
@@ -776,7 +768,7 @@ static int extract_parameter_table_options(
                                  &source_map.front(), "source_map");
     assert(iret == (int)source_map.size());
 
-#ifndef _NDEBUG
+#ifdef CARPET_DEBUG
 // Check source map
 #pragma omp parallel for
     for (int n = 0; n < (int)source_map.size(); ++n) {
@@ -951,7 +943,7 @@ static void map_points(cGH const *const cctkGH, int const coord_system_handle,
                        void const *const coords_list[],
                        CCTK_REAL const *const coords, vector<int> &procs,
                        vector<int> &sendcnt, vector<int> &rlev,
-                       vector<int> &home, std::map<int, int> &homecntsmap,
+                       vector<int> &home, std::map<size_type, int> &homecntsmap,
                        vector<int> &homecnts) {
   DECLARE_CCTK_PARAMETERS;
 
@@ -1055,12 +1047,12 @@ static void map_points(cGH const *const cctkGH, int const coord_system_handle,
                                ml, minrl, maxrl, rl2, c2);
           if (rl2 != rl or c2 != c) {
 #pragma omp critical
-            CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                       "Inconsistent search result from find_location_tree for "
-                       "interpolation point #%d at [%g,%g,%g] of patch #%d is "
-                       "not on any component",
-                       n, (double)pos[0], (double)pos[1], (double)pos[2],
-                       (int)m);
+            CCTK_VError(
+                __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Inconsistent search result from find_location_tree for "
+                "interpolation point #%d at [%g,%g,%g] of patch #%d is "
+                "not on any component",
+                n, (double)pos[0], (double)pos[1], (double)pos[2], (int)m);
           }
         }
       }
@@ -1096,7 +1088,7 @@ static void map_points(cGH const *const cctkGH, int const coord_system_handle,
       assert(m < maps);
     }
 
-#ifndef _NDEBUG
+#ifdef CARPET_DEBUG
     if (not(rl >= minrl and rl < maxrl) or
         not(c >= 0 and c < hh->components(rl))) {
 #pragma omp critical
@@ -1116,7 +1108,7 @@ static void map_points(cGH const *const cctkGH, int const coord_system_handle,
     }
     rlev.AT(n) = rl;
     home.AT(n) = c;
-    int const cidx = component_idx(procs.AT(n), m, rl, c);
+    size_type const cidx = component_idx(procs.AT(n), m, rl, c);
 #pragma omp critical
     {
       // Increase counter, creating a new hash element if necessary
@@ -1129,7 +1121,7 @@ static void map_points(cGH const *const cctkGH, int const coord_system_handle,
   homecnts.resize(homecntsmap.size());
   {
     int c = 0;
-    for (std::map<int, int>::iterator it = homecntsmap.begin();
+    for (std::map<size_type, int>::iterator it = homecntsmap.begin();
          it != homecntsmap.end(); it++) {
       // store the number of points of this component in homecnts
       assert(it->second > 0);
@@ -1148,7 +1140,7 @@ static void interpolate_components(
     int const coord_group, int const minrl, int const maxrl,
     int const maxncomps, bool const want_global_mode,
     int const prolongation_order_time, int const N_dims,
-    vector<int> const &homecnts, std::map<int, int> const &homecntsmap,
+    vector<int> const &homecnts, std::map<size_type, int> const &homecntsmap,
     vector<int> const &recvcnt, vector<CCTK_REAL *> const &coords,
     vector<char *> const &outputs, CCTK_INT *const per_proc_statuses,
     CCTK_INT *const per_proc_retvals, vector<CCTK_INT> const &operand_indices,
@@ -1177,7 +1169,7 @@ static void interpolate_components(
     }
   }
 
-#ifndef _NDEBUG
+#ifdef CARPET_DEBUG
   // Ensure that this processor is only supposed to interpolate
   // points from maps and components that are actually located on
   // this processor
@@ -1186,7 +1178,7 @@ static void interpolate_components(
       gh const *const hh = arrdata.AT(coord_group).AT(m).hh;
       for (int c = 0; c < hh->components(rl); ++c) {
         for (int p = 0; p < dist::size(); ++p) {
-          int const cidx = component_idx(p, m, rl, c);
+          size_type const cidx = component_idx(p, m, rl, c);
           if (homecntsmap.find(cidx) != homecntsmap.end()) {
             assert(hh->is_local(rl, c));
           }
@@ -1229,8 +1221,8 @@ static void interpolate_components(
           if (recvcnt[p] <= 0)
             continue;
 
-          int const cidx = component_idx(p, m, rl, c);
-          std::map<int, int>::const_iterator it = homecntsmap.find(cidx);
+          size_type const cidx = component_idx(p, m, rl, c);
+          std::map<size_type, int>::const_iterator it = homecntsmap.find(cidx);
           if (it != homecntsmap.end()) {
             int const idx = it->second;
             assert(idx < (int)homecnts.size());
@@ -1519,11 +1511,11 @@ static void interpolate_single_component(
             groupdata.AT(gi).activetimelevels.AT(mglevel).AT(rl);
         if (active_tl <= my_tl) {
           char *const fullname = CCTK_FullName(vi);
-          CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                     "Grid function \"%s\" has only %d active time levels on "
-                     "refinement level %d; this is not enough for time "
-                     "interpolation",
-                     fullname, active_tl, rl);
+          CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Grid function \"%s\" has only %d active time levels on "
+                      "refinement level %d; this is not enough for time "
+                      "interpolation",
+                      fullname, active_tl, rl);
           free(fullname);
         }
 
@@ -1538,11 +1530,9 @@ static void interpolate_single_component(
     tmp_output_arrays[tl].resize(N_output_arrays);
     for (int j = 0; j < N_output_arrays; ++j) {
       if (need_time_interp.AT(j)) {
-        if (output_array_type_codes[j] != CCTK_VARIABLE_REAL) {
-          CCTK_WARN(CCTK_WARN_ABORT,
-                    "time interpolation into output arrays of datatype "
-                    "other than CCTK_VARIABLE_REAL is not supported");
-        }
+        if (output_array_type_codes[j] != CCTK_VARIABLE_REAL)
+          CCTK_ERROR("time interpolation into output arrays of datatype "
+                     "other than CCTK_VARIABLE_REAL is not supported");
         tmp_output_arrays[tl][j] = new CCTK_REAL[npoints];
       } else {
         const int vartypesize = CCTK_VarTypeSize(output_array_type_codes[j]);
@@ -1563,10 +1553,9 @@ static void interpolate_single_component(
         npoints, CCTK_VARIABLE_REAL, tmp_coords, N_input_arrays, &lsh[0],
         &input_array_type_codes.front(), &input_arrays.front(), N_output_arrays,
         output_array_type_codes, &tmp_output_arrays[tl].front());
-    if (retval) {
+    if (retval)
       CCTK_VWarn(CCTK_WARN_DEBUG, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "The local interpolator returned the error code %d", retval);
-    }
 
     overall_retval = min(overall_retval, (CCTK_INT)retval);
     for (int n = 0; n < (int)per_point_status.size(); n++) {
@@ -1606,7 +1595,7 @@ static void interpolate_single_component(
       }
 
       for (int tl = 0; tl < max_num_tl; ++tl) {
-        delete[](CCTK_REAL *)tmp_output_arrays[tl][j];
+        delete[](CCTK_REAL *) tmp_output_arrays[tl][j];
       }
 
     } // if need_time_interp
