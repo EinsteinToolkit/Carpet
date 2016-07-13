@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <vector>
 
@@ -44,15 +45,17 @@ using namespace Carpet;
 // Return a unique index for component c on reflevel rl, map m and processor p
 #define component_idx(p, m, rl, c)                                             \
   component_idx_(p, m, rl, c, minrl, maxrl, maxncomps)
-static inline int component_idx_(int const p, int const m, int const rl,
-                                 int const c, int const minrl, int const maxrl,
-                                 int const maxncomps) {
+static inline size_type component_idx_(int const p, int const m, int const rl,
+                                       int const c, int const minrl,
+                                       int const maxrl, int const maxncomps) {
   assert(p >= 0 and p < dist::size());
   assert(m >= 0 and m < maps);
   assert(rl >= minrl and rl < maxrl);
   assert(c >= 0 and c < maxncomps);
-  int const local_idx = ((rl - minrl) * maps + m) * maxncomps + c;
-  int const global_idx = p * (maxrl - minrl) * maps * maxncomps + local_idx;
+  size_type const local_idx =
+      (size_type(rl - minrl) * maps + m) * maxncomps + c;
+  size_type const global_idx =
+      size_type(p) * (maxrl - minrl) * maps * maxncomps + local_idx;
   return global_idx;
 }
 
@@ -73,7 +76,7 @@ static void map_points(cGH const *const cctkGH, int const coord_system_handle,
                        void const *const coords_list[],
                        CCTK_REAL const *const coords, vector<int> &procs,
                        vector<int> &sendcnt, vector<int> &rlev,
-                       vector<int> &home, std::map<int, int> &homecntsmap,
+                       vector<int> &home, std::map<size_type, int> &homecntsmap,
                        vector<int> &homecnts);
 
 static void interpolate_components(
@@ -81,7 +84,7 @@ static void interpolate_components(
     int const coord_group, int const minrl, int const maxrl,
     int const maxncomps, bool const want_global_mode,
     int const prolongation_order_time, int const N_dims,
-    vector<int> const &homecnts, std::map<int, int> const &homecntsmap,
+    vector<int> const &homecnts, std::map<size_type, int> const &homecntsmap,
     vector<int> const &recvcnt, vector<CCTK_REAL *> const &coords,
     vector<char *> const &outputs, CCTK_INT *const per_proc_statuses,
     CCTK_INT *const per_proc_retvals, vector<CCTK_INT> const &operand_indices,
@@ -313,7 +316,7 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
   vector<int> dstprocs(N_interp_points); // which processor owns point n
   vector<int> rlev(N_interp_points);     // refinement level of point n
   vector<int> home(N_interp_points);     // component of point n
-  std::map<int, int> homecntsmap;        // components hash map
+  std::map<size_type, int> homecntsmap;  // components hash map
   vector<int> allhomecnts;               // number of points in component
                                          // homecntsmap.find(c)
   int const ndims = have_source_map ? N_dims + 1 : N_dims;
@@ -376,9 +379,9 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
     vector<int> tmpcnts(allhomecnts.size());
 #pragma omp parallel for
     for (int n = 0; n < N_interp_points; n++) {
-      int const cidx = component_idx(dstprocs.AT(n), source_map.AT(n),
-                                     rlev.AT(n), home.AT(n));
-      std::map<int, int>::const_iterator it = homecntsmap.find(cidx);
+      size_type const cidx = component_idx(dstprocs.AT(n), source_map.AT(n),
+                                           rlev.AT(n), home.AT(n));
+      std::map<size_type, int>::const_iterator it = homecntsmap.find(cidx);
       assert(it != homecntsmap.end());
       int const idx = it->second;
       assert(idx < (int)totalhomecnts.size());
@@ -951,7 +954,7 @@ static void map_points(cGH const *const cctkGH, int const coord_system_handle,
                        void const *const coords_list[],
                        CCTK_REAL const *const coords, vector<int> &procs,
                        vector<int> &sendcnt, vector<int> &rlev,
-                       vector<int> &home, std::map<int, int> &homecntsmap,
+                       vector<int> &home, std::map<size_type, int> &homecntsmap,
                        vector<int> &homecnts) {
   DECLARE_CCTK_PARAMETERS;
 
@@ -1116,7 +1119,7 @@ static void map_points(cGH const *const cctkGH, int const coord_system_handle,
     }
     rlev.AT(n) = rl;
     home.AT(n) = c;
-    int const cidx = component_idx(procs.AT(n), m, rl, c);
+    size_type const cidx = component_idx(procs.AT(n), m, rl, c);
 #pragma omp critical
     {
       // Increase counter, creating a new hash element if necessary
@@ -1129,7 +1132,7 @@ static void map_points(cGH const *const cctkGH, int const coord_system_handle,
   homecnts.resize(homecntsmap.size());
   {
     int c = 0;
-    for (std::map<int, int>::iterator it = homecntsmap.begin();
+    for (std::map<size_type, int>::iterator it = homecntsmap.begin();
          it != homecntsmap.end(); it++) {
       // store the number of points of this component in homecnts
       assert(it->second > 0);
@@ -1148,7 +1151,7 @@ static void interpolate_components(
     int const coord_group, int const minrl, int const maxrl,
     int const maxncomps, bool const want_global_mode,
     int const prolongation_order_time, int const N_dims,
-    vector<int> const &homecnts, std::map<int, int> const &homecntsmap,
+    vector<int> const &homecnts, std::map<size_type, int> const &homecntsmap,
     vector<int> const &recvcnt, vector<CCTK_REAL *> const &coords,
     vector<char *> const &outputs, CCTK_INT *const per_proc_statuses,
     CCTK_INT *const per_proc_retvals, vector<CCTK_INT> const &operand_indices,
@@ -1186,7 +1189,7 @@ static void interpolate_components(
       gh const *const hh = arrdata.AT(coord_group).AT(m).hh;
       for (int c = 0; c < hh->components(rl); ++c) {
         for (int p = 0; p < dist::size(); ++p) {
-          int const cidx = component_idx(p, m, rl, c);
+          size_type const cidx = component_idx(p, m, rl, c);
           if (homecntsmap.find(cidx) != homecntsmap.end()) {
             assert(hh->is_local(rl, c));
           }
@@ -1229,8 +1232,8 @@ static void interpolate_components(
           if (recvcnt[p] <= 0)
             continue;
 
-          int const cidx = component_idx(p, m, rl, c);
-          std::map<int, int>::const_iterator it = homecntsmap.find(cidx);
+          size_type const cidx = component_idx(p, m, rl, c);
+          std::map<size_type, int>::const_iterator it = homecntsmap.find(cidx);
           if (it != homecntsmap.end()) {
             int const idx = it->second;
             assert(idx < (int)homecnts.size());
