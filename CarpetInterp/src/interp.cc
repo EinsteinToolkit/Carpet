@@ -417,7 +417,7 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
         assert(recvdispl.AT(n) + recvcnt.AT(n) <= recvbufsize);
       }
     }
-#ifndef _NDEBUG
+#ifdef CARPET_DEBUG
 #pragma omp parallel for
     for (int i = 0; i < (int)tmp.size(); ++i) {
       tmp.AT(i) = poison;
@@ -441,7 +441,7 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
 
       MPI_Type_free(&vdatatype);
     }
-#ifndef _NDEBUG
+#ifdef CARPET_DEBUG
     {
       vector<bool> filled(N_points_local, false);
       for (int n = 0; n < (int)dist::size(); ++n) {
@@ -768,7 +768,7 @@ static int extract_parameter_table_options(
                                  &source_map.front(), "source_map");
     assert(iret == (int)source_map.size());
 
-#ifndef _NDEBUG
+#ifdef CARPET_DEBUG
 // Check source map
 #pragma omp parallel for
     for (int n = 0; n < (int)source_map.size(); ++n) {
@@ -1088,7 +1088,7 @@ static void map_points(cGH const *const cctkGH, int const coord_system_handle,
       assert(m < maps);
     }
 
-#ifndef _NDEBUG
+#ifdef CARPET_DEBUG
     if (not(rl >= minrl and rl < maxrl) or
         not(c >= 0 and c < hh->components(rl))) {
 #pragma omp critical
@@ -1169,7 +1169,7 @@ static void interpolate_components(
     }
   }
 
-#ifndef _NDEBUG
+#ifdef CARPET_DEBUG
   // Ensure that this processor is only supposed to interpolate
   // points from maps and components that are actually located on
   // this processor
