@@ -378,8 +378,8 @@ extern "C" CCTK_INT Carpet_DriverInterpolate(
       int const idx = it->second;
       assert(idx < (int)totalhomecnts.size());
       int mytmpcnt;
-#pragma omp critical
-      { mytmpcnt = tmpcnts.AT(idx)++; }
+#pragma omp atomic capture
+      mytmpcnt = tmpcnts.AT(idx)++;
       indices.AT(n) = totalhomecnts.AT(idx) + mytmpcnt;
     }
     assert(tmpcnts == allhomecnts);
