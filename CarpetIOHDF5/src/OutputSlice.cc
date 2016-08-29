@@ -753,7 +753,7 @@ int IOHDF5<outdim>::OpenFile(const cGH *const cctkGH, const int m,
       filenamebuf << coords[dirs[d]];
     }
     if (nioprocs > 1) {
-      filenamebuf << ".file_" << dist::rank();
+      filenamebuf << ".file_" << ioproc / ioproc_every;
     }
     string index_filename(filenamebuf.str() + ".idx" + out_extension);
     filenamebuf << out_extension;
