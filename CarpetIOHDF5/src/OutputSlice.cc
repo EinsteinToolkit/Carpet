@@ -134,7 +134,8 @@ void IOHDF5<outdim>::CheckSteerableParameters(const cGH *const cctkGH) {
     my_out_slice_dir = strdup(the_out_dir);
 
     // create the output directory
-    const int result = IOUtil_CreateDirectory(cctkGH, my_out_slice_dir, 0, 0);
+    const int result =
+        IOUtil_CreateDirectory(cctkGH, my_out_slice_dir, ioproc, nioprocs == 1);
     if (result < 0) {
       CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Problem creating %dD-output directory '%s'", outdim,
