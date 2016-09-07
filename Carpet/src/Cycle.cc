@@ -238,7 +238,6 @@ void FlipTimeLevels(cGH *const cctkGH) {
 void FillTimeLevels(const cGH *const cctkGH) {
   Checkpoint("FillTimeLevels");
   assert(is_level_mode());
-  return;
 
   for (int group = 0; group < CCTK_NumGroups(); ++group) {
     if (CCTK_QueryGroupStorageI(cctkGH, group)) {

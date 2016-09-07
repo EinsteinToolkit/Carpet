@@ -148,7 +148,7 @@ void compute_clauses(const int num_strings,const char **strings,std::map<int,int
   }
   for(auto i=rwvec.begin();i != rwvec.end();++i) {
     RWClause& rwc = *i;
-    std::cerr << "RWC: " << rwc.name << " " << wstr(rwc.where) << std::endl;
+    //std::cerr << "RWC: " << rwc.name << " " << wstr(rwc.where) << std::endl;
     int vi = CCTK_VarIndex(rwc.name.c_str());
     int where_val = rwc.where;
     if(where_val == 0) {
