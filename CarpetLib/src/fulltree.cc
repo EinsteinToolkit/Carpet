@@ -143,11 +143,9 @@ bool fulltree<T, D, P>::invariant() const {
 template <typename T, int D, typename P>
 P const *fulltree<T, D, P>::search(tvect const &ipos) const {
   assert(not empty());
-  // cout << "fulltree::search ipos=" << ipos << endl;
   if (is_leaf())
     return &p;
   int const i = CarpetLib::asearch(ipos[dir], bounds);
-  // cout << "fulltree::search i=" << i << " size=" << subtrees.size() << endl;
   if (i < 0 or i >= int(subtrees.size()))
     return NULL; // not found
   return subtrees.AT(i)->search(ipos);
@@ -156,11 +154,9 @@ P const *fulltree<T, D, P>::search(tvect const &ipos) const {
 template <typename T, int D, typename P>
 P *fulltree<T, D, P>::search(tvect const &ipos) {
   assert(not empty());
-  // cout << "fulltree::search ipos=" << ipos << endl;
   if (is_leaf())
     return &p;
   int const i = CarpetLib::asearch(ipos[dir], bounds);
-  // cout << "fulltree::search i=" << i << " size=" << subtrees.size() << endl;
   if (i < 0 or i >= int(subtrees.size()))
     return NULL; // not found
   return subtrees.AT(i)->search(ipos);
@@ -424,23 +420,17 @@ void fulltree<T, D, P>::output(ostream &os) const {
 
 // Generic arithmetic search
 template <typename T> static int asearch(T const t, vector<T> const &ts) {
-  // cout << "fulltree::asearch t=" << t << " ts=" << ts << endl;
   int imin = 0;
   int imax = int(ts.size()) - 1;
   if (imax <= imin) {
-    // cout << "fulltree::asearch: no values" << endl;
     return imin;
   }
   T tmin = ts.AT(imin);
-  // cout << "fulltree::asearch: imin=" << imin << " tmin=" << tmin << endl;
   if (t < tmin) {
-    // cout << "fulltree::asearch: below minimum" << endl;
     return -1;
   }
   T tmax = ts.AT(imax);
-  // cout << "fulltree::asearch: imax=" << imax << " tmax=" << tmax << endl;
   if (t >= tmax) {
-    // cout << "fulltree::asearch: above maximum" << endl;
     return imax;
   }
   int isize = imax - imin;
@@ -449,10 +439,7 @@ template <typename T> static int asearch(T const t, vector<T> const &ts) {
     assert(imin < imax);
     assert(t >= tmin);
     assert(t < tmax);
-    // cout << "fulltree::asearch t=" << t << " imin=" << imin << " imax=" <<
-    // imax << endl;
     if (imax == imin + 1) {
-      // cout << "fulltree::asearch: found value" << endl;
       return imin;
     }
     assert(tmax > tmin); // require that ts is strictly ordered
@@ -461,24 +448,16 @@ template <typename T> static int asearch(T const t, vector<T> const &ts) {
     int const iguess = imin + std::max(1, int(std::lrint(std::floor(rguess))));
     // handle round-off errors
     if (iguess == imax) {
-      // cout << "fulltree::asearch: accidental hit after roundoff error" <<
-      // endl;
       return imax - 1;
     }
     assert(iguess > imin and iguess < imax);
     T const tguess = ts.AT(iguess);
-    // cout << "fulltree::asearch: intersecting at iguess=" << iguess << "
-    // tguess=" << tguess << endl;
     if (t < tguess) {
       imax = iguess;
       tmax = tguess;
-      // cout << "fulltree::asearch: new imax=" << imax << " tmax=" << tmax <<
-      // endl;
     } else {
       imin = iguess;
       tmin = tguess;
-      // cout << "fulltree::asearch: new imin=" << imin << " tmin=" << tmin <<
-      // endl;
     }
     // check loop variant
     int const newisize = imax - imin;
