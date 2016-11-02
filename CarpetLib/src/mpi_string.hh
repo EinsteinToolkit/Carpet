@@ -1,3 +1,6 @@
+#ifndef MPI_STRING_HH
+#define MPI_STRING_HH
+
 #include <cctk.h>
 
 #include <string>
@@ -326,3 +329,5 @@ vector<T> alltoallv1(MPI_Comm const comm, vector<vector<T> > const &data) {
 }
 
 } // namespace CarpetLib
+
+#endif // #ifndef MPI_STRING_HH
