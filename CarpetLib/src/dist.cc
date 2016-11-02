@@ -251,8 +251,10 @@ MPI_Datatype create_mpi_datatype(size_t const count,
     displacements[n] = descr[n].displacement;
     types[n] = descr[n].type;
   }
+  MPI_Datatype newtype0;
+  MPI_Type_create_struct(count, blocklengths, displacements, types, &newtype0);
   MPI_Datatype newtype;
-  MPI_Type_struct(count, blocklengths, displacements, types, &newtype);
+  MPI_Type_create_resized(newtype0, 0, size, &newtype);
   MPI_Type_commit(&newtype);
   if (verbose) {
     CCTK_VInfo(CCTK_THORNSTRING, "Creating new MPI type for C type %s:", name);
@@ -323,9 +325,9 @@ MPI_Datatype create_mpi_datatype(size_t const count,
     
     // Create MPI type
     size_t const count = entries.size();
-    int          blocklengths [count+1];
-    MPI_Aint     displacements[count+1];
-    MPI_Datatype types        [count+1];
+    int          blocklengths [count];
+    MPI_Aint     displacements[count];
+    MPI_Datatype types        [count];
     {
       size_t n = 0;
       for (list<field_t>::const_iterator ifield =
@@ -336,13 +338,8 @@ MPI_Datatype create_mpi_datatype(size_t const count,
         types        [n] = ifield->mpi_datatype;
       }
       assert (n == count);
-      // Add MPI_UB
-      blocklengths [n] = 1;
-      displacements[n] = type_size();
-      types        [n] = MPI_UB;
     }
-    
-    MPI_Type_struct
+    MPI_Type_create_struct
       (count+1, blocklengths, displacements, types, &mpi_datatype);
     MPI_Type_commit (&mpi_datatype);
   }

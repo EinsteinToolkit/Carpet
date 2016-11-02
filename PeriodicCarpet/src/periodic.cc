@@ -65,10 +65,8 @@ MPI_Datatype mpi_datatype(xferinfo_t const &) {
         STRINGIFY(type),                  /* type name */                      \
   }
     dist::mpi_struct_descr_t const descr[] = {
-        ENTRY(int, m),
-        ENTRY(sendrecv_pseudoregion_t, sendrecv),
-        ENTRY(islab, slab),
-        {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}};
+        ENTRY(int, m), ENTRY(sendrecv_pseudoregion_t, sendrecv),
+        ENTRY(islab, slab)};
 #undef ENTRY
     newtype = dist::create_mpi_datatype(sizeof descr / sizeof descr[0], descr,
                                         "xferinfo_t", sizeof s);

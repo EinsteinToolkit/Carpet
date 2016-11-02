@@ -57,8 +57,7 @@ template <typename T, int D> MPI_Datatype mpi_datatype(slab<T, D> const &) {
         STRINGIFY(name),            /* field name */                           \
         STRINGIFY(type),            /* type name */                            \
   }
-    dist::mpi_struct_descr_t const descr[] = {
-        ENTRY(avect, offset), {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}};
+    dist::mpi_struct_descr_t const descr[] = {ENTRY(avect, offset)};
 #undef ENTRY
     ostringstream buf;
     buf << "slab<" << typeid(T).name() << "," << D << ">";

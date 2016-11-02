@@ -367,10 +367,8 @@ MPI_Datatype mpi_datatype(pseudoregion_t const &) {
         STRINGIFY(name),                  /* field name */                     \
         STRINGIFY(type),                  /* type name */                      \
   }
-    dist::mpi_struct_descr_t const descr[] = {
-        ENTRY(int, extent),
-        ENTRY(int, component),
-        {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}};
+    dist::mpi_struct_descr_t const descr[] = {ENTRY(int, extent),
+                                              ENTRY(int, component)};
 #undef ENTRY
     newtype = dist::create_mpi_datatype(sizeof descr / sizeof descr[0], descr,
                                         "pseudoregion_t", sizeof s);
@@ -392,10 +390,8 @@ MPI_Datatype mpi_datatype(sendrecv_pseudoregion_t const &) {
         STRINGIFY(name),                  /* field name */                     \
         STRINGIFY(type),                  /* type name */                      \
   }
-    dist::mpi_struct_descr_t const descr[] = {
-        ENTRY(pseudoregion_t, send),
-        ENTRY(pseudoregion_t, recv),
-        {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}};
+    dist::mpi_struct_descr_t const descr[] = {ENTRY(pseudoregion_t, send),
+                                              ENTRY(pseudoregion_t, recv)};
 #undef ENTRY
     newtype = dist::create_mpi_datatype(sizeof descr / sizeof descr[0], descr,
                                         "sendrecv_pseudoregion_t", sizeof s);
