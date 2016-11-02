@@ -63,7 +63,7 @@ void evaluate_level_mask(cGH const *restrict const cctkGH,
             // next upper grid point in this case. We subtract 0.25
             // just for proper rounding.
             origin[d] =
-                ceil(-CCTK_ORIGIN_SPACE(d) / CCTK_DELTA_SPACE(d) - 0.25);
+                lrint(ceil(-CCTK_ORIGIN_SPACE(d) / CCTK_DELTA_SPACE(d) - 0.25));
             rorigin[d] = CCTK_ORIGIN_SPACE(d) + origin[d] * CCTK_DELTA_SPACE(d);
           }
         }
