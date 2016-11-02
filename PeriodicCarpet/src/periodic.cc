@@ -434,29 +434,23 @@ extern "C" void PeriodicCarpet_RegisterBC(CCTK_ARGUMENTS) {
   CCTK_INT shiftout[6];
   int ierr =
       GetBoundarySpecification(6, width, is_internal, is_staggered, shiftout);
-  if (ierr < 0) {
-    CCTK_WARN(CCTK_WARN_ABORT, "Could not get the boundary specification");
-  }
+  if (ierr < 0)
+    CCTK_ERROR("Could not get the boundary specification");
 
   CCTK_INT const handle = SymmetryRegister("periodic");
-  if (handle < 0) {
-    CCTK_WARN(CCTK_WARN_ABORT,
-              "Could not register periodicity boundary condition");
-  }
+  if (handle < 0)
+    CCTK_ERROR("Could not register periodicity boundary condition");
 
   ierr = SymmetryRegisterGrid(cctkGH, handle, faces, width);
-  if (ierr < 0) {
-    CCTK_WARN(CCTK_WARN_ABORT, "Could not register the periodic boundaries -- "
-                               "probably some other thorn has already "
-                               "registered the same boundary faces for a "
-                               "different symmetry");
-  }
-
-  ierr = SymmetryRegisterGridInterpolator(cctkGH, handle, PeriodicCarpet_Interpolate);
   if (ierr < 0)
-  {
-    CCTK_WARN (0, "Could not register the symmetry interpolator");
-  }
+    CCTK_ERROR("Could not register the periodic boundaries -- probably some "
+               "other thorn has already registered the same boundary faces for "
+               "a different symmetry");
+
+  ierr = SymmetryRegisterGridInterpolator(cctkGH, handle,
+                                          PeriodicCarpet_Interpolate);
+  if (ierr < 0)
+    CCTK_ERROR("Could not register the symmetry interpolator");
 }
 
 extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
@@ -491,9 +485,8 @@ extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
   CCTK_INT shiftout[2 * dim];
   int ierr = GetBoundarySpecification(2 * dim, width, is_internal, is_staggered,
                                       shiftout);
-  if (ierr < 0) {
-    CCTK_WARN(CCTK_WARN_ABORT, "Could not get the boundary specification");
-  }
+  if (ierr < 0)
+    CCTK_ERROR("Could not get the boundary specification");
 
   CCTK_INT stencil[dim];
   for (int d = 0; d < dim; ++d) {
