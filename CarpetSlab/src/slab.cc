@@ -14,8 +14,8 @@
 #include "bboxset.hh"
 #include "dh.hh"
 #include "gdata.hh"
-#include "gh.hh"
 #include "ggf.hh"
+#include "gh.hh"
 #include "vect.hh"
 
 #include "carpet.hh"

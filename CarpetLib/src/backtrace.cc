@@ -65,14 +65,14 @@
 #define false 0
 
 #define _GNU_SOURCE
-#include <string.h>
+#include <bfd.h>
+#include <dlfcn.h>
+#include <execinfo.h>
+#include <libiberty.h>
+#include <link.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <execinfo.h>
-#include <bfd.h>
-#include <libiberty.h>
-#include <dlfcn.h>
-#include <link.h>
+#include <string.h>
 
 namespace CarpetLib {
 
@@ -333,7 +333,7 @@ char **backtrace_symbols(void *const *buffer, int size) {
   int total = 0;
 
   char ***locations;
-  char **final;
+  char ** final;
   char *f_strings;
 
   locations = malloc(sizeof(char **) * (stack_depth + 1));

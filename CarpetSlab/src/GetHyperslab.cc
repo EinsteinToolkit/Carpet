@@ -16,8 +16,8 @@
 
 #include "carpet.hh"
 
-#include "slab.hh"
 #include "GetHyperslab.hh"
+#include "slab.hh"
 
 namespace CarpetSlab {
 

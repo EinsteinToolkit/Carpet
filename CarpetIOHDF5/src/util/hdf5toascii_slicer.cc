@@ -10,13 +10,13 @@
 @@*/
 
 #include <algorithm>
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <vector>
 #include <cmath>
 #include <cstring>
+#include <iomanip>
+#include <iostream>
 #include <regex.h>
+#include <string>
+#include <vector>
 
 #define H5_USE_16_API 1
 #include <hdf5.h>

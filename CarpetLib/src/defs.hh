@@ -49,8 +49,8 @@ using namespace std;
 #endif
 
 #ifdef CARPET_USE_BOOST_SHARED_PTR
-#include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/shared_ptr.hpp>
 #define shared_ptr boost::shared_ptr
 #define make_shared boost::make_shared
 #endif

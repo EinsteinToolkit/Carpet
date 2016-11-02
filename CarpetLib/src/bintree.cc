@@ -12,8 +12,7 @@ using namespace std;
 
 // Create an empty tree
 template <typename T, int D, typename P>
-bintree<T, D, P>::bintree()
-    : type(type_empty) {
+bintree<T, D, P>::bintree() : type(type_empty) {
   assert(invariant());
   // This is unused
   assert(0);
@@ -30,15 +29,13 @@ bintree<T, D, P>::bintree(int const dir_, vect<T, 3> const &bounds_,
 
 // Create a tree leaf from a payload
 template <typename T, int D, typename P>
-bintree<T, D, P>::bintree(P const &p_)
-    : type(type_leaf), p(p_) {
+bintree<T, D, P>::bintree(P const &p_) : type(type_leaf), p(p_) {
   assert(invariant());
 }
 
 // Create a tree as copy from another tree
 template <typename T, int D, typename P>
-bintree<T, D, P>::bintree(bintree const &t)
-    : type(t.type) {
+bintree<T, D, P>::bintree(bintree const &t) : type(t.type) {
   switch (type) {
   case type_empty:
     // do nothing
@@ -260,8 +257,7 @@ bool bintree<T, D, P>::const_iterator::done() const {
 
 // Non-const iterator
 template <typename T, int D, typename P>
-bintree<T, D, P>::iterator::iterator(bintree &f_)
-    : f(f_), i(0), it(0) {
+bintree<T, D, P>::iterator::iterator(bintree &f_) : f(f_), i(0), it(0) {
   if (f.is_branch()) {
     it = new iterator(*f.subtrees[i]);
     while ((*it).done()) {
@@ -278,8 +274,7 @@ bintree<T, D, P>::iterator::iterator(bintree &f_)
 }
 
 template <typename T, int D, typename P>
-bintree<T, D, P>::iterator::iterator(bintree &f_, int)
-    : f(f_), it(0) {
+bintree<T, D, P>::iterator::iterator(bintree &f_, int) : f(f_), it(0) {
   if (f.empty()) {
     i = 0;
   } else if (f.is_leaf()) {

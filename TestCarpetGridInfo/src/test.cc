@@ -1,5 +1,5 @@
-#include <cstdio>
 #include <cassert>
+#include <cstdio>
 
 #include "cctk.h"
 #include "cctk_Arguments.h"

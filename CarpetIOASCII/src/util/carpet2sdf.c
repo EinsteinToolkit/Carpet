@@ -9,10 +9,10 @@
  * sdtout, it sends it to <infile>.sdf
  *******************************************************************/
 
+#include <bbhutil.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <bbhutil.h>
 
 /*******************************************************************
  * Function: read_next_set

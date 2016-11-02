@@ -1,5 +1,5 @@
-#include "all_clauses.hh"
 #include "all_state.hh"
+#include "all_clauses.hh"
 #include "clauses.hh"
 #include "util.hh"
 

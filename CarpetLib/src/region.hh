@@ -4,10 +4,10 @@
 #include <iostream>
 #include <vector>
 
-#include "defs.hh"
-#include "dist.hh"
 #include "bbox.hh"
 #include "bboxset.hh"
+#include "defs.hh"
+#include "dist.hh"
 #include "fulltree.hh"
 #include "vect.hh"
 

@@ -1,8 +1,8 @@
 #include <math.h>
 
 #include "cctk.h"
-#include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Parameters.h"
 
 void CarpetRegrid_SetupGaussian(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;

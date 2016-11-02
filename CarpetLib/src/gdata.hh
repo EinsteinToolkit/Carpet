@@ -5,8 +5,8 @@
 
 #include <cassert>
 #include <cstdlib>
-#include <queue>
 #include <iostream>
+#include <queue>
 #include <string>
 #include <vector>
 

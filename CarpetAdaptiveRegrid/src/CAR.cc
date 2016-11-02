@@ -1,11 +1,11 @@
+#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <stack>
 #include <string>
 #include <vector>
-#include <stack>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -13,8 +13,8 @@
 #include "gh.hh"
 #include "vect.hh"
 
-#include "carpet.hh"
 #include "CAR.hh"
+#include "carpet.hh"
 
 //
 // For the moment this is going to live as one large file with one
@@ -665,16 +665,10 @@ CCTK_INT CarpetAdaptiveRegrid_Regrid(CCTK_POINTER_TO_CONST const cctkGH_,
           // of the Berger-Rigoutsos algorithm.
           //
 
-          CCTK_FNAME(check_box)(nx, ny, nz,
-                                  &mask.front(),
-                                  &sum_x.front(), &sum_y.front(),
-                                  &sum_z.front(),
-                                  &sig_x.front(), &sig_y.front(),
-                                  &sig_z.front(),
-                                  fbbox,
-                                  fbbox1, fbbox2,
-                                  min_width, min_fraction,
-                                  didit);
+          CCTK_FNAME(check_box)
+          (nx, ny, nz, &mask.front(), &sum_x.front(), &sum_y.front(),
+           &sum_z.front(), &sig_x.front(), &sig_y.front(), &sig_z.front(),
+           fbbox, fbbox1, fbbox2, min_width, min_fraction, didit);
 
           if (didit == 0) { // Box was accepted
 
@@ -697,10 +691,9 @@ CCTK_INT CarpetAdaptiveRegrid_Regrid(CCTK_POINTER_TO_CONST const cctkGH_,
 
             vector<int> newmask1(prod(newbbox1.shape() / newbbox1.stride()), 0);
 
-            CCTK_FNAME(copy_mask)(nx, ny, nz,
-                                    &mask.front(), fbbox,
-                                    dnx, dny, dnz,
-                                    &newmask1.front(), fbbox1);
+            CCTK_FNAME(copy_mask)
+            (nx, ny, nz, &mask.front(), fbbox, dnx, dny, dnz, &newmask1.front(),
+             fbbox1);
             masklist.push(newmask1);
 
             if (verbose) {
@@ -724,10 +717,9 @@ CCTK_INT CarpetAdaptiveRegrid_Regrid(CCTK_POINTER_TO_CONST const cctkGH_,
 
             vector<int> newmask1(prod(newbbox1.shape() / newbbox1.stride()), 0);
 
-            CCTK_FNAME(copy_mask)(nx, ny, nz,
-                                    &mask.front(), fbbox,
-                                    dnx, dny, dnz,
-                                    &newmask1.front(), fbbox1);
+            CCTK_FNAME(copy_mask)
+            (nx, ny, nz, &mask.front(), fbbox, dnx, dny, dnz, &newmask1.front(),
+             fbbox1);
             masklist.push(newmask1);
 
             dnx = newbbox2.shape()[0] / newbbox2.stride()[0];
@@ -736,10 +728,9 @@ CCTK_INT CarpetAdaptiveRegrid_Regrid(CCTK_POINTER_TO_CONST const cctkGH_,
 
             vector<int> newmask2(prod(newbbox2.shape() / newbbox2.stride()), 0);
 
-            CCTK_FNAME(copy_mask)(nx, ny, nz,
-                                    &mask.front(), fbbox,
-                                    dnx, dny, dnz,
-                                    &newmask2.front(), fbbox2);
+            CCTK_FNAME(copy_mask)
+            (nx, ny, nz, &mask.front(), fbbox, dnx, dny, dnz, &newmask2.front(),
+             fbbox2);
             masklist.push(newmask2);
 
             if (verbose) {

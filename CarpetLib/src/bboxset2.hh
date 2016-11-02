@@ -315,23 +315,24 @@ template <typename T, int D> class bboxset {
     }                                                                          \
                                                                                \
     bboxset1 old_decoded_subsetr;                                              \
-    TRAVERSE_SUBSETS2(const T &pos(_1); const bboxset1 &decoded_subset0(_2);   \
-                      const bboxset1 &decoded_subset1(_3); {                   \
-                        bboxset1 decoded_subsetr;                              \
-                        {                                                      \
-                          auto &_0(decoded_subsetr);                           \
-                          const auto &_1(decoded_subset0);                     \
-                          const auto &_2(decoded_subset1);                     \
-                          op;                                                  \
-                        }                                                      \
-                        const auto subsetrp = make_shared<bboxset1>(           \
-                            decoded_subsetr ^ old_decoded_subsetr);            \
-                        if (not subsetrp->empty()) {                           \
-                          res.subsets.insert(res.subsets.end(),                \
-                                             make_pair(pos, subsetrp));        \
-                        }                                                      \
-                        swap(old_decoded_subsetr, decoded_subsetr);            \
-                      }, other);                                               \
+    TRAVERSE_SUBSETS2(                                                         \
+        const T &pos(_1); const bboxset1 &decoded_subset0(_2);                 \
+        const bboxset1 &decoded_subset1(_3); {                                 \
+          bboxset1 decoded_subsetr;                                            \
+          {                                                                    \
+            auto &_0(decoded_subsetr);                                         \
+            const auto &_1(decoded_subset0);                                   \
+            const auto &_2(decoded_subset1);                                   \
+            op;                                                                \
+          }                                                                    \
+          const auto subsetrp =                                                \
+              make_shared<bboxset1>(decoded_subsetr ^ old_decoded_subsetr);    \
+          if (not subsetrp->empty()) {                                         \
+            res.subsets.insert(res.subsets.end(), make_pair(pos, subsetrp));   \
+          }                                                                    \
+          swap(old_decoded_subsetr, decoded_subsetr);                          \
+        },                                                                     \
+                                             other);                           \
     assert(old_decoded_subsetr.empty());                                       \
                                                                                \
     _0 = res;                                                                  \
@@ -704,10 +705,12 @@ inline bboxset<T, D> operator&(const bbox<T, D> &b, const bboxset<T, D> &bs) {
 template <typename T, int D>
 inline bboxset<T, D> operator^(const bboxset<T, D> &bs, const bbox<T, D> &b) {
   return bs ^ bboxset<T, D>(b);
-} template <typename T, int D>
+}
+template <typename T, int D>
 inline bboxset<T, D> operator^(const bbox<T, D> &b, const bboxset<T, D> &bs) {
   return bboxset<T, D>(b) ^ bs;
-} template <typename T, int D>
+}
+template <typename T, int D>
 inline bboxset<T, D> operator^(const bbox<T, D> &b1, const bbox<T, D> &b2) {
   return bboxset<T, D>(b1) ^ bboxset<T, D>(b2);
 }
@@ -1005,9 +1008,9 @@ bboxset<T, D> bboxset<T, D>::operator^(const bboxset &other) const {
 // TODO: If other is much smaller than this, direct insertion may
 // be faster
 #ifndef CARPET_AVOID_LAMBDA
-  return binary_operator([](const bboxset1 &set0, const bboxset1 &set1) {
-    return set0 ^ set1;
-  }, other);
+  return binary_operator(
+      [](const bboxset1 &set0, const bboxset1 &set1) { return set0 ^ set1; },
+      other);
 #else
   bboxset _0;
   BINARY_OPERATOR(const bboxset1 &set0(_1); const bboxset1 &set1(_2);
@@ -1027,9 +1030,9 @@ bboxset<T, D> &bboxset<T, D>::operator^=(const bboxset &other) {
 template <typename T, int D>
 bboxset<T, D> bboxset<T, D>::operator&(const bboxset &other) const {
 #ifndef CARPET_AVOID_LAMBDA
-  return binary_operator([](const bboxset1 &set0, const bboxset1 &set1) {
-    return set0 & set1;
-  }, other);
+  return binary_operator(
+      [](const bboxset1 &set0, const bboxset1 &set1) { return set0 & set1; },
+      other);
 #else
   bboxset _0;
   BINARY_OPERATOR(const bboxset1 &set0(_1); const bboxset1 &set1(_2);
@@ -1048,9 +1051,9 @@ bboxset<T, D> &bboxset<T, D>::operator&=(const bboxset &other) {
 template <typename T, int D>
 bboxset<T, D> bboxset<T, D>::operator|(const bboxset &other) const {
 #ifndef CARPET_AVOID_LAMBDA
-  return binary_operator([](const bboxset1 &set0, const bboxset1 &set1) {
-    return set0 | set1;
-  }, other);
+  return binary_operator(
+      [](const bboxset1 &set0, const bboxset1 &set1) { return set0 | set1; },
+      other);
 #else
   bboxset _0;
   BINARY_OPERATOR(const bboxset1 &set0(_1); const bboxset1 &set1(_2);
@@ -1089,9 +1092,9 @@ bboxset<T, D> &bboxset<T, D>::operator+=(const bboxset &other) {
 template <typename T, int D>
 bboxset<T, D> bboxset<T, D>::operator-(const bboxset &other) const {
 #ifndef CARPET_AVOID_LAMBDA
-  return binary_operator([](const bboxset1 &set0, const bboxset1 &set1) {
-    return set0 - set1;
-  }, other);
+  return binary_operator(
+      [](const bboxset1 &set0, const bboxset1 &set1) { return set0 - set1; },
+      other);
 #else
   bboxset _0;
   BINARY_OPERATOR(const bboxset1 &set0(_1); const bboxset1 &set1(_2);

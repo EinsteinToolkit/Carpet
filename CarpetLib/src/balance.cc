@@ -165,8 +165,7 @@ template <typename item_t> CCTK_REAL worker_t<item_t>::business() const {
 }
 
 template <typename item_t>
-workers_t<item_t>::workers_t(int const nworkers)
-    : workers(nworkers) {}
+workers_t<item_t>::workers_t(int const nworkers) : workers(nworkers) {}
 
 template <typename item_t> bool workers_t<item_t>::empty() const {
   return workers.empty();

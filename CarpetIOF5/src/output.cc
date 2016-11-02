@@ -13,12 +13,12 @@
 #include <string>
 #include <vector>
 
-#include <hdf5.h>
 #include <F5/F5F.h>
 #include <F5/F5R.h>
 #include <F5/F5X.h>
 #include <F5/F5iterate.h>
 #include <F5/F5uniform.h>
+#include <hdf5.h>
 
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
@@ -915,10 +915,10 @@ private:
       if (data[d]) {
         switch (vartype) {
         case CCTK_VARIABLE_INT:
-          delete[](CCTK_INT const *)data[d];
+          delete[](CCTK_INT const *) data[d];
           break;
         case CCTK_VARIABLE_REAL:
-          delete[](CCTK_REAL const *)data[d];
+          delete[](CCTK_REAL const *) data[d];
           break;
         default:
           assert(0);
