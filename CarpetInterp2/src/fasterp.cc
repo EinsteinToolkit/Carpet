@@ -83,9 +83,7 @@ MPI_Datatype fasterp_iloc_t::mpi_datatype() {
         ENTRY(int, ipos),
         ENTRY(int, ind),
 #endif
-        ENTRY(int, ind3d),
-        ENTRY(CCTK_REAL, offset),
-        {1, sizeof(s), MPI_UB, "MPI_UB", "MPI_UB"}};
+        ENTRY(int, ind3d), ENTRY(CCTK_REAL, offset)};
 #undef ENTRY
     newtype =
         dist::create_mpi_datatype(sizeof descr / sizeof descr[0], descr,

@@ -54,8 +54,7 @@ template <typename T, int D> MPI_Datatype vect<T, D>::mpi_datatype() const {
         STRINGIFY(name),            /* field name */                           \
         STRINGIFY(type),            /* type name */                            \
   }
-    dist::mpi_struct_descr_t const descr[] = {
-        ENTRY(T, elt), {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}};
+    dist::mpi_struct_descr_t const descr[] = {ENTRY(T, elt)};
 #undef ENTRY
     ostringstream buf;
     buf << "vect<" << typeid(T).name() << "," << D << ">";

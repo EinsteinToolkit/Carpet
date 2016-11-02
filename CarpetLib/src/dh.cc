@@ -2187,13 +2187,9 @@ MPI_Datatype mpi_datatype(dh::light_dboxes const &) {
         STRINGIFY(type),              /* type name */                          \
   }
     dist::mpi_struct_descr_t const descr[] = {
-        ENTRY(int, exterior),
-        ENTRY(int, owned),
-        ENTRY(int, interior),
-        ENTRY(size_type, exterior_size),
-        ENTRY(size_type, owned_size),
-        ENTRY(size_type, active_size),
-        {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}};
+        ENTRY(int, exterior),         ENTRY(int, owned),
+        ENTRY(int, interior),         ENTRY(size_type, exterior_size),
+        ENTRY(size_type, owned_size), ENTRY(size_type, active_size)};
 #undef ENTRY
     newtype = dist::create_mpi_datatype(sizeof descr / sizeof descr[0], descr,
                                         "dh::light::dboxes", sizeof s);
@@ -2244,8 +2240,7 @@ MPI_Datatype mpi_datatype(dh::fast_dboxes const &) {
         ENTRY(dh::srpvect, fast_ref_refl_prol_sendrecv_1_0),
         ENTRY(dh::srpvect, fast_ref_refl_prol_sendrecv_1_1),
         ENTRY(dh::srpvect, fast_ref_refl_prol_sendrecv_2_0),
-        ENTRY(dh::srpvect, fast_ref_refl_prol_sendrecv_2_1),
-        {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}};
+        ENTRY(dh::srpvect, fast_ref_refl_prol_sendrecv_2_1)};
 #undef ENTRY
     newtype = dist::create_mpi_datatype(sizeof descr / sizeof descr[0], descr,
                                         "dh::fast_dboxes", sizeof s);
