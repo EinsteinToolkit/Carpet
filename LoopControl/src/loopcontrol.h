@@ -278,7 +278,7 @@ void lc_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
 #endif /* #ifdef CCODE */
 
 #ifdef FCODE
-#include "loopcontrol_fortran.h"
+#include "loopcontrol_fortran.inc"
 #endif
 
 #endif /* #ifndef LOOPCONTROL_H */
