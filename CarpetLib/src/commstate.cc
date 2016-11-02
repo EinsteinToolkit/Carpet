@@ -1,10 +1,12 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <limits>
 
 #include "bbox.hh"
 #include "defs.hh"
@@ -130,6 +132,12 @@ void comm_state::step() {
       if (commstate_verbose) {
         CCTK_INFO("before MPI_Alltoall");
       }
+      for (auto sc : sendcount)
+        if (sc > numeric_limits<int>::max())
+          CCTK_ERROR("Integer overflow in MPI_Alltoall");
+      for (auto rc : recvcount)
+        if (rc > numeric_limits<int>::max())
+          CCTK_ERROR("Integer overflow in MPI_Alltoall");
       MPI_Alltoall(&sendcount.front(), dist::c_ndatatypes(), MPI_INT,
                    &recvcount.front(), dist::c_ndatatypes(), MPI_INT,
                    dist::comm());
@@ -191,10 +199,17 @@ void comm_state::step() {
                          "About to MPI_Irecv from process %d for type %s", proc,
                          dist::c_datatype_name(type));
             }
-            MPI_Irecv(&procbuf.recvbufbase.front(),
-                      procbuf.recvbufsize * message_size_multiplier,
-                      typebufs.AT(type).mpi_datatype, proc, tag, dist::comm(),
-                      &push_back(rrequests));
+            ptrdiff_t offset = 0;
+            ptrdiff_t count = procbuf.recvbufsize * message_size_multiplier;
+            while (count > 0) {
+              ptrdiff_t thiscount =
+                  std::min(ptrdiff_t(numeric_limits<int>::max()), count);
+              MPI_Irecv(&procbuf.recvbufbase[offset], thiscount,
+                        typebufs.AT(type).mpi_datatype, proc, tag, dist::comm(),
+                        &push_back(rrequests));
+              offset += thiscount * datatypesize;
+              count -= thiscount;
+            }
             if (commstate_verbose) {
               CCTK_INFO("Finished MPI_Irecv");
             }
@@ -238,14 +253,14 @@ void comm_state::step() {
 
               int const datatypesize = typebufs.AT(type).datatypesize;
 
-              size_t const fillstate =
+              ptrdiff_t const fillstate =
                   procbuf.sendbuf - &procbuf.sendbufbase.front();
               assert(fillstate == procbuf.sendbufsize * datatypesize);
 
               // Enlarge messages for performance testing
               if (message_size_multiplier > 1) {
-                size_t const nbytes = procbuf.sendbufsize * datatypesize *
-                                      (message_size_multiplier - 1);
+                ptrdiff_t const nbytes = procbuf.sendbufsize * datatypesize *
+                                         (message_size_multiplier - 1);
                 memset(procbuf.sendbuf, poison_value, nbytes);
               }
 
@@ -297,10 +312,17 @@ void comm_state::step() {
                              "About to MPI_Isend to process %d for type %s",
                              proc, dist::c_datatype_name(type));
                 }
-                MPI_Isend(const_cast<char *>(&procbuf.sendbufbase.front()),
-                          procbuf.sendbufsize * message_size_multiplier,
-                          typebufs.AT(type).mpi_datatype, proc, tag,
-                          dist::comm(), &push_back(srequests));
+                ptrdiff_t offset = 0;
+                ptrdiff_t count = procbuf.sendbufsize * message_size_multiplier;
+                while (count > 0) {
+                  ptrdiff_t thiscount =
+                      std::min(ptrdiff_t(numeric_limits<int>::max()), count);
+                  MPI_Isend(const_cast<char *>(&procbuf.sendbufbase[offset]),
+                            thiscount, typebufs.AT(type).mpi_datatype, proc,
+                            tag, dist::comm(), &push_back(srequests));
+                  offset += thiscount * datatypesize;
+                  count -= thiscount;
+                }
                 assert(not procbuf.did_post_send);
                 procbuf.did_post_send = true;
                 if (commstate_verbose) {
@@ -385,10 +407,17 @@ void comm_state::step() {
                            "About to MPI_Irecv from process %d for type %s",
                            proc, dist::c_datatype_name(type));
               }
-              MPI_Irecv(&procbuf.recvbufbase.front(),
-                        procbuf.recvbufsize * message_size_multiplier,
-                        typebufs.AT(type).mpi_datatype, proc, tag, dist::comm(),
-                        &push_back(rrequests));
+              ptrdiff_t offset = 0;
+              ptrdiff_t count = procbuf.recvbufsize * message_size_multiplier;
+              while (count > 0) {
+                ptrdiff_t thiscount =
+                    std::min(ptrdiff_t(numeric_limits<int>::max()), count);
+                MPI_Irecv(&procbuf.recvbufbase.front(), thiscount,
+                          typebufs.AT(type).mpi_datatype, proc, tag,
+                          dist::comm(), &push_back(rrequests));
+                offset += thiscount * typebufs.AT(type).datatypesize;
+                count -= thiscount;
+              }
               if (commstate_verbose) {
                 CCTK_INFO("Finished MPI_Irecv");
               }
@@ -422,10 +451,17 @@ void comm_state::step() {
                            "About to MPI_Isend to process %d for type %s", proc,
                            dist::c_datatype_name(type));
               }
-              MPI_Isend(const_cast<char *>(&procbuf.sendbufbase.front()),
-                        procbuf.sendbufsize * message_size_multiplier,
-                        typebufs.AT(type).mpi_datatype, proc, tag, dist::comm(),
-                        &push_back(srequests));
+              ptrdiff_t offset = 0;
+              ptrdiff_t count = procbuf.sendbufsize * message_size_multiplier;
+              while (count > 0) {
+                ptrdiff_t thiscount =
+                    std::min(ptrdiff_t(numeric_limits<int>::max()), count);
+                MPI_Isend(const_cast<char *>(&procbuf.sendbufbase[offset]),
+                          thiscount, typebufs.AT(type).mpi_datatype, proc, tag,
+                          dist::comm(), &push_back(srequests));
+                offset += thiscount * typebufs.AT(type).datatypesize;
+                count -= thiscount;
+              }
               if (commstate_verbose) {
                 CCTK_INFO("Finished MPI_Isend");
               }
@@ -508,7 +544,7 @@ comm_state::~comm_state() {
 }
 
 void comm_state::reserve_send_space(unsigned const type, int const proc,
-                                    int const npoints) {
+                                    ptrdiff_t const npoints) {
   assert(type < dist::c_ndatatypes());
   assert(proc >= 0 and proc < dist::size());
   assert(npoints >= 0);
@@ -522,7 +558,7 @@ void comm_state::reserve_send_space(unsigned const type, int const proc,
 }
 
 void comm_state::reserve_recv_space(unsigned const type, int const proc,
-                                    int const npoints) {
+                                    ptrdiff_t const npoints) {
   assert(type < dist::c_ndatatypes());
   assert(proc >= 0 and proc < dist::size());
   assert(npoints >= 0);
@@ -536,7 +572,7 @@ void comm_state::reserve_recv_space(unsigned const type, int const proc,
 }
 
 void *comm_state::send_buffer(unsigned const type, int const proc,
-                              int const npoints) {
+                              ptrdiff_t const npoints) {
   assert(type < dist::c_ndatatypes());
   assert(proc >= 0 and proc < dist::size());
   assert(npoints > 0);
@@ -551,7 +587,7 @@ void *comm_state::send_buffer(unsigned const type, int const proc,
 }
 
 void *comm_state::recv_buffer(unsigned const type, int const proc,
-                              int const npoints) {
+                              ptrdiff_t const npoints) {
   assert(type < dist::c_ndatatypes());
   assert(proc >= 0 and proc < dist::size());
   assert(npoints > 0);
@@ -566,7 +602,7 @@ void *comm_state::recv_buffer(unsigned const type, int const proc,
 }
 
 void comm_state::commit_send_space(unsigned const type, int const proc,
-                                   int const npoints) {
+                                   ptrdiff_t const npoints) {
   DECLARE_CCTK_PARAMETERS;
 
   assert(type < dist::c_ndatatypes());
@@ -585,8 +621,8 @@ void comm_state::commit_send_space(unsigned const type, int const proc,
         &procbuf.sendbufbase.front() +
             procbuf.sendbufsize * typebuf.datatypesize) {
       if (message_size_multiplier > 1) {
-        size_t const nbytes = procbuf.sendbufsize * typebuf.datatypesize *
-                              (message_size_multiplier - 1);
+        ptrdiff_t const nbytes = procbuf.sendbufsize * typebuf.datatypesize *
+                                 (message_size_multiplier - 1);
         memset(procbuf.sendbuf, poison_value, nbytes);
       }
 
@@ -601,10 +637,16 @@ void comm_state::commit_send_space(unsigned const type, int const proc,
       assert(procbuf.sendbufsize > 0);
       assert(not use_mpi_send);
       assert(not use_mpi_ssend);
-      MPI_Isend(&procbuf.sendbufbase.front(),
-                procbuf.sendbufsize * message_size_multiplier,
-                typebuf.mpi_datatype, proc, tag, dist::comm(),
-                &push_back(srequests));
+      ptrdiff_t offset = 0;
+      ptrdiff_t count = procbuf.sendbufsize * message_size_multiplier;
+      while (count > 0) {
+        ptrdiff_t thiscount =
+            std::min(ptrdiff_t(numeric_limits<int>::max()), count);
+        MPI_Isend(&procbuf.sendbufbase[offset], thiscount, typebuf.mpi_datatype,
+                  proc, tag, dist::comm(), &push_back(srequests));
+        offset += thiscount * typebuf.datatypesize;
+        count -= thiscount;
+      }
       assert(not procbuf.did_post_send);
       procbuf.did_post_send = true;
       if (commstate_verbose) {
@@ -616,7 +658,7 @@ void comm_state::commit_send_space(unsigned const type, int const proc,
 }
 
 void comm_state::commit_recv_space(unsigned const type, int const proc,
-                                   int const npoints) {
+                                   ptrdiff_t const npoints) {
   assert(type < dist::c_ndatatypes());
   assert(proc >= 0 and proc < dist::size());
   assert(npoints >= 0);
