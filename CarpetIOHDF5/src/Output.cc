@@ -871,8 +871,9 @@ static int AddAttributes(const cGH *const cctkGH, const char *fullname,
     for (int d = 0; d < dim; ++d) {
       origin[d] =
           (global_lower[d] +
-           coord_delta[d] *
-               (cctkGH->cctk_levoff[d] / cctkGH->cctk_levoffdenom[d] + pos[d]));
+           coord_delta[d] * (static_cast<CCTK_REAL>(cctkGH->cctk_levoff[d]) /
+                                 cctkGH->cctk_levoffdenom[d] +
+                             pos[d]));
       delta[d] = coord_delta[d];
     }
 
