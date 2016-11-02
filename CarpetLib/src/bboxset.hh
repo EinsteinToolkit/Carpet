@@ -12,6 +12,7 @@ namespace CarpetLib {
 #ifdef CARPET_USE_BBOXSET2
 using namespace bboxset2;
 #else
+#error "Using bboxset1"
 using namespace bboxset1;
 #endif
 }
