@@ -373,7 +373,7 @@ void gdata::find_source_timelevel(vector<CCTK_REAL> const &times,
         ::free(fullname);
       }
       buf << "  time=" << time << "  times=" << times;
-      CCTK_WARN(0, buf.str().c_str());
+      CCTK_ERROR(buf.str().c_str());
     }
   }
 
