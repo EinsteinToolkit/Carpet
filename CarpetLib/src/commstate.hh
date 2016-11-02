@@ -58,8 +58,8 @@ private:
     vector<char> recvbufbase;
 
     // sizes of the communication buffers (in elements of type <datatype>)
-    size_t sendbufsize;
-    size_t recvbufsize;
+    ptrdiff_t sendbufsize;
+    ptrdiff_t recvbufsize;
 
     // pointers to step through the communication buffers
     // (these get advanced by the routines which fill/empty the buffers)
@@ -107,17 +107,17 @@ private:
   }
 
 public:
-  void reserve_send_space(unsigned type, int proc, int npoints);
+  void reserve_send_space(unsigned type, int proc, ptrdiff_t npoints);
 
-  void reserve_recv_space(unsigned type, int proc, int npoints);
+  void reserve_recv_space(unsigned type, int proc, ptrdiff_t npoints);
 
-  void *send_buffer(unsigned type, int proc, int npoints);
+  void *send_buffer(unsigned type, int proc, ptrdiff_t npoints);
 
-  void *recv_buffer(unsigned type, int proc, int npoints);
+  void *recv_buffer(unsigned type, int proc, ptrdiff_t npoints);
 
-  void commit_send_space(unsigned type, int proc, int npoints);
+  void commit_send_space(unsigned type, int proc, ptrdiff_t npoints);
 
-  void commit_recv_space(unsigned type, int proc, int npoints);
+  void commit_recv_space(unsigned type, int proc, ptrdiff_t npoints);
 };
 }
 
