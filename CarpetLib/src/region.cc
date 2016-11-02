@@ -361,11 +361,11 @@ MPI_Datatype mpi_datatype(pseudoregion_t const &) {
     static pseudoregion_t s;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type),         /* count elements */                 \
-        (char *) & s.name - (char *) & s, /* offsetof doesn't work (why?) */   \
-        dist::mpi_datatype<type>(),       /* find MPI datatype */              \
-        STRINGIFY(name),                  /* field name */                     \
-        STRINGIFY(type),                  /* type name */                      \
+    sizeof s.name / sizeof(type),     /* count elements */                     \
+        (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */       \
+        dist::mpi_datatype<type>(),   /* find MPI datatype */                  \
+        STRINGIFY(name),              /* field name */                         \
+        STRINGIFY(type),              /* type name */                          \
   }
     dist::mpi_struct_descr_t const descr[] = {ENTRY(int, extent),
                                               ENTRY(int, component)};
@@ -384,11 +384,11 @@ MPI_Datatype mpi_datatype(sendrecv_pseudoregion_t const &) {
     static sendrecv_pseudoregion_t s;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type),         /* count elements */                 \
-        (char *) & s.name - (char *) & s, /* offsetof doesn't work (why?) */   \
-        dist::mpi_datatype<type>(),       /* find MPI datatype */              \
-        STRINGIFY(name),                  /* field name */                     \
-        STRINGIFY(type),                  /* type name */                      \
+    sizeof s.name / sizeof(type),     /* count elements */                     \
+        (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */       \
+        dist::mpi_datatype<type>(),   /* find MPI datatype */                  \
+        STRINGIFY(name),              /* field name */                         \
+        STRINGIFY(type),              /* type name */                          \
   }
     dist::mpi_struct_descr_t const descr[] = {ENTRY(pseudoregion_t, send),
                                               ENTRY(pseudoregion_t, recv)};

@@ -466,9 +466,9 @@ INLINE_ELAPSED(inline)
 /* MIPS ZBus */
 #if HAVE_MIPS_ZBUS_TIMER
 #if defined(__mips__) && !defined(HAVE_TICK_COUNTER)
+#include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 typedef uint64_t ticks;
 

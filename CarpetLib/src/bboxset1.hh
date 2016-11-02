@@ -357,8 +357,7 @@ template <typename T, int D> bboxset<T, D>::bboxset() : skip_normalize(false) {
 }
 
 template <typename T, int D>
-bboxset<T, D>::bboxset(const box &b)
-    : skip_normalize(false) {
+bboxset<T, D>::bboxset(const box &b) : skip_normalize(false) {
   // S if (not b.empty()) bs.insert(b);
   if (not b.empty())
     bs.push_back(b);
@@ -366,14 +365,12 @@ bboxset<T, D>::bboxset(const box &b)
 }
 
 template <typename T, int D>
-bboxset<T, D>::bboxset(const bboxset &s)
-    : bs(s.bs), skip_normalize(false) {
+bboxset<T, D>::bboxset(const bboxset &s) : bs(s.bs), skip_normalize(false) {
   assert(invariant());
 }
 
 template <typename T, int D>
-bboxset<T, D>::bboxset(const list<box> &lb)
-    : skip_normalize(false) {
+bboxset<T, D>::bboxset(const list<box> &lb) : skip_normalize(false) {
   SKIP_NORMALIZE(*this);
   for (typename list<box>::const_iterator li = lb.begin(), le = lb.end();
        li != le; ++li) {
@@ -382,8 +379,7 @@ bboxset<T, D>::bboxset(const list<box> &lb)
 }
 
 template <typename T, int D>
-bboxset<T, D>::bboxset(const set<box> &sb)
-    : skip_normalize(false) {
+bboxset<T, D>::bboxset(const set<box> &sb) : skip_normalize(false) {
   SKIP_NORMALIZE(*this);
   for (typename set<box>::const_iterator vi = sb.begin(), ve = sb.end();
        vi != ve; ++vi) {
@@ -392,8 +388,7 @@ bboxset<T, D>::bboxset(const set<box> &sb)
 }
 
 template <typename T, int D>
-bboxset<T, D>::bboxset(const vector<box> &vb)
-    : skip_normalize(false) {
+bboxset<T, D>::bboxset(const vector<box> &vb) : skip_normalize(false) {
   SKIP_NORMALIZE(*this);
   for (typename vector<box>::const_iterator vi = vb.begin(), ve = vb.end();
        vi != ve; ++vi) {
@@ -402,8 +397,7 @@ bboxset<T, D>::bboxset(const vector<box> &vb)
 }
 
 template <typename T, int D>
-bboxset<T, D>::bboxset(const vector<list<box> > &vlb)
-    : skip_normalize(false) {
+bboxset<T, D>::bboxset(const vector<list<box> > &vlb) : skip_normalize(false) {
   SKIP_NORMALIZE(*this);
   for (typename vector<list<box> >::const_iterator vli = vlb.begin(),
                                                    vle = vlb.end();

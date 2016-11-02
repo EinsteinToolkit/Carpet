@@ -11,8 +11,8 @@
 #include "util_ErrorCodes.h"
 #include "util_Table.h"
 
-#include "carpet.hh"
 #include "TATelliptic.h"
+#include "carpet.hh"
 
 namespace CarpetMG {
 

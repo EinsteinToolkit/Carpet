@@ -8,10 +8,9 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "vectors.h"
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
-
+#include "vectors.h"
 
 namespace CarpetLib {
 using namespace std;

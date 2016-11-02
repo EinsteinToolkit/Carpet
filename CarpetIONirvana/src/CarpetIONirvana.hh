@@ -6,9 +6,9 @@
 
 #include <vector>
 
-#include "cctk_Arguments.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 #include "carpet.hh"
+#include "cctk_Arguments.h"
 
 // CarpetIONirvana GH extension structure
 typedef struct {

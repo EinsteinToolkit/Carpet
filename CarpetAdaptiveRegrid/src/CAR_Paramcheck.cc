@@ -4,8 +4,8 @@
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 
-#include "carpet.hh"
 #include "CAR.hh"
+#include "carpet.hh"
 
 namespace CarpetAdaptiveRegrid {
 

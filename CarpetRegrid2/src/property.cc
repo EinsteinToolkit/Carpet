@@ -119,8 +119,8 @@ ibset add_buffers::buffered_regions(gh const &hh, dh const &dd,
                                     level_boundary const &bnd,
                                     vector<ibset> const &regions,
                                     int const rl) {
-  return regions.at(rl)
-      .expand(dd.buffer_widths.at(rl) + dd.overlap_widths.at(rl));
+  return regions.at(rl).expand(dd.buffer_widths.at(rl) +
+                               dd.overlap_widths.at(rl));
 }
 
 bool add_buffers::test_impl(gh const &hh, dh const &dd,

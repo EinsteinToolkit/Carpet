@@ -8,10 +8,10 @@
 #include "cctk_Parameters.h"
 #include "util_Table.h"
 
+#include "CactusBase/IOUtil/src/ioGH.h"
+#include "CarpetIOHDF5.hh"
 #include "operators.hh"
 #include "typeprops.hh"
-#include "CarpetIOHDF5.hh"
-#include "CactusBase/IOUtil/src/ioGH.h"
 
 namespace CarpetIOHDF5 {
 

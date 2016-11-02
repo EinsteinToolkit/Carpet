@@ -51,8 +51,8 @@ template <typename T, int D> MPI_Datatype mpi_datatype(slab<T, D> const &) {
 #define ENTRY(type, name)                                                      \
   {                                                                            \
     sizeof s.name / sizeof(type), /* count elements */                         \
-        (const char *) & s.name - (const char *) &                             \
-            s,                      /* offsetof doesn't work (why?) */         \
+        (const char *)&s.name -                                                \
+            (const char *)&s,       /* offsetof doesn't work (why?) */         \
         dist::mpi_datatype<type>(), /* find MPI datatype */                    \
         STRINGIFY(name),            /* field name */                           \
         STRINGIFY(type),            /* type name */                            \

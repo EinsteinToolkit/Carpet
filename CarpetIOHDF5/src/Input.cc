@@ -1,20 +1,20 @@
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
 #include <list>
+#include <map>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <map>
-#include <algorithm>
 
-#include "util_Table.h"
 #include "cctk.h"
 #include "cctk_Parameters.h"
+#include "util_Table.h"
 
-#include "CarpetIOHDF5.hh"
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
+#include "CarpetIOHDF5.hh"
 
 #include "defs.hh"
 
@@ -1319,7 +1319,7 @@ static int ReadVar(const cGH *const cctkGH, file_t &file, CCTK_REAL &io_bytes,
   DECLARE_CCTK_PARAMETERS;
 
   const int gindex = CCTK_GroupIndexFromVarI(patch->vindex);
-  assert(gindex >= 0 and (unsigned int)gindex < Carpet::arrdata.size());
+  assert(gindex >= 0 and (unsigned int) gindex < Carpet::arrdata.size());
   cGroup group;
   CCTK_GroupData(gindex, &group);
 

@@ -1238,8 +1238,8 @@ void SplitRegionsMaps(cGH const *const cctkGH,
     for (size_t r = 0; r < regss.AT(m).size(); ++r) {
       bool const good_regs = regss.AT(m).AT(r).check_region(false);
       if (not good_regs) {
-        cout << "regs[" << m << "][" << r << "]:\n" << regss.AT(m).AT(r)
-             << "\n";
+        cout << "regs[" << m << "][" << r << "]:\n"
+             << regss.AT(m).AT(r) << "\n";
         cout << "all superregions:\n" << superregss << "\n";
         cout << "all regions:\n" << regss << "\n";
         CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,

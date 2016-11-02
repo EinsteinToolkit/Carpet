@@ -1,11 +1,11 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <map>
-#include <string>
 #include <sstream>
-#include <fstream>
+#include <string>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
@@ -940,8 +940,7 @@ void CallRegridRecoverLevel(cGH *const cctkGH) {
 
       for (int rl = 0; rl < reflevels; ++rl) {
 
-        bool const did_recompose =
-          Recompose(cctkGH, rl, true);
+        bool const did_recompose = Recompose(cctkGH, rl, true);
         did_any_recompose = did_any_recompose or did_recompose;
 #ifdef REQUIREMENTS_HH
         Requirements::Recompose(cctkGH->cctk_iteration, rl,

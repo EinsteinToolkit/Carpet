@@ -8,9 +8,9 @@
 #include <string>
 #include <vector>
 
+#include "bbox.hh"
 #include "defs.hh"
 #include "dist.hh"
-#include "bbox.hh"
 #include "gdata.hh"
 #include "mem.hh"
 #include "vect.hh"

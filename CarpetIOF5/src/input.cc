@@ -12,11 +12,11 @@
 #include <string>
 #include <vector>
 
-#include <hdf5.h>
 #include <F5/F5F.h>
 #include <F5/F5R.h>
 #include <F5/F5iterate.h>
 #include <F5/F5uniform.h>
+#include <hdf5.h>
 
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
@@ -140,8 +140,8 @@ private:
     herr_t herr;
 
     cout << indent << "topology=" << topologyname << ""
-         << " (" << (index_depth == 0 ? "vertex" : "cell") << ")\n" << indent
-         << "topological dimension=" << topological_dimension << "\n";
+         << " (" << (index_depth == 0 ? "vertex" : "cell") << ")\n"
+         << indent << "topological dimension=" << topological_dimension << "\n";
 
     // Ignore topologies that are only an alias for another topology
     H5G_stat_t stat;
@@ -153,8 +153,8 @@ private:
           H5Gget_linkval(path->Grid_hid, topologyname, sizeof linkval, linkval);
       assert(not herr);
       indent_t indent2;
-      cout << indent2 << "alias for topology \"" << linkval << "\"\n" << indent2
-           << "ignoring this topology\n";
+      cout << indent2 << "alias for topology \"" << linkval << "\"\n"
+           << indent2 << "ignoring this topology\n";
       return;
     }
 

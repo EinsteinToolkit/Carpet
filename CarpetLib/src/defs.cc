@@ -9,8 +9,8 @@
 #include <memory>
 #include <set>
 #include <stack>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "bbox.hh"
 #include "defs.hh"

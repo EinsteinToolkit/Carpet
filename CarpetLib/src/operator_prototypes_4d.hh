@@ -5,9 +5,9 @@
 
 #include <cstdlib>
 
-#include "defs.hh"
 #include "bbox.hh"
 #include "bboxset.hh"
+#include "defs.hh"
 #include "vect.hh"
 
 #include "operator_prototypes.hh"

@@ -8,10 +8,10 @@
 #include "cctk_Parameters.h"
 #include "util_Table.h"
 
+#include "CactusBase/IOUtil/src/ioGH.h"
+#include "CarpetIONirvana.hh"
 #include "operators.hh"
 #include "typeprops.hh"
-#include "CarpetIONirvana.hh"
-#include "CactusBase/IOUtil/src/ioGH.h"
 
 namespace CarpetIONirvana {
 

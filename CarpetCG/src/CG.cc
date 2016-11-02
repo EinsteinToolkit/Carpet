@@ -13,8 +13,8 @@
 #include "util_ErrorCodes.h"
 #include "util_Table.h"
 
-#include "carpet.hh"
 #include "TATelliptic.h"
+#include "carpet.hh"
 
 namespace Carpet {
 // TODO: fix this
@@ -561,8 +561,8 @@ int CarpetCG_solve(cGH const *restrict const cctkGH,
   // Security check
   if (!CCTK_IsThornActive(CCTK_THORNSTRING)) {
     CCTK_WARN(0, "Thorn " CCTK_THORNSTRING " has not been activated.  It is "
-                                           "therefore not possible to call "
-                                           "CarpetCG_solve.");
+                 "therefore not possible to call "
+                 "CarpetCG_solve.");
   }
 
   // Check arguments

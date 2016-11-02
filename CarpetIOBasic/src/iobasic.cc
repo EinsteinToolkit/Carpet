@@ -1,9 +1,9 @@
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
-#include <cctype>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
