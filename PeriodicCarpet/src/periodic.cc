@@ -356,10 +356,13 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
         int const p = hh.processor(rl, c);
 
         // Get pointers to the variable's data
-        gdata *const src =
+        gdata *const src0 =
             hh.is_local(rl, oc) ? ff.data_pointer(tl, rl, olc, ml) : NULL;
-        gdata *const dst =
+        gdata *const dst0 =
             hh.is_local(rl, c) ? ff.data_pointer(tl, rl, lc, ml) : NULL;
+        // Avoid null pointers
+        gdata *const src = src0 ? src0 : dst0;
+        gdata *const dst = dst0 ? dst0 : src0;
 
         // Copy
         ibbox const &dstbox = xferinfo.sendrecv.recv.extent;
