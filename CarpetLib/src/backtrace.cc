@@ -544,8 +544,11 @@ void request_backtraces() {
 #include <cctk.h>
 #include <cctk_Arguments.h>
 
+namespace CarpetLib {
+
 extern "C" void CarpetLib_BacktraceTest(CCTK_ARGUMENTS) {
   CCTK_INFO("Generating backtrace...");
   kill(0, SIGABRT);
   CCTK_WARN(CCTK_WARN_ABORT, "Backtrace test failed");
+}
 }

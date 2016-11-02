@@ -23,6 +23,7 @@ static inline int omp_get_num_threads() { return 1; }
 
 #include "defs.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 namespace dist {
@@ -357,5 +358,6 @@ template <> inline MPI_Datatype mpi_datatype<CCTK_COMPLEX32>() {
 #endif
 
 } // namespace dist
+}
 
 #endif // DIST_HH

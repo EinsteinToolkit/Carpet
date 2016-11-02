@@ -9,6 +9,7 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 //
@@ -35,8 +36,6 @@ using namespace std;
 // corresponding to the fine grid point (the interpolation target)
 // minus the offset. Example: fine grid 8 -> coarse grid 8, fine grid
 // 12 -> also coarse grid 8.
-
-namespace CarpetLib {
 
 #define SRCIND3(i, j, k)                                                       \
   index3(i, j, k, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext)
@@ -97,7 +96,7 @@ template <typename RT, int ORDER, int di> struct coeffs1d {
       RT const y0 = ipow(x0, n);
       // Allow losing 3 digits:
       CCTK_REAL const eps = RT(1.0e+3) * numeric_limits<RT>::epsilon();
-      if (not(fabs(res - y0) < eps)) {
+      if (not(std::fabs(res - y0) < eps)) {
         RT rt;
         ostringstream buf;
         buf << "Error in prolongate_3d_cc_rf2::coeffs_3d_cc_rf2\n"

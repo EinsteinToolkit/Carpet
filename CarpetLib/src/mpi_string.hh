@@ -72,7 +72,7 @@ vector<vector<T> > allgatherv(MPI_Comm comm, vector<T> const &data) {
 
   // Exchange all data vectors
   T dummy;
-  MPI_Datatype const type = mpi_datatype(dummy);
+  MPI_Datatype const type = dist::mpi_datatype(dummy);
   int datatypesize;
   MPI_Type_size(type, &datatypesize);
 // cerr << "QQQ: allgatherv[3] total_length_out=" << total_length_out << "
@@ -144,7 +144,7 @@ vector<T> allgatherv1(MPI_Comm comm, vector<T> const &data) {
 
   // Exchange all data vectors
   T dummy;
-  MPI_Datatype const type = mpi_datatype(dummy);
+  MPI_Datatype const type = dist::mpi_datatype(dummy);
   int datatypesize;
   MPI_Type_size(type, &datatypesize);
 // cerr << "QQQ: allgatherv[3] total_length_out=" << total_length_out << "
@@ -319,7 +319,7 @@ vector<T> alltoallv1(MPI_Comm const comm, vector<vector<T> > const &data) {
 
   // Exchange all data vectors
   T dummy;
-  MPI_Datatype const type = mpi_datatype(dummy);
+  MPI_Datatype const type = dist::mpi_datatype(dummy);
   int const tag = 4711;
   vector<MPI_Request> reqs(2 * num_procs);
   int nreqs = 0;

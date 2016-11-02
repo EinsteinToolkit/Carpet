@@ -5,9 +5,8 @@
 
 #include <vector>
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 // This routine splits N items over P workers.  It can split the
 // items if necessary to ensure a maximum imbalance, and it can

@@ -1,6 +1,8 @@
 #ifndef OPERATORS_HH
 #define OPERATORS_HH
 
+namespace CarpetLib {
+
 // Transport (i.e., prolongation and restriction) operator types
 
 enum operator_type {
@@ -21,5 +23,6 @@ enum operator_type {
   op_STAGGER110, // use STAGGER110 stencils (for staggered A-field evolutions)
   op_STAGGER111  // use STAGGER111 stencils (for staggered A-field evolutions)
 };
+}
 
 #endif // OPERATORS_HH

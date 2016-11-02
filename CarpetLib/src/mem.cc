@@ -16,6 +16,7 @@
 #include "defs.hh"
 #include "mem.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 double const gmem::KILO = 1000.0;
@@ -283,7 +284,6 @@ size_t mempool::memory() const {
 }
 
 #define TYPECASE(N, T) template class mem<T>;
-
 #include "typecase.hh"
-
 #undef TYPECASE
+}

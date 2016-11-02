@@ -1215,7 +1215,7 @@ static herr_t BrowseDatasets(hid_t group, const char *objectname, void *args) {
   HDF5_ERROR(dataset = H5Dopen(group, objectname));
   HDF5_ERROR(dataspace = H5Dget_space(dataset));
   patch.rank = H5Sget_simple_extent_ndims(dataspace);
-  assert(patch.rank > 0 and patch.rank <= ::dim);
+  assert(patch.rank > 0 and patch.rank <= CarpetLib::dim);
   patch.shape.resize(patch.rank);
   if (file->indexfile >= 0) { // index files store shape of master file in attr
     HDF5_ERROR(attr = H5Aopen_name(dataset, "h5shape"));

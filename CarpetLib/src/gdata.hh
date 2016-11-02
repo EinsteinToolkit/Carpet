@@ -18,6 +18,7 @@
 #include "timestat.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // Slabbing description
@@ -33,9 +34,9 @@ typedef slab<int, dim> islab;
 template <typename T, int D>
 ostream &operator<<(ostream &os, slab<T, D> const &slabinfo);
 
+namespace dist {
 template <typename T, int D>
 MPI_Datatype mpi_datatype(slab<T, D> const &) CCTK_ATTRIBUTE_CONST;
-namespace dist {
 template <> inline MPI_Datatype mpi_datatype<islab>() CCTK_ATTRIBUTE_CONST;
 template <> inline MPI_Datatype mpi_datatype<islab>() {
   islab dummy;
@@ -202,5 +203,6 @@ public:
 inline size_t memoryof(gdata const &d) { return d.memory(); }
 
 inline ostream &operator<<(ostream &os, const gdata &d) { return d.output(os); }
+}
 
 #endif // GDATA_HH

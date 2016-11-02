@@ -16,8 +16,8 @@
 
 #include "ggf.hh"
 
+namespace CarpetLib {
 using namespace std;
-using namespace CarpetLib;
 
 set<ggf *> ggf::allggf;
 
@@ -358,8 +358,8 @@ void ggf::mg_restrict_all(comm_state &state, int const tl, int const rl,
   static Timer timer("mg_restrict_all");
   timer.start();
   // Require same times
-  assert(fabs(t.get_time(ml, rl, 0) - t.get_time(ml - 1, rl, 0)) <=
-         1.0e-8 * (1.0 + fabs(t.get_time(ml, rl, 0))));
+  assert(std::fabs(t.get_time(ml, rl, 0) - t.get_time(ml - 1, rl, 0)) <=
+         1.0e-8 * (1.0 + std::fabs(t.get_time(ml, rl, 0))));
   vector<int> const tl2s(1, tl);
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_mg_rest_sendrecv,
                     tl2s, rl, ml - 1, time);
@@ -372,8 +372,8 @@ void ggf::mg_prolongate_all(comm_state &state, int const tl, int const rl,
   static Timer timer("mg_prolongate_all");
   timer.start();
   // Require same times
-  assert(fabs(t.get_time(ml, rl, 0) - t.get_time(ml + 1, rl, 0)) <=
-         1.0e-8 * (1.0 + fabs(t.get_time(ml, rl, 0))));
+  assert(std::fabs(t.get_time(ml, rl, 0) - t.get_time(ml + 1, rl, 0)) <=
+         1.0e-8 * (1.0 + std::fabs(t.get_time(ml, rl, 0))));
   vector<int> const tl2s(1, tl);
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_mg_prol_sendrecv,
                     tl2s, rl, ml + 1, time);
@@ -388,8 +388,8 @@ void ggf::ref_restrict_all(comm_state &state, int const tl, int const rl,
   static Timer timer("ref_restrict_all");
   timer.start();
   // Require same times
-  assert(fabs(t.get_time(ml, rl, tl) - t.get_time(ml, rl + 1, tl)) <=
-         1.0e-8 * (1.0 + fabs(t.get_time(ml, rl, tl))));
+  assert(std::fabs(t.get_time(ml, rl, tl) - t.get_time(ml, rl + 1, tl)) <=
+         1.0e-8 * (1.0 + std::fabs(t.get_time(ml, rl, tl))));
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_ref_rest_sendrecv,
                     tl, rl + 1, ml);
   timer.stop(0);
@@ -421,8 +421,8 @@ void ggf::ref_reflux_all(comm_state &state, int const tl, int const rl,
   static Timer timer("ref_reflux_all");
   timer.start();
   // Require same times
-  assert(fabs(t.get_time(ml, rl, tl) - t.get_time(ml, rl + 1, tl)) <=
-         1.0e-8 * (1.0 + fabs(t.get_time(ml, rl, tl))));
+  assert(std::fabs(t.get_time(ml, rl, tl) - t.get_time(ml, rl + 1, tl)) <=
+         1.0e-8 * (1.0 + std::fabs(t.get_time(ml, rl, tl))));
   islab slabinfo;
   slabinfo.is_centered = 1 - ivect::dir(dir);
   transfer_from_all(state, tl, rl, ml,
@@ -438,8 +438,8 @@ void ggf::ref_reflux_prolongate_all(comm_state &state, int const tl,
   static Timer timer("ref_reflux_prolongate_all");
   timer.start();
   // Require same times
-  assert(fabs(t.get_time(ml, rl, tl) - t.get_time(ml, rl - 1, tl)) <=
-         1.0e-8 * (1.0 + fabs(t.get_time(ml, rl, tl))));
+  assert(std::fabs(t.get_time(ml, rl, tl) - t.get_time(ml, rl - 1, tl)) <=
+         1.0e-8 * (1.0 + std::fabs(t.get_time(ml, rl, tl))));
   islab slabinfo;
   slabinfo.is_centered = 1 - ivect::dir(dir);
   transfer_from_all(state, tl, rl, ml,
@@ -560,4 +560,5 @@ size_t ggf::allmemory() {
     mem += memoryof(**ggfi);
   }
   return mem;
+}
 }

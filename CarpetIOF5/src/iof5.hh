@@ -61,8 +61,8 @@ static T failwarn0(bool &error_flag, T const expr, int const line,
 
 namespace CarpetIOF5 {
 class indent_t;
-};
-ostream &operator<<(ostream &os, CarpetIOF5::indent_t const &indent);
+}
+std::ostream &operator<<(std::ostream &os, CarpetIOF5::indent_t const &indent);
 
 namespace CarpetIOF5 {
 

@@ -29,8 +29,8 @@
 
 #include "gdata.hh"
 
+namespace CarpetLib {
 using namespace std;
-using namespace CarpetLib;
 
 template <typename T, int D>
 ostream &operator<<(ostream &os, slab<T, D> const &slabinfo) {
@@ -41,6 +41,7 @@ ostream &operator<<(ostream &os, slab<T, D> const &slabinfo) {
 template ostream &operator<<(ostream &os, slab<int, dim> const &slabinfo);
 template ostream &operator<<(ostream &os, slab<CCTK_REAL, dim> const &slabinfo);
 
+namespace dist {
 template <typename T, int D> MPI_Datatype mpi_datatype(slab<T, D> const &) {
   static bool initialised = false;
   static MPI_Datatype newtype;
@@ -69,6 +70,7 @@ template <typename T, int D> MPI_Datatype mpi_datatype(slab<T, D> const &) {
 }
 
 template MPI_Datatype mpi_datatype(slab<int, dim> const &);
+}
 
 set<gdata *> gdata::allgdata;
 
@@ -360,7 +362,7 @@ void gdata::find_source_timelevel(vector<CCTK_REAL> const &times,
   CCTK_REAL const min_time = *min_element(times.begin(), times.end());
   CCTK_REAL const max_time = *max_element(times.begin(), times.end());
   // TODO: Use a real delta-time from somewhere instead of 1.0
-  CCTK_REAL const some_time = fabs(min_time) + fabs(max_time) + 1.0;
+  CCTK_REAL const some_time = std::fabs(min_time) + std::fabs(max_time) + 1.0;
   if (op != op_copy) {
     if (time < min_time - eps * some_time or
         time > max_time + eps * some_time) {
@@ -392,7 +394,7 @@ void gdata::find_source_timelevel(vector<CCTK_REAL> const &times,
   }
   if (timelevel == -1) {
     for (size_t tl = 0; tl < times.size(); ++tl) {
-      if (fabs(times.AT(tl) - time) < eps * some_time) {
+      if (std::fabs(times.AT(tl) - time) < eps * some_time) {
         timelevel = tl;
         break;
       }
@@ -418,4 +420,5 @@ size_t gdata::allmemory() {
     mem += memoryof(**gdatai);
   }
   return mem;
+}
 }

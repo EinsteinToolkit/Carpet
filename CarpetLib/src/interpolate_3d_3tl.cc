@@ -11,9 +11,8 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND3(i, j, k)                                                       \
   index3(srcioff + (i), srcjoff + (j), srckoff + (k), srcipadext, srcjpadext,  \
@@ -96,10 +95,12 @@ void interpolate_3d_3tl(T const *restrict const src1, CCTK_REAL const t1,
 
   RT const eps = 1.0e-10;
 
-  if (fabs(t1 - t2) < eps or fabs(t1 - t3) < eps or fabs(t2 - t3) < eps) {
+  if (std::fabs(t1 - t2) < eps or std::fabs(t1 - t3) < eps or
+      std::fabs(t2 - t3) < eps) {
     CCTK_ERROR("Internal error: arrays have same time");
   }
-  if (t < fmin(fmin(t1, t2), t3) - eps or t > fmax(fmax(t1, t2), t3) + eps) {
+  if (t < std::fmin(std::fmin(t1, t2), t3) - eps or
+      t > std::fmax(std::fmax(t1, t2), t3) + eps) {
     CCTK_ERROR("Internal error: extrapolation in time");
   }
 

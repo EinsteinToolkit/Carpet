@@ -12,6 +12,7 @@
 #include "defs.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // Choose the implementation of bboxset by #defining exactly one of
@@ -1058,5 +1059,6 @@ template <typename T, int D> ostream &bboxset<T, D>::output(ostream &os) const {
 #undef SKIP_NORMALIZE
 
 } // namespace bboxset1
+} // namespace CarpetLib
 
 #endif // BBOXSET1_HH

@@ -9,6 +9,7 @@
 
 #include <vect.hh>
 
+namespace CarpetLib {
 using namespace std;
 
 // This is a binary tree data structure, i.e. a tree data structure
@@ -160,6 +161,7 @@ template <typename T, int D, typename P>
 ostream &operator<<(ostream &os, bintree<T, D, P> const &f) {
   f.output(os);
   return os;
+}
 }
 
 #endif // #ifndef BINTREE_HH

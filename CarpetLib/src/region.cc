@@ -8,6 +8,7 @@
 #include "mpi_string.hh"
 #include "region.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 region_t::region_t() : processor(-1), processors(NULL) { assert(invariant()); }
@@ -85,7 +86,7 @@ region_t region_t::split(CCTK_REAL const ratio_new_over_old) {
   int const idir = maxloc1(extent.shape());
   int const np = extent.shape()[idir];
   // Keep the lower part, and split off the upper part
-  int const new_np = floor(np * ratio_new_over_old + 0.5);
+  int const new_np = std::lrint(std::floor(np * ratio_new_over_old + 0.5));
   int const keep_np = np - new_np;
   // Calculate new region extents
   ivect const lo = extent.lower();
@@ -351,6 +352,7 @@ ostream &operator<<(ostream &os, region_t const &reg) {
   return os;
 }
 
+namespace dist {
 // Create an MPI datatype for a pseudoretion
 MPI_Datatype mpi_datatype(pseudoregion_t const &) {
   static bool initialised = false;
@@ -401,6 +403,7 @@ MPI_Datatype mpi_datatype(sendrecv_pseudoregion_t const &) {
   }
   return newtype;
 }
+}
 
 // Compare two pseudoregions for equality.
 bool operator==(pseudoregion_t const &a, pseudoregion_t const &b) {
@@ -446,8 +449,6 @@ ostream &operator<<(ostream &os, pseudoregion_t const &p) {
 ostream &operator<<(ostream &os, sendrecv_pseudoregion_t const &srp) {
   return os << "(send:" << srp.send << ",recv:" << srp.recv << ")";
 }
-
-namespace CarpetLib {
 
 template vector<sendrecv_pseudoregion_t>
 alltoallv1(MPI_Comm comm, vector<vector<sendrecv_pseudoregion_t> > const &data);

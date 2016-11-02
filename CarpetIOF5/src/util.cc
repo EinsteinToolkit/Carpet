@@ -29,7 +29,7 @@
 
 #include "iof5.hh"
 
-ostream &operator<<(ostream &os, CarpetIOF5::indent_t const &indent) {
+std::ostream &operator<<(std::ostream &os, CarpetIOF5::indent_t const &indent) {
   return indent.output(os);
 }
 

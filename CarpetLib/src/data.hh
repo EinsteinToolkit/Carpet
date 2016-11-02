@@ -15,6 +15,7 @@
 #include "mem.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 template <typename T> class data;
@@ -126,5 +127,6 @@ public:
   // Output
   virtual ostream &output(ostream &os) const;
 };
+}
 
 #endif // DATA_HH

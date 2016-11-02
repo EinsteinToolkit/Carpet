@@ -9,6 +9,7 @@
 
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // Input
@@ -173,3 +174,4 @@ DEFINE_FAKE_VECT_OPERATIONS(T1, dim)
 DEFINE_FAKE_VECT_OPERATIONS(T2, dim)
 
 #undef DEFINE_FAKE_VECT_OPERATIONS
+}

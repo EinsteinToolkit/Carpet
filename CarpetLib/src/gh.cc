@@ -15,6 +15,7 @@
 
 #include "gh.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 set<gh *> gh::allgh;
@@ -569,4 +570,5 @@ ostream &gh::output(ostream &os) const {
   }
   os << "}}";
   return os;
+}
 }

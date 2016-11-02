@@ -26,9 +26,8 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND3(i, j, k)                                                       \
   index3(i, j, k, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext)
@@ -37,24 +36,26 @@ namespace CarpetLib {
 
 template <typename T>
 inline T min4(T const &x1, T const &x2, T const &x3, T const &x4) {
-  return min(min(x1, x2), min(x3, x4));
+  return std::min(std::min(x1, x2), std::min(x3, x4));
 }
 
 template <typename T>
 inline T max4(T const &x1, T const &x2, T const &x3, T const &x4) {
-  return max(max(x1, x2), max(x3, x4));
+  return std::max(std::max(x1, x2), std::max(x3, x4));
 }
 
 template <typename T>
 inline T min8(T const &x1, T const &x2, T const &x3, T const &x4, T const &x5,
               T const &x6, T const &x7, T const &x8) {
-  return min(min(min(x1, x2), min(x3, x4)), min(min(x5, x6), min(x7, x8)));
+  return std::min(std::min(std::min(x1, x2), std::min(x3, x4)),
+                  std::min(std::min(x5, x6), std::min(x7, x8)));
 }
 
 template <typename T>
 inline T max8(T const &x1, T const &x2, T const &x3, T const &x4, T const &x5,
               T const &x6, T const &x7, T const &x8) {
-  return max(max(max(x1, x2), max(x3, x4)), max(max(x5, x6), max(x7, x8)));
+  return std::max(std::max(std::max(x1, x2), std::max(x3, x4)),
+                  std::max(std::max(x5, x6), std::max(x7, x8)));
 }
 
 template <typename T>
@@ -201,9 +202,9 @@ l8001:
       f5 * src[SRCIND3(is + 2, js, ks)] + f6 * src[SRCIND3(is + 3, js, ks)];
   // Monotonicity enforcement
   if ((dst[DSTIND3(id, jd, kd)] >
-       max(src[SRCIND3(is, js, ks)], src[SRCIND3(is + 1, js, ks)])) ||
+       std::max(src[SRCIND3(is, js, ks)], src[SRCIND3(is + 1, js, ks)])) ||
       (dst[DSTIND3(id, jd, kd)] <
-       min(src[SRCIND3(is, js, ks)], src[SRCIND3(is + 1, js, ks)]))) {
+       std::min(src[SRCIND3(is, js, ks)], src[SRCIND3(is + 1, js, ks)]))) {
     dst[DSTIND3(id, jd, kd)] = +o1_f1 * src[SRCIND3(is, js, ks)] +
                                o1_f2 * src[SRCIND3(is + 1, js, ks)];
   }
@@ -240,9 +241,9 @@ l8010:
       f5 * src[SRCIND3(is, js + 2, ks)] + f6 * src[SRCIND3(is, js + 3, ks)];
   // Monotonicity enforcement
   if ((dst[DSTIND3(id, jd, kd)] >
-       max(src[SRCIND3(is, js, ks)], src[SRCIND3(is, js + 1, ks)])) ||
+       std::max(src[SRCIND3(is, js, ks)], src[SRCIND3(is, js + 1, ks)])) ||
       (dst[DSTIND3(id, jd, kd)] <
-       min(src[SRCIND3(is, js, ks)], src[SRCIND3(is, js + 1, ks)]))) {
+       std::min(src[SRCIND3(is, js, ks)], src[SRCIND3(is, js + 1, ks)]))) {
     dst[DSTIND3(id, jd, kd)] = +o1_f1 * src[SRCIND3(is, js, ks)] +
                                o1_f2 * src[SRCIND3(is, js + 1, ks)];
   }
@@ -352,9 +353,9 @@ l8100:
       f5 * src[SRCIND3(is, js, ks + 2)] + f6 * src[SRCIND3(is, js, ks + 3)];
   // Monotonicity enforcement
   if ((dst[DSTIND3(id, jd, kd)] >
-       max(src[SRCIND3(is, js, ks)], src[SRCIND3(is, js, ks + 1)])) ||
+       std::max(src[SRCIND3(is, js, ks)], src[SRCIND3(is, js, ks + 1)])) ||
       (dst[DSTIND3(id, jd, kd)] <
-       min(src[SRCIND3(is, js, ks)], src[SRCIND3(is, js, ks + 1)]))) {
+       std::min(src[SRCIND3(is, js, ks)], src[SRCIND3(is, js, ks + 1)]))) {
     dst[DSTIND3(id, jd, kd)] = +o1_f1 * src[SRCIND3(is, js, ks)] +
                                o1_f2 * src[SRCIND3(is, js, ks + 1)];
   }

@@ -75,7 +75,7 @@ struct f_bbox {
 
   f_bbox() {}
   f_bbox(ibbox const &box) {
-    assert(::dim == 3);
+    assert(CarpetLib::dim == 3);
     for (int d = 0; d < 3; ++d) {
       dim[d].lower = box.lower()[d];
       dim[d].upper = box.upper()[d];
@@ -84,7 +84,7 @@ struct f_bbox {
   }
   /*explicit*/ operator ibbox() const {
     ivect lower, upper, stride;
-    assert(::dim == 3);
+    assert(CarpetLib::dim == 3);
     for (int d = 0; d < 3; ++d) {
       lower[d] = dim[d].lower;
       upper[d] = dim[d].upper;
@@ -99,7 +99,7 @@ struct f_boundary {
 
   f_boundary() {}
   f_boundary(b2vect const &ob) {
-    assert(::dim == 3);
+    assert(CarpetLib::dim == 3);
     for (int d = 0; d < 3; ++d) {
       for (int f = 0; f < 2; ++f) {
         obound[f][d] = ob[f][d];
@@ -108,7 +108,7 @@ struct f_boundary {
   }
   /*explicit*/ operator b2vect() const {
     b2vect ob;
-    assert(::dim == 3);
+    assert(CarpetLib::dim == 3);
     for (int d = 0; d < 3; ++d) {
       for (int f = 0; f < 2; ++f) {
         ob[f][d] = obound[f][d];

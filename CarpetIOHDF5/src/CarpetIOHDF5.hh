@@ -71,7 +71,7 @@ typedef struct {
   int stop_on_parse_errors;
 
   // I/O request description list (for all variables)
-  vector<ioRequest *> requests;
+  std::vector<ioRequest *> requests;
 
   // directory in which to output
   char *out_dir;
@@ -94,6 +94,8 @@ typedef struct {
 } CarpetIOHDF5GH;
 
 namespace CarpetIOHDF5 {
+using namespace std;
+
 // callback routine registered for recovery/filereader
 int Recover(cGH *cctkGH, const char *basefilename, int called_from);
 

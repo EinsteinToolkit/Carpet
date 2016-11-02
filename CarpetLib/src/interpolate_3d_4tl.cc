@@ -11,9 +11,8 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND3(i, j, k)                                                       \
   index3(srcioff + (i), srcjoff + (j), srckoff + (k), srcipadext, srcjpadext,  \
@@ -97,13 +96,14 @@ void interpolate_3d_4tl(T const *restrict const src1, CCTK_REAL const t1,
 
   RT const eps = 1.0e-10;
 
-  if (fabs(t1 - t2) < eps or fabs(t1 - t3) < eps or fabs(t1 - t4) < eps or
-      fabs(t2 - t3) < eps or fabs(t2 - t4) < eps or fabs(t3 - t4) < eps) {
-    CCTK_WARN(0, "Internal error: arrays have same time");
+  if (std::fabs(t1 - t2) < eps or std::fabs(t1 - t3) < eps or
+      std::fabs(t1 - t4) < eps or std::fabs(t2 - t3) < eps or
+      std::fabs(t2 - t4) < eps or std::fabs(t3 - t4) < eps) {
+    CCTK_ERROR("Internal error: arrays have same time");
   }
-  if (t < min(min(min(t1, t2), t3), t4) - eps or
-      t > max(max(max(t1, t2), t3), t4) + eps) {
-    CCTK_WARN(0, "Internal error: extrapolation in time");
+  if (t < std::min(std::min(std::min(t1, t2), t3), t4) - eps or
+      t > std::max(std::max(std::max(t1, t2), t3), t4) + eps) {
+    CCTK_ERROR("Internal error: extrapolation in time");
   }
 
   RT const s1fac =

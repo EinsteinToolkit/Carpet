@@ -11,9 +11,8 @@
 
 #include "balance.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 // Interface for one item
 struct item_ifc {
@@ -205,7 +204,7 @@ template <typename item_t> CCTK_REAL workers_t<item_t>::imbalance() const {
   CCTK_REAL avg_load = 0.0;
   for (typename coll_t::const_iterator w = workers.begin(); w != workers.end();
        ++w) {
-    max_load = max(max_load, w->business());
+    max_load = std::max(max_load, w->business());
     avg_load += w->business();
   }
   avg_load /= size();
@@ -264,7 +263,7 @@ template <typename item_t> void workers_t<item_t>::ensure_same_size() {
     if (nonempty_worker == workers.end() and not w->empty()) {
       nonempty_worker = w;
     }
-    max_items = max(max_items, w->size());
+    max_items = std::max(max_items, w->size());
   }
   if (max_items == 0)
     return; // load is already equal

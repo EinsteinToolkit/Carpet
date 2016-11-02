@@ -18,6 +18,7 @@
 #include "region.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 template <typename T>
@@ -307,6 +308,7 @@ template <class T> ostream &output(ostream &os, const vector<T> &v) {
   os << "]";
   return os;
 }
+}
 
 #include "bbox.hh"
 #include "bboxset.hh"
@@ -317,6 +319,9 @@ template <class T> ostream &output(ostream &os, const vector<T> &v) {
 #include "region.hh"
 #include "th.hh"
 #include "vect.hh"
+
+namespace CarpetLib {
+using namespace std;
 
 template int ipow(int x, int y);
 template CCTK_REAL ipow(CCTK_REAL x, int y);
@@ -502,3 +507,4 @@ template ostream &output(ostream &os,
                          const vector<vector<vector<dh::local_dboxes> > > &b);
 template ostream &output(ostream &os,
                          const vector<vector<vector<region_t> > > &v);
+}

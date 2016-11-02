@@ -64,8 +64,8 @@ class output_iterator_t {
 
       if (gindex == -1) {
         // grid function
-        dim = ::dim;
-        for (int d = 0; d < (::dim); ++d) {
+        dim = CarpetLib::dim;
+        for (int d = 0; d < CarpetLib::dim; ++d) {
           gsh[d] = cctk_gsh[d];
           origin[d] = CCTK_ORIGIN_SPACE(d);
           delta[d] = CCTK_DELTA_SPACE(d);
@@ -82,13 +82,13 @@ class output_iterator_t {
           origin[d] = 0.0;
           delta[d] = 1.0;
         }
-        for (int d = dyndata.dim; d < (::dim); ++d) {
+        for (int d = dyndata.dim; d < CarpetLib::dim; ++d) {
           gsh[d] = 1;
           origin[d] = 0.0;
           delta[d] = 1.0;
         }
       }
-      for (int d = 0; d < (::dim); ++d) {
+      for (int d = 0; d < CarpetLib::dim; ++d) {
         lower[d] = origin[d];
         upper[d] = lower[d] + (gsh[d] - 1) * delta[d];
       }
@@ -109,7 +109,7 @@ class output_iterator_t {
 
       if (gindex == -1) {
         // grid function
-        for (int d = 0; d < (::dim); ++d) {
+        for (int d = 0; d < CarpetLib::dim; ++d) {
           ash[d] = cctk_ash[d];
           lbnd[d] = cctk_lbnd[d];
           lsh[d] = cctk_lsh[d];
@@ -128,7 +128,7 @@ class output_iterator_t {
           lghosts[d] = dyndata.bbox[2 * d] ? 0 : dyndata.nghostzones[d];
           ughosts[d] = dyndata.bbox[2 * d + 1] ? 0 : dyndata.nghostzones[d];
         }
-        for (int d = dyndata.dim; d < (::dim); ++d) {
+        for (int d = dyndata.dim; d < CarpetLib::dim; ++d) {
           ash[d] = 1;
           lbnd[d] = 0;
           lsh[d] = 1;
@@ -136,7 +136,7 @@ class output_iterator_t {
           ughosts[d] = 0;
         }
       }
-      for (int d = 0; d < (::dim); ++d) {
+      for (int d = 0; d < CarpetLib::dim; ++d) {
         imin[d] = 0;
         imax[d] = lsh[d];
         if (slice_ipos[d] != -1) {
