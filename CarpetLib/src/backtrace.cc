@@ -478,6 +478,7 @@ void generate_backtrace(ostream &stacktrace) {
     }
     free(names);
 #endif
+    stacktrace.flags(ios::dec);
   }
 }
 
