@@ -28,8 +28,8 @@
 #include "operator_prototypes_3d.hh"
 #include "operator_prototypes_4d.hh"
 
+namespace CarpetLib {
 using namespace std;
-using namespace CarpetLib;
 
 template <typename T>
 static void
@@ -73,8 +73,9 @@ call_operator(void (*the_operator)(
       int const my_num_points =
           (num_points / stride + num_threads - 1) / num_threads * stride;
       int const my_first_point =
-          min(last_point, first_point + thread_num * my_num_points);
-      int const my_last_point = min(last_point, my_first_point + my_num_points);
+          std::min(last_point, first_point + thread_num * my_num_points);
+      int const my_last_point =
+          std::min(last_point, my_first_point + my_num_points);
       assert(my_last_point >= my_first_point);
       ibbox3 const mydstregbbox(
           dstregbbox.lower().replace(dir, my_first_point),
@@ -141,8 +142,9 @@ call_operator(void (*the_operator)(
       int const my_num_points =
           (num_points / stride + num_threads - 1) / num_threads * stride;
       int const my_first_point =
-          min(last_point, first_point + thread_num * my_num_points);
-      int const my_last_point = min(last_point, my_first_point + my_num_points);
+          std::min(last_point, first_point + thread_num * my_num_points);
+      int const my_last_point =
+          std::min(last_point, my_first_point + my_num_points);
       assert(my_last_point >= my_first_point);
       ibbox4 const mydstregbbox(
           dstregbbox.lower().replace(dir, my_first_point),
@@ -1343,3 +1345,4 @@ template <typename T> ostream &data<T>::output(ostream &os) const {
 #define TYPECASE(N, T) template class data<T>;
 #include "typecase.hh"
 #undef TYPECASE
+}

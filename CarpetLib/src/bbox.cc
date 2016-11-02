@@ -14,6 +14,7 @@
 
 #include "bbox.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // Consistency checks
@@ -340,6 +341,7 @@ template <typename T, int D> void bbox<T, D>::output(ostream &os) const {
      << idiv(lower(), stride()) << ":" << idiv(upper(), stride()) << "/"
      << shape() / stride() << "/" << size() << ")";
 }
+}
 
 // Comparison
 
@@ -389,12 +391,15 @@ bool less<bbox<T, D> >::operator()(const bbox<T, D> &x,
 }
 
 // Note: We need all dimensions all the time.
+namespace CarpetLib {
+using namespace std;
 template class bbox<int, 0>;
 template class bbox<int, 1>;
 template class bbox<int, 2>;
 template class bbox<int, 3>;
 template class bbox<int, 4>;
 template class bbox<CCTK_REAL, dim>;
+}
 
 namespace std {
 template struct less<bbox<int, 0> >;

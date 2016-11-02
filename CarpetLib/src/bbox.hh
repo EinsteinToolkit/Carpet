@@ -10,6 +10,7 @@
 #include "defs.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 #ifdef CARPET_DEBUG
@@ -206,7 +207,7 @@ public:
     bbox const posbox(pos, pos, stride());
     assert(is_aligned_with(posbox));
     assert(contains(pos));
-    size_type const i = ::index(shape(), (pos - lower()) / stride());
+    size_type const i = CarpetLib::index(shape(), (pos - lower()) / stride());
     assert(i >= 0 and i < size());
     return i;
   }
@@ -243,6 +244,7 @@ template <typename T, int D>
 inline ostream &operator<<(ostream &os, const bbox<T, D> &b) {
   b.output(os);
   return os;
+}
 }
 
 // Comparison

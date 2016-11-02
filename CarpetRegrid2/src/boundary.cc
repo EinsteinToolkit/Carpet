@@ -284,7 +284,8 @@ level_boundary::level_boundary(gh const &hh, dh const &dd, int const rl)
 
 } // namespace CarpetRegrid2
 
-ostream &operator<<(ostream &os, CarpetRegrid2::domain_boundary const &bnd) {
+std::ostream &operator<<(std::ostream &os,
+                         CarpetRegrid2::domain_boundary const &bnd) {
   return os << "domain_boundary:{"
             << "nboundaryzones=" << bnd.nboundaryzones << ","
             << "is_internal=" << bnd.is_internal << ","
@@ -303,7 +304,8 @@ ostream &operator<<(ostream &os, CarpetRegrid2::domain_boundary const &bnd) {
             << "physical_iupper=" << bnd.physical_iupper << "}";
 }
 
-ostream &operator<<(ostream &os, CarpetRegrid2::level_boundary const &bnd) {
+std::ostream &operator<<(std::ostream &os,
+                         CarpetRegrid2::level_boundary const &bnd) {
   return os << "level_boundary:{"
             << *static_cast<CarpetRegrid2::domain_boundary const *>(&bnd) << ","
             << "level_physical_lower=" << bnd.level_physical_lower << ","

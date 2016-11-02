@@ -11,7 +11,6 @@
 #include "limits.hh"
 
 namespace CarpetLib {
-
 using namespace std;
 
 static void set_limit(int resource, char const *name, CCTK_INT value);
@@ -67,4 +66,4 @@ static void output(ostream &s, rlim_t const &value) {
   }
 }
 
-} // namespace Carpet
+} // namespace CarpetLib

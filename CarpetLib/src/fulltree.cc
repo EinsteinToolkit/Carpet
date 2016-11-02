@@ -7,6 +7,8 @@
 
 #include "fulltree.hh"
 
+namespace CarpetLib {
+
 // Create an empty tree
 template <typename T, int D, typename P>
 fulltree<T, D, P>::fulltree()
@@ -144,7 +146,7 @@ P const *fulltree<T, D, P>::search(tvect const &ipos) const {
   // cout << "fulltree::search ipos=" << ipos << endl;
   if (is_leaf())
     return &p;
-  int const i = ::asearch(ipos[dir], bounds);
+  int const i = CarpetLib::asearch(ipos[dir], bounds);
   // cout << "fulltree::search i=" << i << " size=" << subtrees.size() << endl;
   if (i < 0 or i >= int(subtrees.size()))
     return NULL; // not found
@@ -157,7 +159,7 @@ P *fulltree<T, D, P>::search(tvect const &ipos) {
   // cout << "fulltree::search ipos=" << ipos << endl;
   if (is_leaf())
     return &p;
-  int const i = ::asearch(ipos[dir], bounds);
+  int const i = CarpetLib::asearch(ipos[dir], bounds);
   // cout << "fulltree::search i=" << i << " size=" << subtrees.size() << endl;
   if (i < 0 or i >= int(subtrees.size()))
     return NULL; // not found
@@ -456,7 +458,7 @@ template <typename T> static int asearch(T const t, vector<T> const &ts) {
     assert(tmax > tmin); // require that ts is strictly ordered
     CCTK_REAL const rguess =
         (imax - imin) * CCTK_REAL(t - tmin) / (tmax - tmin);
-    int const iguess = imin + max(1, int(floor(rguess)));
+    int const iguess = imin + std::max(1, int(std::lrint(std::floor(rguess))));
     // handle round-off errors
     if (iguess == imax) {
       // cout << "fulltree::asearch: accidental hit after roundoff error" <<
@@ -491,3 +493,4 @@ template size_t memoryof(fulltree<int, dim, pseudoregion_t> const &f);
 
 template ostream &operator<<(ostream &os,
                              fulltree<int, dim, pseudoregion_t> const &f);
+}

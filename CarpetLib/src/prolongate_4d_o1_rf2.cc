@@ -9,9 +9,8 @@
 #include "operator_prototypes_4d.hh"
 #include "typeprops.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND4(i, j, k, l)                                                    \
   index4(i, j, k, l, srcipadext, srcjpadext, srckpadext, srclpadext, srciext,  \

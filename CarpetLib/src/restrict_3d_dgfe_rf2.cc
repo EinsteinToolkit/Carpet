@@ -11,12 +11,12 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
+namespace CarpetLib {
+
 using namespace std;
 #ifdef HRSCC_GLL_ELEMENT_HH
 using namespace hrscc;
 #endif
-
-namespace CarpetLib {
 
 #define SRCIND3(i, j, k)                                                       \
   index3(i, j, k, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext)

@@ -6,6 +6,7 @@
 #include "cctk.h"
 
 namespace CarpetSlab {
+using namespace std;
 
 // Mapping object
 // (just store the mapping)

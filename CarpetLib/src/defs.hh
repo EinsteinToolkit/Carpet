@@ -17,6 +17,9 @@
 
 #include "typeprops.hh"
 
+namespace CarpetLib {
+using namespace std;
+
 // Disable bboxset2 if C++11 is not supported
 #if !defined(HAVE_CCTK_CXX_AUTO_SPECIFIER) ||                                  \
     !defined(HAVE_CCTK_CXX_LAMBDA) || !defined(HAVE_CCTK_CXX_RANGE_BASED_FOR)
@@ -31,8 +34,6 @@
 #define CARPET_ENABLE_BBOXSET2
 #define CARPET_USE_BBOXSET2
 #endif
-
-using namespace std;
 
 // TODO: autoconf these
 
@@ -241,6 +242,10 @@ inline const char *typestring(const CCTK_COMPLEX32 &) {
   return "CCTK_COMPLEX32";
 }
 #endif
+}
+
+namespace std {
+namespace Cactus {
 
 // Provide implementations for some functions for complex numbers
 
@@ -262,9 +267,6 @@ inline const char *typestring(const CCTK_COMPLEX32 &) {
     return isnormal(x.real()) and isnormal(x.imag());                          \
   }
 
-namespace std {
-namespace Cactus {
-
 #ifdef HAVE_CCTK_COMPLEX8
 IMPLEMENT_FUNCTIONS(CCTK_COMPLEX8)
 #endif
@@ -278,6 +280,7 @@ IMPLEMENT_FUNCTIONS(CCTK_COMPLEX32)
 }
 
 #undef IMPLEMENT_FUNCTIONS
+namespace CarpetLib {
 
 // Container memory usage
 inline size_t memoryof(char const &e) { return sizeof e; }
@@ -371,6 +374,7 @@ template <class T> inline ostream &operator<<(ostream &os, const stack<T> &s) {
 
 template <class T> inline ostream &operator<<(ostream &os, const vector<T> &v) {
   return output(os, v);
+}
 }
 
 #endif // DEFS_HH

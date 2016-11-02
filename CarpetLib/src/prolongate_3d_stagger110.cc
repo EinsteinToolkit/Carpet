@@ -11,9 +11,8 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND3(i, j, k)                                                       \
   index3(i, j, k, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext)

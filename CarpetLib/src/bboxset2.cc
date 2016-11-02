@@ -4,6 +4,7 @@
 
 #include "bboxset2.hh"
 
+namespace CarpetLib {
 namespace bboxset2 {
 
 template class bboxset<int, 0>;
@@ -33,5 +34,5 @@ template bboxset<int, 3>::bboxset(const vector<region_t> &,
                                   const bbox region_t::*);
 
 } // namespace bboxset2
-
+}
 #endif // #ifdef CARPET_ENABLE_BBOXSET2

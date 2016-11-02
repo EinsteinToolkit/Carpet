@@ -18,8 +18,8 @@
 
 #include "dh.hh"
 
+namespace CarpetLib {
 using namespace std;
-using namespace CarpetLib;
 
 set<dh *> dh::alldh;
 
@@ -2172,6 +2172,7 @@ bool dh::full_dboxes::operator==(full_dboxes const &b) const {
 
 // MPI datatypes
 
+namespace dist {
 MPI_Datatype mpi_datatype(dh::light_dboxes const &) {
   static bool initialised = false;
   static MPI_Datatype newtype;
@@ -2251,6 +2252,7 @@ MPI_Datatype mpi_datatype(dh::fast_dboxes const &) {
     initialised = true;
   }
   return newtype;
+}
 }
 
 // Memory usage
@@ -2628,4 +2630,5 @@ ostream &dh::fast_dboxes::output(ostream &os) const {
      << "   fast_old2new_ref_prol_sendrecv: " << fast_old2new_ref_prol_sendrecv
      << eol << "}" << eol;
   return os;
+}
 }

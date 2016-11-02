@@ -9,7 +9,6 @@
 #include <cctk_Parameters.h>
 
 #include <carpet.hh>
-#include <mpi_string.hh>
 #include <dist.hh>
 
 extern "C" {
@@ -18,6 +17,7 @@ extern "C" {
 
 using namespace std;
 using namespace Carpet;
+using namespace CarpetLib;
 
 // Divide rounding downwards (towards negative infinity)
 static int divdn(int const a, int const b) {
@@ -39,6 +39,7 @@ struct xferinfo_t {
 };
 
 MPI_Datatype mpi_datatype(xferinfo_t const &);
+namespace CarpetLib {
 namespace dist {
 template <> inline MPI_Datatype mpi_datatype<xferinfo_t>() {
   xferinfo_t dummy;
@@ -46,6 +47,10 @@ template <> inline MPI_Datatype mpi_datatype<xferinfo_t>() {
 }
 }
 
+#include <mpi_string.hh>
+
+namespace CarpetLib {
+namespace dist {
 MPI_Datatype mpi_datatype(xferinfo_t const &) {
   static bool initialised = false;
   static MPI_Datatype newtype;
@@ -70,6 +75,8 @@ MPI_Datatype mpi_datatype(xferinfo_t const &) {
     initialised = true;
   }
   return newtype;
+}
+}
 }
 
 struct levelinfo_t {

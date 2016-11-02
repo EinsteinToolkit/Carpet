@@ -13,6 +13,7 @@
 #include "region.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // Forward declaration
@@ -174,5 +175,6 @@ private:
 inline size_t memoryof(gh const &g) { return g.memory(); }
 
 inline ostream &operator<<(ostream &os, gh const &h) { return h.output(os); }
+}
 
 #endif // GH_HH

@@ -1372,7 +1372,6 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
       }
       const ibbox outputslab(lo, up, str);
       // Intersect active region with this hyperslab
-      const int lc = vhh.at(m)->get_local_component(rl, c);
       const ibset &active0 = vdd.at(m)->level_boxes.at(ml).at(rl).active;
       const ibset active1 = active0 & outputslab;
       // Reduce dimensionality of active region
@@ -1383,7 +1382,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
         const vect<int, outdim> lo = box0.lower()[dirs];
         const vect<int, outdim> up = box0.upper()[dirs];
         const vect<int, outdim> str = box0.stride()[dirs];
-        const ::bbox<int, outdim> box(lo, up, str);
+        const CarpetLib::bbox<int, outdim> box(lo, up, str);
         active2 += box;
       }
       ostringstream buf;

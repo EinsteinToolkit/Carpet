@@ -10,6 +10,7 @@
 
 #include "defs.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // A chunk of memory, possibly shared between some clients
@@ -109,5 +110,6 @@ public:
 };
 
 inline size_t memoryof(mempool const &m) { return m.memory(); }
+}
 
 #endif // ifndef MEM_HH

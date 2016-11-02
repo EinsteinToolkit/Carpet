@@ -10,6 +10,7 @@
 
 #include "th.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 set<th *> th::allth;
@@ -192,4 +193,5 @@ ostream &th::output(ostream &os) const {
      << "times=" << times << ","
      << "deltas=" << deltas << "}";
   return os;
+}
 }

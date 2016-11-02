@@ -22,6 +22,7 @@
 
 #include "dist.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 namespace dist {
@@ -476,3 +477,4 @@ char const *c_datatype_name(unsigned const type) {
 }
 
 } // namespace dist
+}

@@ -20,6 +20,7 @@
 #include "defs.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 /* A note on CARPET_AVOID_LAMBDA:
@@ -102,10 +103,10 @@ namespace bboxset2 {
 
 template <typename T, int D> class bboxset {
   template <typename, int> friend class bboxset;
-  typedef ::vect<T, D> vect;
-  typedef ::bbox<T, D> bbox;
-  typedef ::vect<T, D - 1> vect1;
-  typedef ::bbox<T, D - 1> bbox1;
+  typedef CarpetLib::vect<T, D> vect;
+  typedef CarpetLib::bbox<T, D> bbox;
+  typedef CarpetLib::vect<T, D - 1> vect1;
+  typedef CarpetLib::bbox<T, D - 1> bbox1;
   typedef bboxset<T, D - 1> bboxset1;
 
 #if 0
@@ -178,7 +179,7 @@ template <typename T, int D> class bboxset {
           iter0 != end0 ? iter0->first : numeric_limits<T>::max();
       const T next_pos1 =
           iter1 != end1 ? iter1->first : numeric_limits<T>::max();
-      const T pos = min(next_pos0, next_pos1);
+      const T pos = std::min(next_pos0, next_pos1);
       const bool active0 = next_pos0 == pos;
       const bool active1 = next_pos1 == pos;
       const bboxset1 *const subset0p = active0 ? iter0->second.get() : 0;
@@ -476,7 +477,7 @@ public:
   bboxset expand(const vect &lo, const vect &hi) const;
 
   /** Expand the set (convolute with a bbox) */
-  bboxset expand(const ::vect<vect, 2> &lohi) const {
+  bboxset expand(const CarpetLib::vect<vect, 2> &lohi) const {
     return expand(lohi[0], lohi[1]);
   }
 
@@ -544,8 +545,8 @@ public:
 
 template <typename T> class bboxset<T, 0> {
   template <typename, int> friend class bboxset;
-  typedef ::vect<T, 0> vect;
-  typedef ::bbox<T, 0> bbox;
+  typedef CarpetLib::vect<T, 0> vect;
+  typedef CarpetLib::bbox<T, 0> bbox;
 
   bool state;
   vect stride, offset;
@@ -671,7 +672,7 @@ public:
     assert(not is_poison());
     return *this;
   }
-  bboxset expand(const ::vect<vect, 2> &lohi) const {
+  bboxset expand(const CarpetLib::vect<vect, 2> &lohi) const {
     return expand(lohi[0], lohi[1]);
   }
 
@@ -1137,7 +1138,7 @@ bboxset<T, D> bboxset<T, D>::expand(const vect &lo, const vect &hi) const {
     T to_expand = (hi + lo)[d];
     T current_size = 1;
     while (to_expand > 0) {
-      const T this_expand = min(to_expand, current_size);
+      const T this_expand = std::min(to_expand, current_size);
       res |= res.shift(vect::dir(d) * this_expand);
       current_size += this_expand;
       to_expand -= this_expand;
@@ -1466,5 +1467,7 @@ template <typename T> ostream &bboxset<T, 0>::output(ostream &os) const {
 } // namespace bboxset2
 
 #endif // #ifdef CARPET_ENABLE_BBOXSET2
+
+} // namespace CarpetLib
 
 #endif // #ifndef BBOXSET2_HH

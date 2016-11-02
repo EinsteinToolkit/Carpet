@@ -4,6 +4,7 @@
 #include <carpet.hh>
 
 namespace CarpetRegrid2 {
+using namespace std;
 
 void evaluate_level_mask(cGH const *restrict cctkGH, vector<ibset> &regions,
                          int rl);

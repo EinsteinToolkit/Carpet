@@ -17,8 +17,8 @@
 #include "dist.hh"
 #include "timestat.hh"
 
+namespace CarpetLib {
 using namespace std;
-using namespace CarpetLib;
 
 // State information for communications
 
@@ -119,5 +119,6 @@ public:
 
   void commit_recv_space(unsigned type, int proc, int npoints);
 };
+}
 
 #endif // COMMSTATE_HH

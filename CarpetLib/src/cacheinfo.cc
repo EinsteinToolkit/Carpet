@@ -8,6 +8,8 @@
 
 #include <vectors.h>
 
+namespace CarpetLib {
+
 template <int D> vect<int, D> pad_shape(bbox<int, D> const &extent) {
   assert(all(extent.shape() >= 0));
   return pad_shape(extent.shape() / extent.stride());
@@ -154,3 +156,4 @@ template vect<int, 3> pad_shape(vect<int, 3> const &shape);
 
 template vect<int, 4> pad_shape(bbox<int, 4> const &extent);
 template vect<int, 4> pad_shape(vect<int, 4> const &shape);
+}

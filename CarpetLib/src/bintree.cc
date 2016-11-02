@@ -7,6 +7,9 @@
 
 #include "bintree.hh"
 
+namespace CarpetLib {
+using namespace std;
+
 // Create an empty tree
 template <typename T, int D, typename P>
 bintree<T, D, P>::bintree()
@@ -140,7 +143,7 @@ P const *bintree<T, D, P>::search(tvect const &ipos) const {
   assert(not empty());
   if (is_leaf())
     return &p;
-  int const i = ::asearch(ipos[dir], bounds);
+  int const i = CarpetLib::asearch(ipos[dir], bounds);
   if (i < 0 or i >= 2)
     return NULL; // not found
   return subtrees[i]->search(ipos);
@@ -151,7 +154,7 @@ P *bintree<T, D, P>::search(tvect const &ipos) {
   assert(not empty());
   if (is_leaf())
     return &p;
-  int const i = ::asearch(ipos[dir], bounds);
+  int const i = CarpetLib::asearch(ipos[dir], bounds);
   if (i < 0 or i >= 2)
     return NULL; // not found
   return subtrees[i]->search(ipos);
@@ -412,7 +415,7 @@ static int asearch(T const t, vect<T, D> const &ts) {
     assert(tmax > tmin); // require that ts is strictly ordered
     CCTK_REAL const rguess =
         (imax - imin) * CCTK_REAL(t - tmin) / (tmax - tmin);
-    int const iguess = imin + max(1, int(floor(rguess)));
+    int const iguess = imin + std::max(1, int(std::lrint(std::floor(rguess))));
     // handle round-off errors
     if (iguess == imax) {
       return imax - 1;
@@ -439,3 +442,4 @@ template size_t memoryof(bintree<int, dim, pseudoregion_t> const &f);
 
 template ostream &operator<<(ostream &os,
                              bintree<int, dim, pseudoregion_t> const &f);
+}

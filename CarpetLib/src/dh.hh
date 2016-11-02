@@ -16,6 +16,7 @@
 #include "region.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 #define CARPET_HAVE_BUFFER_WIDTHS
@@ -277,9 +278,9 @@ public:
   ostream &output(ostream &os) const;
 };
 
+namespace dist {
 MPI_Datatype mpi_datatype(dh::light_dboxes const &) CCTK_ATTRIBUTE_CONST;
 MPI_Datatype mpi_datatype(dh::fast_dboxes const &) CCTK_ATTRIBUTE_CONST;
-namespace dist {
 template <> inline MPI_Datatype mpi_datatype<dh::light_dboxes>() {
   dh::light_dboxes dummy;
   return mpi_datatype(dummy);
@@ -343,5 +344,6 @@ inline ostream &operator<<(ostream &os, dh::fast_dboxes const &b) {
 }
 
 inline ostream &operator<<(ostream &os, dh const &d) { return d.output(os); }
+}
 
 #endif // DH_HH

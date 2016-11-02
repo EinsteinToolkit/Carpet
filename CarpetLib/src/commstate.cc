@@ -14,8 +14,8 @@
 #include "commstate.hh"
 #include "timestat.hh"
 
+namespace CarpetLib {
 using namespace std;
-using namespace CarpetLib;
 
 char const *tostring(astate const &thestate) {
   switch (thestate) {
@@ -626,4 +626,5 @@ void comm_state::commit_recv_space(unsigned const type, int const proc,
   procbuf.recvbuf += npoints * typebuf.datatypesize;
   assert(procbuf.recvbuf <= &procbuf.recvbufbase.front() +
                                 procbuf.recvbufsize * typebuf.datatypesize);
+}
 }

@@ -11,6 +11,9 @@
 #include "fulltree.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
+using namespace std;
+
 // Region description
 struct region_t {
   ibbox extent;            // extent
@@ -116,5 +119,6 @@ inline size_t memoryof(sendrecv_pseudoregion_t const &srp) {
 
 istream &operator>>(istream &os, sendrecv_pseudoregion_t &srp);
 ostream &operator<<(ostream &os, sendrecv_pseudoregion_t const &srp);
+}
 
 #endif // #ifndef REGION_HH

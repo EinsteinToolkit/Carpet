@@ -15,6 +15,7 @@
 #include "th.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // A real grid function
@@ -71,5 +72,6 @@ private:
   gf(const gf &);            // canonical copy construtor
   gf &operator=(const gf &); // canonical copy
 };
+}
 
 #endif // GF_HH
