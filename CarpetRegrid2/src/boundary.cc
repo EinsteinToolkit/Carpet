@@ -257,6 +257,12 @@ level_boundary::level_boundary(gh const &hh, dh const &dd, int const rl)
       rpos2ipos(level_exterior_lower, origin, scale, hh, rl);
   level_exterior_iupper =
       rpos2ipos1(level_exterior_upper, origin, scale, hh, rl);
+  if (not(all(level_exterior_ilower >= baseextent.lower()) and
+          all(level_exterior_iupper <= baseextent.upper()))) {
+    cerr << "Refinement level " << rl << ": exterior boundary is at "
+         << i2vect(level_exterior_ilower, level_exterior_iupper) << "\n"
+         << "Basegrid: extent is " << baseextent << "\n";
+  }
   assert(all(level_exterior_ilower >= baseextent.lower()));
   assert(all(level_exterior_iupper <= baseextent.upper()));
   if (veryverbose) {
