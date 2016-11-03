@@ -1,0 +1,13 @@
+Example parameter files, listed in order of increasing complexity:
+
+csio-uniform.par
+csio-refined.par
+csio-refined-cell.par
+csio-multipatch.par
+csio-checkpoint.par
+csio-multipatch-minkowski.par
+
+csio-uniform-input.par
+csio-refined-input.par
+csio-refined-cell-input.par
+csio-multipatch-input.par

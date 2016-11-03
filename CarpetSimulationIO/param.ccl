@@ -1,0 +1,154 @@
+# Parameter definitions for thorn CarpetSimulationIO
+
+SHARES: IO
+
+USES STRING filereader_ID_dir AS IO_filereader_ID_dir
+
+# USES KEYWORD recover
+USES STRING recover_dir AS IO_recover_dir
+# USES STRING recover_file
+
+USES STRING out_dir AS IO_out_dir
+USES CCTK_INT out_every AS IO_out_every
+USES CCTK_INT out_timesteps_per_file
+
+USES BOOLEAN checkpoint_ID
+USES CCTK_INT checkpoint_every
+USES BOOLEAN checkpoint_on_terminate
+
+USES STRING checkpoint_dir AS IO_checkpoint_dir
+USES STRING checkpoint_ID_file
+USES STRING checkpoint_file
+USES STRING checkpoint_keep
+
+# USES CCTK_REAL out_xline_y
+# USES CCTK_REAL out_xline_z
+# USES CCTK_REAL out_yline_x
+# USES CCTK_REAL out_yline_z
+# USES CCTK_REAL out_zline_x
+# USES CCTK_REAL out_zline_y
+# 
+# USES CCTK_REAL out_xyplane_z
+# USES CCTK_REAL out_xzplane_y
+# USES CCTK_REAL out_yzplane_x
+
+
+
+PRIVATE:
+
+BOOLEAN verbose "Verbosity" STEERABLE=always
+{
+} "no"
+
+
+
+STRING filereader_ID_dir "Input directory (overrides IO::filereader_ID_dir)" STEERABLE=always
+{
+  "^$" :: "Empty: use IO::filereader_ID_dir"
+  ".+" :: "Not empty: directory name"
+} ""
+
+STRING out_dir "Output directory (overrides IO::out_dir)" STEERABLE=always
+{
+  "^$" :: "Empty: use IO::out_dir"
+  ".+" :: "Not empty: directory name"
+} ""
+
+STRING out_vars "Variables to output in F5 format" STEERABLE=always
+{
+  "" :: "List of group or variable names"
+} ""
+
+CCTK_INT out_every "How often to do CarpetSimulationIO output, overrides out_every" STEERABLE=always
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use IO::out_every"
+} -2
+
+CCTK_INT out0D_every "How often to do 0D output" STEERABLE = ALWAYS
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use out_every"
+} -2
+
+CCTK_INT out1D_every "How often to do 1D output" STEERABLE = ALWAYS
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use out_every"
+} -2
+
+CCTK_INT out2D_every "How often to do 2D output" STEERABLE = ALWAYS
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use out_every"
+} -2
+
+CCTK_INT out3D_every "How often to do 3D output" STEERABLE = ALWAYS
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use out_every"
+} -2
+
+
+
+STRING out_filename "File name (without extension) for file_content='everything'" STEERABLE=always
+{
+  ""   :: "use the parameter file name"
+  ".+" :: "use this file name"
+} ""
+
+CCTK_INT iteration_digits "Minimum number of digits for iteration number" STEERABLE=always
+{
+  0:* :: ""
+} 10
+
+CCTK_INT processor_digits "Minimum number of digits for processor number" STEERABLE=always
+{
+  0:* :: ""
+} 6
+
+STRING out_extension "File name extension" STEERABLE=always
+{
+  "" :: "File extension (including a leading dot, if desired)"
+} ".s5"
+
+
+
+CCTK_INT max_nioprocs "Maximum number of I/O processes" STEERABLE=always
+{
+  0 :: "unlimited"
+  1:* :: "that many processes"
+} 0
+
+
+
+BOOLEAN output_all_timelevels "Output all timelevels (instead of only the current)" STEERABLE=always
+{
+} "no"
+
+
+
+STRING recover_dir "Recover directory (overrides IO::recover_dir)" STEERABLE=always
+{
+  "^$" :: "Empty: use IO::recover_dir"
+  ".+" :: "Not empty: directory name"
+} ""
+
+BOOLEAN checkpoint "Checkpoint" STEERABLE=always
+{
+} "no"
+
+BOOLEAN checkpoint_next "Checkpoint at next iteration" STEERABLE=always
+{
+} "no"
+
+STRING checkpoint_dir "Checkpoint directory (overrides IO::checkpoint_dir)" STEERABLE=always
+{
+  "^$" :: "Empty: use IO::checkpoint_dir"
+  ".+" :: "Not empty: directory name"
+} ""

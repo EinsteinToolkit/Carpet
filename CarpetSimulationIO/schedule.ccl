@@ -1,0 +1,48 @@
+# Schedule definitions for thorn CarpetSimulationIO
+
+STORAGE: this_iteration next_output_iteration
+
+
+
+# Initialisation
+
+SCHEDULE CarpetSimulationIO_Startup AT startup AFTER Driver_Startup
+{
+  LANG: C
+} "Register I/O method"
+
+# if (!CCTK_EQUALS(recover, "no")) {
+#   SCHEDULE CarpetSimulationIO_RecoverParameters AT recover_parameters
+#   {
+#     LANG: C
+#     OPTIONS: level
+#   } "Recover parameters"
+# }
+
+SCHEDULE CarpetSimulationIO_Init AT basegrid
+{
+  LANG: C
+  OPTIONS: global
+} "Initialise I/O data structures"
+
+
+
+# Checkpointing
+
+schedule CarpetSimulationIO_InitialDataCheckpoint at CPINITIAL
+{
+  LANG: C
+  OPTIONS: global
+} "Initial data checkpoint routine"
+
+schedule CarpetSimulationIO_EvolutionCheckpoint at CHECKPOINT
+{
+  LANG: C
+  OPTIONS: global
+} "Evolution checkpoint routine"
+
+schedule CarpetSimulationIO_TerminationCheckpoint at TERMINATE
+{
+  LANG: C
+  OPTIONS: global
+} "Termination checkpoint routine"

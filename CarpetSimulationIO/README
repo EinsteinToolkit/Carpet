@@ -1,0 +1,9 @@
+Cactus Code Thorn CarpetSimulationIO
+Author(s)    : Erik Schnetter <schnetter@gmail.com>
+Maintainer(s): Erik Schnetter <schnetter@gmail.com>
+Licence      : GPL
+--------------------------------------------------------------------------
+
+1. Purpose
+
+Efficient and portal binary I/O based on the SimulationIO library
