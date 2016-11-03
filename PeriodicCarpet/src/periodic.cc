@@ -36,12 +36,13 @@ struct xferinfo_t {
   islab slab;                       // slabbing offset
 };
 
-MPI_Datatype mpi_datatype(xferinfo_t const &);
 namespace CarpetLib {
 namespace dist {
-template <> inline MPI_Datatype mpi_datatype<xferinfo_t>() {
+MPI_Datatype mpi_datatype(xferinfo_t const &);
+template <> MPI_Datatype mpi_datatype<xferinfo_t>() {
   xferinfo_t dummy;
   return mpi_datatype(dummy);
+}
 }
 }
 
