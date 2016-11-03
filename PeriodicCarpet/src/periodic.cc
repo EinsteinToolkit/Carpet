@@ -154,6 +154,9 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
     dh::light_cboxes const &light_level =
         dd.light_boxes.AT(mglevel).AT(reflevel);
 
+    if (hh.local_components(reflevel) != 1)
+      CCTK_ERROR("Cannot handle more than one local component");
+
     // Interior of the domain with respect to periodic boundaries,
     // i.e. periodic boundaries cut off, but all other boundaries
     // still included
@@ -292,6 +295,9 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
             xferinfo.slab = slab;
             xferinfos.push_back(xferinfo);
           }
+          ibbox const dst_bbox(lo, up, str);
+          assert(dst_bbox.shape()[d] / dst_bbox.stride()[d] == bnd);
+          dst_bset |= dst_bbox;
         }
       } // for oc
       // Ensure we know how to handle all points
