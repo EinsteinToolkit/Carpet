@@ -13,6 +13,7 @@
 #endif
 
 #include "defs.hh"
+#include "region.hh"
 
 namespace CarpetLib {
 
