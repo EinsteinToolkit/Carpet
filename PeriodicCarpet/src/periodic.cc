@@ -325,26 +325,29 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
   // Transfer: Loop over all communication phases, all variables, and
   // all regions
   for (comm_state state; not state.done(); state.step()) {
-    for (int n = 0; n < nvars; ++n) {
-      int const vi = vars[n];
-      int const gi = CCTK_GroupIndexFromVarI(vi);
-      int const v0 = CCTK_FirstVarIndexI(gi);
 
-      vector<xferinfo_t>::const_iterator const ib = xferinfos.begin();
-      vector<xferinfo_t>::const_iterator const ie = xferinfos.end();
-      for (vector<xferinfo_t>::const_iterator ixferinfo = ib; ixferinfo != ie;
-           ++ixferinfo) {
-        xferinfo_t const &xferinfo = *ixferinfo;
-        gh const &hh = *vhh.at(xferinfo.m);
+    vector<xferinfo_t>::const_iterator const ib = xferinfos.begin();
+    vector<xferinfo_t>::const_iterator const ie = xferinfos.end();
+    for (vector<xferinfo_t>::const_iterator ixferinfo = ib; ixferinfo != ie;
+         ++ixferinfo) {
+      xferinfo_t const &xferinfo = *ixferinfo;
+
+      gh const &hh = *vhh.at(xferinfo.m);
+
+      // Determine components, local components, processes
+      int const oc = xferinfo.sendrecv.send.component;
+      int const c = xferinfo.sendrecv.recv.component;
+      int const olc = hh.get_local_component(rl, oc);
+      int const lc = hh.get_local_component(rl, c);
+      int const op = hh.processor(rl, oc);
+      int const p = hh.processor(rl, c);
+
+      for (int n = 0; n < nvars; ++n) {
+        int const vi = vars[n];
+        int const gi = CCTK_GroupIndexFromVarI(vi);
+        int const v0 = CCTK_FirstVarIndexI(gi);
+
         ggf &ff = *arrdata.at(gi).at(xferinfo.m).data.at(vi - v0);
-
-        // Determine components, local components, processes
-        int const oc = xferinfo.sendrecv.send.component;
-        int const c = xferinfo.sendrecv.recv.component;
-        int const olc = hh.get_local_component(rl, oc);
-        int const lc = hh.get_local_component(rl, c);
-        int const op = hh.processor(rl, oc);
-        int const p = hh.processor(rl, c);
 
         // Get pointers to the variable's data
         gdata *const src0 =
