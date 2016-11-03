@@ -21,7 +21,7 @@ enum operator_type {
   op_STAGGER011, // use STAGGER011 stencils (for staggered A-field evolutions)
   op_STAGGER101, // use STAGGER101 stencils (for staggered A-field evolutions)
   op_STAGGER110, // use STAGGER110 stencils (for staggered A-field evolutions)
-  op_STAGGER111  // use STAGGER111 stencils (for staggered A-field evolutions)
+  op_STAGGER111, // use STAGGER111 stencils (for staggered A-field evolutions)
 };
 }
 
