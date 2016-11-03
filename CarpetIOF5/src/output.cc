@@ -13,12 +13,13 @@
 #include <string>
 #include <vector>
 
+#include <hdf5.h>
+
 #include <F5/F5F.h>
 #include <F5/F5R.h>
 #include <F5/F5X.h>
 #include <F5/F5iterate.h>
 #include <F5/F5uniform.h>
-#include <hdf5.h>
 
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
