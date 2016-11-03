@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "cctk.h"
+#include <cctk.h>
 
 namespace CarpetSlab {
 using namespace std;
