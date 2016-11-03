@@ -103,7 +103,6 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
 
   // Get and check group info
   cGroup group;
-  cGroupDynamicData data;
   for (int i = 0; i < nvars; ++i) {
     int const vi = vars[i];
     assert(vi >= 0 and vi < CCTK_NumVars());
@@ -117,15 +116,11 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
     int const vartypesize = CCTK_VarTypeSize(group.vartype);
     assert(vartypesize > 0);
 
-    if (group.dim != size) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "The group \"%s\" has dimension %d, but the given stencil has "
-                 "size %d.",
-                 CCTK_GroupNameFromVarI(vi), group.dim, size);
-    }
-
-    ierr = CCTK_GroupDynamicData(cctkGH, gi, &data);
-    assert(not ierr);
+    if (group.dim != size)
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The group \"%s\" has dimension %d, but the given stencil "
+                  "has size %d.",
+                  CCTK_GroupNameFromVarI(vi), group.dim, size);
   }
 
   // Ensure we are in level mode (and not global mode)
@@ -137,9 +132,8 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
   int const rl = reflevel;
   int const tl = 0;
 
-  if (reflevels >= (int)levelinfos.size()) {
+  if (reflevels >= (int)levelinfos.size())
     levelinfos.resize(reflevels);
-  }
   levelinfo_t &levelinfo = levelinfos.at(reflevel);
   vector<xferinfo_t> &xferinfos = levelinfo.xferinfos;
 
@@ -224,11 +218,10 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
           ivect up = ext.upper();
           ivect const str = ext.stride();
           int const bnd = boundary_width[f][d];
-          if (f == 0) {
+          if (f == 0)
             up[d] = lo[d] + (bnd - 1) * str[d];
-          } else {
+          else
             lo[d] = up[d] - (bnd - 1) * str[d];
-          }
           ibbox const dst_bbox(lo, up, str);
           assert(dst_bbox.shape()[d] / dst_bbox.stride()[d] == bnd);
           dst_bset |= dst_bbox;
@@ -318,9 +311,8 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
         gh const &hh = *vhh.at(xferinfo.m);
         int const oc = xferinfo.sendrecv.send.component;
         int const op = hh.processor(rl, oc);
-        if (op != p) {
+        if (op != p)
           sends.at(op).push_back(xferinfo);
-        }
       }
 
       vector<xferinfo_t> const recv = alltoallv1(dist::comm(), sends);
