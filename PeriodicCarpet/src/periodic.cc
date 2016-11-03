@@ -295,9 +295,6 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
             xferinfo.slab = slab;
             xferinfos.push_back(xferinfo);
           }
-          ibbox const dst_bbox(lo, up, str);
-          assert(dst_bbox.shape()[d] / dst_bbox.stride()[d] == bnd);
-          dst_bset |= dst_bbox;
         }
       } // for oc
       // Ensure we know how to handle all points
