@@ -16,7 +16,6 @@
 #include "region.hh"
 
 namespace CarpetLib {
-
 using namespace std;
 
 // String communication

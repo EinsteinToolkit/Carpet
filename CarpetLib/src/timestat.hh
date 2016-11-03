@@ -17,7 +17,6 @@ inline void measure_tick(void) {}
 #endif
 
 namespace CarpetLib {
-
 using namespace std;
 
 class Timer;

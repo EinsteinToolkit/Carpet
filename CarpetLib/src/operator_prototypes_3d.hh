@@ -12,7 +12,6 @@
 #include "operator_prototypes.hh"
 
 namespace CarpetLib {
-
 using namespace std;
 
 static inline size_t index3(size_t const i, size_t const j, size_t const k,
