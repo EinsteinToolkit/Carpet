@@ -4,6 +4,10 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 CCTK_INT
 PeriodicCarpet_Interpolate(
     CCTK_POINTER_TO_CONST restrict const cctkGH, CCTK_INT const N_dims,
@@ -14,5 +18,9 @@ PeriodicCarpet_Interpolate(
     CCTK_INT const input_array_indices[], CCTK_INT const N_output_arrays,
     CCTK_INT const output_array_types[], CCTK_POINTER const output_arrays[],
     CCTK_INT const faces);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ! defined PERIODICCARPET_H */

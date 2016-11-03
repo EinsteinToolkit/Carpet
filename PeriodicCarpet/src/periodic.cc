@@ -11,9 +11,7 @@
 #include <carpet.hh>
 #include <dist.hh>
 
-extern "C" {
 #include "interpolate.h"
-}
 
 using namespace std;
 using namespace Carpet;
