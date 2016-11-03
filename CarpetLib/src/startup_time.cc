@@ -27,7 +27,6 @@
 #include "startup_time.hh"
 
 namespace CarpetLib {
-
 using namespace std;
 
 // Return the current wall time

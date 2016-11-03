@@ -17,7 +17,6 @@
 #include "region.hh"
 
 namespace CarpetLib {
-
 using namespace std;
 
 vector<string> gather_string(MPI_Comm const comm, int const root,
