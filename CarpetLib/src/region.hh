@@ -73,8 +73,8 @@ struct pseudoregion_t {
       : extent(extent_), component(component_) {}
 };
 
-MPI_Datatype mpi_datatype(pseudoregion_t const &) CCTK_ATTRIBUTE_PURE;
 namespace dist {
+MPI_Datatype mpi_datatype(pseudoregion_t const &) CCTK_ATTRIBUTE_PURE;
 template <> inline MPI_Datatype mpi_datatype<pseudoregion_t>() {
   pseudoregion_t dummy;
   return mpi_datatype(dummy);
@@ -105,8 +105,8 @@ struct sendrecv_pseudoregion_t {
         recv(pseudoregion_t(recv_extent, recv_component)) {}
 };
 
-MPI_Datatype mpi_datatype(sendrecv_pseudoregion_t const &) CCTK_ATTRIBUTE_PURE;
 namespace dist {
+MPI_Datatype mpi_datatype(sendrecv_pseudoregion_t const &) CCTK_ATTRIBUTE_PURE;
 template <> inline MPI_Datatype mpi_datatype<sendrecv_pseudoregion_t>() {
   sendrecv_pseudoregion_t dummy;
   return mpi_datatype(dummy);
