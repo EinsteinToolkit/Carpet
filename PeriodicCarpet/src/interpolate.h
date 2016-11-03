@@ -1,8 +1,8 @@
 #ifndef PERIODICCARPET_H
 #define PERIODICCARPET_H
 
-#include "cctk.h"
-#include "cctk_Arguments.h"
+#include <cctk.h>
+#include <cctk_Arguments.h>
 
 CCTK_INT
 PeriodicCarpet_Interpolate(

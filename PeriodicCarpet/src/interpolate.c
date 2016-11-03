@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
-#include "util_ErrorCodes.h"
-#include "util_Table.h"
+#include <util_ErrorCodes.h>
+#include <util_Table.h>
 
 #include "interpolate.h"
 
