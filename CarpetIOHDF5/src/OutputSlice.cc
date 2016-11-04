@@ -322,7 +322,21 @@ int IOHDF5<outdim>::TriggerOutput(const cGH *const cctkGH, const int vindex) {
   char *const fullname = CCTK_FullName(vindex);
 
   int retval;
-  if (one_file_per_group) {
+  if (one_file_per_proc) {
+    char path[500];
+    CCTK_ParameterFilename(500, path);
+    char *value = strrchr(path, '/');
+    if (value == NULL) {
+      value = path;
+    } else {
+      value++;
+    }
+    char *dot = strrchr(value, '.');
+    if (dot != NULL and strcmp(dot, ".par") == 0) {
+      *dot = '\0';
+    }
+    retval = OutputVarAs(cctkGH, fullname, value);
+  } else if (one_file_per_group) {
     char *const alias_c = CCTK_GroupNameFromVarI(vindex);
     string alias(alias_c);
     free(alias_c);
