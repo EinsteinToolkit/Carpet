@@ -10,9 +10,36 @@
 
 namespace Carpet {
 
-#define WH_EVERYWHERE          0x7
-#define WH_INTERIOR            0x4
-#define WH_BOUNDARY            0x2
+// The upper right hand corner of a 2-D simulation.
+// +---+---+---+
+// | B | B | W |
+// +---+---+---+
+// | B | I | G |
+// +---+---+---+
+// | W | G | G |
+// +---+---+---+
+// B = Boundary Interior
+// I = Interior
+// G = Ghost
+// W = Boundary Exterior
+//
+// Sync can only be performed if
+// all any/all I and B cells are
+// valid.
+//
+// A boundary condition routine
+// will either read INTERIOR or
+// INTERIOR_PLUS_GHOSTS. If the
+// former, it will be applied
+// prior to the sync. If the latter
+// it will be applied after the
+// sync.
+
+#define WH_EVERYWHERE          0xF
+#define WH_INTERIOR            0x8
+#define WH_BOUNDARY            0x6 /* Describes B+W cells */
+#define WH_BOUNDARY_IN         0x4 /* Describes B cells */
+#define WH_BOUNDARY_EX         0x2 /* Describes W cells */
 #define WH_GHOSTS              0x1
 #define WH_INVALIDATE_EXTERIOR 0x8
 
@@ -99,6 +126,8 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec) {
         rwc.where = WH_INTERIOR;
       } else if(current == "boundary") {
         rwc.where = WH_BOUNDARY;
+      } else if(current == "interior+ghosts" || current == "interiorwithghosts") {
+        rwc.where = WH_INTERIOR|WH_GHOSTS;
       } else if(current == "boundary+ghosts" || current == "boundarywithghosts") {
         rwc.where = WH_BOUNDARY|WH_GHOSTS;
       } else {
@@ -327,4 +356,51 @@ void cycle_rdwr(const cGH *cctkGH) {
   }
 }
 
+void Sync1(const cGH *cctkGH,int gi) {
+  std::vector<int> sync_groups;
+  sync_groups.push_back(gi);
+  cFunctionData *attribute = 0;
+  SyncProlongateGroups(cctkGH, sync_groups, attribute);
+}
+
+extern "C" void ManualSyncGF(const cGH *cctkGH,int vi) {
+
+  auto f = valid_k.find(vi);
+  assert(f != valid_k.end());
+  // Check if anything needs to be done
+  if(f->second == WH_EVERYWHERE) {
+    return;
+  }
+  assert(f->second == WH_INTERIOR);
+
+  // Update valid region info
+  int gi = CCTK_GroupIndexFromVarI(vi);
+  int i0 = CCTK_FirstVarIndexI(gi);
+  int iN = i0+CCTK_NumVarsInGroupI(gi);
+  for(int vi2=i0;vi2<iN;vi2++) {
+    if((valid_k[vi2] & WH_INTERIOR) == WH_INTERIOR) {
+      valid_k[vi2] = WH_EVERYWHERE;
+    }
+  }
+
+  // Take action by mode
+  if(is_level_mode()) {
+    Sync1(cctkGH,gi);
+  } else if(is_global_mode()) {
+    BEGIN_REFLEVEL_LOOP(cctkGH) {
+      Sync1(cctkGH,gi);
+    }
+    END_REFLEVEL_LOOP;
+  } else if(is_meta_mode()) {
+    BEGIN_MGLEVEL_LOOP(cctkGH) {
+      BEGIN_REFLEVEL_LOOP(cctkGH) {
+        Sync1(cctkGH,gi);
+      }
+      END_REFLEVEL_LOOP;
+    }
+    END_MGLEVEL_LOOP;
+  } else {
+    abort();
+  }
+}
 }

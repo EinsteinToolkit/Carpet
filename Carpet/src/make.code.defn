@@ -26,6 +26,7 @@ SRCS =	CallFunction.cc				\
 	helpers.cc				\
 	modes.cc				\
 	variables.cc    \
+  Boundary.cc \
   PreSync.cc
 
 # Subdirectories containing source files

@@ -22,6 +22,23 @@
 
 namespace Carpet {
 
+struct AddVariables {
+  std::vector<int> vars;
+  void add(std::set<int> pregroups) {
+    bool newgroup = false;
+    for(int vnum : vars) {
+      int group = CCTK_GroupIndexFromVarI(vnum);
+      if(pregroups.find(group) == pregroups.end()) {
+        newgroup = true;
+        pregroups.insert(group);
+      }
+    }
+    // If nothing was added, the exception shouldn't
+    // have been thrown
+    assert(newgroup);
+  }
+};
+
 using namespace std;
 
 static void CallScheduledFunction(char const *restrict time_and_mode,
@@ -105,17 +122,26 @@ int CallFunction(void *function,           ///< the function to call
         BEGIN_META_MODE(cctkGH) {
           BEGIN_MGLEVEL_LOOP(cctkGH) {
             BEGIN_REFLEVEL_LOOP(cctkGH) {
-              if(not pregroups.empty()) {
-                PreSyncGroups(attribute,cctkGH,pregroups);
-              }
-              BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
-                BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
-                  CallScheduledFunction("Meta time local mode", function,
-                                        attribute, data, user_timer);
+              bool done = false;
+              while(!done) {
+                done = true;
+                if(not pregroups.empty()) {
+                  PreSyncGroups(attribute,cctkGH,pregroups);
                 }
-                END_LOCAL_COMPONENT_LOOP;
+                try {
+                  BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
+                    BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+                      CallScheduledFunction("Meta time local mode", function,
+                        attribute, data, user_timer);
+                    }
+                    END_LOCAL_COMPONENT_LOOP;
+                  }
+                  END_LOCAL_MAP_LOOP;
+                } catch(AddVariables av) {
+                  av.add(pregroups);
+                  done = false;
+                }
               }
-              END_LOCAL_MAP_LOOP;
               if (not sync_groups.empty()) {
                 SyncGroupsInScheduleBlock(attribute, cctkGH, sync_groups,
                                           sync_timer);
