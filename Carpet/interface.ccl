@@ -407,6 +407,7 @@ USES FUNCTION Boundary_SelectedGVs
 
 # TODO: make this somehow public, e.g. by moving it into its own thorn
 
+public:
 CCTK_INT point_classification TYPE=gf TAGS='checkpoint="no" prolongation="none"'
 {
   point_class
@@ -424,6 +425,7 @@ CCTK_INT point_classification TYPE=gf TAGS='checkpoint="no" prolongation="none"'
 CCTK_INT carpet_unusedpoints_mask TYPE=GF tags='Prolongation="none"' "mask which is set !=0 for points which do not influence future evolution, assuming appropriate regridding"
 
 
+private:
 
 CCTK_REAL timing TAGS='checkpoint="no"'
 {
