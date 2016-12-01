@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <vector>
 
@@ -133,19 +134,19 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
     bool const local_do_prolongate = do_prolongate and not do_taper;
     if (local_do_prolongate) {
       if (sync_barriers) {
-        static Timers::Timer barrier_timer("PreProlongateBarrier");
+        static Timers::Timer barrier_timer("PreProlongateBarrier", 0);
         barrier_timer.start();
         CCTK_Barrier(cctkGH);
         barrier_timer.stop();
       }
 
-      static Timers::Timer timer("Prolongate");
+      static Timers::Timer timer("Prolongate", 0);
       timer.start();
       ProlongateGroupBoundaries(cctkGH, goodgroups);
       timer.stop();
 
       if (sync_barriers) {
-        static Timers::Timer barrier_timer("PostProlongateBarrier");
+        static Timers::Timer barrier_timer("PostProlongateBarrier", 0);
         barrier_timer.start();
         CCTK_Barrier(cctkGH);
         barrier_timer.stop();
@@ -167,19 +168,19 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
     // synchronise ghostzones
     if (sync_during_time_integration or local_do_prolongate) {
       if (sync_barriers) {
-        static Timers::Timer barrier_timer("PreSyncBarrier");
+        static Timers::Timer barrier_timer("PreSyncBarrier", 0);
         barrier_timer.start();
         CCTK_Barrier(cctkGH);
         barrier_timer.stop();
       }
 
-      static Timers::Timer timer("Sync");
+      static Timers::Timer timer("Sync", 0);
       timer.start();
       SyncGroups(cctkGH, goodgroups);
       timer.stop();
 
       if (sync_barriers) {
-        static Timers::Timer barrier_timer("PostSyncBarrier");
+        static Timers::Timer barrier_timer("PostSyncBarrier", 0);
         barrier_timer.start();
         CCTK_Barrier(cctkGH);
         barrier_timer.stop();
@@ -233,22 +234,109 @@ static void ProlongateGroupBoundaries(const cGH *cctkGH,
                                  &tls.front(), vis.size(), on_device);
   }
 
+// poison target region
+#ifdef CARPET_DEBUG
+  {
+    Timers::Timer timer("PoisonProlongatedGroupBoundaries", 0);
+    timer.start();
+    // TODO: handle case where no GF is present more effiiently
+    int const carpetlib_poison_value = int(get_poison_value());
+    vector<CCTK_INT> vis, tls, szs;
+    for (int group = 0; group < (int)groups.size(); ++group) {
+      int const g = groups.AT(group);
+      int const grouptype = CCTK_GroupTypeI(g);
+      if (grouptype != CCTK_GF) {
+        continue;
+      }
+      const int var0 = CCTK_FirstVarIndexI(g);
+      const int varn = CCTK_NumVarsInGroupI(g);
+      for (int vi = var0; vi < var0 + varn; ++vi) {
+        int const active_tl =
+            groupdata.AT(g).activetimelevels.AT(mglevel).AT(reflevel);
+        assert(active_tl >= 0);
+        int const tl = active_tl > 1 ? timelevel : 0;
+        int const sz = CCTK_VarTypeSize(CCTK_VarTypeI(vi));
+        assert(sz > 0);
+        vis.push_back(vi);
+        tls.push_back(tl);
+        szs.push_back(sz);
+      }
+    }
+    BEGIN_LEVEL_MODE(cctkGH) {
+      assert(reflevel >= 1 and reflevel < reflevels);
+      BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+        dh::fast_dboxes const &fast_boxes =
+            vdd.at(map)->fast_boxes.at(mglevel).at(reflevel);
+        for (size_t ip = 0; ip < fast_boxes.fast_ref_bnd_prol_sendrecv.size();
+             ++ip) {
+          const pseudoregion_t &rp =
+              fast_boxes.fast_ref_bnd_prol_sendrecv.at(ip).recv;
+          if (not vhh.at(map)->is_local(reflevel, rp.component)) {
+            continue; // TODO: check if this can actually happen
+          }
+          ENTER_LOCAL_MODE(cctkGH, rp.component, CCTK_GF) {
+            DECLARE_CCTK_ARGUMENTS;
+#pragma omp parallel for
+            for (size_t v = 0; v < vis.size(); ++v) {
+              CCTK_INT const vi = vis.at(v);
+              CCTK_INT const tl = tls.at(v);
+              CCTK_INT const sz = szs.at(v);
+              char *vardataptr = static_cast<char *>(
+                  cctkGH->data[vi][0 /*tl*/]); // DECLARE_CCTK_ARGUMENTS always
+                                               // puts the correct pointer into
+                                               // tl=0
+              if (vardataptr == NULL) {
+                int const active_tl = groupdata.AT(CCTK_GroupIndexFromVarI(vi))
+                                          .activetimelevels.AT(mglevel)
+                                          .AT(reflevel);
+#pragma omp critical
+                CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__,
+                           CCTK_THORNSTRING, "Got NULL vardataptr for '%s' tl "
+                                             "%d vi %d timelevel %d atl %d",
+                           CCTK_VarName(vi), tl, vi, timelevel, active_tl);
+              }
+              assert(vardataptr);
+              LOOP_OVER_BBOX(cctkGH, rp.extent, box, imin, imax) {
+#pragma omp parallel
+                CCTK_LOOP3(poison_boundary, i, j, k, imin[0], imin[1], imin[2],
+                           imin[0] + 1, imax[1], imax[2], cctk_lsh[0],
+                           cctk_lsh[1], cctk_lsh[2]) {
+                  int const ind = CCTK_GFINDEX3D(cctkGH, i, j, k);
+                  // poison one x-stripe at a time
+                  memset(vardataptr + ind * sz, carpetlib_poison_value,
+                         sz * (imax[0] - imin[0]));
+                }
+                CCTK_ENDLOOP3(poison_boundary);
+              }
+              END_LOOP_OVER_BBOX;
+            } // for v
+          }
+          LEAVE_LOCAL_MODE;
+        } // for p
+      }
+      END_MAP_LOOP;
+    }
+    END_LEVEL_MODE;
+    timer.stop();
+  }
+#endif
+
   // use the current time here (which may be modified by the user)
   const CCTK_REAL time = cctkGH->cctk_time;
 
   static vector<Timers::Timer *> timers;
   if (timers.empty()) {
-    timers.push_back(new Timers::Timer("comm_state[0].create"));
+    timers.push_back(new Timers::Timer("prol_comm_state[0].create", 0));
     for (astate state = static_cast<astate>(0); state != state_done;
          state = static_cast<astate>(static_cast<int>(state) + 1)) {
       ostringstream name1;
-      name1 << "comm_state[" << timers.size() << "]"
+      name1 << "prol_comm_state[" << timers.size() << "]"
             << "." << tostring(state) << ".user";
-      timers.push_back(new Timers::Timer(name1.str()));
+      timers.push_back(new Timers::Timer(name1.str(), 0));
       ostringstream name2;
-      name2 << "comm_state[" << timers.size() << "]"
+      name2 << "prol_comm_state[" << timers.size() << "]"
             << "." << tostring(state) << ".step";
-      timers.push_back(new Timers::Timer(name2.str()));
+      timers.push_back(new Timers::Timer(name2.str(), 0));
     }
   }
 
@@ -327,17 +415,17 @@ void SyncGroups(const cGH *cctkGH, const vector<int> &groups) {
 
   static vector<Timers::Timer *> timers;
   if (timers.empty()) {
-    timers.push_back(new Timers::Timer("comm_state[0].create"));
+    timers.push_back(new Timers::Timer("sync_comm_state[0].create", 0));
     for (astate state = static_cast<astate>(0); state != state_done;
          state = static_cast<astate>(static_cast<int>(state) + 1)) {
       ostringstream name1;
-      name1 << "comm_state[" << timers.size() << "]"
+      name1 << "sync_comm_state[" << timers.size() << "]"
             << "." << tostring(state) << ".user";
-      timers.push_back(new Timers::Timer(name1.str()));
+      timers.push_back(new Timers::Timer(name1.str(), 0));
       ostringstream name2;
-      name2 << "comm_state[" << timers.size() << "]"
+      name2 << "sync_comm_state[" << timers.size() << "]"
             << "." << tostring(state) << ".step";
-      timers.push_back(new Timers::Timer(name2.str()));
+      timers.push_back(new Timers::Timer(name2.str(), 0));
     }
   }
 

@@ -2198,6 +2198,8 @@ operator_type get_transport_operator(cGH const *const cctkGH, int const group,
     return op_Lagrange;
   } else if (CCTK_Equals(prolong_string, "ENO")) {
     return op_ENO;
+  } else if (CCTK_Equals(prolong_string, "ENOG2")) {
+    return op_ENOG2;
   } else if (CCTK_Equals(prolong_string, "WENO")) {
     return op_WENO;
   } else if (CCTK_Equals(prolong_string, "TVD")) {
