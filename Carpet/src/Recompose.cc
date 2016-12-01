@@ -67,8 +67,6 @@ static rvect cost(region_t const &reg) {
   return rvect(reg.extent.shape() / reg.extent.stride()) * costfactor;
 }
 
-static void ClassifyPoints(cGH const *cctkGH, int rl);
-
 static void SplitRegionsMaps_Automatic_Recursively(bvect const &dims,
                                                    int const firstproc,
                                                    int const nprocs,
@@ -1988,16 +1986,9 @@ void MakeMultigridBoxesMaps(
   } // for m
 }
 
-static void ClassifyPoints(cGH const *const cctkGH, int const rl) {
-  // negative: needs to be set explicitly (e.g. boundary)
-  // zero:     unused (e.g. ghost)
-  // positive: needs to be evolved
-  // -1:      boundary point (needs to be set explicitly)
-  //  0:      unused (e.g. ghost point, or restriction target)
-  //  n=1..N: evolved, used for integrator substeps i<=n
-  //          (i=N..1, counting backwards; see MoL documentation)
-  //          i.e.: n=1: used between time steps (i.e., should be visualised)
-  //                n>1: used only while time stepping (e.g. buffer zones)
+void ClassifyPoints(cGH const *const cctkGH, int const rl) {
+  // zero:     active region
+  // 1..N:     number of grid points away from active region
 
   BEGIN_META_MODE(cctkGH) {
     BEGIN_MGLEVEL_LOOP(cctkGH) {

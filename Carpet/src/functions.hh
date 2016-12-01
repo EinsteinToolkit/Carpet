@@ -108,6 +108,7 @@ void RegridMap(cGH const *cctkGH, int m, gh::rregs const &supeerregss,
                gh::mregs const &regsss, bool do_init);
 void PostRegrid(cGH const *cctkGH);
 bool Recompose(cGH const *cctkGH, int rl, bool do_init);
+void ClassifyPoints(cGH const *const cctkGH, int const rl);
 void RegridFree(cGH const *cctkGH, bool do_init);
 
 void CheckRegions(gh::mregs const &regsss);

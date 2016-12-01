@@ -411,15 +411,8 @@ public:
 CCTK_INT point_classification TYPE=gf TAGS='checkpoint="no" prolongation="none"'
 {
   point_class
-  # negative: needs to be set explicitly (e.g. boundary)
-  # zero:     unused (e.g. ghost)
-  # positive: needs to be evolved
-  # -1:      boundary point (needs to be set explicitly)
-  #  0:      unused (e.g. ghost point, or restriction target)
-  #  n=1..N: evolved, used for integrator substeps i<=n
-  #          (i=N..1, counting backwards; see MoL documentation) 
-  #          i.e.: n=1: used between time steps (i.e., should be visualised)
-  #                n>1: used only while time stepping (e.g. buffer zones)
+  # zero:     active region
+  # 1..N:     number of grid points away from active region
 } "Grid point classification"
 
 CCTK_INT carpet_unusedpoints_mask TYPE=GF tags='Prolongation="none"' "mask which is set !=0 for points which do not influence future evolution, assuming appropriate regridding"

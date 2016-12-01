@@ -368,6 +368,9 @@ void CallInitial(cGH *const cctkGH) {
         // Checking
         Poison(cctkGH, alltimes, CCTK_GF);
 
+        // re-compute point classification that was just poisened
+        ClassifyPoints(cctkGH, rl);
+
         EndTimingLevel(cctkGH);
       }
       LEAVE_LEVEL_MODE;
