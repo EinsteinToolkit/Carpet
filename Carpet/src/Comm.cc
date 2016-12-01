@@ -17,6 +17,8 @@
 
 #include <carpet.hh>
 
+extern "C" void Carpet_ApplyPhysicalBCsForGroupI(const cGH *cctkGH,int group,bool before);
+
 namespace Carpet {
 
 using namespace std;
@@ -58,6 +60,17 @@ int SyncGroupsByDirI(const cGH *cctkGH, int num_groups, const int *groups,
   return retval;
 }
 
+struct ApplyGroup {
+  const cGH *cctkGH;
+  int group;
+  ApplyGroup(const cGH *cctkGH_,int group_) : cctkGH(cctkGH_), group(group_) {
+    Carpet_ApplyPhysicalBCsForGroupI(cctkGH,group,true);
+  }
+  ~ApplyGroup() {
+    Carpet_ApplyPhysicalBCsForGroupI(cctkGH,group,false);
+  }
+};
+
 // synchronises ghostzones and prolongates boundaries of a set of groups
 //
 // returns 0 for success and -1 if the set contains a group with no storage
@@ -73,6 +86,7 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
   vector<int> goodgroups;
   goodgroups.reserve(groups.size());
   for (size_t group = 0; group < groups.size(); group++) {
+    ApplyGroup applyGroup(cctkGH,group);
     const int g = groups.AT(group);
     const int grouptype = CCTK_GroupTypeI(g);
     char *const groupname = CCTK_GroupName(g);

@@ -10,36 +10,36 @@
 
 namespace Carpet {
 
-// The upper right hand corner of a 2-D simulation.
-// +---+---+---+
-// | B | B | W |
-// +---+---+---+
-// | B | I | G |
-// +---+---+---+
-// | W | G | G |
-// +---+---+---+
-// B = Boundary Interior
-// I = Interior
-// G = Ghost
-// W = Boundary Exterior
+// The upper left-hand corner of a 2-D simulation.
+// +-----+-----+-----+
+// |     |     |     | 
+// |  B  |  B  | B+G | 
+// |     |     |     | 
+// +-----+-----+-----+
+// |     |     |     | 
+// |  B  |  I  |  G  | 
+// |     |     |     | 
+// +-----+-----+-----+
+// |     |     |     | 
+// | B+G |  G  |  G  | 
+// |     |     |     | 
+// +-----+-----+-----+
+//  B  = Boundary 
+//  I  = Interior
+//  G  = Ghost
+// B+G = Boundary and Ghost
 //
-// Sync can only be performed if
-// all any/all I and B cells are
-// valid.
+// Read and Write directives in schedule.ccl apply to:
+// Interior, Everywhere, or Invalidate.
 //
-// A boundary condition routine
-// will either read INTERIOR or
-// INTERIOR_PLUS_GHOSTS. If the
-// former, it will be applied
-// prior to the sync. If the latter
-// it will be applied after the
-// sync.
+// Boundary routines are registered with
+// to either update B+G cells or not. If it
+// updates B+G cells, it runs after synchronization.
+// If it doesn't update B+G cells, it runs before.
 
-#define WH_EVERYWHERE          0xF
-#define WH_INTERIOR            0x8
-#define WH_BOUNDARY            0x6 /* Describes B+W cells */
-#define WH_BOUNDARY_IN         0x4 /* Describes B cells */
-#define WH_BOUNDARY_EX         0x2 /* Describes W cells */
+#define WH_EVERYWHERE          0x7
+#define WH_INTERIOR            0x3
+#define WH_BOUNDARY            0x2 /* Describes B+W cells */
 #define WH_GHOSTS              0x1
 #define WH_INVALIDATE_EXTERIOR 0x8
 
@@ -275,19 +275,23 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
   std::vector<int> sync_groups;
   for(auto i=pregroups.begin();i != pregroups.end();++i) {
     int gi = *i;
-    sync_groups.push_back(gi);
     int i0 = CCTK_FirstVarIndexI(gi);
     int iN = i0+CCTK_NumVarsInGroupI(gi);
     for(int vi=i0;vi<iN;vi++) {
-      if(on(valid_k[vi],WH_INTERIOR)) {
+      int wh = valid_k[vi];
+      if(on(wh,WH_GHOSTS))
+        continue;
+      if(on(wh,WH_INTERIOR)) {
         std::cerr << "SYNC of variable with invalid interior. Name: " << CCTK_FullName(vi) << " after: " << current_routine << std::endl;
         assert(false);
       }
-      valid_k[vi] = WH_EVERYWHERE;
+      sync_groups.push_back(gi);
+      valid_k[vi] |= WH_GHOSTS;
     }
   }
-  if(not sync_groups.empty())
+  if(not sync_groups.empty()) {
     SyncProlongateGroups(cctkGH, sync_groups, attribute);
+  }
 }
 
 void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups) {
@@ -403,4 +407,137 @@ extern "C" void ManualSyncGF(const cGH *cctkGH,int vi) {
     abort();
   }
 }
+
+typedef void (*boundary_function)(
+  const cGH *cctkGH,
+  int num_vars,
+  int *var_indices,
+  int *faces,
+  int *widths,
+  int *table_handles);
+
+struct Bound {
+  std::string bc_name;
+  int faces;
+  int width;
+  int table_handle;
+};
+
+struct Func {
+  boundary_function func;
+  int before;
+};
+
+std::map<std::string,Func> boundary_functions;
+std::map<int,std::vector<Bound>> boundary_conditions;
+
+extern "C"
+void Carpet_RegisterPhysicalBC(
+    const cGH *cctkGH,
+    boundary_function func,
+    const char *bc_name,
+    int before) {
+  Func& f = boundary_functions[bc_name];
+  f.func = func;
+  f.before = before != 0;
+}
+
+extern "C"
+void Carpet_SelectVarForBCI(
+    const cGH *cctkGH,
+    int faces,
+    int width,
+    int table_handle,
+    int var_index,
+    const char *bc_name) {
+  std::vector<Bound>& bv = boundary_conditions[var_index];
+  Bound b;
+  b.faces = faces;
+  b.width = width;
+  b.table_handle = table_handle;
+  b.bc_name = bc_name;
+  bv.push_back(b);
+}
+
+extern "C"
+void Carpet_SelectGroupForBC(
+    const cGH *cctkGH,
+    int faces,
+    int width,
+    int table_handle,
+    const char *group_name,
+    const char *bc_name) {
+  int group = CCTK_GroupIndex(group_name);
+  int vstart = CCTK_FirstVarIndexI(group);
+  int vnum   = CCTK_NumVarsInGroupI(group);
+  for(int i=vstart;i<vstart+vnum;i++) {
+    Carpet_SelectVarForBCI(cctkGH,faces,width,table_handle,i,bc_name);
+  }
+}
+
+extern "C"
+void Carpet_ClearBCForVarI(
+    const cGH *cctkGH,
+    int var_index) {
+  boundary_conditions[var_index].resize(0);
+}
+
+extern "C"
+void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before) {
+  std::vector<Bound>& bv = boundary_conditions[var_index];
+  for(auto j=bv.begin(); j != bv.end(); ++j) {
+    Bound& b = *j;
+    Func& f = boundary_functions[b.bc_name];
+    if(before == f.before)
+      (*f.func)(cctkGH,1,&var_index,&b.faces,&b.width,&b.table_handle);
+  }
+}
+
+extern "C"
+void Carpet_ApplyPhysicalBCsForGroupI(const cGH *cctkGH, int group_index,int before) {
+  int vstart = CCTK_FirstVarIndexI(group_index);
+  int vnum   = CCTK_NumVarsInGroupI(group_index);
+  for(int var_index=vstart;var_index<vstart+vnum;var_index++) {
+    Carpet_ApplyPhysicalBCsForVarI(cctkGH,var_index,before);
+  }
+}
+
+/**
+ * Deprecated: This routine only exists to compare with the old version
+ * provided by the Boundary thorn.
+ */
+extern "C"
+void Carpet_ApplyPhysicalBCs(const cGH *cctkGH) {
+  for(auto i=boundary_conditions.begin(); i != boundary_conditions.end(); ++i) {
+    Carpet_ApplyPhysicalBCsForVarI(cctkGH,i->first,1); // before
+  }
+  for(auto i=boundary_conditions.begin(); i != boundary_conditions.end(); ++i) {
+    Carpet_ApplyPhysicalBCsForVarI(cctkGH,i->first,0); // after
+  }
+}
+
+#if 0
+extern "C"
+void Carpet_ApplyPhysicalBCsForeGroupI(const cGH *cctkGH,int group,bool before) {
+  int vstart = CCTK_FirstVarIndexI(group);
+  int vnum   = CCTK_NumVarsInGroupI(group);
+  for(int var_index=vstart;var_index<vstart+vnum;var_index++) {
+    std::vector<Bound>& bv= boundary_conditions[var_index];
+    for(auto j=bv.begin(); j != bv.end(); ++j) {
+      Bound& b = *j;
+      Func& f = boundary_functions[b.bc_name];
+      if(f.before != before)
+        continue;
+      if(!on(valid_k[var_index],WH_INTERIOR)) {
+        std::ostringstream msg;
+        msg << "Could not sync " << CCTK_FullName(var_index) << " because the interior is invalid.";
+        CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
+      }
+      valid_k[var_index] |= WH_BOUNDARY;
+      (*f.func)(cctkGH,1,&var_index,&b.faces,&b.width,&b.table_handle);
+    }
+  }
+}
+#endif
+
 }
