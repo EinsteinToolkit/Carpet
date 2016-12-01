@@ -13,7 +13,6 @@ enum operator_type {
                         // (needs only one time level)
   op_Lagrange,          // Lagrange interpolation (standard)
   op_ENO,               // use ENO stencils (for hydro)
-  op_ENOG2,             // use ENO stencils (for hydro)
   op_WENO,              // use WENO stencils (for hydro)
   op_TVD,               // use TVD stencils (for hydro)
   op_Lagrange_monotone, // monotone Lagrange interpolation (for hydro)

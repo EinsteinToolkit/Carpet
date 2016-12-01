@@ -19,8 +19,8 @@ namespace CarpetLib {
   index3(i, j, k, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext)
 #define DSTIND3(i, j, k)                                                       \
   index3(i, j, k, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext)
-#define SRCOFF3(i, j, k) offset3(i, j, k, srcipadext, srcjpadext, srckpadext)
-#define DSTOFF3(i, j, k) offset3(i, j, k, dstipadext, dstjpadext, dstkpadext)
+#define SRCOFF3(i, j, k) offset3(i, j, k, srciext, srcjext, srckext)
+#define DSTOFF3(i, j, k) offset3(i, j, k, dstiext, dstjext, dstkext)
 
 template <typename T, int ORDER>
 void prolongate_3d_stagger101(

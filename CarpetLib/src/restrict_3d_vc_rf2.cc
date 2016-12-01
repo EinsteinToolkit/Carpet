@@ -21,11 +21,11 @@ namespace CarpetLib {
   index3(dstioff + (i), dstjoff + (j), dstkoff + (k), dstipadext, dstjpadext,  \
          dstkpadext, dstiext, dstjext, dstkext)
 #define SRCOFF3(i, j, k)                                                       \
-  offset3(srcioff + (i), srcjoff + (j), srckoff + (k), srcipadext, srcjpadext, \
-          srckpadext)
+  offset3(srcioff + (i), srcjoff + (j), srckoff + (k), srciext, srcjext,       \
+          srckext)
 #define DSTOFF3(i, j, k)                                                       \
-  offset3(dstioff + (i), dstjoff + (j), dstkoff + (k), dstipadext, dstjpadext, \
-          dstkpadext)
+  offset3(dstioff + (i), dstjoff + (j), dstkoff + (k), dstiext, dstjext,       \
+          dstkext)
 
 // 0D "restriction"
 template <typename T> struct restrict0 {

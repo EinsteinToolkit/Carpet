@@ -7,7 +7,6 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
-#include <vector>
 
 #include "vectors.h"
 #include "operator_prototypes_3d.hh"
@@ -21,8 +20,8 @@ namespace CarpetLib {
   index3(i, j, k, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext)
 #define DSTIND3(i, j, k)                                                       \
   index3(i, j, k, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext)
-#define SRCOFF3(i, j, k) offset3(i, j, k, srcipadext, srcjpadext, srckpadext)
-#define DSTOFF3(i, j, k) offset3(i, j, k, dstipadext, dstjpadext, dstkpadext)
+#define SRCOFF3(i, j, k) offset3(i, j, k, srciext, srcjext, srckext)
+#define DSTOFF3(i, j, k) offset3(i, j, k, dstiext, dstjext, dstkext)
 
 namespace coeffs_3d_rf2 {
 
@@ -171,7 +170,7 @@ static inline T const &interp0(T const *restrict const p) {
 
 // 1D interpolation
 template <typename T, int ORDER, int di>
-static inline T interp1(T const *restrict const p, ptrdiff_t const d1) {
+static inline T interp1(T const *restrict const p, size_t const d1) {
   typedef typeprops<T> typ;
   typedef typename typ::real RT;
   typedef coeffs1d<RT, ORDER> coeffs;
@@ -263,6 +262,7 @@ static inline T interp1(T const *restrict const p, ptrdiff_t const d1) {
       }
       return res;
     } else {
+      assert(0); // why would d1 have a non-unit stride?
       T res = typ::fromreal(0);
       for (ptrdiff_t i = coeffs::imin; i < coeffs::imax; ++i) {
         res += coeffs::get(i) * interp0<T, ORDER>(p + i * d1);
@@ -274,8 +274,8 @@ static inline T interp1(T const *restrict const p, ptrdiff_t const d1) {
 
 // 2D interpolation
 template <typename T, int ORDER, int di, int dj>
-static inline T interp2(T const *restrict const p, ptrdiff_t const d1,
-                        ptrdiff_t const d2) {
+static inline T interp2(T const *restrict const p, size_t const d1,
+                        size_t const d2) {
   typedef typeprops<T> typ;
   typedef typename typ::real RT;
   typedef coeffs1d<RT, ORDER> coeffs;
@@ -292,8 +292,8 @@ static inline T interp2(T const *restrict const p, ptrdiff_t const d1,
 
 // 3D interpolation
 template <typename T, int ORDER, int di, int dj, int dk>
-static inline T interp3(T const *restrict const p, ptrdiff_t const d1,
-                        ptrdiff_t const d2, ptrdiff_t const d3) {
+static inline T interp3(T const *restrict const p, size_t const d1,
+                        size_t const d2, size_t const d3) {
   typedef typeprops<T> typ;
   typedef typename typ::real RT;
   typedef coeffs1d<RT, ORDER> coeffs;
@@ -368,319 +368,125 @@ static inline void check_indices3(ptrdiff_t const is, ptrdiff_t const js,
 }
 
 template <typename T, int ORDER>
-static void
-interp_driver_i(T const *restrict const src, ivect3 const &restrict srcpadext,
-                ivect3 const &restrict srcext, T *restrict const dst,
-                ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
-                ivect3 const &restrict srcoff, ivect3 const &restrict dstoff,
-                ivect3 const &restrict regext) {
-  ptrdiff_t const srcipadext = srcpadext[0];
-  ptrdiff_t const srcjpadext = srcpadext[1];
-  ptrdiff_t const srckpadext = srcpadext[2];
+void prolongate_3d_rf2(T const *restrict const src,
+                       ivect3 const &restrict srcpadext,
+                       ivect3 const &restrict srcext, T *restrict const dst,
+                       ivect3 const &restrict dstpadext,
+                       ivect3 const &restrict dstext,
+                       ibbox3 const &restrict srcbbox,
+                       ibbox3 const &restrict dstbbox, ibbox3 const &restrict,
+                       ibbox3 const &restrict regbbox, void *extraargs) {
+  assert(not extraargs);
 
-  ptrdiff_t const dstipadext = dstpadext[0];
-  ptrdiff_t const dstjpadext = dstpadext[1];
-  ptrdiff_t const dstkpadext = dstpadext[2];
+  static_assert(ORDER >= 0 and ORDER % 2 == 1,
+                "ORDER must be non-negative and odd");
 
-  ptrdiff_t const srciext = srcext[0];
-  ptrdiff_t const srcjext = srcext[1];
-  ptrdiff_t const srckext = srcext[2];
+  typedef typename typeprops<T>::real RT;
+  coeffs1d<RT, ORDER>::test();
 
-  ptrdiff_t const dstiext = dstext[0];
-  ptrdiff_t const dstjext = dstext[1];
-  ptrdiff_t const dstkext = dstext[2];
+  if (any(srcbbox.stride() <= regbbox.stride() or
+          dstbbox.stride() != regbbox.stride())) {
+    CCTK_WARN(0, "Internal error: strides disagree");
+  }
 
-  ptrdiff_t const regiext = regext[0];
-  ptrdiff_t const regjext = regext[1];
-  ptrdiff_t const regkext = regext[2];
+  if (any(srcbbox.stride() != reffact2 * dstbbox.stride())) {
+    CCTK_WARN(
+        0,
+        "Internal error: source strides are not twice the destination strides");
+  }
 
-  ptrdiff_t const srcioff = srcoff[0];
-  ptrdiff_t const dstioff = dstoff[0];
+  if (any(srcbbox.lower() % srcbbox.stride() != 0)) {
+    CCTK_WARN(0, "Internal error: source bbox is not aligned with vertices");
+  }
+  if (any(dstbbox.lower() % dstbbox.stride() != 0)) {
+    CCTK_WARN(0,
+              "Internal error: destination bbox is not aligned with vertices");
+  }
+  if (any(regbbox.lower() % regbbox.stride() != 0)) {
+    CCTK_WARN(0, "Internal error: prolongation region bbox is not aligned with "
+                 "vertices");
+  }
 
-  ptrdiff_t const fi = srcioff % 2;
-  ptrdiff_t const i0 = srcioff / 2;
+  // This could be handled, but is likely to point to an error
+  // elsewhere
+  if (regbbox.empty()) {
+    CCTK_WARN(0, "Internal error: region extent is empty");
+  }
 
-  // ptrdiff_t const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
-  ptrdiff_t const srcdi = 1;
+  ivect3 const regext = regbbox.shape() / regbbox.stride();
+  assert(all((regbbox.lower() - srcbbox.lower()) % regbbox.stride() == 0));
+  ivect3 const srcoff = (regbbox.lower() - srcbbox.lower()) / regbbox.stride();
+  assert(all((regbbox.lower() - dstbbox.lower()) % regbbox.stride() == 0));
+  ivect3 const dstoff = (regbbox.lower() - dstbbox.lower()) / regbbox.stride();
+
+  bvect3 const needoffsetlo = srcoff % reffact2 != 0;
+  bvect3 const needoffsethi = (srcoff + regext - 1) % reffact2 != 0;
+  ivect3 const offsetlo =
+      either(needoffsetlo, ORDER / 2 + 1, either(regext > 1, ORDER / 2, 0));
+  ivect3 const offsethi =
+      either(needoffsethi, ORDER / 2 + 1, either(regext > 1, ORDER / 2, 0));
+
+  if (not regbbox.expand(offsetlo, offsethi).is_contained_in(srcbbox) or
+      not regbbox.is_contained_in(dstbbox)) {
+    cerr << "ORDER=" << ORDER << "\n"
+         << "offsetlo=" << offsetlo << "\n"
+         << "offsethi=" << offsethi << "\n"
+         << "regbbox=" << regbbox << "\n"
+         << "dstbbox=" << dstbbox << "\n"
+         << "regbbox.expand=" << regbbox.expand(offsetlo, offsethi) << "\n"
+         << "srcbbox=" << srcbbox << "\n";
+    CCTK_WARN(0,
+              "Internal error: region extent is not contained in array extent");
+  }
+
+  size_t const srcipadext = srcpadext[0];
+  size_t const srcjpadext = srcpadext[1];
+  size_t const srckpadext = srcpadext[2];
+
+  size_t const dstipadext = dstpadext[0];
+  size_t const dstjpadext = dstpadext[1];
+  size_t const dstkpadext = dstpadext[2];
+
+  size_t const srciext = srcext[0];
+  size_t const srcjext = srcext[1];
+  size_t const srckext = srcext[2];
+
+  size_t const dstiext = dstext[0];
+  size_t const dstjext = dstext[1];
+  size_t const dstkext = dstext[2];
+
+  size_t const regiext = regext[0];
+  size_t const regjext = regext[1];
+  size_t const regkext = regext[2];
+
+  size_t const srcioff = srcoff[0];
+  size_t const srcjoff = srcoff[1];
+  size_t const srckoff = srcoff[2];
+
+  size_t const dstioff = dstoff[0];
+  size_t const dstjoff = dstoff[1];
+  size_t const dstkoff = dstoff[2];
+
+  size_t const fi = srcioff % 2;
+  size_t const fj = srcjoff % 2;
+  size_t const fk = srckoff % 2;
+
+  size_t const i0 = srcioff / 2;
+  size_t const j0 = srcjoff / 2;
+  size_t const k0 = srckoff / 2;
+
+  // size_t const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
+  size_t const srcdi = 1;
   assert(srcdi == SRCOFF3(1, 0, 0) - SRCOFF3(0, 0, 0));
-
-  // Loop over fine region
-  for (ptrdiff_t k = 0; k < regkext; ++k) {
-    for (ptrdiff_t j = 0; j < regjext; ++j) {
-
-      ptrdiff_t i = 0;
-      ptrdiff_t is = i0;
-      ptrdiff_t id = dstioff;
-
-      if (fi != 0 && i < regiext) {
-        check_indices1<T, ORDER, 1>(is, srciext);
-        dst[DSTIND3(id, j, k)] =
-            interp1<T, ORDER, 1>(&src[SRCIND3(is, j, k)], srcdi);
-        i = i + 1;
-        id = id + 1;
-        is = is + 1;
-      }
-
-      while (i + 1 < regiext) {
-        check_indices1<T, ORDER, 0>(is, srciext);
-        dst[DSTIND3(id, j, k)] =
-            interp1<T, ORDER, 0>(&src[SRCIND3(is, j, k)], srcdi);
-        i = i + 1;
-        id = id + 1;
-
-        check_indices1<T, ORDER, 1>(is, srciext);
-        dst[DSTIND3(id, j, k)] =
-            interp1<T, ORDER, 1>(&src[SRCIND3(is, j, k)], srcdi);
-        i = i + 1;
-        id = id + 1;
-        is = is + 1;
-      }
-
-      if (i < regiext) {
-        check_indices1<T, ORDER, 0>(is, srciext);
-        dst[DSTIND3(id, j, k)] =
-            interp1<T, ORDER, 0>(&src[SRCIND3(is, j, k)], srcdi);
-        i = i + 1;
-        id = id + 1;
-      }
-
-      assert(i == regiext);
-    }
-  }
-}
-
-template <typename T, int ORDER>
-static void
-interp_driver_j(T const *restrict const src, ivect3 const &restrict srcpadext,
-                ivect3 const &restrict srcext, T *restrict const dst,
-                ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
-                ivect3 const &restrict srcoff, ivect3 const &restrict dstoff,
-                ivect3 const &restrict regext) {
-  ptrdiff_t const srcipadext = srcpadext[0];
-  ptrdiff_t const srcjpadext = srcpadext[1];
-  ptrdiff_t const srckpadext = srcpadext[2];
-
-  ptrdiff_t const dstipadext = dstpadext[0];
-  ptrdiff_t const dstjpadext = dstpadext[1];
-  ptrdiff_t const dstkpadext = dstpadext[2];
-
-  ptrdiff_t const srciext = srcext[0];
-  ptrdiff_t const srcjext = srcext[1];
-  ptrdiff_t const srckext = srcext[2];
-
-  ptrdiff_t const dstiext = dstext[0];
-  ptrdiff_t const dstjext = dstext[1];
-  ptrdiff_t const dstkext = dstext[2];
-
-  ptrdiff_t const regiext = regext[0];
-  ptrdiff_t const regjext = regext[1];
-  ptrdiff_t const regkext = regext[2];
-
-  ptrdiff_t const srcjoff = srcoff[1];
-  ptrdiff_t const dstjoff = dstoff[1];
-
-  ptrdiff_t const fj = srcjoff % 2;
-  ptrdiff_t const j0 = srcjoff / 2;
-
-  ptrdiff_t const srcdj = SRCOFF3(0, 1, 0) - SRCOFF3(0, 0, 0);
-
-  // Loop over fine region
-  for (ptrdiff_t k = 0; k < regkext; ++k) {
-
-    ptrdiff_t j = 0;
-    ptrdiff_t js = j0;
-    ptrdiff_t jd = dstjoff;
-
-    if (fj != 0 && j < regjext) {
-      for (ptrdiff_t i = 0; i < regiext; ++i) {
-        check_indices1<T, ORDER, 1>(js, srcjext);
-        dst[DSTIND3(i, jd, k)] =
-            interp1<T, ORDER, 1>(&src[SRCIND3(i, js, k)], srcdj);
-      }
-      j = j + 1;
-      jd = jd + 1;
-      js = js + 1;
-    }
-
-    while (j + 1 < regjext) {
-      for (ptrdiff_t i = 0; i < regiext; ++i) {
-        check_indices1<T, ORDER, 0>(js, srcjext);
-        dst[DSTIND3(i, jd, k)] =
-            interp1<T, ORDER, 0>(&src[SRCIND3(i, js, k)], srcdj);
-      }
-      j = j + 1;
-      jd = jd + 1;
-
-      for (ptrdiff_t i = 0; i < regiext; ++i) {
-        check_indices1<T, ORDER, 1>(js, srcjext);
-        dst[DSTIND3(i, jd, k)] =
-            interp1<T, ORDER, 1>(&src[SRCIND3(i, js, k)], srcdj);
-      }
-      j = j + 1;
-      jd = jd + 1;
-      js = js + 1;
-    }
-
-    if (j < regjext) {
-      for (ptrdiff_t i = 0; i < regiext; ++i) {
-        check_indices1<T, ORDER, 0>(js, srcjext);
-        dst[DSTIND3(i, jd, k)] =
-            interp1<T, ORDER, 0>(&src[SRCIND3(i, js, k)], srcdj);
-      }
-      j = j + 1;
-      jd = jd + 1;
-    }
-
-    assert(j == regjext);
-  }
-}
-
-template <typename T, int ORDER>
-static void
-interp_driver_k(T const *restrict const src, ivect3 const &restrict srcpadext,
-                ivect3 const &restrict srcext, T *restrict const dst,
-                ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
-                ivect3 const &restrict srcoff, ivect3 const &restrict dstoff,
-                ivect3 const &restrict regext) {
-  ptrdiff_t const srcipadext = srcpadext[0];
-  ptrdiff_t const srcjpadext = srcpadext[1];
-  ptrdiff_t const srckpadext = srcpadext[2];
-
-  ptrdiff_t const dstipadext = dstpadext[0];
-  ptrdiff_t const dstjpadext = dstpadext[1];
-  ptrdiff_t const dstkpadext = dstpadext[2];
-
-  ptrdiff_t const srciext = srcext[0];
-  ptrdiff_t const srcjext = srcext[1];
-  ptrdiff_t const srckext = srcext[2];
-
-  ptrdiff_t const dstiext = dstext[0];
-  ptrdiff_t const dstjext = dstext[1];
-  ptrdiff_t const dstkext = dstext[2];
-
-  ptrdiff_t const regiext = regext[0];
-  ptrdiff_t const regjext = regext[1];
-  ptrdiff_t const regkext = regext[2];
-
-  ptrdiff_t const srckoff = srcoff[2];
-  ptrdiff_t const dstkoff = dstoff[2];
-
-  ptrdiff_t const fk = srckoff % 2;
-  ptrdiff_t const k0 = srckoff / 2;
-
-  ptrdiff_t const srcdk = SRCOFF3(0, 0, 1) - SRCOFF3(0, 0, 0);
-
-  // Loop over fine region
-  ptrdiff_t k = 0;
-  ptrdiff_t ks = k0;
-  ptrdiff_t kd = dstkoff;
-
-  if (fk != 0 && k < regkext) {
-    for (ptrdiff_t j = 0; j < regjext; ++j) {
-      for (ptrdiff_t i = 0; i < regiext; ++i) {
-        check_indices1<T, ORDER, 1>(ks, srckext);
-        dst[DSTIND3(i, j, kd)] =
-            interp1<T, ORDER, 1>(&src[SRCIND3(i, j, ks)], srcdk);
-      }
-    }
-    k = k + 1;
-    kd = kd + 1;
-    ks = ks + 1;
-  }
-
-  while (k + 1 < regkext) {
-    for (ptrdiff_t j = 0; j < regjext; ++j) {
-      for (ptrdiff_t i = 0; i < regiext; ++i) {
-        check_indices1<T, ORDER, 0>(ks, srckext);
-        dst[DSTIND3(i, j, kd)] =
-            interp1<T, ORDER, 0>(&src[SRCIND3(i, j, ks)], srcdk);
-      }
-    }
-    k = k + 1;
-    kd = kd + 1;
-
-    for (ptrdiff_t j = 0; j < regjext; ++j) {
-      for (ptrdiff_t i = 0; i < regiext; ++i) {
-        check_indices1<T, ORDER, 1>(ks, srckext);
-        dst[DSTIND3(i, j, kd)] =
-            interp1<T, ORDER, 1>(&src[SRCIND3(i, j, ks)], srcdk);
-      }
-    }
-    k = k + 1;
-    kd = kd + 1;
-    ks = ks + 1;
-  }
-
-  if (k < regkext) {
-    for (ptrdiff_t j = 0; j < regjext; ++j) {
-      for (ptrdiff_t i = 0; i < regiext; ++i) {
-        check_indices1<T, ORDER, 0>(ks, srckext);
-        dst[DSTIND3(i, j, kd)] =
-            interp1<T, ORDER, 0>(&src[SRCIND3(i, j, ks)], srcdk);
-      }
-    }
-    k = k + 1;
-    kd = kd + 1;
-  }
-
-  assert(k == regkext);
-}
-
-template <typename T, int ORDER>
-static void
-interp_driver_3d(T const *restrict const src, ivect3 const &restrict srcpadext,
-                 ivect3 const &restrict srcext, T *restrict const dst,
-                 ivect3 const &restrict dstpadext,
-                 ivect3 const &restrict dstext, ivect3 const &restrict srcoff,
-                 ivect3 const &restrict dstoff, ivect3 const &restrict regext) {
-  ptrdiff_t const srcipadext = srcpadext[0];
-  ptrdiff_t const srcjpadext = srcpadext[1];
-  ptrdiff_t const srckpadext = srcpadext[2];
-
-  ptrdiff_t const dstipadext = dstpadext[0];
-  ptrdiff_t const dstjpadext = dstpadext[1];
-  ptrdiff_t const dstkpadext = dstpadext[2];
-
-  ptrdiff_t const srciext = srcext[0];
-  ptrdiff_t const srcjext = srcext[1];
-  ptrdiff_t const srckext = srcext[2];
-
-  ptrdiff_t const dstiext = dstext[0];
-  ptrdiff_t const dstjext = dstext[1];
-  ptrdiff_t const dstkext = dstext[2];
-
-  ptrdiff_t const regiext = regext[0];
-  ptrdiff_t const regjext = regext[1];
-  ptrdiff_t const regkext = regext[2];
-
-  ptrdiff_t const srcioff = srcoff[0];
-  ptrdiff_t const srcjoff = srcoff[1];
-  ptrdiff_t const srckoff = srcoff[2];
-
-  ptrdiff_t const dstioff = dstoff[0];
-  ptrdiff_t const dstjoff = dstoff[1];
-  ptrdiff_t const dstkoff = dstoff[2];
-
-  ptrdiff_t const fi = srcioff % 2;
-  ptrdiff_t const fj = srcjoff % 2;
-  ptrdiff_t const fk = srckoff % 2;
-
-  ptrdiff_t const i0 = srcioff / 2;
-  ptrdiff_t const j0 = srcjoff / 2;
-  ptrdiff_t const k0 = srckoff / 2;
-
-  // ptrdiff_t const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
-  ptrdiff_t const srcdi = 1;
-  assert(srcdi == SRCOFF3(1, 0, 0) - SRCOFF3(0, 0, 0));
-  ptrdiff_t const srcdj = SRCOFF3(0, 1, 0) - SRCOFF3(0, 0, 0);
-  ptrdiff_t const srcdk = SRCOFF3(0, 0, 1) - SRCOFF3(0, 0, 0);
+  size_t const srcdj = SRCOFF3(0, 1, 0) - SRCOFF3(0, 0, 0);
+  size_t const srcdk = SRCOFF3(0, 0, 1) - SRCOFF3(0, 0, 0);
 
   // Loop over fine region
   // Label scheme: l 8 fk fj fi
 
-  ptrdiff_t is, js, ks;
-  ptrdiff_t id, jd, kd;
-  ptrdiff_t i, j, k;
+  size_t is, js, ks;
+  size_t id, jd, kd;
+  size_t i, j, k;
 
   // begin k loop
   k = 0;
@@ -889,190 +695,6 @@ l91:
 
 // end k loop
 l9:;
-}
-
-template <typename T, int ORDER>
-void prolongate_3d_rf2(T const *restrict const src,
-                       ivect3 const &restrict srcpadext,
-                       ivect3 const &restrict srcext, T *restrict const dst,
-                       ivect3 const &restrict dstpadext,
-                       ivect3 const &restrict dstext,
-                       ibbox3 const &restrict srcbbox,
-                       ibbox3 const &restrict dstbbox, ibbox3 const &restrict,
-                       ibbox3 const &restrict regbbox, void *extraargs) {
-  assert(not extraargs);
-
-  static_assert(ORDER >= 0 and ORDER % 2 == 1,
-                "ORDER must be non-negative and odd");
-
-  typedef typename typeprops<T>::real RT;
-  coeffs1d<RT, ORDER>::test();
-
-  if (any(srcbbox.stride() <= regbbox.stride() or
-          dstbbox.stride() != regbbox.stride())) {
-    CCTK_ERROR("Internal error: strides disagree");
-  }
-
-  if (any(srcbbox.stride() != reffact2 * dstbbox.stride())) {
-    CCTK_ERROR(
-        "Internal error: source strides are not twice the destination strides");
-  }
-
-  if (any(srcbbox.lower() % srcbbox.stride() != 0)) {
-    CCTK_ERROR("Internal error: source bbox is not aligned with vertices");
-  }
-  if (any(dstbbox.lower() % dstbbox.stride() != 0)) {
-    CCTK_ERROR("Internal error: destination bbox is not aligned with vertices");
-  }
-  if (any(regbbox.lower() % regbbox.stride() != 0)) {
-    CCTK_ERROR("Internal error: prolongation region bbox is not aligned with "
-               "vertices");
-  }
-
-  // This could be handled, but is likely to point to an error
-  // elsewhere
-  if (regbbox.empty()) {
-    CCTK_ERROR("Internal error: region extent is empty");
-  }
-
-  ivect3 const regext = regbbox.shape() / regbbox.stride();
-  assert(all((regbbox.lower() - srcbbox.lower()) % regbbox.stride() == 0));
-  ivect3 const srcoff = (regbbox.lower() - srcbbox.lower()) / regbbox.stride();
-  assert(all((regbbox.lower() - dstbbox.lower()) % regbbox.stride() == 0));
-  ivect3 const dstoff = (regbbox.lower() - dstbbox.lower()) / regbbox.stride();
-
-  bvect3 const needoffsetlo = srcoff % reffact2 != 0;
-  bvect3 const needoffsethi = (srcoff + regext - 1) % reffact2 != 0;
-  ivect3 const offsetlo = either(needoffsetlo, ORDER / 2 * reffact2 + 1,
-                                 either(regext > 1, ORDER / 2 * reffact2, 0));
-  ivect3 const offsethi = either(needoffsethi, ORDER / 2 * reffact2 + 1,
-                                 either(regext > 1, ORDER / 2 * reffact2, 0));
-  ibbox3 const src_regbbox_fine = regbbox.expand(offsetlo, offsethi);
-  ibbox3 const src_regbbox = src_regbbox_fine.expanded_for(srcbbox);
-  assert(src_regbbox.expanded_for(src_regbbox_fine) == src_regbbox_fine);
-  ibbox3 const &dst_regbbox = regbbox;
-  if (not src_regbbox.is_contained_in(srcbbox)) {
-    CCTK_ERROR("Internal error: source region extent is not contained in array "
-               "extent");
-  }
-  if (not dst_regbbox.is_contained_in(dstbbox)) {
-    CCTK_ERROR("Internal error: destination region extent is not contained in "
-               "array extent");
-  }
-
-#warning "TODO"
-#if 1
-
-  interp_driver_3d<T, ORDER>(src, srcpadext, srcext, dst, dstpadext, dstext,
-                             srcoff, dstoff, regext);
-
-#else
-
-  // Copy in the original source
-  // TODO: Don't copy
-  ivect3 srcdataext = src_regbbox.shape() / src_regbbox.stride();
-  ivect3 srcdataoff = offsetlo;
-  vector<T> srcdata(prod(srcdataext));
-  {
-    ptrdiff_t const srcipadext = srcpadext[0];
-    ptrdiff_t const srcjpadext = srcpadext[1];
-    ptrdiff_t const srckpadext = srcpadext[2];
-    ptrdiff_t const srciext = srcext[0];
-    ptrdiff_t const srcjext = srcext[1];
-    ptrdiff_t const srckext = srcext[2];
-    ptrdiff_t const srcioff = srcoff[0];
-    ptrdiff_t const srcjoff = srcoff[1];
-    ptrdiff_t const srckoff = srcoff[2];
-    ptrdiff_t const i0 = srcioff / 2 - srcdataoff[0];
-    ptrdiff_t const j0 = srcjoff / 2 - srcdataoff[1];
-    ptrdiff_t const k0 = srckoff / 2 - srcdataoff[2];
-    assert(i0 >= 0 && i0 + srcdataext[0] < srcext[0]);
-    assert(j0 >= 0 && j0 + srcdataext[1] < srcext[1]);
-    assert(k0 >= 0 && k0 + srcdataext[2] < srcext[2]);
-    assert(all(srcdataext == src_regbbox.shape() / src_regbbox.stride()));
-    assert(all(srcdataext <= srcext));
-    for (int k = 0; k < srcdataext[2]; ++k) {
-      for (int j = 0; j < srcdataext[1]; ++j) {
-        for (int i = 0; i < srcdataext[0]; ++i) {
-          srcdata[i + srcdataext[0] * (j + srcdataext[1] * k)] =
-              src[SRCIND3(i0 + i, j0 + j, k0 + k)];
-        }
-      }
-    }
-  }
-
-  bvect3 did_handle_direction = false;
-  for (int ndirs = 0; ndirs < 3; ++ndirs) {
-    // Handle longest direction last, since this is the most
-    // efficient, as prolongation increases the number of points
-    int dir = -1;
-    for (int d = 0; d < 3; ++d) {
-      if (!did_handle_direction[d] &&
-          (dir < 0 || srcdataext[d] < srcdataext[dir])) {
-        dir = d;
-      }
-    }
-
-    // Allocate destination array
-    ivect3 dstdataext = srcdataext;
-    dstdataext[dir] = (dst_regbbox.shape() / dst_regbbox.stride())[dir];
-    ivect3 dstdataoff = srcdataoff;
-    dstdataoff[dir] = 0;
-    vector<T> dstdata(prod(dstdataext));
-
-    // Prolongate
-    void (*interp_driver)(
-        T const *restrict const src, ivect3 const &restrict srcpadext,
-        ivect3 const &restrict srcext, T *restrict const dst,
-        ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
-        ivect3 const &restrict srcoff, ivect3 const &restrict dstoff,
-        ivect3 const &restrict regext) = 0;
-    switch (dir) {
-    case 0:
-      interp_driver = interp_driver_i<T, ORDER>;
-      break;
-    case 1:
-      interp_driver = interp_driver_j<T, ORDER>;
-      break;
-    case 2:
-      interp_driver = interp_driver_k<T, ORDER>;
-      break;
-    }
-    interp_driver(&srcdata.front(), srcdataext, srcdataext, &dstdata.front(),
-                  dstdataext, dstdataext, srcdataoff, ivect3(0), dstdataext);
-
-    // Switch arrays
-    swap(srcdata, dstdata); // should really be a move
-    srcdataext = dstdataext;
-    srcdataoff = dstdataoff;
-    did_handle_direction[dir] = true;
-  }
-
-  // Copy out the result
-  // TODO: Don't copy
-  {
-    ptrdiff_t const dstipadext = dstpadext[0];
-    ptrdiff_t const dstjpadext = dstpadext[1];
-    ptrdiff_t const dstkpadext = dstpadext[2];
-    ptrdiff_t const dstiext = dstext[0];
-    ptrdiff_t const dstjext = dstext[1];
-    ptrdiff_t const dstkext = dstext[2];
-    ptrdiff_t const dstioff = dstoff[0];
-    ptrdiff_t const dstjoff = dstoff[1];
-    ptrdiff_t const dstkoff = dstoff[2];
-    assert(all(srcdataext == dst_regbbox.shape() / dst_regbbox.stride()));
-    assert(all(srcdataext <= dstext));
-    for (int k = 0; k < srcdataext[2]; ++k) {
-      for (int j = 0; j < srcdataext[1]; ++j) {
-        for (int i = 0; i < srcdataext[0]; ++i) {
-          dst[DSTIND3(dstioff + i, dstjoff + j, dstkoff + k)] =
-              srcdata[i + srcdataext[0] * (j + srcdataext[1] * k)];
-        }
-      }
-    }
-  }
-
-#endif
 }
 
 #define TYPECASE(N, T)                                                         \

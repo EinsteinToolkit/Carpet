@@ -659,7 +659,6 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
     break;
   }
 
-  case op_ENOG2:
   case op_ENO: {
     static Timer timer("prolongate_ENO");
     timer.start();
@@ -1031,7 +1030,6 @@ void data<T>::transfer_restrict(data const *const src, ibbox const &dstregbox,
   case op_copy:
   case op_Lagrange:
   case op_ENO:
-  case op_ENOG2:
   case op_WENO:
   case op_TVD:
   case op_Lagrange_monotone:
@@ -1064,8 +1062,7 @@ void data<T>::transfer_restrict(data const *const src, ibbox const &dstregbox,
           break;
         }
         if (use_higher_order_restriction and transport_operator != op_WENO and
-            transport_operator != op_ENO and
-            transport_operator != op_ENOG2) { // HACK
+            transport_operator != op_ENO) { // HACK
           switch (restriction_order_space) {
           case 1:
             // Don't use call_operator, because we parallelise ourselves
@@ -1262,7 +1259,6 @@ void data<T>::time_interpolate(vector<data *> const &srcs, ibbox const &dstbox,
   }
 
   case op_ENO:
-  case op_ENOG2:
   case op_WENO:
   case op_TVD:
   case op_Lagrange_monotone: {

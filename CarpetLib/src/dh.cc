@@ -23,11 +23,6 @@ using namespace CarpetLib;
 
 set<dh *> dh::alldh;
 
-// Exchange lo and hi
-static b2vect exchange_lohi(const b2vect &x) { return b2vect(x[1], x[0]); }
-
-static i2vect exchange_lohi(const i2vect &x) { return i2vect(x[1], x[0]); }
-
 // Indexing over neighbours
 
 static int num_nbs() { return ipow(3, dim); }
@@ -260,15 +255,6 @@ void dh::regrid(bool const do_init) {
       i2vect const &buffer_width = buffer_widths.AT(rl);
       i2vect const &overlap_width = overlap_widths.AT(rl);
 
-      // Constants for fixed 2 ghosts
-      // TODO: Enable this only for grid functions
-      i2vect const stencil_size2 = ivect(2);
-      int const num_substeps2 = 2;
-      i2vect const ghost_width2 = min(stencil_size2, ghost_width);
-      i2vect const buffer_width2 =
-          min((num_substeps2 - 1) * ghost_width2, buffer_width);
-      int const prolongation_order_space2 = 3; // really ENO, of course
-
       // Domain:
 
       static Timers::Timer timer_domain("domain");
@@ -281,7 +267,7 @@ void dh::regrid(bool const do_init) {
 
       i2vect const &boundary_width = h.boundary_width;
       ASSERT_rl(all(all(boundary_width >= 0)),
-                "The boundary widths must not be negative");
+                "The gh boundary widths must not be negative");
 
       ibbox const domain_active = domain_exterior.expand(-boundary_width);
       // Variables may have size zero
@@ -305,6 +291,7 @@ void dh::regrid(bool const do_init) {
         // Interior:
 
         ibbox &intr = box.interior;
+        intr = ibbox::poison();
 
         // The interior of the grid has the extent as specified by the
         // regridding thorn
@@ -342,9 +329,10 @@ void dh::regrid(bool const do_init) {
         // Exterior:
 
         ibbox &extr = box.exterior;
+        extr = ibbox::poison();
 
         ASSERT_c(all(all(ghost_width >= 0)),
-                 "The ghost widths must not be negative");
+                 "The gh ghost widths must not be negative");
         extr = intr.expand(i2vect(not is_outer_boundary) * ghost_width);
 
         // (The exterior must not be empty)
@@ -359,6 +347,7 @@ void dh::regrid(bool const do_init) {
         // Cactus ghost zones (which include outer boundaries):
 
         ibset &ghosts = box.ghosts;
+        ghosts = ibset::poison();
 
         ghosts = extr - intr;
 
@@ -371,6 +360,7 @@ void dh::regrid(bool const do_init) {
         // Communicated region:
 
         ibbox &comm = box.communicated;
+        comm = ibbox::poison();
 
         comm = extr.expand(i2vect(is_outer_boundary) * (-boundary_width));
 
@@ -388,6 +378,7 @@ void dh::regrid(bool const do_init) {
         // Outer boundary:
 
         ibset &outer_boundaries = box.outer_boundaries;
+        outer_boundaries = ibset::poison();
 
         outer_boundaries = extr - comm;
 
@@ -400,6 +391,7 @@ void dh::regrid(bool const do_init) {
         // Owned region:
 
         ibbox &owned = box.owned;
+        owned = ibbox::poison();
 
         owned = intr.expand(i2vect(is_outer_boundary) * (-boundary_width));
 
@@ -425,6 +417,7 @@ void dh::regrid(bool const do_init) {
         // boundaries):
 
         ibset &boundaries = box.boundaries;
+        boundaries = ibset::poison();
 
         boundaries = comm - owned;
 
@@ -459,8 +452,7 @@ void dh::regrid(bool const do_init) {
       ibset const notowned = domain_enlarged - allowned;
 
       // All not-active points
-      ibset const notactive =
-          notowned.expand(exchange_lohi(buffer_width + overlap_width));
+      ibset const notactive = notowned.expand(buffer_width + overlap_width);
 
       // All not-active points, in stages
       int const num_substeps = any(any(ghost_width == 0))
@@ -491,6 +483,7 @@ void dh::regrid(bool const do_init) {
 #endif
 
       // All buffer zones
+      // ibset const allbuffers = allowned & notowned.expand (buffer_width);
       ibset &allbuffers = level_level.buffers;
       allbuffers = allowned & notowned.expand(buffer_width);
 
@@ -517,17 +510,6 @@ void dh::regrid(bool const do_init) {
       }
 #endif
 
-      // For 2 ghosts: Reduce buffer size, then recalculate other
-      // quantities from this
-      ibset const notowned2 = notowned.expand(buffer_width - buffer_width2);
-      ibset const allbuffers2 = allbuffers - notowned2;
-      ASSERT_rl(allbuffers2 <= allbuffers, "Buffer zones must be consistent");
-      ibset const allowned2 = allactive + alloverlaps + allbuffers2;
-      ASSERT_rl(allowned2 <= allowned, "Owned regions must be consistent");
-      ASSERT_rl(allowned2 <= domain_active, "The owned regions must be "
-                                            "contained in the active part of "
-                                            "the domain");
-
       // Overlap zones and buffer zones must be in the active part of
       // the domain
       ASSERT_rl(allactive <= domain_active,
@@ -546,16 +528,6 @@ void dh::regrid(bool const do_init) {
                 "The active points, the overlap points, and buffer points "
                 "together must be exactly the owned region");
 
-      ASSERT_rl(allbuffers2 <= domain_active,
-                "The buffer zones must be in the active part of the domain");
-      ASSERT_rl((allactive & allbuffers2).empty(),
-                "The active points and the buffer zones cannot overlap");
-      ASSERT_rl((alloverlaps & allbuffers2).empty(),
-                "The overlap zones and the buffer zones cannot overlap");
-      ASSERT_rl(allactive + alloverlaps + allbuffers2 == allowned2,
-                "The active points, the overlap points, and buffer points "
-                "together must be exactly the owned region");
-
       for (int c = 0; c < h.components(rl); ++c) {
         full_dboxes &box = full_level.AT(c);
 
@@ -570,57 +542,6 @@ void dh::regrid(bool const do_init) {
         ASSERT_c(box.active == box.owned - (box.buffers + box.overlaps),
                  "The active region must equal the owned region minus the "
                  "(buffer zones plus overlap zones)");
-
-        // Buffer zones:
-        box.buffers2 = box.buffers & allbuffers2;
-
-        // Owned region:
-        box.owned2 = box.active + box.overlaps + box.buffers2;
-        ASSERT_c(box.owned2 <= box.owned,
-                 "The owned region must be consistent");
-        ASSERT_c(box.active == box.owned2 - (box.buffers2 + box.overlaps),
-                 "The active region must equal the owned region minus the "
-                 "(buffer zones plus overlap zones)");
-
-        // Interior:
-        box.interior2 =
-            box.owned2.expand(i2vect(box.is_outer_boundary) * boundary_width);
-        ASSERT_c(box.interior2 <= box.interior,
-                 "The interior region must be consistent");
-
-        // Exterior:
-        box.exterior2 = box.interior2.expand(i2vect(not box.is_outer_boundary) *
-                                             ghost_width2);
-        ASSERT_c(box.exterior2 <= box.exterior,
-                 "The exterior region must be consistent");
-
-        // Cactus ghost zones (which include outer boundaries):
-        box.ghosts2 = box.exterior2 - box.interior2;
-        ASSERT_c(box.ghosts2 <= domain_exterior,
-                 "The ghost zones must be contained in the domain");
-
-        // Communicated region:
-        {
-          ibset const not_exterior2 = domain_enlarged - box.exterior2;
-          ibset const not_communicated2 = not_exterior2.expand(
-              i2vect(exchange_lohi(box.is_outer_boundary)) * boundary_width);
-          box.communicated2 = domain_enlarged - not_communicated2;
-        }
-        ASSERT_c(box.communicated2 <= domain_active,
-                 "The communicated region must be contained in the active part "
-                 "of the domain");
-
-        // Outer boundary:
-        box.outer_boundaries2 = box.exterior2 - box.communicated2;
-        ASSERT_c(box.outer_boundaries2 <= domain_boundary,
-                 "The outer boundary must be contained in the outer boundary "
-                 "of the domain");
-
-        // Boundaries:
-        box.boundaries2 = box.communicated2 - box.owned2;
-        ASSERT_c(
-            box.boundaries2 <= domain_active,
-            "The boundary must be contained in the active part of the domain");
       } // for c
 
       for (int lc = 0; lc < h.local_components(rl); ++lc) {
@@ -678,29 +599,6 @@ void dh::regrid(bool const do_init) {
         ASSERT_c((box.interior | box.ghosts) == box.exterior,
                  "Consistency check");
 
-        ASSERT_c((box.active & box.buffers2).empty(), "Consistency check");
-        ASSERT_c((box.overlaps & box.buffers2).empty(), "Consistency check");
-        ASSERT_c((box.active | box.overlaps | box.buffers2) == box.owned2,
-                 "Consistency check");
-
-        ASSERT_c((box.owned2 & box.boundaries2).empty(), "Consistency check");
-        ASSERT_c((box.owned2 | box.boundaries2) == box.communicated2,
-                 "Consistency check");
-
-        ASSERT_c((box.communicated2 & box.outer_boundaries2).empty(),
-                 "Consistency check");
-        ASSERT_c((box.communicated2 | box.outer_boundaries2) == box.exterior2,
-                 "Consistency check");
-
-        if (!(box.boundaries2 <= box.ghosts2)) {
-          cout << "box=" << box << "\n";
-        }
-        ASSERT_c(box.boundaries2 <= box.ghosts2, "Consistency check");
-
-        ASSERT_c((box.interior2 & box.ghosts2).empty(), "Consistency check");
-        ASSERT_c((box.interior2 | box.ghosts2) == box.exterior2,
-                 "Consistency check");
-
       } // for c
 
       timer_test.stop();
@@ -714,16 +612,12 @@ void dh::regrid(bool const do_init) {
       static Timers::Timer timer_comm_mgprol("mgprol");
       static Timers::Timer timer_comm_refprol("refprol");
       static Timers::Timer timer_comm_sync("sync");
-      static Timers::Timer timer_comm_sync2("sync2");
       static Timers::Timer timer_comm_refbndprol("refbndprol");
-      static Timers::Timer timer_comm_refbndprol2("refbndprol2");
       timer_comm_mgrest.instantiate();
       timer_comm_mgprol.instantiate();
       timer_comm_refprol.instantiate();
       timer_comm_sync.instantiate();
-      timer_comm_sync2.instantiate();
       timer_comm_refbndprol.instantiate();
-      timer_comm_refbndprol2.instantiate();
 
       for (int lc = 0; lc < h.local_components(rl); ++lc) {
         int const c = h.get_component(rl, lc);
@@ -900,7 +794,6 @@ void dh::regrid(bool const do_init) {
 #endif
 
           ibset &sync = box.sync;
-          sync = ibset();
 
           for (int cc = 0; cc < h.components(rl); ++cc) {
             full_dboxes const &obox = full_level.AT(cc);
@@ -938,70 +831,10 @@ void dh::regrid(bool const do_init) {
 
         timer_comm_sync.stop();
 
-        // Synchronisation with fewer ghosts:
-
-        timer_comm_sync2.start();
-
-        {
-
-// Synchronisation should fill as many boundary points as
-// possible
-
-#if 0
-          // Outer boundaries are not synchronised, since they cannot
-          // be filled by boundary prolongation either, and therefore
-          // the user code must set them anyway.
-          ibset needrecv = box.boundaries2;
-#else
-          // Outer boundaries are synchronised for backward
-          // compatibility.
-          ibset needrecv = box.ghosts2;
-#endif
-
-          ibset &sync2 = box.sync2;
-          sync2 = ibset();
-
-          for (int cc = 0; cc < h.components(rl); ++cc) {
-            full_dboxes const &obox = full_level.AT(cc);
-
-#if 0
-            ibset const ovlp = needrecv & obox.owned2;
-#else
-            ibset const ovlp = needrecv & obox.interior2;
-#endif
-
-            if (cc == c) {
-              ASSERT_cc(ovlp.empty(),
-                        "A region may not synchronise from itself");
-            }
-
-            for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end();
-                 ++ri) {
-              ibbox const &recv = *ri;
-              ibbox const &send = recv;
-              fast_level.fast_sync2_sendrecv.push_back(
-                  sendrecv_pseudoregion_t(send, cc, recv, c));
-              if (not on_this_proc(rl, cc)) {
-                fast_dboxes &fast_level_otherproc =
-                    fast_level_otherprocs.AT(this_proc(rl, cc));
-                fast_level_otherproc.fast_sync2_sendrecv.push_back(
-                    sendrecv_pseudoregion_t(send, cc, recv, c));
-              }
-            }
-
-            needrecv -= ovlp;
-            sync2 += ovlp;
-
-          } // for cc
-        }
-
-        timer_comm_sync2.stop();
-
         // Boundary prolongation:
 
         timer_comm_refbndprol.start();
 
-        box.bndref = ibset();
         if (rl > 0) {
           int const orl = rl - 1;
 
@@ -1078,95 +911,6 @@ void dh::regrid(bool const do_init) {
         } // if rl > 0
 
         timer_comm_refbndprol.stop();
-
-        // Boundary prolongation with fewer ghosts:
-
-        timer_comm_refbndprol2.start();
-
-        box.bndref2 = ibset();
-        if (rl > 0) {
-          int const orl = rl - 1;
-
-#if 0
-          // Outer boundaries are not synchronised, since they cannot
-          // be filled by boundary prolongation either, and therefore
-          // the user code must set them anyway.
-          ibset needrecv = box.boundaries2;
-#else
-          // Outer boundaries are synchronised for backward
-          // compatibility.
-          ibset needrecv = box.ghosts2;
-#endif
-
-          // Points which are synchronised need not be boundary
-          // prolongated
-          needrecv -= box.sync2;
-
-          // Outer boundary points cannot be boundary prolongated
-          needrecv &= box.communicated2;
-
-          // Prolongation must fill what cannot be synchronised, and
-          // also all buffer zones
-          needrecv += box.buffers2;
-
-          ibset &bndref2 = box.bndref2;
-
-          i2vect const stencil_size =
-              min(i2vect(prolongation_order_space2 / 2),
-                  i2vect(prolongation_stencil_size(rl)));
-
-          ASSERT_c(
-              all(h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
-              "Refinement factors must be integer multiples of each other");
-          i2vect const reffact = i2vect(h.reffacts.at(rl) / h.reffacts.at(orl));
-
-          for (int cc = 0; cc < h.components(orl); ++cc) {
-            full_dboxes const &obox = full_boxes.AT(ml).AT(orl).AT(cc);
-
-            // See "refinement prolongation"
-            ibset const expanded_oactive(
-                obox.active.expanded_for(box.interior)
-                    .expand(h.refcent == vertex_centered ? reffact
-                                                         : reffact - 1));
-            ibset const ovlp = needrecv & expanded_oactive;
-
-            for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end();
-                 ++ri) {
-              ibbox const &recv = *ri;
-              ibbox const send =
-                  recv.expanded_for(obox.interior).expand(stencil_size);
-              if (!(send <= obox.exterior2)) {
-                cout << "send=" << send << "\n"
-                     << "recv=" << recv << "\n"
-                     << "obox.exterior2=" << obox.exterior2 << "\n";
-              }
-              ASSERT_c(send <= obox.exterior2, "Boundary prolongation: Send "
-                                               "region must be contained in "
-                                               "exterior");
-              fast_level.fast_ref_bnd_prol2_sendrecv.push_back(
-                  sendrecv_pseudoregion_t(send, cc, recv, c));
-              if (not on_this_proc(orl, cc)) {
-                fast_dboxes &fast_level_otherproc =
-                    fast_level_otherprocs.AT(this_proc(orl, cc));
-                fast_level_otherproc.fast_ref_bnd_prol2_sendrecv.push_back(
-                    sendrecv_pseudoregion_t(send, cc, recv, c));
-              }
-            }
-
-            needrecv -= ovlp;
-            bndref2 += ovlp;
-
-          } // for cc
-
-          // All points must now have been received, either through
-          // synchronisation or through boundary prolongation
-          ASSERT_c(needrecv.empty(), "Synchronisation and boundary "
-                                     "prolongation: All points must have been "
-                                     "received");
-
-        } // if rl > 0
-
-        timer_comm_refbndprol2.stop();
 
       } // for lc
 
@@ -2099,12 +1843,6 @@ void dh::regrid(bool const do_init) {
                            &fast_dboxes::fast_ref_bnd_prol_sendrecv);
         timer_bcast_comm_ref_bnd_prol.stop();
 
-        static Timers::Timer timer_bcast_comm_ref_bnd_prol2("ref_bnd_prol2");
-        timer_bcast_comm_ref_bnd_prol2.start();
-        broadcast_schedule(fast_level_otherprocs, fast_level,
-                           &fast_dboxes::fast_ref_bnd_prol2_sendrecv);
-        timer_bcast_comm_ref_bnd_prol2.stop();
-
         if (rl > 0) {
           int const orl = rl - 1;
           fast_dboxes &fast_olevel = fast_boxes.AT(ml).AT(orl);
@@ -2420,21 +2158,6 @@ void dh::erase(ggf *const f) {
   assert(erased == 1);
 }
 
-// Constructors
-
-dh::full_dboxes::full_dboxes()
-    : exterior(ibbox::poison()), outer_boundaries(ibset::poison()),
-      communicated(ibbox::poison()), boundaries(ibset::poison()),
-      owned(ibbox::poison()), buffers(ibset::poison()),
-      overlaps(ibset::poison()), active(ibset::poison()), sync(ibset::poison()),
-      bndref(ibset::poison()), ghosts(ibset::poison()),
-      interior(ibbox::poison()), exterior2(ibset::poison()),
-      outer_boundaries2(ibset::poison()), communicated2(ibset::poison()),
-      boundaries2(ibset::poison()), owned2(ibset::poison()),
-      buffers2(ibset::poison()), sync2(ibset::poison()),
-      bndref2(ibset::poison()), ghosts2(ibset::poison()),
-      interior2(ibset::poison()) {}
-
 // Equality
 
 bool dh::full_dboxes::operator==(full_dboxes const &b) const {
@@ -2444,15 +2167,7 @@ bool dh::full_dboxes::operator==(full_dboxes const &b) const {
          communicated == b.communicated and boundaries == b.boundaries and
          owned == b.owned and buffers == b.buffers and
          overlaps == b.overlaps and active == b.active and sync == b.sync and
-         bndref == b.bndref and ghosts == b.ghosts and
-         interior == b.interior and
-
-         exterior2 == b.exterior2 and
-         outer_boundaries2 == b.outer_boundaries2 and
-         communicated2 == b.communicated2 and boundaries2 == b.boundaries2 and
-         owned2 == b.owned2 and buffers2 == b.buffers2 and sync2 == b.sync2 and
-         bndref2 == b.bndref2 and ghosts2 == b.ghosts2 and
-         interior2 == b.interior2;
+         bndref == b.bndref and ghosts == b.ghosts and interior == b.interior;
 }
 
 // MPI datatypes
@@ -2515,8 +2230,6 @@ MPI_Datatype mpi_datatype(dh::fast_dboxes const &) {
         ENTRY(dh::srpvect, fast_ref_rest_sendrecv),
         ENTRY(dh::srpvect, fast_sync_sendrecv),
         ENTRY(dh::srpvect, fast_ref_bnd_prol_sendrecv),
-        ENTRY(dh::srpvect, fast_sync2_sendrecv),
-        ENTRY(dh::srpvect, fast_ref_bnd_prol2_sendrecv),
         ENTRY(dh::srpvect, fast_old2new_sync_sendrecv),
         ENTRY(dh::srpvect, fast_old2new_ref_prol_sendrecv),
         ENTRY(dh::srpvect, fast_ref_refl_sendrecv_0_0),
@@ -2589,19 +2302,13 @@ size_t dh::full_dboxes::memory() const {
          memoryof(outer_boundaries) + memoryof(communicated) +
          memoryof(boundaries) + memoryof(owned) + memoryof(buffers) +
          memoryof(overlaps) + memoryof(active) + memoryof(sync) +
-         memoryof(bndref) + memoryof(ghosts) + memoryof(interior) +
-
-         memoryof(exterior2) + memoryof(outer_boundaries2) +
-         memoryof(communicated2) + memoryof(boundaries2) + memoryof(owned2) +
-         memoryof(buffers2) + memoryof(sync2) + memoryof(bndref2) +
-         memoryof(ghosts2) + memoryof(interior2);
+         memoryof(bndref) + memoryof(ghosts) + memoryof(interior);
 }
 
 size_t dh::fast_dboxes::memory() const {
   return memoryof(fast_mg_rest_sendrecv) + memoryof(fast_mg_prol_sendrecv) +
          memoryof(fast_ref_prol_sendrecv) + memoryof(fast_ref_rest_sendrecv) +
          memoryof(fast_sync_sendrecv) + memoryof(fast_ref_bnd_prol_sendrecv) +
-         memoryof(fast_sync2_sendrecv) + memoryof(fast_ref_bnd_prol2_sendrecv) +
          memoryof(fast_ref_refl_sendrecv_0_0) +
          memoryof(fast_ref_refl_sendrecv_0_1) +
          memoryof(fast_ref_refl_sendrecv_1_0) +
@@ -2762,36 +2469,6 @@ istream &dh::full_dboxes::input(istream &is) {
     consume(is, "interior:");
     is >> interior;
     skipws(is);
-    consume(is, "exterior2:");
-    is >> exterior2;
-    skipws(is);
-    consume(is, "outer_boundaries2:");
-    is >> outer_boundaries2;
-    skipws(is);
-    consume(is, "communicated2:");
-    is >> communicated2;
-    skipws(is);
-    consume(is, "boundaries2:");
-    is >> boundaries2;
-    skipws(is);
-    consume(is, "owned2:");
-    is >> owned2;
-    skipws(is);
-    consume(is, "buffers2:");
-    is >> buffers2;
-    skipws(is);
-    consume(is, "sync2:");
-    is >> sync2;
-    skipws(is);
-    consume(is, "bndref2:");
-    is >> bndref2;
-    skipws(is);
-    consume(is, "ghosts2:");
-    is >> ghosts2;
-    skipws(is);
-    consume(is, "interior2:");
-    is >> interior2;
-    skipws(is);
     consume(is, "}");
   } catch (input_error &err) {
     cout << "Input error while reading a dh::full_dboxes" << endl;
@@ -2823,12 +2500,6 @@ istream &dh::fast_dboxes::input(istream &is) {
     skipws(is);
     consume(is, "fast_ref_bnd_prol_sendrecv:");
     is >> fast_ref_bnd_prol_sendrecv;
-    skipws(is);
-    consume(is, "fast_sync2_sendrecv:");
-    is >> fast_sync_sendrecv;
-    skipws(is);
-    consume(is, "fast_ref_bnd_prol2_sendrecv:");
-    is >> fast_ref_bnd_prol2_sendrecv;
     skipws(is);
     consume(is, "fast_old2new_sync_sendrecv:");
     is >> fast_old2new_sync_sendrecv;
@@ -2921,13 +2592,7 @@ ostream &dh::full_dboxes::output(ostream &os) const {
      << "   buffers: " << buffers << eol << "   overlaps: " << overlaps << eol
      << "   active: " << active << eol << "   sync: " << sync << eol
      << "   bndref: " << bndref << eol << "   ghosts: " << ghosts << eol
-     << "   interior: " << interior << eol << "   exterior2: " << exterior2
-     << eol << "   outer_boundaries2: " << outer_boundaries2 << eol
-     << "   communicated2: " << communicated2 << eol
-     << "   boundaries2: " << boundaries2 << eol << "   owned2: " << owned2
-     << eol << "   buffers2: " << buffers2 << eol << "   sync2: " << sync2
-     << eol << "   bndref2: " << bndref2 << eol << "   interior2: " << interior2
-     << eol << "   ghosts2: " << ghosts2 << eol << "}" << eol;
+     << "   interior: " << interior << eol << "}" << eol;
   return os;
 }
 
@@ -2940,8 +2605,6 @@ ostream &dh::fast_dboxes::output(ostream &os) const {
      << "   fast_ref_rest_sendrecv: " << fast_ref_rest_sendrecv << eol
      << "   fast_sync_sendrecv: " << fast_sync_sendrecv << eol
      << "   fast_ref_bnd_prol_sendrecv: " << fast_ref_bnd_prol_sendrecv << eol
-     << "   fast_sync2_sendrecv: " << fast_sync2_sendrecv << eol
-     << "   fast_ref_bnd_prol2_sendrecv: " << fast_ref_bnd_prol2_sendrecv << eol
      << "   fast_ref_refl_sendrecv_0_0: " << fast_ref_refl_sendrecv_0_0 << eol
      << "   fast_ref_refl_sendrecv_0_1: " << fast_ref_refl_sendrecv_0_1 << eol
      << "   fast_ref_refl_sendrecv_1_0: " << fast_ref_refl_sendrecv_1_0 << eol
