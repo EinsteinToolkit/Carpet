@@ -131,6 +131,28 @@ public:
     ibset ghosts;   // ghost zones, as seen from Cactus
     ibbox interior; // interior (without ghost zones)
 
+    // For fixed 2 ghost zones:
+    ibset exterior2;
+
+    // is_outer_boundary2 = is_outer_boundary
+    ibset outer_boundaries2;
+    ibset communicated2;
+
+    ibset boundaries2;
+    ibset owned2;
+
+    ibset buffers2;
+    // overlaps2 = overlaps
+    // active2 = active
+
+    ibset sync2;
+    ibset bndref2;
+
+    ibset ghosts2;
+    ibset interior2;
+
+    full_dboxes();
+
     bool operator==(full_dboxes const &b) const CCTK_MEMBER_ATTRIBUTE_PURE;
     bool operator!=(full_dboxes const &b) const { return not operator==(b); }
 
@@ -149,6 +171,8 @@ public:
     srpvect fast_ref_rest_sendrecv;
     srpvect fast_sync_sendrecv;
     srpvect fast_ref_bnd_prol_sendrecv;
+    srpvect fast_sync2_sendrecv;
+    srpvect fast_ref_bnd_prol2_sendrecv;
 
     // refluxing
     // vect<vect<srpvect,2>,dim> fast_ref_refl_sendrecv;
