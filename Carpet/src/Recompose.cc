@@ -2018,7 +2018,7 @@ static void ClassifyPoints(cGH const *const cctkGH, int const rl) {
                   dd.light_boxes.AT(mglevel).AT(reflevel).AT(component);
               const ibbox ext = light_box.exterior;
               ibset prev_region, curr_region(active);
-              for (int i = 0; i <= num_substeps; ++i, prev_region = curr_region,
+              for (int step = 0; step <= num_substeps; ++step, prev_region = curr_region,
                        curr_region = curr_region.expand(i2vect(1))) {
                 const ibset strip = ext & (curr_region - prev_region);
                 LOOP_OVER_BSET(cctkGH, strip, box, imin, imax) {
@@ -2029,7 +2029,7 @@ static void ClassifyPoints(cGH const *const cctkGH, int const rl) {
                              imax[0], imax[1], imax[2], cctk_lsh[0],
                              cctk_lsh[1], cctk_lsh[2]) {
                     const int ind = CCTK_GFINDEX3D(cctkGH, i, j, k);
-                    point_class[ind] = i;
+                    point_class[ind] = step;
                   }
                   CCTK_ENDLOOP3(point_class);
                 }
