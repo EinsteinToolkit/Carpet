@@ -2003,15 +2003,40 @@ static void ClassifyPoints(cGH const *const cctkGH, int const rl) {
     BEGIN_MGLEVEL_LOOP(cctkGH) {
       ENTER_LEVEL_MODE(cctkGH, rl) {
         BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
+          dh const &dd(*vdd.AT(map));
+          ibset const &active = dd.level_boxes.AT(mglevel).AT(reflevel).active;
+          i2vect const &ghost_width = dd.ghost_widths.AT(reflevel);
+          i2vect const &buffer_width = dd.buffer_widths.AT(reflevel);
+          int const num_substeps =
+              any(any(ghost_width == 0))
+                  ? 0
+                  : minval(minval(buffer_width + ghost_width));
           BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
             DECLARE_CCTK_ARGUMENTS;
             if (point_class) {
+              const dh::light_dboxes &light_box =
+                  dd.light_boxes.AT(mglevel).AT(reflevel).AT(component);
+              const ibbox ext = light_box.exterior;
+              ibset prev_region, curr_region(active);
+              for (int i = 0; i <= num_substeps; ++i, prev_region = curr_region,
+                       curr_region = curr_region.expand(i2vect(1))) {
+                const ibset strip = ext & (curr_region - prev_region);
+                LOOP_OVER_BSET(cctkGH, strip, box, imin, imax) {
+
+                  assert(dim == 3);
 #pragma omp parallel
-              CCTK_LOOP3_ALL(CarpetClassifyPoints, cctkGH, i, j, k) {
-                int const ind = CCTK_GFINDEX3D(cctkGH, i, j, k);
-                point_class[ind] = 1;
+                  CCTK_LOOP3(point_class, i, j, k, imin[0], imin[1], imin[2],
+                             imax[0], imax[1], imax[2], cctk_lsh[0],
+                             cctk_lsh[1], cctk_lsh[2]) {
+                    const int ind = CCTK_GFINDEX3D(cctkGH, i, j, k);
+                    point_class[ind] = i;
+                  }
+                  CCTK_ENDLOOP3(point_class);
+                }
+                END_LOOP_OVER_BSET;
               }
-              CCTK_ENDLOOP3_ALL(CarpetClassifyPoints);
+              // by now prev_region is the last one used
+              assert(ext <= prev_region);
             }
           }
           END_LOCAL_COMPONENT_LOOP;
