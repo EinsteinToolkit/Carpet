@@ -125,9 +125,7 @@ int CallFunction(void *function,           ///< the function to call
               bool done = false;
               while(!done) {
                 done = true;
-                if(not pregroups.empty()) {
-                  PreSyncGroups(attribute,cctkGH,pregroups);
-                }
+                PreSyncGroups(attribute,cctkGH,pregroups);
                 try {
                   BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
                     BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
@@ -156,9 +154,7 @@ int CallFunction(void *function,           ///< the function to call
         BEGIN_META_MODE(cctkGH) {
           BEGIN_MGLEVEL_LOOP(cctkGH) {
             BEGIN_REFLEVEL_LOOP(cctkGH) {
-              if(not pregroups.empty()) {
-                PreSyncGroups(attribute,cctkGH,pregroups);
-              }
+              PreSyncGroups(attribute,cctkGH,pregroups);
               BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
                 CallScheduledFunction("Meta time singlemap mode", function,
                                       attribute, data, user_timer);
@@ -178,9 +174,7 @@ int CallFunction(void *function,           ///< the function to call
         BEGIN_META_MODE(cctkGH) {
           BEGIN_MGLEVEL_LOOP(cctkGH) {
             BEGIN_REFLEVEL_LOOP(cctkGH) {
-              if(not pregroups.empty()) {
-                PreSyncGroups(attribute,cctkGH,pregroups);
-              }
+              PreSyncGroups(attribute,cctkGH,pregroups);
               CallScheduledFunction("Meta time level mode", function, attribute,
                                     data, user_timer);
               if (not sync_groups.empty()) {
@@ -253,9 +247,7 @@ int CallFunction(void *function,           ///< the function to call
       if (attribute->loop_local) {
         BEGIN_GLOBAL_MODE(cctkGH) {
           BEGIN_REFLEVEL_LOOP(cctkGH) {
-            if (not sync_groups.empty()) {
-              PreSyncGroups(attribute,cctkGH,pregroups);
-            }
+            PreSyncGroups(attribute,cctkGH,pregroups);
             BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
               BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
                 CallScheduledFunction("Global time local mode", function,
@@ -275,9 +267,7 @@ int CallFunction(void *function,           ///< the function to call
       } else if (attribute->loop_singlemap) {
         BEGIN_GLOBAL_MODE(cctkGH) {
           BEGIN_REFLEVEL_LOOP(cctkGH) {
-            if (not sync_groups.empty()) {
-              PreSyncGroups(attribute,cctkGH,pregroups);
-            }
+            PreSyncGroups(attribute,cctkGH,pregroups);
             BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
               CallScheduledFunction("Global time singlemap mode", function,
                                     attribute, data, user_timer);
@@ -294,9 +284,7 @@ int CallFunction(void *function,           ///< the function to call
       } else if (attribute->loop_level) {
         BEGIN_GLOBAL_MODE(cctkGH) {
           BEGIN_REFLEVEL_LOOP(cctkGH) {
-            if (not sync_groups.empty()) {
-              PreSyncGroups(attribute,cctkGH,pregroups);
-            }
+            PreSyncGroups(attribute,cctkGH,pregroups);
             CallScheduledFunction("Global time level mode", function, attribute,
                                   data, user_timer);
             if (not sync_groups.empty()) {
@@ -331,9 +319,7 @@ int CallFunction(void *function,           ///< the function to call
 
   } else if (attribute->level) {
     // Level operation: call once per refinement level
-    if (not sync_groups.empty()) {
-      PreSyncGroups(attribute,cctkGH,pregroups);
-    }
+    PreSyncGroups(attribute,cctkGH,pregroups);
 
     if (attribute->loop_local) {
       BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
@@ -360,9 +346,7 @@ int CallFunction(void *function,           ///< the function to call
 
   } else if (attribute->singlemap) {
     // Single map operation: call once per refinement level and map
-    if (not sync_groups.empty()) {
-      PreSyncGroups(attribute,cctkGH,pregroups);
-    }
+    PreSyncGroups(attribute,cctkGH,pregroups);
 
     if (attribute->loop_local) {
       BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
@@ -386,9 +370,7 @@ int CallFunction(void *function,           ///< the function to call
 
   } else {
     // Local operation: call once per component
-    if (not sync_groups.empty()) {
-      PreSyncGroups(attribute,cctkGH,pregroups);
-    }
+    PreSyncGroups(attribute,cctkGH,pregroups);
 
     BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
       BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {

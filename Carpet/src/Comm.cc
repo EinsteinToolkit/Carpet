@@ -85,8 +85,9 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
   // create a new set with empty and no-storage groups removed
   vector<int> goodgroups;
   goodgroups.reserve(groups.size());
+  std::cout << "CarpetSync(" << groups << ")" << std::endl;
   for (size_t group = 0; group < groups.size(); group++) {
-    ApplyGroup applyGroup(cctkGH,group);
+    ApplyGroup applyGroup(cctkGH,groups[group]);
     const int g = groups.AT(group);
     const int grouptype = CCTK_GroupTypeI(g);
     char *const groupname = CCTK_GroupName(g);
