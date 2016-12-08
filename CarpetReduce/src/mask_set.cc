@@ -6,10 +6,7 @@
 
 #include "bits.h"
 
-extern "C" void assert_safe();
-
 extern "C" void MaskBase_SetMask(CCTK_ARGUMENTS) {
-  assert_safe();
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 

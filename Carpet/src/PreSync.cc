@@ -9,8 +9,6 @@
 #include <math.h>
 #include <array>
 
-#define monitor(X) monitor_(X,__FILE__,__LINE__)
-
 namespace Carpet {
 
 // The upper left-hand corner of a 2-D simulation.
@@ -44,12 +42,46 @@ namespace Carpet {
 #define WH_INTERIOR            0x4
 #define WH_BOUNDARY            0x2 /* Describes B+W cells */
 #define WH_GHOSTS              0x1
-#define WH_INVALIDATE_EXTERIOR 0x8
+#define WH_NOWHERE             0x0
+
+struct var_tuple {
+  int vi; // var index
+  int tl; // time level;
+  var_tuple() : vi(-1), tl(0) {}
+  var_tuple(int vi_) : vi(vi_), tl(0) {}
+  var_tuple(int vi_,int tl_) : vi(vi_), tl(tl_) {}
+};
+
+std::ostream& operator<<(std::ostream& o,const var_tuple& vt) {
+  o << CCTK_FullName(vt.vi);
+  for(int i=0;i<vt.tl;i++)
+    o << "_p";
+  return o;
+}
+
+bool operator<(const var_tuple& v1,const var_tuple& v2) {
+  if(v1.vi < v2.vi) return true;
+  if(v1.vi > v2.vi) return false;
+  if(v1.tl < v2.tl) return true;
+  return false;
+}
 
 inline bool on(int flags,int flag) {
   return (flags & flag) == flag;
 }
 
+inline void cctk_assert_(int line,const char *file,const char *thorn,const char *str) {
+  std::ostringstream msg; 
+  msg << "Assertion Failed: " << str;
+  CCTK_Error(line,file,thorn,msg.str().c_str());
+}
+
+#define CCTK_ASSERT(X) if(!(X)) cctk_assert_(__LINE__,__FILE__,CCTK_THORNSTRING,#X);
+
+/**
+ * Provide a string representation
+ * of the code for the boundary.
+ */
 inline std::string wstr(int wh) {
   std::string s;
   if(wh == WH_EVERYWHERE) {
@@ -75,9 +107,18 @@ inline std::string wstr(int wh) {
 
 struct RWClause {
   int where;
+  int tl;
   std::string name;
-  RWClause() : where(0), name() {}
+  RWClause() : where(0), tl(0), name() {}
   ~RWClause() {}
+  void parse_tl() {
+    int s = name.size();
+    while(s > 2 && name[s-1]=='p' && name[s-2] == '_') {
+      tl++;
+      s -= 2;
+      name.resize(s);
+    }
+  }
 };
 
 inline void tolower(std::string& s) {
@@ -109,58 +150,22 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec) {
     if(c >= 'A' && c <= 'Z')
       c = c - 'A' + 'a';
     if(iswhite(c)||c==0) {
-      if(current != "") {
-        rwc.name = current;
-        vec.push_back(rwc);
-      }
       rwc.name = "";
       rwc.where = 0;
       current = "";
     } else if(c == '(' && !parsing_where) {
       rwc.name = current;
+      rwc.parse_tl();
       current = "";
       parsing_where = true;
-      assert(rwc.name != "");
+      CCTK_ASSERT(rwc.name != "");
     } else if(c == ')' && parsing_where) {
-      assert(rwc.name != "");
-      if(current == "everywhere") {
+      CCTK_ASSERT(rwc.name != "");
+      if(current == "everywhere" || current == "all") {
         rwc.where = WH_EVERYWHERE;
-      } else if(current == "interior-exterior" || current == "in-out") {
-        rwc.where = WH_INTERIOR|WH_INVALIDATE_EXTERIOR;
-        abort();
       } else if(current == "interior" || current == "in") {
         rwc.where = WH_INTERIOR;
-      } else if(current == "boundary") {
-        rwc.where = WH_BOUNDARY;
-        abort();
-      } else if(current == "interior+ghosts" || current == "interiorwithghosts") {
-        rwc.where = WH_INTERIOR|WH_GHOSTS;
-        abort();
-      } else if(current == "boundary+ghosts" || current == "boundarywithghosts") {
-        rwc.where = WH_BOUNDARY|WH_GHOSTS;
-        abort();
       } else {
-        abort();
-        // Is it a parameters?
-        int pos = current.find("::");
-        if(pos >= 0 && rwc.name == "parameter") {
-          std::cerr << "Looks like a parameter: (" << current << ")" << std::endl;
-          int type;
-          std::string thorn = current.substr(0,pos);
-          toupper(thorn);
-          const void *val = CCTK_ParameterGet(
-            current.substr(pos+2).c_str(),
-            current.substr(0,pos).c_str(),
-            &type);
-          if(val != nullptr && type == PARAMETER_STRING) {
-            const char* const val_str =
-              * ( (const char*const *)val);
-            std::cerr << "Parse string: " << val_str << std::endl;
-            return;
-          }
-          std::cerr << "val=" << val << " " << (type == PARAMETER_STRING) << " type=" << type << std::endl;
-        }
-        std::cerr << "Bad where spec[" << current << "]";
         abort();
       }
       vec.push_back(rwc);
@@ -178,7 +183,7 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec) {
 
 std::string current_routine;
 
-void compute_clauses(const int num_strings,const char **strings,std::map<int,int>& routine_m) {
+void compute_clauses(const int num_strings,const char **strings,std::map<var_tuple,int>& routine_m) {
   std::vector<RWClause> rwvec;
   for(int i=0;i< num_strings; ++i) {
 
@@ -192,12 +197,14 @@ void compute_clauses(const int num_strings,const char **strings,std::map<int,int
     if(where_val == 0) {
       int type = CCTK_GroupTypeFromVarI(vi);
       if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
-        std::cerr << "Missing Where Spec: Var: " << rwc.name << " Routine: " << current_routine << std::endl;
-        assert(0=="missing where spec");
+        std::ostringstream msg;
+        msg << "Missing Where Spec: Var: " << rwc.name << " Routine: " << current_routine;
+        CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
       }
     }
     if(vi >= 0) {
-      routine_m[vi] = where_val;
+      var_tuple vt{vi,rwc.tl};
+      routine_m[vt] = where_val;
     } else {
       // If looking up a specific variable failed, then
       // we lookup everything on the group.
@@ -206,7 +213,8 @@ void compute_clauses(const int num_strings,const char **strings,std::map<int,int
         int i0 = CCTK_FirstVarIndexI(gi);
         int iN = i0+CCTK_NumVarsInGroupI(gi);
         for(vi=i0;vi<iN;vi++) {
-          routine_m[vi] = where_val;
+          var_tuple vt{vi};
+          routine_m[vt] = where_val;
         }
       } else {
         std::cerr << "error: Could not find (" << rwc.name << ")" << std::endl;
@@ -216,34 +224,8 @@ void compute_clauses(const int num_strings,const char **strings,std::map<int,int
   }
 }
 
-std::map<std::string,std::map<int,int>> reads,writes;
-std::map<int,int> valid_k;
-std::map<int,std::string> where_k;
-
-void monitor_(int vi,const char *file,int line) {
-  //std::cout << file << ":" << line << ": " << CCTK_FullName(vi) << "=" << wstr(valid_k[vi]) << std::endl;
-}
-
-std::map<std::string,std::set<int>> access_allowed;
-
-extern "C" int is_access_allowed(int vi) {
-  if(current_routine == "")
-    return 1;
-  auto& s = access_allowed[current_routine];
-  if(s.find(-1) != s.end())
-    return 1;
-  if(s.find(vi) != s.end())
-    return 1;
-  return 0;
-}
-
-extern "C" void assert_safe() {
-  auto& s = access_allowed[current_routine];
-  if(s.find(-1) == s.end()) {
-    std::cerr << "ASSERT SAFE: (" << current_routine << ")" << std::endl;
-    s.insert(-1);
-  }
-}
+std::map<std::string,std::map<var_tuple,int>> reads,writes;
+std::map<var_tuple,int> valid_k;
 
 void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
   std::string r;
@@ -251,20 +233,10 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
   r += "::";
   r += attribute->routine;
   current_routine = "";
-  std::map<int,int>& writes_m = writes[r];
+  std::map<var_tuple,int>& writes_m = writes[r];
   for(auto i = writes_m.begin();i != writes_m.end(); ++i) {
-    int vi = i->first;
-    int wh = valid_k[vi];
-    monitor(vi);
-    int wh_before = wh;
-    if(on(wh_before,WH_INVALIDATE_EXTERIOR)) {
-      wh = WH_INTERIOR;
-    } else {
-      wh = i->second;
-    }
-    valid_k[vi] = wh;
-    monitor(vi);
-    where_k[vi] = r;
+    const var_tuple& vi = i->first;
+    valid_k[vi] = i->second;
   }
   for(auto g = sync_groups.begin();g != sync_groups.end();++g) {
     int gi = *g;
@@ -272,10 +244,10 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
     int iN = i0+CCTK_NumVarsInGroupI(gi);
     for(int vi=i0;vi<iN;vi++) {
       int& w = writes[r][vi];
-      if(w == WH_INTERIOR)
-        w = WH_EVERYWHERE;
-        valid_k[vi] = w;
-        monitor(w);
+      if(w == WH_INTERIOR) {
+        var_tuple vt{vi};
+        valid_k[vt] = WH_EVERYWHERE;
+      }
     }
   }
 }
@@ -288,23 +260,23 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     int iN = i0+CCTK_NumVarsInGroupI(gi);
     bool push = true;
     for(int vi=i0;vi<iN;vi++) {
-      int wh = valid_k[vi];
-      monitor(vi);
+      var_tuple vt(vi);
+      int wh = valid_k[vt];
       if(on(wh,WH_GHOSTS)) {
         continue;
       }
       if(!on(wh,WH_INTERIOR)) {
-        std::cerr << "SYNC of variable with invalid interior. Name: " << CCTK_FullName(vi) << " after: " << current_routine << std::endl;
-        monitor(vi);
-        assert(false);
+        std::ostringstream msg;
+        msg << "SYNC of variable with invalid interior. Name: "
+            << CCTK_FullName(vi) << " after: " << current_routine;
+        CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
       }
       if(push) {
         sync_groups.push_back(gi);
         std::cout << "SYNC GROUP: " << CCTK_GroupName(gi) << std::endl;
         push = false;
       }
-      valid_k[vi] |= WH_GHOSTS;
-      monitor(vi);
+      valid_k[vt] |= WH_GHOSTS;
     }
   }
   if(sync_groups.size()>0)
@@ -323,8 +295,8 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 
   if(writes.find(r) == writes.end()) {
 
-    std::map<int,int>& writes_m  = writes[r];
-    std::map<int,int>& reads_m  = reads [r];
+    std::map<var_tuple,int>& writes_m  = writes[r];
+    std::map<var_tuple,int>& reads_m  = reads [r];
 
     compute_clauses(
         attribute->n_WritesClauses,
@@ -334,50 +306,67 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
         attribute->n_ReadsClauses,
         attribute->ReadsClauses,
         reads_m);
-
-    for(auto i = writes_m.begin();i != writes_m.end(); ++i) {
-      int vi = i->first;
-      access_allowed[r].insert(vi);
-    }
-    for(auto i = reads_m.begin();i != reads_m.end(); ++i) {
-      int vi = i->first;
-      access_allowed[r].insert(vi);
-    }
   }
 
-  std::map<int,int>& reads_m  = reads [r];
+  std::map<var_tuple,int>& reads_m  = reads [r];
 
   for(auto i = reads_m.begin();i != reads_m.end(); ++i) {
-    int vi = i->first;
-    monitor(vi);
-    if(i->second == WH_EVERYWHERE) {
-      if(on(valid_k[vi],WH_INTERIOR) && valid_k[vi] != WH_EVERYWHERE) {
-        int g = CCTK_GroupIndexFromVarI(vi);
-        pregroups.insert(g);
-        //std::cout << "SYNC:: " << r << " " << CCTK_VarName(vi) << " from=" << where_k[vi] << std::endl;
-      } else if(!on(valid_k[vi],WH_INTERIOR)) {
-        std::cerr << "Cannot sync " << CCTK_FullName(vi) << " because it is not valid in the interior." << std::endl;
-        abort();
+    const var_tuple& vt = i->first;
+    if(!on(valid_k[vt],WH_INTERIOR)) {
+      // If the read spec is everywhere and we only have
+      // interior, that's ok. The system will sync.
+      std::ostringstream msg; 
+      msg << "Required read for " << vt 
+          << " not satisfied. Invalid interior "
+          << " at the start of routine " << r;
+      CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str()); 
+    } else if(vt.tl > 0) {
+      if(!on(valid_k[vt],i->second)) {
+        // If the read spec is everywhere, that's not
+        // okay for previous time levels as they won't sync.
+        std::ostringstream msg; 
+        msg << "Required read for " << vt 
+          << " not satisfied. Wanted '" << wstr(i->second)
+          << "' found '" << wstr(valid_k[vt])
+          << "' at the start of routine " << r;
+        CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str()); 
       }
-      monitor(vi);
+    }
+    if(i->second == WH_EVERYWHERE) {
+      if(on(valid_k[vt],WH_INTERIOR) && valid_k[vt] != WH_EVERYWHERE) {
+        if(vt.tl != 0) {
+          std::ostringstream msg;
+          msg << "Attempt to sync previous time level (tl=" << vt.tl << ")"
+              << " for " << CCTK_FullName(vt.vi);
+          CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
+        }
+
+        int g = CCTK_GroupIndexFromVarI(vt.vi);
+        pregroups.insert(g);
+      } else if(!on(valid_k[vt],WH_INTERIOR)) {
+        std::ostringstream msg; 
+        msg << "Cannot sync " << CCTK_FullName(vt.vi)
+            << " because it is not valid in the interior.";
+        CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str()); 
+      }
     }
   }
 }
 
-/**
- * TODO: Currently, we only track the validity of the
- * GF on time level zero. We could track based on arbitrary
- * timelevel.
- */
 void cycle_rdwr(const cGH *cctkGH) {
-  unsigned int num = CCTK_NumVars();
-  for(unsigned int vi=0;vi<num;vi++) {
+  int num = CCTK_NumVars();
+  for(int vi=0;vi<num;vi++) {
     int const cactus_tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
     if(cactus_tl > 1) {
       int type = CCTK_GroupTypeFromVarI(vi);
       if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
-        valid_k[vi] = 0; // Nowhere valid
-        monitor(vi);
+        for(int t = cactus_tl - 1; t > 0; t--) {
+          var_tuple vold{vi,t};
+          var_tuple vnew{vi,t-1};
+          valid_k[vold] = valid_k[vnew];
+        }
+        var_tuple vt{vi};
+        valid_k[vt] = WH_NOWHERE;
       }
     }
   }
@@ -392,23 +381,23 @@ void Sync1(const cGH *cctkGH,int gi) {
 
 extern "C" void ManualSyncGF(const cGH *cctkGH,int vi) {
 
-  auto f = valid_k.find(vi);
-  assert(f != valid_k.end());
-  monitor(vi);
+  var_tuple vt{vi};
+  auto f = valid_k.find(vt);
+  CCTK_ASSERT(f != valid_k.end());
   // Check if anything needs to be done
   if(f->second == WH_EVERYWHERE) {
     return;
   }
-  assert(f->second == WH_INTERIOR);
+  CCTK_ASSERT(f->second == WH_INTERIOR);
 
   // Update valid region info
   int gi = CCTK_GroupIndexFromVarI(vi);
   int i0 = CCTK_FirstVarIndexI(gi);
   int iN = i0+CCTK_NumVarsInGroupI(gi);
   for(int vi2=i0;vi2<iN;vi2++) {
-    if(on(valid_k[vi2],WH_INTERIOR)) {
-      valid_k[vi2] = WH_EVERYWHERE;
-      monitor(vi2);
+    var_tuple vt{vi2};
+    if(on(valid_k[vt],WH_INTERIOR)) {
+      valid_k[vt] = WH_EVERYWHERE;
     }
   }
 
@@ -481,7 +470,7 @@ void Carpet_SelectVarForBCI(
     int var_index,
     const char *bc_name) {
   Func& f = boundary_functions[bc_name];
-  assert(var_index != 0);
+  CCTK_ASSERT(var_index != 0);
   std::vector<Bound>& bv = boundary_conditions[f.before][var_index];
   Bound b;
   b.faces = faces;
@@ -511,7 +500,7 @@ extern "C"
 void Carpet_ClearBCForVarI(
     const cGH *cctkGH,
     int var_index) {
-  assert(var_index != 0);
+  CCTK_ASSERT(var_index != 0);
   boundary_conditions[0][var_index].resize(0);
   boundary_conditions[1][var_index].resize(0);
 }
@@ -543,7 +532,8 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
 
         if(faces != 0)
           (*f.func)(cctkGH,1,&var_index,&faces,&b.width,&b.table_handle);
-        valid_k[var_index] |= WH_BOUNDARY;
+        var_tuple vt{var_index};
+        valid_k[vt] |= WH_BOUNDARY;
       }
     }
     END_LOCAL_COMPONENT_LOOP;
