@@ -2,6 +2,9 @@
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
+extern "C" int Timer_Startup() {return 0;} 
+extern "C" int Timer_Shutdown() {return 0;}
+#if 0
 
 #include <Timer.hh>
 #include <TimerTree.hh>
@@ -120,3 +123,4 @@ extern "C" int Timer_Shutdown() {
 }
 
 } // namespace Timers
+#endif

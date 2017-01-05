@@ -48,17 +48,17 @@ namespace Timers {
 class Timer {
 
 public:
-  Timer(std::string name, int tree = 0);
-  ~Timer();
+  Timer(std::string name, int tree = 0) : d_name(name), d_tree(NULL) {};
+  ~Timer() {};
 
-  void instantiate();
-  void start();
-  void stop();
-  std::string name() const;
-  double getTime();
+  void instantiate() {};
+  void start() {};
+  void stop() {};
+  std::string name() const {return d_name;};
+  double getTime() {return 0.;};
 
-  static void outputTree(std::string name);
-  static void outputTreeXML();
+  static void outputTree(std::string name) {};
+  static void outputTreeXML() {};
 
 private:
   std::string d_name;

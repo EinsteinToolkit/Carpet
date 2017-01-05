@@ -29,16 +29,16 @@ class TimerSet {
 
 public:
   // Add a timer
-  void add(Timer *timer);
+  void add(Timer *timer) {};
 
   // Remove a timer
-  void remove(Timer *timer);
+  void remove(Timer *timer) {};
 
   // Output all timer names
-  void outputNames(ostream &os) const;
+  void outputNames(ostream &os) const {};
 
   // Output all timer data
-  void outputData(ostream &os) const;
+  void outputData(ostream &os) const {};
 
 }; // class TimerSet
 
@@ -55,17 +55,17 @@ class Timer {
 
 public:
   // Create a new timer with the given name
-  Timer(char const *timername_);
+  Timer(char const *timername_) : timername(timername_) {};
 
   // Destroy a timer
-  ~Timer();
+  ~Timer() {};
 
 private:
   // Reset the statistics
-  void resetstats();
+  void resetstats() {};
 
   // Add statistics of a timing operation
-  void addstat(double t, double b);
+  void addstat(double t, double b) {};
 
 private:
   double wtime;
@@ -85,19 +85,19 @@ private:
 
 public:
   // Start the timer
-  void start();
+  void start() {};
 
   // Stop the timer
-  void stop(double b);
+  void stop(double b) {};
 
   // Reset the timer
-  void reset();
+  void reset() {};
 
   // Timer name
-  string name() const CCTK_MEMBER_ATTRIBUTE_PURE;
+  string name() const CCTK_MEMBER_ATTRIBUTE_PURE {return timername;};
 
   // Print timer data
-  void outputData(ostream &os) const;
+  void outputData(ostream &os) const {};
 };
 
 inline ostream &operator<<(ostream &os, Timer const &timer) {

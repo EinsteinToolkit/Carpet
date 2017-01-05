@@ -1,6 +1,7 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
+#if 0
 
 #include <algorithm>
 #include <cassert>
@@ -277,3 +278,7 @@ void CarpetLib_printtimestats(CCTK_ARGUMENTS) {
 }
 
 } // namespace CarpetLib
+#endif
+extern "C" {
+void CarpetLib_printtimestats(CCTK_ARGUMENTS) {}
+}
