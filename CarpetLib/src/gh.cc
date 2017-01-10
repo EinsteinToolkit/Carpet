@@ -17,7 +17,7 @@
 
 using namespace std;
 
-set<gh *> gh::allgh;
+//set<gh *> gh::allgh;
 
 // Constructors
 gh::gh(vector<ivect> const &reffacts_, centering const refcent_,
@@ -62,14 +62,14 @@ gh::gh(vector<ivect> const &reffacts_, centering const refcent_,
     }
   }
 
-  allgh.insert(this);
+  //allgh.insert(this);
 }
 
 // Destructors
 gh::~gh() {
   assert(dhs.empty());
   assert(ths.empty());
-  allgh.erase(this);
+  //allgh.erase(this);
 }
 
 // Modifiers
@@ -512,11 +512,11 @@ size_t gh::memory() const {
 }
 
 size_t gh::allmemory() {
-  size_t mem = memoryof(allgh);
-  for (set<gh *>::const_iterator ghi = allgh.begin(); ghi != allgh.end();
-       ++ghi) {
-    mem += memoryof(**ghi);
-  }
+  size_t mem = 0; //memoryof(allgh);
+  //for (set<gh *>::const_iterator ghi = allgh.begin(); ghi != allgh.end();
+  //     ++ghi) {
+  //  mem += memoryof(**ghi);
+  //}
   return mem;
 }
 

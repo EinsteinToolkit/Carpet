@@ -24,7 +24,7 @@ class gh;
 // level.  The extents do not include ghost zones.
 class gh {
 
-  static set<gh *> allgh;
+  //static set<gh *> allgh;
 
 public:
   // Types

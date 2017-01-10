@@ -28,7 +28,7 @@ class dh;
 // A data hierarchy (grid hierarchy plus ghost zones)
 class dh {
 
-  static set<dh *> alldh;
+  //static set<dh *> alldh;
 
   // Types
 public:

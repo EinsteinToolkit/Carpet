@@ -21,7 +21,7 @@
 using namespace std;
 using namespace CarpetLib;
 
-set<dh *> dh::alldh;
+//set<dh *> dh::alldh;
 
 // Indexing over neighbours
 
@@ -97,7 +97,7 @@ dh::dh(gh &h_, vector<i2vect> const &ghost_widths_,
     assert(prolongation_orders_space.AT(rl) >= 0);
   }
 
-  alldh.insert(this);
+  //alldh.insert(this);
   h.insert(this);
   CHECKPOINT;
   regrid(false);
@@ -112,7 +112,7 @@ dh::~dh() {
   CHECKPOINT;
   assert(gfs.empty());
   h.erase(this);
-  alldh.erase(this);
+  //alldh.erase(this);
 }
 
 // Helpers
@@ -2263,11 +2263,11 @@ size_t dh::memory() const {
 }
 
 size_t dh::allmemory() {
-  size_t mem = memoryof(alldh);
-  for (set<dh *>::const_iterator dhi = alldh.begin(); dhi != alldh.end();
-       ++dhi) {
-    mem += memoryof(**dhi);
-  }
+  size_t mem = 0; //memoryof(alldh);
+  //for (set<dh *>::const_iterator dhi = alldh.begin(); dhi != alldh.end();
+  //     ++dhi) {
+  //  mem += memoryof(**dhi);
+  //}
   return mem;
 }
 
