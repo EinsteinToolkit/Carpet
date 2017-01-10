@@ -12,7 +12,7 @@
 
 using namespace std;
 
-set<th *> th::allth;
+//set<th *> th::allth;
 
 // Constructors
 th::th(gh &h_, bool const time_interpolation_during_regridding_)
@@ -20,7 +20,7 @@ th::th(gh &h_, bool const time_interpolation_during_regridding_)
                  time_interpolation_during_regridding_),
       timelevels(0) {
   reffacts.resize(1, 1);
-  allth.insert(this);
+  //allth.insert(this);
   h.insert(this);
 }
 
@@ -36,14 +36,14 @@ th::th(gh &h_, int const timelevels_, vector<int> const &reffacts_,
     assert(reffacts.AT(n) >= reffacts.AT(n - 1));
     assert(reffacts.AT(n) % reffacts.AT(n - 1) == 0);
   }
-  allth.insert(this);
+  //allth.insert(this);
   h.insert(this);
 }
 
 // Destructors
 th::~th() {
   h.erase(this);
-  allth.erase(this);
+  //allth.erase(this);
 }
 
 // Modifiers
@@ -157,11 +157,11 @@ size_t th::memory() const {
 }
 
 size_t th::allmemory() {
-  size_t mem = memoryof(allth);
-  for (set<th *>::const_iterator thi = allth.begin(); thi != allth.end();
-       ++thi) {
-    mem += memoryof(**thi);
-  }
+  size_t mem = 0; //memoryof(allth);
+  //for (set<th *>::const_iterator thi = allth.begin(); thi != allth.end();
+  //     ++thi) {
+  //  mem += memoryof(**thi);
+  //}
   return mem;
 }
 

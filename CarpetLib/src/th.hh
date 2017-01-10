@@ -24,7 +24,7 @@ ostream &operator<<(ostream &os, const th &t);
 // The time hierarchy (information about the current time)
 class th {
 
-  static set<th *> allth;
+  //static set<th *> allth;
 
 public: // should be readonly
   // Fields
