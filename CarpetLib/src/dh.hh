@@ -252,6 +252,7 @@ public:
 
   // Modifiers
   void regrid(bool do_init);
+  void do_bcast();
   void regrid_free(bool do_init);
   void recompose(int rl, bool do_prolongate);
 

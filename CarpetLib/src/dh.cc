@@ -1790,6 +1790,7 @@ void dh::regrid(bool const do_init) {
 
       // Broadcast grid structure and communication schedule
 
+      if(0)
       {
 
         static Timers::Timer timer_bcast_boxes("bcast_boxes");
@@ -1820,6 +1821,7 @@ void dh::regrid(bool const do_init) {
         timer_bcast_boxes.stop();
       }
 
+      if(0)
       {
 
         static Timers::Timer timer_bcast_comm("bcast_comm");
@@ -2034,6 +2036,145 @@ void dh::regrid(bool const do_init) {
         CCTK_WARN_ABORT,
         "The grid structure is inconsistent.  It is impossible to continue.");
   }
+
+  total.stop(0);
+  timer.stop();
+}
+
+void dh::do_bcast() {
+  DECLARE_CCTK_PARAMETERS;
+
+  static Timers::Timer timer("CarpetLib::dh::regrid");
+  timer.start();
+
+  CHECKPOINT;
+
+  static Timer total("CarpetLib::dh::regrid");
+  total.start();
+
+  for (int ml = 0; ml < h.mglevels(); ++ml) {
+    for (int rl = 0; rl < h.reflevels(); ++rl) {
+      light_cboxes &light_level = light_boxes.AT(ml).AT(rl);
+      local_cboxes &local_level = local_boxes.AT(ml).AT(rl);
+      level_dboxes &level_level = level_boxes.AT(ml).AT(rl);
+      fast_dboxes &fast_level = fast_boxes.AT(ml).AT(rl);
+
+      vector<fast_dboxes> fast_level_otherprocs(dist::size());
+
+      // Broadcast grid structure and communication schedule
+
+      if(1)
+      {
+
+        static Timers::Timer timer_bcast_boxes("bcast_boxes");
+        timer_bcast_boxes.start();
+
+        int const count_send = h.local_components(rl);
+        vector<light_dboxes> level_send(count_send);
+        for (int lc = 0; lc < h.local_components(rl); ++lc) {
+          int const c = h.get_component(rl, lc);
+          level_send.AT(lc) = light_level.AT(c);
+        }
+        vector<vector<light_dboxes> > const level_recv =
+            allgatherv(dist::comm(), level_send);
+        vector<int> count_recv(dist::size(), 0);
+        for (int c = 0; c < h.components(rl); ++c) {
+          int const p = this_proc(rl, c);
+          if (p != dist::rank()) {
+            light_level.AT(c) = level_recv.AT(p).AT(count_recv.AT(p));
+            ++count_recv.AT(p);
+          }
+        }
+        for (int p = 0; p < dist::size(); ++p) {
+          if (p != dist::rank()) {
+            assert(count_recv.AT(p) == int(level_recv.AT(p).size()));
+          }
+        }
+
+        timer_bcast_boxes.stop();
+      }
+
+      if(1)
+      {
+
+        static Timers::Timer timer_bcast_comm("bcast_comm");
+        timer_bcast_comm.start();
+
+        static Timers::Timer timer_bcast_comm_ref_prol("ref_prol");
+        timer_bcast_comm_ref_prol.start();
+        broadcast_schedule(fast_level_otherprocs, fast_level,
+                           &fast_dboxes::fast_ref_prol_sendrecv);
+        timer_bcast_comm_ref_prol.stop();
+
+        static Timers::Timer timer_bcast_comm_sync("sync");
+        timer_bcast_comm_sync.start();
+        broadcast_schedule(fast_level_otherprocs, fast_level,
+                           &fast_dboxes::fast_sync_sendrecv);
+        timer_bcast_comm_sync.stop();
+
+        static Timers::Timer timer_bcast_comm_ref_bnd_prol("ref_bnd_prol");
+        timer_bcast_comm_ref_bnd_prol.start();
+        broadcast_schedule(fast_level_otherprocs, fast_level,
+                           &fast_dboxes::fast_ref_bnd_prol_sendrecv);
+        timer_bcast_comm_ref_bnd_prol.stop();
+
+        if (rl > 0) {
+          int const orl = rl - 1;
+          fast_dboxes &fast_olevel = fast_boxes.AT(ml).AT(orl);
+          static Timers::Timer timer_bcast_comm_ref_rest("ref_rest");
+          timer_bcast_comm_ref_rest.start();
+          broadcast_schedule(fast_level_otherprocs, fast_olevel,
+                             &fast_dboxes::fast_ref_rest_sendrecv);
+          timer_bcast_comm_ref_rest.stop();
+        }
+
+        if (rl > 0) {
+          int const orl = rl - 1;
+          fast_dboxes &fast_olevel = fast_boxes.AT(ml).AT(orl);
+          static Timers::Timer timer_bcast_comm_ref_refl("ref_refl");
+          timer_bcast_comm_ref_refl.start();
+          for (int dir = 0; dir < dim; ++dir) {
+            for (int face = 0; face < 2; ++face) {
+              srpvect fast_dboxes::*const fast_ref_refl_sendrecv =
+                  fast_dboxes::fast_ref_refl_sendrecv[dir][face];
+              broadcast_schedule(fast_level_otherprocs, fast_olevel,
+                                 fast_ref_refl_sendrecv);
+            }
+          }
+          timer_bcast_comm_ref_refl.stop();
+        }
+
+        static Timers::Timer timer_bcast_comm_ref_refl_prol("ref_refl_prol");
+        timer_bcast_comm_ref_refl_prol.start();
+        for (int dir = 0; dir < dim; ++dir) {
+          for (int face = 0; face < 2; ++face) {
+            srpvect fast_dboxes::*const fast_ref_refl_prol_sendrecv =
+                fast_dboxes::fast_ref_refl_prol_sendrecv[dir][face];
+            broadcast_schedule(fast_level_otherprocs, fast_level,
+                               fast_ref_refl_prol_sendrecv);
+          }
+        }
+        timer_bcast_comm_ref_refl_prol.stop();
+
+        // TODO: Maybe broadcast old2new schedule only if do_init is
+        // set
+        static Timers::Timer timer_bcast_comm_old2new_sync("old2new_sync");
+        timer_bcast_comm_old2new_sync.start();
+        broadcast_schedule(fast_level_otherprocs, fast_level,
+                           &fast_dboxes::fast_old2new_sync_sendrecv);
+        timer_bcast_comm_old2new_sync.stop();
+
+        static Timers::Timer timer_bcast_comm_old2new_ref_prol(
+            "old2new_ref_prol");
+        timer_bcast_comm_old2new_ref_prol.start();
+        broadcast_schedule(fast_level_otherprocs, fast_level,
+                           &fast_dboxes::fast_old2new_ref_prol_sendrecv);
+        timer_bcast_comm_old2new_ref_prol.stop();
+
+        timer_bcast_comm.stop();
+      }
+    } // for rl
+  } // for ml
 
   total.stop(0);
   timer.stop();

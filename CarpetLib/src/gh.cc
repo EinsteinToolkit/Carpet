@@ -73,6 +73,11 @@ gh::~gh() {
 }
 
 // Modifiers
+void gh::do_bcast() {
+  for (set<dh *>::iterator d = dhs.begin(); d != dhs.end(); ++d) {
+    (*d)->do_bcast();
+  }
+}
 void gh::regrid(rregs const &superregs, mregs const &regs, bool const do_init) {
   DECLARE_CCTK_PARAMETERS;
 

@@ -840,6 +840,7 @@ void setup_grid_hierarchy(cGH const *const cctkGH) {
 
     // Recompose grid hierarchy
     vhh.AT(m)->regrid(superregsss.AT(m), regssss.AT(m), false);
+    vhh.AT(m)->do_bcast();
     int const rl = 0;
     vhh.AT(m)->recompose(rl, false);
     vhh.AT(m)->regrid_free(false);
@@ -945,6 +946,7 @@ void allocate_group_data(cGH const *const cctkGH) {
   groupdata.resize(CCTK_NumGroups());
   arrdata.resize(CCTK_NumGroups());
 
+  #pragma omp parallel for
   for (int group = 0; group < CCTK_NumGroups(); ++group) {
 
     cGroup gdata;
@@ -1022,7 +1024,18 @@ void allocate_group_data(cGH const *const cctkGH) {
     } // switch grouptype
 
     initialise_group_info(cctkGH, group, gdata);
+  } // for groups
+  for (int group = 0; group < CCTK_NumGroups(); ++group) {
+    cGroup gdata;
+    check(not CCTK_GroupData(group, &gdata));
 
+    switch (gdata.grouptype) {
+    // Grid scalars and grid arrays are treated in the same way
+    case CCTK_SCALAR:
+    case CCTK_ARRAY: {
+      arrdata.AT(group).AT(0).hh->do_bcast();
+      }
+    }
   } // for groups
 
   output_group_statistics(cctkGH);

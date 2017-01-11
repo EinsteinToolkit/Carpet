@@ -70,6 +70,7 @@ public:
 
   // Modifiers
   void regrid(rregs const &superregs, mregs const &regs, bool do_init);
+  void do_bcast();
   void regrid_free(bool do_init);
   bool recompose(int rl, bool do_prolongate);
 

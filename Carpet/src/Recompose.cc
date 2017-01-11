@@ -285,6 +285,7 @@ void RegridMap(cGH const *const cctkGH, int const m,
 
   // Regrid
   vhh.AT(m)->regrid(superregss, regsss, do_init);
+  vhh.AT(m)->do_bcast();
 
   if (print_grid_info) {
     // Output grid structure to screen
