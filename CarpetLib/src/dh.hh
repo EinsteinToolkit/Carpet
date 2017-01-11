@@ -232,6 +232,8 @@ public: // should be readonly
   level_mboxes level_boxes; // grid hierarchy [ml][rl]
   fast_mboxes fast_boxes;   // grid hierarchy [ml][rl][p]
 
+  vector<vector<fast_dboxes> > fast_otherprocs; // comm schedule[rl][p]
+
 private:
   // this needs to be sorted by varindex so that when iterating through the
   // container in order with a forward iterator, vector leaders are processed

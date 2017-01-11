@@ -227,6 +227,9 @@ void dh::regrid(bool const do_init) {
   fast_boxes.clear();
   local_boxes.clear();
 
+  fast_otherprocs.clear();
+  fast_otherprocs.resize(h.reflevels());
+
   light_boxes.resize(h.mglevels());
   local_boxes.resize(h.mglevels());
   level_boxes.resize(h.mglevels());
@@ -249,7 +252,8 @@ void dh::regrid(bool const do_init) {
       full_cboxes &full_level = full_boxes.AT(ml).AT(rl);
       fast_dboxes &fast_level = fast_boxes.AT(ml).AT(rl);
 
-      vector<fast_dboxes> fast_level_otherprocs(dist::size());
+      vector<fast_dboxes> &fast_level_otherprocs = fast_otherprocs.AT(rl);
+      fast_level_otherprocs.resize(dist::size());
 
       i2vect const &ghost_width = ghost_widths.AT(rl);
       i2vect const &buffer_width = buffer_widths.AT(rl);
@@ -2059,7 +2063,7 @@ void dh::do_bcast() {
       level_dboxes &level_level = level_boxes.AT(ml).AT(rl);
       fast_dboxes &fast_level = fast_boxes.AT(ml).AT(rl);
 
-      vector<fast_dboxes> fast_level_otherprocs(dist::size());
+      vector<fast_dboxes> &fast_level_otherprocs = fast_otherprocs.AT(rl);
 
       // Broadcast grid structure and communication schedule
 
@@ -2175,6 +2179,9 @@ void dh::do_bcast() {
       }
     } // for rl
   } // for ml
+
+  vector<vector<fast_dboxes> > empty;
+  swap(fast_otherprocs, empty);
 
   total.stop(0);
   timer.stop();
