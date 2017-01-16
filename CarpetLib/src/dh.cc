@@ -251,9 +251,14 @@ void dh::regrid(bool const do_init) {
 
       vector<fast_dboxes> fast_level_otherprocs(dist::size());
 
+      i2vect const &boundary_width = h.boundary_width;
       i2vect const &ghost_width = ghost_widths.AT(rl);
       i2vect const &buffer_width = buffer_widths.AT(rl);
       i2vect const &overlap_width = overlap_widths.AT(rl);
+
+      bool const boundaries_are_trivial =
+          all(all(boundary_width == 0)) && all(all(ghost_width == 0)) &&
+          all(all(buffer_width == 0)) && all(all(overlap_width == 0));
 
       // Domain:
 
@@ -265,7 +270,6 @@ void dh::regrid(bool const do_init) {
       // ASSERT_rl (not domain_exterior.empty(),
       //            "The exterior of the domain must not be empty");
 
-      i2vect const &boundary_width = h.boundary_width;
       ASSERT_rl(all(all(boundary_width >= 0)),
                 "The gh boundary widths must not be negative");
 
@@ -333,7 +337,15 @@ void dh::regrid(bool const do_init) {
 
         ASSERT_c(all(all(ghost_width >= 0)),
                  "The gh ghost widths must not be negative");
-        extr = intr.expand(i2vect(not is_outer_boundary) * ghost_width);
+
+        if (boundaries_are_trivial) {
+
+          extr = intr;
+
+        } else {
+
+          extr = intr.expand(i2vect(not is_outer_boundary) * ghost_width);
+        }
 
         // (The exterior must not be empty)
         // Variables may have size zero
@@ -349,7 +361,14 @@ void dh::regrid(bool const do_init) {
         ibset &ghosts = box.ghosts;
         ghosts = ibset::poison();
 
-        ghosts = extr - intr;
+        if (boundaries_are_trivial) {
+
+          ghosts = ibset();
+
+        } else {
+
+          ghosts = extr - intr;
+        }
 
         // The ghosts must be contained in the domain.  Different from
         // the boundaries, the ghost can include part of the outer
@@ -362,7 +381,14 @@ void dh::regrid(bool const do_init) {
         ibbox &comm = box.communicated;
         comm = ibbox::poison();
 
-        comm = extr.expand(i2vect(is_outer_boundary) * (-boundary_width));
+        if (boundaries_are_trivial) {
+
+          comm = extr;
+
+        } else {
+
+          comm = extr.expand(i2vect(is_outer_boundary) * (-boundary_width));
+        }
 
         // (The communicated region must not be empty)
         // Variables may have size zero
@@ -380,7 +406,14 @@ void dh::regrid(bool const do_init) {
         ibset &outer_boundaries = box.outer_boundaries;
         outer_boundaries = ibset::poison();
 
-        outer_boundaries = extr - comm;
+        if (boundaries_are_trivial) {
+
+          outer_boundaries = ibset();
+
+        } else {
+
+          outer_boundaries = extr - comm;
+        }
 
         // The outer boundary must be contained in the outer boundary
         // of the domain
@@ -393,7 +426,14 @@ void dh::regrid(bool const do_init) {
         ibbox &owned = box.owned;
         owned = ibbox::poison();
 
-        owned = intr.expand(i2vect(is_outer_boundary) * (-boundary_width));
+        if (boundaries_are_trivial) {
+
+          owned = intr;
+
+        } else {
+
+          owned = intr.expand(i2vect(is_outer_boundary) * (-boundary_width));
+        }
 
         // (The owned region must not be empty)
         // Variables may have size zero
@@ -419,7 +459,14 @@ void dh::regrid(bool const do_init) {
         ibset &boundaries = box.boundaries;
         boundaries = ibset::poison();
 
-        boundaries = comm - owned;
+        if (boundaries_are_trivial) {
+
+          boundaries = ibset();
+
+        } else {
+
+          boundaries = comm - owned;
+        }
 
         // The boundary must be contained in the active part of the
         // domain.  This prevents that a region is too close to the
@@ -531,14 +578,29 @@ void dh::regrid(bool const do_init) {
       for (int c = 0; c < h.components(rl); ++c) {
         full_dboxes &box = full_level.AT(c);
 
-        // Buffer zones:
-        box.buffers = box.owned & allbuffers;
+        if (boundaries_are_trivial) {
 
-        // Overlap zones:
-        box.overlaps = box.owned & alloverlaps;
+          // Buffer zones:
+          box.buffers = ibset();
 
-        // Active region:
-        box.active = box.owned & allactive;
+          // Overlap zones:
+          box.overlaps = ibset();
+
+          // Active region:
+          box.active = box.owned;
+
+        } else {
+
+          // Buffer zones:
+          box.buffers = box.owned & allbuffers;
+
+          // Overlap zones:
+          box.overlaps = box.owned & alloverlaps;
+
+          // Active region:
+          box.active = box.owned & allactive;
+        }
+
         ASSERT_c(box.active == box.owned - (box.buffers + box.overlaps),
                  "The active region must equal the owned region minus the "
                  "(buffer zones plus overlap zones)");
@@ -723,6 +785,9 @@ void dh::regrid(bool const do_init) {
           i2vect const reffact = i2vect(h.reffacts.at(rl) / h.reffacts.at(orl));
 
           for (int cc = 0; cc < h.components(orl); ++cc) {
+            if (needrecv.empty())
+              break;
+
             full_dboxes const &obox = full_boxes.AT(ml).AT(orl).AT(cc);
 
 #if 0
@@ -761,7 +826,7 @@ void dh::regrid(bool const do_init) {
           } // for cc
 
           // All points must have been received
-          if (not(needrecv.empty())) {
+          if (not needrecv.empty()) {
             cerr << "box.active=" << box.active << "\n"
                  << "needrecv=" << needrecv << "\n";
           }
@@ -796,6 +861,9 @@ void dh::regrid(bool const do_init) {
           ibset &sync = box.sync;
 
           for (int cc = 0; cc < h.components(rl); ++cc) {
+            if (needrecv.empty())
+              break;
+
             full_dboxes const &obox = full_level.AT(cc);
 
 #if 0
@@ -870,6 +938,9 @@ void dh::regrid(bool const do_init) {
           i2vect const reffact = i2vect(h.reffacts.at(rl) / h.reffacts.at(orl));
 
           for (int cc = 0; cc < h.components(orl); ++cc) {
+            if (needrecv.empty())
+              break;
+
             full_dboxes const &obox = full_boxes.AT(ml).AT(orl).AT(cc);
 
             // See "refinement prolongation"
@@ -972,6 +1043,9 @@ void dh::regrid(bool const do_init) {
           assert((allrestricted & obox.buffers).empty());
 
           for (int c = 0; c < h.components(rl); ++c) {
+            if (needrecv.empty())
+              break;
+
             full_dboxes const &box = full_level.AT(c);
 
             // If we make a mistake expanding the domain of dependence here, it
@@ -1245,6 +1319,9 @@ void dh::regrid(bool const do_init) {
                 ibset needrecv(local_obox.coarse_boundary[dir][face]);
 
                 for (int c = 0; c < h.components(rl); ++c) {
+                  if (needrecv.empty())
+                    break;
+
                   full_dboxes const &box = full_level.AT(c);
                   if (verbose) {
                     cout << "REF ref_refl ml=" << ml << " rl=" << rl
@@ -1674,6 +1751,9 @@ void dh::regrid(bool const do_init) {
             // as possible.
 
             for (int cc = 0; cc < oldcomponents; ++cc) {
+              if (needrecv.empty())
+                break;
+
               light_dboxes const &obox = old_light_boxes.AT(ml).AT(rl).AT(cc);
 
               ibset const ovlp = needrecv & obox.owned;
@@ -1720,6 +1800,9 @@ void dh::regrid(bool const do_init) {
                 i2vect(h.reffacts.at(rl) / h.reffacts.at(orl));
 
             for (int cc = 0; cc < h.components(orl); ++cc) {
+              if (needrecv.empty())
+                break;
+
               full_dboxes const &obox = full_boxes.AT(ml).AT(orl).AT(cc);
 
               // See "refinement prolongation"
