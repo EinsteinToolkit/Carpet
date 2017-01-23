@@ -20,6 +20,8 @@
 
 #include "adler32.hh"
 
+extern "C" void ShowValid();
+
 namespace Carpet {
 
 struct AddVariables {
@@ -440,7 +442,19 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
       Accelerator_PreCallFunction(cctkGH, attribute);
       pre_timer.stop();
     }
+    #if 0
+    std::cout << ">> pre  : " << attribute->routine << std::endl;
+    ShowValid();
+    #endif
     int const res = CCTK_CallFunction(function, attribute, data);
+    CCTK_REAL *var = (CCTK_REAL*)CCTK_VarDataPtr(cctkGH,0,"PRESYNCWAVE::psi");
+    #if 0
+    if(var != 0) {
+      int zero = CCTK_GFINDEX3D(cctkGH,0,0,0);
+      std::cout << " -->zero=" << var[zero] << std::endl;
+    }
+    std::cout << ">> post : " << attribute->routine << std::endl;
+    #endif
     assert(res == 0);
     if (CCTK_IsFunctionAliased("Accelerator_PostCallFunction")) {
       Timers::Timer post_timer("PostCall");

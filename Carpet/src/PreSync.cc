@@ -9,6 +9,8 @@
 #include <math.h>
 #include <array>
 
+extern "C" void ShowValid();
+
 namespace Carpet {
 
 // The upper left-hand corner of a 2-D simulation.
@@ -353,6 +355,9 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
   }
 }
 
+/**
+ * Rotate timelevels
+ */
 void cycle_rdwr(const cGH *cctkGH) {
   int num = CCTK_NumVars();
   for(int vi=0;vi<num;vi++) {
@@ -377,6 +382,15 @@ void Sync1(const cGH *cctkGH,int gi) {
   sync_groups.push_back(gi);
   cFunctionData *attribute = 0;
   SyncProlongateGroups(cctkGH, sync_groups, attribute);
+}
+
+extern "C" void SetValidRegion(int vi,int tl,int wh) {
+  var_tuple vt(vi,tl);
+  valid_k[vt] = wh;
+}
+extern "C" int GetValidRegion(int vi,int tl) {
+  var_tuple vt(vi,tl);
+  return valid_k[vt];
 }
 
 extern "C" void ManualSyncGF(const cGH *cctkGH,int vi) {
@@ -574,4 +588,12 @@ void Carpet_ApplyPhysicalBCs(const cGH *cctkGH) {
   std::cout << " done" << std::endl;
 }
 
+}
+
+void ShowValid() {
+  for(auto i = Carpet::valid_k.begin();i != Carpet::valid_k.end(); ++i) {
+    const Carpet::var_tuple& vt = i->first;
+    int wh = i->second;
+    std::cout << "  valid: " << CCTK_FullName(vt.vi) << " tl=" << vt.tl << " wh=" << Carpet::wstr(wh) << std::endl;
+  }
 }
