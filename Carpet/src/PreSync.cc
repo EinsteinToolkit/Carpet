@@ -42,7 +42,7 @@ namespace Carpet {
 
 #define WH_EVERYWHERE          0x7
 #define WH_INTERIOR            0x4
-#define WH_BOUNDARY            0x2 /* Describes B+W cells */
+#define WH_BOUNDARY            0x2 /* Describes B+G cells */
 #define WH_GHOSTS              0x1
 #define WH_NOWHERE             0x0
 
@@ -384,16 +384,16 @@ void Sync1(const cGH *cctkGH,int gi) {
   SyncProlongateGroups(cctkGH, sync_groups, attribute);
 }
 
-extern "C" void SetValidRegion(int vi,int tl,int wh) {
+extern "C" void Carpet_SetValidRegion(int vi,int tl,int wh) {
   var_tuple vt(vi,tl);
   valid_k[vt] = wh;
 }
-extern "C" int GetValidRegion(int vi,int tl) {
+extern "C" int Carpet_GetValidRegion(int vi,int tl) {
   var_tuple vt(vi,tl);
   return valid_k[vt];
 }
 
-extern "C" void ManualSyncGF(const cGH *cctkGH,int vi) {
+extern "C" void Carpet_ManualSyncGF(const cGH *cctkGH,int vi) {
 
   var_tuple vt{vi};
   auto f = valid_k.find(vt);
