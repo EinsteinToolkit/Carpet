@@ -107,9 +107,12 @@ inline std::string wstr(int wh) {
   return s;
 }
 
+/*
+ * A read/write clause.
+ */
 struct RWClause {
-  int where;
-  int tl;
+  int where; 
+  int tl; // time-level
   std::string name;
   RWClause() : where(0), tl(0), name() {}
   ~RWClause() {}
@@ -143,6 +146,12 @@ inline bool iswhite(char c) {
   return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\b' || c == '\f';
 }
 
+/**
+ * Parse a single input clause, e.g. READS: foo::bar(Everywhere)
+ * and store the result in a vector of RWClause objects. Note
+ * that this method supports "All" as a shorthand for "Everywhere"
+ * and "In" as a shorthand for "Interior."
+ */
 void parse_rwclauses(const char *input,std::vector<RWClause>& vec) {
   std::string current;
   RWClause rwc;
@@ -185,6 +194,10 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec) {
 
 std::string current_routine;
 
+/**
+ * This method is convert an array of textual descriptions of read/write clauses to
+ * a map that takes a var tuple (var index, time level) and produces a where spec.
+ */
 void compute_clauses(const int num_strings,const char **strings,std::map<var_tuple,int>& routine_m) {
   std::vector<RWClause> rwvec;
   for(int i=0;i< num_strings; ++i) {
@@ -254,6 +267,9 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
   }
 }
 
+/**
+ * Do the actual presync of the groups.
+ **/
 void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pregroups) {
   std::vector<int> sync_groups;
   for(auto i=pregroups.begin();i != pregroups.end();++i) {
@@ -285,6 +301,9 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     SyncProlongateGroups(cctkGH, sync_groups, attribute);
 }
 
+/**
+ * Computes which groups need to be presync'd.
+ */
 void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups) {
   if(cctkGH == 0) return;
   if(attribute == 0) return;
@@ -356,7 +375,9 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 }
 
 /**
- * Rotate timelevels
+ * Rotate timelevels:
+ * Copy all knowledge about read/write levels down one level,
+ * then mark the current level as valid nowhere.
  */
 void cycle_rdwr(const cGH *cctkGH) {
   int num = CCTK_NumVars();
@@ -377,6 +398,9 @@ void cycle_rdwr(const cGH *cctkGH) {
   }
 }
 
+/**
+ * Called by ManualSyncGF.
+ */
 void Sync1(const cGH *cctkGH,int gi) {
   std::vector<int> sync_groups;
   sync_groups.push_back(gi);
@@ -384,15 +408,29 @@ void Sync1(const cGH *cctkGH,int gi) {
   SyncProlongateGroups(cctkGH, sync_groups, attribute);
 }
 
+/**
+ * Given a variable and a timelevel, set the region
+ * of the grid where that variable is valid (i.e. the where_spec).
+ */
 extern "C" void Carpet_SetValidRegion(int vi,int tl,int wh) {
   var_tuple vt(vi,tl);
   valid_k[vt] = wh;
 }
+
+/**
+ * Given a variable and a timelevel, return the region
+ * of the grid where that variable is valid (i.e. the where_spec).
+ */
 extern "C" int Carpet_GetValidRegion(int vi,int tl) {
   var_tuple vt(vi,tl);
   return valid_k[vt];
 }
 
+/**
+ * Apply manual synchronization to variable vi. If this variable
+ * is already valid everywhere, this routine does nothing. When
+ * the routine finishes, it will be valid everywhere.
+ */
 extern "C" void Carpet_ManualSyncGF(const cGH *cctkGH,int vi) {
 
   var_tuple vt{vi};
@@ -434,6 +472,7 @@ extern "C" void Carpet_ManualSyncGF(const cGH *cctkGH,int vi) {
   } else {
     abort();
   }
+  valid_k[vt] = WH_EVERYWHERE;
 }
 
 typedef void (*boundary_function)(
@@ -519,6 +558,9 @@ void Carpet_ClearBCForVarI(
   boundary_conditions[1][var_index].resize(0);
 }
 
+/**
+ * Apply boundary conditions for a single variable.
+ */
 extern "C"
 void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before) {
   if(before != 0) before = 1;
@@ -555,6 +597,9 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
   END_LOCAL_MAP_LOOP;
 }
 
+/**
+ * Apply boundary conditions for a group. Called from inside SyncProlongateGroups.
+ */
 extern "C"
 void Carpet_ApplyPhysicalBCsForGroupI(const cGH *cctkGH, int group_index,int before) {
   if(before != 0) before = 1;

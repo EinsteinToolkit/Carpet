@@ -108,8 +108,6 @@ int CallFunction(void *function,           ///< the function to call
   }
 
   // Filled in by PreSyncGroups
-  // TODO: Hack CallScheduledFunction
-  // to call the boundary routines
   std::set<int> pregroups;
 
   PreCheckValid(attribute,cctkGH,pregroups);
