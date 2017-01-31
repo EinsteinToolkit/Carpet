@@ -2824,7 +2824,7 @@ istream &dh::fast_dboxes::input(istream &is) {
     is >> fast_ref_bnd_prol_sendrecv;
     skipws(is);
     consume(is, "fast_sync2_sendrecv:");
-    is >> fast_sync_sendrecv;
+    is >> fast_sync2_sendrecv;
     skipws(is);
     consume(is, "fast_ref_bnd_prol2_sendrecv:");
     is >> fast_ref_bnd_prol2_sendrecv;
