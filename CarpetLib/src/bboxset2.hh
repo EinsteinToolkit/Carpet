@@ -1404,7 +1404,10 @@ ostream &bboxset<T, D>::debug_output(ostream &os) const {
 }
 
 template <typename T, int D> ostream &bboxset<T, D>::output(ostream &os) const {
-  assert(not is_poison());
+  //assert(not is_poison());
+  if(is_poison()) {
+          return os << "poisoned ";
+  }
   T Tdummy;
   set<bbox> bs;
   serialise(bs);
@@ -1455,7 +1458,10 @@ template <typename T> ostream &bboxset<T, 0>::debug_output(ostream &os) const {
 }
 
 template <typename T> ostream &bboxset<T, 0>::output(ostream &os) const {
-  assert(not is_poison());
+  //assert(not is_poison());
+  if(is_poison()) {
+          return os << "poisoned ";
+  }
   T Tdummy;
   return os << "bboxset<" << typestring(Tdummy) << ",0>("
             << "state:" << state << ","
