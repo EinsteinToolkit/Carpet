@@ -519,10 +519,9 @@ void dh::regrid(bool const do_init) {
 
       // For 2 ghosts: Reduce buffer size, then recalculate other
       // quantities from this
-      ibset const notowned2 = notowned.expand(buffer_width - buffer_width2);
-      ibset const allbuffers2 = allbuffers - notowned2;
+      ibset const allowned2 = (allactive + alloverlaps).expand(buffer_width2);
+      ibset const allbuffers2 = allowned2 - (allactive + alloverlaps);
       ASSERT_rl(allbuffers2 <= allbuffers, "Buffer zones must be consistent");
-      ibset const allowned2 = allactive + alloverlaps + allbuffers2;
       ASSERT_rl(allowned2 <= allowned, "Owned regions must be consistent");
       ASSERT_rl(allowned2 <= domain_active, "The owned regions must be "
                                             "contained in the active part of "
@@ -575,7 +574,7 @@ void dh::regrid(bool const do_init) {
         box.buffers2 = box.buffers & allbuffers2;
 
         // Owned region:
-        box.owned2 = box.active + box.overlaps + box.buffers2;
+        box.owned2 = box.owned & allowned2;
         ASSERT_c(box.owned2 <= box.owned,
                  "The owned region must be consistent");
         ASSERT_c(box.active == box.owned2 - (box.buffers2 + box.overlaps),
