@@ -2092,6 +2092,12 @@ void dh::regrid(bool const do_init) {
                            &fast_dboxes::fast_sync_sendrecv);
         timer_bcast_comm_sync.stop();
 
+        static Timers::Timer timer_bcast_comm_sync2("sync2");
+        timer_bcast_comm_sync2.start();
+        broadcast_schedule(fast_level_otherprocs, fast_level,
+                           &fast_dboxes::fast_sync2_sendrecv);
+        timer_bcast_comm_sync2.stop();
+
         static Timers::Timer timer_bcast_comm_ref_bnd_prol("ref_bnd_prol");
         timer_bcast_comm_ref_bnd_prol.start();
         broadcast_schedule(fast_level_otherprocs, fast_level,
