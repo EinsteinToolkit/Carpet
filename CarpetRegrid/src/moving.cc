@@ -23,8 +23,8 @@ int Moving(cGH const *const cctkGH, gh const &hh, gh::rregs &regss) {
   regss.resize(refinement_levels);
 
   bvect const symmetric(symmetry_x, symmetry_y, symmetry_z);
-  b2vect const ob(false);
-  b2vect const rb(true);
+  b2vect const ob(bvect(false));
+  b2vect const rb(bvect(true));
 
   assert(!smart_outer_boundaries);
 
@@ -43,7 +43,7 @@ int Moving(cGH const *const cctkGH, gh const &hh, gh::rregs &regss) {
 
     region_t reg;
     reg.map = Carpet::map;
-    reg.outer_boundaries = b2vect(false);
+    reg.outer_boundaries = b2vect(bvect(false));
 
     vector<region_t> regs;
     ManualCoordinates_OneLevel(cctkGH, hh, rl, refinement_levels, rlb, rub, reg,
