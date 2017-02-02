@@ -1644,9 +1644,9 @@ int ReduceGVs(const cGH *const cgh, const int proc, const int num_outvals,
                     int const vi0 = CCTK_FirstVarIndexI(gi);
                     ggf const *const ff =
                         arrdata.AT(gi).AT(Carpet::map).data.AT(vi1 - vi0);
-                    void const *const ptr =
-                        ff->data_pointer(tl, reflevel, local_component, mglevel)
-                            ->storage();
+                    gdata const *const dd = ff->data_pointer(
+                        tl, reflevel, local_component, mglevel);
+                    void const *const ptr = dd->storage();
                     myinarrays.AT(tl).AT(n) = ptr;
                     assert(myinarrays.AT(tl).AT(n));
                   }
