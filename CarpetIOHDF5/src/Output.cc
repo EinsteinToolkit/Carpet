@@ -196,7 +196,7 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
                 : NULL;
         gdata *const processor_component = ff->new_typed_data();
 
-        processor_component->allocate(overlap, 0);
+        processor_component->allocate(overlap, overlap.sizes(), ivect(0), 0);
         for (comm_state state; not state.done(); state.step()) {
           int const p = hh->processor(refinementlevel, component);
           processor_component->copy_from(state, data, overlap, overlap, NULL, 0,
@@ -378,7 +378,7 @@ int WriteVarChunkedSequential(const cGH *const cctkGH, hid_t outfile,
               : NULL;
       gdata *const processor_component = ff->new_typed_data();
 
-      processor_component->allocate(bbox, 0);
+      processor_component->allocate(bbox, bbox.sizes(), ivect(0), 0);
       for (comm_state state; not state.done(); state.step()) {
         int const p = hh->processor(refinementlevel, component);
         processor_component->copy_from(state, data, bbox, bbox, NULL, 0, p);

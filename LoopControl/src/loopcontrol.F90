@@ -24,6 +24,7 @@ module loopcontrol
           imin, jmin, kmin, &
           imax, jmax, kmax, &
           iash, jash, kash, &
+          ialn, ioff, &
           istr)
        use loopcontrol_types
        implicit none
@@ -32,6 +33,7 @@ module loopcontrol
        integer            :: imin, jmin, kmin
        integer            :: imax, jmax, kmax
        integer            :: iash, jash, kash
+       integer            :: ialn, ioff
        integer            :: istr
      end subroutine lc_control_init
 

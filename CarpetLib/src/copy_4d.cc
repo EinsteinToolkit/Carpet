@@ -58,7 +58,7 @@ void copy_4d(T const *restrict const src, ivect4 const &restrict srcpadext,
         "Internal error: region extent is not contained in array extent");
   }
 
-  ivect4 const regext = regbbox.shape() / regbbox.stride();
+  ivect4 const regext = regbbox.sizes();
   assert(all((regbbox.lower() - srcbbox.lower()) % srcbbox.stride() == 0));
   ivect4 const srcoff = (regbbox.lower() - srcbbox.lower()) / srcbbox.stride();
   assert(all((regbbox.lower() - dstbbox.lower()) % dstbbox.stride() == 0));

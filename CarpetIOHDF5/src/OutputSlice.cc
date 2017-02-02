@@ -596,9 +596,10 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
               const ggf *const ff = arrdata.at(group).at(m).data.at(n + n_min);
               tmpdatas.at(n) = ff->new_typed_data();
               size_t const memsize =
-                  tmpdatas.at(n)->allocsize(data_ext, ioproc);
+                  tmpdatas.at(n)->allocsize(data_ext, data_ext.sizes(), ioproc);
               void *const memptr = pool.alloc(memsize);
-              tmpdatas.at(n)->allocate(data_ext, ioproc, memptr, memsize);
+              tmpdatas.at(n)->allocate(data_ext, data_ext.sizes(), ivect(0),
+                                       ioproc, memptr, memsize);
             } // for n
 
             for (comm_state state; not state.done(); state.step()) {
