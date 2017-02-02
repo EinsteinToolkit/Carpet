@@ -452,6 +452,10 @@ BOOLEAN use_grid_structure_from_checkpoint "Use the grid structure stored in the
 {
 } "yes"
 
+BOOLEAN one_file_per_proc "Write one file per process instead of per variable" STEERABLE = ALWAYS
+{
+} "no"
+
 BOOLEAN one_file_per_group "Write one file per group instead of per variable" STEERABLE = ALWAYS
 {
 } "no"

@@ -134,7 +134,8 @@ void IOHDF5<outdim>::CheckSteerableParameters(const cGH *const cctkGH) {
     my_out_slice_dir = strdup(the_out_dir);
 
     // create the output directory
-    const int result = IOUtil_CreateDirectory(cctkGH, my_out_slice_dir, 0, 0);
+    const int result =
+        IOUtil_CreateDirectory(cctkGH, my_out_slice_dir, ioproc, nioprocs == 1);
     if (result < 0) {
       CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Problem creating %dD-output directory '%s'", outdim,
@@ -322,7 +323,25 @@ int IOHDF5<outdim>::TriggerOutput(const cGH *const cctkGH, const int vindex) {
   char *const fullname = CCTK_FullName(vindex);
 
   int retval;
-  if (one_file_per_group) {
+  if (one_file_per_proc) {
+    // paths could be up to PATH_MAX
+    // http://pubs.opengroup.org/onlinepubs/009695399/basedefs/limits.h.html
+    // yet man realpath(3) states that PATH_MAX may be -1 in which case there
+    // is no upper limit.
+    char path[1000];
+    CCTK_ParameterFilename(sizeof(path), path);
+    char *value = strrchr(path, '/');
+    if (value == NULL) {
+      value = path;
+    } else {
+      value++;
+    }
+    char *dot = strrchr(value, '.');
+    if (dot != NULL and strcmp(dot, ".par") == 0) {
+      *dot = '\0';
+    }
+    retval = OutputVarAs(cctkGH, fullname, value);
+  } else if (one_file_per_group) {
     char *const alias_c = CCTK_GroupNameFromVarI(vindex);
     string alias(alias_c);
     free(alias_c);
@@ -736,7 +755,7 @@ int IOHDF5<outdim>::OpenFile(const cGH *const cctkGH, const int m,
       filenamebuf << coords[dirs[d]];
     }
     if (nioprocs > 1) {
-      filenamebuf << ".file_" << dist::rank();
+      filenamebuf << ".file_" << ioproc / ioproc_every;
     }
     string index_filename(filenamebuf.str() + ".idx" + out_extension);
     filenamebuf << out_extension;
