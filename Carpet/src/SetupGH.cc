@@ -1670,7 +1670,7 @@ void calculate_grid_points(int const m, vector<i2vect> const &ghosts,
 #endif
   {
     CCTK_REAL const total_npoints = prod(rvect(npoints));
-    CCTK_REAL const size_max = numeric_limits<size_type>::max();
+    CCTK_REAL const size_max = CCTK_REAL(numeric_limits<size_type>::max());
     if (total_npoints > size_max) {
       CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
                   "The domain for map %d contains %g grid points.  This number "
