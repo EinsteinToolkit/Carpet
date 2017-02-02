@@ -8,6 +8,7 @@
 #include <carpet.hh>
 #include <math.h>
 #include <array>
+#include "PreSync.h"
 
 extern "C" void ShowValid();
 
@@ -231,6 +232,7 @@ void compute_clauses(const int num_strings,const char **strings,std::map<var_tup
           var_tuple vt{vi};
           routine_m[vt] = where_val;
         }
+        assert(i0 < iN);
       } else {
         std::cerr << "error: Could not find (" << rwc.name << ")" << std::endl;
         abort();
@@ -251,7 +253,8 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
   std::map<var_tuple,int>& writes_m = writes[r];
   for(auto i = writes_m.begin();i != writes_m.end(); ++i) {
     const var_tuple& vi = i->first;
-    valid_k[vi] = i->second;
+    if(i->second != WH_NOWHERE)
+      valid_k[vi] = i->second;
   }
   for(auto g = sync_groups.begin();g != sync_groups.end();++g) {
     int gi = *g;
@@ -286,7 +289,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
       if(!on(wh,WH_INTERIOR)) {
         std::ostringstream msg;
         msg << "SYNC of variable with invalid interior. Name: "
-            << CCTK_FullName(vi) << " after: " << current_routine;
+            << CCTK_FullName(vi) << " before: " << current_routine;
         CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
       }
       if(push) {
@@ -301,12 +304,69 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     SyncProlongateGroups(cctkGH, sync_groups, attribute);
 }
 
+std::map<var_tuple,int> tmp_read, tmp_write;
+
+/**
+ * Determine whether the currently executed function
+ * has either read or write access to the variable
+ * in question. If it does not, access is blocked
+ * by causing CCTKi_VarDataPtrI() to return null.
+ * Note that only REAL grid functions are affected.
+ */
+extern "C"
+int Carpet_hasAccess(int var_index) {
+  int type = CCTK_GroupTypeFromVarI(var_index);
+  if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(var_index)) == sizeof(CCTK_REAL)) {
+    var_tuple vi(var_index);
+    if(reads[current_routine][vi] != WH_NOWHERE)
+      return true;
+    if(writes[current_routine][vi] != WH_NOWHERE)
+      return true;
+    if(tmp_read[vi] != WH_NOWHERE)
+      return true;
+    if(tmp_write[vi] != WH_NOWHERE)
+      return true;
+    return false;
+  } else {
+    return true;
+  }
+}
+
+/**
+ * Request temporary read access to a variable,
+ * thus allowing Carpet_hasAccess() to return true.
+ * This needs to be called <i>before</i> the 
+ * CCTK_DECLARE_VARIABLES macro in order to have
+ * the desired effect.
+ */
+extern "C"
+void Carpet_requestAccess(const char *vn,int read_spec,int write_spec) {
+  int var_index = CCTK_VarIndex(vn);
+  assert(var_index >= 0);
+  var_tuple vi(var_index);
+  tmp_read[vi]  |= read_spec;
+  tmp_write[vi] |= write_spec;
+}
+
+void dump_clauses(std::map<var_tuple,int>& reads_m,std::map<var_tuple,int>& writes_m) {
+  std::cout << "ROUTINE: " << current_routine << " {" << std::endl;
+  for(auto i = reads_m.begin(); i != reads_m.end(); ++i) {
+    std::cout << "  >>READ:  " << CCTK_FullName(i->first.vi) << "," << wstr(i->second) << std::endl;
+  }
+  for(auto i = writes_m.begin(); i != writes_m.end(); ++i) {
+    std::cout << "  >>WRITE: " << CCTK_FullName(i->first.vi) << "," << wstr(i->second) << std::endl;
+  }
+  std::cout << "}" << std::endl;
+}
+
 /**
  * Computes which groups need to be presync'd.
  */
 void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups) {
   if(cctkGH == 0) return;
   if(attribute == 0) return;
+  tmp_read.erase(tmp_read.begin(),tmp_read.end());
+  tmp_write.erase(tmp_write.begin(),tmp_write.end());
 
   std::string r;
   r += attribute->thorn;
@@ -332,6 +392,8 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
   std::map<var_tuple,int>& reads_m  = reads [r];
 
   for(auto i = reads_m.begin();i != reads_m.end(); ++i) {
+    if(i->second == WH_NOWHERE)
+      continue;
     const var_tuple& vt = i->first;
     if(!on(valid_k[vt],WH_INTERIOR)) {
       // If the read spec is everywhere and we only have

@@ -443,9 +443,9 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
     #if 0
     std::cout << ">> pre  : " << attribute->routine << std::endl;
     ShowValid();
+    CCTK_REAL *var = (CCTK_REAL*)CCTK_VarDataPtr(cctkGH,0,"PRESYNCWAVE::psi");
     #endif
     int const res = CCTK_CallFunction(function, attribute, data);
-    CCTK_REAL *var = (CCTK_REAL*)CCTK_VarDataPtr(cctkGH,0,"PRESYNCWAVE::psi");
     #if 0
     if(var != 0) {
       int zero = CCTK_GFINDEX3D(cctkGH,0,0,0);
