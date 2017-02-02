@@ -36,7 +36,7 @@ public:
     sum += difference;
     sum2 += pow(difference, 2.0);
     min = min == 0.0 ? difference : fmin(min, difference);
-    max = fmax(min, difference);
+    max = fmax(max, difference);
     count += 1.0;
   }
 
