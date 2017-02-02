@@ -50,8 +50,8 @@ centre_description::centre_description(cGH const *const cctkGH, int const n) {
 
   bool found_error = false;
 
-  int lsh[2];
-  getvectorindex2(cctkGH, "CarpetRegrid2::radii", lsh);
+  int lsh[2], ash[2];
+  getvectorindex2(cctkGH, "CarpetRegrid2::radii", lsh, ash);
 
   this->_num_levels = num_levels[n];
   this->_active = active[n];
@@ -66,7 +66,7 @@ centre_description::centre_description(cGH const *const cctkGH, int const n) {
   this->_radius.resize(this->_num_levels);
   this->_radius.at(0) = rvect(-1.0, -1.0, -1.0); // unused
   for (int rl = 1; rl < this->_num_levels; ++rl) {
-    int const ind = index2(lsh, rl, n);
+    int const ind = index2(lsh, ash, rl, n);
     CCTK_REAL const rx = radius_x[ind] < 0.0 ? radius[ind] : radius_x[ind];
     CCTK_REAL const ry = radius_y[ind] < 0.0 ? radius[ind] : radius_y[ind];
     CCTK_REAL const rz = radius_z[ind] < 0.0 ? radius[ind] : radius_z[ind];
@@ -502,8 +502,8 @@ CarpetRegrid2_Regrid(CCTK_POINTER_TO_CONST const cctkGH_,
 
   if (not force and do_recompose and *last_iteration != -1) {
 
-    int lsh[2];
-    getvectorindex2(cctkGH, "CarpetRegrid2::radii", lsh);
+    int lsh[2], ash[2];
+    getvectorindex2(cctkGH, "CarpetRegrid2::radii", lsh, ash);
 
     // Regrid only if the regions have changed sufficiently
     do_recompose = false;
@@ -571,7 +571,7 @@ CarpetRegrid2_Regrid(CCTK_POINTER_TO_CONST const cctkGH_,
 
         // Regrid if the radii have changed sufficiently
         for (int rl = 1; rl < num_levels[n]; ++rl) {
-          int const ind = index2(lsh, rl, n);
+          int const ind = index2(lsh, ash, rl, n);
           CCTK_REAL const rx = radius_x[ind] < 0 ? radius[ind] : radius_x[ind];
           CCTK_REAL const ry = radius_y[ind] < 0 ? radius[ind] : radius_y[ind];
           CCTK_REAL const rz = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
@@ -728,8 +728,8 @@ CarpetRegrid2_RegridMaps(CCTK_POINTER_TO_CONST const cctkGH_,
 
   if (not force and do_recompose and *last_iteration != -1) {
 
-    int lsh[2];
-    getvectorindex2(cctkGH, "CarpetRegrid2::radii", lsh);
+    int lsh[2], ash[2];
+    getvectorindex2(cctkGH, "CarpetRegrid2::radii", lsh, ash);
 
     // Regrid only if the regions have changed sufficiently
     do_recompose = false;
@@ -806,7 +806,7 @@ CarpetRegrid2_RegridMaps(CCTK_POINTER_TO_CONST const cctkGH_,
 
         // Regrid if the radii have changed sufficiently
         for (int rl = 1; rl < num_levels[n]; ++rl) {
-          int const ind = index2(lsh, rl, n);
+          int const ind = index2(lsh, ash, rl, n);
           CCTK_REAL const rx = radius_x[ind] < 0 ? radius[ind] : radius_x[ind];
           CCTK_REAL const ry = radius_y[ind] < 0 ? radius[ind] : radius_y[ind];
           CCTK_REAL const rz = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
@@ -947,8 +947,8 @@ CarpetRegrid2_RegridMaps(CCTK_POINTER_TO_CONST const cctkGH_,
     // Make multigrid aware
     MakeMultigridBoxesMaps(cctkGH, regsss, regssss);
 
-    int lsh[2];
-    getvectorindex2(cctkGH, "CarpetRegrid2::radii", lsh);
+    int lsh[2], ash[2];
+    getvectorindex2(cctkGH, "CarpetRegrid2::radii", lsh, ash);
 
     // Remember current positions
     for (int n = 0; n < num_centres; ++n) {
@@ -961,7 +961,7 @@ CarpetRegrid2_RegridMaps(CCTK_POINTER_TO_CONST const cctkGH_,
       old_position_z[n] = position_z[n];
 
       for (int rl = 1; rl < num_levels[n]; ++rl) {
-        int const ind = index2(lsh, rl, n);
+        int const ind = index2(lsh, ash, rl, n);
         old_radius_x[ind] = radius_x[ind] < 0 ? radius[ind] : radius_x[ind];
         old_radius_y[ind] = radius_y[ind] < 0 ? radius[ind] : radius_y[ind];
         old_radius_z[ind] = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];

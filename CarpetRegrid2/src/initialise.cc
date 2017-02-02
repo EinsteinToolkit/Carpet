@@ -25,8 +25,8 @@ void CarpetRegrid2_Initialise(CCTK_ARGUMENTS) {
     num_levels[n] = 0;
   }
 
-  int lsh[2];
-  getvectorindex2(cctkGH, "CarpetRegrid2::radii", lsh);
+  int lsh[2], ash[2];
+  getvectorindex2(cctkGH, "CarpetRegrid2::radii", lsh, ash);
 
 #define INIT_CENTRE(N)                                                         \
   do {                                                                         \
@@ -37,7 +37,7 @@ void CarpetRegrid2_Initialise(CCTK_ARGUMENTS) {
       position_y[N - 1] = position_y_##N;                                      \
       position_z[N - 1] = position_z_##N;                                      \
       for (int rl = 0; rl < 30; ++rl) {                                        \
-        int const ind = index2(lsh, rl, N - 1);                                \
+        int const ind = index2(lsh, ash, rl, N - 1);                           \
         radius[ind] = radius_##N[rl];                                          \
         radius_x[ind] = radius_x_##N[rl];                                      \
         radius_y[ind] = radius_y_##N[rl];                                      \
