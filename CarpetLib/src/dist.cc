@@ -409,12 +409,18 @@ void collect_total_num_threads() {
 #pragma omp master
     { num_threads = omp_get_num_threads(); }
   }
+  int thread_count = 0;
+#pragma omp parallel
+  {
+#pragma omp atomic
+    thread_count += 1;
+  }
   int const max_threads = omp_get_max_threads();
-  if (max_threads != num_threads) {
-    CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Unexpected OpenMP setup: omp_get_max_threads=%d, "
-               "omp_get_num_threads=%d",
-               max_threads, num_threads);
+  if (max_threads != num_threads or thread_count != num_threads) {
+    CCTK_VWARN(CCTK_WARN_ALERT, "Unexpected OpenMP setup: "
+                                "omp_get_num_threads=%d, "
+                                "omp_get_max_threads=%d, thread_count=%d",
+               num_threads, max_threads, thread_count);
   }
 #endif
   assert(num_threads >= 1);
