@@ -1100,11 +1100,10 @@ void fasterp_setup_gen_t<FASTERP>::setup(cGH const *restrict const cctkGH,
     }
     assert(rl >= 0 and c >= 0);
 
-    ibbox const &ext = Carpet::vdd.AT(m)
-                           ->light_boxes.AT(Carpet::mglevel)
-                           .AT(rl)
-                           .AT(c)
-                           .exterior;
+    const auto &cmp =
+        Carpet::vdd.AT(m)->light_boxes.AT(Carpet::mglevel).AT(rl).AT(c);
+    ibbox const &ext = cmp.exterior;
+    ibbox const &own = cmp.owned;
     rvect dpos = rpos - rvect(ipos);
 
     // Convert from Carpet indexing to grid point indexing
@@ -1119,7 +1118,7 @@ void fasterp_setup_gen_t<FASTERP>::setup(cGH const *restrict const cctkGH,
     assert(all(fabs(dpos) <= rvect(0.5)));
 
     ivect const ind = ipos - ext.lower() / ext.stride();
-    ivect const ash = pad_shape(ext);
+    ivect const ash = pad_shape(ext, own).padded_shape;
     int const ind3d = index(ash, ind);
 #if 0
       ENTER_SINGLEMAP_MODE (cctkGH, m, CCTK_GF) {
@@ -1361,12 +1360,11 @@ void fasterp_setup_gen_t<FASTERP>::setup(cGH const *restrict const cctkGH,
       int const rl = themrc.rl;
       int const c = themrc.c;
       assert(Carpet::vhh.AT(m)->is_local(rl, c));
-      ibbox const &ext = Carpet::vdd.AT(m)
-                             ->light_boxes.AT(Carpet::mglevel)
-                             .AT(rl)
-                             .AT(c)
-                             .exterior;
-      send_comp.ash = pad_shape(ext);
+      const auto &cmp =
+          Carpet::vdd.AT(m)->light_boxes.AT(Carpet::mglevel).AT(rl).AT(c);
+      ibbox const &ext = cmp.exterior;
+      ibbox const &own = cmp.owned;
+      send_comp.ash = pad_shape(ext, own).padded_shape;
 #ifdef CARPETINTERP2_CHECK
       send_comp.lsh = ext.shape() / ext.stride();
 #endif

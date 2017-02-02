@@ -51,10 +51,12 @@ public:
                            const operator_type transport_operator) const;
 
   // Storage management
-  virtual void allocate(const ibbox &extent, const int proc,
+  virtual void allocate(const ibbox &extent, const ivect &padded_shape,
+                        const ivect &padding_offset, const int proc,
                         void *const memptr = NULL, size_t const memsize = 0);
   virtual void free();
-  virtual size_t allocsize(const ibbox &extent, const int proc) const;
+  virtual size_t allocsize(const ibbox &extent, const ivect &padded_shape,
+                           const int proc) const;
   virtual bool check_fence(const int upperlower) const;
 
 public:

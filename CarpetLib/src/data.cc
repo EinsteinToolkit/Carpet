@@ -348,7 +348,8 @@ data<T> *data<T>::make_typed(const int varindex_, const centering cent_,
 
 // Storage management
 template <typename T>
-void data<T>::allocate(const ibbox &extent_, const int proc_,
+void data<T>::allocate(const ibbox &extent_, const ivect &padded_shape_,
+                       const ivect &padding_offset_, const int proc_,
                        void *const memptr, size_t const memsize) {
   assert(not _has_storage);
   _has_storage = true;
@@ -360,8 +361,10 @@ void data<T>::allocate(const ibbox &extent_, const int proc_,
 
   // data
   _extent = extent_;
-  _shape = max(ivect(0), _extent.shape() / _extent.stride());
-  _padded_shape = pad_shape(_shape);
+  _shape = _extent.sizes();
+  _padded_shape = padded_shape_;
+  _padding_offset = padding_offset_;
+  assert(all(_shape <= _padded_shape));
   _stride[0] = 1;
   for (int d = 1; d < dim; ++d)
     _stride[d] = _stride[d - 1] * _padded_shape[d - 1];
@@ -371,7 +374,8 @@ void data<T>::allocate(const ibbox &extent_, const int proc_,
   if (dist::rank() == _proc) {
     if (vectorindex == 0) {
       assert(not vectorleader);
-      _memory = new mem<T>(vectorlength, _size, (T *)memptr, memsize);
+      _memory = new mem<T>(vectorlength, _size, sum(_padding_offset * _stride),
+                           (T *)memptr, memsize);
     } else {
       assert(vectorleader);
       _memory = vectorleader->_memory;
@@ -396,13 +400,15 @@ template <typename T> void data<T>::free() {
 }
 
 template <typename T>
-size_t data<T>::allocsize(const ibbox &extent_, const int proc_) const {
+size_t data<T>::allocsize(const ibbox &extent_, const ivect &padded_shape_,
+                          const int proc_) const {
   if (dist::rank() != proc_)
     return 0;
   if (vectorindex != 0)
     return 0;
   assert(not vectorleader);
-  return vectorlength * prod(pad_shape(extent_)) * sizeof(T);
+  assert(all(extent_.sizes() <= padded_shape_));
+  return vectorlength * prod(padded_shape_) * sizeof(T);
 }
 
 template <typename T> bool data<T>::check_fence(const int upperlower) const {
@@ -495,7 +501,7 @@ void data<T>::transfer_time(vector<gdata const *> const &gsrcs,
     for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++tl) {
       tmps.AT(tl) =
           new data(this->varindex, this->cent, this->transport_operator);
-      tmps.AT(tl)->allocate(dstbox, this->proc());
+      tmps.AT(tl)->allocate(dstbox, dstbox.sizes(), ivect(0), this->proc());
 
       assert(gsrcs.AT(tl));
       // data const * const src = dynamic_cast <data const *> (gsrcs.AT(tl));
@@ -1026,7 +1032,7 @@ void data<T>::transfer_restrict(data const *const src, ibbox const &dstregbox,
       break;
     case cell_centered: {
       assert(all(dstregbox.stride() == this->extent().stride()));
-      ivect const is_centered = slabinfo ? slabinfo->is_centered : 1;
+      ivect const is_centered = slabinfo ? slabinfo->is_centered : ivect(1);
 
       ibbox const &srcbox = src->extent();
       ibbox const &dstbox = this->extent();
@@ -1316,6 +1322,7 @@ template <typename T> ostream &data<T>::output(ostream &os) const {
      << "extent=" << extent() << ","
      << "shape=" << shape() << ","
      << "padded_shape=" << padded_shape() << ","
+     << "padding_offset=" << padding_offset() << ","
      << "stride=" << stride() << ",size=" << size();
   return os;
 }

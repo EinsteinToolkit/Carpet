@@ -509,8 +509,9 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
              truncate_file, file);
 
     // Find the output offset
-    const ivect offset =
-        groupdata.grouptype == CCTK_GF ? GetOutputOffset(cctkGH, m, dirs) : 0;
+    const ivect offset = groupdata.grouptype == CCTK_GF
+                             ? GetOutputOffset(cctkGH, m, dirs)
+                             : ivect(0);
 
     const gh *const hh = arrdata.at(group).at(m).hh;
     const dh *const dd = arrdata.at(group).at(m).dd;
@@ -591,17 +592,19 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
               const ggf *const ff = arrdata.at(group).at(m).data.at(n + n_min);
               tmpdatas.at(n) = ff->new_typed_data();
               size_t const memsize =
-                  tmpdatas.at(n)->allocsize(data_ext, ioproc);
+                  tmpdatas.at(n)->allocsize(data_ext, data_ext.sizes(), ioproc);
               void *const memptr = pool.alloc(memsize);
-              tmpdatas.at(n)->allocate(data_ext, ioproc, memptr, memsize);
+              tmpdatas.at(n)->allocate(data_ext, data_ext.sizes(), ivect(0),
+                                       ioproc, memptr, memsize);
             } // for n
             for (size_t n = 0; n < coords.size(); ++n) {
               const ggf *const ff = arrdata.at(coord_group).at(m).data.at(n);
               tmpcoords.at(n) = ff->new_typed_data();
-              size_t const memsize =
-                  tmpcoords.at(n)->allocsize(data_ext, ioproc);
+              size_t const memsize = tmpcoords.at(n)->allocsize(
+                  data_ext, data_ext.sizes(), ioproc);
               void *const memptr = pool.alloc(memsize);
-              tmpcoords.at(n)->allocate(data_ext, ioproc, memptr, memsize);
+              tmpcoords.at(n)->allocate(data_ext, data_ext.sizes(), ivect(0),
+                                        ioproc, memptr, memsize);
             } // for n
 
             for (comm_state state; not state.done(); state.step()) {

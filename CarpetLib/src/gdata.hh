@@ -67,6 +67,7 @@ protected:
 
   ivect _shape;                 // shape
   ivect _padded_shape, _stride; // allocated shape and index order
+  ivect _padding_offset;
 
   ibbox _extent; // bbox for all data
 
@@ -92,11 +93,13 @@ public:
              const operator_type transport_operator = op_error) const = 0;
 
   // Storage management
-  virtual void allocate(const ibbox &extent, const int proc,
+  virtual void allocate(const ibbox &extent, const ivect &padded_shape,
+                        const ivect &padding_offset, const int proc,
                         void *const memptr = NULL,
                         size_t const memsize = 0) = 0;
   virtual void free() = 0;
-  virtual size_t allocsize(const ibbox &extent, const int proc) const = 0;
+  virtual size_t allocsize(const ibbox &extent, const ivect &padded_shape,
+                           const int proc) const = 0;
 
   // true if fence is intact
   virtual bool check_fence(const int upperlower) const = 0;
@@ -133,6 +136,11 @@ public:
   const ivect &padded_shape() const {
     assert(_has_storage);
     return _padded_shape;
+  }
+
+  const ivect &padding_offset() const {
+    assert(_has_storage);
+    return _padding_offset;
   }
 
   const ivect &stride() const {

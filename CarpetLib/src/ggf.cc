@@ -9,6 +9,7 @@
 
 #include <Timer.hh>
 
+#include "cacheinfo.hh"
 #include "defs.hh"
 #include "dh.hh"
 #include "th.hh"
@@ -88,8 +89,11 @@ void ggf::set_timelevels(const int ml, const int rl, const int new_timelevels) {
       storage.AT(ml).AT(rl).AT(lc).resize(new_timelevels);
       for (int tl = timelevels(ml, rl); tl < new_timelevels; ++tl) {
         storage.AT(ml).AT(rl).AT(lc).AT(tl) = typed_data(tl, rl, lc, ml);
+        const auto &comp = d.light_boxes.AT(ml).AT(rl).AT(c);
+        auto shp = pad_shape(comp.exterior, comp.owned);
         storage.AT(ml).AT(rl).AT(lc).AT(tl)->allocate(
-            d.light_boxes.AT(ml).AT(rl).AT(c).exterior, dist::rank());
+            d.light_boxes.AT(ml).AT(rl).AT(c).exterior, shp.padded_shape,
+            shp.padding_offset, dist::rank());
       } // for tl
     }   // for lc
   }
@@ -138,8 +142,11 @@ void ggf::recompose_allocate(const int rl) {
       storage.AT(ml).AT(rl).AT(lc).resize(timelevels(ml, rl));
       for (int tl = 0; tl < timelevels(ml, rl); ++tl) {
         storage.AT(ml).AT(rl).AT(lc).AT(tl) = typed_data(tl, rl, lc, ml);
+        const auto &comp = d.light_boxes.AT(ml).AT(rl).AT(c);
+        auto shp = pad_shape(comp.exterior, comp.owned);
         storage.AT(ml).AT(rl).AT(lc).AT(tl)->allocate(
-            d.light_boxes.AT(ml).AT(rl).AT(c).exterior, dist::rank());
+            d.light_boxes.AT(ml).AT(rl).AT(c).exterior, shp.padded_shape,
+            shp.padding_offset, dist::rank());
       } // for tl
     }   // for lc
   }     // for ml
