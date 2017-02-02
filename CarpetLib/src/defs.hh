@@ -163,16 +163,20 @@ template <typename T> inline T div_up(T const x, T const y) {
   return (x + y - 1) / y;
 }
 
-template <typename T> inline T align_down(T const x, T const align) {
+template <typename T>
+inline T align_down(T const x, T const align, T const offset = T(0)) {
   assert(x >= 0);
   assert(align > 0);
-  return div_down(x, align) * align;
+  assert(offset >= 0 && offset < align);
+  return div_down(x + align - offset, align) * align - align + offset;
 }
 
-template <typename T> inline T align_up(T const x, T const align) {
+template <typename T>
+inline T align_up(T const x, T const align, T const offset = T(0)) {
   assert(x >= 0);
   assert(align > 0);
-  return div_up(x, align) * align;
+  assert(offset >= 0 && offset < align);
+  return div_up(x + align - offset, align) * align - align + offset;
 }
 
 // Useful helpers
