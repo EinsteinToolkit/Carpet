@@ -152,15 +152,15 @@ int GroupStorageCrease(const cGH *cctkGH, int n_groups, const int *groups,
           if (not can_do) {
             char *const groupname = CCTK_GroupName(group);
             char const *const modestring =
-                (is_meta_mode() ? "meta" : is_global_mode()
-                                               ? "global"
-                                               : is_level_mode()
-                                                     ? "level"
-                                                     : is_singlemap_mode()
-                                                           ? "singlemap"
-                                                           : is_local_mode()
-                                                                 ? "local"
-                                                                 : NULL);
+                (is_meta_mode()
+                     ? "meta"
+                     : is_global_mode()
+                           ? "global"
+                           : is_level_mode()
+                                 ? "level"
+                                 : is_singlemap_mode()
+                                       ? "singlemap"
+                                       : is_local_mode() ? "local" : NULL);
             CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
                        "Cannot change storage for group \"%s\" in %s mode",
                        groupname, modestring);
@@ -192,11 +192,11 @@ int GroupStorageCrease(const cGH *cctkGH, int n_groups, const int *groups,
               bool const contiguous = false;
 #endif
               const int vectorindex =
-                  (contiguous ? var : gp.vectorgroup ? var % gp.vectorlength
-                                                     : 0);
+                  (contiguous ? var
+                              : gp.vectorgroup ? var % gp.vectorlength : 0);
               const int vectorlength =
-                  (contiguous ? gp.numvars : gp.vectorgroup ? gp.vectorlength
-                                                            : 1);
+                  (contiguous ? gp.numvars
+                              : gp.vectorgroup ? gp.vectorlength : 1);
               assert(vectorindex >= 0 and vectorindex < gp.numvars);
               assert(vectorlength > 0 and vectorlength <= gp.numvars);
               ggf *const vectorleader =
