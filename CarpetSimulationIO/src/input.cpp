@@ -141,10 +141,11 @@ void input_file_t::read_vars(const vector<int> &varindices, int reflevel,
       for (int reflevel = min_reflevel; reflevel < max_reflevel; ++reflevel) {
 
         const int min_timelevel = timelevel >= 0 ? timelevel : 0;
-        const int max_timelevel =
-            timelevel >= 0 ? timelevel + 1 : Carpet::groupdata.at(groupindex)
-                                                 .activetimelevels.at(mglevel)
-                                                 .at(reflevel);
+        const int max_timelevel = timelevel >= 0
+                                      ? timelevel + 1
+                                      : Carpet::groupdata.at(groupindex)
+                                            .activetimelevels.at(mglevel)
+                                            .at(reflevel);
         for (int timelevel = min_timelevel; timelevel < max_timelevel;
              ++timelevel) {
 

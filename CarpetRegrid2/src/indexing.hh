@@ -1,9 +1,9 @@
 #ifndef INDEXING_HH
 #define INDEXING_HH
 
-#include <cassert>
-
 #include <cctk.h>
+
+#include <cassert>
 
 namespace CarpetRegrid2 {
 

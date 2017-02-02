@@ -387,8 +387,7 @@ void set_num_threads(int const num_threads) {
   if (num_threads > 0) {
     // Set number of threads which should be used
     // TODO: do this at startup, not in this routine
-    CCTK_VInfo(CCTK_THORNSTRING,
-               "Setting number of OpenMP threads per process to %d",
+    CCTK_VINFO("Setting number of OpenMP threads per process to %d",
                num_threads);
     omp_set_num_threads(num_threads);
     collect_total_num_threads();

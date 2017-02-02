@@ -432,9 +432,8 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
 
   string projectname =
       called_from == CP_INITIAL_DATA ? checkpoint_ID_file : checkpoint_file;
-  output_file_t output_file(cctkGH, io_dir_checkpoint, projectname,
-
-                            myproc, nprocs);
+  output_file_t output_file(cctkGH, io_dir_checkpoint, projectname, myproc,
+                            nprocs);
   output_file.insert_vars(varindices, -1, -1, false);
   output_file.write();
 

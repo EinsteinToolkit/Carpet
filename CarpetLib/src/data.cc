@@ -424,9 +424,8 @@ void data<T>::allocate(const ibbox &extent_, const int proc_,
   _shape = max(ivect(0), _extent.shape() / _extent.stride());
   _padded_shape = pad_shape(_shape);
   _stride[0] = 1;
-  for (int d = 1; d < dim; ++d) {
+  for (int d = 1; d < dim; ++d)
     _stride[d] = _stride[d - 1] * _padded_shape[d - 1];
-  }
   _size = _stride[dim - 1] * _padded_shape[dim - 1];
 
   _proc = proc_;
@@ -567,9 +566,8 @@ void data<T>::transfer_time(vector<gdata const *> const &gsrcs,
 
     time_interpolate(tmps, dstbox, dstbox, times, time, order_time);
 
-    for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++tl) {
+    for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++tl)
       delete tmps.AT(tl);
-    }
 
   } else {
     // No time interpolation
@@ -652,16 +650,13 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
           NULL, &prolongate_3d_rf2<T, 9>, NULL, &prolongate_3d_rf2<T, 11>,
       };
 #if defined(CCTK_REAL_PRECISION_4)
-      if (order_space == 11) {
+      if (order_space == 11)
         CCTK_ERROR("There is no single precision vertex-centred stencil for "
                    "op=\"LAGRANGE\" or op=\"COPY\" with order_space=11");
-      }
 #endif
-      if (order_space < 0 or order_space > 11 or
-          not the_operators[order_space]) {
+      if (order_space < 0 or order_space > 11 or not the_operators[order_space])
         CCTK_ERROR("There is no vertex-centred stencil for op=\"LAGRANGE\" or "
                    "op=\"COPY\" with order_space not in {1, 3, 5, 7, 9, 11}");
-      }
       call_operator<T>(
           the_operators[order_space], static_cast<T const *>(src->storage()),
           src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
@@ -689,10 +684,9 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
           &prolongate_3d_cc_rf2<T, 0>, &prolongate_3d_cc_rf2<T, 1>,
           &prolongate_3d_cc_rf2<T, 2>, &prolongate_3d_cc_rf2<T, 3>,
           &prolongate_3d_cc_rf2<T, 4>, &prolongate_3d_cc_rf2<T, 5>};
-      if (order_space < 0 or order_space > 5) {
+      if (order_space < 0 or order_space > 5)
         CCTK_ERROR("There is no cell-centred stencil for op=\"LAGRANGE\" or "
                    "op=\"COPY\" with order_space not in {0, 1, 2, 3, 4, 5}");
-      }
       call_operator<T>(
           the_operators[order_space], static_cast<T const *>(src->storage()),
           src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
@@ -762,10 +756,9 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
           // and second, we want to allow spacetime interpolation to be of
           // higher order while keeping the implemeneted ENO order!
       };
-      if (order_space < 2 or order_space > 5) {
+      if (order_space < 2 or order_space > 5)
         CCTK_ERROR("There is no cell-centred stencil for op=\"ENO\" with "
                    "order_space not in {2,3,4,5}");
-      }
 
       call_operator<T>(
           the_operators[order_space - 2],

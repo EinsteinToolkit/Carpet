@@ -1,8 +1,7 @@
 #ifndef LOOPCONTROL_H
 #define LOOPCONTROL_H
 
-/* This file uses the namespace LC_* for macros and lc_* for C
-   identifiers. */
+/* This file uses the namespace LC_* for macros and lc_* for C identifiers. */
 
 #define LC_DIM 3
 
@@ -37,9 +36,8 @@ struct lc_descr_t;
 typedef struct { ptrdiff_t v[LC_DIM]; } lc_vec_t;
 
 typedef struct {
-  /* Traverse pos from min (inclusive) to max (exclusive) with a
-     stride of step. Equivalently, traverse idx from 0 (inclusive)
-     to count (exclusive). */
+  /* Traverse pos from min (inclusive) to max (exclusive) with a stride of step.
+   * Equivalently, traverse idx from 0 (inclusive) to count (exclusive). */
   lc_vec_t min, max, step, pos;
   lc_vec_t count, idx;
 } lc_space_t;

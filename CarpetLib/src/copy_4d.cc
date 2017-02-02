@@ -39,23 +39,23 @@ void copy_4d(T const *restrict const src, ivect4 const &restrict srcpadext,
          << "srcbbox=" << srcbbox << endl
          << "dstbbox=" << dstbbox << endl
          << "regbbox=" << regbbox << endl;
-    CCTK_WARN(0, "Internal error: strides disagree");
+    CCTK_ERROR("Internal error: strides disagree");
   }
 
   if (any(srcbbox.stride() != dstbbox.stride())) {
-    CCTK_WARN(0, "Internal error: strides disagree");
+    CCTK_ERROR("Internal error: strides disagree");
   }
 
   // This could be handled, but is likely to point to an error
   // elsewhere
   if (regbbox.empty()) {
-    CCTK_WARN(0, "Internal error: region extent is empty");
+    CCTK_ERROR("Internal error: region extent is empty");
   }
 
   if (not regbbox.is_contained_in(srcbbox) or
       not regbbox.is_contained_in(dstbbox)) {
-    CCTK_WARN(0,
-              "Internal error: region extent is not contained in array extent");
+    CCTK_ERROR(
+        "Internal error: region extent is not contained in array extent");
   }
 
   ivect4 const regext = regbbox.shape() / regbbox.stride();
@@ -106,7 +106,6 @@ void copy_4d(T const *restrict const src, ivect4 const &restrict srcpadext,
       for (int k = 0; k < regkext; ++k) {
         for (int j = 0; j < regjext; ++j) {
           for (int i = 0; i < regiext; ++i) {
-
             dst[DSTIND4(i, j, k, l)] = src[SRCIND4(i, j, k, l)];
           }
         }
@@ -117,7 +116,6 @@ void copy_4d(T const *restrict const src, ivect4 const &restrict srcpadext,
       for (int k = 0; k < regkext; ++k) {
         for (int j = 0; j < regjext; ++j) {
           for (int i = 0; i < regiext; ++i) {
-
             dst[DSTIND4(i, j, k, l)] = src[SRCIND4(i, j, k, l)];
           }
         }
