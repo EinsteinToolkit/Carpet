@@ -50,19 +50,30 @@ template <typename T, int D> bool bbox<T, D>::is_poison() const {
 }
 
 // Accessors
+template <typename T, int D> vect<T, D> bbox<T, D>::offset() const {
+  return imod(_lower, _stride);
+}
+
+template <typename T, int D> vect<T, D> bbox<T, D>::shape() const {
+  return empty() ? vect<T, D>(T(0)) : _upper - _lower + _stride;
+}
+
+template <typename T, int D> vect<T, D> bbox<T, D>::sizes() const {
+  return shape() / stride();
+}
+
 template <typename T, int D> size_type bbox<T, D>::size() const {
   if (empty())
     return 0;
-  const vect<T, D> sh(shape() / stride());
+  const vect<T, D> sh(sizes());
 #ifndef CARPET_DEBUG
   return prod(vect<size_type, D>(sh));
 #else
   size_type sz = 1, max = numeric_limits<size_type>::max();
   for (int d = 0; d < D; ++d) {
     if (sh[d] > max) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "size of bbox of type %s is too large -- integer overflow",
-                 typeid(*this).name());
+      CCTK_VERROR("size of bbox of type %s is too large -- integer overflow",
+                  typeid(*this).name());
     }
     sz *= sh[d];
     max /= sh[d];

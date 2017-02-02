@@ -486,7 +486,7 @@ void dh::regrid(bool const do_init) {
       timer_buffers.start();
 
       // Enlarge active part of domain
-      i2vect const safedist = i2vect(0);
+      i2vect const safedist = i2vect(ivect(0));
       ibbox const domain_enlarged = domain_active.expand(safedist);
 
       // All owned regions
@@ -738,7 +738,8 @@ void dh::regrid(bool const do_init) {
 
           ibset oneedrecv = obox.active;
 
-          i2vect const stencil_size = i2vect(prolongation_stencil_size(rl));
+          i2vect const stencil_size =
+              i2vect(ivect(prolongation_stencil_size(rl)));
 
           ibset const expanded_active(box.active.expanded_for(obox.interior));
           ibset const ovlp = oneedrecv & expanded_active;
@@ -777,7 +778,8 @@ void dh::regrid(bool const do_init) {
 
           ibset needrecv = box.active + box.overlaps;
 
-          i2vect const stencil_size = i2vect(prolongation_stencil_size(rl));
+          i2vect const stencil_size =
+              i2vect(ivect(prolongation_stencil_size(rl)));
 
           ASSERT_c(
               all(h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
@@ -930,7 +932,8 @@ void dh::regrid(bool const do_init) {
 
           ibset &bndref = box.bndref;
 
-          i2vect const stencil_size = i2vect(prolongation_stencil_size(rl));
+          i2vect const stencil_size =
+              i2vect(ivect(prolongation_stencil_size(rl)));
 
           ASSERT_c(
               all(h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
@@ -1059,14 +1062,15 @@ void dh::regrid(bool const do_init) {
             else
               shrink_by = 0;
             ibbox const contracted_exterior =
-                box.exterior.expand(ivect(-shrink_by)).contracted_for(odomext);
+                box.exterior.expand(-shrink_by, -shrink_by)
+                    .contracted_for(odomext);
             ibset const ovlp = needrecv & contracted_exterior;
 
             for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end();
                  ++ri) {
               ibbox const &recv = *ri;
               ibbox const send =
-                  recv.expanded_for(box.exterior).expand(ivect(shrink_by));
+                  recv.expanded_for(box.exterior).expand(shrink_by, shrink_by);
               ASSERT_c(send <= box.exterior, "Refinement restriction: Send "
                                              "region must be contained in "
                                              "exterior");
@@ -1614,8 +1618,8 @@ void dh::regrid(bool const do_init) {
             switch (h.refcent) {
             case vertex_centered: {
               ivect const dir = ivect::dir(d);
-              enlarged[d][f] =
-                  ibset(notrefined.expand(f == 1 ? dir : 0, f == 0 ? dir : 0));
+              enlarged[d][f] = ibset(notrefined.expand(
+                  f == 1 ? dir : ivect(0), f == 0 ? dir : ivect(0)));
               break;
             }
             case cell_centered: {
@@ -1791,7 +1795,8 @@ void dh::regrid(bool const do_init) {
             // of the new grid structure.  It must fill what cannot be
             // synchronised.
 
-            i2vect const stencil_size = i2vect(prolongation_stencil_size(rl));
+            i2vect const stencil_size =
+                i2vect(ivect(prolongation_stencil_size(rl)));
 
             ASSERT_c(
                 all(h.reffacts.at(rl) % h.reffacts.at(orl) == 0),

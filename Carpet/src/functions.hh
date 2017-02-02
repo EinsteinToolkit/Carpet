@@ -133,7 +133,7 @@ void SplitRegions_AlongDir(cGH const *cctkGH, vector<region_t> &superregs,
                            vector<region_t> &regs, int dir);
 void SplitRegions_Automatic(cGH const *cctkGH, vector<region_t> &superregs,
                             vector<region_t> &regs,
-                            bvect const &no_split_dims = false);
+                            bvect const &no_split_dims = bvect(false));
 void SplitRegionsMaps_Recursively(cGH const *cctkGH,
                                   vector<vector<region_t> > &superregss,
                                   vector<vector<region_t> > &regss);
@@ -143,7 +143,7 @@ void SplitRegionsMaps(cGH const *cctkGH, vector<vector<region_t> > &superregss,
 void SplitRegionsMaps_Automatic(cGH const *cctkGH,
                                 vector<vector<region_t> > &superregss,
                                 vector<vector<region_t> > &regss,
-                                bvect const &no_split_dims = false);
+                                bvect const &no_split_dims = bvect(false));
 void SplitRegionsMaps_Recursively(cGH const *cctkGH,
                                   vector<vector<region_t> > &superregss,
                                   vector<vector<region_t> > &regss);

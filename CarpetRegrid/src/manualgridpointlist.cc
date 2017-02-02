@@ -65,7 +65,7 @@ int ManualGridpointList(cGH const *const cctkGH, gh const &hh,
       newobss.at(rl).resize(newbbss.at(rl).size());
 
       for (size_t c = 0; c < newobss.at(rl).size(); ++c) {
-        newobss.at(rl).at(c) = bbvect(false);
+        newobss.at(rl).at(c) = bbvect(vect<bool, 2>(false));
       }
     }
   }

@@ -71,7 +71,7 @@ public:
 
   /** Constructor from a single element.  This constructor might be
       confusing, but it is very convenient.  */
-  vect(const T &x) {
+  explicit vect(const T &x) {
     for (int d = 0; d < D; ++d)
       elt[d] = x;
   }
@@ -172,7 +172,7 @@ public:
   /** Create a vector with one element set to 1 and all other elements
       set to zero.  */
   static vect dir(const int d) {
-    vect r = (T)0;
+    vect r(T(0));
     r[d] = 1;
     return r;
   }

@@ -513,8 +513,9 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
                             dirs, is_new_file, truncate_file, file, index_file);
 
     // Find the output offset
-    const ivect offset =
-        groupdata.grouptype == CCTK_GF ? GetOutputOffset(cctkGH, m, dirs) : 0;
+    const ivect offset = groupdata.grouptype == CCTK_GF
+                             ? GetOutputOffset(cctkGH, m, dirs)
+                             : ivect(0);
 
     const gh *const hh = arrdata.at(group).at(m).hh;
     const dh *const dd = arrdata.at(group).at(m).dd;
@@ -1482,7 +1483,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
     hsize_t npoints = 0;
     for (int i = maxval(base.lower()); i <= minval(base.upper());
          i += base.stride()[0]) {
-      if (gfext.contains(i)) {
+      if (gfext.contains(ivect(i))) {
         ++npoints;
       }
     }

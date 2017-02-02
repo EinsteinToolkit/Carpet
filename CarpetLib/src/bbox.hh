@@ -92,13 +92,16 @@ public:
   vect<T, D> stride() const { return _stride; }
 
   /** Get offset.  */
-  vect<T, D> offset() const { return imod(_lower, _stride); }
+  vect<T, D> offset() const;
 
   /** Get the shape (or extent).  */
-  vect<T, D> shape() const { return _upper - _lower + _stride; }
+  vect<T, D> shape() const;
 
   /** Determine whether the bbox is empty.  */
   bool empty() const { return any(lower() > upper()); }
+
+  /** Return the sizes, i.e. the number of contained points in each direction */
+  vect<T, D> sizes() const;
 
   /** Return the size, which is the number of contained points.  */
   // T size () const;
@@ -141,6 +144,10 @@ public:
   /** Expand (enlarge) the bbox by multiples of the stride.  */
   bbox expand(const vect<T, D> &lo,
               const vect<T, D> &hi) const CCTK_MEMBER_ATTRIBUTE_PURE;
+  bbox expand(const T &lo, const T &hi) const {
+    return expand(vect<T, D>(lo), vect<T, D>(hi));
+  }
+  bbox expand(const T &lohi) const { return expand(lohi, lohi); }
   bbox expand(const vect<vect<T, D>, 2> &lohi) const {
     return expand(lohi[0], lohi[1]);
   }
@@ -159,6 +166,11 @@ public:
   /** Shift the bbox by multiples of a fraction of the stride.  */
   bbox shift(const vect<T, D> &v, const vect<T, D> &denom) const {
     return expand(-v, v, denom);
+  }
+
+  /** Shift the bbox by multiples of a fraction of the stride.  */
+  bbox shift(const vect<T, D> &v, const T &denom) const {
+    return shift(v, vect<T, D>(denom));
   }
 
   /** Find the smallest b-compatible box around this bbox.
