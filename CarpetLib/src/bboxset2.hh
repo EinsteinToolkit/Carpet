@@ -1421,11 +1421,14 @@ ostream &bboxset<T, D>::debug_output(ostream &os) const {
 }
 
 template <typename T, int D> ostream &bboxset<T, D>::output(ostream &os) const {
-  assert(not is_poison());
   T Tdummy;
+  os << "bboxset<" << typestring(Tdummy) << "," << D << ">";
+  if (is_poison())
+    return os << "(poison)";
+  assert(not is_poison());
   set<bbox> bs;
   serialise(bs);
-  return os << "bboxset<" << typestring(Tdummy) << "," << D << ">("
+  return os << "("
             << "set<bbox>:" << bs << ","
             << "stride:" << stride << ","
             << "offset:" << offset << ")";
