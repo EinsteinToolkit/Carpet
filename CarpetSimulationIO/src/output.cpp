@@ -511,7 +511,7 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
                 CCTK_VINFO("Creating external link \"%s\"",
                            discretefieldname.c_str());
               auto otherfilename = generate_filename(
-                  cctkGH, io_dir_none, projectname, cctkGH->cctk_iteration,
+                  cctkGH, io_dir_none, projectname, "", cctkGH->cctk_iteration,
                   other_ioproc, nioprocs);
               auto dataset = discretefieldblockcomponent->createExtLink(
                   otherfilename,
@@ -666,10 +666,12 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
 
 void output_file_t::write() {
   DECLARE_CCTK_PARAMETERS;
-  auto tmpname = generate_filename(cctkGH, io_dir, projectname + ".tmp",
+  auto tmpname = generate_filename(cctkGH, io_dir, projectname, ".tmp",
                                    cctkGH->cctk_iteration, ioproc, nioprocs);
-  auto filename = generate_filename(cctkGH, io_dir, projectname,
-                                    cctkGH->cctk_iteration, ioproc, nioprocs);
+  const bool create_dirs = ioproc >= 0;
+  auto filename =
+      generate_filename(cctkGH, io_dir, projectname, "", cctkGH->cctk_iteration,
+                        ioproc, nioprocs, create_dirs);
   if (verbose)
     CCTK_VINFO("Creating file \"%s\"", filename.c_str());
   auto fapl = H5::FileAccPropList();

@@ -6,6 +6,7 @@
 #include <cctk_Parameters.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cctype>
 #include <cstdlib>
 #include <iomanip>
@@ -228,9 +229,12 @@ string generate_projectname(const cGH *cctkGH) {
 
 // Generate the final file name on a particular processor
 string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
-                         const string &basename, int iteration, int ioproc,
-                         int nioprocs) {
+                         const string &basename, const string &extra_suffix,
+                         int iteration, int ioproc, int nioprocs,
+                         bool create_dirs) {
   DECLARE_CCTK_PARAMETERS;
+
+  const int mode = 0777;
 
   string IO_dir;
   string S5_dir;
@@ -258,66 +262,42 @@ string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
   default:
     assert(0);
   }
-
   string path = S5_dir.empty() ? IO_dir : S5_dir;
+  if (create_dirs) {
+    assert(ioproc >= 0);
+    if (ioproc == 0) {
+      int ierr = CCTK_CreateDirectory(mode, path.c_str());
+      if (ierr < 0)
+        CCTK_VERROR("Could not create directory \"%s\"", path.c_str());
+    }
+    CCTK_Barrier(cctkGH);
+  }
 
-#if 0
-  // calculate processor_digits automatically
-  // always use one_dir_per_file
-  // create subdirectories ahead of time
-  // introduce parameter to choose #entries per subdir
-  // use level number instead of "nnn" placeholders
-  if (create_subdirs) {
-    {
+  if (ioproc >= 0) {
+    const int procs_per_dir = 100;
+
+    long long max_dir_nioprocs = 1;
+    while (max_dir_nioprocs < nioprocs)
+      max_dir_nioprocs *= procs_per_dir;
+
+    for (long long dir_nioprocs = max_dir_nioprocs; dir_nioprocs >= 1;
+         dir_nioprocs /= procs_per_dir) {
       ostringstream buf;
-      buf << path << "/" << basename << ".p"
-          << setw(max(0, int(processor_digits) - 6)) << setfill('0')
-          << proc / 1000000 << "nnnnnn/";
+      long long dir_ioproc = ioproc / dir_nioprocs * dir_nioprocs;
+      buf << path << "/" << basename << ".p" << setw(processor_digits)
+          << setfill('0') << dir_ioproc;
       path = buf.str();
-      if (create_directories) {
-        if (proc % 1000000 == 0) {
-          check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
-        }
-        CCTK_Barrier(cctkGH);
-      }
-    }
-    {
-      ostringstream buf;
-      buf << path << "/" << basename << ".p"
-          << setw(max(0, int(processor_digits) - 4)) << setfill('0')
-          << proc / 10000 << "nnnn/";
-      path = buf.str();
-      if (create_directories) {
-        if (proc % 10000 == 0) {
-          check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
-        }
-        CCTK_Barrier(cctkGH);
-      }
-    }
-    {
-      ostringstream buf;
-      buf << path << "/" << basename << ".p"
-          << setw(max(0, int(processor_digits) - 2)) << setfill('0')
-          << proc / 100 << "nn/";
-      path = buf.str();
-      if (create_directories) {
-        if (proc % 100 == 0) {
-          check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
+      if (create_dirs) {
+        assert(ioproc >= 0);
+        if (ioproc == dir_ioproc) {
+          int ierr = CCTK_CreateDirectory(mode, path.c_str());
+          if (ierr < 0)
+            CCTK_VERROR("Could not create directory \"%s\"", path.c_str());
         }
         CCTK_Barrier(cctkGH);
       }
     }
   }
-  if (one_dir_per_file) {
-    ostringstream buf;
-    buf << path << basename << ".p" << setw(processor_digits) << setfill('0')
-        << proc << "/";
-    path = buf.str();
-    if (create_directories) {
-      check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
-    }
-  }
-#endif
 
   ostringstream buf;
   buf << path << "/" << basename;
@@ -326,7 +306,7 @@ string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
   // }
   if (ioproc >= 0)
     buf << ".p" << setw(processor_digits) << setfill('0') << ioproc;
-  buf << out_extension;
+  buf << extra_suffix << out_extension;
   path = buf.str();
 
   return path;

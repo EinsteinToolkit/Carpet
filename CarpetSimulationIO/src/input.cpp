@@ -18,7 +18,7 @@ using namespace std;
 input_file_t::input_file_t(const cGH *cctkGH, io_dir_t io_dir,
                            const string &projectname, int ioproc, int nioprocs)
     : cctkGH(cctkGH) {
-  auto filename = generate_filename(cctkGH, io_dir, projectname,
+  auto filename = generate_filename(cctkGH, io_dir, projectname, "",
                                     cctkGH->cctk_iteration, -1, -1);
   auto file = H5::H5File(filename, H5F_ACC_RDONLY);
   project = readProject(file);

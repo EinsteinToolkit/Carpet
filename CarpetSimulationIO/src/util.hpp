@@ -170,8 +170,9 @@ string charptr2string(char *const &str);
 string generate_projectname(const cGH *cctkGH, int variable);
 string generate_projectname(const cGH *cctkGH);
 string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
-                         const string &basename, int iteration, int ioproc,
-                         int nioprocs);
+                         const string &basename, const string &extra_suffix,
+                         int iteration, int ioproc, int nioprocs,
+                         bool create_dirs = false);
 
 string serialize_grid_structure(const cGH *cctkGH);
 }

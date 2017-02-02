@@ -460,12 +460,13 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
         int iteration = *iterpos;
         if (myproc == 0)
           CCTK_VINFO("Deleting old checkpoint for iteration %d...", iteration);
-        auto filename = generate_filename(
-            cctkGH, io_dir_checkpoint, projectname, iteration, myproc, nprocs);
+        auto filename =
+            generate_filename(cctkGH, io_dir_checkpoint, projectname, "",
+                              iteration, myproc, nprocs);
         remove(filename.c_str());
         if (myproc == 0) {
           auto filename = generate_filename(cctkGH, io_dir_checkpoint,
-                                            projectname, iteration, -1, -1);
+                                            projectname, "", iteration, -1, -1);
           remove(filename.c_str());
         }
         checkpoint_iterations.erase(iterpos);
