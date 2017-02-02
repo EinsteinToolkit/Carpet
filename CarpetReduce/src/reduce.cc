@@ -192,6 +192,44 @@ template <> inline CCTK_INT16 mysqrt(CCTK_INT16 const x) {
 }
 #endif
 
+// Ensure that nans are handled properly for min and max
+
+#ifdef HAVE_CCTK_REAL4
+
+template <> inline CCTK_REAL4 mymin(const CCTK_REAL4 x, const CCTK_REAL4 y) {
+  return CCTK_isnan(x) ? x : CCTK_isnan(y) ? y : min(x, y);
+}
+
+template <> inline CCTK_REAL4 mymax(const CCTK_REAL4 x, const CCTK_REAL4 y) {
+  return CCTK_isnan(x) ? x : CCTK_isnan(y) ? y : max(x, y);
+}
+
+#endif
+
+#ifdef HAVE_CCTK_REAL8
+
+template <> inline CCTK_REAL8 mymin(const CCTK_REAL8 x, const CCTK_REAL8 y) {
+  return CCTK_isnan(x) ? x : CCTK_isnan(y) ? y : min(x, y);
+}
+
+template <> inline CCTK_REAL8 mymax(const CCTK_REAL8 x, const CCTK_REAL8 y) {
+  return CCTK_isnan(x) ? x : CCTK_isnan(y) ? y : max(x, y);
+}
+
+#endif
+
+#ifdef HAVE_CCTK_REAL16
+
+template <> inline CCTK_REAL16 mymin(const CCTK_REAL16 x, const CCTK_REAL16 y) {
+  return CCTK_isnan(x) ? x : CCTK_isnan(y) ? y : min(x, y);
+}
+
+template <> inline CCTK_REAL16 mymax(const CCTK_REAL16 x, const CCTK_REAL16 y) {
+  return CCTK_isnan(x) ? x : CCTK_isnan(y) ? y : max(x, y);
+}
+
+#endif
+
 // Overload the above helper functions and types for complex values
 
 #ifdef HAVE_CCTK_REAL4
