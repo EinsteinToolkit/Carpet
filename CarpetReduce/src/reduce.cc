@@ -700,9 +700,9 @@ void reduce(const int *const lsh, const int *const ash, const int *const bbox,
   }
 
 #if !(defined(__PGI) && (__PGIC__ > 9))
-// Regular case
+  // Regular case
 
-#pragma omp parallel
+  // #pragma omp parallel
   {
     T myoutval_local;
     T mycnt_local;
