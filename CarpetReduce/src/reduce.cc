@@ -1365,14 +1365,15 @@ int ReduceGVs(const cGH *const cgh, const int proc, const int num_outvals,
     assert(vhh.AT(m)->reflevels() == vhh.AT(0)->reflevels());
   }
   int const minrl = reduce_arrays ? 0 : want_global_mode ? 0 : reflevel;
-  int const maxrl = reduce_arrays ? 1 : want_global_mode
-                                            ? vhh.AT(0)->reflevels()
-                                            : reflevel + 1;
+  int const maxrl =
+      reduce_arrays ? 1
+                    : want_global_mode ? vhh.AT(0)->reflevels() : reflevel + 1;
   int const minm =
       reduce_arrays ? 0 : want_global_mode or want_level_mode ? 0 : Carpet::map;
-  int const maxm = reduce_arrays ? 1 : want_global_mode or want_level_mode
-                                           ? maps
-                                           : Carpet::map + 1;
+  int const maxm =
+      reduce_arrays
+          ? 1
+          : want_global_mode or want_level_mode ? maps : Carpet::map + 1;
 
   // Find the time interpolation order
   int partype;

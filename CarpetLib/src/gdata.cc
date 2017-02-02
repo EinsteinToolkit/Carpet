@@ -247,14 +247,12 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
   case state_get_buffer_sizes:
     // don't count process-local copies
     if (not(is_dst and is_src)) {
-      if (is_dst) {
+      if (is_dst)
         // increment the recv buffer size
         state.reserve_recv_space(c_datatype(), srcproc, npoints);
-      }
-      if (is_src) {
+      if (is_src)
         // increment the send buffer size
         state.reserve_send_space(src->c_datatype(), dstproc, npoints);
-      }
     }
     break;
 
@@ -296,10 +294,9 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
 
   case state_do_some_work:
     // handle the process-local case
-    if (is_dst and is_src) {
+    if (is_dst and is_src)
       transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
                               order_space, order_time);
-    }
     break;
 
   case state_empty_recv_buffers:
@@ -335,9 +332,8 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
           }
           transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo, time,
                                   order_space, order_time);
-          for (int tl = 0; tl < ntimelevels; ++tl) {
+          for (int tl = 0; tl < ntimelevels; ++tl)
             delete bufs.AT(tl);
-          }
         }
       }
     }

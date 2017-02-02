@@ -113,9 +113,8 @@ void *IOASCII<outdim>::SetupGH(tFleshConfig *const fc, const int convLevel,
   dummy = &dummy;
 
   if (not CCTK_Equals(verbose, "none")) {
-    CCTK_VInfo(CCTK_THORNSTRING,
-               "I/O Method 'IOASCII_%dD' registered: "
-               "%dD AMR output of grid variables to ASCII files",
+    CCTK_VINFO("I/O Method 'IOASCII_%dD' registered: %dD AMR output of grid "
+               "variables to ASCII files",
                outdim, outdim);
   }
 
@@ -152,12 +151,11 @@ void IOASCII<outdim>::CheckSteerableParameters(const cGH *const cctkGH) {
     // create the output directory
     const int result = IOUtil_CreateDirectory(cctkGH, my_out_dir, 0, 0);
     if (result < 0) {
-      CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Problem creating %dD-output directory '%s'", outdim,
-                 my_out_dir);
-    } else if (result > 0 and CCTK_Equals(verbose, "full")) {
-      CCTK_VInfo(CCTK_THORNSTRING, "%dD-output directory '%s' already exists",
+      CCTK_VWARN(CCTK_WARN_ALERT, "Problem creating %dD-output directory '%s'",
                  outdim, my_out_dir);
+    } else if (result > 0 and CCTK_Equals(verbose, "full")) {
+      CCTK_VINFO("%dD-output directory '%s' already exists", outdim,
+                 my_out_dir);
     }
   }
 
@@ -345,10 +343,10 @@ static void GetVarIndex(const int vindex, const char *const optstring,
                         void *const arg) {
   if (optstring) {
     char *const fullname = CCTK_FullName(vindex);
-    CCTK_VWarn(CCTK_WARN_COMPLAIN, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Option string '%s' will be ignored for ASCII output of "
-               "variable '%s'",
-               optstring, fullname);
+    CCTK_VWARN(
+        CCTK_WARN_COMPLAIN,
+        "Option string '%s' will be ignored for ASCII output of variable '%s'",
+        optstring, fullname);
     free(fullname);
   }
 
@@ -364,7 +362,7 @@ int IOASCII<outdim>::OutputVarAs(const cGH *const cctkGH,
   int vindex = -1;
 
   if (CCTK_TraverseString(varname, GetVarIndex, &vindex, CCTK_VAR) < 0) {
-    CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+    CCTK_VWARN(CCTK_WARN_ALERT,
                "error while parsing variable name '%s' (alias name '%s')",
                varname, alias);
     return -1;
@@ -398,7 +396,7 @@ int IOASCII<outdim>::OutputVarAs(const cGH *const cctkGH,
     }
 
     if (outdim > groupdata.dim) {
-      CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWARN(CCTK_WARN_ALERT,
                  "Cannot produce %dD ASCII output file '%s' for variable '%s' "
                  "because it has only %d dimensions",
                  outdim, alias, varname, groupdata.dim);
@@ -409,7 +407,7 @@ int IOASCII<outdim>::OutputVarAs(const cGH *const cctkGH,
     if (not CCTK_QueryGroupStorageI(cctkGH, group)) {
       // This may be okay if storage is e.g. scheduled only in the
       // analysis bin
-      CCTK_VWarn(CCTK_WARN_DEBUG, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWARN(CCTK_WARN_DEBUG,
                  "Cannot output variable '%s' because it has no storage",
                  varname);
       return 0;
@@ -707,10 +705,9 @@ bool IOASCII<outdim>::DidOutput(const cGH *const cctkGH, const int vindex,
   if (last_output == cctkGH->cctk_iteration) {
     // has already been output during this iteration
     char *const fullname = CCTK_FullName(vindex);
-    CCTK_VWarn(5, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Skipping output for variable '%s', because this variable "
-               "has already been output during the current iteration -- "
-               "probably via a trigger during the analysis stage",
+    CCTK_VWARN(5, "Skipping output for variable '%s', because this variable "
+                  "has already been output during the current iteration -- "
+                  "probably via a trigger during the analysis stage",
                fullname);
     free(fullname);
     return true;
@@ -773,8 +770,7 @@ void IOASCII<outdim>::OpenFile(const cGH *const cctkGH, const int m,
     file.open(filename, ios::out | (truncate_file ? ios::trunc : ios::app));
     if (not file.good()) {
       char *const fullname = CCTK_FullName(vindex);
-      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Could not open output file '%s' for variable '%s'", filename,
+      CCTK_VERROR("Could not open output file '%s' for variable '%s'", filename,
                   fullname);
       free(fullname);
     }

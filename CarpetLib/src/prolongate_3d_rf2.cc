@@ -87,9 +87,8 @@ template <typename RT, int ORDER> struct coeffs1d {
         error = true;
       }
     } // for n
-    if (error) {
-      CCTK_WARN(CCTK_WARN_ABORT, "Aborting.");
-    }
+    if (error)
+      CCTK_ERROR("Aborting.");
   }
 };
 
@@ -384,33 +383,25 @@ void prolongate_3d_rf2(T const *restrict const src,
   coeffs1d<RT, ORDER>::test();
 
   if (any(srcbbox.stride() <= regbbox.stride() or
-          dstbbox.stride() != regbbox.stride())) {
-    CCTK_WARN(0, "Internal error: strides disagree");
-  }
+          dstbbox.stride() != regbbox.stride()))
+    CCTK_ERROR("Internal error: strides disagree");
 
-  if (any(srcbbox.stride() != reffact2 * dstbbox.stride())) {
-    CCTK_WARN(
-        0,
+  if (any(srcbbox.stride() != reffact2 * dstbbox.stride()))
+    CCTK_ERROR(
         "Internal error: source strides are not twice the destination strides");
-  }
 
-  if (any(srcbbox.lower() % srcbbox.stride() != 0)) {
-    CCTK_WARN(0, "Internal error: source bbox is not aligned with vertices");
-  }
-  if (any(dstbbox.lower() % dstbbox.stride() != 0)) {
-    CCTK_WARN(0,
-              "Internal error: destination bbox is not aligned with vertices");
-  }
-  if (any(regbbox.lower() % regbbox.stride() != 0)) {
-    CCTK_WARN(0, "Internal error: prolongation region bbox is not aligned with "
-                 "vertices");
-  }
+  if (any(srcbbox.lower() % srcbbox.stride() != 0))
+    CCTK_ERROR("Internal error: source bbox is not aligned with vertices");
+  if (any(dstbbox.lower() % dstbbox.stride() != 0))
+    CCTK_ERROR("Internal error: destination bbox is not aligned with vertices");
+  if (any(regbbox.lower() % regbbox.stride() != 0))
+    CCTK_ERROR("Internal error: prolongation region bbox is not aligned with "
+               "vertices");
 
   // This could be handled, but is likely to point to an error
   // elsewhere
-  if (regbbox.empty()) {
-    CCTK_WARN(0, "Internal error: region extent is empty");
-  }
+  if (regbbox.empty())
+    CCTK_ERROR("Internal error: region extent is empty");
 
   ivect3 const regext = regbbox.shape() / regbbox.stride();
   assert(all((regbbox.lower() - srcbbox.lower()) % regbbox.stride() == 0));
@@ -434,8 +425,8 @@ void prolongate_3d_rf2(T const *restrict const src,
          << "dstbbox=" << dstbbox << "\n"
          << "regbbox.expand=" << regbbox.expand(offsetlo, offsethi) << "\n"
          << "srcbbox=" << srcbbox << "\n";
-    CCTK_WARN(0,
-              "Internal error: region extent is not contained in array extent");
+    CCTK_ERROR(
+        "Internal error: region extent is not contained in array extent");
   }
 
   size_t const srcipadext = srcpadext[0];

@@ -1,8 +1,8 @@
-#include <cassert>
+#include "indexing.hh"
 
 #include <cctk.h>
 
-#include "indexing.hh"
+#include <cassert>
 
 namespace CarpetRegrid2 {
 

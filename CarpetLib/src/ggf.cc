@@ -53,14 +53,11 @@ ggf::ggf(const int varindex_, const operator_type transport_operator_, th &t_,
 
 // Destructors
 ggf::~ggf() {
-  for (int ml = 0; ml < (int)oldstorage.size(); ++ml) {
-    for (int rl = 0; rl < (int)oldstorage.AT(ml).size(); ++rl) {
+  for (int ml = 0; ml < (int)oldstorage.size(); ++ml)
+    for (int rl = 0; rl < (int)oldstorage.AT(ml).size(); ++rl)
       assert(oldstorage.AT(ml).AT(rl).empty());
-    }
-  }
-  for (int rl = 0; rl < h.reflevels(); ++rl) {
+  for (int rl = 0; rl < h.reflevels(); ++rl)
     recompose_free(rl);
-  } // for rl
 
   d.erase(this);
   allggf.erase(this);
@@ -79,9 +76,8 @@ void ggf::set_timelevels(const int ml, const int rl, const int new_timelevels) {
   if (new_timelevels < timelevels(ml, rl)) {
 
     for (int lc = 0; lc < h.local_components(rl); ++lc) {
-      for (int tl = new_timelevels; tl < timelevels(ml, rl); ++tl) {
+      for (int tl = new_timelevels; tl < timelevels(ml, rl); ++tl)
         delete storage.AT(ml).AT(rl).AT(lc).AT(tl);
-      }
       storage.AT(ml).AT(rl).AT(lc).resize(new_timelevels);
     } // for lc
 
@@ -107,13 +103,10 @@ void ggf::recompose_crop() {
   timer.start();
 
   for (int ml = 0; ml < h.mglevels(); ++ml) {
-    for (int rl = h.reflevels(); rl < (int)storage.AT(ml).size(); ++rl) {
-      for (int lc = 0; lc < (int)storage.AT(ml).AT(rl).size(); ++lc) {
-        for (int tl = 0; tl < (int)storage.AT(ml).AT(rl).AT(lc).size(); ++tl) {
+    for (int rl = h.reflevels(); rl < (int)storage.AT(ml).size(); ++rl)
+      for (int lc = 0; lc < (int)storage.AT(ml).AT(rl).size(); ++lc)
+        for (int tl = 0; tl < (int)storage.AT(ml).AT(rl).AT(lc).size(); ++tl)
           delete storage.AT(ml).AT(rl).AT(lc).AT(tl);
-        } // for tl
-      }   // for lc
-    }     // for rl
     storage.AT(ml).resize(h.reflevels());
   } // for ml
 
@@ -132,9 +125,8 @@ void ggf::recompose_allocate(const int rl) {
     swap(storage.AT(ml).AT(rl), oldstorage.AT(ml).AT(rl));
   }
 
-  for (int ml = 0; ml < d.h.mglevels(); ++ml) {
+  for (int ml = 0; ml < d.h.mglevels(); ++ml)
     timelevels_.AT(ml).resize(d.h.reflevels(), timelevels_.AT(ml).AT(0));
-  }
 
   // Resize structure and allocate storage
   storage.resize(h.mglevels());
@@ -165,15 +157,13 @@ void ggf::recompose_fill(comm_state &state, int const rl,
 
     assert(d.fast_boxes.AT(ml).AT(rl).do_init);
 
-    // Initialise from the same level of the old hierarchy, where
-    // possible
+    // Initialise from the same level of the old hierarchy, where possible
     if (rl < (int)oldstorage.AT(ml).size()) {
-      for (int tl = 0; tl < timelevels(ml, rl); ++tl) {
+      for (int tl = 0; tl < timelevels(ml, rl); ++tl)
         transfer_from_all(state, tl, rl, ml,
                           &dh::fast_dboxes::fast_old2new_sync_sendrecv, tl, rl,
                           ml, true);
-      } // for tl
-    }   // if rl
+    } // if rl
 
     if (do_prolongate) {
       // Initialise from a coarser level of the new hierarchy, where
@@ -183,18 +173,16 @@ void ggf::recompose_fill(comm_state &state, int const rl,
             transport_operator != op_restrict) {
           int const numtl = timelevels(ml, rl);
           vector<int> tls(numtl);
-          for (int tl = 0; tl < numtl; ++tl) {
+          for (int tl = 0; tl < numtl; ++tl)
             tls.AT(tl) = tl;
-          }
 
-          for (int tl = 0; tl < timelevels(ml, rl); ++tl) {
+          for (int tl = 0; tl < timelevels(ml, rl); ++tl)
             transfer_from_all(state, tl, rl, ml,
                               &dh::fast_dboxes::fast_old2new_ref_prol_sendrecv,
                               tls, rl - 1, ml, t.get_time(ml, rl, tl));
-          } // for tl
-        }   // if transport_operator
-      }     // if rl
-    }       // if do_prolongate
+        } // if transport_operator
+      }   // if rl
+    }     // if do_prolongate
 
   } // for ml
 
@@ -207,11 +195,9 @@ void ggf::recompose_free_old(const int rl) {
   timer.start();
 
   for (int ml = 0; ml < (int)oldstorage.size(); ++ml) {
-    for (int lc = 0; lc < (int)oldstorage.AT(ml).AT(rl).size(); ++lc) {
-      for (int tl = 0; tl < (int)oldstorage.AT(ml).AT(rl).AT(lc).size(); ++tl) {
+    for (int lc = 0; lc < (int)oldstorage.AT(ml).AT(rl).size(); ++lc)
+      for (int tl = 0; tl < (int)oldstorage.AT(ml).AT(rl).AT(lc).size(); ++tl)
         delete oldstorage.AT(ml).AT(rl).AT(lc).AT(tl);
-      } // for tl
-    }   // for lc
     oldstorage.AT(ml).AT(rl).clear();
   } // for ml
 
@@ -224,11 +210,9 @@ void ggf::recompose_free(const int rl) {
   timer.start();
 
   for (int ml = 0; ml < (int)storage.size(); ++ml) {
-    for (int lc = 0; lc < h.local_components(rl); ++lc) {
-      for (int tl = 0; tl < timelevels(ml, rl); ++tl) {
+    for (int lc = 0; lc < h.local_components(rl); ++lc)
+      for (int tl = 0; tl < timelevels(ml, rl); ++tl)
         delete storage.AT(ml).AT(rl).AT(lc).AT(tl);
-      } // for tl
-    }   // for lc
     storage.AT(ml).AT(rl).clear();
   } // for ml
 
@@ -244,9 +228,8 @@ void ggf::cycle_all(int const rl, int const ml) {
   for (int lc = 0; lc < (int)storage.AT(ml).AT(rl).size(); ++lc) {
     fdata &fdatas = storage.AT(ml).AT(rl).AT(lc);
     gdata *const tmpdata = fdatas.AT(ntl - 1);
-    for (int tl = ntl - 1; tl > 0; --tl) {
+    for (int tl = ntl - 1; tl > 0; --tl)
       fdatas.AT(tl) = fdatas.AT(tl - 1);
-    }
     fdatas.AT(0) = tmpdata;
   }
 }
@@ -260,9 +243,8 @@ void ggf::uncycle_all(int const rl, int const ml) {
   for (int lc = 0; lc < (int)storage.AT(ml).AT(rl).size(); ++lc) {
     fdata &fdatas = storage.AT(ml).AT(rl).AT(lc);
     gdata *const tmpdata = fdatas.AT(0);
-    for (int tl = 0; tl < ntl - 1; ++tl) {
+    for (int tl = 0; tl < ntl - 1; ++tl)
       fdatas.AT(tl) = fdatas.AT(tl + 1);
-    }
     fdatas.AT(ntl - 1) = tmpdata;
   }
 }
@@ -331,8 +313,7 @@ void ggf::ref_bnd_prolongate_all(comm_state &state, int const tl, int const rl,
     // Interpolation in time
     if (not(timelevels(ml, rl) >= prolongation_order_time + 1)) {
       char *const fullname = CCTK_FullName(varindex);
-      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The variable \"%s\" has only %d active time levels, which "
+      CCTK_VERROR("The variable \"%s\" has only %d active time levels, which "
                   "is not enough for boundary prolongation of order %d",
                   fullname ? fullname : "<unknown variable>",
                   timelevels(ml, rl), prolongation_order_time);
@@ -478,9 +459,8 @@ void ggf::transfer_from_all(comm_state &state, int const tl1, int const rl1,
     int const tl2 = tl2s.AT(i);
     assert(tl2 >= 0);
     int const lc = 0;
-    if (lc < int(srcstorage.AT(ml2).AT(rl2).size())) {
+    if (lc < int(srcstorage.AT(ml2).AT(rl2).size()))
       assert(tl2 < (int)srcstorage.AT(ml2).AT(rl2).AT(lc).size());
-    }
   }
 
   // Set up source times
@@ -534,9 +514,8 @@ void ggf::transfer_from_all(comm_state &state, int const tl1, int const rl1,
     gdata *const dst =
         lc1 >= 0 ? storage.AT(ml1).AT(rl1).AT(lc1).AT(tl1) : NULL;
     cdata const &srcs = srcstorage.AT(ml2).AT(rl2);
-    for (int i = 0; i < (int)gsrcs.size(); ++i) {
+    for (int i = 0; i < (int)gsrcs.size(); ++i)
       gsrcs.AT(i) = lc2 >= 0 ? srcs.AT(lc2).AT(tl2s.AT(i)) : NULL;
-    }
 
     dst->transfer_from(state, gsrcs, times, recv, send, slabinfo, p1, p2, time,
                        pos, pot);
@@ -556,9 +535,8 @@ size_t ggf::memory() const {
 size_t ggf::allmemory() {
   size_t mem = memoryof(allggf);
   for (set<ggf *>::const_iterator ggfi = allggf.begin(); ggfi != allggf.end();
-       ++ggfi) {
+       ++ggfi)
     mem += memoryof(**ggfi);
-  }
   return mem;
 }
 }

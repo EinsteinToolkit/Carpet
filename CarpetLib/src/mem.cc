@@ -95,8 +95,7 @@ mem<T>::mem(size_t const vectorlength, size_t const nelems, T *const memptr,
     if (max_allowed_memory_MB > 0 and
         (total_allocated_bytes + nbytes > MEGA * max_allowed_memory_MB)) {
       T Tdummy;
-      CCTK_VError(
-          __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VERROR(
           "Refusing to allocate %.0f bytes (%.3f MB) of memory for type %s.  "
           "%.0f bytes (%.3f MB) are currently allocated in %d objects.  The "
           "parameter file specifies a maximum of %d MB",
@@ -110,8 +109,7 @@ mem<T>::mem(size_t const vectorlength, size_t const nelems, T *const memptr,
     void *ptr = malloc(nbytes + alignment - 1);
     if (not ptr) {
       T Tdummy;
-      CCTK_VError(
-          __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VERROR(
           "Failed to allocate %.0f bytes (%.3f MB) of memory for type %s.  "
           "%.0f bytes (%.3f MB) are currently allocated in %d objects",
           double(nbytes), double(nbytes / MEGA), typestring(Tdummy),
@@ -259,8 +257,7 @@ void *mempool::alloc(size_t nbytes) {
     freeptr = malloc(freesize);
     allocated += freesize;
     if (not freeptr) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Failed to allocate %.3f MB of memory",
+      CCTK_VWARN(CCTK_WARN_ABORT, "Failed to allocate %.3f MB of memory",
                  double(freesize / gmem::MEGA));
     }
     // Remember the pointer so that it can be freed

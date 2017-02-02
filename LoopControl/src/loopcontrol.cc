@@ -682,12 +682,10 @@ void lc_control_init(lc_control_t *restrict const control,
       assert(not descr->current_params);
       descr->current_params = params_p;
       setup.current_params = descr->current_params;
-      if (not setup.default_params) {
+      if (not setup.default_params)
         setup.default_params = setup.current_params;
-      }
-      if (not setup.best_params) {
+      if (not setup.best_params)
         setup.best_params = setup.current_params;
-      }
     }
   }
 #pragma omp barrier
@@ -767,9 +765,8 @@ void lc_control_init(lc_control_t *restrict const control,
   const ptrdiff_t vect_size[LC_DIM] = {istr, 1, 1};
 
   // Copy ash arguments
-  for (int d = 0; d < LC_DIM; ++d) {
+  for (int d = 0; d < LC_DIM; ++d)
     control->ash.v[d] = ash[d];
-  }
 
   // Set up multithreading state
   {
@@ -896,10 +893,8 @@ void lc_control_finish(lc_control_t *restrict const control,
           }
         }
       }
-      if (nfailed > 0) {
-        CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                    "LoopControl self-test failed");
-      }
+      if (nfailed > 0)
+        CCTK_ERROR("LoopControl self-test failed");
       delete[] control->selftest_array;
     }
     control->selftest_array = NULL;
@@ -1105,18 +1100,15 @@ void lc_statistics(CCTK_ARGUMENTS) {
          (sizeof(lc_setup_key_t) + sizeof(lc_setup_t *) + sizeof(lc_setup_t))) +
         (nparams * (sizeof(lc_params_key_t) + sizeof(lc_params_t *) +
                     sizeof(lc_params_t)));
-    CCTK_VInfo(CCTK_THORNSTRING, "  Loops traversed:    %td", nloops);
-    CCTK_VInfo(CCTK_THORNSTRING, "  Setups encountered: %td", nsetups);
-    CCTK_VInfo(CCTK_THORNSTRING, "  Params explored:    %td", nparams);
-    CCTK_VInfo(CCTK_THORNSTRING, "    Actual time spent:                %g s",
-               time_actual);
-    CCTK_VInfo(CCTK_THORNSTRING,
-               "    Unoptimized time would have been: %g s   (%+.1f%%)",
+    CCTK_VINFO("  Loops traversed:    %td", nloops);
+    CCTK_VINFO("  Setups encountered: %td", nsetups);
+    CCTK_VINFO("  Params explored:    %td", nparams);
+    CCTK_VINFO("    Actual time spent:                %g s", time_actual);
+    CCTK_VINFO("    Unoptimized time would have been: %g s   (%+.1f%%)",
                time_default, 100.0 * ratio_unopt);
-    CCTK_VInfo(CCTK_THORNSTRING,
-               "    Ideal time could have been:       %g s   (%+.1f%%)",
+    CCTK_VINFO("    Ideal time could have been:       %g s   (%+.1f%%)",
                time_best, 100.0 * ratio_ideal);
-    CCTK_VInfo(CCTK_THORNSTRING, "  Memory allocated: %g MB", nbytes / 1.0e+6);
+    CCTK_VINFO("  Memory allocated: %g MB", nbytes / 1.0e+6);
   }
 
   if (strcmp(statistics_filename, "") == 0)
@@ -1241,8 +1233,8 @@ extern "C" CCTK_FCALL void CCTK_FNAME(lc_control_init)(
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(lc_control_finish)(lc_control_t &restrict control,
-                                  CCTK_POINTER &descr) {
+CCTK_FNAME(lc_control_finish)(lc_control_t &restrict control,
+                              CCTK_POINTER &descr) {
   lc_control_finish(&control, (lc_descr_t *)descr);
 }
 
@@ -1251,7 +1243,7 @@ extern "C" CCTK_FCALL void CCTK_FNAME(lc_thread_init)(lc_control_t &control) {
 }
 
 extern "C" CCTK_FCALL int
-    CCTK_FNAME(lc_thread_done)(const lc_control_t &control) {
+CCTK_FNAME(lc_thread_done)(const lc_control_t &control) {
   return lc_thread_done(&control);
 }
 

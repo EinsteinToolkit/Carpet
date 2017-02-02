@@ -12,7 +12,7 @@ extern "C" void MaskBase_SetMask(CCTK_ARGUMENTS) {
 
   if (verbose) {
     int const reflevel = GetRefinementLevel(cctkGH);
-    CCTK_VInfo(CCTK_THORNSTRING, "Finalise the weight on level %d", reflevel);
+    CCTK_VINFO("Finalise the weight on level %d", reflevel);
   }
 
   unsigned const bits = BMSK(cctk_dim);
