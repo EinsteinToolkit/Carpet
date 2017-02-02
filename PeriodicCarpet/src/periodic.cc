@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ostream>
+#include <sstream>
 #include <vector>
 
 #include <cctk.h>
@@ -34,6 +36,10 @@ struct xferinfo_t {
   int m;                            // map
   sendrecv_pseudoregion_t sendrecv; // regions and components
   islab slab;                       // slabbing offset
+  friend ostream &operator<<(ostream &os, const xferinfo_t &xi) {
+    return os << "xferinfo_t{m=" << xi.m << ",sendrecv=" << xi.sendrecv
+              << ",slab=" << xi.slab << "}";
+  }
 };
 
 namespace CarpetLib {
@@ -80,7 +86,22 @@ struct levelinfo_t {
   int regridding_epoch;
   vector<xferinfo_t> xferinfos;
   levelinfo_t() : regridding_epoch(-1) {}
+  friend ostream &operator<<(ostream &os, const levelinfo_t &li) {
+    os << "levelinfo_t{regridding_epoch=" << li.regridding_epoch
+       << ",xferinfos=vector<xferinfo_t>[";
+    for (const auto &xi : li.xferinfos)
+      os << xi << ",";
+    os << "]}";
+    return os;
+  }
 };
+ostream &operator<<(ostream &os, const vector<levelinfo_t> &lis) {
+  os << "vector<levelinfo_t>[";
+  for (const auto &li : lis)
+    os << li << ",";
+  os << "]";
+  return os;
+}
 
 static vector<levelinfo_t> levelinfos;
 
@@ -117,9 +138,8 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
     assert(vartypesize > 0);
 
     if (group.dim != size)
-      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The group \"%s\" has dimension %d, but the given stencil "
-                  "has size %d.",
+      CCTK_VERROR("The group \"%s\" has dimension %d, but the given stencil "
+                  "has size %d",
                   CCTK_GroupNameFromVarI(vi), group.dim, size);
   }
 
@@ -140,6 +160,9 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
   // Do we need a new levelinfo? (We need a new levelinfo after each
   // regridding.)
   if (levelinfo.regridding_epoch != level_regridding_epochs.at(reflevel)) {
+    if (verbose)
+      CCTK_INFO("New regridding epoch -- (re-)generating levelinfos");
+
     levelinfo.regridding_epoch = level_regridding_epochs.at(reflevel);
     xferinfos.clear();
 
@@ -323,6 +346,12 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
       xferinfos.insert(xferinfos.end(), recv.begin(), recv.end());
     }
 
+    if (verbose) {
+      ostringstream buf;
+      buf << "levelinfos=" << levelinfos;
+      CCTK_INFO(buf.str().c_str());
+    }
+
   } // if need new levelinfo
 
   // Transfer: Loop over all communication phases, all variables, and
@@ -501,8 +530,7 @@ extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
     if (verbose) {
       char *const fullname = CCTK_FullName(vi);
       assert(fullname);
-      CCTK_VInfo(CCTK_THORNSTRING,
-                 "Applying periodicity boundary conditions to \"%s\"",
+      CCTK_VINFO("Applying periodicity boundary conditions to \"%s\"",
                  fullname);
       free(fullname);
     }
