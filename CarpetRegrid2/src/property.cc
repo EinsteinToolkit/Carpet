@@ -52,7 +52,7 @@ ibset proper_nesting::enlarged_fine_grid(gh const &hh, dh const &dd,
   // on the coarse and a certain amount on the fine grid.
   i2vect const fdistance = dd.ghost_widths.at(rl + 1);
   i2vect const cdistance =
-      i2vect(min_distance + dd.prolongation_stencil_size(rl));
+      i2vect(ivect(min_distance + dd.prolongation_stencil_size(rl)));
 
   ibset enlarged;
 

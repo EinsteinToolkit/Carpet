@@ -118,7 +118,7 @@ void Automatic_OneLevel(const cGH *const cctkGH, const gh &hh, const int rl,
   }
 
   // Remove grid points outside the outer boundary
-  b2vect const obp(false);
+  b2vect const obp(bvect(false));
   for (size_t c = 0; c < regs.size(); ++c) {
     const ivect lb = either(
         obp[0], regs.at(c).extent.lower(),

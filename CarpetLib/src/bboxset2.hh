@@ -474,8 +474,21 @@ public:
   /** Shift all points */
   bboxset shift(const vect &dist, const vect &dist_denom = vect(1)) const;
 
+  /** Shift all points */
+  bboxset shift(const vect &dist, const T &dist_denom) const {
+    return shift(dist, vect(dist_denom));
+  }
+
   /** Expand the set (convolute with a bbox) */
   bboxset expand(const vect &lo, const vect &hi) const;
+
+  /** Expand the set (convolute with a bbox) */
+  bboxset expand(const T &lo, const T &hi) const {
+    return expand(vect(lo), vect(hi));
+  }
+
+  /** Expand the set (convolute with a bbox) */
+  bboxset expand(const T &lohi) const { return expand(lohi, lohi); }
 
   /** Expand the set (convolute with a bbox) */
   bboxset expand(const CarpetLib::vect<vect, 2> &lohi) const {
@@ -1185,7 +1198,7 @@ bboxset<T, D> bboxset<T, D>::contracted_for(const bbox &target) const {
   assert(not target.empty());
   assert(strides_are_compatible(stride, target.stride()));
   const bbox cont = container();
-  const vect safety = 10;
+  const T safety = 10;
   const bbox good_world = cont.anti_contracted_for(target).expand(safety);
   const bbox world1 = good_world.anti_contracted_for(cont).expand(safety);
   const bbox world2 = world1.anti_contracted_for(target).expand(safety);

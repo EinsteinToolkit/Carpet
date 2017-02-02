@@ -58,7 +58,7 @@ void interpolate_3d_4tl(T const *restrict const src1, CCTK_REAL const t1,
               "Internal error: region extent is not contained in array extent");
   }
 
-  ivect3 const regext = regbbox.shape() / regbbox.stride();
+  ivect3 const regext = regbbox.sizes();
   assert(all((regbbox.lower() - srcbbox.lower()) % srcbbox.stride() == 0));
   ivect3 const srcoff = (regbbox.lower() - srcbbox.lower()) / srcbbox.stride();
   assert(all((regbbox.lower() - dstbbox.lower()) % dstbbox.stride() == 0));

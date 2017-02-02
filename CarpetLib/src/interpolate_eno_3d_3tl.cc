@@ -64,7 +64,7 @@ void interpolate_eno_3d_3tl(
               "Internal error: region extent is not contained in array extent");
   }
 
-  ivect3 const regext = regbbox.shape() / regbbox.stride();
+  ivect3 const regext = regbbox.sizes();
   assert(all((regbbox.lower() - srcbbox.lower()) % srcbbox.stride() == 0));
   ivect3 const srcoff = (regbbox.lower() - srcbbox.lower()) / srcbbox.stride();
   assert(all((regbbox.lower() - dstbbox.lower()) % dstbbox.stride() == 0));

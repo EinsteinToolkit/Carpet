@@ -379,7 +379,7 @@ private:
 
     // Read the fragment offset. This is stored with the dataset
     // group.
-    ivect foff = 0;
+    ivect foff = ivect(0);
     if (fragmentname) {
       hsize_t hoff[FIBER_MAX_RANK];
       iret = F5LAget_dimensions(fragment_is_group ? fragment : element,
@@ -420,7 +420,7 @@ private:
     herr = H5Sclose(space);
     assert(not herr);
 
-    ibbox const fbox(foff, foff + flen - 1, 1);
+    ibbox const fbox(foff, foff + flen - 1, ivect(1));
     {
       indent_t indent2;
       cout << indent2 << "dataset bbox is " << foff << ":" << foff + flen - 1

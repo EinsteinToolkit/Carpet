@@ -1305,7 +1305,7 @@ static void SplitRegionsMaps_Automatic_Recursively(bvect const &dims,
 
     // Create a new region
     region_t newreg(superreg);
-    newreg.outer_boundaries = b2vect(false);
+    newreg.outer_boundaries = b2vect(bvect(false));
     if (recompose_verbose)
       cout << "SRMAR newreg " << newreg << endl;
 

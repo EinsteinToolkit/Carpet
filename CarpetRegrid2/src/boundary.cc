@@ -243,13 +243,14 @@ level_boundary::level_boundary(gh const &hh, dh const &dd, int const rl)
          << i2vect(level_physical_ilower, level_physical_iupper) << "\n";
     cout << "Refinement level " << rl
          << ": reconstructed physical coordinate boundary is at "
-         << r2vect(
-                ipos2rpos(level_physical_ilower -
-                              (hh.refcent == cell_centered ? istride / 2 : 0),
-                          origin, scale, hh, rl),
-                ipos2rpos(level_physical_iupper +
-                              (hh.refcent == cell_centered ? istride / 2 : 0),
-                          origin, scale, hh, rl))
+         << r2vect(ipos2rpos(level_physical_ilower -
+                                 (hh.refcent == cell_centered ? istride / 2
+                                                              : ivect(0)),
+                             origin, scale, hh, rl),
+                   ipos2rpos(level_physical_iupper +
+                                 (hh.refcent == cell_centered ? istride / 2
+                                                              : ivect(0)),
+                             origin, scale, hh, rl))
          << "\n";
   }
 

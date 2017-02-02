@@ -329,7 +329,7 @@ void SplitRegionsMaps_Recursively(cGH const *const cctkGH,
       dummy.extent =
           ibbox(ext.lower(), ext.lower() - ext.stride(), ext.stride());
       assert(dummy.extent.empty());
-      dummy.outer_boundaries = b2vect(true);
+      dummy.outer_boundaries = b2vect(bvect(true));
       dummy.map = nmaps - 1; // arbitrary choice
       // Insert dummy regions at the end
       regs.resize(nregs + missingcomps, dummy);

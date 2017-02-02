@@ -286,7 +286,7 @@ private:
               // 0D output
               if (group_index < 0 and my_out0D_every > 0 and
                   cctk_iteration % my_out0D_every == 0) {
-                slice_ipos = 0;
+                slice_ipos = rvect(0);
                 output_reflevel(file);
               }
 
@@ -337,7 +337,7 @@ private:
               // 3D output
               if (my_out3D_every > 0 and cctk_iteration % my_out3D_every == 0) {
                 // xyz
-                slice_ipos = -1;
+                slice_ipos = rvect(-1);
                 output_reflevel(file);
               }
             }
@@ -855,7 +855,7 @@ private:
         csd <<= ci.dim;
         assert(ci.dim > 0);
       }
-      ivect chunkshape = cs;
+      ivect chunkshape(cs);
       chunkshape[ci.dim - 1] = cs / (csd / chunksize);
       chunkshape = max(chunkshape, 1);
       chunkshape = min(chunkshape, ci.ilen);

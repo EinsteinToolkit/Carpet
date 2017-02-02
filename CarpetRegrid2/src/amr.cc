@@ -38,7 +38,7 @@ void evaluate_level_mask(cGH const *restrict const cctkGH,
         }
 
         // Determine the block size
-        ivect block_size = adaptive_block_size;
+        ivect block_size(adaptive_block_size);
         if (adaptive_block_size_x > 0)
           block_size[0] = adaptive_block_size_x;
         if (adaptive_block_size_y > 0)
