@@ -1,6 +1,5 @@
-#define _GNU_SOURCE                                                            \
-  1 // needed for sched_getaffinity, best at the top to avoid inconsistent
-    // includes
+// Needed for sched_getaffinity, best at the top to avoid inconsistent includes
+#define _GNU_SOURCE 1
 
 #include <algorithm>
 #include <cassert>
