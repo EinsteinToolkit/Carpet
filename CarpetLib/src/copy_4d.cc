@@ -100,7 +100,7 @@ void copy_4d(T const *restrict const src, ivect4 const &restrict srcpadext,
   ptrdiff_t const dstloff = dstoff[3];
 
   // Loop over region
-  if (use_openmp) {
+  if (false and use_openmp) {
 #pragma omp parallel for collapse(4)
     for (int l = 0; l < reglext; ++l) {
       for (int k = 0; k < regkext; ++k) {
@@ -115,6 +115,7 @@ void copy_4d(T const *restrict const src, ivect4 const &restrict srcpadext,
     for (int l = 0; l < reglext; ++l) {
       for (int k = 0; k < regkext; ++k) {
         for (int j = 0; j < regjext; ++j) {
+#pragma omp simd
           for (int i = 0; i < regiext; ++i) {
             dst[DSTIND4(i, j, k, l)] = src[SRCIND4(i, j, k, l)];
           }
