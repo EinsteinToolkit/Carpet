@@ -484,7 +484,7 @@ int WriteAttribute(hid_t const group, char const *const name,
   }
   vector<char> svalue(nvalues * (maxstrlen + 1));
   for (int i = 0; i < nvalues; ++i) {
-    strncpy(&svalue.at(i * maxstrlen), svalues[i], maxstrlen + 1);
+    strncpy(&svalue.at(i * (maxstrlen + 1)), svalues[i], maxstrlen + 1);
   }
 
   HDF5_ERROR(datatype = H5Tcopy(H5T_C_S1));
