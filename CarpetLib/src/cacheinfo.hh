@@ -34,21 +34,6 @@ template <typename T> static bool is_power_of_2(T const x) {
   return x == next_power_of_2(x);
 }
 
-#if 0
-template<typename T>
-static T lcm (T const x, T const y)
-  CCTK_ATTRIBUTE_UNUSED;
-template<typename T>
-static T lcm (T const x, T const y)
-{
-  assert (x > 0 && y > 0);
-  T z = x;
-  // TODO: improve LCM algorithm
-  while (z % y != 0) z += x;
-  assert (z % x == 0 && z % y == 0);
-  return z;
-}
-#endif
 
 // These routines are apparently not pure -- don't know why
 template <int D>

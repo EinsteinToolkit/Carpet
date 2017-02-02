@@ -53,9 +53,6 @@ static int TimeToOutput(const cGH *cctkGH, int vindex);
 static int TriggerOutput(const cGH *cctkGH, int vindex);
 
 // Internal functions
-#if 0
-  static void SetFlag (int index, const char* optstring, void* arg);
-#endif
 static void CheckSteerableParameters(const cGH *const cctkGH,
                                      bool first_time = false);
 
@@ -801,19 +798,5 @@ static void CheckSteerableParameters(const cGH *const cctkGH, bool first_time) {
     }
   }
 }
-
-#if 0
-  void
-  SetFlag (int const index, const char * const optstring, void * const arg)
-  {
-    const void *dummy;
-
-    dummy = &optstring;
-    dummy = &dummy;
-
-    vector<bool>& flags = *(vector<bool>*)arg;
-    flags.at(index) = true;
-  }
-#endif
 
 } // namespace CarpetIOScalar

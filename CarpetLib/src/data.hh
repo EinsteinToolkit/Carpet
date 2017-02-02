@@ -42,10 +42,6 @@ public:
        const operator_type transport_operator = op_error,
        const int vectorlength = 1, const int vectorindex = 0,
        data *const vectorleader = NULL);
-  data(const int varindex, const centering cent,
-       const operator_type transport_operator, const int vectorlength,
-       const int vectorindex, data *const vectorleader, const ibbox &extent,
-       const int proc);
 
   // Destructors
   virtual ~data();

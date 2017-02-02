@@ -116,10 +116,6 @@ static bool can_transfer_variable_type(cGH const *cctkGH, int group,
                                        cGroup const &gdata);
 
 static void ensure_CartGrid3D_type();
-#if 0
-  static void
-  ensure_CartGrid3D_domain ();  // UNUSED
-#endif
 static void ensure_CartGrid3D_avoid_origin();
 static void ensure_ReflectionSymmetry_avoid_origin(centering refcentering);
 static void ensure_ghostzones(int m, vector<i2vect> const &ghosts);

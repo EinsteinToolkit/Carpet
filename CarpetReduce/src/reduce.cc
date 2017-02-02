@@ -1601,10 +1601,6 @@ int ReduceGVs(const cGH *const cgh, const int proc, const int num_outvals,
                 for (int tl = 0; tl < num_tl; ++tl) {
                   myinarrays.AT(tl).resize(num_invars);
                   for (int n = 0; n < num_invars; ++n) {
-#if 0
-                      myinarrays.AT(tl).AT(n)
-                        = CCTK_VarDataPtrI(cgh, tl, invars[n]);
-#else
                     int const vi1 = invars[n];
                     int const gi = CCTK_GroupIndexFromVarI(vi1);
                     int const vi0 = CCTK_FirstVarIndexI(gi);
@@ -1614,7 +1610,6 @@ int ReduceGVs(const cGH *const cgh, const int proc, const int num_outvals,
                         ff->data_pointer(tl, reflevel, local_component, mglevel)
                             ->storage();
                     myinarrays.AT(tl).AT(n) = ptr;
-#endif
                     assert(myinarrays.AT(tl).AT(n));
                   }
                   inarrays.AT(tl) = &myinarrays.AT(tl).AT(0);
