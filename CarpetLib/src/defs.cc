@@ -442,6 +442,7 @@ template ostream &output(ostream &os, const set<bbox<int, 3> > &s);
 template ostream &output(ostream &os, const vector<bool> &v);
 template ostream &output(ostream &os, const vector<int> &v);
 template ostream &output(ostream &os, const vector<CCTK_REAL> &v);
+template ostream &output(ostream &os, const vector<bbox<int, 0> > &v);
 template ostream &output(ostream &os, const vector<bbox<int, 1> > &v);
 template ostream &output(ostream &os, const vector<bbox<int, 2> > &v);
 template ostream &output(ostream &os, const vector<bbox<int, 3> > &v);
