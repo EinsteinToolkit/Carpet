@@ -34,7 +34,7 @@ public:
     ticks const current = getticks();
     double const difference = elapsed(current, last);
     sum += difference;
-    sum2 += pow(difference, 2.0);
+    sum2 += pow(difference, 2);
     min = min == 0.0 ? difference : fmin(min, difference);
     max = fmax(max, difference);
     count += 1.0;
@@ -72,7 +72,8 @@ public:
     vals[2].heading = "cycle[sdv]";
     vals[2].units = "secs";
     vals[2].val.d =
-        (count == 0.0 ? 0.0 : sqrt(fabs(sum2 * count - pow(sum, 2.0)) / count));
+        (count == 0.0 ? 0.0
+                      : sqrt(fmax(0.0, sum2 * count - pow(sum, 2)) / count));
     vals[2].seconds = tick * vals[2].val.d;
     vals[2].resolution = tick;
 
