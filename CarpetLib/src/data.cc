@@ -379,21 +379,6 @@ data<T>::data(const int varindex_, const centering cent_,
          (vectorindex != 0 and vectorleader));
 }
 
-template <typename T>
-data<T>::data(const int varindex_, const centering cent_,
-              const operator_type transport_operator_, const int vectorlength_,
-              const int vectorindex_, data *const vectorleader_,
-              const ibbox &extent_, const int proc_)
-    : gdata(varindex_, cent_, transport_operator_), _memory(NULL),
-      vectorlength(vectorlength_), vectorindex(vectorindex_),
-      vectorleader(vectorleader_) {
-  assert(vectorlength >= 1);
-  assert(vectorindex >= 0 and vectorindex < vectorlength);
-  assert((vectorindex == 0 and not vectorleader) or
-         (vectorindex != 0 and vectorleader));
-  allocate(extent_, proc_);
-}
-
 // Destructors
 template <typename T> data<T>::~data() {
   if (_memory)

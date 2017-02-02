@@ -72,10 +72,6 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
          c < arrdata.at(gindex).at(Carpet::map).hh->components(refinementlevel);
          ++c) {
 // Using "interior" removes ghost zones and refinement boundaries.
-#if 0
-      bboxes += arrdata.at(gindex).at(Carpet::map).dd->
-                light_boxes.at(mglevel).at(refinementlevel).at(c).interior;
-#endif
       bboxes += arrdata.at(gindex)
                     .at(Carpet::map)
                     .dd->light_boxes.at(mglevel)
@@ -181,11 +177,6 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
         // (use either the interior or exterior here, as we did above)
         gh const *const hh = arrdata.at(gindex).at(Carpet::map).hh;
         dh const *const dd = arrdata.at(gindex).at(Carpet::map).dd;
-#if 0
-        ibbox const overlap = *bbox &
-          dd->light_boxes.at(mglevel).at(refinementlevel).at(component).
-          interior;
-#endif
         ibbox const overlap = *bbox &
                               dd->light_boxes.at(mglevel)
                                   .at(refinementlevel)
@@ -203,13 +194,7 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
                 ? ff->data_pointer(request->timelevel, refinementlevel,
                                    local_component, mglevel)
                 : NULL;
-#if 0
-        // TODO: This does not work; data may be NULL
-        gdata* const processor_component =
-          data->make_typed (request->vindex, error_centered, op_sync);
-#else
         gdata *const processor_component = ff->new_typed_data();
-#endif
 
         processor_component->allocate(overlap, 0);
         for (comm_state state; not state.done(); state.step()) {
@@ -391,13 +376,7 @@ int WriteVarChunkedSequential(const cGH *const cctkGH, hid_t outfile,
               ? ff->data_pointer(request->timelevel, refinementlevel,
                                  local_component, mglevel)
               : NULL;
-#if 0
-      // TODO: This does not work; data may be NULL
-      gdata* const processor_component =
-        data->make_typed (request->vindex, error_centered, op_sync);
-#else
       gdata *const processor_component = ff->new_typed_data();
-#endif
 
       processor_component->allocate(bbox, 0);
       for (comm_state state; not state.done(); state.step()) {
@@ -840,10 +819,6 @@ static int AddAttributes(const cGH *const cctkGH, const char *fullname,
   if (coord_system_handle >= 0 and
       Util_TableGetIntArray(coord_system_handle, vdim, coord_handles,
                             "COORDINATES") >= 0) {
-#if 0 // dh::dbases
-    const ibbox& baseext =
-      vdd.at(Carpet::map)->bases.at(mglevel).at(refinementlevel).exterior;
-#endif
     const ibbox &baseext =
         vhh.at(Carpet::map)->baseextents.at(mglevel).at(refinementlevel);
 
