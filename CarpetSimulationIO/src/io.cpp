@@ -417,11 +417,12 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
     // Do not checkpoint groups with a "checkpoint=no" tag
     int len = Util_TableGetString(gdata.tagstable, 0, nullptr, "checkpoint");
     if (len > 0) {
-      char buf[1000];
-      Util_TableGetString(gdata.tagstable, sizeof buf, buf, "checkpoint");
-      if (CCTK_EQUALS(buf, "no"))
+      vector<char> buf(1000);
+      Util_TableGetString(gdata.tagstable, buf.size(), buf.data(),
+                          "checkpoint");
+      if (CCTK_EQUALS(buf.data(), "no"))
         continue;
-      assert(CCTK_EQUALS(buf, "yes"));
+      assert(CCTK_EQUALS(buf.data(), "yes"));
     }
 
     int varindex0 = CCTK_FirstVarIndexI(gindex);
