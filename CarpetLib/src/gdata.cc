@@ -114,7 +114,7 @@ void gdata::copy_from(comm_state &state, gdata const *const src,
   vector<gdata const *> const srcs(1, src);
   CCTK_REAL const time = 0.0;
   vector<CCTK_REAL> const times(1, time);
-  int const order_space = (this ? cent : src->cent) == vertex_centered ? 1 : 0;
+  int const order_space = cent == vertex_centered ? 1 : 0;
   int const order_time = 0;
   transfer_from(state, srcs, times, dstbox, srcbox, slabinfo, dstproc, srcproc,
                 time, order_space, order_time);
@@ -152,7 +152,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
       assert(srcs.AT(t)->has_storage());
     }
   }
-  gdata const *const src = is_src ? srcs.AT(0) : NULL;
+  gdata const *const src = srcs.AT(0);
 
   operator_type const my_transport_operator =
       is_dst ? transport_operator : src->transport_operator;
