@@ -24,7 +24,7 @@ using namespace std;
 template <typename T>
 inline T ipow_helper(T x, unsigned int y) CCTK_ATTRIBUTE_CONST;
 template <typename T> inline T ipow_helper(T x, unsigned int y) {
-  T z = y & 1 ? x : 1;
+  T z = y & 1 ? x : T(1);
   while (y >>= 1) {
     x *= x;
     if (y & 1)
