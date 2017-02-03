@@ -157,6 +157,8 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec) {
   std::string current;
   RWClause rwc;
   bool parsing_where = false;
+  const char *input_sav = input;
+  bool parsed = false;
   while(true) {
     char c = *input++;
     if(c >= 'A' && c <= 'Z')
@@ -181,6 +183,7 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec) {
         abort();
       }
       vec.push_back(rwc);
+      parsed = true;
       rwc.name = "";
       rwc.where = 0;
       current = "";
@@ -191,6 +194,8 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec) {
     if(c == 0)
       break;
   }
+  if(!parsed) std::cout << "PARSING: " << input_sav << std::endl;
+  CCTK_ASSERT(parsed);
 }
 
 std::string current_routine;
@@ -253,8 +258,7 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
   std::map<var_tuple,int>& writes_m = writes[r];
   for(auto i = writes_m.begin();i != writes_m.end(); ++i) {
     const var_tuple& vi = i->first;
-    if(i->second != WH_NOWHERE)
-      valid_k[vi] = i->second;
+    valid_k[vi] = i->second;
   }
   for(auto g = sync_groups.begin();g != sync_groups.end();++g) {
     int gi = *g;
@@ -306,6 +310,13 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
 
 std::map<var_tuple,int> tmp_read, tmp_write;
 
+bool hasAccess(const std::map<var_tuple,int>& m, const var_tuple& vt) {
+  auto i2 = m.find(vt);
+  if(i2 == m.end())
+    return false;
+  return i2->second != WH_NOWHERE;
+}
+
 /**
  * Determine whether the currently executed function
  * has either read or write access to the variable
@@ -318,13 +329,13 @@ int Carpet_hasAccess(int var_index) {
   int type = CCTK_GroupTypeFromVarI(var_index);
   if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(var_index)) == sizeof(CCTK_REAL)) {
     var_tuple vi(var_index);
-    if(reads[current_routine][vi] != WH_NOWHERE)
+    if(hasAccess(reads[current_routine],vi))
       return true;
-    if(writes[current_routine][vi] != WH_NOWHERE)
+    if(hasAccess(writes[current_routine],vi))
       return true;
-    if(tmp_read[vi] != WH_NOWHERE)
+    if(hasAccess(tmp_read,vi))
       return true;
-    if(tmp_write[vi] != WH_NOWHERE)
+    if(hasAccess(tmp_write,vi))
       return true;
     return false;
   } else {
@@ -392,8 +403,6 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
   std::map<var_tuple,int>& reads_m  = reads [r];
 
   for(auto i = reads_m.begin();i != reads_m.end(); ++i) {
-    if(i->second == WH_NOWHERE)
-      continue;
     const var_tuple& vt = i->first;
     if(!on(valid_k[vt],WH_INTERIOR)) {
       // If the read spec is everywhere and we only have
