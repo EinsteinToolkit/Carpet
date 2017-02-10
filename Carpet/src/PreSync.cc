@@ -147,13 +147,17 @@ inline bool iswhite(char c) {
   return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\b' || c == '\f';
 }
 
+inline std::ostream& operator<<(std::ostream& o,const RWClause& rwc) {
+  return o << "RWC(" << rwc.name << ",tl=" << rwc.tl << ",wh=" << wstr(rwc.where) << ")";
+}
+
 /**
  * Parse a single input clause, e.g. READS: foo::bar(Everywhere)
  * and store the result in a vector of RWClause objects. Note
  * that this method supports "All" as a shorthand for "Everywhere"
  * and "In" as a shorthand for "Interior."
  */
-void parse_rwclauses(const char *input,std::vector<RWClause>& vec) {
+void parse_rwclauses(const char *input,std::vector<RWClause>& vec,int default_where) {
   std::string current;
   RWClause rwc;
   bool parsing_where = false;
@@ -164,6 +168,11 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec) {
     if(c >= 'A' && c <= 'Z')
       c = c - 'A' + 'a';
     if(iswhite(c)||c==0) {
+      if(rwc.name != "") {
+        rwc.where = default_where;
+        vec.push_back(rwc);
+        std::cout << "DEFAULT:: " << rwc << std::endl;
+      }
       rwc.name = "";
       rwc.where = 0;
       current = "";
@@ -194,8 +203,6 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec) {
     if(c == 0)
       break;
   }
-  if(!parsed) std::cout << "PARSING: " << input_sav << std::endl;
-  CCTK_ASSERT(parsed);
 }
 
 std::string current_routine;
@@ -204,12 +211,12 @@ std::string current_routine;
  * This method is convert an array of textual descriptions of read/write clauses to
  * a map that takes a var tuple (var index, time level) and produces a where spec.
  */
-void compute_clauses(const int num_strings,const char **strings,std::map<var_tuple,int>& routine_m) {
+void compute_clauses(const int num_strings,const char **strings,std::map<var_tuple,int>& routine_m,int default_where) {
   std::vector<RWClause> rwvec;
   for(int i=0;i< num_strings; ++i) {
 
     // Parse the where clause (if any)
-    parse_rwclauses(strings[i],rwvec);
+    parse_rwclauses(strings[i],rwvec,default_where);
   }
   for(auto i=rwvec.begin();i != rwvec.end();++i) {
     RWClause& rwc = *i;
@@ -393,11 +400,11 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
     compute_clauses(
         attribute->n_WritesClauses,
         attribute->WritesClauses,
-        writes_m);
+        writes_m,WH_INTERIOR);
     compute_clauses(
         attribute->n_ReadsClauses,
         attribute->ReadsClauses,
-        reads_m);
+        reads_m,WH_EVERYWHERE);
   }
 
   std::map<var_tuple,int>& reads_m  = reads [r];
