@@ -14,6 +14,8 @@ extern "C" void ShowValid();
 
 namespace Carpet {
 
+bool msg1 = true, msg2 = true, msg3 = true;
+
 // The upper left-hand corner of a 2-D simulation.
 // +-----+-----+-----+
 // |     |     |     | 
@@ -168,12 +170,10 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec,int default_wh
     if(c >= 'A' && c <= 'Z')
       c = c - 'A' + 'a';
     if(c == 0) {
-      std::cout << "END OF STR " << rwc << " (" << input_sav << ") (" << input << ") (" << current << ")" << std::endl;
       rwc.name = current;
       if(rwc.name != "") {
         rwc.where = default_where;
         vec.push_back(rwc);
-        std::cout << "DEFAULT:: " << rwc << std::endl;
         parsed = true;
       }
       break;
@@ -186,12 +186,13 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec,int default_wh
       parsing_where = true;
       CCTK_ASSERT(rwc.name != "");
     } else if(c == ')' && parsing_where) {
-      std::cout << "HERE " << rwc << std::endl;
       CCTK_ASSERT(rwc.name != "");
       if(current == "everywhere" || current == "all") {
         rwc.where = WH_EVERYWHERE;
       } else if(current == "interior" || current == "in") {
         rwc.where = WH_INTERIOR;
+      } else if(current == "boundary") {
+        rwc.where = WH_BOUNDARY;
       } else {
         abort();
       }
@@ -287,6 +288,7 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
  * Do the actual presync of the groups.
  **/
 void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pregroups) {
+  DECLARE_CCTK_PARAMETERS;
   std::vector<int> sync_groups;
   for(auto i=pregroups.begin();i != pregroups.end();++i) {
     int gi = *i;
@@ -303,11 +305,14 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
         std::ostringstream msg;
         msg << "SYNC of variable with invalid interior. Name: "
             << CCTK_FullName(vi) << " before: " << current_routine;
-        CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
+        int level = psync_error ? 0 : 1;
+        if(msg1) {
+          msg1 = false;
+          CCTK_Warn(level,__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
+        }
       }
       if(push) {
         sync_groups.push_back(gi);
-        std::cout << "SYNC GROUP: " << CCTK_GroupName(gi) << std::endl;
         push = false;
       }
       valid_k[vt] |= WH_GHOSTS;
@@ -334,7 +339,10 @@ bool hasAccess(const std::map<var_tuple,int>& m, const var_tuple& vt) {
  * Note that only REAL grid functions are affected.
  */
 extern "C"
-int Carpet_hasAccess(int var_index) {
+int Carpet_hasAccess(const cGH *cctkGH,int var_index) {
+  DECLARE_CCTK_PARAMETERS;
+  if(!psync_error)
+    return true;
   int type = CCTK_GroupTypeFromVarI(var_index);
   if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(var_index)) == sizeof(CCTK_REAL)) {
     var_tuple vi(var_index);
@@ -383,6 +391,7 @@ void dump_clauses(std::map<var_tuple,int>& reads_m,std::map<var_tuple,int>& writ
  * Computes which groups need to be presync'd.
  */
 void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups) {
+  DECLARE_CCTK_PARAMETERS;
   if(cctkGH == 0) return;
   if(attribute == 0) return;
   tmp_read.erase(tmp_read.begin(),tmp_read.end());
@@ -420,7 +429,11 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
       msg << "Required read for " << vt 
           << " not satisfied. Invalid interior "
           << " at the start of routine " << r;
-      CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str()); 
+      int level = psync_error ? 0 : 1;
+      if(msg2) {
+        CCTK_Warn(level,__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str()); 
+        msg2 = false;
+      }
     } else if(vt.tl > 0) {
       if(!on(valid_k[vt],i->second)) {
         // If the read spec is everywhere, that's not
@@ -434,7 +447,8 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
       }
     }
     if(i->second == WH_EVERYWHERE) {
-      if(on(valid_k[vt],WH_INTERIOR) && valid_k[vt] != WH_EVERYWHERE) {
+      if(true) //(on(valid_k[vt],WH_INTERIOR) && valid_k[vt] != WH_EVERYWHERE)
+      {
         if(vt.tl != 0) {
           std::ostringstream msg;
           msg << "Attempt to sync previous time level (tl=" << vt.tl << ")"
@@ -448,7 +462,11 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
         std::ostringstream msg; 
         msg << "Cannot sync " << CCTK_FullName(vt.vi)
             << " because it is not valid in the interior.";
-        CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str()); 
+        int level = psync_error ? 0 : 1;
+        if(msg3) {
+          CCTK_Warn(level,__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str()); 
+          msg3 = false;
+        }
       }
     }
   }
@@ -648,7 +666,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
   if(bc.find(var_index) == bc.end()) {
     return;
   } else {
-    std::cout << "Carpet_ApplyPhysicalBCsForVarI(" << CCTK_FullName(var_index) << ") -> **FOUND**" << std::endl;
+    //std::cout << "Carpet_ApplyPhysicalBCsForVarI(" << CCTK_FullName(var_index) << ") -> **FOUND**" << std::endl;
   }
   std::vector<Bound>& bv = bc[var_index];
   BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
