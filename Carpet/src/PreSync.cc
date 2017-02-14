@@ -167,15 +167,18 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec,int default_wh
     char c = *input++;
     if(c >= 'A' && c <= 'Z')
       c = c - 'A' + 'a';
-    if(iswhite(c)||c==0) {
+    if(c == 0) {
+      std::cout << "END OF STR " << rwc << " (" << input_sav << ") (" << input << ") (" << current << ")" << std::endl;
+      rwc.name = current;
       if(rwc.name != "") {
         rwc.where = default_where;
         vec.push_back(rwc);
         std::cout << "DEFAULT:: " << rwc << std::endl;
+        parsed = true;
       }
-      rwc.name = "";
-      rwc.where = 0;
-      current = "";
+      break;
+    } else if(iswhite(c)) {
+      CCTK_ASSERT(false);
     } else if(c == '(' && !parsing_where) {
       rwc.name = current;
       rwc.parse_tl();
@@ -183,6 +186,7 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec,int default_wh
       parsing_where = true;
       CCTK_ASSERT(rwc.name != "");
     } else if(c == ')' && parsing_where) {
+      std::cout << "HERE " << rwc << std::endl;
       CCTK_ASSERT(rwc.name != "");
       if(current == "everywhere" || current == "all") {
         rwc.where = WH_EVERYWHERE;
@@ -193,16 +197,14 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec,int default_wh
       }
       vec.push_back(rwc);
       parsed = true;
-      rwc.name = "";
-      rwc.where = 0;
-      current = "";
+      break;
       parsing_where = 0;
     } else {
       current += c;
     }
-    if(c == 0)
-      break;
   }
+  if(!parsed) std::cout << "PARSE FAIL: (" << input_sav << ") (" << input << ") " << rwc<< std::endl;
+  CCTK_ASSERT(parsed);
 }
 
 std::string current_routine;
