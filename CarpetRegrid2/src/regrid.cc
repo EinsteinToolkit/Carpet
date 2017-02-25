@@ -57,10 +57,9 @@ centre_description::centre_description(cGH const *const cctkGH, int const n) {
   this->_active = active[n];
   this->_position = rvect(position_x[n], position_y[n], position_z[n]);
   if (any(not isfinite(this->_position))) {
-    CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "The position of region %d is [%g,%g,%g], which is not finite",
-               n + 1, double(this->_position[0]), double(this->_position[1]),
-               double(this->_position[2]));
+    CCTK_VERROR("The position of region %d is [%g,%g,%g], which is not finite",
+                n + 1, double(this->_position[0]), double(this->_position[1]),
+                double(this->_position[2]));
     found_error = true;
   }
   this->_radius.resize(this->_num_levels);
@@ -72,32 +71,29 @@ centre_description::centre_description(cGH const *const cctkGH, int const n) {
     CCTK_REAL const rz = radius_z[ind] < 0.0 ? radius[ind] : radius_z[ind];
     rvect const rad(rx, ry, rz);
     if (any(not isfinite(rad))) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "The radius of refinement level %d of region %d is "
-                 "[%g,%g,%g], which is not finite",
-                 rl, n + 1, double(rad[0]), double(rad[1]), double(rad[2]));
+      CCTK_VERROR("The radius of refinement level %d of region %d is "
+                  "[%g,%g,%g], which is not finite",
+                  rl, n + 1, double(rad[0]), double(rad[1]), double(rad[2]));
       found_error = true;
     }
     if (any(rad < CCTK_REAL(0))) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "The radius of refinement level %d of region %d is "
-                 "[%g,%g,%g], which is not non-negative",
-                 rl, n + 1, double(rad[0]), double(rad[1]), double(rad[2]));
+      CCTK_VERROR("The radius of refinement level %d of region %d is "
+                  "[%g,%g,%g], which is not non-negative",
+                  rl, n + 1, double(rad[0]), double(rad[1]), double(rad[2]));
       found_error = true;
     }
     this->_radius.at(rl) = rad;
   }
 
   if (this->_num_levels > maxreflevels) {
-    CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Region %d has %d levels active, which is larger than the "
-               "maximum number of refinement levels %d",
-               n + 1, this->_num_levels, maxreflevels);
+    CCTK_VERROR("Region %d has %d levels active, which is larger than the "
+                "maximum number of refinement levels %d",
+                n + 1, this->_num_levels, maxreflevels);
     found_error = true;
   }
 
   if (found_error) {
-    CCTK_WARN(CCTK_WARN_ABORT, "Errors found in grid structure specification");
+    CCTK_ERROR("Errors found in grid structure specification");
   }
 }
 
@@ -117,8 +113,7 @@ void Regrid(cGH const *const cctkGH, gh::rregs &regss) {
   DECLARE_CCTK_PARAMETERS;
 
   if (verbose or veryverbose) {
-    CCTK_VInfo(CCTK_THORNSTRING,
-               "Regridding level %d map %d at iteration %d time %g", reflevel,
+    CCTK_VINFO("Regridding level %d map %d at iteration %d time %g", reflevel,
                Carpet::map, cctkGH->cctk_iteration, cctkGH->cctk_time);
   }
 
@@ -191,7 +186,7 @@ void Regrid(cGH const *const cctkGH, gh::rregs &regss) {
       ++min_rl;
     }
     if (verbose or veryverbose) {
-      CCTK_VInfo(CCTK_THORNSTRING, "Regridding levels %d and up", min_rl);
+      CCTK_VINFO("Regridding levels %d and up", min_rl);
     }
   }
 
@@ -353,8 +348,7 @@ void Regrid(cGH const *const cctkGH, gh::rregs &regss) {
 
     // Enforce properties on this level
     for (int count = 0;; ++count) {
-      CCTK_VInfo(CCTK_THORNSTRING,
-                 "Enforcing grid structure properties, iteration %d", count);
+      CCTK_VINFO("Enforcing grid structure properties, iteration %d", count);
       bool done_enforcing = true;
       ibset const old_regions = regions.at(rl);
       for (vector<property *>::iterator pi = properties.begin();
@@ -370,15 +364,14 @@ void Regrid(cGH const *const cctkGH, gh::rregs &regss) {
         break;
 
       if (regions.at(rl) == old_regions) {
-        CCTK_WARN(CCTK_WARN_ABORT, "Could not enforce grid structure "
-                                   "properties (not making any progress); "
-                                   "giving up");
+        CCTK_ERROR("Could not enforce grid structure "
+                   "properties (not making any progress); "
+                   "giving up");
       }
       if (count == 10) {
-        CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                   "Could not enforce grid structure properties after %d "
-                   "iterations; giving up",
-                   count);
+        CCTK_VERROR("Could not enforce grid structure properties after %d "
+                    "iterations; giving up",
+                    count);
       }
       if (count != 0) {
         // This may not be true. However, the previous version of
@@ -407,8 +400,7 @@ void Regrid(cGH const *const cctkGH, gh::rregs &regss) {
       all_is_well = all_is_well and test_satisfied;
     }
     if (not all_is_well) {
-      CCTK_WARN(CCTK_WARN_ABORT,
-                "Not all necessary grid structure properties are holding");
+      CCTK_ERROR("Not all necessary grid structure properties are holding");
     }
 
     // Create a vector of bboxes for this level
@@ -487,14 +479,13 @@ CarpetRegrid2_Regrid(CCTK_POINTER_TO_CONST const cctkGH_,
     if (do_recompose) {
       for (int n = 0; n < num_centres; ++n) {
         if (active[n]) {
-          CCTK_VInfo(CCTK_THORNSTRING,
-                     "Centre %d is at position [%g,%g,%g] with %d levels",
+          CCTK_VINFO("Centre %d is at position [%g,%g,%g] with %d levels",
                      n + 1, static_cast<double>(position_x[n]),
                      static_cast<double>(position_y[n]),
                      static_cast<double>(position_z[n]),
                      static_cast<int>(num_levels[n]));
         } else {
-          CCTK_VInfo(CCTK_THORNSTRING, "Centre %d is not active", n + 1);
+          CCTK_VINFO("Centre %d is not active", n + 1);
         }
       }
     }
@@ -713,14 +704,13 @@ CarpetRegrid2_RegridMaps(CCTK_POINTER_TO_CONST const cctkGH_,
     if (do_recompose) {
       for (int n = 0; n < num_centres; ++n) {
         if (active[n]) {
-          CCTK_VInfo(CCTK_THORNSTRING,
-                     "Centre %d is at position [%g,%g,%g] with %d levels",
+          CCTK_VINFO("Centre %d is at position [%g,%g,%g] with %d levels",
                      n + 1, static_cast<double>(position_x[n]),
                      static_cast<double>(position_y[n]),
                      static_cast<double>(position_z[n]),
                      static_cast<int>(num_levels[n]));
         } else {
-          CCTK_VInfo(CCTK_THORNSTRING, "Centre %d is not active", n + 1);
+          CCTK_VINFO("Centre %d is not active", n + 1);
         }
       }
     }
@@ -742,8 +732,7 @@ CarpetRegrid2_RegridMaps(CCTK_POINTER_TO_CONST const cctkGH_,
         // initial regrid, and the regrid before the first time step
         if (add_levels_automatically and cctk_iteration > 1) {
           num_levels[n] = min(int(num_levels[n] + 1), maxreflevels);
-          CCTK_VInfo(CCTK_THORNSTRING,
-                     "Increasing number of levels of centre %d to %d (it=%d)",
+          CCTK_VINFO("Increasing number of levels of centre %d to %d (it=%d)",
                      n + 1, static_cast<int>(num_levels[n]), cctk_iteration);
         }
 
