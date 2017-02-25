@@ -305,6 +305,7 @@ void Regrid(cGH const *const cctkGH, gh::rregs &regss) {
   // Properties to be enforced "until all is well"
   vector<property *> properties;
   properties.push_back(new combine_regions());
+  properties.push_back(new granulated());
   properties.push_back(new snap_coarse());
   properties.push_back(new rotsym90());
   properties.push_back(new rotsym180());

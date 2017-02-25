@@ -62,6 +62,17 @@ class combine_regions : public property {
                     vector<ibset> &regions, int rl);
 };
 
+// Align the boxes with granularity
+class granulated : public property {
+  ibset granulated_regions(gh const &hh, dh const &dd,
+                           level_boundary const &bnd,
+                           vector<ibset> const &regions, int rl);
+  bool test_impl(gh const &hh, dh const &dd, level_boundary const &bnd,
+                 vector<ibset> const &regions, int rl);
+  void enforce_impl(gh const &hh, dh const &dd, level_boundary const &bnd,
+                    vector<ibset> &regions, int rl);
+};
+
 // Align the boxes with the next coarser grid
 class snap_coarse : public property {
   ibset snapped_regions(gh const &hh, dh const &dd, level_boundary const &bnd,
