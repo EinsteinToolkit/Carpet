@@ -196,6 +196,101 @@ void combine_regions::enforce_impl(gh const &hh, dh const &dd,
 }
 
 //////////////////////////////////////////////////////////////////////////////
+// Align the boxes with granularity
+//////////////////////////////////////////////////////////////////////////////
+
+ibset granulated::granulated_regions(gh const &hh, dh const &dd,
+                                     level_boundary const &bnd,
+                                     vector<ibset> const &regions,
+                                     int const rl) {
+  DECLARE_CCTK_PARAMETERS;
+
+  assert(rl > 0);
+
+  ibbox const &base = hh.baseextent(0, rl);
+#warning "TODO: Correct this"
+  ivect const origin = base.lower();
+
+  ibset granned;
+
+  for (ibset::const_iterator ibb = regions.at(rl).begin();
+       ibb != regions.at(rl).end(); ++ibb) {
+    ibbox const &bb = *ibb;
+    assert(not bb.empty());
+
+    // We want to align the current level (including its buffer zones) with the
+    // granularity
+
+    ivect const &blo = bb.lower();
+    ivect const &bhi = bb.upper() + bb.stride();
+    ivect const &str = bb.stride();
+
+    assert(all((origin - blo) % str == 0));
+    assert(all((origin - bhi) % str == 0));
+    ivect const alo = +ialign(+blo - origin, str * granularity) + origin;
+    ivect const ahi = -ialign(-bhi + origin, str * granularity) + origin;
+    assert(all(alo <= blo && alo + str * (granularity - 1) >= blo));
+    assert(all(ahi >= bhi && ahi - str * (granularity - 1) <= bhi));
+    ibbox const aa(alo, ahi - str, str);
+    assert(aa >= bb);
+
+    granned |= aa;
+  }
+
+  // We don't want to remove any points
+  ibset const &original = regions.at(rl);
+  // return granned | original;
+  if (not(granned >= original)) {
+    cout << "granned=" << granned << "\n"
+         << "original=" << original << "\n"
+         << "original-granned=" << (original - granned) << "\n";
+  }
+  assert(granned >= original);
+
+  return granned;
+}
+
+bool granulated::test_impl(gh const &hh, dh const &dd,
+                           level_boundary const &bnd,
+                           vector<ibset> const &regions, int const rl) {
+  DECLARE_CCTK_PARAMETERS;
+
+  // TODO: Skip this is granularity is 1
+
+  ibset const granned = granulated_regions(hh, dd, bnd, regions, rl);
+
+  // We cannot test for equality, since the difference may be
+  // outside of the domain (and hence irrelevant)
+  // return regions.AT(rl) == granned;
+
+  // Test whether any part of the difference (i.e. that part of the level that
+  // would be added by granulating) is inside the domain. If the difference is
+  // outside, we can safely ignore it.
+  ibbox const &baseextent = hh.baseextent(0, rl);
+  ibset const difference = granned - regions.AT(rl);
+  return (difference & baseextent).empty();
+}
+
+void granulated::enforce_impl(gh const &hh, dh const &dd,
+                              level_boundary const &bnd, vector<ibset> &regions,
+                              int const rl) {
+  DECLARE_CCTK_PARAMETERS;
+
+  assert(granularity > 1);
+
+  if (veryverbose) {
+    cout << "Refinement level " << rl << ": enforcing granularity of "
+         << granularity << "...\n";
+  }
+
+  regions.AT(rl) = granulated_regions(hh, dd, bnd, regions, rl);
+
+  if (veryverbose) {
+    cout << "   New regions are " << regions.at(rl) << "\n";
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////////
 // Align the boxes with the next coarser grid
 //////////////////////////////////////////////////////////////////////////////
 
