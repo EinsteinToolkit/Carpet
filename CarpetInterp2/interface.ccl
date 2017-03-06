@@ -16,6 +16,7 @@ USES INCLUDE HEADER: vect.hh
 USES INCLUDE HEADER: carpet.hh
 uses include header: Timer.hh
 
+uses include header: vectors.h
 
 
 # Get access to communicators

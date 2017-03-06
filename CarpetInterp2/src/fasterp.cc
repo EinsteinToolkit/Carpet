@@ -21,6 +21,7 @@
 #include <vect.hh>
 
 #include "fasterp.hh"
+#include "vectors.h"
 
 #ifdef CARPETINTERP2_CHECK
 #define CI2C(x, y) x, y
@@ -285,6 +286,14 @@ void fasterp_src_loc_t::interpolate(ivect const &ash,
   size_t const dj = di * ash[0];
   size_t const dk = dj * ash[1];
 
+  // we pad coeffs with zeros so that the extra vector elements don't spoil the
+  // sum
+  CCTK_REAL coeffs0[O0 + 1 + CCTK_REAL_VEC_SIZE-1]
+    CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL)) = {0.};
+  for (size_t i = 0 ; i <= O0; ++i) {
+    coeffs0[i] = coeffs[0][i];
+  }
+
 #ifdef CARPETINTERP2_CHECK
   assert(all(ind >= 0 and ind + ivect(O0, O1, O2) < lsh));
   assert(ind3d == index(ash, ind));
@@ -292,38 +301,30 @@ void fasterp_src_loc_t::interpolate(ivect const &ash,
 #endif
 
   for (size_t v = 0; v < varptrs.size(); ++v) {
-    CCTK_REAL tmp = 0.0;
+    CCTK_REAL_VEC tmp = vec_set1(0.0);
     const CCTK_REAL *restrict const varptr = &varptrs.AT(v)[ind3d];
 
     for (size_t k = 0; k <= O2; ++k) {
       CCTK_REAL const coeff_k = O2 == 0 ? 1.0 : coeffs[2][k];
       for (size_t j = 0; j <= O1; ++j) {
         CCTK_REAL const coeff_jk = coeff_k * (O1 == 0 ? 1.0 : coeffs[1][j]);
-#ifndef __BIGGEST_ALIGNMENT__    // this is a GCC extension
-#define __BIGGEST_ALIGNMENT__ 64 // a guess
-#endif
-        CCTK_REAL buffer[O0 + 1]
-            __attribute__((__aligned__(__BIGGEST_ALIGNMENT__)));
-#ifdef __INTEL_COMPILER
-#pragma vector always
-#else
-#pragma omp simd
-#endif
-        for (size_t i = 0; i <= O0; ++i) {
-          buffer[i] = varptr[i * di + j * dj + k * dk];
+        CCTK_REAL_VEC buffer[(O0 + 1) / CCTK_REAL_VEC_SIZE + 1];
+        for (size_t i = 0, ii = 0; i <= O0; i += CCTK_REAL_VEC_SIZE, ++ii) {
+          buffer[ii] = vec_loadu(varptr[i * di + j * dj + k * dk]);
         }
-#ifdef __INTEL_COMPILER
-#pragma vector always
-#else
-#pragma omp simd reduction(+ : tmp)
-#endif
-        for (size_t i = 0; i <= O0; ++i) {
-          CCTK_REAL const coeff_ijk = coeff_jk * (O0 == 0 ? 1.0 : coeffs[0][i]);
-          tmp += coeff_ijk * buffer[i];
+        for (size_t i = 0, ii = 0; i <= O0; i += CCTK_REAL_VEC_SIZE, ++ii) {
+          CCTK_REAL_VEC const coeff_ijk =
+              coeff_jk * (O0 == 0 ? vec_set1(1.0) : vec_load(coeffs0[i]));
+          tmp += coeff_ijk * buffer[ii];
         }
       }
     }
-    vals[v] = tmp;
+    // there is no horizontal sum in Vectors
+    CCTK_REAL tmp2 = 0.;
+    for(size_t d = 0; d < CCTK_REAL_VEC_SIZE; ++d) {
+      tmp2 += vec_elt(tmp, d);
+    }
+    vals[v] = tmp2;
   } // for v
 
 #ifdef CARPETINTERP2_CHECK
