@@ -610,6 +610,11 @@ BOOLEAN use_unusedpoints_mask "Turn on storage and usage of 'unusedpoints_mask'"
 {
 } "no"
 
+BOOLEAN use_psync "Whether presync causes fatal errors"
+{
+} "no"
+
+# Strange error occurs if this is named "presync_error". Why?
 BOOLEAN psync_error "Whether presync causes fatal errors"
 {
 } "no"

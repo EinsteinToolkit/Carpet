@@ -110,7 +110,8 @@ int CallFunction(void *function,           ///< the function to call
   // Filled in by PreSyncGroups
   std::set<int> pregroups;
 
-  PreCheckValid(attribute,cctkGH,pregroups);
+  if(use_psync)
+    PreCheckValid(attribute,cctkGH,pregroups);
   if (attribute->meta or attribute->meta_early or attribute->meta_late or
       is_meta_mode()) {
     // Convtest operation
@@ -138,6 +139,8 @@ int CallFunction(void *function,           ///< the function to call
                 } catch(AddVariables av) {
                   av.add(pregroups);
                   done = false;
+                  // TODO: This is hacky. Probably it should not be kept.
+                  assert(false);
                 }
               }
               if (not sync_groups.empty()) {
@@ -434,25 +437,18 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
                                 map, timelevel, timelevel_offset);
 #endif
     timer.start();
+    #if 0
+    std::cout << ">> pre  : " << attribute->routine << std::endl;
+    ShowValid();
+    CCTK_REAL *var = (CCTK_REAL*)CCTK_VarDataPtr(cctkGH,0,"PRESYNCWAVE::psi");
+    #endif
     if (CCTK_IsFunctionAliased("Accelerator_PreCallFunction")) {
       Timers::Timer pre_timer("PreCall");
       pre_timer.start();
       Accelerator_PreCallFunction(cctkGH, attribute);
       pre_timer.stop();
     }
-    #if 0
-    std::cout << ">> pre  : " << attribute->routine << std::endl;
-    ShowValid();
-    CCTK_REAL *var = (CCTK_REAL*)CCTK_VarDataPtr(cctkGH,0,"PRESYNCWAVE::psi");
-    #endif
     int const res = CCTK_CallFunction(function, attribute, data);
-    #if 0
-    if(var != 0) {
-      int zero = CCTK_GFINDEX3D(cctkGH,0,0,0);
-      std::cout << " -->zero=" << var[zero] << std::endl;
-    }
-    std::cout << ">> post : " << attribute->routine << std::endl;
-    #endif
     assert(res == 0);
     if (CCTK_IsFunctionAliased("Accelerator_PostCallFunction")) {
       Timers::Timer post_timer("PostCall");
@@ -460,6 +456,13 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
       Accelerator_PostCallFunction(cctkGH, attribute);
       post_timer.stop();
     }
+    #if 0
+    if(var != 0) {
+      int zero = CCTK_GFINDEX3D(cctkGH,0,0,0);
+      std::cout << " -->zero=" << var[zero] << std::endl;
+    }
+    std::cout << ">> post : " << attribute->routine << std::endl;
+    #endif
     timer.stop();
     CheckFence(cctkGH, attribute);
 #ifdef REQUIREMENTS_HH
