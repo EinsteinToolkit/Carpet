@@ -30,12 +30,12 @@ CoordBase::dx = 1.0
 CoordBase::dy = 1.0
 CoordBase::dz = 1.0
 
-CoordBase::boundary_size_x_lower = 2
-CoordBase::boundary_size_y_lower = 2
-CoordBase::boundary_size_z_lower = 2
-CoordBase::boundary_size_x_upper = 2
-CoordBase::boundary_size_y_upper = 2
-CoordBase::boundary_size_z_upper = 2
+CoordBase::boundary_size_x_lower = 1
+CoordBase::boundary_size_y_lower = 1
+CoordBase::boundary_size_z_lower = 1
+CoordBase::boundary_size_x_upper = 1
+CoordBase::boundary_size_y_upper = 1
+CoordBase::boundary_size_z_upper = 1
 
 CoordBase::boundary_staggered_x_lower = yes
 CoordBase::boundary_staggered_y_lower = yes
@@ -51,14 +51,16 @@ MoL::MoL_Intermediate_Steps = 2
 Carpet::domain_from_coordbase = yes
 Carpet::init_fill_timelevels = yes
 Carpet::refinement_centering = "cell"
-Carpet::ghost_size = 2
+Carpet::ghost_size = 1
 Carpet::use_buffer_zones = yes
-Carpet::granularity = 2
-Carpet::granularity_boundary = 0
+Carpet::granularity = 4
+Carpet::granularity_boundary = 1
 
 ActiveThorns = "CarpetRegrid2"
 CarpetRegrid2::verbose = yes
+CarpetRegrid2::veryverbose = yes
 CarpetRegrid2::snap_to_coarse = yes
+CarpetRegrid2::granularity = 4
 
 Carpet::max_refinement_levels = 3
 CarpetRegrid2::regrid_every = 0
@@ -66,8 +68,8 @@ CarpetRegrid2::num_centres = 1
 CarpetRegrid2::num_levels_1 = 3
 
 CarpetRegrid2::position_z_1 = 0.5
-CarpetRegrid2::radius_1[1] = 1.0
-CarpetRegrid2::radius_1[2] = 0.5
+CarpetRegrid2::radius_1[1] = 1.5
+CarpetRegrid2::radius_1[2] = 0.75
 
 IO::out_dir = $parfile
 IO::out_fileinfo = "none"
