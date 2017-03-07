@@ -288,9 +288,9 @@ void fasterp_src_loc_t::interpolate(ivect const &ash,
 
   // we pad coeffs with zeros so that the extra vector elements don't spoil the
   // sum
-  CCTK_REAL coeffs0[O0 + 1 + CCTK_REAL_VEC_SIZE-1]
-    CCTK_ATTRIBUTE_ALIGNED(CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL)) = {0.};
-  for (size_t i = 0 ; i <= O0; ++i) {
+  CCTK_REAL coeffs0[O0 + 1 + CCTK_REAL_VEC_SIZE - 1] CCTK_ATTRIBUTE_ALIGNED(
+      CCTK_REAL_VEC_SIZE * sizeof(CCTK_REAL)) = {0.};
+  for (size_t i = 0; i <= O0; ++i) {
     coeffs0[i] = coeffs[0][i];
   }
 
@@ -307,21 +307,20 @@ void fasterp_src_loc_t::interpolate(ivect const &ash,
     for (size_t k = 0; k <= O2; ++k) {
       CCTK_REAL const coeff_k = O2 == 0 ? 1.0 : coeffs[2][k];
       for (size_t j = 0; j <= O1; ++j) {
-        CCTK_REAL const coeff_jk = coeff_k * (O1 == 0 ? 1.0 : coeffs[1][j]);
-        CCTK_REAL_VEC buffer[(O0 + 1) / CCTK_REAL_VEC_SIZE + 1];
-        for (size_t i = 0, ii = 0; i <= O0; i += CCTK_REAL_VEC_SIZE, ++ii) {
-          buffer[ii] = vec_loadu(varptr[i * di + j * dj + k * dk]);
-        }
+        CCTK_REAL_VEC const coeff_jk =
+            vec_set1(coeff_k * (O1 == 0 ? 1.0 : coeffs[1][j]));
         for (size_t i = 0, ii = 0; i <= O0; i += CCTK_REAL_VEC_SIZE, ++ii) {
           CCTK_REAL_VEC const coeff_ijk =
               coeff_jk * (O0 == 0 ? vec_set1(1.0) : vec_load(coeffs0[i]));
-          tmp += coeff_ijk * buffer[ii];
+          CCTK_REAL_VEC const buffer =
+              vec_loadu(varptr[i * di + j * dj + k * dk]);
+          tmp += coeff_ijk * buffer;
         }
       }
     }
     // there is no horizontal sum in Vectors
     CCTK_REAL tmp2 = 0.;
-    for(size_t d = 0; d < CCTK_REAL_VEC_SIZE; ++d) {
+    for (size_t d = 0; d < CCTK_REAL_VEC_SIZE; ++d) {
       tmp2 += vec_elt(tmp, d);
     }
     vals[v] = tmp2;
