@@ -318,8 +318,24 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
       valid_k[vt] |= WH_GHOSTS;
     }
   }
-  if(sync_groups.size()>0)
+  if(sync_groups.size()>0) {
+      const bool debug = false;
+      if (debug) {
+        for (int sgi=0;sgi<sync_groups.size();sgi++) {
+          int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
+          int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
+          for (int vi=i0;vi<iN;vi++) {
+            std::ostringstream msg;
+            msg << "  Presync: syncing for "
+                << attribute->thorn << "::" << attribute->routine
+                << " in/at " << attribute->where
+                << " variable " << CCTK_FullName(vi);
+            CCTK_INFO(msg.str().c_str());
+          }
+        }
+      }
     SyncProlongateGroups(cctkGH, sync_groups, attribute);
+  }
 }
 
 std::map<var_tuple,int> tmp_read, tmp_write;
