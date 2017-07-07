@@ -107,8 +107,8 @@ void restrict_3d_cc_rf2(T const *restrict const src,
 
   if (not use_loopcontrol_in_operators) {
 
-// Loop over coarse region
-#pragma omp parallel for collapse(3)
+    // Loop over coarse region
+    // #pragma omp parallel for collapse(3)
     for (int k = 0; k < regkext; ++k) {
       for (int j = 0; j < regjext; ++j) {
         for (int i = 0; i < regiext; ++i) {
@@ -130,8 +130,8 @@ void restrict_3d_cc_rf2(T const *restrict const src,
 
   } else {
 
-// Loop over coarse region
-#pragma omp parallel
+    // Loop over coarse region
+    // #pragma omp parallel
     CCTK_LOOP3(restrict_3d_cc_rf2, i, j, k, 0, 0, 0, regiext, regjext, regkext,
                dstipadext, dstjpadext, dstkpadext) {
 

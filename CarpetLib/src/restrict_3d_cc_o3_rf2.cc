@@ -215,8 +215,8 @@ void restrict_3d_cc_o3_rf2(
 
   } else {
 
-// Loop over coarse region
-#pragma omp parallel
+    // Loop over coarse region
+    // #pragma omp parallel
     CCTK_LOOP3(restrict_3d_cc_o3_rf2, i, j, k, 0, 0, 0, regiext, regjext,
                regkext, dstipadext, dstjpadext, dstkpadext) {
 

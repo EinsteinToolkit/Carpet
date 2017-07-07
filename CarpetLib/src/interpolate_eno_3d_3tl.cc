@@ -133,15 +133,14 @@ void interpolate_eno_3d_3tl(
   bool const use_23 =
       t >= std::min(t2, t3) - eps and t <= std::max(t2, t3) + eps;
   assert(use_12 or use_23);
-// TODO: Instead of use_12, calculate 3 coefficents that perform
-// the desired 2-point interpolation, which would avoid the if
-// statement in the loop, simplifying the code.
+  // TODO: Instead of use_12, calculate 3 coefficents that perform
+  // the desired 2-point interpolation, which would avoid the if
+  // statement in the loop, simplifying the code.
 
-// Loop over region
-#pragma omp parallel
+  // Loop over region
+  // #pragma omp parallel
   CCTK_LOOP3(interpolate_end_3d_3tl, i, j, k, 0, 0, 0, regiext, regjext,
              regkext, srcipadext, srcjpadext, srckpadext) {
-
     T const s1 = src1[SRCIND3(i, j, k)];
     T const s2 = src2[SRCIND3(i, j, k)];
     T const s3 = src3[SRCIND3(i, j, k)];

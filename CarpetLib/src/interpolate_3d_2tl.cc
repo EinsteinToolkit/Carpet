@@ -106,8 +106,8 @@ void interpolate_3d_2tl(T const *restrict const src1, CCTK_REAL const t1,
   RT const s1fac = (t - t2) / (t1 - t2);
   RT const s2fac = (t - t1) / (t2 - t1);
 
-// Loop over region
-#pragma omp parallel
+  // Loop over region
+  // #pragma omp parallel
   CCTK_LOOP3(interpolate_3d_2tl, i, j, k, 0, 0, 0, regiext, regjext, regkext,
              dstipadext, dstjpadext, dstkpadext) {
     dst[DSTIND3(i, j, k)] =

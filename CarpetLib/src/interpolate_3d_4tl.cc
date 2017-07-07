@@ -117,8 +117,8 @@ void interpolate_3d_4tl(T const *restrict const src1, CCTK_REAL const t1,
   RT const s4fac =
       (t - t1) * (t - t2) * (t - t3) / ((t4 - t1) * (t4 - t2) * (t4 - t3));
 
-// Loop over region
-#pragma omp parallel
+  // Loop over region
+  // #pragma omp parallel
   CCTK_LOOP3(interpolate_3d_4tl, i, j, k, 0, 0, 0, regiext, regjext, regkext,
              dstipadext, dstjpadext, dstkpadext) {
     dst[DSTIND3(i, j, k)] =

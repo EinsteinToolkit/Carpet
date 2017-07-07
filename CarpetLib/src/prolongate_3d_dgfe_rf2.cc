@@ -133,7 +133,7 @@ void prolongate_3d_dgfe_rf2(
 
     // Loop over fine region
     ptrdiff_t const i = 0;
-#pragma omp parallel for collapse(2)
+    // #pragma omp parallel for collapse(2)
     // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
     for (/*ptrdiff_t*/ int k = 0; k < regkext; k += 2 * (ORDER + 1)) {
       for (/*ptrdiff_t*/ int j = 0; j < regjext; j += 2 * (ORDER + 1)) {
@@ -169,7 +169,7 @@ void prolongate_3d_dgfe_rf2(
 
     // Loop over fine region
     ptrdiff_t const j = 0;
-#pragma omp parallel for collapse(2)
+    // #pragma omp parallel for collapse(2)
     // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
     for (/*ptrdiff_t*/ int k = 0; k < regkext; k += 2 * (ORDER + 1)) {
       for (/*ptrdiff_t*/ int i = 0; i < regiext; i += 2 * (ORDER + 1)) {
@@ -205,7 +205,7 @@ void prolongate_3d_dgfe_rf2(
 
     // Loop over fine region
     ptrdiff_t const k = 0;
-#pragma omp parallel for collapse(2)
+    // #pragma omp parallel for collapse(2)
     // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
     for (/*ptrdiff_t*/ int j = 0; j < regjext; j += 2 * (ORDER + 1)) {
       for (/*ptrdiff_t*/ int i = 0; i < regiext; i += 2 * (ORDER + 1)) {
@@ -237,8 +237,8 @@ void prolongate_3d_dgfe_rf2(
     int const srcstr[3] = {srcdi, srcdj, srcdk};
     int const dststr[3] = {dstdi, dstdj, dstdk};
 
-// Loop over fine region
-#pragma omp parallel for collapse(3)
+    // Loop over fine region
+    // #pragma omp parallel for collapse(3)
     // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
     for (/*ptrdiff_t*/ int k = 0; k < regkext; k += 2 * (ORDER + 1)) {
       for (/*ptrdiff_t*/ int j = 0; j < regjext; j += 2 * (ORDER + 1)) {

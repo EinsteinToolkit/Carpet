@@ -110,8 +110,8 @@ void restrict_3d_rf2(T const *restrict const src,
 
   } else {
 
-// Loop over coarse region
-#pragma omp parallel
+    // Loop over coarse region
+    // #pragma omp parallel
     CCTK_LOOP3(restrict_3d_rf2, i, j, k, 0, 0, 0, regiext, regjext, regkext,
                dstipadext, dstjpadext, dstkpadext) {
       dst[DSTIND3(i, j, k)] = src[SRCIND3(2 * i, 2 * j, 2 * k)];
