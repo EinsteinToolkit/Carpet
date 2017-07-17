@@ -257,12 +257,10 @@ static void ProlongateGroupBoundaries(const cGH *cctkGH,
     for (astate state = static_cast<astate>(0); state != state_done;
          state = static_cast<astate>(static_cast<int>(state) + 1)) {
       ostringstream name1;
-      name1 << "comm_state[" << timers.size() << "]"
-            << "." << tostring(state) << ".user";
+      name1 << "comm_state[" << timers.size() << "].user." << tostring(state);
       timers.push_back(new Timers::Timer(name1.str()));
       ostringstream name2;
-      name2 << "comm_state[" << timers.size() << "]"
-            << "." << tostring(state) << ".step";
+      name2 << "comm_state[" << timers.size() << "].step." << tostring(state);
       timers.push_back(new Timers::Timer(name2.str()));
     }
   }
