@@ -542,8 +542,7 @@ void ggf::transfer_from_all(comm_state &state, int const tl1, int const rl1,
 
   // Interpolation orders
   assert(transport_operator != op_none);
-  int const pos =
-      transport_operator == op_copy ? 0 : d.prolongation_orders_space.AT(rl2);
+  int const pos = d.prolongation_orders_space.AT(rl2);
   int const pot = transport_operator == op_copy ? 0 : prolongation_order_time;
 
   vector<const gdata *> gsrcs(tl2s.size());
