@@ -71,7 +71,7 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
     for (int c = 0;
          c < arrdata.at(gindex).at(Carpet::map).hh->components(refinementlevel);
          ++c) {
-// Using "interior" removes ghost zones and refinement boundaries.
+      // Using "interior" removes ghost zones and refinement boundaries.
       bboxes += arrdata.at(gindex)
                     .at(Carpet::map)
                     .dd->light_boxes.at(mglevel)
