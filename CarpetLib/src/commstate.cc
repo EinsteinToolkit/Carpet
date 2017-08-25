@@ -1,6 +1,12 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#ifdef HAVE_CAPABILITY_FunHPC
+#include <funhpc/server.hpp>
+#include <qthread/future.hpp>
+#include <qthread/thread.hpp>
+#endif
+
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -53,6 +59,11 @@ void comm_state::procbufdesc::reinitialize() {
   recvbuf = NULL;
   did_post_send = false;
   did_post_recv = false;
+
+#ifdef HAVE_CAPABILITY_FunHPC
+  assert(futures.size() == 0);
+  futures.resize(0);
+#endif
 }
 
 comm_state::typebufdesc::typebufdesc()
@@ -63,6 +74,10 @@ bool comm_state::typebufs_busy = false;
 vector<comm_state::typebufdesc> comm_state::typebufs;
 vector<MPI_Request> comm_state::srequests;
 vector<MPI_Request> comm_state::rrequests;
+
+#ifdef HAVE_CAPABILITY_FunHPC
+vector<qthread::future<void> > comm_state::futures;
+#endif
 
 // Communication state control
 comm_state::comm_state() {
@@ -352,6 +367,25 @@ void comm_state::step() {
   }
 
   case state_do_some_work: {
+#ifdef HAVE_CAPABILITY_FunHPC
+    qthread::this_thread::yield();
+    if (!overlap_funhpc_and_comm) {
+      static HighResTimer::HighResTimer timer(
+          "commstate::do_some_work::future::wait_early");
+      auto clock = timer.start();
+      if (commstate_verbose) {
+        CCTK_INFO("About to future::wait_early");
+      }
+      for (auto &f : futures)
+        f.get();
+      futures.resize(0);
+      if (commstate_verbose) {
+        CCTK_INFO("Finished future::wait_early");
+      }
+      clock.stop(0);
+    }
+#endif
+
     static HighResTimer::HighResTimer timer("commstate::do_some_work::waitall");
     auto timer_clock = timer.start();
     if (commstate_verbose) {
@@ -506,6 +540,25 @@ void comm_state::step() {
       }
 
     } // for n
+
+#ifdef HAVE_CAPABILITY_FunHPC
+    if (overlap_funhpc_and_comm) {
+      static HighResTimer::HighResTimer timer(
+          "commstate::do_some_work::future::wait");
+      auto clock = timer.start();
+      if (commstate_verbose) {
+        CCTK_INFO("About to future::wait");
+      }
+      for (auto &f : futures)
+        f.get();
+      futures.resize(0);
+      if (commstate_verbose) {
+        CCTK_INFO("Finished future::wait");
+      }
+      clock.stop(0);
+      assert(futures.empty());
+    }
+#endif
 
     thestate = state_done;
     break;
@@ -672,4 +725,10 @@ void comm_state::commit_recv_space(unsigned const type, int const proc,
   assert(procbuf.recvbuf <= &procbuf.recvbufbase.front() +
                                 procbuf.recvbufsize * typebuf.datatypesize);
 }
+
+#ifdef HAVE_CAPABILITY_FunHPC
+void comm_state::insert(qthread::future<void> &&f) {
+  futures.push_back(move(f));
+}
+#endif
 }

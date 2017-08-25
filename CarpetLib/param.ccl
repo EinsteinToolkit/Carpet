@@ -56,6 +56,14 @@ INT funhpc_blocksize "Block size for FunHPC parallelization" STEERABLE=always
   1:* :: ""
 } 8
 
+BOOLEAN use_funhpc_in_comm "Use FunHPC to parallelize communication operations" STEERABLE=always
+{
+} "no"
+
+BOOLEAN overlap_funhpc_and_comm "Overlap FunHPC parallelization and communication" STEERABLE=always
+{
+} "yes"
+
 
 
 restricted:

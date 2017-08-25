@@ -127,6 +127,8 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
                           int const dstproc, int const srcproc,
                           CCTK_REAL const time, int const order_space,
                           int const order_time) {
+  DECLARE_CCTK_PARAMETERS;
+
   bool const is_dst = dist::rank() == dstproc;
   bool const is_src = dist::rank() == srcproc;
   // Return early if this communication does not concern us
@@ -224,9 +226,32 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
 
   case state_do_some_work:
     // handle the process-local case
-    if (is_dst and is_src)
-      transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
-                              order_space, order_time);
+    if (is_dst and is_src) {
+      static HighResTimer::HighResTimer timer_submit(
+          "FunHPC:" __FILE__ ":" STRINGIFY(__LINE__) ":submit");
+      static HighResTimer::HighResTimer timer_threads(
+          "FunHPC:" __FILE__ ":" STRINGIFY(__LINE__) ":threads");
+      auto clock_submit = timer_submit.start();
+      if (use_funhpc_in_comm) {
+#ifdef HAVE_CAPABILITY_FunHPC
+        // We could start the local calculations earlier, either before or while
+        // filling the send buffers. However, we wait until here so that the
+        // send-buffer filling runs as fast as possible to reduce latency.
+        state.insert(qthread::async(qthread::launch::async, [=]() {
+          auto clock_threads = timer_threads.start();
+          transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
+                                  order_space, order_time);
+          clock_threads.stop(dstbox.size() * elementsize());
+        }));
+#else
+        CCTK_ERROR("Cannot use CarpetLib::use_funhpc_in_comm without FunHPC");
+#endif
+      } else {
+        transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
+                                order_space, order_time);
+      }
+      clock_submit.stop(00);
+    }
     break;
 
   case state_empty_recv_buffers:

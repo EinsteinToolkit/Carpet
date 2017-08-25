@@ -1,14 +1,16 @@
 #ifndef COMMSTATE_HH
 #define COMMSTATE_HH
 
+#include "dist.hh"
+
 #include <HighResTimer.hh>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
-#include <cstdlib>
-#include <iostream>
-#include <vector>
+#ifdef HAVE_CAPABILITY_FunHPC
+#include <qthread/future.hpp>
+#endif
 
 #ifdef CCTK_MPI
 #include <mpi.h>
@@ -16,8 +18,9 @@
 #include "nompi.h"
 #endif
 
-#include "dist.hh"
-#include "timestat.hh"
+#include <cstdlib>
+#include <iostream>
+#include <vector>
 
 namespace CarpetLib {
 using namespace std;
@@ -108,6 +111,11 @@ private:
     return reqs.back();
   }
 
+#ifdef HAVE_CAPABILITY_FunHPC
+  static bool did_enable;
+  static vector<qthread::future<void> > futures;
+#endif
+
 public:
   void reserve_send_space(unsigned type, int proc, ptrdiff_t npoints);
 
@@ -120,6 +128,10 @@ public:
   void commit_send_space(unsigned type, int proc, ptrdiff_t npoints);
 
   void commit_recv_space(unsigned type, int proc, ptrdiff_t npoints);
+
+#ifdef HAVE_CAPABILITY_FunHPC
+  void insert(qthread::future<void> &&f);
+#endif
 };
 }
 
