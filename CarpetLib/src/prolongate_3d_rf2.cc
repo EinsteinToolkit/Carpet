@@ -55,8 +55,7 @@ template <typename RT, int ORDER> struct coeffs1d {
     static_assert(ncoeffs == sizeof coeffs / sizeof *coeffs,
                   "coefficient array has wrong size");
 
-    // Do not test integer operators (they should be disabled
-    // anyway)
+    // Do not test integer operators (they should be disabled anyway)
     if (std::fabs(RT(0.5) - 0.5) > 1.0e-5)
       return;
 
@@ -396,8 +395,7 @@ void prolongate_3d_rf2(T const *restrict const src,
     CCTK_ERROR("Internal error: prolongation region bbox is not aligned with "
                "vertices");
 
-  // This could be handled, but is likely to point to an error
-  // elsewhere
+  // This could be handled, but is likely to point to an error elsewhere
   if (regbbox.empty())
     CCTK_ERROR("Internal error: region extent is empty");
 
