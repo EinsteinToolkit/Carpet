@@ -629,9 +629,12 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
           }
 
           if (dist::rank() == ioproc) {
-            WriteASCII(file, tmpdatas, ext, vindex, cctkGH->cctk_iteration,
+            ostringstream buf;
+            buf << setprecision(out_precision);
+            WriteASCII(buf, tmpdatas, ext, vindex, cctkGH->cctk_iteration,
                        offset1, dirs, rl, ml, m, c, tl, coord_time, coord_lower,
                        coord_upper, tmpcoords);
+            file << buf.str();
           }
 
           if (proc != ioproc) {
