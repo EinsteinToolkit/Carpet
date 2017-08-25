@@ -113,7 +113,7 @@ void interpolate_3d_3tl(T const *restrict const src1, CCTK_REAL const t1,
   CCTK_LOOP3(interpolate_3d_3tl, i, j, k, 0, 0, 0, regiext, regjext, regkext,
              dstipadext, dstjpadext, dstkpadext) {
 
-    dst[DSTIND3(i, j, k)] = +s1fac * src1[SRCIND3(i, j, k)] +
+    dst[DSTIND3(i, j, k)] = s1fac * src1[SRCIND3(i, j, k)] +
                             s2fac * src2[SRCIND3(i, j, k)] +
                             s3fac * src3[SRCIND3(i, j, k)];
   }

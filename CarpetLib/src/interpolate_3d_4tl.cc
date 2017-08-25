@@ -121,7 +121,7 @@ void interpolate_3d_4tl(T const *restrict const src1, CCTK_REAL const t1,
              dstipadext, dstjpadext, dstkpadext) {
 
     dst[DSTIND3(i, j, k)] =
-        +s1fac * src1[SRCIND3(i, j, k)] + s2fac * src2[SRCIND3(i, j, k)] +
+        s1fac * src1[SRCIND3(i, j, k)] + s2fac * src2[SRCIND3(i, j, k)] +
         s3fac * src3[SRCIND3(i, j, k)] + s4fac * src4[SRCIND3(i, j, k)];
   }
   CCTK_ENDLOOP3(interpolate_3d_4tl);
