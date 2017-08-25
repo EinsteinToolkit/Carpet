@@ -97,8 +97,7 @@ void TimerNode::stop() {
 
   // A timer can only be stopped if it is the current timer
   if (this != d_tree->current)
-    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                "Tried to stop non-current timer '%s'", getName().c_str());
+    CCTK_VERROR("Tried to stop non-current timer '%s'", getName().c_str());
 
   d_timer->stop();
 
@@ -236,8 +235,7 @@ void TimerNode::print(ostream &out, double total, int level, double threshold,
     const string root_timername =
         CarpetLib::broadcast_string(dist::comm(), 0, timername);
     if (timername != root_timername) {
-      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Timers are inconsistent across processes: root process "
+      CCTK_VERROR("Timers are inconsistent across processes: root process "
                   "expects timer %s, this process has timer %s instead",
                   root_timername.c_str(), timername.c_str());
     }
@@ -255,8 +253,7 @@ void TimerNode::print(ostream &out, double total, int level, double threshold,
     const string root_timername =
         CarpetLib::broadcast_string(dist::comm(), 0, timername);
     if (timername != root_timername) {
-      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Timers are inconsistent across processes: root process "
+      CCTK_VERROR("Timers are inconsistent across processes: root process "
                   "expects timer %s, this process has timer %s instead",
                   root_timername.c_str(), timername.c_str());
     }

@@ -53,8 +53,7 @@ void Timer::stop() {
     return; // do nothing if there is no root
   TimerNode *current_timer = d_tree->current;
   if (current_timer->getName() != name())
-    CCTK_VError(
-        __LINE__, __FILE__, CCTK_THORNSTRING,
+    CCTK_VERROR(
         "Trying to stop enclosing timer '%s' before enclosed timer '%s'",
         name().c_str(), current_timer->getName().c_str());
   current_timer->stop();
