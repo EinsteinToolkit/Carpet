@@ -41,7 +41,7 @@ inline T restrict1(T const *restrict const p, size_t const d1) {
   typedef typename typeprops<T>::real RT;
   RT const den = 256;
   RT const f2 = 3 / den, f1 = 25 / den, f0 = 150 / den;
-  T const res = +f2 * p[-2] - f1 * p[-1] + f0 * p[-0] + f0 * p[+1] -
+  T const res = f2 * p[-2] - f1 * p[-1] + f0 * p[-0] + f0 * p[+1] -
                 f1 * p[+2] + f2 * p[+3];
   return res;
 }
@@ -54,7 +54,7 @@ inline T restrict2(T const *restrict const p, size_t const d1,
   RT const den = 256;
   RT const f2 = 3 / den, f1 = 25 / den, f0 = 150 / den;
   T const res =
-      +f2 * restrict1(p - 2 * d2, d1) - f1 * restrict1(p - 1 * d2, d1) +
+      f2 * restrict1(p - 2 * d2, d1) - f1 * restrict1(p - 1 * d2, d1) +
       f0 * restrict1(p - 0 * d2, d1) + f0 * restrict1(p + 1 * d2, d1) -
       f1 * restrict1(p + 2 * d2, d1) + f2 * restrict1(p + 3 * d2, d1);
   return res;
@@ -68,7 +68,7 @@ inline T restrict3(T const *restrict const p, size_t const d1, size_t const d2,
   RT const den = 256;
   RT const f2 = 3 / den, f1 = 25 / den, f0 = 150 / den;
   T const res =
-      +f2 * restrict2(p - 2 * d3, d1, d2) - f1 * restrict2(p - 1 * d3, d1, d2) +
+      f2 * restrict2(p - 2 * d3, d1, d2) - f1 * restrict2(p - 1 * d3, d1, d2) +
       f0 * restrict2(p - 0 * d3, d1, d2) + f0 * restrict2(p + 1 * d3, d1, d2) -
       f1 * restrict2(p + 2 * d3, d1, d2) + f2 * restrict2(p + 3 * d3, d1, d2);
   return res;
