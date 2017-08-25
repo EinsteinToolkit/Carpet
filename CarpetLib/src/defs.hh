@@ -69,7 +69,7 @@ using namespace std;
 #ifndef CARPET_DIM
 #define CARPET_DIM 3
 #endif
-const int dim = CARPET_DIM;
+constexpr int dim = CARPET_DIM;
 
 // A type for counting grid points (should be at least 64 bits)
 typedef long long int size_type;
