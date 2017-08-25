@@ -58,9 +58,8 @@ template <typename RT, int ORDER> struct coeffs1d {
     static_assert(ncoeffs == sizeof coeffs / sizeof *coeffs,
                   "coefficient array has wrong size");
 
-    // Do not test integer operators (they should be disabled
-    // anyway)
-    if (fabs(RT(0.5) - 0.5) > 1.0e-5)
+    // Do not test integer operators (they should be disabled anyway)
+    if (std::fabs(RT(0.5) - 0.5) > 1.0e-5)
       return;
 
     // Test all orders
@@ -407,11 +406,9 @@ void prolongate_3d_rf2(T const *restrict const src,
                  "vertices");
   }
 
-  // This could be handled, but is likely to point to an error
-  // elsewhere
-  if (regbbox.empty()) {
-    CCTK_WARN(0, "Internal error: region extent is empty");
-  }
+  // This could be handled, but is likely to point to an error elsewhere
+  if (regbbox.empty())
+    CCTK_ERROR("Internal error: region extent is empty");
 
   ivect3 const regext = regbbox.shape() / regbbox.stride();
   assert(all((regbbox.lower() - srcbbox.lower()) % regbbox.stride() == 0));
