@@ -1504,7 +1504,7 @@ void get_boundary_specification(cGH const *const cctkGH, int const m,
             CCTK_ERROR("The parameters CoordBase::boundary_staggered specify a "
                        "staggered boundary.  Carpet does not support staggered "
                        "boundaries when Carpet::max_refinement_levels > 1 with "
-                       "Carpet::centering = \"vertex\"");
+                       "Carpet::refinement_centering = \"vertex\"");
           }
         } else if (CCTK_EQUALS(refinement_centering, "cell")) {
           if (not is_staggered[f][d]) {
@@ -1512,7 +1512,7 @@ void get_boundary_specification(cGH const *const cctkGH, int const m,
                        "non-staggered boundary.  Carpet does not support "
                        "non-staggered boundaries when "
                        "Carpet::max_refinement_levels > 1 with "
-                       "Carpet::centering = \"cell\"");
+                       "Carpet::refinement_centering = \"cell\"");
           }
         } else {
           assert(0);
