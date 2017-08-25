@@ -420,7 +420,8 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
 
         int const handle = ireduction->handle;
 
-        char result[100]; // assuming no type is larger
+        char resultbuf[100]; // assuming no type is larger
+        void *const result = &resultbuf;
 
         int const firstvar =
             one_file_per_group ? CCTK_FirstVarIndexI(group) : n;
@@ -429,6 +430,7 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
 
         for (int n = firstvar; n < firstvar + numvars; ++n) {
 
+          assert(CCTK_VarTypeSize(vartype) <= int(sizeof resultbuf));
           int const ierr =
               CCTK_Reduce(cctkGH, 0, handle, 1, vartype, result, 1, n);
           if (ierr) {
@@ -436,7 +438,7 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
             CCTK_VWARN(CCTK_WARN_ALERT,
                        "Error during reduction for variable \"%s\"", fullname);
             free(fullname);
-            memset(result, 0, sizeof result);
+            memset(result, 0, sizeof resultbuf);
           }
 
           if (CCTK_MyProc(cctkGH) == 0) {
