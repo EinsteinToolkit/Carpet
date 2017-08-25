@@ -145,8 +145,10 @@ void lc_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
       lc_assert((lc_fmax0 + lc_off0) % lc_aln0 == 0);                          \
       lc_assert((lc_fmax0 + lc_off0) % lc_str0 == 0);                          \
     }                                                                          \
-    const ptrdiff_t lc_iminpos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);       \
-    const ptrdiff_t lc_imaxpos = lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);       \
+    const ptrdiff_t lc_iminpos CCTK_ATTRIBUTE_UNUSED =                         \
+        lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);                                \
+    const ptrdiff_t lc_imaxpos CCTK_ATTRIBUTE_UNUSED =                         \
+        lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);                                \
     if (!lc_fmin0_is_outer)                                                    \
       lc_assert((lc_iminpos + lc_off0) % lc_aln0 == 0);                        \
     lc_assert((lc_iminpos + lc_off0) % lc_str0 == 0);                          \
