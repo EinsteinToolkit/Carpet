@@ -364,24 +364,17 @@ void Regrid(cGH const *const cctkGH, gh::rregs &regss) {
       if (done_enforcing)
         break;
 
-      if (regions.at(rl) == old_regions) {
+      if (regions.at(rl) == old_regions)
         CCTK_ERROR("Could not enforce grid structure "
                    "properties (not making any progress); "
                    "giving up");
-      }
-      if (count == 10) {
+      if (count == 10)
         CCTK_VERROR("Could not enforce grid structure properties after %d "
                     "iterations; giving up",
                     count);
-      }
-      if (count != 0) {
-        // This may not be true. However, the previous version of
-        // the code assumed this, so we want to know whether this
-        // fails.
-        CCTK_WARN(CCTK_WARN_ALERT, "Could not enforce grid structure "
-                                   "properties in this round, starting another "
-                                   "round");
-      }
+      if (count != 0)
+        CCTK_INFO("Could not enforce grid structure properties in this round, "
+                  "starting another round");
     }
 
     if (veryverbose) {
