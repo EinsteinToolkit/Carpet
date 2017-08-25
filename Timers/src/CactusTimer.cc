@@ -37,7 +37,7 @@ CactusTimer::CactusTimer(string timername) : running(false) {
 // Destroy a timer
 CactusTimer::~CactusTimer() {
   timerSet.remove(this);
-  check(not CCTK_TimerDestroyI(handle));
+  CCTK_TimerDestroyI(handle);
 }
 
 // Start the timer
@@ -191,7 +191,7 @@ void CactusTimer::printData() {
     stop();
 
 #if 0
-    check (not CCTK_TimerPrintDataI (handle, -1)); // -1 means: all clocks
+  CCTK_TimerPrintDataI(handle, -1); // -1 means: all clocks
 #endif
 
   static cTimerData *timer = 0;
