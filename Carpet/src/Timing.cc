@@ -300,13 +300,13 @@ static void UpdateUpdatesPerSecond(cGH const *const cctkGH) {
 
   // Calculate updates per second
   *local_grid_points_per_second =
-      *local_grid_point_updates_count / max(*time_computing, eps);
+      *local_grid_point_updates_count / max(*time_evolution, eps);
   *total_grid_points_per_second =
-      *total_grid_point_updates_count / max(*time_computing, eps);
+      *total_grid_point_updates_count / max(*time_evolution, eps);
   *local_interior_points_per_second =
-      *local_interior_point_updates_count / max(*time_computing, eps);
+      *local_interior_point_updates_count / max(*time_evolution, eps);
   *total_interior_points_per_second =
-      *total_interior_point_updates_count / max(*time_computing, eps);
+      *total_interior_point_updates_count / max(*time_evolution, eps);
 
   *grid_points_per_second = *local_grid_points_per_second;
   *interior_points_per_second = *local_interior_points_per_second;
