@@ -13,7 +13,7 @@
 #include <util_Table.h>
 
 #include <H5Cpp.h>
-#include <SimulationIO.hpp>
+#include <SimulationIO/SimulationIO.hpp>
 
 #include <algorithm>
 #include <cassert>

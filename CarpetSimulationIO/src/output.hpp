@@ -5,7 +5,7 @@
 
 #include <cctk.h>
 
-#include <SimulationIO.hpp>
+#include <SimulationIO/SimulationIO.hpp>
 
 #include <functional>
 #include <memory>

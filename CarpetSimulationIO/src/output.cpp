@@ -11,9 +11,9 @@
 #include <cctk_Parameters.h>
 #include <cctk_Version.h>
 
-#include <H5Helpers.hpp>
-#include <RegionCalculus.hpp>
-#include <SimulationIO.hpp>
+#include <SimulationIO/H5Helpers.hpp>
+#include <SimulationIO/RegionCalculus.hpp>
+#include <SimulationIO/SimulationIO.hpp>
 
 #include <algorithm>
 #include <array>

@@ -5,8 +5,8 @@
 
 #include <cctk.h>
 
-#include <RegionCalculus.hpp>
-#include <SimulationIO.hpp>
+#include <SimulationIO/RegionCalculus.hpp>
+#include <SimulationIO/SimulationIO.hpp>
 
 #include <array>
 #include <sstream>
