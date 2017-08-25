@@ -408,10 +408,13 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
 
         } // if on the root processor
 
+        ostringstream buf;
+        buf << setprecision(out_precision);
+
         if (CCTK_MyProc(cctkGH) == 0) {
           if (not all_reductions_in_one_file or
               ireduction == reductions.begin()) {
-            file << cctk_iteration << " " << cctk_time;
+            buf << cctk_iteration << " " << cctk_time;
           }
         }
 
@@ -437,13 +440,13 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
           }
 
           if (CCTK_MyProc(cctkGH) == 0) {
-            file << " ";
+            buf << " ";
 
             switch (specific_cactus_type(vartype)) {
 #define CARPET_NO_COMPLEX
 #define TYPECASE(N, T)                                                         \
   case N:                                                                      \
-    file << *(T const *)result;                                                \
+    buf << *(T const *)result;                                                 \
     break;
 #include "typecase.hh"
 #undef TYPECASE
@@ -451,7 +454,7 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
 #define CARPET_COMPLEX
 #define TYPECASE(N, T)                                                         \
   case N:                                                                      \
-    file << real(*(T const *)result) << " " << imag(*(T const *)result);       \
+    buf << real(*(T const *)result) << " " << imag(*(T const *)result);        \
     break;
 #include "typecase.hh"
 #undef TYPECASE
@@ -462,6 +465,8 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
           }
 
         } // for n
+
+        file << buf.str();
 
         if (not all_reductions_in_one_file) {
           if (CCTK_MyProc(cctkGH) == 0) {
