@@ -739,13 +739,13 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
           ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
           void *const extraargs) = {
           &prolongate_3d_cc_eno_rf2<T, 2>,
-          &prolongate_3d_cc_eno_rf2<T, 2>, // note that we cheat here: order is
-                                           // still 2 even though 3 was
-                                           // requested!
-          &prolongate_3d_cc_eno_rf2<T, 2>, // note that we cheat here: order is
-                                           // 2 even though 4 was requested!
-          &prolongate_3d_cc_eno_rf2<T, 3> // note that we cheat here: order is 3
-                                          // even though 5 was requested!
+          // note that we cheat here: order is still 2 even though 3 was
+          // requested!
+          &prolongate_3d_cc_eno_rf2<T, 2>,
+          // note that we cheat here: order is 2 even though 4 was requested!
+          &prolongate_3d_cc_eno_rf2<T, 2>,
+          // note that we cheat here: order is 3 even though 5 was requested!
+          &prolongate_3d_cc_eno_rf2<T, 3>
           // have cheated here for two reasons: first, the ENO prolongation
           // operator stencil radius is larger than Lagrange (and dh.cc assumes
           // that the stencil goes as order_space/2!),
