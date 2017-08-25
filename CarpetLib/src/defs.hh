@@ -77,13 +77,6 @@ typedef long long int size_type;
 // Begin a new line without flushing the output buffer
 char const *const eol = "\n";
 
-// Check a return value
-#define check(_expr)                                                           \
-  do {                                                                         \
-    bool const _val = (_expr);                                                 \
-    assert(_val);                                                              \
-  } while (0)
-
 // Use this macro AT instead of vector's operator[] or at().
 // Depending on the macro CARPET_OPTIMISE, this macro AT either checks
 // for valid indices or not.

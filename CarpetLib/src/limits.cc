@@ -27,8 +27,11 @@ void set_system_limits() {
 
 void set_limit(int const resource, char const *const name,
                CCTK_INT const value) {
+  int ierr;
   struct rlimit limit;
-  check(not getrlimit(resource, &limit));
+  ierr = getrlimit(resource, &limit);
+  if (ierr < 0)
+    CCTK_ERROR("getrlimit failed");
 
   if (value == -2) {
     // Only show limit
@@ -44,8 +47,12 @@ void set_limit(int const resource, char const *const name,
     limit.rlim_cur = min((rlim_t)value * 1024 * 1024, limit.rlim_max);
   }
 
-  check(not setrlimit(resource, &limit));
-  check(not getrlimit(resource, &limit));
+  ierr = setrlimit(resource, &limit);
+  if (ierr < 0)
+    CCTK_ERROR("setrlimit failed");
+  ierr = getrlimit(resource, &limit);
+  if (ierr < 0)
+    CCTK_ERROR("getrlimit failed");
 
   cout << "New " << name << " limit: " << limit << endl;
 }
