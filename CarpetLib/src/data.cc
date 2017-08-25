@@ -109,27 +109,74 @@ call_operator(const char *restrict const name,
 #ifdef CARPET_DEBUG
     ibset alldstregbboxes;
 #endif
-    const ivect3 &str = dstregbbox.stride();
-    ivect3 npoints = dstregbbox.shape() / str;
+    static HighResTimer::HighResTimer timer_overall(
+        "FunHPC:" __FILE__ ":" STRINGIFY(__LINE__) ":overall");
+    auto timer_overall_clock = timer_overall.start();
+    static HighResTimer::HighResTimer timer_submit(
+        "FunHPC:" __FILE__ ":" STRINGIFY(__LINE__) ":submit");
+    auto timer_submit_clock = timer_submit.start();
+    static HighResTimer::HighResTimer timer("FunHPC:" __FILE__
+                                            ":" STRINGIFY(__LINE__) ":threads");
+#if 0
+    const ivect3 &npoints = dstregbbox.sizes();
     for (int k = 0; k < npoints[2]; k += funhpc_blocksize) {
       for (int j = 0; j < npoints[1]; j += funhpc_blocksize) {
         for (int i = 0; i < npoints[0]; i += funhpc_blocksize) {
+#ifdef CARPET_DEBUG
           ivect3 lo(i, j, k);
           ivect3 up = lo + ivect3(funhpc_blocksize - 1);
+          const ivect3 &str = dstregbbox.stride();
           ibbox3 mydstregbbox(
               dstregbbox.lower() + lo * str,
               min(dstregbbox.upper(), dstregbbox.lower() + up * str), str);
-          assert(!mydstregbbox.empty());
-#ifdef CARPET_DEBUG
           alldstregbboxes += mydstregbbox;
 #endif
-          fs.push_back(qthread::async(qthread::launch::async, the_operator, src,
-                                      srcpadext, srcext, dst, dstpadext, dstext,
-                                      srcbbox, dstbbox, srcregbbox,
-                                      mydstregbbox, extraargs));
+          fs.push_back(qthread::async(qthread::launch::async, [=]() {
+            auto t0 = timer.start();
+            ivect3 lo(i, j, k);
+            ivect3 up = lo + ivect3(funhpc_blocksize - 1);
+            const ivect3 &str = dstregbbox.stride();
+            ibbox3 mydstregbbox(
+                dstregbbox.lower() + lo * str,
+                min(dstregbbox.upper(), dstregbbox.lower() + up * str), str);
+            assert(!mydstregbbox.empty());
+            (*the_operator)(src, srcpadext, srcext, dst, dstpadext, dstext,
+                            srcbbox, dstbbox, srcregbbox, mydstregbbox,
+                            extraargs);
+            timer.stop(t0);
+          }));
         }
       }
     }
+#endif
+    const ivect3 &npoints = dstregbbox.sizes();
+    for (int k = 0; k < npoints[2]; k += funhpc_blocksize) {
+#ifdef CARPET_DEBUG
+      ivect3 lo(0, 0, k);
+      ivect3 up =
+          lo + ivect3(npoints[0] - 1, npoints[1] - 1, funhpc_blocksize - 1);
+      const ivect3 &str = dstregbbox.stride();
+      ibbox3 mydstregbbox(
+          dstregbbox.lower() + lo * str,
+          min(dstregbbox.upper(), dstregbbox.lower() + up * str), str);
+      alldstregbboxes += mydstregbbox;
+#endif
+      fs.push_back(qthread::async(qthread::launch::async, [=]() {
+        auto timer_clock = timer.start();
+        ivect3 lo(0, 0, k);
+        ivect3 up =
+            lo + ivect3(npoints[0] - 1, npoints[1] - 1, funhpc_blocksize - 1);
+        const ivect3 &str = dstregbbox.stride();
+        ibbox3 mydstregbbox(
+            dstregbbox.lower() + lo * str,
+            min(dstregbbox.upper(), dstregbbox.lower() + up * str), str);
+        assert(!mydstregbbox.empty());
+        (*the_operator)(src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox,
+                        dstbbox, srcregbbox, mydstregbbox, extraargs);
+        timer_clock.stop(mydstregbbox.size() * sizeof(T));
+      }));
+    }
+    timer_submit_clock.stop(0);
 #ifdef CARPET_DEBUG
     if (not(alldstregbboxes == ibset(dstregbbox))) {
       cout << "alldstregbboxes=" << alldstregbboxes << endl
@@ -137,8 +184,9 @@ call_operator(const char *restrict const name,
     }
     assert(alldstregbboxes == ibset(dstregbbox));
 #endif
-    for (auto &f : fs)
+    for (const auto &f : fs)
       f.wait();
+    timer_overall_clock.stop(dstregbbox.size() * sizeof(T));
 #else
     CCTK_ERROR("Cannot have CarpetLib::use_funhpc=yes without FunHPC");
 #endif
