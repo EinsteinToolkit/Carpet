@@ -71,7 +71,7 @@ template <typename T, int D> MPI_Datatype mpi_datatype(slab<T, D> const &) {
 template MPI_Datatype mpi_datatype(slab<int, dim> const &);
 }
 
-set<gdata *> gdata::allgdata;
+// set<gdata *> gdata::allgdata;
 
 // Constructors
 gdata::gdata(const int varindex_, const centering cent_,
@@ -81,7 +81,7 @@ gdata::gdata(const int varindex_, const centering cent_,
       comm_active(false) {
   DECLARE_CCTK_PARAMETERS;
 
-  allgdata.insert(this);
+  // allgdata.insert(this);
 
   if (barriers) {
     dist::barrier(dist::comm(), 783988953, "CarpetLib::gdata::gdata");
@@ -92,7 +92,7 @@ gdata::gdata(const int varindex_, const centering cent_,
 gdata::~gdata() {
   DECLARE_CCTK_PARAMETERS;
 
-  allgdata.erase(this);
+  // allgdata.erase(this);
 
   if (barriers) {
     dist::barrier(dist::comm(), 109687805, "CarpetLib::gdata::~gdata");
@@ -337,11 +337,12 @@ void gdata::find_source_timelevel(vector<CCTK_REAL> const &times,
 }
 
 size_t gdata::allmemory() {
-  size_t mem = memoryof(allgdata);
-  for (set<gdata *>::const_iterator gdatai = allgdata.begin();
-       gdatai != allgdata.end(); ++gdatai) {
-    mem += memoryof(**gdatai);
-  }
-  return mem;
+  // size_t mem = memoryof(allgdata);
+  // for (set<gdata *>::const_iterator gdatai = allgdata.begin();
+  //      gdatai != allgdata.end(); ++gdatai) {
+  //   mem += memoryof(**gdatai);
+  // }
+  // return mem;
+  return 0;
 }
 }

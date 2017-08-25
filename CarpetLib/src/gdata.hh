@@ -48,7 +48,8 @@ template <> inline MPI_Datatype mpi_datatype<islab>() {
 // A generic data storage without type information
 class gdata {
 
-  static set<gdata *> allgdata;
+  // This is not thread-safe
+  // static set<gdata *> allgdata;
 
 protected: // should be readonly
   // Fields
