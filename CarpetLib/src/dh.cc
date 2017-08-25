@@ -1,11 +1,4 @@
-#include <cctk.h>
-#include <cctk_Parameters.h>
-
-#include <cassert>
-#include <cstddef>
-#include <sstream>
-
-#include <Timer.hh>
+#include "dh.hh"
 
 #include "bbox.hh"
 #include "bboxset.hh"
@@ -13,10 +6,17 @@
 #include "dist.hh"
 #include "ggf.hh"
 #include "mpi_string.hh"
-#include "timestat.hh"
 #include "vect.hh"
 
-#include "dh.hh"
+#include <cctk.h>
+#include <cctk_Parameters.h>
+
+#include <HighResTimer.hh>
+#include <Timer.hh>
+
+#include <cassert>
+#include <cstddef>
+#include <sstream>
 
 namespace CarpetLib {
 using namespace std;
@@ -211,13 +211,10 @@ static void assert_error(char const *restrict const checkstring,
 void dh::regrid(bool const do_init) {
   DECLARE_CCTK_PARAMETERS;
 
-  static Timers::Timer timer("CarpetLib::dh::regrid");
-  timer.start();
+  static HighResTimer::HighResTimer timer("CarpetLib::dh::regrid");
+  auto timer_clock = timer.start();
 
   CHECKPOINT;
-
-  static Timer total("CarpetLib::dh::regrid");
-  total.start();
 
   light_mboxes old_light_boxes;
   swap(light_boxes, old_light_boxes);
@@ -2123,8 +2120,7 @@ void dh::regrid(bool const do_init) {
         "The grid structure is inconsistent.  It is impossible to continue.");
   }
 
-  total.stop(0);
-  timer.stop();
+  timer_clock.stop(0);
 }
 
 void dh::broadcast_schedule(vector<fast_dboxes> &fast_level_otherprocs,

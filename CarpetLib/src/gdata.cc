@@ -1,9 +1,25 @@
+#include "gdata.hh"
+
+#include "bbox.hh"
+#include "cacheinfo.hh"
+#include "commstate.hh"
+#include "defs.hh"
+#include "dist.hh"
+#include "vect.hh"
+
+#include <HighResTimer.hh>
+#include <vectors.h>
+
 #include <cctk.h>
 #include <cctk_Parameters.h>
 #include <util_ErrorCodes.h>
 #include <util_Table.h>
 
-#include <vectors.h>
+#ifdef CCTK_MPI
+#include <mpi.h>
+#else
+#include "nompi.h"
+#endif
 
 #include <cassert>
 #include <cmath>
@@ -12,22 +28,6 @@
 #include <iostream>
 #include <sstream>
 #include <typeinfo>
-
-#ifdef CCTK_MPI
-#include <mpi.h>
-#else
-#include "nompi.h"
-#endif
-
-#include "bbox.hh"
-#include "cacheinfo.hh"
-#include "commstate.hh"
-#include "defs.hh"
-#include "dist.hh"
-#include "timestat.hh"
-#include "vect.hh"
-
-#include "gdata.hh"
 
 namespace CarpetLib {
 using namespace std;

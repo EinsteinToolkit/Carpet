@@ -1,6 +1,8 @@
 #ifndef COMMSTATE_HH
 #define COMMSTATE_HH
 
+#include <HighResTimer.hh>
+
 #include <cctk.h>
 #include <cctk_Parameters.h>
 

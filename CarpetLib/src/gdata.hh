@@ -1,6 +1,15 @@
 #ifndef GDATA_HH
 #define GDATA_HH
 
+#include "bbox.hh"
+#include "commstate.hh"
+#include "defs.hh"
+#include "dist.hh"
+#include "operators.hh"
+#include "vect.hh"
+
+#include <HighResTimer.hh>
+
 #include <cctk.h>
 
 #include <cassert>
@@ -9,14 +18,6 @@
 #include <queue>
 #include <string>
 #include <vector>
-
-#include "bbox.hh"
-#include "commstate.hh"
-#include "defs.hh"
-#include "dist.hh"
-#include "operators.hh"
-#include "timestat.hh"
-#include "vect.hh"
 
 namespace CarpetLib {
 using namespace std;

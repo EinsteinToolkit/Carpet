@@ -1,3 +1,13 @@
+#include "ggf.hh"
+
+#include "cacheinfo.hh"
+#include "defs.hh"
+#include "dh.hh"
+#include "th.hh"
+
+#include <HighResTimer.hh>
+#include <Timer.hh>
+
 #include <cctk.h>
 
 #include <cassert>
@@ -6,16 +16,6 @@
 #include <cstring>
 #include <iostream>
 #include <string>
-
-#include <Timer.hh>
-
-#include "cacheinfo.hh"
-#include "defs.hh"
-#include "dh.hh"
-#include "th.hh"
-#include "timestat.hh"
-
-#include "ggf.hh"
 
 namespace CarpetLib {
 using namespace std;
@@ -298,11 +298,11 @@ void ggf::sync_all(comm_state &state, int const tl, int const rl,
   if (transport_operator == op_none)
     return;
   // Copy
-  static Timer timer("sync_all");
-  timer.start();
+  static HighResTimer::HighResTimer timer("sync_all");
+  auto clock = timer.start();
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_sync_sendrecv, tl,
                     rl, ml);
-  timer.stop(0);
+  clock.stop(0);
 }
 
 // Prolongate the boundaries of all components
@@ -314,8 +314,8 @@ void ggf::ref_bnd_prolongate_all(comm_state &state, int const tl, int const rl,
       transport_operator == op_restrict)
     return;
   vector<int> tl2s;
-  static Timer timer("ref_bnd_prolongate_all");
-  timer.start();
+  static HighResTimer::HighResTimer timer("ref_bnd_prolongate_all");
+  auto clock = timer.start();
   if (transport_operator != op_copy) {
     // Interpolation in time
     if (not(timelevels(ml, rl) >= prolongation_order_time + 1)) {
@@ -337,35 +337,35 @@ void ggf::ref_bnd_prolongate_all(comm_state &state, int const tl, int const rl,
   transfer_from_all(state, tl, rl, ml,
                     &dh::fast_dboxes::fast_ref_bnd_prol_sendrecv, tl2s, rl - 1,
                     ml, time);
-  timer.stop(0);
+  clock.stop(0);
 }
 
 // Restrict a multigrid level
 void ggf::mg_restrict_all(comm_state &state, int const tl, int const rl,
                           int const ml, CCTK_REAL const time) {
-  static Timer timer("mg_restrict_all");
-  timer.start();
+  static HighResTimer::HighResTimer timer("mg_restrict_all");
+  auto clock = timer.start();
   // Require same times
   assert(std::fabs(t.get_time(ml, rl, 0) - t.get_time(ml - 1, rl, 0)) <=
          1.0e-8 * (1.0 + std::fabs(t.get_time(ml, rl, 0))));
   vector<int> const tl2s(1, tl);
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_mg_rest_sendrecv,
                     tl2s, rl, ml - 1, time);
-  timer.stop(0);
+  clock.stop(0);
 }
 
 // Prolongate a multigrid level
 void ggf::mg_prolongate_all(comm_state &state, int const tl, int const rl,
                             int const ml, CCTK_REAL const time) {
-  static Timer timer("mg_prolongate_all");
-  timer.start();
+  static HighResTimer::HighResTimer timer("mg_prolongate_all");
+  auto clock = timer.start();
   // Require same times
   assert(std::fabs(t.get_time(ml, rl, 0) - t.get_time(ml + 1, rl, 0)) <=
          1.0e-8 * (1.0 + std::fabs(t.get_time(ml, rl, 0))));
   vector<int> const tl2s(1, tl);
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_mg_prol_sendrecv,
                     tl2s, rl, ml + 1, time);
-  timer.stop(0);
+  clock.stop(0);
 }
 
 // Restrict a refinement level
@@ -373,14 +373,14 @@ void ggf::ref_restrict_all(comm_state &state, int const tl, int const rl,
                            int const ml) {
   if (transport_operator == op_none or transport_operator == op_sync)
     return;
-  static Timer timer("ref_restrict_all");
-  timer.start();
+  static HighResTimer::HighResTimer timer("ref_restrict_all");
+  auto clock = timer.start();
   // Require same times
   assert(std::fabs(t.get_time(ml, rl, tl) - t.get_time(ml, rl + 1, tl)) <=
          1.0e-8 * (1.0 + std::fabs(t.get_time(ml, rl, tl))));
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_ref_rest_sendrecv,
                     tl, rl + 1, ml);
-  timer.stop(0);
+  clock.stop(0);
 }
 
 // Prolongate a refinement level
@@ -390,8 +390,8 @@ void ggf::ref_prolongate_all(comm_state &state, int const tl, int const rl,
   if (transport_operator == op_none or transport_operator == op_sync or
       transport_operator == op_restrict)
     return;
-  static Timer timer("ref_prolongate_all");
-  timer.start();
+  static HighResTimer::HighResTimer timer("ref_prolongate_all");
+  auto clock = timer.start();
   vector<int> tl2s;
   // Interpolation in time
   assert(timelevels(ml, rl) >= prolongation_order_time + 1);
@@ -400,14 +400,14 @@ void ggf::ref_prolongate_all(comm_state &state, int const tl, int const rl,
     tl2s.AT(i) = i;
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_ref_prol_sendrecv,
                     tl2s, rl - 1, ml, time);
-  timer.stop(0);
+  clock.stop(0);
 }
 
 // Reflux a refinement level
 void ggf::ref_reflux_all(comm_state &state, int const tl, int const rl,
                          int const ml, int const dir, int const face) {
-  static Timer timer("ref_reflux_all");
-  timer.start();
+  static HighResTimer::HighResTimer timer("ref_reflux_all");
+  auto clock = timer.start();
   // Require same times
   assert(std::fabs(t.get_time(ml, rl, tl) - t.get_time(ml, rl + 1, tl)) <=
          1.0e-8 * (1.0 + std::fabs(t.get_time(ml, rl, tl))));
@@ -416,15 +416,15 @@ void ggf::ref_reflux_all(comm_state &state, int const tl, int const rl,
   transfer_from_all(state, tl, rl, ml,
                     dh::fast_dboxes::fast_ref_refl_sendrecv[dir][face], tl,
                     rl + 1, ml, false, false, &slabinfo);
-  timer.stop(0);
+  clock.stop(0);
 }
 
 // Reflux-prolongate a refinement level
 void ggf::ref_reflux_prolongate_all(comm_state &state, int const tl,
                                     int const rl, int const ml, int const dir,
                                     int const face) {
-  static Timer timer("ref_reflux_prolongate_all");
-  timer.start();
+  static HighResTimer::HighResTimer timer("ref_reflux_prolongate_all");
+  auto clock = timer.start();
   // Require same times
   assert(std::fabs(t.get_time(ml, rl, tl) - t.get_time(ml, rl - 1, tl)) <=
          1.0e-8 * (1.0 + std::fabs(t.get_time(ml, rl, tl))));
@@ -433,7 +433,7 @@ void ggf::ref_reflux_prolongate_all(comm_state &state, int const tl,
   transfer_from_all(state, tl, rl, ml,
                     dh::fast_dboxes::fast_ref_refl_prol_sendrecv[dir][face], tl,
                     rl - 1, ml, false, false, &slabinfo);
-  timer.stop(0);
+  clock.stop(0);
 }
 
 // Transfer regions of all components
@@ -455,8 +455,8 @@ void ggf::transfer_from_all(comm_state &state, int const tl1, int const rl1,
   if (psendrecvs.empty())
     return;
 
-  static Timer total("transfer_from_all");
-  total.start();
+  static HighResTimer::HighResTimer total("transfer_from_all");
+  auto clock = total.start();
 
   mdata &srcstorage = use_old_storage ? oldstorage : storage;
 
@@ -528,7 +528,7 @@ void ggf::transfer_from_all(comm_state &state, int const tl1, int const rl1,
                        pos, pot);
   }
 
-  total.stop(0);
+  clock.stop(0);
 }
 
 // Memory usage

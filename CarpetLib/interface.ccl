@@ -36,6 +36,7 @@ includes header: operators.hh in operators.hh
 
 uses include header: nompi.h
 
+uses include header: HighResTimer.hh
 uses include header: Timer.hh
 uses include header: cycleclock.h
 uses include header: loopcontrol.h

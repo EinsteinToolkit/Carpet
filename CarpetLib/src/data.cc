@@ -1,5 +1,26 @@
+#include "data.hh"
+#include "operator_prototypes_3d.hh"
+#include "operator_prototypes_4d.hh"
+
+#include "bbox.hh"
+#include "bboxset.hh"
+#include "cacheinfo.hh"
+#include "defs.hh"
+#include "dist.hh"
+#include "vect.hh"
+
+#include <HighResTimer.hh>
+
 #include <cctk.h>
 #include <cctk_Parameters.h>
+
+#ifdef HAVE_CAPABILITY_FunHPC
+#include <qthread/future.hpp>
+#endif
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include <algorithm>
 #include <cassert>
@@ -11,26 +32,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
-#ifdef HAVE_CAPABILITY_FunHPC
-#include <qthread/future.hpp>
-#endif
-
-#include "bbox.hh"
-#include "bboxset.hh"
-#include "cacheinfo.hh"
-#include "defs.hh"
-#include "dist.hh"
-#include "timestat.hh"
-#include "vect.hh"
-
-#include "data.hh"
-#include "operator_prototypes_3d.hh"
-#include "operator_prototypes_4d.hh"
 
 namespace CarpetLib {
 using namespace std;
@@ -615,8 +616,8 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
                                   ibbox const &srcbox, int const order_space) {
   DECLARE_CCTK_PARAMETERS;
 
-  static Timer total("prolongate");
-  total.start();
+// TODO static Timer total("prolongate");
+// TODO total.start();
 
 #if CARPET_DIM == 3
 
@@ -624,8 +625,8 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
 
   case op_copy:
   case op_Lagrange: {
-    static Timer timer("prolongate_Lagrange");
-    timer.start();
+    // TODO static Timer timer("prolongate_Lagrange");
+    // TODO timer.start();
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
     case vertex_centered: {
@@ -688,13 +689,13 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
     default:
       assert(0);
     }
-    timer.stop(0);
+    // TODO timer.stop(0);
     break;
   }
 
   case op_ENO: {
-    static Timer timer("prolongate_ENO");
-    timer.start();
+    // TODO static Timer timer("prolongate_ENO");
+    // TODO timer.start();
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
     case vertex_centered: {
@@ -760,12 +761,12 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
     default:
       assert(0);
     }
-    timer.stop(0);
+    // TODO timer.stop(0);
   } break;
 
   case op_WENO: {
-    static Timer timer("prolongate_WENO");
-    timer.start();
+    // TODO static Timer timer("prolongate_WENO");
+    // TODO timer.start();
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
     case vertex_centered: {
@@ -797,11 +798,11 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
     default:
       assert(0);
     }
-    timer.stop(0);
+    // TODO timer.stop(0);
   } break;
   case op_TVD: {
-    static Timer timer("prolongate_TVD");
-    timer.start();
+    // TODO static Timer timer("prolongate_TVD");
+    // TODO timer.start();
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
     case vertex_centered: {
@@ -837,12 +838,12 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
     default:
       assert(0);
     }
-    timer.stop(0);
+    // TODO timer.stop(0);
     break;
   } break;
   case op_Lagrange_monotone: {
-    static Timer timer("prolongate_Lagrange_monotone");
-    timer.start();
+    // TODO static Timer timer("prolongate_Lagrange_monotone");
+    // TODO timer.start();
     switch (order_space) {
     case 1:
       CCTK_ERROR("There is no stencil for op=\"Lagrange_monotone\" with "
@@ -864,7 +865,7 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
                  "order_space!=5");
       break;
     }
-    timer.stop(0);
+    // TODO timer.stop(0);
     break;
   }
   case op_STAGGER011: {
@@ -878,14 +879,14 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
         &prolongate_3d_stagger011<T, 2>, &prolongate_3d_stagger011<T, 3>,
         &prolongate_3d_stagger011<T, 3>, &prolongate_3d_stagger011<T, 3>};
 
-    static Timer timer("prolongate_STAGGER011");
-    timer.start();
+    // TODO static Timer timer("prolongate_STAGGER011");
+    // TODO timer.start();
     call_operator<T>(
         the_operators[order_space - 2], static_cast<T const *>(src->storage()),
         src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
         this->padded_shape(), this->shape(), src->extent(), this->extent(),
         srcbox, dstbox, NULL);
-    timer.stop(0);
+    // TODO timer.stop(0);
     break;
   }
 
@@ -900,14 +901,14 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
         &prolongate_3d_stagger101<T, 2>, &prolongate_3d_stagger101<T, 3>,
         &prolongate_3d_stagger101<T, 3>, &prolongate_3d_stagger101<T, 3>};
 
-    static Timer timer("prolongate_STAGGER101");
-    timer.start();
+    // TODO static Timer timer("prolongate_STAGGER101");
+    // TODO timer.start();
     call_operator<T>(
         the_operators[order_space - 2], static_cast<T const *>(src->storage()),
         src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
         this->padded_shape(), this->shape(), src->extent(), this->extent(),
         srcbox, dstbox, NULL);
-    timer.stop(0);
+    // TODO timer.stop(0);
     break;
   }
 
@@ -922,14 +923,14 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
         &prolongate_3d_stagger110<T, 2>, &prolongate_3d_stagger110<T, 3>,
         &prolongate_3d_stagger110<T, 3>, &prolongate_3d_stagger110<T, 3>};
 
-    static Timer timer("prolongate_STAGGER110");
-    timer.start();
+    // TODO static Timer timer("prolongate_STAGGER110");
+    // TODO timer.start();
     call_operator<T>(
         the_operators[order_space - 2], static_cast<T const *>(src->storage()),
         src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
         this->padded_shape(), this->shape(), src->extent(), this->extent(),
         srcbox, dstbox, NULL);
-    timer.stop(0);
+    // TODO timer.stop(0);
     break;
   }
 
@@ -944,14 +945,14 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
         &prolongate_3d_stagger111<T, 2>, &prolongate_3d_stagger111<T, 3>,
         &prolongate_3d_stagger111<T, 3>, &prolongate_3d_stagger111<T, 3>};
 
-    static Timer timer("prolongate_STAGGER111");
-    timer.start();
+    // TODO static Timer timer("prolongate_STAGGER111");
+    // TODO timer.start();
     call_operator<T>(
         the_operators[order_space - 2], static_cast<T const *>(src->storage()),
         src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
         this->padded_shape(), this->shape(), src->extent(), this->extent(),
         srcbox, dstbox, NULL);
-    timer.stop(0);
+    // TODO timer.stop(0);
     break;
   }
 
@@ -965,7 +966,7 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
 
   case op_copy:
   case op_Lagrange: {
-    static Timer timer("prolongate_Lagrange");
+    // TODO static Timer timer("prolongate_Lagrange");
     timer.start();
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
@@ -987,7 +988,7 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
     default:
       assert(0);
     }
-    timer.stop(0);
+    // TODO timer.stop(0);
     break;
   }
   default:
@@ -998,7 +999,7 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
 #error "Value for CARPET_DIM not supported"
 #endif
 
-  total.stop(0);
+  // TODO total.stop(0);
 }
 
 template <>
@@ -1016,8 +1017,8 @@ void data<T>::transfer_restrict(data const *const src, ibbox const &dstregbox,
                                 int const /*order_space*/) {
   DECLARE_CCTK_PARAMETERS;
 
-  static Timer total("restrict");
-  total.start();
+// TODO static Timer total("restrict");
+// TODO total.start();
 
 #if CARPET_DIM == 3
 
@@ -1199,7 +1200,7 @@ void data<T>::transfer_restrict(data const *const src, ibbox const &dstregbox,
 #error "Value for CARPET_DIM not supported"
 #endif
 
-  total.stop(0);
+  // TODO total.stop(0);
 }
 
 template <>
@@ -1216,8 +1217,8 @@ void data<T>::time_interpolate(vector<data *> const &srcs, ibbox const &dstbox,
                                ibbox const &srcbox,
                                vector<CCTK_REAL> const &times,
                                CCTK_REAL const time, int const order_time) {
-  static Timer total("time_interpolate");
-  total.start();
+// TODO static Timer total("time_interpolate");
+// TODO total.start();
 
 #if CARPET_DIM == 3
 
@@ -1229,8 +1230,8 @@ void data<T>::time_interpolate(vector<data *> const &srcs, ibbox const &dstbox,
   case op_STAGGER110:
   case op_STAGGER111:
   case op_Lagrange: {
-    static Timer timer("time_interpolate_Lagrange");
-    timer.start();
+    // TODO static Timer timer("time_interpolate_Lagrange");
+    // TODO timer.start();
     switch (order_time) {
 
     case 1:
@@ -1286,7 +1287,7 @@ void data<T>::time_interpolate(vector<data *> const &srcs, ibbox const &dstbox,
     default:
       assert(0);
     }
-    timer.stop(0);
+    // TODO timer.stop(0);
     break;
   }
 
@@ -1296,8 +1297,8 @@ void data<T>::time_interpolate(vector<data *> const &srcs, ibbox const &dstbox,
   case op_Lagrange_monotone: {
     // ENO, WENO, TVD, and Lagrange_monotone time interpolation is the
     // same for order_time <= 2
-    static Timer timer("time_interpolate_ENO");
-    timer.start();
+    // TODO static Timer timer("time_interpolate_ENO");
+    // TODO timer.start();
     switch (order_time) {
 
     case 1:
@@ -1326,7 +1327,7 @@ void data<T>::time_interpolate(vector<data *> const &srcs, ibbox const &dstbox,
     default:
       assert(0);
     }
-    timer.stop(0);
+    // TODO timer.stop(0);
     break;
   }
 
@@ -1342,7 +1343,7 @@ void data<T>::time_interpolate(vector<data *> const &srcs, ibbox const &dstbox,
 #error "Value for CARPET_DIM not supported"
 #endif
 
-  total.stop(0);
+  // TODO total.stop(0);
 }
 
 template <>
