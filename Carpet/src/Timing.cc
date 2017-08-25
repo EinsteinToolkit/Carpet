@@ -1,31 +1,12 @@
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
-
-// IRIX wants this before <time.h>
-#if HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-#if TIME_WITH_SYS_TIME
-#include <sys/time.h>
-#include <time.h>
-#else
-#if HAVE_SYS_TIME_H
-#include <sys/time.h>
-#elif HAVE_TIME_H
-#include <time.h>
-#endif
-#endif
-
-#if HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 #include <defs.hh>
 #include <dist.hh>
@@ -41,14 +22,7 @@ CCTK_REAL const eps = 1.0e-15;
 
 // Return the current wall time
 static CCTK_REAL get_walltime() {
-#ifdef HAVE_TIME_GETTIMEOFDAY
-  // get the current time
-  struct timeval tv;
-  gettimeofday(&tv, 0);
-  return tv.tv_sec + tv.tv_usec / CCTK_REAL(1.0e6);
-#else
-  return CCTK_REAL(0.0);
-#endif
+  return std::chrono::steady_clock::now().time_since_epoch().count();
 }
 
 // Calculate the number of updates for the current level
