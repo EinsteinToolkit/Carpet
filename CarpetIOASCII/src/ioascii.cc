@@ -1193,7 +1193,7 @@ int CoordToOffset(const cGH *cctkGH, const int m, const int dir,
                               cctk_levoff[dir - 1] / cctk_levoffdenom[dir - 1];
 
   const CCTK_REAL rindex = (coord - lower) / delta;
-  int cindex = (int)floor(rindex + 0.75);
+  int cindex = lrint(floor(rindex + 0.75));
 
   return cindex;
 }
