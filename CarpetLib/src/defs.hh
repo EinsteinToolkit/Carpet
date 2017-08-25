@@ -143,6 +143,10 @@ template <typename T> inline T imod(T const x, T const y) {
   // return x - idiv(x,y)*y;
   return (x ^ y) >= T(0) ? x % y : (x - y + 1) % y + y - 1;
 }
+// Align towards minus infinity
+template <typename T> inline T ialign(T const x, T const y) {
+  return idiv(x, y) * y;
+}
 
 template <typename T> inline T div_down(T const x, T const y) {
   assert(x >= 0);
