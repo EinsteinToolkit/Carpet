@@ -208,7 +208,7 @@ ibset granulated::granulated_regions(gh const &hh, dh const &dd,
   assert(rl > 0);
 
   ibbox const &base = hh.baseextent(0, rl);
-#warning "TODO: Correct this"
+  // TODO: Correct this
   ivect const origin = base.lower();
 
   ibset granned;
