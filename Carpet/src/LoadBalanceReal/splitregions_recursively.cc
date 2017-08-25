@@ -473,24 +473,24 @@ void SplitRegionsMaps_Recursively(cGH const *const cctkGH,
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(carpet_get_region)(CCTK_POINTER &cxx_superregs, int const &i,
-                                  CCTK_POINTER &cxx_superreg) {
+CCTK_FNAME(carpet_get_region)(CCTK_POINTER &cxx_superregs, int const &i,
+                              CCTK_POINTER &cxx_superreg) {
   vector<region_t> &superregs = *static_cast<vector<region_t> *>(cxx_superregs);
   region_t &superreg = superregs.AT(i);
   cxx_superreg = &superreg;
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(carpet_get_bbox)(CCTK_POINTER &cxx_superreg, f_bbox &box,
-                                f_boundary &obound) {
+CCTK_FNAME(carpet_get_bbox)(CCTK_POINTER &cxx_superreg, f_bbox &box,
+                            f_boundary &obound) {
   region_t &superreg = *static_cast<region_t *>(cxx_superreg);
   box = f_bbox(superreg.extent);
   obound = f_boundary(superreg.outer_boundaries);
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(carpet_insert_region)(CCTK_POINTER &cxx_regs,
-                                     f_superregion2slim const &reg) {
+CCTK_FNAME(carpet_insert_region)(CCTK_POINTER &cxx_regs,
+                                 f_superregion2slim const &reg) {
   vector<region_t> &regs = *static_cast<vector<region_t> *>(cxx_regs);
   regs.push_back(region_t(reg));
 }
@@ -512,14 +512,14 @@ extern "C" CCTK_FCALL void CCTK_FNAME(carpet_create_tree_branch)(
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(carpet_create_tree_leaf)(f_superregion2slim const &sreg,
-                                        CCTK_POINTER &cxx_tree) {
+CCTK_FNAME(carpet_create_tree_leaf)(f_superregion2slim const &sreg,
+                                    CCTK_POINTER &cxx_tree) {
   cxx_tree = new ipfulltree(pseudoregion_t(sreg));
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(carpet_set_tree)(CCTK_POINTER &cxx_superreg,
-                                CCTK_POINTER &cxx_tree) {
+CCTK_FNAME(carpet_set_tree)(CCTK_POINTER &cxx_superreg,
+                            CCTK_POINTER &cxx_tree) {
   region_t &superreg = *static_cast<region_t *>(cxx_superreg);
   ipfulltree *tree = static_cast<ipfulltree *>(cxx_tree);
   assert(not superreg.processors);
