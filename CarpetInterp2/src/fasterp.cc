@@ -1534,7 +1534,8 @@ void fasterp_setup_gen_t<FASTERP>::interpolate(
     int const gi = CCTK_GroupIndexFromVarI(vi);
     assert(gi >= 0);
     cGroup group;
-    check(not CCTK_GroupData(gi, &group));
+    int const ierr = CCTK_GroupData(gi, &group);
+    assert(not ierr);
     assert(group.grouptype == CCTK_GF);
     assert(group.vartype == CCTK_VARIABLE_REAL);
     assert(group.dim == dim);
