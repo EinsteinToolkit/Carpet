@@ -114,7 +114,8 @@ int GroupStorageCrease(const cGH *cctkGH, int n_groups, const int *groups,
     }
 
     cGroup gp;
-    check(not CCTK_GroupData(group, &gp));
+    int ierr = CCTK_GroupData(group, &gp);
+    assert(not ierr);
 
     bool const all_rl = is_meta_mode() or is_global_mode();
     bool const is_array = gp.grouptype != CCTK_GF;
@@ -426,7 +427,8 @@ void GroupStorageCheck(cGH const *const cctkGH, int const group, int const ml,
     return;
 
   cGroup gp;
-  check(not CCTK_GroupData(group, &gp));
+  int ierr = CCTK_GroupData(group, &gp);
+  assert(not ierr);
 
   if (gp.grouptype == CCTK_GF) {
     operator_type const op = groupdata.AT(group).transport_operator;
