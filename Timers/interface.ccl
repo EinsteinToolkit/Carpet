@@ -4,6 +4,7 @@ IMPLEMENTS: Timers
 
 INCLUDE HEADER: CactusTimer.hh IN CactusTimer.hh
 INCLUDE HEADER: CactusTimerSet.hh IN CactusTimerSet.hh
+INCLUDE HEADER: HighResTimer.hh IN HighResTimer.hh
 INCLUDE HEADER: Timer.hh IN Timer.hh
 INCLUDE HEADER: TimerTree.hh IN TimerTree.hh
 

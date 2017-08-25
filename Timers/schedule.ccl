@@ -8,4 +8,10 @@ SCHEDULE Timer_Startup AT startup BEFORE Driver_Startup
 SCHEDULE Timer_Shutdown AT shutdown AFTER Driver_Shutdown
 {
   LANG: C
-} "Prepare hierarchical timers"
+} "Shutdown hierarchical timers"
+
+SCHEDULE HighResTimer_OutputAllTimers AS zzz_HighResTimer_OutputAllTimers AT terminate
+{
+  LANG: C
+  OPTIONS: global-late
+} "Output high-resolution timers"
