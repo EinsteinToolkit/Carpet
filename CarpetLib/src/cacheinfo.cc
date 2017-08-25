@@ -15,6 +15,10 @@ namespace CarpetLib {
 template <int D>
 padding_t<int, D> pad_shape(bbox<int, D> const &extent,
                             bbox<int, D> const &owned) {
+  // This is an empty grid group
+  // TODO: Use larger alignment and/or make up an offset
+  if (extent.empty())
+    return {extent.sizes(), vect<int, D>(1), vect<int, D>(0)};
   assert(not extent.empty());
   assert(not owned.empty());
   assert(owned.is_aligned_with(extent));
