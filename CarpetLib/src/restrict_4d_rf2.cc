@@ -100,8 +100,8 @@ void restrict_4d_rf2(T const *restrict const src,
   ptrdiff_t const dstkoff = dstoff[2];
   ptrdiff_t const dstloff = dstoff[3];
 
-// Loop over coarse region
-#pragma omp parallel for collapse(4)
+  // Loop over coarse region
+  // #pragma omp parallel for collapse(4)
   for (int l = 0; l < reglext; ++l) {
     for (int k = 0; k < regkext; ++k) {
       for (int j = 0; j < regjext; ++j) {

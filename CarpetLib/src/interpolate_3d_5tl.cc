@@ -1,7 +1,7 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
-#include <loopcontrol.h>
+// #include <loopcontrol.h>
 
 #include <algorithm>
 #include <cassert>
@@ -120,8 +120,8 @@ void interpolate_3d_5tl(T const *restrict const src1, CCTK_REAL const t1,
   RT const s5fac = (t - t1) * (t - t2) * (t - t3) * (t - t4) /
                    ((t5 - t1) * (t5 - t2) * (t5 - t3) * (t5 - t4));
 
-// Loop over region
-#pragma omp parallel
+  // Loop over region
+  // #pragma omp parallel
   CCTK_LOOP3(interpolate_3d_5tl, i, j, k, 0, 0, 0, regiext, regjext, regkext,
              dstipadext, dstjpadext, dstkpadext) {
 
