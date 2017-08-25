@@ -626,7 +626,8 @@ void setup_map_information() {
     assert(num_maps == 1); // must be the default to avoid confusion
     assert(CCTK_IsFunctionAliased("MultiPatch_GetSystemSpecification"));
     CCTK_INT maps1;
-    check(not MultiPatch_GetSystemSpecification(&maps1));
+    int ierr = MultiPatch_GetSystemSpecification(&maps1);
+    assert(not ierr);
     maps = maps1;
   } else {
     maps = num_maps;
@@ -943,7 +944,8 @@ void allocate_group_data(cGH const *const cctkGH) {
   for (int group = 0; group < CCTK_NumGroups(); ++group) {
 
     cGroup gdata;
-    check(not CCTK_GroupData(group, &gdata));
+    int ierr = CCTK_GroupData(group, &gdata);
+    assert(not ierr);
 
     // Check for compact, contiguous, and staggered groups
     ensure_group_options(group, gdata);
@@ -1429,13 +1431,15 @@ void get_boundary_specification(cGH const *const cctkGH, int const m,
 
     jjvect nboundaryzones_, is_internal_, is_staggered_, shiftout_;
     if (CCTK_IsFunctionAliased("MultiPatch_GetBoundarySpecification")) {
-      check(not MultiPatch_GetBoundarySpecification(
+      int ierr = MultiPatch_GetBoundarySpecification(
           m, 2 * dim, &nboundaryzones_[0][0], &is_internal_[0][0],
-          &is_staggered_[0][0], &shiftout_[0][0]));
+          &is_staggered_[0][0], &shiftout_[0][0]);
+      assert(not ierr);
     } else {
-      check(not GetBoundarySpecification(
+      int ierr = GetBoundarySpecification(
           2 * dim, &nboundaryzones_[0][0], &is_internal_[0][0],
-          &is_staggered_[0][0], &shiftout_[0][0]));
+          &is_staggered_[0][0], &shiftout_[0][0]);
+      assert(not ierr);
     }
     nboundaryzones = xpose(nboundaryzones_);
     is_internal = xpose(is_internal_);
@@ -1534,10 +1538,10 @@ void get_domain_specification(cGH const *cctkGH, int const m,
     // altogether, maybe creating a new thorn
 
     assert(CCTK_IsFunctionAliased("MultiPatch_GetDomainSpecification"));
-    check(not MultiPatch_GetDomainSpecification(
+    int ierr = MultiPatch_GetDomainSpecification(
         m, dim, &physical_min[0], &physical_max[0], &interior_min[0],
-        &interior_max[0], &exterior_min[0], &exterior_max[0],
-        &base_spacing[0]));
+        &interior_max[0], &exterior_min[0], &exterior_max[0], &base_spacing[0]);
+    assert(not ierr);
 
   } else if (domain_from_coordbase) {
 
@@ -1546,10 +1550,10 @@ void get_domain_specification(cGH const *cctkGH, int const m,
     // Ensure that CartGrid3D::type = "coordbase"
     ensure_CartGrid3D_type();
 
-    check(not GetDomainSpecification(dim, &physical_min[0], &physical_max[0],
-                                     &interior_min[0], &interior_max[0],
-                                     &exterior_min[0], &exterior_max[0],
-                                     &base_spacing[0]));
+    int ierr = GetDomainSpecification(
+        dim, &physical_min[0], &physical_max[0], &interior_min[0],
+        &interior_max[0], &exterior_min[0], &exterior_max[0], &base_spacing[0]);
+    assert(not ierr);
 
   } else {
     // Legacy code
@@ -1573,10 +1577,10 @@ void get_domain_specification(cGH const *cctkGH, int const m,
     exterior_min = rvect(0.0);
     exterior_max = rvect(npoints - 1);
     base_spacing = rvect(1.0);
-    check(not ConvertFromExteriorBoundary(dim, &physical_min[0],
-                                          &physical_max[0], &interior_min[0],
-                                          &interior_max[0], &exterior_min[0],
-                                          &exterior_max[0], &base_spacing[0]));
+    int ierr = ConvertFromExteriorBoundary(
+        dim, &physical_min[0], &physical_max[0], &interior_min[0],
+        &interior_max[0], &exterior_min[0], &exterior_max[0], &base_spacing[0]);
+    assert(not ierr);
 
   } // if legacy domain specification
 
@@ -1607,13 +1611,15 @@ void adapt_domain_specification(int const m, rvect const &physical_min,
   if (domain_from_multipatch and
       CCTK_IsFunctionAliased("MultiPatch_ConvertFromPhysicalBoundary")) {
     assert(not domain_from_coordbase);
-    check(not MultiPatch_ConvertFromPhysicalBoundary(
+    int ierr = MultiPatch_ConvertFromPhysicalBoundary(
         m, dim, &physical_min[0], &physical_max[0], &interior_min[0],
-        &interior_max[0], &exterior_min[0], &exterior_max[0], &spacing[0]));
+        &interior_max[0], &exterior_min[0], &exterior_max[0], &spacing[0]);
+    assert(not ierr);
   } else {
-    check(not ConvertFromPhysicalBoundary(
+    int ierr = ConvertFromPhysicalBoundary(
         dim, &physical_min[0], &physical_max[0], &interior_min[0],
-        &interior_max[0], &exterior_min[0], &exterior_max[0], &spacing[0]));
+        &interior_max[0], &exterior_min[0], &exterior_max[0], &spacing[0]);
+    assert(not ierr);
   }
 
   ostringstream buf;
@@ -2000,7 +2006,8 @@ void output_group_statistics(cGH const *const cctkGH) {
   for (int group = 0; group < CCTK_NumGroups(); ++group) {
 
     cGroup gdata;
-    check(not CCTK_GroupData(group, &gdata));
+    int ierr = CCTK_GroupData(group, &gdata);
+    assert(not ierr);
 
     switch (gdata.grouptype) {
     case CCTK_GF:

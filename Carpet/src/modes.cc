@@ -105,7 +105,8 @@ void enter_global_mode(cGH *const cctkGH, int const ml) {
   // Set array information
   for (int group = 0; group < CCTK_NumGroups(); ++group) {
     cGroup gp;
-    check(not CCTK_GroupData(group, &gp));
+    int ierr = CCTK_GroupData(group, &gp);
+    assert(not ierr);
     if (gp.grouptype != CCTK_GF) {
 
       const int rl = 0;

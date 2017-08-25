@@ -842,7 +842,7 @@ void OutputGridStatistics(cGH const *const cctkGH) {
   CCTK_REAL size_total_array_points = 0;
   for (int g = 0; g < CCTK_NumGroups(); ++g) {
     cGroup gdata;
-    check(not CCTK_GroupData(g, &gdata));
+    CCTK_GroupData(g, &gdata);
     int const num_tl = CCTK_ActiveTimeLevelsGI(cctkGH, g);
     int const num_vars = gdata.numvars;
     int const size_vars = gdata.numvars * CCTK_VarTypeSize(gdata.vartype);
@@ -1890,13 +1890,13 @@ static void MakeMultigridBoxes(cGH const *const cctkGH, int const m,
     jjvect nboundaryzones, is_internal, is_staggered, shiftout;
     if (domain_from_multipatch and
         CCTK_IsFunctionAliased("MultiPatch_GetBoundarySpecification")) {
-      check(not MultiPatch_GetBoundarySpecification(
-          m, 2 * dim, &nboundaryzones[0][0], &is_internal[0][0],
-          &is_staggered[0][0], &shiftout[0][0]));
+      MultiPatch_GetBoundarySpecification(m, 2 * dim, &nboundaryzones[0][0],
+                                          &is_internal[0][0],
+                                          &is_staggered[0][0], &shiftout[0][0]);
     } else {
-      check(not GetBoundarySpecification(2 * dim, &nboundaryzones[0][0],
-                                         &is_internal[0][0],
-                                         &is_staggered[0][0], &shiftout[0][0]));
+      GetBoundarySpecification(2 * dim, &nboundaryzones[0][0],
+                               &is_internal[0][0], &is_staggered[0][0],
+                               &shiftout[0][0]);
     }
     // (distance in grid points between the exterior and the physical boundary)
     iivect offset;
