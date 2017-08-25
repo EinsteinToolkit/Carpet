@@ -70,11 +70,11 @@ MPI_Datatype fasterp_iloc_t::mpi_datatype() {
     static fasterp_iloc_t s;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type),     /* count elements */                     \
-        (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */       \
-        dist::mpi_datatype<type>(),   /* find MPI datatype */                  \
-        STRINGIFY(name),              /* field name */                         \
-        STRINGIFY(type),              /* type name */                          \
+      sizeof s.name / sizeof(type), /* count elements */                       \
+      (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */         \
+      dist::mpi_datatype<type>(),   /* find MPI datatype */                    \
+      STRINGIFY(name),              /* field name */                           \
+      STRINGIFY(type),              /* type name */                            \
   }
     dist::mpi_struct_descr_t const descr[] = {
         ENTRY(int, mrc),
