@@ -50,12 +50,12 @@ template <typename T, int D> MPI_Datatype mpi_datatype(slab<T, D> const &) {
     typedef vect<T, D> avect;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type), /* count elements */                         \
-        (const char *)&s.name -                                                \
-            (const char *)&s,       /* offsetof doesn't work (why?) */         \
-        dist::mpi_datatype<type>(), /* find MPI datatype */                    \
-        STRINGIFY(name),            /* field name */                           \
-        STRINGIFY(type),            /* type name */                            \
+      sizeof s.name / sizeof(type), /* count elements */                       \
+      (const char *)&s.name -                                                  \
+          (const char *)&s,       /* offsetof doesn't work (why?) */           \
+      dist::mpi_datatype<type>(), /* find MPI datatype */                      \
+      STRINGIFY(name),            /* field name */                             \
+      STRINGIFY(type),            /* type name */                              \
   }
     dist::mpi_struct_descr_t const descr[] = {ENTRY(avect, offset)};
 #undef ENTRY

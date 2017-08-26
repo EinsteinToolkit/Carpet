@@ -47,12 +47,12 @@ template <typename T, int D> MPI_Datatype vect<T, D>::mpi_datatype() const {
     vect<T, D> const &s = *this;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type), /* count elements */                         \
-        (const char *)&s.name -                                                \
-            (const char *)&s,       /* offsetof doesn't work (why?) */         \
-        dist::mpi_datatype<type>(), /* find MPI datatype */                    \
-        STRINGIFY(name),            /* field name */                           \
-        STRINGIFY(type),            /* type name */                            \
+      sizeof s.name / sizeof(type), /* count elements */                       \
+      (const char *)&s.name -                                                  \
+          (const char *)&s,       /* offsetof doesn't work (why?) */           \
+      dist::mpi_datatype<type>(), /* find MPI datatype */                      \
+      STRINGIFY(name),            /* field name */                             \
+      STRINGIFY(type),            /* type name */                              \
   }
     dist::mpi_struct_descr_t const descr[] = {ENTRY(T, elt)};
 #undef ENTRY
