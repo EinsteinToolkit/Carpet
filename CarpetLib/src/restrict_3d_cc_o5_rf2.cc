@@ -41,8 +41,8 @@ inline T restrict1(T const *restrict const p, size_t const d1) {
   typedef typename typeprops<T>::real RT;
   RT const den = 256;
   RT const f2 = 3 / den, f1 = 25 / den, f0 = 150 / den;
-  T const res = f2 * p[-2] - f1 * p[-1] + f0 * p[-0] + f0 * p[+1] -
-                f1 * p[+2] + f2 * p[+3];
+  T const res = f2 * p[-2] - f1 * p[-1] + f0 * p[-0] + f0 * p[+1] - f1 * p[+2] +
+                f2 * p[+3];
   return res;
 }
 

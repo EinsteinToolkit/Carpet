@@ -333,7 +333,7 @@ char **backtrace_symbols(void *const *buffer, int size) {
   int total = 0;
 
   char ***locations;
-  char ** final;
+  char **final;
   char *f_strings;
 
   locations = malloc(sizeof(char **) * (stack_depth + 1));
