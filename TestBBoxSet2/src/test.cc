@@ -80,8 +80,8 @@ void check_equal(const string descr, const A1 &x1, const A2 &x2,
     cerr.flush();
     fflush(stdout);
     fflush(stderr);
-    CCTK_VParamWarn(CCTK_THORNSTRING, "Found difference in operation \"%s\":",
-                    descr.c_str());
+    CCTK_VParamWarn(CCTK_THORNSTRING,
+                    "Found difference in operation \"%s\":", descr.c_str());
     fflush(stdout);
     fflush(stderr);
     cout << "\n"
