@@ -118,9 +118,10 @@ void restrict_3d_cc_o3_rf2(
   if (not use_loopcontrol_in_operators) {
 
 // Loop over coarse region
-#pragma omp parallel for collapse(3)
+#pragma omp parallel for collapse(2)
     for (int k = 0; k < regkext; ++k) {
       for (int j = 0; j < regjext; ++j) {
+#pragma omp simd
         for (int i = 0; i < regiext; ++i) {
 
 #ifdef CARPET_DEBUG

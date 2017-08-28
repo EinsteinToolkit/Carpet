@@ -39,6 +39,8 @@ void interpolate_eno_3d_3tl(
     ivect3 const &restrict dstext, ibbox3 const &restrict srcbbox,
     ibbox3 const &restrict dstbbox, ibbox3 const &restrict,
     ibbox3 const &restrict regbbox, void *extraargs) {
+  DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   typedef typename typeprops<T>::real RT;

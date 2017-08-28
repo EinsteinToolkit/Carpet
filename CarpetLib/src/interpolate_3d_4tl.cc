@@ -33,6 +33,8 @@ void interpolate_3d_4tl(T const *restrict const src1, CCTK_REAL const t1,
                         ibbox3 const &restrict srcbbox,
                         ibbox3 const &restrict dstbbox, ibbox3 const &restrict,
                         ibbox3 const &restrict regbbox, void *extraargs) {
+  DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   typedef typename typeprops<T>::real RT;
@@ -119,7 +121,6 @@ void interpolate_3d_4tl(T const *restrict const src1, CCTK_REAL const t1,
 #pragma omp parallel
   CCTK_LOOP3(interpolate_3d_4tl, i, j, k, 0, 0, 0, regiext, regjext, regkext,
              dstipadext, dstjpadext, dstkpadext) {
-
     dst[DSTIND3(i, j, k)] =
         s1fac * src1[SRCIND3(i, j, k)] + s2fac * src2[SRCIND3(i, j, k)] +
         s3fac * src3[SRCIND3(i, j, k)] + s4fac * src4[SRCIND3(i, j, k)];

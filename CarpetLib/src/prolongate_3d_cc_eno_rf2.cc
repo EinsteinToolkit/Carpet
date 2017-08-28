@@ -948,6 +948,7 @@ void prolongate_3d_cc_eno_rf2(
     ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
     ibbox3 const &restrict, ibbox3 const &restrict regbbox, void *extraargs) {
   DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   static_assert(ORDER >= 0, "ORDER must be non-negative");
