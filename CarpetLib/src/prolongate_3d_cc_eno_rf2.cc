@@ -948,6 +948,7 @@ void prolongate_3d_cc_eno_rf2(
     ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
     ibbox3 const &restrict, ibbox3 const &restrict regbbox, void *extraargs) {
   DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   static_assert(ORDER >= 0, "ORDER must be non-negative");
@@ -1289,8 +1290,8 @@ void prolongate_3d_cc_eno_rf2(
 
   } else { // use_loopcontrol_in_operators
 
-    // Loop over fine region
-    // #pragma omp parallel
+// Loop over fine region
+#pragma omp parallel if (use_openmp)
     CCTK_LOOP3(prolongate_3d_cc_eno_rf2, i, j, k, 0, 0, 0, regiext, regjext,
                regkext, dstipadext, dstjpadext, dstkpadext) {
       const ptrdiff_t is = (srcioff + i) / 2;

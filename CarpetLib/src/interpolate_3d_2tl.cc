@@ -31,6 +31,8 @@ void interpolate_3d_2tl(T const *restrict const src1, CCTK_REAL const t1,
                         ibbox3 const &restrict srcbbox,
                         ibbox3 const &restrict dstbbox, ibbox3 const &restrict,
                         ibbox3 const &restrict regbbox, void *extraargs) {
+  DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   typedef typename typeprops<T>::real RT;
@@ -103,11 +105,10 @@ void interpolate_3d_2tl(T const *restrict const src1, CCTK_REAL const t1,
   RT const s1fac = (t - t2) / (t1 - t2);
   RT const s2fac = (t - t1) / (t2 - t1);
 
-  // Loop over region
-  // #pragma omp parallel
+// Loop over region
+#pragma omp parallel if (use_openmp)
   CCTK_LOOP3(interpolate_3d_2tl, i, j, k, 0, 0, 0, regiext, regjext, regkext,
              dstipadext, dstjpadext, dstkpadext) {
-
     dst[DSTIND3(i, j, k)] =
         s1fac * src1[SRCIND3(i, j, k)] + s2fac * src2[SRCIND3(i, j, k)];
   }

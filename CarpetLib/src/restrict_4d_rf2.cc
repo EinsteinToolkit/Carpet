@@ -31,6 +31,8 @@ void restrict_4d_rf2(T const *restrict const src,
                      ibbox4 const &restrict srcbbox,
                      ibbox4 const &restrict dstbbox, ibbox4 const &restrict,
                      ibbox4 const &restrict regbbox, void *extraargs) {
+  DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   if (any(srcbbox.stride() >= regbbox.stride() or
@@ -100,13 +102,13 @@ void restrict_4d_rf2(T const *restrict const src,
   ptrdiff_t const dstkoff = dstoff[2];
   ptrdiff_t const dstloff = dstoff[3];
 
-  // Loop over coarse region
-  // #pragma omp parallel for collapse(4)
+// Loop over coarse region
+#pragma omp parallel for collapse(3) if (use_openmp)
   for (int l = 0; l < reglext; ++l) {
     for (int k = 0; k < regkext; ++k) {
       for (int j = 0; j < regjext; ++j) {
+#pragma omp simd
         for (int i = 0; i < regiext; ++i) {
-
           dst[DSTIND4(i, j, k, l)] = src[SRCIND4(2 * i, 2 * j, 2 * k, 2 * l)];
         }
       }

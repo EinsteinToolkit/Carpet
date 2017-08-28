@@ -34,6 +34,8 @@ void interpolate_3d_5tl(T const *restrict const src1, CCTK_REAL const t1,
                         ibbox3 const &restrict srcbbox,
                         ibbox3 const &restrict dstbbox, ibbox3 const &restrict,
                         ibbox3 const &restrict regbbox, void *extraargs) {
+  DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   typedef typename typeprops<T>::real RT;
@@ -120,11 +122,10 @@ void interpolate_3d_5tl(T const *restrict const src1, CCTK_REAL const t1,
   RT const s5fac = (t - t1) * (t - t2) * (t - t3) * (t - t4) /
                    ((t5 - t1) * (t5 - t2) * (t5 - t3) * (t5 - t4));
 
-  // Loop over region
-  // #pragma omp parallel
+// Loop over region
+#pragma omp parallel if (use_openmp)
   CCTK_LOOP3(interpolate_3d_5tl, i, j, k, 0, 0, 0, regiext, regjext, regkext,
              dstipadext, dstjpadext, dstkpadext) {
-
     dst[DSTIND3(i, j, k)] =
         s1fac * src1[SRCIND3(i, j, k)] + s2fac * src2[SRCIND3(i, j, k)] +
         s3fac * src3[SRCIND3(i, j, k)] + s4fac * src4[SRCIND3(i, j, k)] +

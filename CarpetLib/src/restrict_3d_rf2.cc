@@ -97,11 +97,12 @@ void restrict_3d_rf2(T const *restrict const src,
 
   if (not use_loopcontrol_in_operators) {
 
-    // Loop over coarse region
+// Loop over coarse region
+#pragma omp parallel for collapse(2) if (use_openmp)
     for (int k = 0; k < regkext; ++k) {
       for (int j = 0; j < regjext; ++j) {
+#pragma omp simd
         for (int i = 0; i < regiext; ++i) {
-
           dst[DSTIND3(i, j, k)] = src[SRCIND3(2 * i, 2 * j, 2 * k)];
         }
       }
@@ -109,11 +110,10 @@ void restrict_3d_rf2(T const *restrict const src,
 
   } else {
 
-    // Loop over coarse region
-    // #pragma omp parallel
+// Loop over coarse region
+#pragma omp parallel if (use_openmp)
     CCTK_LOOP3(restrict_3d_rf2, i, j, k, 0, 0, 0, regiext, regjext, regkext,
                dstipadext, dstjpadext, dstkpadext) {
-
       dst[DSTIND3(i, j, k)] = src[SRCIND3(2 * i, 2 * j, 2 * k)];
     }
     CCTK_ENDLOOP3(restrict_3d_rf2);
