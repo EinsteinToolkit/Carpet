@@ -129,7 +129,8 @@ void enter_global_mode(cGH *const cctkGH, int const ml) {
                  arrdata.AT(group).AT(m).dd->ghost_widths.AT(0)[1]));
       ivect_ref(info.gsh) = baseext.sizes();
       ivect_ref(info.lbnd) = (ext.lower() - baseext.lower()) / ext.stride();
-      ivect_ref(info.ubnd) = (ext.upper() - baseext.lower()) / ext.stride();
+      // ivect_ref(info.ubnd) = (ext.upper() - baseext.lower()) / ext.stride();
+      ivect_ref(info.ubnd) = ivect_ref(info.lbnd) + ivect_ref(info.lsh) - 1;
       ivect_ref(info.lsh) = ext.sizes();
       const auto shp = pad_shape(ext, own);
       ivect_ref(info.ash) = shp.padded_shape;
