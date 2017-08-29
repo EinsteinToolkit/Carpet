@@ -22,7 +22,9 @@ CCTK_REAL const eps = 1.0e-15;
 
 // Return the current wall time
 static CCTK_REAL get_walltime() {
-  return std::chrono::steady_clock::now().time_since_epoch().count();
+  return std::chrono::duration<CCTK_REAL>(
+             std::chrono::steady_clock::now().time_since_epoch())
+      .count();
 }
 
 // Calculate the number of updates for the current level
