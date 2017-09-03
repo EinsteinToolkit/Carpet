@@ -274,7 +274,7 @@ void TimerNode::print(ostream &out, double total, int level, double threshold,
     }
   }
   out.precision(oldprecision);
-  out.setf(oldflags);
+  out.flags(oldflags);
 
   if (level == 0) {
     out << "--------" << hyphens << "--------" << hyphens << "--------"
