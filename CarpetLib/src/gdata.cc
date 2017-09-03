@@ -202,9 +202,13 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
                                              src->transport_operator);
           buf->allocate(dstbox, dstbox.sizes(), ivect(0), srcproc, sendbuf,
                         sendbufsize);
-          buf->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo,
-                                       time, order_space, order_time);
-          delete buf;
+#pragma omp task firstprivate(buf, srcs, times, dstbox, srcbox, slabinfo,      \
+                              time, order_space, order_time)
+          {
+            buf->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo,
+                                         time, order_space, order_time);
+            delete buf;
+          }
           state.commit_send_space(src->c_datatype(), dstproc, dstbox.size());
         } else {
           for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++tl) {
@@ -227,13 +231,13 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
   case state_do_some_work:
     // handle the process-local case
     if (is_dst and is_src) {
-      static HighResTimer::HighResTimer timer_submit(
-          "FunHPC:" __FILE__ ":" STRINGIFY(__LINE__) ":submit");
-      static HighResTimer::HighResTimer timer_threads(
-          "FunHPC:" __FILE__ ":" STRINGIFY(__LINE__) ":threads");
-      auto clock_submit = timer_submit.start();
       if (use_funhpc_in_comm) {
 #ifdef HAVE_CAPABILITY_FunHPC
+        static HighResTimer::HighResTimer timer_submit(
+            "FunHPC:" __FILE__ ":" STRINGIFY(__LINE__) ":submit");
+        static HighResTimer::HighResTimer timer_threads(
+            "FunHPC:" __FILE__ ":" STRINGIFY(__LINE__) ":threads");
+        auto clock_submit = timer_submit.start();
         // We could start the local calculations earlier, either before or while
         // filling the send buffers. However, we wait until here so that the
         // send-buffer filling runs as fast as possible to reduce latency.
@@ -243,14 +247,16 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
                                   order_space, order_time);
           clock_threads.stop(dstbox.size() * elementsize());
         }));
+        clock_submit.stop(00);
 #else
         CCTK_ERROR("Cannot use CarpetLib::use_funhpc_in_comm without FunHPC");
 #endif
       } else {
+#pragma omp task firstprivate(srcs, times, dstbox, srcbox, slabinfo, time,     \
+                              order_space, order_time)
         transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
                                 order_space, order_time);
       }
-      clock_submit.stop(00);
     }
     break;
 
@@ -283,10 +289,14 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
             bufs.AT(tl) = buf;
             timebuf.AT(tl) = times.AT(timelevel0 + tl);
           }
-          transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo, time,
-                                  order_space, order_time);
-          for (int tl = 0; tl < ntimelevels; ++tl)
-            delete bufs.AT(tl);
+#pragma omp task firstprivate(bufs, timebuf, dstbox, srcbox, slabinfo, time,   \
+                              order_space, order_time)
+          {
+            transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo,
+                                    time, order_space, order_time);
+            for (auto buf : bufs)
+              delete buf;
+          }
         }
       }
     }
