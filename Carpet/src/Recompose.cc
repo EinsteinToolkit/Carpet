@@ -621,7 +621,7 @@ void OutputGrids(cGH const *const cctkGH, int const m, gh const &hh,
       }
     }
     cout.precision(oldprecision);
-    cout.setf(oldflags);
+    cout.flags(oldflags);
 
     fflush(stdout);
   }

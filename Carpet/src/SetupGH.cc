@@ -770,6 +770,7 @@ void allocate_data_hierarchy(cGH const *const cctkGH, int const m) {
 
   const streamsize oldprecision = cout.precision();
   const ios_base::fmtflags oldflags = cout.flags();
+  // TODO: Should we also set a different precision here?
   cout.setf(ios::fixed);
   CCTK_INFO("Buffer zone counts (excluding ghosts):");
   vector<i2vect> buffers(maxreflevels);
@@ -795,7 +796,7 @@ void allocate_data_hierarchy(cGH const *const cctkGH, int const m) {
     assert(all(all(overlaps.AT(rl) >= 0)));
   }
   cout.precision(oldprecision);
-  cout.setf(oldflags);
+  cout.flags(oldflags);
 
   vector<int> const my_prolongation_orders_space =
       get_prolongation_orders_space();
