@@ -62,7 +62,6 @@ void comm_state::procbufdesc::reinitialize() {
 
 #ifdef HAVE_CAPABILITY_FunHPC
   assert(futures.size() == 0);
-  futures.resize(0);
 #endif
 }
 
