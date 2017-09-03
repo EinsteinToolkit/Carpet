@@ -22,7 +22,9 @@ static void output(ostream &s, rlim_t const &value);
 void set_system_limits() {
   DECLARE_CCTK_PARAMETERS;
   set_limit(RLIMIT_CORE, "core file size", max_core_size_MB);
-  set_limit(RLIMIT_AS, "memory size", max_memory_size_MB);
+  set_limit(RLIMIT_AS, "addres space size", max_memory_size_MB);
+  set_limit(RLIMIT_DATA, "data segment size", max_memory_size_MB);
+  set_limit(RLIMIT_RSS, "resident set size", max_memory_size_MB);
 }
 
 void set_limit(int const resource, char const *const name,
