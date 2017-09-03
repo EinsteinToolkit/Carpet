@@ -82,8 +82,8 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
     if (grouptype == CCTK_GF) {
       if (reflevel == -1) {
         CCTK_VERROR("Cannot synchronise in global mode "
-                   "(Tried to synchronise group \"%s\")",
-                   groupname);
+                    "(Tried to synchronise group \"%s\")",
+                    groupname);
       }
       if (map != -1 and component == -1) {
         if (maps == 1) {
@@ -91,8 +91,8 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
                      groupname);
         } else {
           CCTK_VERROR("Cannot synchronise in singlemap mode "
-                     "(Tried to synchronise group \"%s\")",
-                     groupname);
+                      "(Tried to synchronise group \"%s\")",
+                      groupname);
         }
       }
       if (component != -1) {
@@ -100,8 +100,8 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
           CCTK_VWARN(2, "Synchronising group \"%s\" in local mode", groupname);
         } else {
           CCTK_VERROR("Cannot synchronise in local mode "
-                     "(Tried to synchronise group \"%s\")",
-                     groupname);
+                      "(Tried to synchronise group \"%s\")",
+                      groupname);
         }
       }
     }
@@ -269,22 +269,29 @@ static void ProlongateGroupBoundaries(const cGH *cctkGH,
     }
   }
 
-  vector<Timers::Timer *>::iterator ti = timers.begin();
-  (*ti)->start();
-  for (comm_state state; not state.done(); state.step()) {
-    (*ti)->stop();
-    ++ti;
-    (*ti)->start();
-#pragma omp parallel for schedule(dynamic) if (use_openmp_in_comm)
-    for (size_t i = 0; i < tasks.size(); ++i)
-      tasks[i](state);
-    (*ti)->stop();
-    ++ti;
-    (*ti)->start();
+#pragma omp parallel if (use_openmp_in_comm)
+  {
+#pragma omp master
+    {
+      vector<Timers::Timer *>::iterator ti = timers.begin();
+      (*ti)->start();
+      for (comm_state state; not state.done(); state.step()) {
+        (*ti)->stop();
+        ++ti;
+        (*ti)->start();
+        // #pragma omp parallel for schedule(dynamic) if (use_openmp_in_comm)
+        for (size_t i = 0; i < tasks.size(); ++i)
+          tasks[i](state);
+#pragma omp taskwait
+        (*ti)->stop();
+        ++ti;
+        (*ti)->start();
+      }
+      (*ti)->stop();
+      ++ti;
+      assert(ti == timers.end());
+    }
   }
-  (*ti)->stop();
-  ++ti;
-  assert(ti == timers.end());
 
   // TODO: Transmit only the regions that were actually written
   // (i.e. the buffer zones)
@@ -368,7 +375,7 @@ void SyncGroups(const cGH *cctkGH, const vector<int> &groups) {
     (*ti)->stop();
     ++ti;
     (*ti)->start();
-#pragma omp parallel for schedule(dynamic) if (use_openmp_in_comm)
+    // #pragma omp parallel for schedule(dynamic) if (use_openmp_in_comm)
     for (size_t i = 0; i < tasks.size(); ++i)
       tasks[i](state);
     (*ti)->stop();
