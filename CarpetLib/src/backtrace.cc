@@ -438,7 +438,8 @@ void generate_backtrace(ostream &stacktrace) {
   if (n < 2) {
     stacktrace << "Backtrace not available!\n";
   } else {
-    stacktrace.flags(ios::hex);
+    auto oldflags = stacktrace.flags();
+    stacktrace.setf(ios::hex);
 #ifdef HAVE_BACKTRACE_SYMBOLS
     char **names = backtrace_symbols(addresses, n);
     for (int i = 2; i < n; i++) {
@@ -478,7 +479,7 @@ void generate_backtrace(ostream &stacktrace) {
     }
     free(names);
 #endif
-    stacktrace.flags(ios::dec);
+    stacktrace.flags(oldflags);
   }
 }
 
