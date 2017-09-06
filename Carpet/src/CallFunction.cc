@@ -20,7 +20,13 @@
 
 #include "adler32.hh"
 
+extern "C" void clear_readwrites();
+extern "C" void check_readwrites();
+
 extern "C" void ShowValid();
+
+extern std::string func_name;
+std::string func_name;
 
 namespace Carpet {
 
@@ -442,15 +448,24 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
     ShowValid();
     CCTK_REAL *var = (CCTK_REAL*)CCTK_VarDataPtr(cctkGH,0,"PRESYNCWAVE::psi");
     #endif
+    func_name = "";
+    func_name += attribute->thorn;
+    func_name += "::";
+    func_name += attribute->routine;
+
     if (CCTK_IsFunctionAliased("Accelerator_PreCallFunction")) {
       Timers::Timer pre_timer("PreCall");
       pre_timer.start();
       Accelerator_PreCallFunction(cctkGH, attribute);
       pre_timer.stop();
+      std::cout << "/== " << func_name << std::endl;
     }
+    clear_readwrites();
     int const res = CCTK_CallFunction(function, attribute, data);
+    check_readwrites();
     assert(res == 0);
     if (CCTK_IsFunctionAliased("Accelerator_PostCallFunction")) {
+      std::cout << "\\== " << func_name << std::endl;
       Timers::Timer post_timer("PostCall");
       post_timer.start();
       Accelerator_PostCallFunction(cctkGH, attribute);
