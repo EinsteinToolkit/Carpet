@@ -15,6 +15,12 @@
 #include <util_ErrorCodes.h>
 #include <util_Table.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#else
+inline int omp_in_parallel() { return 0; }
+#endif
+
 #ifdef CCTK_MPI
 #include <mpi.h>
 #else
@@ -207,6 +213,9 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
                                          time, order_space, order_time);
             delete buf;
           }};
+          // TODO: Handle this better
+          if (omp_in_parallel())
+            assert(combine_sends);
 #pragma omp task
           transfer();
           state.commit_send_space(src->c_datatype(), dstproc, dstbox.size());
