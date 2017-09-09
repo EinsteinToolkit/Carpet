@@ -69,7 +69,7 @@ template <typename T, int D> MPI_Datatype mpi_datatype(slab<T, D> const &) {
 }
 
 template MPI_Datatype mpi_datatype(slab<int, dim> const &);
-}
+} // namespace dist
 
 // set<gdata *> gdata::allgdata;
 
@@ -202,13 +202,13 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
                                              src->transport_operator);
           buf->allocate(dstbox, dstbox.sizes(), ivect(0), srcproc, sendbuf,
                         sendbufsize);
-#pragma omp task firstprivate(buf, srcs, times, dstbox, srcbox, slabinfo,      \
-                              time, order_space, order_time)
-          {
+          const auto transfer{[=]() {
             buf->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo,
                                          time, order_space, order_time);
             delete buf;
-          }
+          }};
+#pragma omp task
+          transfer();
           state.commit_send_space(src->c_datatype(), dstproc, dstbox.size());
         } else {
           for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++tl) {
@@ -252,10 +252,12 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
         CCTK_ERROR("Cannot use CarpetLib::use_funhpc_in_comm without FunHPC");
 #endif
       } else {
-#pragma omp task firstprivate(srcs, times, dstbox, srcbox, slabinfo, time,     \
-                              order_space, order_time)
-        transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
-                                order_space, order_time);
+        const auto transfer{[=]() {
+          transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
+                                  order_space, order_time);
+        }};
+#pragma omp task
+        transfer();
       }
     }
     break;
@@ -289,14 +291,14 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
             bufs.AT(tl) = buf;
             timebuf.AT(tl) = times.AT(timelevel0 + tl);
           }
-#pragma omp task firstprivate(bufs, timebuf, dstbox, srcbox, slabinfo, time,   \
-                              order_space, order_time)
-          {
+          const auto transfer{[=]() {
             transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo,
                                     time, order_space, order_time);
             for (auto buf : bufs)
               delete buf;
-          }
+          }};
+#pragma omp task
+          transfer();
         }
       }
     }
@@ -380,4 +382,4 @@ size_t gdata::allmemory() {
   // return mem;
   return 0;
 }
-}
+} // namespace CarpetLib
