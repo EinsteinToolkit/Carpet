@@ -307,14 +307,15 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
             bufs.AT(tl) = buf;
             timebuf.AT(tl) = times.AT(timelevel0 + tl);
           }
-          const auto transfer{[=]() {
-            transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo,
-                                    time, order_space, order_time);
-            for (auto buf : bufs)
-              delete buf;
-          }};
+          const auto transfer{
+              std::make_shared<std::function<void(void)> >([=]() {
+                transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo,
+                                        time, order_space, order_time);
+                for (auto buf : bufs)
+                  delete buf;
+              })};
 #pragma omp task
-          transfer();
+          (*transfer)();
         }
       }
     }
