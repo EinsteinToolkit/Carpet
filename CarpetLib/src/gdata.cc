@@ -210,18 +210,16 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
                                              src->transport_operator);
           buf->allocate(dstbox, dstbox.sizes(), ivect(0), srcproc, sendbuf,
                         sendbufsize);
-          const auto transfer{
-              std::make_shared<std::function<void(void)> >([=]() {
-                buf->transfer_from_innerloop(srcs, times, dstbox, srcbox,
-                                             slabinfo, time, order_space,
-                                             order_time);
-                delete buf;
-              })};
+          const auto transfer = [=]() {
+            buf->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo,
+                                         time, order_space, order_time);
+            delete buf;
+          };
           // TODO: Handle this better
           if (omp_in_parallel())
             assert(combine_sends);
 #pragma omp task
-          (*transfer)();
+          transfer();
           state.commit_send_space(src->c_datatype(), dstproc, dstbox.size());
         } else {
           for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++tl) {
@@ -268,12 +266,12 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
         // Create a C++ closure to capture some local variables
         // automatically, which is a bit easier than via OpenMP. Wrap
         // this in a std::shared_ptr to make the Intel compiler happy.
-        const auto transfer{std::make_shared<std::function<void(void)> >([=]() {
+        const auto transfer = [=]() {
           transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
                                   order_space, order_time);
-        })};
+        };
 #pragma omp task
-        (*transfer)();
+        transfer();
       }
     }
     break;
@@ -307,15 +305,14 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
             bufs.AT(tl) = buf;
             timebuf.AT(tl) = times.AT(timelevel0 + tl);
           }
-          const auto transfer{
-              std::make_shared<std::function<void(void)> >([=]() {
-                transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo,
-                                        time, order_space, order_time);
-                for (auto buf : bufs)
-                  delete buf;
-              })};
+          const auto transfer = [=]() {
+            transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo,
+                                    time, order_space, order_time);
+            for (auto buf : bufs)
+              delete buf;
+          };
 #pragma omp task
-          (*transfer)();
+          transfer();
         }
       }
     }
