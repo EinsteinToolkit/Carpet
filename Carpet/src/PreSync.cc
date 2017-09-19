@@ -280,6 +280,22 @@ void compute_clauses(const int num_strings,const char **strings,std::map<var_tup
 std::map<std::string,std::map<var_tuple,int>> reads,writes;
 std::map<var_tuple,int> valid_k;
 
+extern "C" void TraverseReads(const char *func_name,void(*trace_func)(int,int,int)) {
+    std::string f{func_name};
+    auto r = reads[f];
+    for(auto i = r.begin();i != r.end(); ++i) {
+        trace_func(i->first.vi,i->first.tl,i->second);
+    }
+}
+
+extern "C" void TraverseWrites(const char *func_name,void(*trace_func)(int,int,int)) {
+    std::string f{func_name};
+    auto r = writes[f];
+    for(auto i = r.begin();i != r.end(); ++i) {
+        trace_func(i->first.vi,i->first.tl,i->second);
+    }
+}
+
 void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
   std::string r;
   r += attribute->thorn;
@@ -393,6 +409,40 @@ int Carpet_hasAccess(const cGH *cctkGH,int var_index) {
     return false;
   } else {
     return true;
+  }
+}
+
+std::map<int,int> attempted_readwrites;
+
+extern "C" void attempt_readwrite(const char *thorn,const char *var, int spec);
+void attempt_readwrite(int gf,int spec);
+extern "C" void clear_readwrites();
+extern "C" void check_readwrites();
+
+extern "C" void attempt_readwrite(const char *thorn,const char *var, int spec) {
+  std::string v;
+  v += thorn;
+  v += "::";
+  v += var;
+  int vi = CCTK_VarIndex(v.c_str());
+  if(vi < 0) abort();
+  attempt_readwrite(vi,spec);
+}
+void attempt_readwrite(int gf,int spec) {
+  if(gf >= 0)
+    attempted_readwrites[gf] |= spec;
+}
+extern "C" void clear_readwrites() {
+  attempted_readwrites.clear();
+}
+extern "C" void check_readwrites() {
+  for(auto i=attempted_readwrites.begin(); i != attempted_readwrites.end(); ++i) {
+    if((i->second & 0x01)==0x01 && !hasAccess(reads[current_routine],i->first)) {
+        std::cerr << "Undeclared access: " << current_routine << " read name='" << CCTK_FullName(i->first) << "'" << std::endl;
+    }
+    if((i->second & 0x10)==0x10 && !hasAccess(writes[current_routine],i->first)) {
+        std::cerr << "Undeclared access: " << current_routine << " write name='" << CCTK_FullName(i->first) << "'" << std::endl;
+    }
   }
 }
 
