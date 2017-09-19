@@ -1,5 +1,6 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_CarpetReduce.h>
 #include <cctk_Parameters.h>
 
 #include <carpet.h>
@@ -8,7 +9,7 @@
 #include <math.h>
 
 extern "C" void MaskBase_TestMask(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_MaskBase_TestMask;
   DECLARE_CCTK_PARAMETERS;
 
   if (verbose) {

@@ -95,15 +95,16 @@ int CallFunction(void *function,           ///< the function to call
              not not attribute->loop_singlemap +
              not not attribute->loop_local <=
          1);
-
-  // Create list of all groups that need to be synchronised
+  // Create list of all groups that need to be synchronised via SYNC
   vector<int> sync_groups;
-  sync_groups.reserve(attribute->n_SyncGroups);
-  for (int g = 0; g < attribute->n_SyncGroups; g++) {
-    const int group = attribute->SyncGroups[g];
-    if (CCTK_NumVarsInGroupI(group) > 0) {
-      // don't add empty groups from the list
-      sync_groups.push_back(group);
+  if(not psync_only) {
+    sync_groups.reserve(attribute->n_SyncGroups);
+    for (int g = 0; g < attribute->n_SyncGroups; g++) {
+      const int group = attribute->SyncGroups[g];
+      if (CCTK_NumVarsInGroupI(group) > 0) {
+        // don't add empty groups from the list
+        sync_groups.push_back(group);
+      }
     }
   }
 

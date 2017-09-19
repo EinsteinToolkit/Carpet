@@ -1,4 +1,5 @@
 #include <set>
+#include <cstring>
 #include <map>
 #include <vector>
 #include <cctk.h>
@@ -9,6 +10,8 @@
 #include <math.h>
 #include <array>
 #include "PreSync.h"
+
+const bool debug=false;
 
 extern "C" void ShowValid();
 
@@ -241,6 +244,12 @@ void compute_clauses(const int num_strings,const char **strings,std::map<var_tup
       // we lookup everything on the group.
       int gi = CCTK_GroupIndex(rwc.name.c_str());
       if(gi >= 0) {
+        if(!CCTK_NumVarsInGroupI(gi)) {
+          // Some groups have array length set at runtime, and
+          // they can be set to 0 (inactive), in which case
+          // the rd/wr should be ignored.
+          continue;
+        }
         int i0 = CCTK_FirstVarIndexI(gi);
         int iN = i0+CCTK_NumVarsInGroupI(gi);
         for(vi=i0;vi<iN;vi++) {
@@ -249,8 +258,20 @@ void compute_clauses(const int num_strings,const char **strings,std::map<var_tup
         }
         assert(i0 < iN);
       } else {
-        std::cerr << "error: Could not find (" << rwc.name << ")" << std::endl;
-        abort();
+        std::string vname = rwc.name.c_str();
+        vname += "[0]";
+        vi = CCTK_VarIndex(vname.c_str());
+        std::cout << vname.c_str() << " has " << vi << std::endl;
+        gi = CCTK_GroupIndexFromVarI(vi);
+        if(gi >= 0) {
+          int i0 = CCTK_FirstVarIndexI(gi);
+          int iN = i0+CCTK_NumVarsInGroupI(gi);
+          for(vi=i0;vi<iN;vi++) {
+            var_tuple vt{vi};
+            routine_m[vt] = where_val;
+          }
+          assert(i0 < iN);
+        }
       }
     }
   }
@@ -268,7 +289,7 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
   std::map<var_tuple,int>& writes_m = writes[r];
   for(auto i = writes_m.begin();i != writes_m.end(); ++i) {
     const var_tuple& vi = i->first;
-    valid_k[vi] = i->second;
+    valid_k[vi] |= i->second;
   }
   for(auto g = sync_groups.begin();g != sync_groups.end();++g) {
     int gi = *g;
@@ -278,7 +299,7 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
       int& w = writes[r][vi];
       if(w == WH_INTERIOR) {
         var_tuple vt{vi};
-        valid_k[vt] = WH_EVERYWHERE;
+        valid_k[vt] |= WH_GHOSTS;
       }
     }
   }
@@ -319,7 +340,6 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     }
   }
   if(sync_groups.size()>0) {
-      const bool debug = false;
       if (debug) {
         for (int sgi=0;sgi<sync_groups.size();sgi++) {
           int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
@@ -438,6 +458,23 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 
   for(auto i = reads_m.begin();i != reads_m.end(); ++i) {
     const var_tuple& vt = i->first;
+      if(!strcmp(CCTK_FullVarName(vt.vi),testing_parameter)) {
+        std::string valid_name;
+        switch(valid_k[vt]) {
+          case 7: valid_name = "everywhere"; break;
+          case 6: valid_name = "interior & boundaries"; break;
+          case 5: valid_name = "interior & ghosts"; break;
+          case 4: valid_name = "interior"; break;
+          case 3: valid_name = "boundaries & ghosts"; break;
+          case 2: valid_name = "boundaries"; break;
+          case 1: valid_name = "ghosts"; break;
+          case 0: valid_name = "nowhere"; break;
+          default: valid_name = "invalid type";
+        }
+        std::cout << CCTK_FullVarName(vt.vi);
+        std::cout << " has validity " << valid_name;
+        std::cout << " in routine " << current_routine << std::endl;
+      }
     if(!on(valid_k[vt],WH_INTERIOR)) {
       // If the read spec is everywhere and we only have
       // interior, that's ok. The system will sync.
@@ -463,7 +500,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
       }
     }
     if(i->second == WH_EVERYWHERE) {
-      if(true) //(on(valid_k[vt],WH_INTERIOR) && valid_k[vt] != WH_EVERYWHERE)
+      if(on(valid_k[vt],WH_INTERIOR) && valid_k[vt] != WH_EVERYWHERE)
       {
         if(vt.tl != 0) {
           std::ostringstream msg;
@@ -648,7 +685,7 @@ void Carpet_SelectVarForBCI(
 }
 
 extern "C"
-void Carpet_SelectGroupForBC(
+CCTK_INT SelectGroupForBC(
     const cGH *cctkGH,
     int faces,
     int width,
@@ -661,6 +698,7 @@ void Carpet_SelectGroupForBC(
   for(int i=vstart;i<vstart+vnum;i++) {
     Carpet_SelectVarForBCI(cctkGH,faces,width,table_handle,i,bc_name);
   }
+  return 0;
 }
 
 extern "C"
@@ -680,9 +718,10 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
   if(before != 0) before = 1;
   auto bc = boundary_conditions[before];
   if(bc.find(var_index) == bc.end()) {
+    if(debug) std::cout <<"Returned " << CCTK_FullName(var_index) << std::endl;
     return;
   } else {
-    //std::cout << "Carpet_ApplyPhysicalBCsForVarI(" << CCTK_FullName(var_index) << ") -> **FOUND**" << std::endl;
+    if(debug) std::cout << "Carpet_ApplyPhysicalBCsForVarI(" << CCTK_FullName(var_index) << ") -> **FOUND**" << std::endl;
   }
   std::vector<Bound>& bv = bc[var_index];
   BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
@@ -694,11 +733,11 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
         // Disable faces if they don't apply to this
         // computational region.
         int faces = b.faces;
-        for(int i=0;i<6;i++) {
-          if(cctkGH->cctk_bbox[i] == 0) {
-            faces &= ~(1 << i);
-          }
-        }
+//        for(int i=0;i<6;i++) {
+//          if(cctkGH->cctk_bbox[i] == 0) {
+//            faces &= ~(1 << i);
+//          }
+//        }
 
         if(faces != 0)
           (*f.func)(cctkGH,1,&var_index,&faces,&b.width,&b.table_handle);

@@ -11,6 +11,7 @@
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_CarpetIOScalar.h>
 #include <cctk_Parameters.h>
 #include <util_Network.h>
 
@@ -96,7 +97,7 @@ extern "C" int CarpetIOScalarStartup() {
 }
 
 extern "C" void CarpetIOScalarInit(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetIOScalarInit;
 
   *this_iteration = 0;
   *last_output_iteration = 0;

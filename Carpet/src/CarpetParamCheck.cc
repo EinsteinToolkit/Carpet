@@ -3,6 +3,7 @@
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_Carpet.h>
 #include <cctk_Parameters.h>
 
 #include <carpet.hh>
@@ -17,7 +18,7 @@ using namespace std;
  * already been set up.
  */
 void CarpetParamCheck(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetParamCheck;
   DECLARE_CCTK_PARAMETERS;
 
   if ((CCTK_ParameterQueryTimesSet("periodic", "Carpet") and periodic) or

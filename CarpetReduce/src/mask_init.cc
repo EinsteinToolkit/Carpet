@@ -1,5 +1,6 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_CarpetReduce.h>
 #include <cctk_Parameters.h>
 
 #include <loopcontrol.h>
@@ -7,7 +8,7 @@
 #include "bits.h"
 
 extern "C" void MaskBase_InitMask(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_MaskBase_InitMask;
   DECLARE_CCTK_PARAMETERS;
 
   /* Initialise the weight to 1 everywhere */

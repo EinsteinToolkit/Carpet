@@ -14,6 +14,7 @@
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_CarpetIOBasic.h>
 #include <cctk_Parameters.h>
 
 #include "CactusBase/IOUtil/src/ioGH.h"
@@ -101,7 +102,7 @@ extern "C" int CarpetIOBasicStartup() {
 }
 
 extern "C" void CarpetIOBasicInit(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetIOBasicInit;
 
   *this_iteration = 0;
   *last_output_iteration = 0;

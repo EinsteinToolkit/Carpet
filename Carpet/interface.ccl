@@ -1,7 +1,6 @@
 # Interface definition for thorn Carpet
 
 IMPLEMENTS: Driver
-
 include header: carpet_public.hh in carpet.hh
 include header: carpet_public.h in carpet.h
 
@@ -40,7 +39,6 @@ uses include header: gh.hh
 uses include header: th.hh
 
 uses include header: operators.hh
-
 
 
 # Get access to communicators
@@ -361,6 +359,18 @@ PROVIDES FUNCTION GetTimeLevelOffset \
     LANGUAGE C
 
 
+# Presync function for selecting boundary conditions.
+
+CCTK_INT FUNCTION                         \
+   Carpet_SelectGroupForBC                \
+      (CCTK_POINTER_TO_CONST IN cctkGH,   \
+      CCTK_INT IN faces,                  \
+      CCTK_INT IN width,                  \
+      CCTK_INT IN table_handle,           \
+      CCTK_STRING IN group_name,          \
+      CCTK_STRING IN bc_name)
+PROVIDES FUNCTION Carpet_SelectGroupForBC WITH \
+   SelectGroupForBC LANGUAGE C
 
 # Get pointer to grid variable for a specific map and refinement level
 CCTK_POINTER FUNCTION                     \

@@ -41,12 +41,14 @@ SCHEDULE GROUP MaskBase_SetupMaskAll IN MaskBase_SetupMask
 SCHEDULE MaskBase_AllocateMask IN MaskBase_SetupMaskAll
 {
   LANG: C
+  WRITES: CARPETREDUCE::excised_cells(everywhere)
   OPTIONS: global
 } "Allocate the weight function"
 
 SCHEDULE MaskBase_InitMask IN MaskBase_SetupMaskAll AFTER MaskBase_AllocateMask
 {
   LANG: C
+  WRITES: CARPETREDUCE::iweight(everywhere)
   OPTIONS: global loop-local
 } "Initialise the weight function"
 
@@ -61,6 +63,9 @@ SCHEDULE GROUP SetupIMask IN MaskBase_SetupMaskAll AFTER SetupIMaskInternal
 SCHEDULE MaskBase_SetMask IN MaskBase_SetupMaskAll AFTER SetupIMask
 {
   LANG: C
+  READS: CARPETREDUCE::iweight(everywhere)
+  WRITES: CARPETREDUCE::one(boundary)
+  WRITES: CARPETREDUCE::weight(interior)
   OPTIONS: global loop-local
 } "Set the weight function"
 
@@ -71,6 +76,8 @@ SCHEDULE GROUP SetupMask IN MaskBase_SetupMaskAll AFTER MaskBase_SetMask
 SCHEDULE MaskBase_TestMask IN MaskBase_SetupMaskAll AFTER SetupMask
 {
   LANG: C
+  READS: CARPETREDUCE::excised_cells(everywhere) #scalar
+  WRITES: CARPETREDUCE::excised_cells(everywhere) #scalar
   OPTIONS: global
 } "Test the weight function"
 
@@ -80,6 +87,7 @@ SCHEDULE MaskBase_TestMask IN MaskBase_SetupMaskAll AFTER SetupMask
 SCHEDULE CoordBase_SetupMask IN SetupIMaskInternal
 {
   LANG: C
+  WRITES: CARPETREDUCE::iweight(everywhere)
   OPTIONS: global loop-local
 } "Set up the outer boundaries of the weight function"
 
@@ -87,5 +95,7 @@ SCHEDULE CoordBase_SetupMask IN SetupIMaskInternal
 SCHEDULE CarpetMaskSetup IN SetupIMaskInternal
 {
   LANG: C
+  READS: CARPETREDUCE::iweight(everywhere)
+  WRITES: CARPETREDUCE::iweight(everywhere)
   OPTIONS: global loop-singlemap
 } "Set up the weight function for the restriction regions"

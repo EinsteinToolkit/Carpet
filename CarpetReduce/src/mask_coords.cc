@@ -3,6 +3,7 @@
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_CarpetReduce.h>
 #include <cctk_Functions.h>
 #include <cctk_Parameters.h>
 
@@ -11,7 +12,7 @@
 #include "bits.h"
 
 extern "C" void CoordBase_SetupMask(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CoordBase_SetupMask;
   DECLARE_CCTK_PARAMETERS;
 
   CCTK_INT nboundaryzones[2 * cctk_dim];

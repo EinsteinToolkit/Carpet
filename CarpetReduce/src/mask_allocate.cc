@@ -1,9 +1,10 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_CarpetReduce.h>
 #include <cctk_Parameters.h>
 
 extern "C" void MaskBase_AllocateMask(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_MaskBase_AllocateMask;
   DECLARE_CCTK_PARAMETERS;
 
   /* Allocate helpers for the weight function */

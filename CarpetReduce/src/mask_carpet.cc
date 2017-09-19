@@ -4,6 +4,7 @@
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_CarpetReduce.h>
 #include <cctk_Parameters.h>
 
 #include <dh.hh>
@@ -48,7 +49,7 @@ void CarpetMaskSetup(CCTK_ARGUMENTS) {
 
   // Set prolongation boundaries and restricted region of this level
   BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
-    DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_ARGUMENTS_CarpetMaskSetup;
 
     // Set the weight in the interior of the not_active and the
     // fine_active regions to zero, and set the weight on the

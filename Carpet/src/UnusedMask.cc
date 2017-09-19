@@ -1,5 +1,6 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_Carpet.h>
 #include <cctk_Parameters.h>
 
 #include <carpet.hh>
@@ -11,7 +12,7 @@ namespace Carpet {
 using namespace std;
 
 void CarpetUnusedMask(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetUnusedMask;
   DECLARE_CCTK_PARAMETERS;
 
   dh const &dd = *vdd.AT(map);

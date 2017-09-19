@@ -2,6 +2,7 @@
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_Carpet.h>
 #include <cctk_Parameters.h>
 
 #include <carpet.hh>
@@ -11,7 +12,7 @@ namespace Carpet {
 using namespace std;
 
 void CarpetRefineTimeStep(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetRefineTimeStep;
   DECLARE_CCTK_PARAMETERS;
 
   // Find the smallest CFL factor for all refinement levels

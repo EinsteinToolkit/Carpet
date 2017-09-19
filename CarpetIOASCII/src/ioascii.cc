@@ -17,6 +17,7 @@
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
+#include <cctk_Arguments_CarpetIOASCII.h>
 #include <util_Network.h>
 #include <util_Table.h>
 
@@ -65,7 +66,7 @@ int CarpetIOASCIIStartup() {
 }
 
 void CarpetIOASCIIInit(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetIOASCIIInit;
 
   for (int d = 0; d < 4; ++d) {
     this_iteration[d] = 0;

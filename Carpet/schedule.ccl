@@ -41,10 +41,12 @@ if (use_unusedpoints_mask)
   schedule CarpetUnusedMask AT BASEGRID
   {
     LANG: C
+    WRITES: Carpet::carpet_unusedpoints_mask(everywhere)
   } "Set mask of unused points"
 
   schedule CarpetUnusedMask AT POSTREGRID
   {
     LANG: C
+    WRITES: Carpet::carpet_unusedpoints_mask(everywhere)
   } "Set mask of unused points"
 }

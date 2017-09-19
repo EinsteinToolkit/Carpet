@@ -36,7 +36,10 @@ BOOLEAN domain_from_multipatch "Use the domain description from MultiPatch"
 {
 } "no"
 
-
+STRING testing_parameter"For printing out region validity for a variable"
+{
+  "" :: "Must be a valid variable name with format THORN::variable"
+} ""
 
 CCTK_INT global_nx "Grid size in x direction" STEERABLE=recover
 {
@@ -611,6 +614,10 @@ BOOLEAN use_unusedpoints_mask "Turn on storage and usage of 'unusedpoints_mask'"
 } "no"
 
 BOOLEAN use_psync "Whether presync causes fatal errors"
+{
+} "no"
+
+BOOLEAN psync_only "Whether SYNC statements are evaluated"
 {
 } "no"
 

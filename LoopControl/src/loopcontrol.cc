@@ -2,6 +2,7 @@
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_LoopControl.h>
 #include <cctk_Parameters.h>
 
 #include <algorithm>
@@ -1057,7 +1058,7 @@ int lc_setup(void) {
 }
 
 void lc_steer(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_lc_steer;
   DECLARE_CCTK_PARAMETERS;
 
   lc_do_settle = settle_after_iteration >= 0 and
@@ -1200,7 +1201,7 @@ void lc_statistics(CCTK_ARGUMENTS) {
 }
 
 void lc_statistics_analysis(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_lc_statistics_analysis;
   DECLARE_CCTK_PARAMETERS;
 
   static double last_output = 0.0;
@@ -1214,7 +1215,7 @@ void lc_statistics_analysis(CCTK_ARGUMENTS) {
 }
 
 void lc_statistics_terminate(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_lc_statistics_terminate;
   DECLARE_CCTK_PARAMETERS;
 
   if (verbose or veryverbose or statistics_every_seconds >= 0.0) {
