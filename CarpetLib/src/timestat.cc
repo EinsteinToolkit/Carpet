@@ -1,5 +1,6 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_CarpetLib.h>
 #include <cctk_Parameters.h>
 
 #include <algorithm>
@@ -220,7 +221,7 @@ void CarpetLib_printtimestats(CCTK_ARGUMENTS);
 }
 
 void CarpetLib_printtimestats(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetLib_printtimestats;
   DECLARE_CCTK_PARAMETERS;
 
   static int next_output = 0;

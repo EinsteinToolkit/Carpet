@@ -1,5 +1,6 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_CarpetLib.h>
 #include <cctk_Parameters.h>
 
 #include <algorithm>
@@ -134,7 +135,7 @@ template <typename RT, int ORDER> struct coeffs1d {
 #undef TYPECASE
 
 extern "C" void CarpetLib_test_prolongate_3d_rf2(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetLib_test_prolongate_3d_rf2;
 
 #ifdef CCTK_REAL_PRECISION_4
 #define TYPECASE(N, RT)                                                        \

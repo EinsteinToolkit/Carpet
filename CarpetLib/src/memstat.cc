@@ -1,5 +1,6 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_CarpetLib.h>
 #include <cctk_Parameters.h>
 
 #include <algorithm>
@@ -44,7 +45,7 @@ int const mstat_entries = sizeof(mstat) / sizeof(double);
 extern "C" void CarpetLib_printmemstats(CCTK_ARGUMENTS);
 
 void CarpetLib_printmemstats(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetLib_printmemstats;
   DECLARE_CCTK_PARAMETERS;
 
   int const ioproc = 0;

@@ -1070,7 +1070,7 @@ void lc_steer(CCTK_ARGUMENTS) {
 }
 
 void lc_statistics(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_lc_statistics_analysis;
   DECLARE_CCTK_PARAMETERS;
 
   {
