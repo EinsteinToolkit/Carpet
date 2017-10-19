@@ -95,14 +95,18 @@ void interpolate_3d_3tl(T const *restrict const src1, CCTK_REAL const t1,
 
   // Quadratic (second order) interpolation
 
-  RT const eps = 1.0e-10;
+  RT const eps = 1.0e-12;
 
   if (std::fabs(t1 - t2) < eps or std::fabs(t1 - t3) < eps or
       std::fabs(t2 - t3) < eps) {
+    CCTK_VWARN(CCTK_WARN_ALERT, "t1=%.17g t2=%.17g t3=%.17g eps=%.17g",
+               double(t1), double(t2), double(t3), double(eps));
     CCTK_ERROR("Internal error: arrays have same time");
   }
   if (t < std::fmin(std::fmin(t1, t2), t3) - eps or
       t > std::fmax(std::fmax(t1, t2), t3) + eps) {
+    CCTK_VWARN(CCTK_WARN_ALERT, "t1=%.17g t2=%.17g t3=%.17g eps=%.17g",
+               double(t1), double(t2), double(t3), double(eps));
     CCTK_ERROR("Internal error: extrapolation in time");
   }
 

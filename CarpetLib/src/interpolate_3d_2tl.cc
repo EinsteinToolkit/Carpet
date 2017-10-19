@@ -94,7 +94,8 @@ void interpolate_3d_2tl(T const *restrict const src1, CCTK_REAL const t1,
 
   // Linear (first order) interpolation
 
-  RT const eps = 1.0e-10;
+  RT const eps = 1.0e-12;
+
   if (std::fabs(t1 - t2) < eps) {
     CCTK_ERROR("Internal error: arrays have same time");
   }
