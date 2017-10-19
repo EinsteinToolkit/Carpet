@@ -97,7 +97,7 @@ void interpolate_3d_5tl(T const *restrict const src1, CCTK_REAL const t1,
 
   // Quadratic (second order) interpolation
 
-  RT const eps = 1.0e-10;
+  RT const eps = 1.0e-12;
 
   if (std::fabs(t1 - t2) < eps or std::fabs(t1 - t3) < eps or
       std::fabs(t1 - t4) < eps or std::fabs(t1 - t5) < eps or

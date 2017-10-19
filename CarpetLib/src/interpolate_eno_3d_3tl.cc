@@ -104,7 +104,7 @@ void interpolate_eno_3d_3tl(
 
   RT const tmin = min3(t1, t2, t3);
   RT const tmax = max3(t1, t2, t3);
-  RT const eps = 1.0e-10 * (tmax - tmin);
+  RT const eps = 1.0e-12 * (tmax - tmin);
 
   if (std::fabs(t1 - t2) < eps or std::fabs(t1 - t3) < eps or
       std::fabs(t2 - t3) < eps) {
