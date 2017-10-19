@@ -269,29 +269,25 @@ static void ProlongateGroupBoundaries(const cGH *cctkGH,
     }
   }
 
+  vector<Timers::Timer *>::iterator ti = timers.begin();
+  (*ti)->start();
+  for (comm_state state; not state.done(); state.step()) {
+    (*ti)->stop();
+    ++ti;
+    (*ti)->start();
 #pragma omp parallel if (use_openmp_in_comm)
-  {
-#pragma omp master
     {
-      vector<Timers::Timer *>::iterator ti = timers.begin();
-      (*ti)->start();
-      for (comm_state state; not state.done(); state.step()) {
-        (*ti)->stop();
-        ++ti;
-        (*ti)->start();
-        // #pragma omp parallel for schedule(dynamic) if (use_openmp_in_comm)
-        for (size_t i = 0; i < tasks.size(); ++i)
-          tasks[i](state);
-#pragma omp taskwait
-        (*ti)->stop();
-        ++ti;
-        (*ti)->start();
-      }
-      (*ti)->stop();
-      ++ti;
-      assert(ti == timers.end());
+#pragma omp master
+      for (auto &task : tasks)
+        task(state);
     }
+    (*ti)->stop();
+    ++ti;
+    (*ti)->start();
   }
+  (*ti)->stop();
+  ++ti;
+  assert(ti == timers.end());
 
   // TODO: Transmit only the regions that were actually written
   // (i.e. the buffer zones)
