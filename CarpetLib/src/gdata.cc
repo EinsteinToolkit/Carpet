@@ -210,7 +210,12 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
                                              src->transport_operator);
           buf->allocate(dstbox, dstbox.sizes(), ivect(0), srcproc, sendbuf,
                         sendbufsize);
+          const bool have_slabinfo = slabinfo != nullptr;
+          islab my_slabinfo;
+          if (have_slabinfo)
+            my_slabinfo = *slabinfo;
           const auto transfer = [=]() {
+            const islab *slabinfo = have_slabinfo ? &my_slabinfo : nullptr;
             buf->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo,
                                          time, order_space, order_time);
             delete buf;
@@ -218,7 +223,9 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
           // TODO: Handle this better
           if (omp_in_parallel())
             assert(combine_sends);
-#pragma omp task
+          // TODO: Handle these better
+          assert(combine_sends);
+#pragma omp task firstprivate(transfer)
           transfer();
           state.commit_send_space(src->c_datatype(), dstproc, dstbox.size());
         } else {
@@ -263,14 +270,18 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
         CCTK_ERROR("Cannot use CarpetLib::use_funhpc_in_comm without FunHPC");
 #endif
       } else {
-        // Create a C++ closure to capture some local variables
-        // automatically, which is a bit easier than via OpenMP. Wrap
-        // this in a std::shared_ptr to make the Intel compiler happy.
+        // Create a C++ closure to capture some local variables automatically,
+        // which is a bit easier than via OpenMP.
+        const bool have_slabinfo = slabinfo != nullptr;
+        islab my_slabinfo;
+        if (have_slabinfo)
+          my_slabinfo = *slabinfo;
         const auto transfer = [=]() {
+          const islab *slabinfo = have_slabinfo ? &my_slabinfo : nullptr;
           transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
                                   order_space, order_time);
         };
-#pragma omp task
+#pragma omp task firstprivate(transfer)
         transfer();
       }
     }
@@ -305,13 +316,18 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
             bufs.AT(tl) = buf;
             timebuf.AT(tl) = times.AT(timelevel0 + tl);
           }
+          const bool have_slabinfo = slabinfo != nullptr;
+          islab my_slabinfo;
+          if (have_slabinfo)
+            my_slabinfo = *slabinfo;
           const auto transfer = [=]() {
+            const islab *slabinfo = have_slabinfo ? &my_slabinfo : nullptr;
             transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo,
                                     time, order_space, order_time);
             for (auto buf : bufs)
               delete buf;
           };
-#pragma omp task
+#pragma omp task firstprivate(transfer)
           transfer();
         }
       }
