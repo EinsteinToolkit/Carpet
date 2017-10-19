@@ -308,7 +308,7 @@ template <class T> ostream &output(ostream &os, const vector<T> &v) {
   os << "]";
   return os;
 }
-}
+} // namespace CarpetLib
 
 #include "bbox.hh"
 #include "bboxset.hh"
@@ -456,6 +456,7 @@ template ostream &output(ostream &os,
 template ostream &output(ostream &os, const vector<ivect> &v);
 template ostream &output(ostream &os, const vector<rvect> &v);
 // template ostream& output (ostream& os, const vector<bbvect>& v);
+template ostream &output(ostream &os, const vector<gdata const *> &v);
 template ostream &output(ostream &os, const vector<i2vect> &v);
 // template ostream& output (ostream& os, const vector<dh::fast_dboxes> & v);
 // template ostream& output (ostream& os, const vector<dh::full_dboxes> & v);
@@ -508,4 +509,4 @@ template ostream &output(ostream &os,
                          const vector<vector<vector<dh::local_dboxes> > > &b);
 template ostream &output(ostream &os,
                          const vector<vector<vector<region_t> > > &v);
-}
+} // namespace CarpetLib
