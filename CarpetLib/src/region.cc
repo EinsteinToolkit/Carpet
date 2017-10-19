@@ -86,7 +86,7 @@ region_t region_t::split(CCTK_REAL const ratio_new_over_old) {
   int const idir = maxloc1(extent.shape());
   int const np = extent.shape()[idir];
   // Keep the lower part, and split off the upper part
-  int const new_np = std::lrint(std::floor(np * ratio_new_over_old + 0.5));
+  int const new_np = std::lrint(np * ratio_new_over_old);
   int const keep_np = np - new_np;
   // Calculate new region extents
   ivect const lo = extent.lower();
