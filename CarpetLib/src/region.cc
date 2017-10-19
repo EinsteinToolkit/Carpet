@@ -102,8 +102,8 @@ region_t region_t::split(CCTK_REAL const ratio_new_over_old) {
   newreg.extent = ibbox(locut, up, str);
 
   // Mark cutting boundary as not outer boundary
-  outer_boundaries[idir][1] = false;
-  newreg.outer_boundaries[idir][0] = false;
+  outer_boundaries[1][idir] = false;
+  newreg.outer_boundaries[0][idir] = false;
 
   return newreg;
 }
