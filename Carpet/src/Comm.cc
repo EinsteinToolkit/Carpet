@@ -357,10 +357,9 @@ void SyncGroups(const cGH *cctkGH, const vector<int> &groups) {
     const int tl = active_tl > 1 ? timelevel : 0;
     for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
       for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
-        arrdesc &array = arrdata.AT(g).AT(m);
-        tasks.push_back([=](comm_state &state) {
-          array.data.AT(v)->sync_all(state, tl, rl, ml);
-        });
+        ggf *const gv = arrdata.AT(g).AT(m).data.AT(v);
+        tasks.push_back(
+            [=](comm_state &state) { gv->sync_all(state, tl, rl, ml); });
       }
     }
   }
@@ -371,9 +370,12 @@ void SyncGroups(const cGH *cctkGH, const vector<int> &groups) {
     (*ti)->stop();
     ++ti;
     (*ti)->start();
-    // #pragma omp parallel for schedule(dynamic) if (use_openmp_in_comm)
-    for (size_t i = 0; i < tasks.size(); ++i)
-      tasks[i](state);
+#pragma omp parallel if (use_openmp_in_comm)
+    {
+#pragma omp master
+      for (auto &task : tasks)
+        task(state);
+    }
     (*ti)->stop();
     ++ti;
     (*ti)->start();
