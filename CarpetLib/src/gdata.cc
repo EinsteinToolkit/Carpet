@@ -223,8 +223,6 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
           // TODO: Handle this better
           if (omp_in_parallel())
             assert(combine_sends);
-          // TODO: Handle these better
-          assert(combine_sends);
 #pragma omp task firstprivate(transfer)
           transfer();
           state.commit_send_space(src->c_datatype(), dstproc, dstbox.size());
@@ -237,8 +235,16 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
                                                src->transport_operator);
             buf->allocate(srcbox, srcbox.sizes(), ivect(0), srcproc, sendbuf,
                           sendbufsize);
-            buf->copy_from_innerloop(srcs.AT(tl), srcbox, srcbox, NULL);
-            delete buf;
+            const gdata *const src = srcs.AT(tl);
+            const auto transfer = [=]() {
+              buf->copy_from_innerloop(src, srcbox, srcbox, NULL);
+              delete buf;
+            };
+            // TODO: Handle this better
+            if (omp_in_parallel())
+              assert(combine_sends);
+#pragma omp task firstprivate(transfer)
+            transfer();
             state.commit_send_space(src->c_datatype(), dstproc, srcbox.size());
           }
         }
@@ -281,6 +287,9 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
           transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
                                   order_space, order_time);
         };
+        // TODO: Handle this better
+        if (omp_in_parallel())
+          assert(combine_sends);
 #pragma omp task firstprivate(transfer)
         transfer();
       }
@@ -299,8 +308,15 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
           buf->allocate(dstbox, dstbox.sizes(), ivect(0), dstproc, recvbuf,
                         recvbufsize);
           state.commit_recv_space(c_datatype(), srcproc, dstbox.size());
-          copy_from_innerloop(buf, dstbox, dstbox, NULL);
-          delete buf;
+          const auto transfer = [=]() {
+            copy_from_innerloop(buf, dstbox, dstbox, NULL);
+            delete buf;
+          };
+          // TODO: Handle this better
+          if (omp_in_parallel())
+            assert(combine_sends);
+#pragma omp task firstprivate(transfer)
+          transfer();
         } else {
           gdata const *const null = NULL;
           vector<gdata const *> bufs(ntimelevels, null);
@@ -327,6 +343,9 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
             for (auto buf : bufs)
               delete buf;
           };
+          // TODO: Handle this better
+          if (omp_in_parallel())
+            assert(combine_sends);
 #pragma omp task firstprivate(transfer)
           transfer();
         }
