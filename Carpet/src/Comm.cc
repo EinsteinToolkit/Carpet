@@ -5,6 +5,12 @@
 #include <iostream>
 #include <vector>
 
+#ifdef _OPENMP
+#include <omp.h>
+#else
+inline int omp_get_max_threads() { return 1; }
+#endif
+
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
@@ -364,13 +370,18 @@ void SyncGroups(const cGH *cctkGH, const vector<int> &groups) {
     }
   }
 
+  const int max_threads = omp_get_max_threads();
+  const int sync_threads = max_sync_openmp_threads == 0
+                               ? max_threads
+                               : min(max_sync_openmp_threads, max_threads);
   vector<Timers::Timer *>::iterator ti = timers.begin();
   (*ti)->start();
   for (comm_state state; not state.done(); state.step()) {
     (*ti)->stop();
     ++ti;
     (*ti)->start();
-#pragma omp parallel if (use_openmp_in_comm)
+#pragma omp parallel num_threads(sync_threads) if (use_openmp_in_comm &&       \
+                                                   use_openmp_in_sync)
     {
 #pragma omp master
       for (auto &task : tasks)

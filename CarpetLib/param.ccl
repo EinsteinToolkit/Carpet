@@ -64,6 +64,14 @@ BOOLEAN overlap_funhpc_and_comm "Overlap FunHPC parallelization and communicatio
 {
 } "yes"
 
+BOOLEAN enable_openmp_tasks_in_comm "Create OpenMP tasks for communication" STEERABLE=always
+{
+} "yes"
+
+BOOLEAN enable_openmp_tasks_in_copy "Create OpenMP tasks for copying data (requires enable_openmp_tasks_in_comm)" STEERABLE=always
+{
+} "no"
+
 
 
 restricted:
