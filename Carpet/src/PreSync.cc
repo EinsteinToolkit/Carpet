@@ -19,39 +19,6 @@ namespace Carpet {
 
 bool msg1 = true, msg2 = true, msg3 = true;
 
-// The upper left-hand corner of a 2-D simulation.
-// +-----+-----+-----+
-// |     |     |     | 
-// |  B  |  B  | B+G | 
-// |     |     |     | 
-// +-----+-----+-----+
-// |     |     |     | 
-// |  B  |  I  |  G  | 
-// |     |     |     | 
-// +-----+-----+-----+
-// |     |     |     | 
-// | B+G |  G  |  G  | 
-// |     |     |     | 
-// +-----+-----+-----+
-//  B  = Boundary 
-//  I  = Interior
-//  G  = Ghost
-// B+G = Boundary and Ghost
-//
-// Read and Write directives in schedule.ccl apply to:
-// Interior, Everywhere, or Invalidate.
-//
-// Boundary routines are registered with
-// to either update B+G cells or not. If it
-// updates B+G cells, it runs after synchronization.
-// If it doesn't update B+G cells, it runs before.
-
-#define WH_EVERYWHERE          0x7
-#define WH_INTERIOR            0x4
-#define WH_BOUNDARY            0x2 /* Describes B+G cells */
-#define WH_GHOSTS              0x1
-#define WH_NOWHERE             0x0
-
 struct var_tuple {
   int vi; // var index
   int tl; // time level;
@@ -261,7 +228,6 @@ void compute_clauses(const int num_strings,const char **strings,std::map<var_tup
         std::string vname = rwc.name.c_str();
         vname += "[0]";
         vi = CCTK_VarIndex(vname.c_str());
-        std::cout << vname.c_str() << " has " << vi << std::endl;
         gi = CCTK_GroupIndexFromVarI(vi);
         if(gi >= 0) {
           int i0 = CCTK_FirstVarIndexI(gi);
@@ -338,14 +304,14 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
       if(on(wh,WH_GHOSTS)) {
         continue;
       }
-      if(!on(wh,WH_INTERIOR)) {
+      if(!on(wh,WH_INTERIOR) and !silent_psync) {
         std::ostringstream msg;
         msg << "SYNC of variable with invalid interior. Name: "
             << CCTK_FullName(vi) << " before: " << current_routine;
         int level = psync_error ? 0 : 1;
         if(msg1) {
           msg1 = false;
-          CCTK_Warn(level,__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
+          CCTK_WARN(level,msg.str().c_str());
         }
       }
       if(push) {
@@ -525,16 +491,16 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
         std::cout << " has validity " << valid_name;
         std::cout << " in routine " << current_routine << std::endl;
       }
-    if(!on(valid_k[vt],WH_INTERIOR)) {
+    if(!on(valid_k[vt],WH_INTERIOR) and !silent_psync) {
       // If the read spec is everywhere and we only have
       // interior, that's ok. The system will sync.
       std::ostringstream msg; 
       msg << "Required read for " << vt 
-          << " not satisfied. Invalid interior "
+          << " not satisfied. Invalid interior"
           << " at the start of routine " << r;
       int level = psync_error ? 0 : 1;
       if(msg2) {
-        CCTK_Warn(level,__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str()); 
+        CCTK_WARN(level,msg.str().c_str()); 
         msg2 = false;
       }
     } else if(vt.tl > 0) {
@@ -561,13 +527,13 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 
         int g = CCTK_GroupIndexFromVarI(vt.vi);
         pregroups.insert(g);
-      } else if(!on(valid_k[vt],WH_INTERIOR)) {
+      } else if(!on(valid_k[vt],WH_INTERIOR) and !silent_psync) {
         std::ostringstream msg; 
         msg << "Cannot sync " << CCTK_FullName(vt.vi)
             << " because it is not valid in the interior.";
         int level = psync_error ? 0 : 1;
         if(msg3) {
-          CCTK_Warn(level,__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str()); 
+          CCTK_WARN(level,msg.str().c_str()); 
           msg3 = false;
         }
       }
@@ -606,14 +572,14 @@ void Sync1(const cGH *cctkGH,int gi) {
   std::vector<int> sync_groups;
   sync_groups.push_back(gi);
   cFunctionData *attribute = 0;
-  SyncProlongateGroups(cctkGH, sync_groups, attribute);
+  int ierr = SyncProlongateGroups(cctkGH, sync_groups, attribute);
 }
 
 /**
  * Given a variable and a timelevel, set the region
  * of the grid where that variable is valid (i.e. the where_spec).
  */
-extern "C" void Carpet_SetValidRegion(int vi,int tl,int wh) {
+extern "C" void SetValidRegion(int vi,int tl,int wh) {
   var_tuple vt(vi,tl);
   valid_k[vt] = wh;
 }
@@ -622,7 +588,7 @@ extern "C" void Carpet_SetValidRegion(int vi,int tl,int wh) {
  * Given a variable and a timelevel, return the region
  * of the grid where that variable is valid (i.e. the where_spec).
  */
-extern "C" int Carpet_GetValidRegion(int vi,int tl) {
+extern "C" int GetValidRegion(int vi,int tl) {
   var_tuple vt(vi,tl);
   return valid_k[vt];
 }
@@ -632,8 +598,7 @@ extern "C" int Carpet_GetValidRegion(int vi,int tl) {
  * is already valid everywhere, this routine does nothing. When
  * the routine finishes, it will be valid everywhere.
  */
-extern "C" void Carpet_ManualSyncGF(const cGH *cctkGH,int vi) {
-
+extern "C" void ManualSyncGF(const cGH *cctkGH,int vi) {
   var_tuple vt{vi};
   auto f = valid_k.find(vt);
   CCTK_ASSERT(f != valid_k.end());
@@ -697,6 +662,7 @@ struct Func {
 };
 
 std::map<std::string,Func> boundary_functions;
+std::map<std::string,Func> symmetry_functions;
 /**
  * The index into the array is the same as the "before"
  * argument defined when registering a BC.
@@ -704,18 +670,37 @@ std::map<std::string,Func> boundary_functions;
 std::array<std::map<int,std::vector<Bound>>,2> boundary_conditions;
 
 extern "C"
-void Carpet_RegisterPhysicalBC(
+void RegisterPhysicalBC(
     const cGH *cctkGH,
     boundary_function func,
     const char *bc_name,
     int before) {
   if(before != 0) before = 1;
+  if(NULL==func) {
+    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
+               "Physical Boundary condition '%s' points to NULL.", bc_name);
+  }
   Func& f = boundary_functions[bc_name];
   f.func = func;
   f.before = before;
 }
 
 extern "C"
+void RegisterSymmetryBC(
+    const cGH *cctkGH,
+    boundary_function func,
+    const char *bc_name,
+    int before) {
+  if(before != 0) before = 1;
+  if(NULL==func) {
+    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
+               "Symmetry Boundary condition '%s' points to NULL.", bc_name);
+  }
+  Func& f = symmetry_functions[bc_name];
+  f.func = func;
+  f.before = before;
+}
+
 void Carpet_SelectVarForBCI(
     const cGH *cctkGH,
     int faces,
@@ -723,7 +708,11 @@ void Carpet_SelectVarForBCI(
     int table_handle,
     int var_index,
     const char *bc_name) {
-  Func& f = boundary_functions[bc_name];
+  if(!boundary_functions.count(bc_name)) {
+    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
+               "Requested BC '%s' not found.", bc_name);
+  }
+  Func& f = boundary_functions.at(bc_name);
   CCTK_ASSERT(var_index != 0);
   std::vector<Bound>& bv = boundary_conditions[f.before][var_index];
   Bound b;
@@ -732,6 +721,18 @@ void Carpet_SelectVarForBCI(
   b.table_handle = table_handle;
   b.bc_name = bc_name;
   bv.push_back(b);
+}
+
+extern "C"
+void SelectVarForBC(
+    const cGH *cctkGH,
+    int faces,
+    int width,
+    int table_handle,
+    const char *var_name,
+    const char *bc_name) {
+  int i = CCTK_VarIndex(var_name);
+  Carpet_SelectVarForBCI(cctkGH,faces,width,table_handle,i,bc_name);
 }
 
 extern "C"
@@ -768,29 +769,33 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
   if(before != 0) before = 1;
   auto bc = boundary_conditions[before];
   if(bc.find(var_index) == bc.end()) {
-    if(debug) std::cout <<"Returned " << CCTK_FullName(var_index) << std::endl;
     return;
-  } else {
-    if(debug) std::cout << "Carpet_ApplyPhysicalBCsForVarI(" << CCTK_FullName(var_index) << ") -> **FOUND**" << std::endl;
   }
   std::vector<Bound>& bv = bc[var_index];
   BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
     BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
       for(auto j=bv.begin(); j != bv.end(); ++j) {
         Bound& b = *j;
-        Func& f = boundary_functions[b.bc_name];
+        Func& f = boundary_functions.at(b.bc_name);
 
         // Disable faces if they don't apply to this
         // computational region.
         int faces = b.faces;
-//        for(int i=0;i<6;i++) {
-//          if(cctkGH->cctk_bbox[i] == 0) {
-//            faces &= ~(1 << i);
-//          }
-//        }
-
-        if(faces != 0)
+/*        for(int i=0;i<6;i++) {
+          if(cctkGH->cctk_bbox[i] == 0) {
+            faces &= ~(1 << i);
+          }
+        }
+*/
+        if(faces != 0) {
           (*f.func)(cctkGH,1,&var_index,&faces,&b.width,&b.table_handle);
+          std::map<std::string, Func>::iterator iter = symmetry_functions.begin();
+          for (auto iter = symmetry_functions.begin(); iter != symmetry_functions.end(); iter++) {
+            std::string name = iter->first;
+            Func& fsym = symmetry_functions.at(name);
+            (*fsym.func)(cctkGH,1,&var_index,&faces,&b.width,&b.table_handle);
+          }
+        }
         var_tuple vt{var_index};
         valid_k[vt] |= WH_BOUNDARY;
       }

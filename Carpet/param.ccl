@@ -613,7 +613,7 @@ BOOLEAN use_unusedpoints_mask "Turn on storage and usage of 'unusedpoints_mask'"
 {
 } "no"
 
-BOOLEAN use_psync "Whether presync causes fatal errors"
+BOOLEAN use_psync "Whether presync is active"
 {
 } "no"
 
@@ -623,5 +623,9 @@ BOOLEAN psync_only "Whether SYNC statements are evaluated"
 
 # Strange error occurs if this is named "presync_error". Why?
 BOOLEAN psync_error "Whether presync causes fatal errors"
+{
+} "no"
+
+BOOLEAN silent_psync "Silences presync error messages; overrides psync_error"
 {
 } "no"

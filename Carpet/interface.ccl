@@ -358,19 +358,71 @@ PROVIDES FUNCTION GetTimeLevelOffset \
     WITH Carpet_GetTimeLevelOffset   \
     LANGUAGE C
 
+# Presync functions for registering physical and symmetry boundary conditions.
 
-# Presync function for selecting boundary conditions.
+#CCTK_INT FUNCTION
+#    Carpet_RegisterPhysicalBC(
+#        CCTK_POINTER_TO_CONST IN cctkGH,
+#        CCTK_INT IN CCTK_FPOINTER func(
+#            CCTK_POINTER_TO_CONST IN cctkGH,
+#            CCTK_POINTER_TO_CONST IN num_vars,
+#            CCTK_INT IN var_indices,
+#            CCTK_INT IN faces,
+#            CCTK_INT IN width,
+#            CCTK_INT IN table_handle),
+#        CCTK_INT IN before,
+#        CCTK_STRING IN bc_name)
+#PROVIDES FUNCTION Carpet_RegisterPhysicalBC WITH
+#    RegisterPhysicalBC LANGUAGE C
 
-CCTK_INT FUNCTION                         \
-   Carpet_SelectGroupForBC                \
-      (CCTK_POINTER_TO_CONST IN cctkGH,   \
-      CCTK_INT IN faces,                  \
-      CCTK_INT IN width,                  \
-      CCTK_INT IN table_handle,           \
-      CCTK_STRING IN group_name,          \
+
+# Presync functions for selecting boundary conditions.
+
+CCTK_INT FUNCTION
+   Carpet_SelectGroupForBC
+      (CCTK_POINTER_TO_CONST IN cctkGH,
+      CCTK_INT IN faces,
+      CCTK_INT IN width,
+      CCTK_INT IN table_handle,
+      CCTK_STRING IN group_name,
       CCTK_STRING IN bc_name)
-PROVIDES FUNCTION Carpet_SelectGroupForBC WITH \
+PROVIDES FUNCTION Carpet_SelectGroupForBC WITH
    SelectGroupForBC LANGUAGE C
+
+CCTK_INT FUNCTION
+   Carpet_SelectVarForBC
+      (CCTK_POINTER_TO_CONST IN cctkGH,
+      CCTK_INT IN faces,
+      CCTK_INT IN width,
+      CCTK_INT IN table_handle,
+      CCTK_STRING IN var_name,
+      CCTK_STRING IN bc_name)
+PROVIDES FUNCTION Carpet_SelectVarForBC WITH
+   SelectVarForBC LANGUAGE C
+
+# Functions for accessing and changing valid region
+void FUNCTION
+      Carpet_SetValidRegion
+      (CCTK_INT IN vi,
+      CCTK_INT IN tl,
+      CCTK_INT IN wh)
+PROVIDES FUNCTION Carpet_SetValidRegion WITH
+   SetValidRegion LANGUAGE C
+
+CCTK_INT FUNCTION
+      Carpet_GetValidRegion
+      (CCTK_INT IN vi,
+      CCTK_INT IN tl)
+PROVIDES FUNCTION Carpet_GetValidRegion WITH
+   GetValidRegion LANGUAGE C
+
+# Manually call synchronization; should be paired with SetValidRegion call
+void FUNCTION
+      Carpet_ManualSyncGF
+      (CCTK_POINTER_TO_CONST IN cctkGH,
+      CCTK_INT IN vi)
+PROVIDES FUNCTION Carpet_ManualSyncGF WITH
+   ManualSyncGF LANGUAGE C
 
 # Get pointer to grid variable for a specific map and refinement level
 CCTK_POINTER FUNCTION                     \
@@ -416,13 +468,6 @@ CCTK_INT FUNCTION IO_TruncateOutputFiles \
   (CCTK_POINTER_TO_CONST IN GH)
 
 REQUIRES FUNCTION IO_TruncateOutputFiles
-
-CCTK_INT FUNCTION Boundary_SelectedGVs(CCTK_POINTER_TO_CONST IN GH, \
-  CCTK_INT IN array_size, CCTK_INT ARRAY OUT var_indicies, \
-  CCTK_INT ARRAY OUT faces, CCTK_INT ARRAY OUT boundary_widths, \
-  CCTK_INT ARRAY OUT table_handles, CCTK_STRING IN bc_name)
-USES FUNCTION Boundary_SelectedGVs
-
 
 # TODO: make this somehow public, e.g. by moving it into its own thorn
 

@@ -25,6 +25,7 @@
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
+#include "PreSync.h"
 
 #include "carpet.hh"
 
@@ -491,6 +492,14 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
   {
     int const ierr = CCTK_GroupData(group, &groupdata);
     assert(not ierr);
+  }
+
+  if(output_boundary_points) {
+    int valid = Carpet_GetValidRegion(vindex,0);
+    if(valid == WH_INTERIOR) {
+      Carpet_ManualSyncGF(cctkGH,vindex);
+      Carpet_SetValidRegion(vindex, 0,WH_EVERYWHERE);
+    }
   }
 
   const int ml = groupdata.grouptype == CCTK_GF ? mglevel : 0;

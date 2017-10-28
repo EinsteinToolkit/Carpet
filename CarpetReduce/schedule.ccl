@@ -64,8 +64,8 @@ SCHEDULE MaskBase_SetMask IN MaskBase_SetupMaskAll AFTER SetupIMask
 {
   LANG: C
   READS: CARPETREDUCE::iweight(everywhere)
-  WRITES: CARPETREDUCE::one(boundary)
-  WRITES: CARPETREDUCE::weight(interior)
+  WRITES: CARPETREDUCE::one(everywhere)
+  WRITES: CARPETREDUCE::weight(everywhere)
   OPTIONS: global loop-local
 } "Set the weight function"
 
