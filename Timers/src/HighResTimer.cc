@@ -3,11 +3,21 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
 
+#ifdef HAVE_CAPABILITY_FunHPC
+#include <qthread/mutex.hpp>
+#include <qthread/thread.hpp>
+#endif
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include <algorithm>
 #include <atomic>
 #include <cfloat>
 #include <cmath>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -26,26 +36,55 @@ struct HighResTimerSet {
 };
 HighResTimerSet timer_set;
 
+void critical(const function<void()> &f) {
+// FunHPC
+#ifdef HAVE_CAPABILITY_FunHPC
+  if (qthread::thread::hardware_concurrency() > 1) {
+    static qthread::mutex m;
+    qthread::lock_guard<qthread::mutex> lock(m);
+    f();
+    return;
+  }
+#endif
+
+// OpenMP
+#ifdef _OPENMP
+  if (omp_get_max_threads() > 1) {
+#pragma omp critical(HighResTimer_HighResTimerSet_timers)
+    f();
+    return;
+  }
+#endif
+
+  f();
+}
+
 void HighResTimerSet::add(const string &timername, HighResTimer *timer) {
-  if (timers.count(timername) > 0)
-    CCTK_VWARN(CCTK_WARN_ALERT, "HighResTimer \"%s\" already registered",
-               timername.c_str());
-  timers[timername] = timer;
+  critical([&]() {
+    if (timers.count(timername) > 0)
+      CCTK_VWARN(CCTK_WARN_ALERT, "HighResTimer \"%s\" already registered",
+                 timername.c_str());
+    timers[timername] = timer;
+  });
 }
 
 void HighResTimerSet::remove(const string &timername) {
-  auto count = timers.erase(timername);
-  if (count == 0)
-    CCTK_VWARN(CCTK_WARN_ALERT, "HighResTimer \"%s\" not registered",
-               timername.c_str());
+  critical([&]() {
+    auto count = timers.erase(timername);
+    if (count == 0)
+      CCTK_VWARN(CCTK_WARN_ALERT, "HighResTimer \"%s\" not registered",
+                 timername.c_str());
+  });
 }
 
 void HighResTimerSet::output(ostream &os) const {
-  for (const auto &tnt : timers) {
-    // const auto &timername = tnt.first;
-    const auto &timer = tnt.second;
-    os << "    " << *timer << "\n";
-  }
+  critical([&]() {
+    for (const auto &tnt : timers) {
+      // const auto &timername = tnt.first;
+      const auto &timer = tnt.second;
+      os << "    " << *timer << "\n";
+    }
+  });
 }
 
 extern "C" void HighResTimer_OutputAllTimers(CCTK_ARGUMENTS) {
@@ -138,4 +177,4 @@ ostream &HighResTimer::output(ostream &os) const {
   os.precision(oldprec);
   return os;
 }
-}
+} // namespace HighResTimer

@@ -6,3 +6,7 @@ PROVIDES Timers
 
 # This is necessary for some convenient communication routines
 REQUIRES CarpetLib
+
+OPTIONAL FunHPC
+{
+}
