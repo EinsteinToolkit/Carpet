@@ -221,7 +221,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
             delete buf;
           };
           // TODO: Handle this better
-          if (omp_in_parallel())
+          if (enable_openmp_tasks_in_comm)
             assert(combine_sends);
 #pragma omp task firstprivate(transfer) if (enable_openmp_tasks_in_comm)
           transfer();
@@ -241,7 +241,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
               delete buf;
             };
             // TODO: Handle this better
-            if (omp_in_parallel())
+            if (enable_openmp_tasks_in_comm && enable_openmp_tasks_in_copy)
               assert(combine_sends);
 #pragma omp task firstprivate(transfer) if (enable_openmp_tasks_in_comm &&     \
                                             enable_openmp_tasks_in_copy)
@@ -289,7 +289,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
                                   order_space, order_time);
         };
         // TODO: Handle this better
-        if (omp_in_parallel())
+        if (enable_openmp_tasks_in_comm && enable_openmp_tasks_in_copy)
           assert(combine_sends);
 #pragma omp task firstprivate(transfer) if (enable_openmp_tasks_in_comm &&     \
                                             enable_openmp_tasks_in_copy)
@@ -315,7 +315,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
             delete buf;
           };
           // TODO: Handle this better
-          if (omp_in_parallel())
+          if (enable_openmp_tasks_in_comm && enable_openmp_tasks_in_copy)
             assert(combine_sends);
 #pragma omp task firstprivate(transfer) if (enable_openmp_tasks_in_comm &&     \
                                             enable_openmp_tasks_in_copy)
@@ -347,7 +347,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
               delete buf;
           };
           // TODO: Handle this better
-          if (omp_in_parallel())
+          if (enable_openmp_tasks_in_comm)
             assert(combine_sends);
 #pragma omp task firstprivate(transfer) if (enable_openmp_tasks_in_comm)
           transfer();
