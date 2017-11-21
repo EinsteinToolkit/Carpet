@@ -4,7 +4,7 @@
 ################################################################################
 
 ActiveThorns = "
-  Boundary
+  Boundary2
   Carpet
   CarpetIOASCII
   CarpetIOBasic
@@ -94,7 +94,7 @@ InitBase::initial_data_setup_method     = "init_single_level"
 # Boundary conditions
 ################################################################################
 
-Boundary::radpower                     = 2
+Boundary2::radpower                     = 2
 
 ################################################################################
 # Time integration

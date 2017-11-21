@@ -45,7 +45,7 @@ CarpetLib::print_memstats_every  = 10
 
 
 
-ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
+ActiveThorns = "Boundary2 CartGrid3D CoordBase SymBase"
 
 CoordBase::domainsize = "minmax"
 CoordBase::xmin       = 0.0

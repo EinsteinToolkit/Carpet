@@ -11,7 +11,7 @@ carpet::prolongation_order_space	=	3
 carpet::prolongation_order_time		=	2
 carpet::init_3_timelevels		=	"yes"
 
-ActiveThorns = "CoordBase cartgrid3d boundary"
+ActiveThorns = "CoordBase cartgrid3d boundary2"
 
 grid::type                              = "coordbase"
 grid::domain = "full"

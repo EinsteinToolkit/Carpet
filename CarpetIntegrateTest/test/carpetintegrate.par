@@ -7,7 +7,7 @@
 # Thorn activation
 #==============================================================================
 
-ActiveThorns = "time carpet carpetlib carpetregrid GSL LoopControl carpetreduce carpetslab carpetinterp cartgrid3d coordbase initbase symbase boundary carpetiobasic carpetioascii carpetioscalar ioutil carpetintegratetest reflectionsymmetry"
+ActiveThorns = "time carpet carpetlib carpetregrid GSL LoopControl carpetreduce carpetslab carpetinterp cartgrid3d coordbase initbase symbase boundary2 carpetiobasic carpetioascii carpetioscalar ioutil carpetintegratetest reflectionsymmetry"
 
 #==============================================================================
 # Directories and recovery
