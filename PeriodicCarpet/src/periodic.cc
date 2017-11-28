@@ -360,7 +360,7 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
         ibbox const &dstbox = xferinfo.sendrecv.recv.extent;
         ibbox const &srcbox = xferinfo.sendrecv.send.extent;
         islab const &slab = xferinfo.slab;
-        dst->copy_from(state, src, dstbox, srcbox, &slab, p, op);
+        gdata::copy_data(dst, state, src, dstbox, srcbox, &slab, p, op);
       }
     }
   }

@@ -618,11 +618,11 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
 
             for (comm_state state; not state.done(); state.step()) {
               for (size_t n = 0; n < datas.size(); ++n) {
-                tmpdatas.at(n)->copy_from(state, datas.at(n), data_ext,
+                gdata::copy_data(tmpdatas.at(n), state, datas.at(n), data_ext,
                                           data_ext, NULL, ioproc, proc);
               }
               for (size_t n = 0; n < coords.size(); ++n) {
-                tmpcoords.at(n)->copy_from(state, coords.at(n), data_ext,
+                gdata::copy_data(tmpcoords.at(n), state, coords.at(n), data_ext,
                                            data_ext, NULL, ioproc, proc);
               }
             }

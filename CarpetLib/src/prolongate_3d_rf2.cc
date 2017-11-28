@@ -59,9 +59,8 @@ template <typename RT, int ORDER> struct coeffs1d {
     static_assert(ncoeffs == sizeof coeffs / sizeof *coeffs,
                   "coefficient array has wrong size");
 
-    // Do not test integer operators (they should be disabled
-    // anyway)
-    if (fabs(RT(0.5) - 0.5) > 1.0e-5)
+    // Do not test integer operators (they should be disabled anyway)
+    if (std::fabs(RT(0.5) - 0.5) > 1.0e-5)
       return;
 
     // Test all orders
@@ -137,14 +136,6 @@ template <typename RT, int ORDER> struct coeffs1d {
 extern "C" void CarpetLib_test_prolongate_3d_rf2(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS_CarpetLib_test_prolongate_3d_rf2;
 
-#ifdef CCTK_REAL_PRECISION_4
-#define TYPECASE(N, RT)                                                        \
-  coeffs1d<RT, 1>::test();                                                     \
-  coeffs1d<RT, 3>::test();                                                     \
-  coeffs1d<RT, 5>::test();                                                     \
-  coeffs1d<RT, 7>::test();                                                     \
-  coeffs1d<RT, 9>::test();
-#else
 #define TYPECASE(N, RT)                                                        \
   coeffs1d<RT, 1>::test();                                                     \
   coeffs1d<RT, 3>::test();                                                     \
@@ -152,7 +143,6 @@ extern "C" void CarpetLib_test_prolongate_3d_rf2(CCTK_ARGUMENTS) {
   coeffs1d<RT, 7>::test();                                                     \
   coeffs1d<RT, 9>::test();                                                     \
   coeffs1d<RT, 11>::test();
-#endif
 #define CARPET_NO_COMPLEX
 #define CARPET_NO_INT
 #include "typecase.hh"
@@ -188,77 +178,77 @@ static inline T interp1(T const *restrict const p, size_t const d1) {
 #endif
       typedef vecprops<T> VP;
       typedef typename VP::vector_t VT;
+      ptrdiff_t const vsize = VP::size();
       ptrdiff_t i = coeffs::imin;
       T res = typ::fromreal(0);
-      if (coeffs::ncoeffs >= ptrdiff_t(VP::size())) {
+      if (coeffs::ncoeffs >= vsize) {
         VT vres = VP::mul(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)));
-        i += VP::size();
+        i += vsize;
 #if defined(__INTEL_COMPILER)
         // Unroll the loop manually to help the Intel compiler
         // (This manual unrolling hurts with other compilers, e.g. PGI)
-        assert(coeffs::ncoeffs / VP::size() <= 12);
-        switch (coeffs::ncoeffs / VP::size()) {
+        assert(coeffs::ncoeffs / vsize <= 12);
+        switch (coeffs::ncoeffs / vsize) {
         // Note that all case statements fall through
         case 12:
           vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)), vres);
-          i += VP::size();
+          i += vsize;
         case 11:
           vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)), vres);
-          i += VP::size();
+          i += vsize;
         case 10:
           vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)), vres);
-          i += VP::size();
+          i += vsize;
         case 9:
           vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)), vres);
-          i += VP::size();
+          i += vsize;
         case 8:
           vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)), vres);
-          i += VP::size();
+          i += vsize;
         case 7:
           vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)), vres);
-          i += VP::size();
+          i += vsize;
         case 6:
           vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)), vres);
-          i += VP::size();
+          i += vsize;
         case 5:
           vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)), vres);
-          i += VP::size();
+          i += vsize;
         case 4:
           vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)), vres);
-          i += VP::size();
+          i += vsize;
         case 3:
           vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)), vres);
-          i += VP::size();
+          i += vsize;
         case 2:
           vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)), vres);
-          i += VP::size();
+          i += vsize;
         }
 #else
-        for (; i + VP::size() <= ptrdiff_t(coeffs::imax); i += VP::size()) {
+        for (; i + vsize <= ptrdiff_t(coeffs::imax); i += vsize) {
           vres = VP::madd(VP::load(typ::fromreal(coeffs::get(i))),
                           VP::loadu(interp0<T, ORDER>(p + i)), vres);
         }
 #endif
-        for (int d = 0; d < ptrdiff_t(VP::size()); ++d) {
+        for (int d = 0; d < vsize; ++d) {
           res += VP::elt(vres, d);
         }
       }
-      assert(i == (ptrdiff_t(coeffs::imax) -
-                   ptrdiff_t(coeffs::ncoeffs % VP::size())));
-      for (i = coeffs::imax - coeffs::ncoeffs % VP::size(); i < coeffs::imax;
-           ++i) {
+      assert(i == ptrdiff_t(coeffs::imax) - ptrdiff_t(coeffs::ncoeffs % vsize));
+      for (i = coeffs::imax - ptrdiff_t(coeffs::ncoeffs % vsize);
+           i < coeffs::imax; ++i) {
         res += coeffs::get(i) * interp0<T, ORDER>(p + i * d1);
       }
       return res;
@@ -408,11 +398,9 @@ void prolongate_3d_rf2(T const *restrict const src,
                  "vertices");
   }
 
-  // This could be handled, but is likely to point to an error
-  // elsewhere
-  if (regbbox.empty()) {
-    CCTK_WARN(0, "Internal error: region extent is empty");
-  }
+  // This could be handled, but is likely to point to an error elsewhere
+  if (regbbox.empty())
+    CCTK_ERROR("Internal error: region extent is empty");
 
   ivect3 const regext = regbbox.shape() / regbbox.stride();
   assert(all((regbbox.lower() - srcbbox.lower()) % regbbox.stride() == 0));
