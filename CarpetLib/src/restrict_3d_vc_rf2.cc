@@ -212,9 +212,10 @@ void restrict_3d_vc_rf2(T const *restrict const src,
   if (not use_loopcontrol_in_operators) {
 
 // Loop over coarse region
-#pragma omp parallel for collapse(3)
+#pragma omp parallel for collapse(2) if (use_openmp)
     for (int k = 0; k < regkext; ++k) {
       for (int j = 0; j < regjext; ++j) {
+//#pragma omp simd
         for (int i = 0; i < regiext; ++i) {
 #ifdef CARPET_DEBUG
           if (not(2 * k + centk < srckext and 2 * j + centj < srcjext and
@@ -241,7 +242,7 @@ void restrict_3d_vc_rf2(T const *restrict const src,
   } else {
 
 // Loop over coarse region
-#pragma omp parallel
+#pragma omp parallel if (use_openmp)
     CCTK_LOOP3(restrict_3d_vc_rf2, i, j, k, 0, 0, 0, regiext, regjext, regkext,
                dstipadext, dstjpadext, dstkpadext) {
 #ifdef CARPET_DEBUG

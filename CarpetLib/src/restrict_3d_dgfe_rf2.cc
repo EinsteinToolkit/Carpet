@@ -119,7 +119,7 @@ void restrict_3d_dgfe_rf2(
   assert(all(regext % (ORDER + 1) == 0));
 
 // Loop over coarse region
-#pragma omp parallel for collapse(3)
+#pragma omp parallel for collapse(3) if (use_openmp)
   // Zwicky's Intel compiler 11.1 ices on ptrdiff_t
   for (/*ptrdiff_t*/ int k = 0; k < regkext; k += ORDER + 1) {
     for (/*ptrdiff_t*/ int j = 0; j < regjext; j += ORDER + 1) {

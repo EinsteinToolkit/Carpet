@@ -13,11 +13,26 @@
 #include <sstream>
 #include <typeinfo>
 
+#ifdef _OPENMP
+#include <omp.h>
+#else
+inline int omp_in_parallel() { return 0; }
+#endif
+
 #ifdef CCTK_MPI
 #include <mpi.h>
 #else
 #include "nompi.h"
 #endif
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <functional>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <typeinfo>
 
 #include "bbox.hh"
 #include "cacheinfo.hh"
@@ -196,6 +211,8 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
                           int const dstproc, int const srcproc,
                           CCTK_REAL const time, int const order_space,
                           int const order_time) {
+  DECLARE_CCTK_PARAMETERS;
+
   bool const is_dst = dist::rank() == dstproc;
   bool const is_src = dist::rank() == srcproc;
   assert(not is_dst or dst);
@@ -271,11 +288,22 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
           gdata *const buf = src->make_typed(src->varindex, src->cent,
                                              src->transport_operator);
           buf->allocate(dstbox, srcproc, sendbuf, sendbufsize);
-          buf->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo,
-                                       time, order_space, order_time);
-          delete buf;
-          state.commit_send_space(src->c_datatype(), dstproc,
-                                  prod(pad_shape(dstbox)));
+          const bool have_slabinfo = slabinfo != nullptr;
+          islab my_slabinfo;
+          if (have_slabinfo)
+            my_slabinfo = *slabinfo;
+          const auto transfer = [=]() {
+            const islab *slabinfo = have_slabinfo ? &my_slabinfo : nullptr;
+            buf->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo,
+                                         time, order_space, order_time);
+            delete buf;
+          };
+          // TODO: Handle this better
+          if (enable_openmp_tasks_in_comm)
+            assert(combine_sends);
+#pragma omp task firstprivate(transfer) if (enable_openmp_tasks_in_comm)
+          transfer();
+          state.commit_send_space(src->c_datatype(), dstproc, dstbox.size());
         } else {
           for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++tl) {
             size_t const sendbufsize =
@@ -285,10 +313,18 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
             gdata *const buf = src->make_typed(src->varindex, src->cent,
                                                src->transport_operator);
             buf->allocate(srcbox, srcproc, sendbuf, sendbufsize);
-            buf->copy_from_innerloop(srcs.AT(tl), srcbox, srcbox, NULL);
-            delete buf;
-            state.commit_send_space(src->c_datatype(), dstproc,
-                                    prod(pad_shape(srcbox)));
+            const gdata *const src = srcs.AT(tl);
+            const auto transfer = [=]() {
+              buf->copy_from_innerloop(src, srcbox, srcbox, NULL);
+              delete buf;
+            };
+            // TODO: Handle this better
+            if (enable_openmp_tasks_in_comm && enable_openmp_tasks_in_copy)
+              assert(combine_sends);
+#pragma omp task firstprivate(transfer) if (enable_openmp_tasks_in_comm &&     \
+                                            enable_openmp_tasks_in_copy)
+            transfer();
+            state.commit_send_space(src->c_datatype(), dstproc, srcbox.size());
           }
         }
       }
@@ -298,8 +334,23 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
   case state_do_some_work:
     // handle the process-local case
     if (is_dst and is_src) {
-      dst->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
-                              order_space, order_time);
+        // Create a C++ closure to capture some local variables automatically,
+        // which is a bit easier than via OpenMP.
+        const bool have_slabinfo = slabinfo != nullptr;
+        islab my_slabinfo;
+        if (have_slabinfo)
+          my_slabinfo = *slabinfo;
+        const auto transfer = [=]() {
+          const islab *slabinfo = have_slabinfo ? &my_slabinfo : nullptr;
+          dst->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
+                                       order_space, order_time);
+        };
+        // TODO: Handle this better
+        if (enable_openmp_tasks_in_comm && enable_openmp_tasks_in_copy)
+          assert(combine_sends);
+#pragma omp task firstprivate(transfer) if (enable_openmp_tasks_in_comm &&     \
+                                            enable_openmp_tasks_in_copy)
+        transfer();
     }
     break;
 
@@ -314,10 +365,17 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
               state.recv_buffer(dst->c_datatype(), srcproc, prod(pad_shape(dstbox)));
           gdata *const buf = dst->make_typed(dst->varindex, dst->cent, dst->transport_operator);
           buf->allocate(dstbox, dstproc, recvbuf, recvbufsize);
-          state.commit_recv_space(dst->c_datatype(), srcproc,
-                                  prod(pad_shape(dstbox)));
-          dst->copy_from_innerloop(buf, dstbox, dstbox, NULL);
-          delete buf;
+          state.commit_recv_space(dst->c_datatype(), srcproc, dstbox.size());
+          const auto transfer = [=]() {
+            dst->copy_from_innerloop(buf, dstbox, dstbox, NULL);
+            delete buf;
+          };
+          // TODO: Handle this better
+          if (enable_openmp_tasks_in_comm && enable_openmp_tasks_in_copy)
+            assert(combine_sends);
+#pragma omp task firstprivate(transfer) if (enable_openmp_tasks_in_comm &&     \
+                                            enable_openmp_tasks_in_copy)
+          transfer();
         } else {
           gdata const *const null = NULL;
           vector<gdata const *> bufs(ntimelevels, null);
@@ -334,11 +392,22 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
             bufs.AT(tl) = buf;
             timebuf.AT(tl) = times.AT(timelevel0 + tl);
           }
-          dst->transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo, time,
-                                  order_space, order_time);
-          for (int tl = 0; tl < ntimelevels; ++tl) {
-            delete bufs.AT(tl);
-          }
+          const bool have_slabinfo = slabinfo != nullptr;
+          islab my_slabinfo;
+          if (have_slabinfo)
+            my_slabinfo = *slabinfo;
+          const auto transfer = [=]() {
+            const islab *slabinfo = have_slabinfo ? &my_slabinfo : nullptr;
+            dst->transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo,
+                                    time, order_space, order_time);
+            for (auto buf : bufs)
+              delete buf;
+          };
+          // TODO: Handle this better
+          if (enable_openmp_tasks_in_comm)
+            assert(combine_sends);
+#pragma omp task firstprivate(transfer) if (enable_openmp_tasks_in_comm)
+          transfer();
         }
       }
     }

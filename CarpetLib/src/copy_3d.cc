@@ -115,24 +115,13 @@ void copy_3d(T const *restrict const src, ivect3 const &restrict srcpadext,
   ptrdiff_t const dstjoff = dstoff[1];
   ptrdiff_t const dstkoff = dstoff[2];
 
-  // Loop over region
-  if (use_openmp) {
-#pragma omp parallel for collapse(3)
-    for (int k = 0; k < regkext; ++k) {
-      for (int j = 0; j < regjext; ++j) {
-        for (int i = 0; i < regiext; ++i) {
-
-          dst[DSTIND3(i, j, k)] = src[SRCIND3(i, j, k)];
-        }
-      }
-    }
-  } else {
-    for (int k = 0; k < regkext; ++k) {
-      for (int j = 0; j < regjext; ++j) {
-        for (int i = 0; i < regiext; ++i) {
-
-          dst[DSTIND3(i, j, k)] = src[SRCIND3(i, j, k)];
-        }
+// Loop over region
+#pragma omp parallel for collapse(2) if (use_openmp)
+  for (int k = 0; k < regkext; ++k) {
+    for (int j = 0; j < regjext; ++j) {
+//#pragma omp simd
+      for (int i = 0; i < regiext; ++i) {
+        dst[DSTIND3(i, j, k)] = src[SRCIND3(i, j, k)];
       }
     }
   }

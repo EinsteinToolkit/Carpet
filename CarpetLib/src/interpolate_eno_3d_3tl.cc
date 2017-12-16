@@ -1,7 +1,7 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
-#include <loopcontrol.h>
+//#include <loopcontrol.h>
 
 #include <algorithm>
 #include <cassert>
@@ -40,6 +40,8 @@ void interpolate_eno_3d_3tl(
     ivect3 const &restrict dstext, ibbox3 const &restrict srcbbox,
     ibbox3 const &restrict dstbbox, ibbox3 const &restrict,
     ibbox3 const &restrict regbbox, void *extraargs) {
+  DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   typedef typename typeprops<T>::real RT;
@@ -134,7 +136,7 @@ void interpolate_eno_3d_3tl(
 // statement in the loop, simplifying the code.
 
 // Loop over region
-#pragma omp parallel
+#pragma omp parallel if (use_openmp)
   CCTK_LOOP3(interpolate_end_3d_3tl, i, j, k, 0, 0, 0, regiext, regjext,
              regkext, srcipadext, srcjpadext, srckpadext) {
 

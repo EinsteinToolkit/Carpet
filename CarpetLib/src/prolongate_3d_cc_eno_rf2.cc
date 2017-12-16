@@ -1290,7 +1290,7 @@ void prolongate_3d_cc_eno_rf2(
   } else { // use_loopcontrol_in_operators
 
 // Loop over fine region
-#pragma omp parallel
+#pragma omp parallel if (use_openmp)
     CCTK_LOOP3(prolongate_3d_cc_eno_rf2, i, j, k, 0, 0, 0, regiext, regjext,
                regkext, dstipadext, dstjpadext, dstkpadext) {
       const ptrdiff_t is = (srcioff + i) / 2;

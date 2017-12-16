@@ -609,3 +609,19 @@ BOOLEAN adaptive_stepsize "Allow adaptive timestep sizes"
 BOOLEAN use_unusedpoints_mask "Turn on storage and usage of 'unusedpoints_mask'" STEERABLE=recover
 {
 } "no"
+
+
+
+BOOLEAN use_openmp_in_comm "Use OpenMP to parallelize communication kernels" STEERABLE=always
+{
+} "no"
+
+BOOLEAN use_openmp_in_sync "Use OpenMP to parallelize synchronization (requires use_openmp_in_comm)" STEERABLE=always
+{
+} "no"
+
+INT max_sync_openmp_threads "Maximum number of OpenMP threads during synchronization" STEERABLE=always
+{
+  0 :: "no limit"
+  1:* :: "this many threads"
+} 0

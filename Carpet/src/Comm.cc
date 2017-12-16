@@ -5,6 +5,12 @@
 #include <iostream>
 #include <vector>
 
+#ifdef _OPENMP
+#include <omp.h>
+#else
+inline int omp_get_max_threads() { return 1; }
+#endif
+
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
@@ -252,30 +258,39 @@ static void ProlongateGroupBoundaries(const cGH *cctkGH,
     }
   }
 
+  typedef function<void(comm_state &)> comm_task;
+  vector<comm_task> tasks;
+  for (int group = 0; group < (int)groups.size(); ++group) {
+    const int g = groups.AT(group);
+    const int grouptype = CCTK_GroupTypeI(g);
+    if (grouptype != CCTK_GF)
+      continue;
+    assert(reflevel >= 0 and reflevel < reflevels);
+    const int active_tl =
+        groupdata.AT(g).activetimelevels.AT(mglevel).AT(reflevel);
+    assert(active_tl >= 0);
+    const int tl = active_tl > 1 ? timelevel : 0;
+    for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
+      for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
+        ggf *const gv = arrdata.AT(g).AT(m).data.AT(v);
+        tasks.push_back([=](comm_state &state) {
+          gv->ref_bnd_prolongate_all(state, tl, reflevel, mglevel, time);
+        });
+      }
+    }
+  }
+
   vector<Timers::Timer *>::iterator ti = timers.begin();
   (*ti)->start();
   for (comm_state state; not state.done(); state.step()) {
     (*ti)->stop();
     ++ti;
     (*ti)->start();
-    for (int group = 0; group < (int)groups.size(); ++group) {
-      const int g = groups.AT(group);
-      const int grouptype = CCTK_GroupTypeI(g);
-      if (grouptype != CCTK_GF) {
-        continue;
-      }
-      assert(reflevel >= 0 and reflevel < reflevels);
-      const int active_tl =
-          groupdata.AT(g).activetimelevels.AT(mglevel).AT(reflevel);
-      assert(active_tl >= 0);
-      const int tl = active_tl > 1 ? timelevel : 0;
-
-      for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
-        for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
-          ggf *const gv = arrdata.AT(g).AT(m).data.AT(v);
-          gv->ref_bnd_prolongate_all(state, tl, reflevel, mglevel, time);
-        }
-      }
+#pragma omp parallel if (use_openmp_in_comm)
+    {
+#pragma omp master
+      for (auto &task : tasks)
+        task(state);
     }
     (*ti)->stop();
     ++ti;
@@ -341,26 +356,41 @@ void SyncGroups(const cGH *cctkGH, const vector<int> &groups) {
     }
   }
 
+  typedef function<void(comm_state &)> comm_task;
+  vector<comm_task> tasks;
+  for (int group = 0; group < (int)groups.size(); ++group) {
+    const int g = groups.AT(group);
+    const int grouptype = CCTK_GroupTypeI(g);
+    const int ml = grouptype == CCTK_GF ? mglevel : 0;
+    const int rl = grouptype == CCTK_GF ? reflevel : 0;
+    const int active_tl = groupdata.AT(g).activetimelevels.AT(ml).AT(rl);
+    assert(active_tl >= 0);
+    const int tl = active_tl > 1 ? timelevel : 0;
+    for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
+      for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
+        ggf *const gv = arrdata.AT(g).AT(m).data.AT(v);
+        tasks.push_back(
+            [=](comm_state &state) { gv->sync_all(state, tl, rl, ml); });
+      }
+    }
+  }
+
+  const int max_threads = omp_get_max_threads();
+  const int sync_threads = max_sync_openmp_threads == 0
+                               ? max_threads
+                               : min(max_sync_openmp_threads, max_threads);
   vector<Timers::Timer *>::iterator ti = timers.begin();
   (*ti)->start();
   for (comm_state state; not state.done(); state.step()) {
     (*ti)->stop();
     ++ti;
     (*ti)->start();
-    for (int group = 0; group < (int)groups.size(); ++group) {
-      const int g = groups.AT(group);
-      const int grouptype = CCTK_GroupTypeI(g);
-      const int ml = grouptype == CCTK_GF ? mglevel : 0;
-      const int rl = grouptype == CCTK_GF ? reflevel : 0;
-      const int active_tl = groupdata.AT(g).activetimelevels.AT(ml).AT(rl);
-      assert(active_tl >= 0);
-      const int tl = active_tl > 1 ? timelevel : 0;
-      for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
-        for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
-          arrdesc &array = arrdata.AT(g).AT(m);
-          array.data.AT(v)->sync_all(state, tl, rl, ml);
-        }
-      }
+#pragma omp parallel num_threads(sync_threads) if (use_openmp_in_comm &&       \
+                                                   use_openmp_in_sync)
+    {
+#pragma omp master
+      for (auto &task : tasks)
+        task(state);
     }
     (*ti)->stop();
     ++ti;

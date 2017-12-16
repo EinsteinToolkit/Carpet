@@ -147,7 +147,7 @@ void restrict_3d_stagger101(
   } else {
 
 // Loop over coarse region
-#pragma omp parallel
+#pragma omp parallel if (use_openmp)
     CCTK_LOOP3(restrict_3d_stagger101, i, j, k, 0, 0, 0, regiext, regjext,
                regkext, dstipadext, dstjpadext, dstkpadext) {
 

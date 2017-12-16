@@ -486,7 +486,7 @@ void dh::regrid(bool const do_init) {
       timer_buffers.start();
 
       // Enlarge active part of domain
-      i2vect const safedist = i2vect(0);
+      i2vect const safedist = i2vect(ivect(0));
       ibbox const domain_enlarged = domain_active.expand(safedist);
 
       // All owned regions

@@ -1,7 +1,7 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
-#include <loopcontrol.h>
+//#include <loopcontrol.h>
 
 #include <algorithm>
 #include <cassert>
@@ -33,6 +33,8 @@ void interpolate_3d_3tl(T const *restrict const src1, CCTK_REAL const t1,
                         ibbox3 const &restrict srcbbox,
                         ibbox3 const &restrict dstbbox, ibbox3 const &restrict,
                         ibbox3 const &restrict regbbox, void *extraargs) {
+  DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   typedef typename typeprops<T>::real RT;
@@ -108,7 +110,7 @@ void interpolate_3d_3tl(T const *restrict const src1, CCTK_REAL const t1,
   RT const s3fac = (t - t1) * (t - t2) / ((t3 - t1) * (t3 - t2));
 
 // Loop over region
-#pragma omp parallel
+#pragma omp parallel if (use_openmp)
   CCTK_LOOP3(interpolate_3d_3tl, i, j, k, 0, 0, 0, regiext, regjext, regkext,
              dstipadext, dstjpadext, dstkpadext) {
 
