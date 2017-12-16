@@ -211,13 +211,13 @@ static void assert_error(char const *restrict const checkstring,
 void dh::regrid(bool const do_init) {
   DECLARE_CCTK_PARAMETERS;
 
-  static Timers::Timer timer("CarpetLib::dh::regrid");
-  timer.start();
+  //static Timers::Timer timer("CarpetLib::dh::regrid");
+  ////timer.start();
 
   CHECKPOINT;
 
-  static Timer total("CarpetLib::dh::regrid");
-  total.start();
+  //static Timer total("CarpetLib::dh::regrid");
+  ////total.start();
 
   light_mboxes old_light_boxes;
   swap(light_boxes, old_light_boxes);
@@ -262,8 +262,8 @@ void dh::regrid(bool const do_init) {
 
       // Domain:
 
-      static Timers::Timer timer_domain("domain");
-      timer_domain.start();
+      //static Timers::Timer timer_domain("domain");
+      //timer_domain.start();
 
       ibbox const &domain_exterior = h.baseextent(ml, rl);
       // Variables may have size zero
@@ -283,10 +283,10 @@ void dh::regrid(bool const do_init) {
 
       ibset const domain_boundary = domain_exterior - domain_active;
 
-      timer_domain.stop();
+      //timer_domain.stop();
 
-      static Timers::Timer timer_region("region");
-      timer_region.start();
+      //static Timers::Timer timer_region("region");
+      //timer_region.start();
 
       for (int c = 0; c < h.components(rl); ++c) {
 
@@ -478,12 +478,12 @@ void dh::regrid(bool const do_init) {
 
       } // for c
 
-      timer_region.stop();
+      //timer_region.stop();
 
       // Conjunction of all buffer zones:
 
-      static Timers::Timer timer_buffers("buffers");
-      timer_buffers.start();
+      //static Timers::Timer timer_buffers("buffers");
+      //timer_buffers.start();
 
       // Enlarge active part of domain
       i2vect const safedist = i2vect(ivect(0));
@@ -630,12 +630,12 @@ void dh::regrid(bool const do_init) {
       ibset const allbuffers1(full_level, &full_dboxes::buffers);
       ASSERT_rl(allbuffers1 == allbuffers, "Buffer zone consistency check");
 
-      timer_buffers.stop();
+      //timer_buffers.stop();
 
       // Test constituency relations:
 
-      static Timers::Timer timer_test("test");
-      timer_test.start();
+      //static Timers::Timer timer_test("test");
+      //timer_test.start();
 
       for (int c = 0; c < h.components(rl); ++c) {
         full_dboxes const &box = full_level.AT(c);
@@ -663,23 +663,23 @@ void dh::regrid(bool const do_init) {
 
       } // for c
 
-      timer_test.stop();
+      //timer_test.stop();
 
       // Communication schedule:
 
-      static Timers::Timer timer_comm("comm");
-      timer_comm.start();
+      //static Timers::Timer timer_comm("comm");
+      //timer_comm.start();
 
-      static Timers::Timer timer_comm_mgrest("mgrest");
-      static Timers::Timer timer_comm_mgprol("mgprol");
-      static Timers::Timer timer_comm_refprol("refprol");
-      static Timers::Timer timer_comm_sync("sync");
-      static Timers::Timer timer_comm_refbndprol("refbndprol");
-      timer_comm_mgrest.instantiate();
-      timer_comm_mgprol.instantiate();
-      timer_comm_refprol.instantiate();
-      timer_comm_sync.instantiate();
-      timer_comm_refbndprol.instantiate();
+      //static Timers::Timer timer_comm_mgrest("mgrest");
+      //static Timers::Timer timer_comm_mgprol("mgprol");
+      //static Timers::Timer timer_comm_refprol("refprol");
+      //static Timers::Timer timer_comm_sync("sync");
+      //static Timers::Timer timer_comm_refbndprol("refbndprol");
+      //timer_comm_mgrest.instantiate();
+      //timer_comm_mgprol.instantiate();
+      //timer_comm_refprol.instantiate();
+      //timer_comm_sync.instantiate();
+      //timer_comm_refbndprol.instantiate();
 
       for (int lc = 0; lc < h.local_components(rl); ++lc) {
         int const c = h.get_component(rl, lc);
@@ -688,7 +688,7 @@ void dh::regrid(bool const do_init) {
 
         // Multigrid restriction:
 
-        timer_comm_mgrest.start();
+        //timer_comm_mgrest.start();
 
         if (ml > 0) {
           int const oml = ml - 1;
@@ -722,11 +722,11 @@ void dh::regrid(bool const do_init) {
 
         } // if ml > 0
 
-        timer_comm_mgrest.stop();
+        //timer_comm_mgrest.stop();
 
         // Multigrid prolongation:
 
-        timer_comm_mgprol.start();
+        //timer_comm_mgprol.start();
 
         if (ml > 0) {
           int const oml = ml - 1;
@@ -764,11 +764,11 @@ void dh::regrid(bool const do_init) {
 
         } // if ml > 0
 
-        timer_comm_mgprol.stop();
+        //timer_comm_mgprol.stop();
 
         // Refinement prolongation:
 
-        timer_comm_refprol.start();
+        //timer_comm_refprol.start();
 
         if (rl > 0) {
           int const orl = rl - 1;
@@ -836,11 +836,11 @@ void dh::regrid(bool const do_init) {
 
         } // if rl > 0
 
-        timer_comm_refprol.stop();
+        //timer_comm_refprol.stop();
 
         // Synchronisation:
 
-        timer_comm_sync.start();
+        //timer_comm_sync.start();
 
         {
 
@@ -897,11 +897,11 @@ void dh::regrid(bool const do_init) {
           } // for cc
         }
 
-        timer_comm_sync.stop();
+        //timer_comm_sync.stop();
 
         // Boundary prolongation:
 
-        timer_comm_refbndprol.start();
+        //timer_comm_refbndprol.start();
 
         if (rl > 0) {
           int const orl = rl - 1;
@@ -981,14 +981,14 @@ void dh::regrid(bool const do_init) {
 
         } // if rl > 0
 
-        timer_comm_refbndprol.stop();
+        //timer_comm_refbndprol.stop();
 
       } // for lc
 
       // Refinement restriction:
 
-      static Timers::Timer timer_comm_refrest("refrest");
-      timer_comm_refrest.start();
+      //static Timers::Timer timer_comm_refrest("refrest");
+      //timer_comm_refrest.start();
 
       if (rl > 0) {
         int const orl = rl - 1;
@@ -1093,12 +1093,12 @@ void dh::regrid(bool const do_init) {
 
       } // if rl > 0
 
-      timer_comm_refrest.stop();
+      //timer_comm_refrest.stop();
 
       // Refinement refluxing:
 
-      static Timers::Timer timer_comm_reflux("reflux");
-      timer_comm_reflux.start();
+      //static Timers::Timer timer_comm_reflux("reflux");
+      //timer_comm_reflux.start();
 
       // If there is no coarser level, do nothing
       if (rl > 0) {
@@ -1407,14 +1407,14 @@ void dh::regrid(bool const do_init) {
 
       } // if rl > 0
 
-      timer_comm_reflux.stop();
+      //timer_comm_reflux.stop();
 
-      timer_comm.stop();
+      //timer_comm.stop();
 
       // Reduction mask:
 
-      static Timers::Timer timer_mask("mask");
-      timer_mask.start();
+      //static Timers::Timer timer_mask("mask");
+      //timer_mask.start();
 
       for (int lc = 0; lc < h.local_components(rl); ++lc) {
         local_dboxes &local_box = local_level.AT(lc);
@@ -1570,13 +1570,13 @@ void dh::regrid(bool const do_init) {
 
       } // if not coarsest level
 
-      timer_mask.stop();
+      //timer_mask.stop();
 
       // Mask for unused points on coarser level (which do not
       // influence the future evolution provided regridding is done at
       // the right times):
-      static Timers::Timer timer_overwrittenmask("unusedpoints_mask");
-      timer_overwrittenmask.start();
+      //static Timers::Timer timer_overwrittenmask("unusedpoints_mask");
+      //timer_overwrittenmask.start();
 
       // Declare this here to save it for later use. Contains all the boxes
       // which are active minus the boundary
@@ -1717,18 +1717,18 @@ void dh::regrid(bool const do_init) {
         }   // if reffact != 2
       }     // if not coarsest level
 
-      timer_overwrittenmask.stop();
+      //timer_overwrittenmask.stop();
 
       // Regridding schedule:
 
       fast_level.do_init = do_init;
       if (do_init) {
 
-        static Timers::Timer timer_regrid("regrid");
-        timer_regrid.start();
+        //static Timers::Timer timer_regrid("regrid");
+        //timer_regrid.start();
 
-        static Timers::Timer timer_regrid_sync("sync");
-        static Timers::Timer timer_regrid_prolongate("prolongate");
+        //static Timers::Timer timer_regrid_sync("sync");
+        //static Timers::Timer timer_regrid_prolongate("prolongate");
 
         for (int lc = 0; lc < h.local_components(rl); ++lc) {
           int const c = h.get_component(rl, lc);
@@ -1739,7 +1739,7 @@ void dh::regrid(bool const do_init) {
 
           // Regridding synchronisation:
 
-          timer_regrid_sync.start();
+          //timer_regrid_sync.start();
 
           if (int(old_light_boxes.size()) > ml and
               int(old_light_boxes.AT(ml).size()) > rl) {
@@ -1778,11 +1778,11 @@ void dh::regrid(bool const do_init) {
 
           } // if not old_light_boxes.empty
 
-          timer_regrid_sync.stop();
+          //timer_regrid_sync.stop();
 
           // Regridding prolongation:
 
-          timer_regrid_prolongate.start();
+          //timer_regrid_prolongate.start();
 
           if (rl > 0) {
             int const orl = rl - 1;
@@ -1850,11 +1850,11 @@ void dh::regrid(bool const do_init) {
                 "Regridding prolongation: All points must have been received");
           }
 
-          timer_regrid_prolongate.stop();
+          //timer_regrid_prolongate.stop();
 
         } // for lc
 
-        timer_regrid.stop();
+        //timer_regrid.stop();
 
       } // if do_init
 
@@ -1875,8 +1875,8 @@ void dh::regrid(bool const do_init) {
 
       {
 
-        static Timers::Timer timer_bcast_boxes("bcast_boxes");
-        timer_bcast_boxes.start();
+        //static Timers::Timer timer_bcast_boxes("bcast_boxes");
+        //timer_bcast_boxes.start();
 
         int const count_send = h.local_components(rl);
         vector<light_dboxes> level_send(count_send);
@@ -1900,47 +1900,47 @@ void dh::regrid(bool const do_init) {
           }
         }
 
-        timer_bcast_boxes.stop();
+        //timer_bcast_boxes.stop();
       }
 
       {
 
-        static Timers::Timer timer_bcast_comm("bcast_comm");
-        timer_bcast_comm.start();
+        //static Timers::Timer timer_bcast_comm("bcast_comm");
+        //timer_bcast_comm.start();
 
-        static Timers::Timer timer_bcast_comm_ref_prol("ref_prol");
-        timer_bcast_comm_ref_prol.start();
+        //static Timers::Timer timer_bcast_comm_ref_prol("ref_prol");
+        //timer_bcast_comm_ref_prol.start();
         broadcast_schedule(fast_level_otherprocs, fast_level,
                            &fast_dboxes::fast_ref_prol_sendrecv);
-        timer_bcast_comm_ref_prol.stop();
+        //timer_bcast_comm_ref_prol.stop();
 
-        static Timers::Timer timer_bcast_comm_sync("sync");
-        timer_bcast_comm_sync.start();
+        //static Timers::Timer timer_bcast_comm_sync("sync");
+        //timer_bcast_comm_sync.start();
         broadcast_schedule(fast_level_otherprocs, fast_level,
                            &fast_dboxes::fast_sync_sendrecv);
-        timer_bcast_comm_sync.stop();
+        //timer_bcast_comm_sync.stop();
 
-        static Timers::Timer timer_bcast_comm_ref_bnd_prol("ref_bnd_prol");
-        timer_bcast_comm_ref_bnd_prol.start();
+        //static Timers::Timer timer_bcast_comm_ref_bnd_prol("ref_bnd_prol");
+        //timer_bcast_comm_ref_bnd_prol.start();
         broadcast_schedule(fast_level_otherprocs, fast_level,
                            &fast_dboxes::fast_ref_bnd_prol_sendrecv);
-        timer_bcast_comm_ref_bnd_prol.stop();
+        //timer_bcast_comm_ref_bnd_prol.stop();
 
         if (rl > 0) {
           int const orl = rl - 1;
           fast_dboxes &fast_olevel = fast_boxes.AT(ml).AT(orl);
-          static Timers::Timer timer_bcast_comm_ref_rest("ref_rest");
-          timer_bcast_comm_ref_rest.start();
+          //static Timers::Timer timer_bcast_comm_ref_rest("ref_rest");
+          //timer_bcast_comm_ref_rest.start();
           broadcast_schedule(fast_level_otherprocs, fast_olevel,
                              &fast_dboxes::fast_ref_rest_sendrecv);
-          timer_bcast_comm_ref_rest.stop();
+          //timer_bcast_comm_ref_rest.stop();
         }
 
         if (rl > 0) {
           int const orl = rl - 1;
           fast_dboxes &fast_olevel = fast_boxes.AT(ml).AT(orl);
-          static Timers::Timer timer_bcast_comm_ref_refl("ref_refl");
-          timer_bcast_comm_ref_refl.start();
+          //static Timers::Timer timer_bcast_comm_ref_refl("ref_refl");
+          //timer_bcast_comm_ref_refl.start();
           for (int dir = 0; dir < dim; ++dir) {
             for (int face = 0; face < 2; ++face) {
               srpvect fast_dboxes::*const fast_ref_refl_sendrecv =
@@ -1949,11 +1949,11 @@ void dh::regrid(bool const do_init) {
                                  fast_ref_refl_sendrecv);
             }
           }
-          timer_bcast_comm_ref_refl.stop();
+          //timer_bcast_comm_ref_refl.stop();
         }
 
-        static Timers::Timer timer_bcast_comm_ref_refl_prol("ref_refl_prol");
-        timer_bcast_comm_ref_refl_prol.start();
+        //static Timers::Timer timer_bcast_comm_ref_refl_prol("ref_refl_prol");
+        //timer_bcast_comm_ref_refl_prol.start();
         for (int dir = 0; dir < dim; ++dir) {
           for (int face = 0; face < 2; ++face) {
             srpvect fast_dboxes::*const fast_ref_refl_prol_sendrecv =
@@ -1962,24 +1962,24 @@ void dh::regrid(bool const do_init) {
                                fast_ref_refl_prol_sendrecv);
           }
         }
-        timer_bcast_comm_ref_refl_prol.stop();
+        //timer_bcast_comm_ref_refl_prol.stop();
 
         // TODO: Maybe broadcast old2new schedule only if do_init is
         // set
-        static Timers::Timer timer_bcast_comm_old2new_sync("old2new_sync");
-        timer_bcast_comm_old2new_sync.start();
+        //static Timers::Timer timer_bcast_comm_old2new_sync("old2new_sync");
+        //timer_bcast_comm_old2new_sync.start();
         broadcast_schedule(fast_level_otherprocs, fast_level,
                            &fast_dboxes::fast_old2new_sync_sendrecv);
-        timer_bcast_comm_old2new_sync.stop();
+        //timer_bcast_comm_old2new_sync.stop();
 
-        static Timers::Timer timer_bcast_comm_old2new_ref_prol(
-            "old2new_ref_prol");
-        timer_bcast_comm_old2new_ref_prol.start();
+        //static Timers::Timer timer_bcast_comm_old2new_ref_prol(
+        //    "old2new_ref_prol");
+        //timer_bcast_comm_old2new_ref_prol.start();
         broadcast_schedule(fast_level_otherprocs, fast_level,
                            &fast_dboxes::fast_old2new_ref_prol_sendrecv);
-        timer_bcast_comm_old2new_ref_prol.stop();
+        //timer_bcast_comm_old2new_ref_prol.stop();
 
-        timer_bcast_comm.stop();
+        //timer_bcast_comm.stop();
       }
 
       // Output:
@@ -2118,31 +2118,31 @@ void dh::regrid(bool const do_init) {
         "The grid structure is inconsistent.  It is impossible to continue.");
   }
 
-  total.stop(0);
-  timer.stop();
+  ////total.stop(0);
+  ////timer.stop();
 }
 
 void dh::broadcast_schedule(vector<fast_dboxes> &fast_level_otherprocs,
                             fast_dboxes &fast_level,
                             srpvect fast_dboxes::*const schedule_item) {
-  static Timers::Timer timer_bs1("CarpetLib::dh::bs1");
-  timer_bs1.start();
+  //static Timers::Timer timer_bs1("CarpetLib::dh::bs1");
+  //timer_bs1.start();
   vector<srpvect> send(dist::size());
   for (int p = 0; p < dist::size(); ++p) {
     swap(send.AT(p), fast_level_otherprocs.AT(p).*schedule_item);
   }
-  timer_bs1.stop();
+  //timer_bs1.stop();
 
-  static Timers::Timer timer_bs2("CarpetLib::dh::bs2");
-  timer_bs2.start();
+  //static Timers::Timer timer_bs2("CarpetLib::dh::bs2");
+  //timer_bs2.start();
   srpvect const recv = alltoallv1(dist::comm(), send);
-  timer_bs2.stop();
+  //timer_bs2.stop();
 
-  static Timers::Timer timer_bs3("CarpetLib::dh::bs3");
-  timer_bs3.start();
+  //static Timers::Timer timer_bs3("CarpetLib::dh::bs3");
+  //timer_bs3.start();
   (fast_level.*schedule_item)
       .insert((fast_level.*schedule_item).end(), recv.begin(), recv.end());
-  timer_bs3.stop();
+  //timer_bs3.stop();
 }
 
 void dh::regrid_free(bool const do_init) {
@@ -2168,8 +2168,8 @@ void dh::recompose(int const rl, bool const do_prolongate) {
 
   assert(rl >= 0 and rl < h.reflevels());
 
-  static Timers::Timer timer("CarpetLib::dh::recompose");
-  timer.start();
+  //static Timers::Timer timer("CarpetLib::dh::recompose");
+  ////timer.start();
 
   for (map<int, ggf *>::iterator f = gfs.begin(); f != gfs.end(); ++f) {
     f->second->recompose_crop();
@@ -2219,7 +2219,7 @@ void dh::recompose(int const rl, bool const do_prolongate) {
     }
   }
 
-  timer.stop();
+  ////timer.stop();
 }
 
 // Grid function management

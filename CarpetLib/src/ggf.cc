@@ -104,7 +104,7 @@ void ggf::set_timelevels(const int ml, const int rl, const int new_timelevels) {
 void ggf::recompose_crop() {
   // Free storage that will not be needed
   static Timers::Timer timer("CarpetLib::ggf::recompose_crop");
-  timer.start();
+  //timer.start();
 
   for (int ml = 0; ml < h.mglevels(); ++ml) {
     for (int rl = h.reflevels(); rl < (int)storage.AT(ml).size(); ++rl) {
@@ -117,13 +117,13 @@ void ggf::recompose_crop() {
     storage.AT(ml).resize(h.reflevels());
   } // for ml
 
-  timer.stop();
+  //timer.stop();
 }
 
 void ggf::recompose_allocate(const int rl) {
   // Retain storage that might be needed
   static Timers::Timer timer("CarpetLib::ggf::recompose_allocate");
-  timer.start();
+  //timer.start();
 
   oldstorage.resize(storage.size());
   for (int ml = 0; ml < (int)storage.size(); ++ml) {
@@ -152,14 +152,14 @@ void ggf::recompose_allocate(const int rl) {
     }   // for lc
   }     // for ml
 
-  timer.stop();
+  //timer.stop();
 }
 
 void ggf::recompose_fill(comm_state &state, int const rl,
                          bool const do_prolongate) {
   // Initialise the new storage
   static Timers::Timer timer("CarpetLib::ggf::recompose_fill");
-  timer.start();
+  //timer.start();
 
   for (int ml = 0; ml < h.mglevels(); ++ml) {
 
@@ -198,13 +198,13 @@ void ggf::recompose_fill(comm_state &state, int const rl,
 
   } // for ml
 
-  timer.stop();
+  //timer.stop();
 }
 
 void ggf::recompose_free_old(const int rl) {
   // Delete old storage
   static Timers::Timer timer("dh::recompose_free_old");
-  timer.start();
+  //timer.start();
 
   for (int ml = 0; ml < (int)oldstorage.size(); ++ml) {
     for (int lc = 0; lc < (int)oldstorage.AT(ml).AT(rl).size(); ++lc) {
@@ -215,13 +215,13 @@ void ggf::recompose_free_old(const int rl) {
     oldstorage.AT(ml).AT(rl).clear();
   } // for ml
 
-  timer.stop();
+  //timer.stop();
 }
 
 void ggf::recompose_free(const int rl) {
   // Delete old storage
   static Timers::Timer timer("dh::recompose_free");
-  timer.start();
+  //timer.start();
 
   for (int ml = 0; ml < (int)storage.size(); ++ml) {
     for (int lc = 0; lc < h.local_components(rl); ++lc) {
@@ -232,7 +232,7 @@ void ggf::recompose_free(const int rl) {
     storage.AT(ml).AT(rl).clear();
   } // for ml
 
-  timer.stop();
+  //timer.stop();
 }
 
 // Cycle the time levels by rotating the data sets
@@ -310,10 +310,10 @@ void ggf::sync_all(comm_state &state, int const tl, int const rl,
     return;
   // Copy
   static Timer timer("sync_all");
-  timer.start();
+  //timer.start();
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_sync_sendrecv, tl,
                     rl, ml);
-  timer.stop(0);
+  //timer.stop(0);
 }
 
 // Prolongate the boundaries of all components
@@ -326,7 +326,7 @@ void ggf::ref_bnd_prolongate_all(comm_state &state, int const tl, int const rl,
     return;
   vector<int> tl2s;
   static Timer timer("ref_bnd_prolongate_all");
-  timer.start();
+  //timer.start();
   if (transport_operator != op_copy) {
     // Interpolation in time
     if (not(timelevels(ml, rl) >= prolongation_order_time + 1)) {
@@ -349,35 +349,35 @@ void ggf::ref_bnd_prolongate_all(comm_state &state, int const tl, int const rl,
   transfer_from_all(state, tl, rl, ml,
                     &dh::fast_dboxes::fast_ref_bnd_prol_sendrecv, tl2s, rl - 1,
                     ml, time);
-  timer.stop(0);
+  //timer.stop(0);
 }
 
 // Restrict a multigrid level
 void ggf::mg_restrict_all(comm_state &state, int const tl, int const rl,
                           int const ml, CCTK_REAL const time) {
   static Timer timer("mg_restrict_all");
-  timer.start();
+  //timer.start();
   // Require same times
   assert(fabs(t.get_time(ml, rl, 0) - t.get_time(ml - 1, rl, 0)) <=
          1.0e-8 * (1.0 + fabs(t.get_time(ml, rl, 0))));
   vector<int> const tl2s(1, tl);
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_mg_rest_sendrecv,
                     tl2s, rl, ml - 1, time);
-  timer.stop(0);
+  //timer.stop(0);
 }
 
 // Prolongate a multigrid level
 void ggf::mg_prolongate_all(comm_state &state, int const tl, int const rl,
                             int const ml, CCTK_REAL const time) {
   static Timer timer("mg_prolongate_all");
-  timer.start();
+  //timer.start();
   // Require same times
   assert(fabs(t.get_time(ml, rl, 0) - t.get_time(ml + 1, rl, 0)) <=
          1.0e-8 * (1.0 + fabs(t.get_time(ml, rl, 0))));
   vector<int> const tl2s(1, tl);
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_mg_prol_sendrecv,
                     tl2s, rl, ml + 1, time);
-  timer.stop(0);
+  //timer.stop(0);
 }
 
 // Restrict a refinement level
@@ -386,13 +386,13 @@ void ggf::ref_restrict_all(comm_state &state, int const tl, int const rl,
   if (transport_operator == op_none or transport_operator == op_sync)
     return;
   static Timer timer("ref_restrict_all");
-  timer.start();
+  //timer.start();
   // Require same times
   assert(fabs(t.get_time(ml, rl, tl) - t.get_time(ml, rl + 1, tl)) <=
          1.0e-8 * (1.0 + fabs(t.get_time(ml, rl, tl))));
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_ref_rest_sendrecv,
                     tl, rl + 1, ml);
-  timer.stop(0);
+  //timer.stop(0);
 }
 
 // Prolongate a refinement level
@@ -403,7 +403,7 @@ void ggf::ref_prolongate_all(comm_state &state, int const tl, int const rl,
       transport_operator == op_restrict)
     return;
   static Timer timer("ref_prolongate_all");
-  timer.start();
+  //timer.start();
   vector<int> tl2s;
   // Interpolation in time
   assert(timelevels(ml, rl) >= prolongation_order_time + 1);
@@ -412,14 +412,14 @@ void ggf::ref_prolongate_all(comm_state &state, int const tl, int const rl,
     tl2s.AT(i) = i;
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_ref_prol_sendrecv,
                     tl2s, rl - 1, ml, time);
-  timer.stop(0);
+  //timer.stop(0);
 }
 
 // Reflux a refinement level
 void ggf::ref_reflux_all(comm_state &state, int const tl, int const rl,
                          int const ml, int const dir, int const face) {
   static Timer timer("ref_reflux_all");
-  timer.start();
+  //timer.start();
   // Require same times
   assert(fabs(t.get_time(ml, rl, tl) - t.get_time(ml, rl + 1, tl)) <=
          1.0e-8 * (1.0 + fabs(t.get_time(ml, rl, tl))));
@@ -428,7 +428,7 @@ void ggf::ref_reflux_all(comm_state &state, int const tl, int const rl,
   transfer_from_all(state, tl, rl, ml,
                     dh::fast_dboxes::fast_ref_refl_sendrecv[dir][face], tl,
                     rl + 1, ml, false, false, &slabinfo);
-  timer.stop(0);
+  //timer.stop(0);
 }
 
 // Reflux-prolongate a refinement level
@@ -436,7 +436,7 @@ void ggf::ref_reflux_prolongate_all(comm_state &state, int const tl,
                                     int const rl, int const ml, int const dir,
                                     int const face) {
   static Timer timer("ref_reflux_prolongate_all");
-  timer.start();
+  //timer.start();
   // Require same times
   assert(fabs(t.get_time(ml, rl, tl) - t.get_time(ml, rl - 1, tl)) <=
          1.0e-8 * (1.0 + fabs(t.get_time(ml, rl, tl))));
@@ -445,7 +445,7 @@ void ggf::ref_reflux_prolongate_all(comm_state &state, int const tl,
   transfer_from_all(state, tl, rl, ml,
                     dh::fast_dboxes::fast_ref_refl_prol_sendrecv[dir][face], tl,
                     rl - 1, ml, false, false, &slabinfo);
-  timer.stop(0);
+  //timer.stop(0);
 }
 
 // Transfer regions of all components
@@ -468,7 +468,7 @@ void ggf::transfer_from_all(comm_state &state, int const tl1, int const rl1,
     return;
 
   static Timer total("transfer_from_all");
-  total.start();
+  //total.start();
 
   mdata &srcstorage = use_old_storage ? oldstorage : storage;
 
@@ -541,7 +541,7 @@ void ggf::transfer_from_all(comm_state &state, int const tl1, int const rl1,
                        pos, pot);
   }
 
-  total.stop(0);
+  //total.stop(0);
 }
 
 // Memory usage
