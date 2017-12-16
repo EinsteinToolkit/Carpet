@@ -98,6 +98,9 @@ call_operator(const char *restrict const name,
     }
     assert(alldstregbboxes == ibset(dstregbbox));
 #endif
+  } else { // serial
+    (*the_operator)(src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox,
+                    dstbbox, srcregbbox, dstregbbox, extraargs);
   }
 }
 
