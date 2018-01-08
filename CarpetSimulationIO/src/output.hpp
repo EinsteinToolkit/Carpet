@@ -37,11 +37,11 @@ public:
 
   // Insert variables into project
   void insert_vars(const vector<int> &varindices, int reflevel, int timelevel,
-                   bool global);
+                   file_type outfile);
 
   // Write project to file
   void write();
 };
-}
+} // namespace CarpetSimulationIO
 
 #endif // #ifndef OUTPUT_HPP

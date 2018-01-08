@@ -77,7 +77,7 @@ output_file_t::~output_file_t() {
 }
 
 void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
-                                int timelevel, bool global) {
+                                int timelevel, file_type output_type) {
   DECLARE_CCTK_PARAMETERS;
   if (verbose)
     CCTK_INFO("Outputting variables");
@@ -384,9 +384,9 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
               auto discretefield =
                   field->discretefields().at(discretefieldname);
 
-              tasks.push_back([=](
-                  int component,
-                  const shared_ptr<DiscretizationBlock> &discretizationblock) {
+              tasks.push_back([=](int component,
+                                  const shared_ptr<DiscretizationBlock>
+                                      &discretizationblock) {
                 auto discretefieldblockname = discretizationblock->name();
                 if (not discretefield->discretefieldblocks().count(
                         discretefieldblockname)) {
@@ -433,12 +433,12 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
                 }
               });
             } // direction
-            create_coordinate_discretefieldblockcomponent = [=](
-                int component,
-                const shared_ptr<DiscretizationBlock> &discretizationblock) {
-              for (const auto &task : tasks)
-                task(component, discretizationblock);
-            };
+            create_coordinate_discretefieldblockcomponent =
+                [=](int component, const shared_ptr<DiscretizationBlock>
+                                       &discretizationblock) {
+                  for (const auto &task : tasks)
+                    task(component, discretizationblock);
+                };
           } // if grouptype == CCTK_GF
 
           // Get discrete field
@@ -449,7 +449,7 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
                                        discretization, basis);
           auto discretefield = field->discretefields().at(discretefieldname);
 
-          if (global) {
+          if (output_type == file_type::global) {
 
             const int min_component = 0;
             const int max_component = hh->components(reflevel);
@@ -548,7 +548,7 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
 
             } // component
 
-          } else { // not global
+          } else { // output_type != file_type:global
 
             const int min_local_component = 0;
             const int max_local_component = hh->local_components(reflevel);
@@ -657,7 +657,7 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
                     component, discretizationblock);
 
             } // local_component
-          }   // if not global
+          }   // if output_type != file_type::global
         }     // timelevel
       }       // reflevel
     }         // mapindex
@@ -721,4 +721,4 @@ void output_file_t::write() {
   if (verbose)
     CCTK_VINFO("Done renaming file \"%s\"", filename.c_str());
 }
-}
+} // namespace CarpetSimulationIO

@@ -17,6 +17,8 @@ namespace CarpetSimulationIO {
 using namespace SimulationIO;
 using namespace std;
 
+enum class file_type { local, global };
+
 uint32_t adler32(const unsigned char *data, size_t len);
 uint32_t adler32(const string &data);
 
@@ -36,7 +38,7 @@ void stringify(std::ostringstream &buf, Arg &&arg, Args &&... args) {
   buf << arg;
   stringify(buf, std::forward<Args>(args)...);
 }
-}
+} // namespace detail
 template <typename... Args> std::string stringify(Args &&... args) {
   std::ostringstream buf;
   detail::stringify(buf, std::forward<Args>(args)...);
@@ -175,6 +177,6 @@ string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
                          bool create_dirs = false);
 
 string serialize_grid_structure(const cGH *cctkGH);
-}
+} // namespace CarpetSimulationIO
 
 #endif // #ifndef UTIL_HH
