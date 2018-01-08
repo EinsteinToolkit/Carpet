@@ -7,8 +7,6 @@
 
 #ifdef _OPENMP
 #include <omp.h>
-#else
-inline int omp_get_max_threads() { return 1; }
 #endif
 
 #include <cctk.h>
