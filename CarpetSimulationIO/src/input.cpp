@@ -18,8 +18,9 @@ using namespace std;
 input_file_t::input_file_t(const cGH *cctkGH, io_dir_t io_dir,
                            const string &projectname, int ioproc, int nioprocs)
     : cctkGH(cctkGH) {
-  auto filename = generate_filename(cctkGH, io_dir, projectname, "",
-                                    cctkGH->cctk_iteration, -1, -1);
+  auto filename =
+      generate_filename(cctkGH, io_dir, projectname, "", cctkGH->cctk_iteration,
+                        file_type::global, -1, -1);
   auto file = H5::H5File(filename, H5F_ACC_RDONLY);
   project = readProject(file);
 }
@@ -179,11 +180,10 @@ void input_file_t::read_vars(const vector<int> &varindices, int reflevel,
             return buf.str();
           };
           auto discretizationname = create_discretizationname(reflevel);
-          if (not manifold->discretizations().count(discretizationname)) {
+          if (not manifold->discretizations().count(discretizationname))
             CCTK_VERROR("Discretization for group \"%s\", map %d, reflevel %d "
                         "does not exist in input file",
                         groupname.c_str(), mapindex, reflevel);
-          }
           auto discretization =
               manifold->discretizations().at(discretizationname);
 
@@ -266,4 +266,4 @@ void input_file_t::read_vars(const vector<int> &varindices, int reflevel,
     }     // mapindex
   }       // varindex
 }
-}
+} // namespace CarpetSimulationIO

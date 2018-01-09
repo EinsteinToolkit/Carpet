@@ -119,11 +119,17 @@ STRING out_extension "File name extension" STEERABLE=always
 
 
 
+CCTK_INT max_files_per_directory "Maximum number of files per directory" STEERABLE=always
+{
+  0 :: "unlimited"
+  1:* :: "that many files"
+} 100
+
 CCTK_INT max_nioprocs "Maximum number of I/O processes" STEERABLE=always
 {
   0 :: "unlimited"
   1:* :: "that many processes"
-} 0
+} 100
 
 
 

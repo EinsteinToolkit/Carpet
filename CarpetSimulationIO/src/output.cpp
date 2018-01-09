@@ -61,13 +61,19 @@ void add_parametervalue(shared_ptr<Configuration> &configuration,
 ////////////////////////////////////////////////////////////////////////////////
 
 output_file_t::output_file_t(const cGH *cctkGH, io_dir_t io_dir,
-                             const string &projectname, int ioproc,
-                             int nioprocs)
-    : cctkGH(cctkGH), io_dir(io_dir), projectname(projectname), ioproc(ioproc),
-      nioprocs(nioprocs) {
+                             const string &projectname, file_type output_type,
+                             int myioproc, int ioproc_every)
+    : cctkGH(cctkGH), io_dir(io_dir), projectname(projectname),
+      output_type(output_type), myioproc(myioproc), ioproc_every(ioproc_every) {
   DECLARE_CCTK_PARAMETERS;
   if (verbose)
     CCTK_VINFO("Creating project \"%s\"", projectname.c_str());
+  const int myproc = CCTK_MyProc(cctkGH);
+  assert(ioproc_every > 0);
+  if (output_type == file_type::global)
+    assert(myioproc == 0); // process 0 outputs the global file
+  else
+    assert(myioproc >= 0 && myioproc <= myproc && myioproc % ioproc_every == 0);
   project = SimulationIO::createProject(projectname);
 }
 
@@ -77,7 +83,7 @@ output_file_t::~output_file_t() {
 }
 
 void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
-                                int timelevel, file_type output_type) {
+                                int timelevel) {
   DECLARE_CCTK_PARAMETERS;
   if (verbose)
     CCTK_INFO("Outputting variables");
@@ -242,6 +248,14 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
       const int max_reflevel = reflevel >= 0 ? reflevel + 1 : hh->reflevels();
       for (int reflevel = min_reflevel; reflevel < max_reflevel; ++reflevel) {
 
+        // Create efficient index for reverse lookups of component-to-process
+        // mapping (should this be put into Carpet?)
+        map<int, vector<int> > proc2components;
+        for (int component = 0; component < hh->components(reflevel);
+             ++component)
+          proc2components[hh->processor(reflevel, component)].push_back(
+              component);
+
         const int min_timelevel = timelevel >= 0 ? timelevel : 0;
         const int max_timelevel = timelevel >= 0
                                       ? timelevel + 1
@@ -345,10 +359,9 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
                 buf << "-map." << setfill('0') << setw(width_m) << mapindex;
               return buf.str();
             }();
-            if (not project->coordinatesystems().count(coordinatesystemname)) {
+            if (not project->coordinatesystems().count(coordinatesystemname))
               project->createCoordinateSystem(coordinatesystemname,
                                               global_configuration, manifold);
-            }
             auto coordinatesystem =
                 project->coordinatesystems().at(coordinatesystemname);
             auto tensortype =
@@ -364,23 +377,20 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
               string coordinatefieldname =
                   stringify(coordinatesystemname, "[", direction, "]");
               string fieldname = coordinatefieldname;
-              if (not project->fields().count(fieldname)) {
+              if (not project->fields().count(fieldname))
                 project->createField(fieldname, global_configuration, manifold,
                                      tangentspace, tensortype);
-              }
               auto field = project->fields().at(fieldname);
               if (not coordinatesystem->coordinatefields().count(
-                      coordinatefieldname)) {
+                      coordinatefieldname))
                 coordinatesystem->createCoordinateField(coordinatefieldname,
                                                         direction, field);
-              }
               auto discretefieldname =
                   stringify(fieldname, "-", discretization->name());
-              if (not field->discretefields().count(discretefieldname)) {
+              if (not field->discretefields().count(discretefieldname))
                 field->createDiscreteField(discretefieldname,
                                            global_configuration, discretization,
                                            basis);
-              }
               auto discretefield =
                   field->discretefields().at(discretefieldname);
 
@@ -389,10 +399,9 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
                                       &discretizationblock) {
                 auto discretefieldblockname = discretizationblock->name();
                 if (not discretefield->discretefieldblocks().count(
-                        discretefieldblockname)) {
+                        discretefieldblockname))
                   discretefield->createDiscreteFieldBlock(
                       discretizationblock->name(), discretizationblock);
-                }
                 auto discretefieldblock =
                     discretefield->discretefieldblocks().at(
                         discretefieldblockname);
@@ -479,10 +488,8 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
                 // TODO: Cut off ghosts?
                 discretizationblock->setBox(
                     bbox2dbox<long long>(light_box.exterior, dimension));
-                // cout << "box=" << discretizationblock->box() << "\n";
                 discretizationblock->setActive(bboxset2dregion<long long>(
                     level_box.active & light_box.owned, dimension));
-                // cout << "active=" << discretizationblock->active() << "\n";
               }
               auto discretizationblock =
                   discretization->discretizationblocks().at(
@@ -512,7 +519,7 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
                            discretefieldname.c_str());
               auto otherfilename = generate_filename(
                   cctkGH, io_dir_none, projectname, "", cctkGH->cctk_iteration,
-                  other_ioproc, nioprocs);
+                  file_type::local, other_ioproc, ioproc_every);
               auto dataset = discretefieldblockcomponent->createExtLink(
                   otherfilename,
                   stringify(discretefieldblockcomponent->getPath(), "/",
@@ -548,147 +555,193 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
 
             } // component
 
-          } else { // output_type != file_type:global
+          } else { // if output_type == file_type:local
 
-            const int min_local_component = 0;
-            const int max_local_component = hh->local_components(reflevel);
-            for (int local_component = min_local_component;
-                 local_component < max_local_component; ++local_component) {
-              const int component =
-                  hh->get_component(reflevel, local_component);
+            const int myproc = CCTK_MyProc(cctkGH);
+            const int nprocs = CCTK_nProcs(cctkGH);
+            const int min_proc = myproc == myioproc ? myioproc : myproc;
+            const int max_proc = myproc == myioproc
+                                     ? min(myioproc + ioproc_every, nprocs)
+                                     : myproc + 1;
+            for (int dataproc = min_proc; dataproc < max_proc; ++dataproc) {
 
-              // Get discretization block
-              string discretizationblockname =
-                  stringify("c.", setfill('0'), setw(width_c), component);
-              if (not discretization->discretizationblocks().count(
-                      discretizationblockname)) {
+              assert(proc2components.count(dataproc));
+              for (int component : proc2components[dataproc]) {
+
+                // Get discretization block
+                string discretizationblockname =
+                    stringify("c.", setfill('0'), setw(width_c), component);
+                if (not discretization->discretizationblocks().count(
+                        discretizationblockname)) {
+                  auto discretizationblock =
+                      discretization->createDiscretizationBlock(
+                          discretizationblockname);
+                  const auto &level_box =
+                      dd->level_boxes.at(mglevel).at(reflevel);
+                  const auto &light_box =
+                      dd->light_boxes.at(mglevel).at(reflevel).at(component);
+                  // const auto &local_box =
+                  //     dd->local_boxes.at(mglevel).at(reflevel).at(
+                  //         local_component);
+                  // TODO: Cut off ghosts?
+                  discretizationblock->setBox(
+                      bbox2dbox<long long>(light_box.exterior, dimension));
+                  // assert((level_box.active & light_box.owned) ==
+                  //        local_box.active);
+                  // discretizationblock->setActive(
+                  //     bboxset2dregion<long long>(local_box.active,
+                  //     dimension));
+                  const ibset active = level_box.active & light_box.owned;
+                  discretizationblock->setActive(
+                      bboxset2dregion<long long>(active, dimension));
+                }
                 auto discretizationblock =
-                    discretization->createDiscretizationBlock(
+                    discretization->discretizationblocks().at(
                         discretizationblockname);
-                const auto &level_box =
-                    dd->level_boxes.at(mglevel).at(reflevel);
-                const auto &light_box =
-                    dd->light_boxes.at(mglevel).at(reflevel).at(component);
-                const auto &local_box =
-                    dd->local_boxes.at(mglevel).at(reflevel).at(
-                        local_component);
-                // TODO: Cut off ghosts?
-                discretizationblock->setBox(
-                    bbox2dbox<long long>(light_box.exterior, dimension));
-                // cout << "box=" << discretizationblock->box() << "\n";
-                assert((level_box.active & light_box.owned) ==
-                       local_box.active);
-                discretizationblock->setActive(
-                    bboxset2dregion<long long>(local_box.active, dimension));
-                // cout << "active=" << discretizationblock->active() << "\n";
-              }
-              auto discretizationblock =
-                  discretization->discretizationblocks().at(
-                      discretizationblockname);
 
-              // Get discrete field block
-              string discretefieldblockname = discretizationblockname;
-              if (not discretefield->discretefieldblocks().count(
-                      discretefieldblockname))
-                discretefield->createDiscreteFieldBlock(
-                    discretizationblock->name(), discretizationblock);
-              auto discretefieldblock = discretefield->discretefieldblocks().at(
-                  discretefieldblockname);
+                // Get discrete field block
+                string discretefieldblockname = discretizationblockname;
+                if (not discretefield->discretefieldblocks().count(
+                        discretefieldblockname))
+                  discretefield->createDiscreteFieldBlock(
+                      discretizationblock->name(), discretizationblock);
+                auto discretefieldblock =
+                    discretefield->discretefieldblocks().at(
+                        discretefieldblockname);
 
-              // Get discrete field block data
-              if (not discretefieldblock->discretefieldblockcomponents().count(
-                      tensorcomponent->name()))
-                discretefieldblock->createDiscreteFieldBlockComponent(
-                    tensorcomponent->name(), tensorcomponent);
-              auto discretefieldblockcomponent =
-                  discretefieldblock->discretefieldblockcomponents().at(
-                      tensorcomponent->name());
+                // Get discrete field block data
+                if (not discretefieldblock->discretefieldblockcomponents()
+                            .count(tensorcomponent->name()))
+                  discretefieldblock->createDiscreteFieldBlockComponent(
+                      tensorcomponent->name(), tensorcomponent);
+                auto discretefieldblockcomponent =
+                    discretefieldblock->discretefieldblockcomponents().at(
+                        tensorcomponent->name());
 
-              // Write data
-              if (verbose)
-                CCTK_VINFO("Creating dataset \"%s\"",
-                           discretefieldname.c_str());
-              H5::DataType type = cactustype2hdf5type(groupdata.vartype);
-              auto dataset = discretefieldblockcomponent->createDataSet(type);
-              tasks.push_back([=]() {
+                // Write data
                 if (verbose)
-                  CCTK_VINFO("Writing dataset \"%s\"",
+                  CCTK_VINFO("Creating dataset \"%s\"",
                              discretefieldname.c_str());
-                auto ggf = Carpet::arrdata.at(groupindex)
-                               .at(mapindex)
-                               .data.at(groupvarindex);
-                assert(ggf);
-                auto gdata = ggf->data_pointer(timelevel, reflevel,
-                                               local_component, mglevel);
-                assert(gdata);
-                assert(gdata->has_storage());
-                auto memdata = gdata->storage();
-                auto memtype = dataset->datatype(); // by construction
-#if 0
-                vector<hsize_t> padded_shape(dimension);
-                assert(dimension <= size(gdata->padded_shape()));
-                for (int d = 0; d < dimension; ++d)
-                  padded_shape.at(d) = gdata->padded_shape()[d];
-                vector<hsize_t> offset(dimension);
-                for (int d = 0; d < dimension; ++d)
-                  offset.at(d) = 0;
-                vector<hsize_t> shape(dimension);
-                assert(dimension <= size(gdata->shape()));
-                for (int d = 0; d < dimension; ++d)
-                  shape.at(d) = gdata->shape()[d];
-                auto memspace =
-                    H5::DataSpace(dimension, reversed(padded_shape).data());
-                if (dimension > 0)
-                  memspace.selectHyperslab(H5S_SELECT_SET,
-                                           reversed(shape).data(),
-                                           reversed(offset).data());
-                dataset->dataset().write(data, memtype, memspace);
-#endif
-                auto membox = bbox2dbox<long long>(gdata->extent(), dimension);
-                auto memshape = dbox<long long>(
-                    membox.lower(),
-                    membox.lower() + vect2dpoint<long long>(
-                                         gdata->padded_shape(), dimension));
-                dataset->writeData(memdata, memtype, memshape, membox);
-              });
+                int cactustype = groupdata.vartype;
+                H5::DataType type = cactustype2hdf5type(cactustype);
+                auto dataset = discretefieldblockcomponent->createDataSet(type);
 
-              if (bool(create_coordinate_discretefieldblockcomponent))
-                create_coordinate_discretefieldblockcomponent(
-                    component, discretizationblock);
+                tasks.push_back([=]() {
+                  auto memtype = dataset->datatype(); // by construction
+                  auto membox = bbox2dbox<long long>(dd->light_boxes.at(mglevel)
+                                                         .at(reflevel)
+                                                         .at(component)
+                                                         .exterior,
+                                                     dimension);
 
-            } // local_component
-          }   // if output_type != file_type::global
-        }     // timelevel
-      }       // reflevel
-    }         // mapindex
-  }           // varindex
-}
+                  if (myproc == dataproc) {
+                    // We have the data, we need to either write or send them
+                    const int local_component =
+                        hh->get_local_component(reflevel, component);
+                    auto ggf = Carpet::arrdata.at(groupindex)
+                                   .at(mapindex)
+                                   .data.at(groupvarindex);
+                    assert(ggf);
+                    auto gdata = ggf->data_pointer(timelevel, reflevel,
+                                                   local_component, mglevel);
+                    assert(gdata);
+                    auto memshape = dbox<long long>(
+                        membox.lower(),
+                        membox.lower() + vect2dpoint<long long>(
+                                             gdata->padded_shape(), dimension));
+                    assert(membox ==
+                           bbox2dbox<long long>(gdata->extent(), dimension));
+                    assert(gdata->has_storage());
+                    auto memdata = gdata->storage();
+
+                    if (myproc == myioproc) {
+                      // Write data to file
+                      if (verbose)
+                        CCTK_VINFO("Writing dataset \"%s\"",
+                                   discretefieldname.c_str());
+                      dataset->writeData(memdata, memtype, memshape, membox);
+                    } else {
+                      // Send data to I/O process
+                      if (verbose)
+                        CCTK_VINFO("Sending dataset \"%s\"",
+                                   discretefieldname.c_str());
+                      send_data(myioproc, memdata, cactustype, memshape,
+                                membox);
+                    }
+
+                  } else if (myproc == myioproc) {
+                    // We don't have the data; we need to receive and write them
+
+                    if (verbose)
+                      CCTK_VINFO("Receiving dataset \"%s\"",
+                                 discretefieldname.c_str());
+                    const vector<char> buf =
+                        recv_data(dataproc, cactustype, membox);
+                    cerr << "cactustype=" << cactustype << "\n"
+                         << "buf.size=" << ptrdiff_t(buf.size()) << "\n"
+                         << "membox=" << membox << "\n"
+                         << "membox.size="
+                         << (membox.size() * CCTK_VarTypeSize(cactustype))
+                         << "\n";
+                    assert(ptrdiff_t(buf.size()) ==
+                           membox.size() * CCTK_VarTypeSize(cactustype));
+                    if (verbose)
+                      CCTK_VINFO("Writing dataset \"%s\"",
+                                 discretefieldname.c_str());
+                    dataset->writeData(&buf.front(), memtype, membox, membox);
+
+                  } else {
+                    assert(0);
+                  }
+
+                });
+
+                if (bool(create_coordinate_discretefieldblockcomponent))
+                  create_coordinate_discretefieldblockcomponent(
+                      component, discretizationblock);
+
+              } // component
+            }   // dataproc
+
+          } // if output_type != file_type::local
+
+        } // timelevel
+      }   // reflevel
+    }     // mapindex
+  }       // varindex
+} // namespace CarpetSimulationIO
 
 void output_file_t::write() {
   DECLARE_CCTK_PARAMETERS;
-  auto tmpname = generate_filename(cctkGH, io_dir, projectname, ".tmp",
-                                   cctkGH->cctk_iteration, ioproc, nioprocs);
-  const bool create_dirs = ioproc >= 0;
-  auto filename =
+  const int myproc = CCTK_MyProc(cctkGH);
+  const string filename =
       generate_filename(cctkGH, io_dir, projectname, "", cctkGH->cctk_iteration,
-                        ioproc, nioprocs, create_dirs);
-  if (verbose)
-    CCTK_VINFO("Creating file \"%s\"", filename.c_str());
-  auto fapl = H5::FileAccPropList();
-  fapl.setFcloseDegree(H5F_CLOSE_STRONG);
-  fapl.setLibverBounds(H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
-  static Timers::Timer timer1("SimulationIO::H5File");
-  timer1.start();
-  // H5F_ACC_EXCL or H5F_ACC_TRUNC,
-  auto file =
-      H5::H5File(tmpname, H5F_ACC_EXCL, H5::FileCreatPropList::DEFAULT, fapl);
-  timer1.stop();
-  if (verbose)
-    CCTK_VINFO("Writing project \"%s\"", filename.c_str());
-  static Timers::Timer timer2("SimulationIO::write");
-  timer2.start();
-  project->write(file);
-  timer2.stop();
+                        output_type, myioproc, ioproc_every);
+  const string tmpname = generate_filename(cctkGH, io_dir, projectname, ".tmp",
+                                           cctkGH->cctk_iteration, output_type,
+                                           myioproc, ioproc_every);
+  H5::H5File file;
+  if (myproc == myioproc) {
+    if (verbose)
+      CCTK_VINFO("Creating file \"%s\"", filename.c_str());
+    const int mode = 0777;
+    CCTK_CreateDirectory(mode, basename(filename).c_str());
+    auto fapl = H5::FileAccPropList();
+    fapl.setFcloseDegree(H5F_CLOSE_STRONG);
+    fapl.setLibverBounds(H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+    static Timers::Timer timer1("SimulationIO::H5File");
+    timer1.start();
+    // H5F_ACC_EXCL or H5F_ACC_TRUNC,
+    file =
+        H5::H5File(tmpname, H5F_ACC_EXCL, H5::FileCreatPropList::DEFAULT, fapl);
+    timer1.stop();
+    if (verbose)
+      CCTK_VINFO("Writing project \"%s\"", filename.c_str());
+    static Timers::Timer timer2("SimulationIO::write");
+    timer2.start();
+    project->write(file);
+    timer2.stop();
+  }
   if (verbose)
     CCTK_VINFO("Writing data for project \"%s\"", filename.c_str());
   static Timers::Timer timer3("SimulationIO::tasks");
@@ -696,29 +749,34 @@ void output_file_t::write() {
   for (auto &task : tasks)
     std::move(task)();
   timer3.stop();
-  if (verbose)
-    CCTK_VINFO("Deleting project \"%s\"", filename.c_str());
-  static Timers::Timer timer4("SimulationIO::close");
-  timer4.start();
-  file.close();
-  timer4.stop();
+  if (myproc == myioproc) {
+    if (verbose)
+      CCTK_VINFO("Deleting project \"%s\"", filename.c_str());
+    static Timers::Timer timer4("SimulationIO::close");
+    timer4.start();
+    file.close();
+    H5garbage_collect();
+    timer4.stop();
+  }
   static Timers::Timer timer5("SimulationIO::cleanup");
   timer5.start();
   tasks.clear();
   project.reset();
-  H5garbage_collect();
   timer5.stop();
   if (verbose)
     CCTK_VINFO("Done deleting project \"%s\"", filename.c_str());
-  if (ioproc >= 0) {
+  if (output_type == file_type::local) {
     CCTK_Barrier(cctkGH);
     if (verbose)
       CCTK_INFO("Done waiting for other processes");
   }
-  int ierr = rename(tmpname.c_str(), filename.c_str());
-  if (ierr)
-    CCTK_VERROR("Could not rename output file \"%s\"", filename.c_str());
-  if (verbose)
-    CCTK_VINFO("Done renaming file \"%s\"", filename.c_str());
+  if (myproc == myioproc) {
+    int ierr = rename(tmpname.c_str(), filename.c_str());
+    if (ierr)
+      CCTK_VERROR("Could not rename output file \"%s\"", filename.c_str());
+    if (verbose)
+      CCTK_VINFO("Done renaming file \"%s\"", filename.c_str());
+  }
 }
+
 } // namespace CarpetSimulationIO

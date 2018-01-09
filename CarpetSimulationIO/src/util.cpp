@@ -50,6 +50,13 @@ string tolower(string str) {
   return str;
 }
 
+string basename(const string &path) {
+  auto pos = path.rfind('/');
+  if (pos == string::npos)
+    return path;
+  return path.substr(0, pos);
+}
+
 // Convert a const char* or char* to string
 string charptr2string(const char *const &str) {
   string res{str};
@@ -101,6 +108,43 @@ H5::DataType cactustype2hdf5type(int cactustype) {
   }
 }
 
+MPI_Datatype cactustype2mpitype(int cactustype) {
+  switch (cactustype) {
+  case CCTK_VARIABLE_BYTE:
+    return dist::mpi_datatype(CCTK_BYTE{});
+  case CCTK_VARIABLE_INT:
+    return dist::mpi_datatype(CCTK_INT{});
+  case CCTK_VARIABLE_INT1:
+    return dist::mpi_datatype(CCTK_INT1{});
+  case CCTK_VARIABLE_INT2:
+    return dist::mpi_datatype(CCTK_INT2{});
+  case CCTK_VARIABLE_INT4:
+    return dist::mpi_datatype(CCTK_INT4{});
+  case CCTK_VARIABLE_INT8:
+    return dist::mpi_datatype(CCTK_INT8{});
+  case CCTK_VARIABLE_REAL:
+    return dist::mpi_datatype(CCTK_REAL{});
+  case CCTK_VARIABLE_REAL4:
+    return dist::mpi_datatype(CCTK_REAL4{});
+  case CCTK_VARIABLE_REAL8:
+    return dist::mpi_datatype(CCTK_REAL8{});
+  case CCTK_VARIABLE_REAL16:
+    return dist::mpi_datatype(CCTK_REAL16{});
+  case CCTK_VARIABLE_COMPLEX:
+    return dist::mpi_datatype(CCTK_COMPLEX{});
+  case CCTK_VARIABLE_COMPLEX8:
+    return dist::mpi_datatype(CCTK_COMPLEX8{});
+  case CCTK_VARIABLE_COMPLEX16:
+    return dist::mpi_datatype(CCTK_COMPLEX16{});
+  case CCTK_VARIABLE_COMPLEX32:
+    return dist::mpi_datatype(CCTK_COMPLEX32{});
+  case CCTK_VARIABLE_CHAR:
+    return dist::mpi_datatype(CCTK_CHAR{});
+  default:
+    CCTK_VERROR("Unsupported Cactus datatype %d", cactustype);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 string serialize_grid_structure(const cGH *cctkGH) {
@@ -116,7 +160,8 @@ string serialize_grid_structure(const cGH *cctkGH) {
     const auto &hh = *Carpet::vhh.AT(m);
     const auto &dd = *Carpet::vdd.AT(m);
     buf << "[" << m << "]={"
-        << "superregions:" << hh.superregions << ","
+        << "superregions:" << hh.superregions
+        << ","
         // We could omit the regions
         << "regions:" << hh.regions.AT(0) << ","
         << "ghost_widths:" << dd.ghost_widths << ","
@@ -230,11 +275,9 @@ string generate_projectname(const cGH *cctkGH) {
 // Generate the final file name on a particular processor
 string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
                          const string &basename, const string &extra_suffix,
-                         int iteration, int ioproc, int nioprocs,
-                         bool create_dirs) {
+                         int iteration, file_type output_type, int myioproc,
+                         int ioproc_every) {
   DECLARE_CCTK_PARAMETERS;
-
-  const int mode = 0777;
 
   string IO_dir;
   string S5_dir;
@@ -263,39 +306,26 @@ string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
     assert(0);
   }
   string path = S5_dir.empty() ? IO_dir : S5_dir;
-  if (create_dirs) {
-    assert(ioproc >= 0);
-    if (ioproc == 0) {
-      int ierr = CCTK_CreateDirectory(mode, path.c_str());
-      if (ierr < 0)
-        CCTK_VERROR("Could not create directory \"%s\"", path.c_str());
+
+  if (output_type == file_type::local) {
+    const int nprocs = CCTK_nProcs(cctkGH);
+    const int nioprocs = (nprocs + ioproc_every - 1) / ioproc_every;
+
+    // Create additional directory levels until we can handle all I/O processes
+    int max_dir_nioprocs = 1; // Number of I/O processes we can handle
+    while (max_dir_nioprocs < nioprocs) {
+      // Need one more level
+      assert(INT_MAX / max_files_per_directory >= max_dir_nioprocs);
+      max_dir_nioprocs *= max_files_per_directory;
     }
-    CCTK_Barrier(cctkGH);
-  }
 
-  if (ioproc >= 0) {
-    const int procs_per_dir = 100;
-
-    long long max_dir_nioprocs = 1;
-    while (max_dir_nioprocs < nioprocs)
-      max_dir_nioprocs *= procs_per_dir;
-
-    for (long long dir_nioprocs = max_dir_nioprocs; dir_nioprocs >= 1;
-         dir_nioprocs /= procs_per_dir) {
+    for (int dir_nioprocs = max_dir_nioprocs; dir_nioprocs >= 1;
+         dir_nioprocs /= max_files_per_directory) {
       ostringstream buf;
-      long long dir_ioproc = ioproc / dir_nioprocs * dir_nioprocs;
+      int dir_ioproc = (myioproc / ioproc_every) / dir_nioprocs * dir_nioprocs;
       buf << path << "/" << basename << ".p" << setw(processor_digits)
           << setfill('0') << dir_ioproc;
       path = buf.str();
-      if (create_dirs) {
-        assert(ioproc >= 0);
-        if (ioproc == dir_ioproc) {
-          int ierr = CCTK_CreateDirectory(mode, path.c_str());
-          if (ierr < 0)
-            CCTK_VERROR("Could not create directory \"%s\"", path.c_str());
-        }
-        CCTK_Barrier(cctkGH);
-      }
     }
   }
 
@@ -304,11 +334,39 @@ string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
   // if (io_dir == io_dir_recover or io_dir == io_dir_checkpoint) {
   buf << ".it" << setw(iteration_digits) << setfill('0') << iteration;
   // }
-  if (ioproc >= 0)
-    buf << ".p" << setw(processor_digits) << setfill('0') << ioproc;
+  if (output_type == file_type::local)
+    buf << ".p" << setw(processor_digits) << setfill('0')
+        << (myioproc / ioproc_every);
   buf << extra_suffix << out_extension;
   path = buf.str();
 
   return path;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+const int tag = 2;
+
+void send_data(int ioproc, const void *data, int cactustype,
+               const dbox<long long> &memshape, const dbox<long long> &membox) {
+  ptrdiff_t count = membox.size();
+  vector<char> buf(count * CCTK_VarTypeSize(cactustype));
+  assert(membox == memshape);
+  memcpy(&buf.front(), data, buf.size());
+  MPI_Datatype mpitype = cactustype2mpitype(cactustype);
+  MPI_Send(&buf.front(), count, mpitype, ioproc, tag, dist::comm());
 }
+
+vector<char> recv_data(int dataproc, int cactustype,
+                       const dbox<long long> &membox) {
+  ptrdiff_t count = membox.size();
+  MPI_Datatype mpitype = cactustype2mpitype(cactustype);
+  vector<char> buf(count * CCTK_VarTypeSize(cactustype));
+  MPI_Recv(&buf.front(), count, mpitype, dataproc, tag, dist::comm(),
+           MPI_STATUS_IGNORE);
+  return buf;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+} // namespace CarpetSimulationIO

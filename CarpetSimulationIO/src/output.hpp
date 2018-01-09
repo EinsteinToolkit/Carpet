@@ -18,9 +18,10 @@ using namespace std;
 
 class output_file_t {
   const cGH *cctkGH;
-  io_dir_t io_dir;
-  string projectname;
-  int ioproc, nioprocs;
+  const io_dir_t io_dir;
+  const string projectname;
+  const file_type output_type;
+  const int myioproc, ioproc_every;
   shared_ptr<Project> project;
   vector<function<void()> > tasks;
 
@@ -32,12 +33,11 @@ public:
   output_file_t &operator=(output_file_t &&) = delete;
 
   output_file_t(const cGH *cctkGH, io_dir_t io_dir, const string &projectname,
-                int ioproc, int nioprocs);
+                file_type output_type, int myioproc, int ioproc_every);
   ~output_file_t();
 
   // Insert variables into project
-  void insert_vars(const vector<int> &varindices, int reflevel, int timelevel,
-                   file_type outfile);
+  void insert_vars(const vector<int> &varindices, int reflevel, int timelevel);
 
   // Write project to file
   void write();

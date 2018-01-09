@@ -1,6 +1,8 @@
 #ifndef UTIL_HH
 #define UTIL_HH
 
+#include <mpi.h>
+
 #include <carpet.hh>
 
 #include <cctk.h>
@@ -12,12 +14,17 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace CarpetSimulationIO {
 using namespace SimulationIO;
 using namespace std;
 
+////////////////////////////////////////////////////////////////////////////////
+
 enum class file_type { local, global };
+
+////////////////////////////////////////////////////////////////////////////////
 
 uint32_t adler32(const unsigned char *data, size_t len);
 uint32_t adler32(const string &data);
@@ -137,6 +144,7 @@ dregion<R> bboxset2dregion(const CarpetLib::bboxset<T, DT> &iset, int DR) {
 ////////////////////////////////////////////////////////////////////////////////
 
 H5::DataType cactustype2hdf5type(int cactustype);
+MPI_Datatype cactustype2mpitype(int cactustype);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -164,6 +172,7 @@ enum io_dir_t {
 };
 
 string tolower(string str);
+string basename(const string &path);
 
 string charptr2string(const char *const &str);
 string charptr2string(char *&&str);
@@ -173,10 +182,20 @@ string generate_projectname(const cGH *cctkGH, int variable);
 string generate_projectname(const cGH *cctkGH);
 string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
                          const string &basename, const string &extra_suffix,
-                         int iteration, int ioproc, int nioprocs,
-                         bool create_dirs = false);
+                         int iteration, file_type output_type, int myioproc,
+                         int ioproc_every);
 
 string serialize_grid_structure(const cGH *cctkGH);
+
+////////////////////////////////////////////////////////////////////////////////
+
+void send_data(int ioproc, const void *data, int cactustype,
+               const dbox<long long> &memshape, const dbox<long long> &membox);
+vector<char> recv_data(int dataproc, int cactustype,
+                       const dbox<long long> &membox);
+
+////////////////////////////////////////////////////////////////////////////////
+
 } // namespace CarpetSimulationIO
 
 #endif // #ifndef UTIL_HH
