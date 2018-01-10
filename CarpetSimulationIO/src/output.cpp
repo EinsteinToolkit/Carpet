@@ -70,10 +70,14 @@ output_file_t::output_file_t(const cGH *cctkGH, io_dir_t io_dir,
     CCTK_VINFO("Creating project \"%s\"", projectname.c_str());
   const int myproc = CCTK_MyProc(cctkGH);
   assert(ioproc_every > 0);
-  if (output_type == file_type::global)
+  switch (output_type) {
+  case file_type::global:
     assert(myioproc == 0); // process 0 outputs the global file
-  else
+    break;
+  case file_type::local:
     assert(myioproc >= 0 && myioproc <= myproc && myioproc % ioproc_every == 0);
+    break;
+  }
   project = SimulationIO::createProject(projectname);
 }
 
@@ -82,11 +86,15 @@ output_file_t::~output_file_t() {
   assert(tasks.empty());
 }
 
-void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
-                                int timelevel) {
+void output_file_t::insert_vars(const vector<int> &varindices,
+                                const int reflevel, const int timelevel) {
   DECLARE_CCTK_PARAMETERS;
   if (verbose)
     CCTK_INFO("Outputting variables");
+  cerr << "timelevel=" << timelevel << "\n";
+
+  const int myproc = CCTK_MyProc(cctkGH);
+  const int nprocs = CCTK_nProcs(cctkGH);
 
   // Parameters
   if (not project->parameters().count("iteration"))
@@ -250,11 +258,20 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
 
         // Create efficient index for reverse lookups of component-to-process
         // mapping (should this be put into Carpet?)
-        map<int, vector<int> > proc2components;
-        for (int component = 0; component < hh->components(reflevel);
-             ++component)
-          proc2components[hh->processor(reflevel, component)].push_back(
-              component);
+        vector<vector<int> > proc2components(nprocs);
+        if (groupdata.disttype == CCTK_DISTRIB_CONSTANT) {
+          // For distrib=constant groups, output only component 0
+          int c = 0;
+          int p = hh->processor(reflevel, c);
+          assert(p == 0);
+          proc2components.at(p).push_back(c);
+
+        } else {
+          for (int component = 0; component < hh->components(reflevel);
+               ++component)
+            proc2components.at(hh->processor(reflevel, component))
+                .push_back(component);
+        }
 
         const int min_timelevel = timelevel >= 0 ? timelevel : 0;
         const int max_timelevel = timelevel >= 0
@@ -458,8 +475,8 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
                                        discretization, basis);
           auto discretefield = field->discretefields().at(discretefieldname);
 
-          if (output_type == file_type::global) {
-
+          switch (output_type) {
+          case file_type::global: {
             const int min_component = 0;
             const int max_component = hh->components(reflevel);
             for (int component = min_component; component < max_component;
@@ -554,18 +571,15 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
                     component, discretizationblock);
 
             } // component
+          } break;
 
-          } else { // if output_type == file_type:local
-
-            const int myproc = CCTK_MyProc(cctkGH);
-            const int nprocs = CCTK_nProcs(cctkGH);
+          case file_type::local: {
             const int min_proc = myproc == myioproc ? myioproc : myproc;
             const int max_proc = myproc == myioproc
                                      ? min(myioproc + ioproc_every, nprocs)
                                      : myproc + 1;
             for (int dataproc = min_proc; dataproc < max_proc; ++dataproc) {
 
-              assert(proc2components.count(dataproc));
               for (int component : proc2components[dataproc]) {
 
                 // Get discretization block
@@ -677,12 +691,6 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
                                  discretefieldname.c_str());
                     const vector<char> buf =
                         recv_data(dataproc, cactustype, membox);
-                    cerr << "cactustype=" << cactustype << "\n"
-                         << "buf.size=" << ptrdiff_t(buf.size()) << "\n"
-                         << "membox=" << membox << "\n"
-                         << "membox.size="
-                         << (membox.size() * CCTK_VarTypeSize(cactustype))
-                         << "\n";
                     assert(ptrdiff_t(buf.size()) ==
                            membox.size() * CCTK_VarTypeSize(cactustype));
                     if (verbose)
@@ -703,7 +711,9 @@ void output_file_t::insert_vars(const vector<int> &varindices, int reflevel,
               } // component
             }   // dataproc
 
-          } // if output_type != file_type::local
+          } break;
+
+          } // switch (output_type)
 
         } // timelevel
       }   // reflevel

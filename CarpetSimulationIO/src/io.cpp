@@ -144,8 +144,8 @@ int OutputGH(const cGH *cctkGH) {
   static Timers::Timer timer("SimulationIO::OutputGH");
   timer.start();
 
-  int myproc = CCTK_MyProc(cctkGH); // TODO: use ioproc
-  int nprocs = CCTK_nProcs(cctkGH); // TODO: use nioprocs
+  int myproc = CCTK_MyProc(cctkGH);
+  int nprocs = CCTK_nProcs(cctkGH);
   string projectname = generate_projectname(cctkGH);
   unique_ptr<output_file_t> output_file_ptr;
   unique_ptr<output_file_t> global_file_ptr;
@@ -293,8 +293,8 @@ int OutputVarAs(const cGH *cctkGH, const char *varname, const char *alias) {
   if (vindex < 0)
     CCTK_VERROR("Unkonwn variable \"%s\"", varname);
 
-  int myproc = CCTK_MyProc(cctkGH); // TODO: use ioproc
-  int nprocs = CCTK_nProcs(cctkGH); // TODO: use nioprocs
+  int myproc = CCTK_MyProc(cctkGH);
+  int nprocs = CCTK_nProcs(cctkGH);
   int grouptype = CCTK_GroupTypeFromVarI(vindex);
   int reflevel = grouptype == CCTK_GF ? Carpet::reflevel : 0;
 
@@ -350,18 +350,6 @@ int OutputVar(const cGH *cctkGH, output_file_t &output_file, int vindex,
   if (verbose)
     CCTK_VINFO("OutputVar variable=\"%s\" reflevel=%d",
                charptr2string(CCTK_FullName(vindex)).c_str(), reflevel);
-
-  int gindex = CCTK_GroupIndexFromVarI(vindex);
-  cGroup gdata;
-  CCTK_GroupData(gindex, &gdata);
-
-  // Determine number of I/O processes
-  int myproc = CCTK_MyProc(cctkGH);
-  // int nprocs = CCTK_nProcs(cctkGH);
-
-  // Output distrib=constant groups only on process 0
-  if (gdata.disttype == CCTK_DISTRIB_CONSTANT and myproc != 0)
-    return 0;
 
   int timelevel = output_all_timelevels ? -1 : 0;
   vector<int> varindices{vindex};
