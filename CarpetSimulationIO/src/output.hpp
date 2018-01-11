@@ -16,8 +16,10 @@ namespace CarpetSimulationIO {
 using namespace SimulationIO;
 using namespace std;
 
+enum class data_handling { write, attach };
+
 class output_file_t {
-  const cGH *cctkGH;
+  const cGH *const cctkGH;
   const io_dir_t io_dir;
   const string projectname;
   const file_type output_type;
@@ -37,7 +39,8 @@ public:
   ~output_file_t();
 
   // Insert variables into project
-  void insert_vars(const vector<int> &varindices, int reflevel, int timelevel);
+  void insert_vars(const vector<int> &varindices, int reflevel, int timelevel,
+                   data_handling handle_data);
 
   // Write project to file
   void write();

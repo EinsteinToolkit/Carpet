@@ -6,7 +6,7 @@ USES STRING filereader_ID_dir AS IO_filereader_ID_dir
 
 # USES KEYWORD recover
 USES STRING recover_dir AS IO_recover_dir
-# USES STRING recover_file
+USES STRING recover_file
 
 USES STRING out_dir AS IO_out_dir
 USES CCTK_INT out_every AS IO_out_every
@@ -47,6 +47,11 @@ STRING filereader_ID_dir "Input directory (overrides IO::filereader_ID_dir)" STE
   "^$" :: "Empty: use IO::filereader_ID_dir"
   ".+" :: "Not empty: directory name"
 } ""
+
+CCTK_INT filereader_ID_iteration "Input iteration" STEERABLE=always
+{
+  0:* :: ""
+} 0
 
 STRING out_dir "Output directory (overrides IO::out_dir)" STEERABLE=always
 {

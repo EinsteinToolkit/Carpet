@@ -163,12 +163,12 @@ extern const vector<vector<vector<int> > > syminds;
 ////////////////////////////////////////////////////////////////////////////////
 
 // Create the final file name on a particular processor
-enum io_dir_t {
-  io_dir_none,
-  io_dir_input,
-  io_dir_output,
-  io_dir_recover,
-  io_dir_checkpoint,
+enum class io_dir_t {
+  none,
+  input,
+  output,
+  recover,
+  checkpoint,
 };
 
 string tolower(string str);

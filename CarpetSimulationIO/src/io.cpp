@@ -1,3 +1,4 @@
+#include "input.hpp"
 #include "output.hpp"
 #include "util.hpp"
 
@@ -121,10 +122,59 @@ public:
 };
 selection_t output_variables;
 
-int TriggerVar(const cGH *cctkGH, output_file_t &output_file, int vindex,
-               int reflevel);
-int OutputVar(const cGH *cctkGH, output_file_t &output_file, int vindex,
-              int reflevel);
+struct output_state_t {
+  unique_ptr<output_file_t> output_file_ptr;
+  unique_ptr<output_file_t> global_file_ptr;
+  bool did_write;
+  output_state_t(const cGH *cctkGH, io_dir_t io_dir, const string &projectname)
+      : did_write(false) {
+    DECLARE_CCTK_PARAMETERS;
+
+    // We split processes into "I/O groups" which range from myioproc to
+    // myioproc + ioproc_every - 1 (inclusive). Within each group, only
+    // one process performs I/O; the other processes then communicate
+    // with that process.
+    int myproc = CCTK_MyProc(cctkGH);
+    int nprocs = CCTK_nProcs(cctkGH);
+    int ioproc_every =
+        max_nioprocs == 0 ? 1 : (nprocs + max_nioprocs - 1) / max_nioprocs;
+    assert(ioproc_every > 0);
+    int nioprocs = (nprocs + ioproc_every - 1) / ioproc_every;
+    assert(nioprocs > 0);
+    assert(max_nioprocs == 0 or nioprocs <= max_nioprocs);
+    assert(nioprocs <= nprocs);
+    int myioproc = myproc / ioproc_every * ioproc_every;
+
+    output_file_ptr.reset(new output_file_t(
+        cctkGH, io_dir, projectname, file_type::local, myioproc, ioproc_every));
+    if (myproc == 0)
+      global_file_ptr.reset(new output_file_t(cctkGH, io_dir, projectname,
+                                              file_type::global, myioproc,
+                                              ioproc_every));
+  }
+  ~output_state_t() { assert(did_write); }
+  void insert_vars(const vector<int> &varindices, int reflevel, int timelevel,
+                   data_handling handle_data) {
+    output_file_ptr->insert_vars(varindices, reflevel, timelevel, handle_data);
+    if (global_file_ptr)
+      global_file_ptr->insert_vars(varindices, reflevel, timelevel,
+                                   handle_data);
+  }
+  void write() {
+    assert(not did_write);
+    output_file_ptr->write();
+    if (global_file_ptr)
+      global_file_ptr->write();
+    did_write = true;
+  }
+};
+
+unique_ptr<output_state_t> output_state_ptr;
+
+int TriggerVar(const cGH *cctkGH, int vindex, int reflevel,
+               data_handling handle_data);
+int OutputVar(const cGH *cctkGH, output_state_t &output_state, int vindex,
+              int reflevel, data_handling handle_data);
 
 // Callbacks for CarpetSimulationIO's I/O method
 
@@ -144,47 +194,15 @@ int OutputGH(const cGH *cctkGH) {
   static Timers::Timer timer("SimulationIO::OutputGH");
   timer.start();
 
-  int myproc = CCTK_MyProc(cctkGH);
-  int nprocs = CCTK_nProcs(cctkGH);
-  string projectname = generate_projectname(cctkGH);
-  unique_ptr<output_file_t> output_file_ptr;
-  unique_ptr<output_file_t> global_file_ptr;
-
-  // We split processes into "I/O groups" which range from myioproc to
-  // myioproc + ioproc_every - 1 (inclusive). Within each group, only
-  // one process performs I/O; the other processes then communicate
-  // with that process.
-  int ioproc_every =
-      max_nioprocs == 0 ? 1 : (nprocs + max_nioprocs - 1) / max_nioprocs;
-  assert(ioproc_every > 0);
-  int nioprocs = (nprocs + ioproc_every - 1) / ioproc_every;
-  assert(nioprocs > 0);
-  assert(max_nioprocs == 0 or nioprocs <= max_nioprocs);
-  assert(nioprocs <= nprocs);
-  int myioproc = myproc / ioproc_every * ioproc_every;
-
   int numvars = CCTK_NumVars();
   for (int vindex = 0; vindex < numvars; ++vindex) {
-    if (TimeToOutput(cctkGH, vindex)) {
-      if (not output_file_ptr)
-        output_file_ptr.reset(new output_file_t(cctkGH, io_dir_output,
-                                                projectname, file_type::local,
-                                                myioproc, ioproc_every));
-      TriggerVar(cctkGH, *output_file_ptr, vindex, -1);
-      if (myproc == 0) {
-        if (not global_file_ptr)
-          global_file_ptr.reset(
-              new output_file_t(cctkGH, io_dir_output, projectname,
-                                file_type::global, myioproc, ioproc_every));
-        TriggerVar(cctkGH, *global_file_ptr, vindex, -1);
-      }
-    }
+    if (TimeToOutput(cctkGH, vindex))
+      TriggerVar(cctkGH, vindex, -1, data_handling::write);
   }
 
-  if (output_file_ptr)
-    output_file_ptr->write();
-  if (global_file_ptr)
-    global_file_ptr->write();
+  if (output_state_ptr)
+    output_state_ptr->write();
+  output_state_ptr.reset();
 
   timer.stop();
 
@@ -244,39 +262,14 @@ int TriggerOutput(const cGH *cctkGH, int vindex) {
   if (vindex < 0)
     CCTK_ERROR("vindex is negative");
 
-  int myproc = CCTK_MyProc(cctkGH); // TODO: use ioproc
-  int nprocs = CCTK_nProcs(cctkGH); // TODO: use nioprocs
   int grouptype = CCTK_GroupTypeFromVarI(vindex);
   int reflevel = grouptype == CCTK_GF ? Carpet::reflevel : 0;
 
-  // We split processes into "I/O groups" which range from myioproc to
-  // myioproc + ioproc_every - 1 (inclusive). Within each group, only
-  // one process performs I/O; the other processes then communicate
-  // with that process.
-  int ioproc_every =
-      max_nioprocs == 0 ? 1 : (nprocs + max_nioprocs - 1) / max_nioprocs;
-  assert(ioproc_every > 0);
-  int nioprocs = (nprocs + ioproc_every - 1) / ioproc_every;
-  assert(nioprocs > 0);
-  assert(max_nioprocs == 0 or nioprocs <= max_nioprocs);
-  assert(nioprocs <= nprocs);
-  int myioproc = myproc / ioproc_every * ioproc_every;
-
   if (verbose)
-    CCTK_VINFO("TriggerOutput variable=\"%s\" refleve=%d",
+    CCTK_VINFO("TriggerOutput variable=\"%s\" reflevel=%d",
                charptr2string(CCTK_FullName(vindex)).c_str(), reflevel);
 
-  string projectname = generate_projectname(cctkGH, vindex);
-  output_file_t output_file(cctkGH, io_dir_output, projectname,
-                            file_type::local, myioproc, ioproc_every);
-  int retval = TriggerVar(cctkGH, output_file, vindex, reflevel);
-  output_file.write();
-  if (myproc == 0) {
-    output_file_t global_file(cctkGH, io_dir_output, projectname,
-                              file_type::global, myioproc, ioproc_every);
-    TriggerVar(cctkGH, global_file, vindex, reflevel);
-    global_file.write();
-  }
+  int retval = TriggerVar(cctkGH, vindex, reflevel, data_handling::attach);
 
   return retval;
 }
@@ -293,40 +286,18 @@ int OutputVarAs(const cGH *cctkGH, const char *varname, const char *alias) {
   if (vindex < 0)
     CCTK_VERROR("Unkonwn variable \"%s\"", varname);
 
-  int myproc = CCTK_MyProc(cctkGH);
-  int nprocs = CCTK_nProcs(cctkGH);
   int grouptype = CCTK_GroupTypeFromVarI(vindex);
   int reflevel = grouptype == CCTK_GF ? Carpet::reflevel : 0;
 
-  // We split processes into "I/O groups" which range from myioproc to
-  // myioproc + ioproc_every - 1 (inclusive). Within each group, only
-  // one process performs I/O; the other processes then communicate
-  // with that process.
-  int ioproc_every =
-      max_nioprocs == 0 ? 1 : (nprocs + max_nioprocs - 1) / max_nioprocs;
-  assert(ioproc_every > 0);
-  int nioprocs = (nprocs + ioproc_every - 1) / ioproc_every;
-  assert(nioprocs > 0);
-  assert(max_nioprocs == 0 or nioprocs <= max_nioprocs);
-  assert(nioprocs <= nprocs);
-  int myioproc = myproc / ioproc_every * ioproc_every;
-
-  output_file_t output_file(cctkGH, io_dir_output, alias, file_type::local,
-                            myioproc, ioproc_every);
-  OutputVar(cctkGH, output_file, vindex, reflevel);
-  output_file.write();
-  if (myproc == 0) {
-    output_file_t global_file(cctkGH, io_dir_output, alias, file_type::global,
-                              myioproc, ioproc_every);
-    OutputVar(cctkGH, global_file, vindex, reflevel);
-    global_file.write();
-  }
+  output_state_t output_state(cctkGH, io_dir_t::output, alias);
+  OutputVar(cctkGH, output_state, vindex, reflevel, data_handling::write);
+  output_state.write();
 
   return 0; // no error
 }
 
-int TriggerVar(const cGH *cctkGH, output_file_t &output_file, int vindex,
-               int reflevel) {
+int TriggerVar(const cGH *cctkGH, int vindex, int reflevel,
+               data_handling handle_data) {
   DECLARE_CCTK_PARAMETERS;
 
   int numvars = CCTK_NumVars();
@@ -337,13 +308,20 @@ int TriggerVar(const cGH *cctkGH, output_file_t &output_file, int vindex,
     CCTK_VINFO("TriggerVar variable=\"%s\"",
                charptr2string(CCTK_FullName(vindex)).c_str());
 
-  int retval = OutputVar(cctkGH, output_file, vindex, reflevel);
+  if (not output_state_ptr) {
+    string projectname = generate_projectname(cctkGH);
+    output_state_ptr.reset(
+        new output_state_t(cctkGH, io_dir_t::output, projectname));
+  }
+
+  int retval =
+      OutputVar(cctkGH, *output_state_ptr, vindex, reflevel, handle_data);
   output_variables.did_output(cctkGH, vindex);
   return retval;
 }
 
-int OutputVar(const cGH *cctkGH, output_file_t &output_file, int vindex,
-              int reflevel) {
+int OutputVar(const cGH *cctkGH, output_state_t &output_state, int vindex,
+              int reflevel, data_handling handle_data) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
@@ -353,7 +331,7 @@ int OutputVar(const cGH *cctkGH, output_file_t &output_file, int vindex,
 
   int timelevel = output_all_timelevels ? -1 : 0;
   vector<int> varindices{vindex};
-  output_file.insert_vars(varindices, reflevel, timelevel);
+  output_state.insert_vars(varindices, reflevel, timelevel, handle_data);
 
   return 0; // no error
 }
@@ -462,15 +440,15 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
 
   string projectname =
       called_from == CP_INITIAL_DATA ? checkpoint_ID_file : checkpoint_file;
-  output_file_t output_file(cctkGH, io_dir_checkpoint, projectname,
+  output_file_t output_file(cctkGH, io_dir_t::checkpoint, projectname,
                             file_type::local, myioproc, ioproc_every);
-  output_file.insert_vars(varindices, -1, -1);
+  output_file.insert_vars(varindices, -1, -1, data_handling::write);
   output_file.write();
 
   if (myproc == 0) {
-    output_file_t global_file(cctkGH, io_dir_checkpoint, projectname,
+    output_file_t global_file(cctkGH, io_dir_t::checkpoint, projectname,
                               file_type::global, myioproc, ioproc_every);
-    global_file.insert_vars(varindices, -1, -1);
+    global_file.insert_vars(varindices, -1, -1, data_handling::write);
     global_file.write();
   }
 
@@ -491,12 +469,12 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
         if (myproc == 0)
           CCTK_VINFO("Deleting old checkpoint for iteration %d...", iteration);
         auto filename = generate_filename(
-            cctkGH, io_dir_checkpoint, projectname, "", iteration,
+            cctkGH, io_dir_t::checkpoint, projectname, "", iteration,
             file_type::local, myioproc, ioproc_every);
         remove(filename.c_str());
         if (myproc == 0) {
           auto filename = generate_filename(
-              cctkGH, io_dir_checkpoint, projectname, "", iteration,
+              cctkGH, io_dir_t::checkpoint, projectname, "", iteration,
               file_type::global, myioproc, ioproc_every);
           remove(filename.c_str());
         }
@@ -514,6 +492,8 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
 static int recovery_iteration = -1;
 
 int Input(cGH *cctkGH, const char *basefilename, int called_from) {
+  DECLARE_CCTK_PARAMETERS;
+
   assert(called_from == CP_RECOVER_PARAMETERS or
          called_from == CP_RECOVER_DATA or called_from == FILEREADER_DATA);
   bool do_recover =
@@ -528,7 +508,7 @@ int Input(cGH *cctkGH, const char *basefilename, int called_from) {
   if (do_recover)
     CCTK_VINFO("Recovering iteration %d", recovery_iteration);
   else
-    CCTK_VINFO("Reading iteration %d", cctkGH->cctk_iteration);
+    CCTK_VINFO("Reading iteration %d", filereader_ID_iteration);
 
   // Determine which variables to read
   const ioGH *ioUtilGH = (const ioGH *)CCTK_GHExtension(cctkGH, "IO");
@@ -537,6 +517,13 @@ int Input(cGH *cctkGH, const char *basefilename, int called_from) {
   for (int vindex = 0; vindex < numvars; ++vindex)
     if (not ioUtilGH->do_inVars or ioUtilGH->do_inVars[vindex])
       input_vars.push_back(vindex);
+
+  io_dir_t io_dir = do_recover ? io_dir_t::recover : io_dir_t::input;
+  // string projectname = do_recover ? recover_file : filereader_file;
+  string projectname = basefilename;
+  int iteration = do_recover ? cctkGH->cctk_iteration : filereader_ID_iteration;
+  input_file_t input_file(cctkGH, io_dir, projectname, iteration, -1, -1);
+  input_file.read_vars(input_vars, -1, -1);
 
   return 0; // no error
 }

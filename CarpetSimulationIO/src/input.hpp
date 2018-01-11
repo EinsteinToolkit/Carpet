@@ -16,7 +16,8 @@ using namespace SimulationIO;
 using namespace std;
 
 class input_file_t {
-  const cGH *cctkGH;
+  const cGH *const cctkGH;
+  const int iteration;
   shared_ptr<Project> project;
 
 public:
@@ -27,12 +28,12 @@ public:
   input_file_t &operator=(input_file_t &&) = delete;
 
   input_file_t(const cGH *cctkGH, io_dir_t io_dir, const string &projectname,
-               int ioproc, int nioprocs);
+               int iteration, int ioproc, int nioprocs);
 
   // Read variables from project
   void read_vars(const vector<int> &varindices, int reflevel,
                  int timelevel) const;
 };
-}
+} // namespace CarpetSimulationIO
 
 #endif // #ifndef INPUT_HPP

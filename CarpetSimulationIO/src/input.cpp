@@ -16,17 +16,21 @@ using namespace SimulationIO;
 using namespace std;
 
 input_file_t::input_file_t(const cGH *cctkGH, io_dir_t io_dir,
-                           const string &projectname, int ioproc, int nioprocs)
-    : cctkGH(cctkGH) {
-  auto filename =
-      generate_filename(cctkGH, io_dir, projectname, "", cctkGH->cctk_iteration,
-                        file_type::global, -1, -1);
+                           const string &projectname, int iteration, int ioproc,
+                           int nioprocs)
+    : cctkGH(cctkGH), iteration(iteration) {
+  DECLARE_CCTK_PARAMETERS;
+
+  auto filename = generate_filename(cctkGH, io_dir, projectname, "", iteration,
+                                    file_type::global, -1, -1);
+  if (verbose)
+    CCTK_VINFO("Reading file \"%s\"", filename.c_str());
   auto file = H5::H5File(filename, H5F_ACC_RDONLY);
   project = readProject(file);
 }
 
-void input_file_t::read_vars(const vector<int> &varindices, int reflevel,
-                             int timelevel) const {
+void input_file_t::read_vars(const vector<int> &varindices, const int reflevel,
+                             const int timelevel) const {
   DECLARE_CCTK_PARAMETERS;
 
   auto parameter_iteration = project->parameters().at("iteration");
@@ -126,7 +130,7 @@ void input_file_t::read_vars(const vector<int> &varindices, int reflevel,
     }
     auto field = project->fields().at(fieldname);
 
-    const int iteration = cctkGH->cctk_iteration;
+    // const int iteration = cctkGH->cctk_iteration;
 
     const int min_mapindex = 0;
     const int max_mapindex = Carpet::arrdata.at(groupindex).size();
@@ -255,6 +259,9 @@ void input_file_t::read_vars(const vector<int> &varindices, int reflevel,
                     vect2dpoint<long long>(gdata->padded_shape(), dimension));
 
                 // TODO: check dataset's datatype in file
+                if (verbose)
+                  CCTK_VINFO("Reading dataset \"%s\"",
+                             discretefieldname.c_str());
                 dataset->readData(memdata, memtype, memshape, read_box);
               } // not read_box.empty()
             }   // local_component

@@ -282,23 +282,23 @@ string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
   string IO_dir;
   string S5_dir;
   switch (io_dir) {
-  case io_dir_none:
+  case io_dir_t::none:
     IO_dir = ".";
     S5_dir = ".";
     break;
-  case io_dir_input:
+  case io_dir_t::input:
     IO_dir = IO_filereader_ID_dir;
     S5_dir = filereader_ID_dir;
     break;
-  case io_dir_output:
+  case io_dir_t::output:
     IO_dir = IO_out_dir;
     S5_dir = out_dir;
     break;
-  case io_dir_recover:
+  case io_dir_t::recover:
     IO_dir = IO_recover_dir;
     S5_dir = recover_dir;
     break;
-  case io_dir_checkpoint:
+  case io_dir_t::checkpoint:
     IO_dir = IO_checkpoint_dir;
     S5_dir = checkpoint_dir;
     break;
@@ -352,9 +352,9 @@ void send_data(int ioproc, const void *data, int cactustype,
   ptrdiff_t count = membox.size();
   vector<char> buf(count * CCTK_VarTypeSize(cactustype));
   assert(membox == memshape);
-  memcpy(&buf.front(), data, buf.size());
+  memcpy(buf.data(), data, buf.size());
   MPI_Datatype mpitype = cactustype2mpitype(cactustype);
-  MPI_Send(&buf.front(), count, mpitype, ioproc, tag, dist::comm());
+  MPI_Send(buf.data(), count, mpitype, ioproc, tag, dist::comm());
 }
 
 vector<char> recv_data(int dataproc, int cactustype,
@@ -362,7 +362,7 @@ vector<char> recv_data(int dataproc, int cactustype,
   ptrdiff_t count = membox.size();
   MPI_Datatype mpitype = cactustype2mpitype(cactustype);
   vector<char> buf(count * CCTK_VarTypeSize(cactustype));
-  MPI_Recv(&buf.front(), count, mpitype, dataproc, tag, dist::comm(),
+  MPI_Recv(buf.data(), count, mpitype, dataproc, tag, dist::comm(),
            MPI_STATUS_IGNORE);
   return buf;
 }

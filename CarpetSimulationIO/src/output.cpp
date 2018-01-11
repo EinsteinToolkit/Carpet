@@ -75,7 +75,8 @@ output_file_t::output_file_t(const cGH *cctkGH, io_dir_t io_dir,
     assert(myioproc == 0); // process 0 outputs the global file
     break;
   case file_type::local:
-    assert(myioproc >= 0 && myioproc <= myproc && myioproc % ioproc_every == 0);
+    assert(myioproc >= 0 and myioproc <= myproc and
+           myioproc % ioproc_every == 0);
     break;
   }
   project = SimulationIO::createProject(projectname);
@@ -87,11 +88,11 @@ output_file_t::~output_file_t() {
 }
 
 void output_file_t::insert_vars(const vector<int> &varindices,
-                                const int reflevel, const int timelevel) {
+                                const int reflevel, const int timelevel,
+                                const data_handling handle_data) {
   DECLARE_CCTK_PARAMETERS;
   if (verbose)
     CCTK_INFO("Outputting variables");
-  cerr << "timelevel=" << timelevel << "\n";
 
   const int myproc = CCTK_MyProc(cctkGH);
   const int nprocs = CCTK_nProcs(cctkGH);
@@ -534,9 +535,10 @@ void output_file_t::insert_vars(const vector<int> &varindices,
               if (verbose)
                 CCTK_VINFO("Creating external link \"%s\"",
                            discretefieldname.c_str());
-              auto otherfilename = generate_filename(
-                  cctkGH, io_dir_none, projectname, "", cctkGH->cctk_iteration,
-                  file_type::local, other_ioproc, ioproc_every);
+              auto otherfilename =
+                  generate_filename(cctkGH, io_dir_t::none, projectname, "",
+                                    cctkGH->cctk_iteration, file_type::local,
+                                    other_ioproc, ioproc_every);
               auto dataset = discretefieldblockcomponent->createExtLink(
                   otherfilename,
                   stringify(discretefieldblockcomponent->getPath(), "/",
@@ -640,7 +642,7 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                 H5::DataType type = cactustype2hdf5type(cactustype);
                 auto dataset = discretefieldblockcomponent->createDataSet(type);
 
-                tasks.push_back([=]() {
+                auto task = [=]() {
                   auto memtype = dataset->datatype(); // by construction
                   auto membox = bbox2dbox<long long>(dd->light_boxes.at(mglevel)
                                                          .at(reflevel)
@@ -669,11 +671,24 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                     auto memdata = gdata->storage();
 
                     if (myproc == myioproc) {
-                      // Write data to file
-                      if (verbose)
-                        CCTK_VINFO("Writing dataset \"%s\"",
-                                   discretefieldname.c_str());
-                      dataset->writeData(memdata, memtype, memshape, membox);
+                      switch (handle_data) {
+                      case data_handling::attach:
+                        // Attach data
+                        if (verbose)
+                          CCTK_VINFO("Attaching dataset \"%s\"",
+                                     discretefieldname.c_str());
+                        dataset->attachData(memdata, memtype, memshape, membox);
+                        break;
+                      case data_handling::write:
+                        // Write data to file
+                        if (verbose)
+                          CCTK_VINFO("Writing dataset \"%s\"",
+                                     discretefieldname.c_str());
+                        dataset->writeData(memdata, memtype, memshape, membox);
+                        break;
+                      default:
+                        assert(0);
+                      }
                     } else {
                       // Send data to I/O process
                       if (verbose)
@@ -693,16 +708,39 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                         recv_data(dataproc, cactustype, membox);
                     assert(ptrdiff_t(buf.size()) ==
                            membox.size() * CCTK_VarTypeSize(cactustype));
-                    if (verbose)
-                      CCTK_VINFO("Writing dataset \"%s\"",
-                                 discretefieldname.c_str());
-                    dataset->writeData(&buf.front(), memtype, membox, membox);
+                    switch (handle_data) {
+                    case data_handling::attach:
+                      if (verbose)
+                        CCTK_VINFO("Attaching dataset \"%s\"",
+                                   discretefieldname.c_str());
+                      dataset->attachData(buf.data(), memtype, membox, membox);
+                      break;
+                    case data_handling::write:
+                      if (verbose)
+                        CCTK_VINFO("Writing dataset \"%s\"",
+                                   discretefieldname.c_str());
+                      dataset->writeData(buf.data(), memtype, membox, membox);
+                      break;
+                    default:
+                      assert(0);
+                    }
 
                   } else {
                     assert(0);
                   }
 
-                });
+                };
+
+                switch (handle_data) {
+                case data_handling::attach:
+                  std::move(task)();
+                  break;
+                case data_handling::write:
+                  tasks.push_back(std::move(task));
+                  break;
+                default:
+                  assert(0);
+                }
 
                 if (bool(create_coordinate_discretefieldblockcomponent))
                   create_coordinate_discretefieldblockcomponent(
