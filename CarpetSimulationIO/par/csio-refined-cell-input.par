@@ -3,15 +3,14 @@
 ActiveThorns = "
     Boundary
     Carpet
+    CarpetSimulationIO
     CarpetLib
     CarpetRegrid2
-    CarpetSimulationIO
     CartGrid3D
     CoordBase
-    F5
     Formaline
-    IOUtil
     InitBase
+    IOUtil
     SymBase
 "
 
@@ -37,7 +36,14 @@ CoordBase::zmax = +1.0
 CoordBase::dx = 0.25
 CoordBase::dy = 0.25
 CoordBase::dz = 0.25
+CoordBase::boundary_staggered_x_lower = yes
+CoordBase::boundary_staggered_y_lower = yes
+CoordBase::boundary_staggered_z_lower = yes
+CoordBase::boundary_staggered_x_upper = yes
+CoordBase::boundary_staggered_y_upper = yes
+CoordBase::boundary_staggered_z_upper = yes
 
+Carpet::refinement_centering = "cell"
 Carpet::max_refinement_levels = 10
 CarpetRegrid2::num_centres = 1
 CarpetRegrid2::num_levels_1 = 3
@@ -46,11 +52,18 @@ CarpetRegrid2::radius_1[2] = 0.2
 
 InitBase::initial_data_setup_method = "init_all_levels"
 
-CarpetSimulationIO::max_nioprocs = 2
-CarpetSimulationIO::checkpoint = yes
-IO::checkpoint_every = 512
-IO::checkpoint_ID = yes
-IO::checkpoint_on_terminate = yes
-IO::checkpoint_dir = $parfile
+CarpetSimulationIO::verbose = yes
+CarpetSimulationIO::max_nioprocs = 3
+IO::filereader_ID_dir = "../../csio-refined-cell/output-0000/csio-refined-cell"
+IO::filereader_ID_files = "csio-refined-cell"
+CarpetSimulationIO::filereader_ID_iteration = 1024
+IO::filereader_ID_vars = "
+    grid::coordinates
+"
+
+CarpetSimulationIO::out_every = 256
+CarpetSimulationIO::out_vars = "
+    grid::coordinates
+"
 
 Formaline::output_source = no
