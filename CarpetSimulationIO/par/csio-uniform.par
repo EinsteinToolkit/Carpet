@@ -41,6 +41,8 @@ CarpetIOHDF5::out_vars = "
     grid::coordinates
 "
 
+CarpetSimulationIO::async_output = yes
+CarpetSimulationIO::async_output = yes
 CarpetSimulationIO::max_nioprocs = 2
 CarpetSimulationIO::out_every = 2
 CarpetSimulationIO::out_vars = "

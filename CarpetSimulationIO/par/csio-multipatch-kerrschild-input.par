@@ -149,6 +149,7 @@ CarpetIOASCII::out1D_vars = "
 
 CarpetSimulationIO::verbose = yes
 
+CarpetSimulationIO::async_output = yes
 CarpetSimulationIO::max_nioprocs = 3
 IO::filereader_ID_dir = "../../csio-multipatch-kerrschild/output-0000/csio-multipatch-kerrschild"
 IO::filereader_ID_files = "csio-uniform"

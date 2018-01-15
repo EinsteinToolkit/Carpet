@@ -37,6 +37,7 @@ CoordBase::dy = 0.25
 CoordBase::dz = 0.25
 
 CarpetSimulationIO::verbose = yes
+CarpetSimulationIO::async_output = yes
 CarpetSimulationIO::max_nioprocs = 3
 IO::filereader_ID_dir = "../../csio-uniform/output-0000/csio-uniform"
 IO::filereader_ID_files = "csio-uniform"

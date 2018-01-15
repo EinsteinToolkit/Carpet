@@ -46,6 +46,7 @@ CarpetRegrid2::radius_1[2] = 0.2
 
 InitBase::initial_data_setup_method = "init_all_levels"
 
+CarpetSimulationIO::async_output = yes
 CarpetSimulationIO::max_nioprocs = 2
 CarpetSimulationIO::checkpoint = yes
 IO::checkpoint_every = 512

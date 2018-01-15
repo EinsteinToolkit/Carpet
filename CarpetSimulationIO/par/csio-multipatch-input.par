@@ -43,6 +43,7 @@ CarpetRegrid2::radius_1[2] = 0.2
 InitBase::initial_data_setup_method = "init_all_levels"
 
 CarpetSimulationIO::verbose = yes
+CarpetSimulationIO::async_output = yes
 CarpetSimulationIO::max_nioprocs = 3
 IO::filereader_ID_dir = "../../csio-multipatch/output-0000/csio-multipatch"
 IO::filereader_ID_files = "csio-multipatch"
