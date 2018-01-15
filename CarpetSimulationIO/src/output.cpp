@@ -64,7 +64,8 @@ output_file_t::output_file_t(const cGH *cctkGH, io_dir_t io_dir,
                              const string &projectname, file_type output_type,
                              int myioproc, int ioproc_every)
     : cctkGH(cctkGH), io_dir(io_dir), projectname(projectname),
-      output_type(output_type), myioproc(myioproc), ioproc_every(ioproc_every) {
+      output_type(output_type), iteration(cctkGH->cctk_iteration),
+      myioproc(myioproc), ioproc_every(ioproc_every) {
   DECLARE_CCTK_PARAMETERS;
   if (verbose)
     CCTK_VINFO("Creating project \"%s\"", projectname.c_str());
@@ -241,8 +242,6 @@ void output_file_t::insert_vars(const vector<int> &varindices,
       project->createField(fieldname, global_configuration, manifold,
                            tangentspace, tensortype);
     auto field = project->fields().at(fieldname);
-
-    const int iteration = cctkGH->cctk_iteration;
 
     const int min_mapindex = 0;
     const int max_mapindex = Carpet::arrdata.at(groupindex).size();
@@ -535,10 +534,9 @@ void output_file_t::insert_vars(const vector<int> &varindices,
               if (verbose)
                 CCTK_VINFO("Creating external link \"%s\"",
                            discretefieldname.c_str());
-              auto otherfilename =
-                  generate_filename(cctkGH, io_dir_t::none, projectname, "",
-                                    cctkGH->cctk_iteration, file_type::local,
-                                    other_ioproc, ioproc_every);
+              auto otherfilename = generate_filename(
+                  cctkGH, io_dir_t::none, projectname, "", iteration,
+                  file_type::local, other_ioproc, ioproc_every);
               auto dataset = discretefieldblockcomponent->createExtLink(
                   otherfilename,
                   stringify(discretefieldblockcomponent->getPath(), "/",
@@ -763,11 +761,11 @@ void output_file_t::write() {
   DECLARE_CCTK_PARAMETERS;
   const int myproc = CCTK_MyProc(cctkGH);
   const string filename =
-      generate_filename(cctkGH, io_dir, projectname, "", cctkGH->cctk_iteration,
+      generate_filename(cctkGH, io_dir, projectname, "", iteration, output_type,
+                        myioproc, ioproc_every);
+  const string tmpname =
+      generate_filename(cctkGH, io_dir, projectname, ".tmp", iteration,
                         output_type, myioproc, ioproc_every);
-  const string tmpname = generate_filename(cctkGH, io_dir, projectname, ".tmp",
-                                           cctkGH->cctk_iteration, output_type,
-                                           myioproc, ioproc_every);
   H5::H5File file;
   if (myproc == myioproc) {
     if (verbose)
@@ -777,40 +775,40 @@ void output_file_t::write() {
     auto fapl = H5::FileAccPropList();
     fapl.setFcloseDegree(H5F_CLOSE_STRONG);
     fapl.setLibverBounds(H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
-    static Timers::Timer timer1("SimulationIO::H5File");
-    timer1.start();
+    // static Timers::Timer timer1("SimulationIO::H5File");
+    // timer1.start();
     // H5F_ACC_EXCL or H5F_ACC_TRUNC,
     file =
         H5::H5File(tmpname, H5F_ACC_EXCL, H5::FileCreatPropList::DEFAULT, fapl);
-    timer1.stop();
+    // timer1.stop();
     if (verbose)
       CCTK_VINFO("Writing project \"%s\"", filename.c_str());
-    static Timers::Timer timer2("SimulationIO::write");
-    timer2.start();
+    // static Timers::Timer timer2("SimulationIO::write");
+    // timer2.start();
     project->write(file);
-    timer2.stop();
+    // timer2.stop();
   }
   if (verbose)
     CCTK_VINFO("Writing data for project \"%s\"", filename.c_str());
-  static Timers::Timer timer3("SimulationIO::tasks");
-  timer3.start();
+  // static Timers::Timer timer3("SimulationIO::tasks");
+  // timer3.start();
   for (auto &task : tasks)
     std::move(task)();
-  timer3.stop();
+  // timer3.stop();
   if (myproc == myioproc) {
     if (verbose)
       CCTK_VINFO("Deleting project \"%s\"", filename.c_str());
-    static Timers::Timer timer4("SimulationIO::close");
-    timer4.start();
+    // static Timers::Timer timer4("SimulationIO::close");
+    // timer4.start();
     file.close();
     H5garbage_collect();
-    timer4.stop();
+    // timer4.stop();
   }
-  static Timers::Timer timer5("SimulationIO::cleanup");
-  timer5.start();
+  // static Timers::Timer timer5("SimulationIO::cleanup");
+  // timer5.start();
   tasks.clear();
   project.reset();
-  timer5.stop();
+  // timer5.stop();
   if (verbose)
     CCTK_VINFO("Done deleting project \"%s\"", filename.c_str());
   if (output_type == file_type::local) {

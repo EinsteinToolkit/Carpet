@@ -1,3 +1,8 @@
 # Configuration definition for thorn CarpetSimulationIO
 
 REQUIRES Carpet CarpetLib HDF5 MPI SimulationIO Timers
+
+# OPTIONAL pthreads
+# {
+# }
+REQUIRES pthreads

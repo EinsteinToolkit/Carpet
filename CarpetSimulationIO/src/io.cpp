@@ -1,5 +1,6 @@
 #include "input.hpp"
 #include "output.hpp"
+#include "pthread_wrapper.hpp"
 #include "util.hpp"
 
 #include <CactusBase/IOUtil/src/ioGH.h>
@@ -14,6 +15,7 @@
 #include <util_Table.h>
 
 #include <H5Cpp.h>
+#include <H5public.h>
 #include <SimulationIO/SimulationIO.hpp>
 
 #include <algorithm>
@@ -28,7 +30,10 @@ namespace CarpetSimulationIO {
 using namespace std;
 
 // Checkpointing state
-static int last_checkpoint_iteration = -1;
+int last_checkpoint_iteration = -1;
+
+// Active output threads
+vector<unique_ptr<pthread_wrapper_t> > output_pthreads;
 
 void *SetupGH(tFleshConfig *fleshconfig, int convLevel, cGH *cctkGH);
 
@@ -75,6 +80,14 @@ extern "C" void CarpetSimulationIO_Init(CCTK_ARGUMENTS) {
   *next_output_iteration = 0;
 
   last_checkpoint_iteration = cctk_iteration;
+}
+
+// Scheduled finalization routine
+extern "C" void CarpetSimulationIO_Finalize(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_ARGUMENTS;
+
+  // Wait for all output threads before shutting down
+  output_pthreads.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -194,15 +207,38 @@ int OutputGH(const cGH *cctkGH) {
   static Timers::Timer timer("SimulationIO::OutputGH");
   timer.start();
 
+  const data_handling handle_data =
+      async_output ? data_handling::attach : data_handling::write;
+
   int numvars = CCTK_NumVars();
   for (int vindex = 0; vindex < numvars; ++vindex) {
     if (TimeToOutput(cctkGH, vindex))
-      TriggerVar(cctkGH, vindex, -1, data_handling::write);
+      TriggerVar(cctkGH, vindex, -1, handle_data);
   }
 
-  if (output_state_ptr)
-    output_state_ptr->write();
-  output_state_ptr.reset();
+  if (output_state_ptr) {
+    // output_state_ptr->write();
+    // output_state_ptr.reset();
+    shared_ptr<output_state_t> osp(std::move(output_state_ptr));
+    auto task = [=]() { osp->write(); };
+    assert(not output_state_ptr);
+    if (async_output) {
+      // Output in a new pthreads thread
+      // Ensure that the HDF5 library is thread-safe
+#ifndef H5_HAVE_THREADSAFE
+      CCTK_ERROR("HDF5 library is not thread-safe");
+#endif
+      // Prevent overlapping I/O. (We could easily allow several
+      // overlapping output threads if we wanted do.)
+      output_pthreads.clear();
+      // Create new thread
+      string projectname = generate_projectname(cctkGH);
+      output_pthreads.emplace_back(new pthread_wrapper_t(projectname, task));
+    } else {
+      // Output synchronously
+      task();
+    }
+  }
 
   timer.stop();
 
@@ -437,6 +473,10 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
   assert(max_nioprocs == 0 or nioprocs <= max_nioprocs);
   assert(nioprocs <= nprocs);
   int myioproc = myproc / ioproc_every * ioproc_every;
+
+  // Wait for all output threads to ensure all previous output has
+  // been written when the checkpoint file is created
+  output_pthreads.clear();
 
   string projectname =
       called_from == CP_INITIAL_DATA ? checkpoint_ID_file : checkpoint_file;

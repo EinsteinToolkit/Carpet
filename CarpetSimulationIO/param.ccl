@@ -42,16 +42,12 @@ BOOLEAN verbose "Verbosity" STEERABLE=always
 
 
 
-STRING filereader_ID_dir "Input directory (overrides IO::filereader_ID_dir)" STEERABLE=always
+BOOLEAN async_output "Asynchronous output method" STEERABLE=always
 {
-  "^$" :: "Empty: use IO::filereader_ID_dir"
-  ".+" :: "Not empty: directory name"
-} ""
+} "no"
+ 
 
-CCTK_INT filereader_ID_iteration "Input iteration" STEERABLE=always
-{
-  0:* :: ""
-} 0
+
 
 STRING out_dir "Output directory (overrides IO::out_dir)" STEERABLE=always
 {
@@ -141,6 +137,20 @@ CCTK_INT max_nioprocs "Maximum number of I/O processes" STEERABLE=always
 BOOLEAN output_all_timelevels "Output all timelevels (instead of only the current)" STEERABLE=always
 {
 } "no"
+
+
+
+ 
+STRING filereader_ID_dir "Input directory (overrides IO::filereader_ID_dir)" STEERABLE=always
+{
+  "^$" :: "Empty: use IO::filereader_ID_dir"
+  ".+" :: "Not empty: directory name"
+} ""
+
+CCTK_INT filereader_ID_iteration "Input iteration" STEERABLE=always
+{
+  0:* :: ""
+} 0
 
 
 

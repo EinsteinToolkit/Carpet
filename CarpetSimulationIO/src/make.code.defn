@@ -1,7 +1,7 @@
 # Main make.code.defn file for thorn CarpetSimulationIO
 
 # Source files in this directory
-SRCS = input.cpp io.cpp output.cpp util.cpp
+SRCS = input.cpp io.cpp pthread_wrapper.cpp output.cpp util.cpp
 
 # Subdirectories containing source files
 SUBDIRS = 

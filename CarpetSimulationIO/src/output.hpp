@@ -23,6 +23,7 @@ class output_file_t {
   const io_dir_t io_dir;
   const string projectname;
   const file_type output_type;
+  const int iteration;
   const int myioproc, ioproc_every;
   shared_ptr<Project> project;
   vector<function<void()> > tasks;

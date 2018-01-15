@@ -25,23 +25,29 @@ SCHEDULE CarpetSimulationIO_Init AT basegrid
   OPTIONS: global
 } "Initialise I/O data structures"
 
+SCHEDULE CarpetSimulationIO_Finalize AT terminate AFTER CarpetSimulationIO_TerminationCheckpoint
+{
+  LANG: C
+  OPTIONS: global
+} "Finalize I/O data structures"
+
 
 
 # Checkpointing
 
-schedule CarpetSimulationIO_InitialDataCheckpoint at CPINITIAL
+SCHEDULE CarpetSimulationIO_InitialDataCheckpoint AT cpinitial
 {
   LANG: C
   OPTIONS: global
 } "Initial data checkpoint routine"
 
-schedule CarpetSimulationIO_EvolutionCheckpoint at CHECKPOINT
+SCHEDULE CarpetSimulationIO_EvolutionCheckpoint AT checkpoint
 {
   LANG: C
   OPTIONS: global
 } "Evolution checkpoint routine"
 
-schedule CarpetSimulationIO_TerminationCheckpoint at TERMINATE
+SCHEDULE CarpetSimulationIO_TerminationCheckpoint AT terminate
 {
   LANG: C
   OPTIONS: global
