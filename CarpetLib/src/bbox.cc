@@ -14,7 +14,7 @@
 
 #include "bbox.hh"
 
-// intel-17.0.0 fails with internal error 0_76 if vectorization is not disabled
+// intel-17.0.0 fails with internal error 0_76 if optimization is not disabled
 #if __INTEL_COMPILER == 1700
 #pragma GCC optimization_level 1
 #endif
