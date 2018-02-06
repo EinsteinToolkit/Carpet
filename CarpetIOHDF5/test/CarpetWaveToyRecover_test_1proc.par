@@ -2,6 +2,8 @@ ActiveThorns = "Boundary2 CartGrid3D Time CoordBase InitBase SymBase Carpet Carp
 
 
 Cactus::cctk_itlast = 128
+Carpet::use_psync = "yes"
+Carpet::psync_only = "yes"
 
 # Output
 IO::out_dir = $parfile

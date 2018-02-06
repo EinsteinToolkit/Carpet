@@ -78,6 +78,9 @@ CarpetLib::print_memstats_every  = -1
 
 CarpetLib::max_allowed_memory_MB = 2048
 
+Carpet::use_psync = "yes"
+Carpet::psync_only = "yes"
+
 ##################################################################
 ActiveThorns = "SphericalSurface ADMBase"
 ##################################################################

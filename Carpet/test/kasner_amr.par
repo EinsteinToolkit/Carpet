@@ -61,6 +61,9 @@ Carpet::init_each_timelevel = "yes"
 Carpet::domain_from_coordbase = yes
 Carpet::max_refinement_levels = 2
 
+Carpet::use_psync = "yes"
+Carpet::psync_only = "yes"
+
 driver::ghost_size       = 3
 Carpet::use_buffer_zones = yes
 

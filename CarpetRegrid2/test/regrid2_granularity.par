@@ -48,6 +48,8 @@ MoL::ODE_Method = "RK2"
 MoL::MoL_Intermediate_Steps = 2
 
 # Carpet
+Carpet::use_psync = "yes"
+Carpet::psync_only = "yes"
 Carpet::domain_from_coordbase = yes
 Carpet::init_fill_timelevels = yes
 Carpet::refinement_centering = "cell"

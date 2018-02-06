@@ -9,6 +9,8 @@ ActiveThorns = "CoordBase CartGrid3D SymBase InitBase IOUtil Carpet CarpetIOASCI
 Cactus::cctk_run_title = "Test Run"
 Cactus::cctk_show_schedule = "yes"
 Cactus::cctk_itlast = 0
+Carpet::use_psync = "yes"
+Carpet::psync_only = "yes"
 
 # CartGrid3D
 CartGrid3D::type = "coordbase"

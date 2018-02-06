@@ -19,7 +19,6 @@ IO::out_fileinfo = "none"
 ActiveThorns = "InitBase"
 
 
-
 ActiveThorns = "LoopControl"
 
 LoopControl::verbose     = no
@@ -43,6 +42,8 @@ Carpet::init_fill_timelevels = yes
 #CarpetLib::print_timestats_every = 1
 CarpetLib::print_memstats_every  = 10
 
+Carpet::use_psync = "yes"
+Carpet::psync_only = "yes"
 
 
 ActiveThorns = "Boundary2 CartGrid3D CoordBase SymBase"

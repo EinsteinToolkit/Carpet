@@ -7,6 +7,9 @@ Driver::ghost_size = 2
 
 InitBase::initial_data_setup_method = "init_all_levels"
 
+Carpet::use_psync = "yes"
+Carpet::psync_only = "yes"
+
 Carpet::max_refinement_levels    = 3
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time  = 2
