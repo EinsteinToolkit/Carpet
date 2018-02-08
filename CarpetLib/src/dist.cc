@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <complex>
+#include <iostream>
 #include <typeinfo>
 
 #ifdef CCTK_MPI
@@ -150,7 +151,13 @@ void op_sum(void *restrict const invec_, void *restrict const inoutvec_,
 }
 
 void init(int &argc, char **&argv) {
-  MPI_Init(&argc, &argv);
+  // MPI_Init(&argc, &argv);
+  int provided;
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+  if (provided != MPI_THREAD_MULTIPLE) {
+    cerr << "Cannot initialise MPI with MPI_THREAD_MULTIPLE\n";
+    exit(1);
+  }
   pseudoinit(MPI_COMM_WORLD);
 }
 
