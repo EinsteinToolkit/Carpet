@@ -113,7 +113,8 @@ int WriteMetadata(const cGH *const cctkGH, int const nioprocs,
                   int const firstvar, int const numvars,
                   bool const called_from_checkpoint, hid_t const file);
 
-int AddSliceAttributes(const cGH *const cctkGH, const char *const fullname,
+int AddSliceAttributes(const CCTK_REAL cctk_time, const CCTK_INT cctk_iteration,
+                       const char *const fullname,
                        const int refinementlevel, const int multigridlevel,
                        const int map, const int timelevel,
                        const vector<double> &origin,
@@ -196,7 +197,9 @@ template <int outdim> struct IOHDF5 {
                       const vect<int, outdim> &dirs, bool is_new_file,
                       bool truncate_file, hid_t &file, hid_t &index_file);
 
-  static int WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &index_file,
+  static int WriteHDF5(const cGH *cctkGH, const CCTK_REAL cctk_time,
+                       const CCTK_INT cctk_iteration,
+                       const hid_t file, const hid_t index_file,
                        vector<gdata *> const gfdatas,
                        const bbox<int, dim> &gfext, const int vi,
                        const vect<int, dim> &org, const vect<int, outdim> &dirs,

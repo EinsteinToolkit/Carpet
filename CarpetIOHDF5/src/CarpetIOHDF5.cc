@@ -322,7 +322,8 @@ hid_t CCTKtoHDF5_Datatype(const cGH *const cctkGH, int cctk_type,
 }
 
 // add attributes to an HDF5 slice dataset
-int AddSliceAttributes(const cGH *const cctkGH, const char *const fullname,
+int AddSliceAttributes(const CCTK_REAL cctk_time, const CCTK_INT cctk_iteration,
+                       const char *const fullname,
                        const int refinementlevel, const int multigridlevel,
                        const int map, const int timelevel,
                        const vector<double> &origin,
@@ -334,8 +335,8 @@ int AddSliceAttributes(const cGH *const cctkGH, const char *const fullname,
                        const bool is_index) {
   int error_count = 0;
 
-  error_count += WriteAttribute(dataset, "time", cctkGH->cctk_time);
-  error_count += WriteAttribute(dataset, "timestep", cctkGH->cctk_iteration);
+  error_count += WriteAttribute(dataset, "time", cctk_time);
+  error_count += WriteAttribute(dataset, "timestep", cctk_iteration);
   error_count += WriteAttribute(dataset, "name", fullname);
   error_count += WriteAttribute(dataset, "level", refinementlevel);
   error_count += WriteAttribute(dataset, "carpet_mglevel", multigridlevel);

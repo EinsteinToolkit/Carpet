@@ -590,7 +590,7 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
         const int tl_max = output_all_timelevels ? num_tl : 1;
         for (int tl = tl_min; tl < tl_max; ++tl) {
 
-          mempool pool;
+          mempool *pool = new mempool;
 
           const int n_min = one_file_per_group ? 0 : var;
           const int n_max =
@@ -607,47 +607,54 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
 
           vector<gdata *> tmpdatas(datas.size());
 
-          // tranfer data through the interconnect to ioproc if necessary
-          if (proc != ioproc) {
+          // make a copy of the output data so that it does not change while
+          // the IO thread uses it
 
+          for (size_t n = 0; n < datas.size(); ++n) {
+            const ggf *const ff = arrdata.at(group).at(m).data.at(n + n_min);
+            tmpdatas.at(n) = ff->new_typed_data();
+            size_t const memsize =
+                tmpdatas.at(n)->allocsize(data_ext, ioproc);
+            void *const memptr = pool->alloc(memsize);
+            tmpdatas.at(n)->allocate(data_ext, ioproc, memptr, memsize);
+          } // for n
+
+          for (comm_state state; not state.done(); state.step()) {
             for (size_t n = 0; n < datas.size(); ++n) {
-              const ggf *const ff = arrdata.at(group).at(m).data.at(n + n_min);
-              tmpdatas.at(n) = ff->new_typed_data();
-              size_t const memsize =
-                  tmpdatas.at(n)->allocsize(data_ext, ioproc);
-              void *const memptr = pool.alloc(memsize);
-              tmpdatas.at(n)->allocate(data_ext, ioproc, memptr, memsize);
-            } // for n
-
-            for (comm_state state; not state.done(); state.step()) {
-              for (size_t n = 0; n < datas.size(); ++n) {
-                gdata::copy_data(tmpdatas.at(n), state, datas.at(n), data_ext,
-                                          data_ext, NULL, ioproc, proc);
-              }
-            }
-
-          } else {
-
-            for (size_t n = 0; n < datas.size(); ++n) {
-              tmpdatas.at(n) = const_cast<gdata *>(datas.at(n));
+              gdata::copy_data(tmpdatas.at(n), state, datas.at(n), data_ext,
+                                        data_ext, NULL, ioproc, proc);
             }
           }
 
           if (dist::rank() == IOProcForProc(proc)) {
-            int c_offset = 0;
-            for (ibset::const_iterator ext = exts.begin(); ext != exts.end();
-                 ++ext, ++c_offset) {
-              error_count += WriteHDF5(
-                  cctkGH, file, index_file, tmpdatas, *ext, vindex,
-                  offsets1[c_offset], dirs, rl, ml, m, c, c_base + c_offset, tl,
-                  coord_time, coord_lower[c_offset], coord_upper[c_offset]);
-            }
-          }
-
-          if (proc != ioproc) {
-            for (size_t n = 0; n < tmpdatas.size(); ++n) {
-              delete tmpdatas.at(n);
-            }
+            /* I dup the file handle so that I do not have to worry about
+             * having the master thread keeping the file open */
+            hid_t clone_file = -1, clone_index_file = -1;
+            HDF5_ERROR(clone_file = H5Freopen(file));
+            if(index_file >= 0)
+              HDF5_ERROR(clone_index_file = H5Freopen(index_file));
+            const CCTK_INT iteration = cctkGH->cctk_iteration;
+            const CCTK_REAL time = cctkGH->cctk_time;
+            auto write_fn = [=](){
+              int c_offset = 0;
+              for (ibset::const_iterator ext = exts.begin(); ext != exts.end();
+                   ++ext, ++c_offset) {
+                // TODO: read up on lambdas to find out how to make error_count
+                // a per-reference variable
+                /*error_count +=*/ WriteHDF5(
+                    cctkGH, time, iteration, clone_file, clone_index_file,
+                    tmpdatas, *ext, vindex,
+                    offsets1[c_offset], dirs, rl, ml, m, c, c_base + c_offset, tl,
+                    coord_time, coord_lower[c_offset], coord_upper[c_offset]);
+              }
+              for (size_t n = 0; n < datas.size(); ++n) {
+                delete tmpdatas.at(n);
+              } // for n
+              delete pool; // actually get rid of memory
+            };
+            // TODO: use a single pthread for all IO
+//#pragma omp task
+            write_fn();
           }
 
         } // for tl
@@ -1189,7 +1196,9 @@ int CoordToOffset(const cGH *cctkGH, const int m, const int dir,
 
 // Output
 template <int outdim>
-int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
+int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, const CCTK_REAL cctk_time,
+                              const CCTK_INT cctk_iteration,
+                              const hid_t file, const hid_t indexfile,
                               vector<gdata *> const gfdatas,
                               const bbox<int, dim> &gfext, const int vi,
                               const vect<int, dim> &org,
@@ -1249,348 +1258,351 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
     }
   }
   // Shortcut if there is nothing to output
-  if (not output_bbox_overlaps_data_extent) {
-    return 0;
-  }
-
   int error_count = 0;
-
-  ostringstream datasetname_suffix;
-  datasetname_suffix << " it=" << cctkGH->cctk_iteration << " tl=" << tl;
-  if (mglevels > 1)
-    datasetname_suffix << " ml=" << ml;
-  if (groupdata.grouptype == CCTK_GF) {
-    if (maps > 1)
-      datasetname_suffix << " m=" << m;
-    datasetname_suffix << " rl=" << rl;
-  }
-  if (arrdata.at(gi).at(m).dd->light_boxes.at(ml).at(rl).size() > 1 and
-      groupdata.disttype != CCTK_DISTRIB_CONSTANT) {
-    datasetname_suffix << " c=" << output_component;
-  }
-
-  // enable compression and checksums if requested
-  hid_t plist;
-  HDF5_ERROR(plist = H5Pcreate(H5P_DATASET_CREATE));
-  // enable checksums if requested
-  if (use_checksums) {
-    HDF5_ERROR(H5Pset_filter(plist, H5Z_FILTER_FLETCHER32, 0, 0, 0));
-  }
-
-  // enable datatype conversion if requested
-  const hid_t mem_type = CCTKtoHDF5_Datatype(cctkGH, groupdata.vartype, false);
-  const hid_t slice_type =
-      CCTKtoHDF5_Datatype(cctkGH, groupdata.vartype, out_single_precision);
-
-  if (not diagonal_output) { // not outputting the diagonal
-
-    // there are currently three "extent" variables in use:
-    // data_ext - the extent of the component in memory
-    // gfext    - the bounding box of data to be written
-    // ext      - gfext in the output dimension(s)
-    // data_ext and gfext are used to construct the hyperslab location and
-    // size, ext is just a shorthand.
-    // TODO: maybe transfer only ext instead of data_ext in copy_data
-    const vect<int, outdim> lo = gfext.lower()[dirs];
-    const vect<int, outdim> up = gfext.upper()[dirs];
-    const vect<int, outdim> str = gfext.stride()[dirs];
-    const bbox<int, outdim> ext(lo, up, str);
-    const dh *const dd = arrdata.at(gi).at(m).dd;
-    const ibbox &data_ext = dd->light_boxes.at(ml).at(rl).at(c).exterior;
-
-    // Check whether the output origin is contained in the extent of
-    // the data that should be output
-    ivect org1(org);
-    for (int d = 0; d < outdim; ++d)
-      org1[dirs[d]] = ext.lower()[d];
-    assert(gfext.contains(org1));
-
-    // HDF5 wants ranks to be >= 1
-    const int rank = outdim > 0 ? outdim : 1;
-    vector<hsize_t> mem_shape(dim);
-    vector<hsize_t> slice_shape(rank, 1);
-    hsize_t num_elems = 1;
-    for (int d = 0; d < dim; d++) {
-      mem_shape[dim - 1 - d] = data_ext.shape()[d] / data_ext.stride()[d];
-      if (d < outdim) {
-        slice_shape[outdim - 1 - d] = ext.shape()[d] / ext.stride()[d];
-        num_elems *= slice_shape[outdim - 1 - d];
-      }
+  if (output_bbox_overlaps_data_extent) {
+    ostringstream datasetname_suffix;
+    datasetname_suffix << " it=" << cctk_iteration << " tl=" << tl;
+    if (mglevels > 1)
+      datasetname_suffix << " ml=" << ml;
+    if (groupdata.grouptype == CCTK_GF) {
+      if (maps > 1)
+        datasetname_suffix << " m=" << m;
+      datasetname_suffix << " rl=" << rl;
+    }
+    if (arrdata.at(gi).at(m).dd->light_boxes.at(ml).at(rl).size() > 1 and
+        groupdata.disttype != CCTK_DISTRIB_CONSTANT) {
+      datasetname_suffix << " c=" << output_component;
     }
 
-    ivect slice_lower(org - data_ext.lower());
-    for (int d = 0; d < outdim; d++) {
-      slice_lower[dirs[d]] = ext.lower()[d] - data_ext.lower()[dirs[d]];
+    // enable compression and checksums if requested
+    hid_t plist;
+    HDF5_ERROR(plist = H5Pcreate(H5P_DATASET_CREATE));
+    // enable checksums if requested
+    if (use_checksums) {
+      HDF5_ERROR(H5Pset_filter(plist, H5Z_FILTER_FLETCHER32, 0, 0, 0));
     }
-    ivect slice_upper(slice_lower);
-    for (int d = 0; d < outdim; d++) {
-      slice_upper[dirs[d]] = ext.upper()[d] - data_ext.lower()[dirs[d]];
-    }
-    slice_lower /= gfext.stride();
-    slice_upper /= gfext.stride();
 
-    slice_start_size_t slice_start[dim];
-    hsize_t slice_count[dim];
-    for (int d = 0; d < dim; d++) {
-      slice_start[dim - 1 - d] = slice_lower[d];
-      slice_count[dim - 1 - d] = slice_upper[d] - slice_lower[d] + 1;
-    }
-    const hsize_t size = num_elems * H5Tget_size(slice_type);
-    if (compression_level and size > hsize_t(minimum_size_for_compression)) {
-      HDF5_ERROR(H5Pset_shuffle(plist));
-      HDF5_ERROR(H5Pset_deflate(plist, compression_level));
-    }
-    if (compression_level or use_checksums) {
-      HDF5_ERROR(H5Pset_chunk(plist, slice_shape.size(), &slice_shape[0]));
-    }
-    hid_t slice_space, mem_space;
-    HDF5_ERROR(slice_space =
-                   H5Screate_simple(slice_shape.size(), &slice_shape[0], NULL));
-    HDF5_ERROR(mem_space =
-                   H5Screate_simple(mem_shape.size(), &mem_shape[0], NULL));
-    HDF5_ERROR(H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, slice_start, NULL,
-                                   slice_count, NULL));
+    // enable datatype conversion if requested
+    const hid_t mem_type = CCTKtoHDF5_Datatype(cctkGH, groupdata.vartype, false);
+    const hid_t slice_type =
+        CCTKtoHDF5_Datatype(cctkGH, groupdata.vartype, out_single_precision);
 
-    vector<int> iorigin(rank, 0);
-    vector<int> ioffset(rank, 0);
-    vector<int> ioffsetdenom(rank, 1);
-    vector<double> delta(rank, 0), origin(rank, 0);
-    vector<int> bbox(2 * rank, 0), nghostzones(rank, 0);
-    for (int d = 0; d < outdim; d++) {
-      assert(gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]] >= 0);
-      iorigin[d] = ext.lower()[d];
-      delta[d] = 0;
-      origin[d] = coord_lower[dirs[d]];
-      if (gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]] > 0) {
-        delta[d] = (coord_upper[dirs[d]] - coord_lower[dirs[d]]) /
-                   (gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]]) *
-                   gfext.stride()[dirs[d]];
-        origin[d] += (org1[dirs[d]] - gfext.lower()[dirs[d]]) * delta[d];
-        ioffsetdenom[d] = gfext.stride()[dirs[d]];
-        ioffset[d] =
-            (iorigin[d] % gfext.stride()[dirs[d]] + gfext.stride()[dirs[d]]) %
-            gfext.stride()[dirs[d]];
-        assert((iorigin[d] - ioffset[d]) % gfext.stride()[dirs[d]] == 0);
-        iorigin[d] = (iorigin[d] - ioffset[d]) / gfext.stride()[dirs[d]];
-      }
-    }
-    string active;
-    {
-      // Determine extent of hyperslab that is output
-      ivect lo = gfext.lower();
-      ivect up = gfext.upper();
-      ivect str = gfext.stride();
-      for (int d = 0; d < dim; ++d) {
-        bool isoutdir = false;
-        for (int e = 0; e < outdim; ++e)
-          isoutdir |= d == dirs[e];
-        if (!isoutdir) {
-          lo[d] = org[d];
-          up[d] = org[d];
+    if (not diagonal_output) { // not outputting the diagonal
+
+      // there are currently three "extent" variables in use:
+      // data_ext - the extent of the component in memory
+      // gfext    - the bounding box of data to be written
+      // ext      - gfext in the output dimension(s)
+      // data_ext and gfext are used to construct the hyperslab location and
+      // size, ext is just a shorthand.
+      // TODO: maybe transfer only ext instead of data_ext in copy_data
+      const vect<int, outdim> lo = gfext.lower()[dirs];
+      const vect<int, outdim> up = gfext.upper()[dirs];
+      const vect<int, outdim> str = gfext.stride()[dirs];
+      const bbox<int, outdim> ext(lo, up, str);
+      const dh *const dd = arrdata.at(gi).at(m).dd;
+      const ibbox &data_ext = dd->light_boxes.at(ml).at(rl).at(c).exterior;
+
+      // Check whether the output origin is contained in the extent of
+      // the data that should be output
+      ivect org1(org);
+      for (int d = 0; d < outdim; ++d)
+        org1[dirs[d]] = ext.lower()[d];
+      assert(gfext.contains(org1));
+
+      // HDF5 wants ranks to be >= 1
+      const int rank = outdim > 0 ? outdim : 1;
+      vector<hsize_t> mem_shape(dim);
+      vector<hsize_t> slice_shape(rank, 1);
+      hsize_t num_elems = 1;
+      for (int d = 0; d < dim; d++) {
+        mem_shape[dim - 1 - d] = data_ext.shape()[d] / data_ext.stride()[d];
+        if (d < outdim) {
+          slice_shape[outdim - 1 - d] = ext.shape()[d] / ext.stride()[d];
+          num_elems *= slice_shape[outdim - 1 - d];
         }
       }
-      const ibbox outputslab(lo, up, str);
-      // Intersect active region with this hyperslab
-      const int lc = vhh.at(m)->get_local_component(rl, c);
-      const ibset &active0 = vdd.at(m)->level_boxes.at(ml).at(rl).active;
-      const ibset active1 = active0 & outputslab;
-      // Reduce dimensionality of active region
-      bboxset<int, outdim> active2;
-      for (ibset::const_iterator bi = active1.begin(), be = active1.end();
-           bi != be; ++bi) {
-        const ibbox &box0 = *bi;
-        const vect<int, outdim> lo = box0.lower()[dirs];
-        const vect<int, outdim> up = box0.upper()[dirs];
-        const vect<int, outdim> str = box0.stride()[dirs];
-        const ::bbox<int, outdim> box(lo, up, str);
-        active2 += box;
-      }
-      ostringstream buf;
-      buf << active2;
-      active = buf.str();
-    }
 
-    // store cctk_bbox and cctk_nghostzones (for grid arrays only)
-    if (groupdata.grouptype != CCTK_SCALAR) {
-      const b2vect obnds = vhh.at(m)->outer_boundaries(rl, c);
-      const i2vect ghost_width = arrdata.at(gi).at(m).dd->ghost_widths.AT(rl);
+      ivect slice_lower(org - data_ext.lower());
       for (int d = 0; d < outdim; d++) {
-        nghostzones[d] = output_ghost_points ? ghost_width[0][dirs[d]] : 0;
-        assert(all(ghost_width[0] == ghost_width[1]));
-
-        bbox[2 * d] = obnds[0][dirs[d]];
-        bbox[2 * d + 1] = obnds[1][dirs[d]];
+        slice_lower[dirs[d]] = ext.lower()[d] - data_ext.lower()[dirs[d]];
       }
-    }
-
-    // now loop over all variables
-    for (size_t n = 0; n < gfdatas.size(); n++) {
-
-      // create a unique name for this variable's dataset
-      char *fullname = CCTK_FullName(vi + n);
-      string datasetname(fullname);
-      datasetname.append(datasetname_suffix.str());
-
-      // remove an already existing dataset of the same name
-      ioRequest *request = slice_requests.at(vi + n);
-      if (not request) {
-#ifdef IOUTIL_PARSER_HAS_OUT_DT
-        request = IOUtil_DefaultIORequest(cctkGH, vi + n, 1, -1.0);
-#else
-        request = IOUtil_DefaultIORequest(cctkGH, vi + n, 1);
-#endif
+      ivect slice_upper(slice_lower);
+      for (int d = 0; d < outdim; d++) {
+        slice_upper[dirs[d]] = ext.upper()[d] - data_ext.lower()[dirs[d]];
       }
-      if (request->check_exist) {
-        H5E_BEGIN_TRY {
-          H5Gunlink(file, datasetname.c_str());
-          if (indexfile != -1)
-            H5Gunlink(indexfile, datasetname.c_str());
+      slice_lower /= gfext.stride();
+      slice_upper /= gfext.stride();
+
+      slice_start_size_t slice_start[dim];
+      hsize_t slice_count[dim];
+      for (int d = 0; d < dim; d++) {
+        slice_start[dim - 1 - d] = slice_lower[d];
+        slice_count[dim - 1 - d] = slice_upper[d] - slice_lower[d] + 1;
+      }
+      const hsize_t size = num_elems * H5Tget_size(slice_type);
+      if (compression_level and size > hsize_t(minimum_size_for_compression)) {
+        HDF5_ERROR(H5Pset_shuffle(plist));
+        HDF5_ERROR(H5Pset_deflate(plist, compression_level));
+      }
+      if (compression_level or use_checksums) {
+        HDF5_ERROR(H5Pset_chunk(plist, slice_shape.size(), &slice_shape[0]));
+      }
+      hid_t slice_space, mem_space;
+      HDF5_ERROR(slice_space =
+                     H5Screate_simple(slice_shape.size(), &slice_shape[0], NULL));
+      HDF5_ERROR(mem_space =
+                     H5Screate_simple(mem_shape.size(), &mem_shape[0], NULL));
+      HDF5_ERROR(H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, slice_start, NULL,
+                                     slice_count, NULL));
+
+      vector<int> iorigin(rank, 0);
+      vector<int> ioffset(rank, 0);
+      vector<int> ioffsetdenom(rank, 1);
+      vector<double> delta(rank, 0), origin(rank, 0);
+      vector<int> bbox(2 * rank, 0), nghostzones(rank, 0);
+      for (int d = 0; d < outdim; d++) {
+        assert(gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]] >= 0);
+        iorigin[d] = ext.lower()[d];
+        delta[d] = 0;
+        origin[d] = coord_lower[dirs[d]];
+        if (gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]] > 0) {
+          delta[d] = (coord_upper[dirs[d]] - coord_lower[dirs[d]]) /
+                     (gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]]) *
+                     gfext.stride()[dirs[d]];
+          origin[d] += (org1[dirs[d]] - gfext.lower()[dirs[d]]) * delta[d];
+          ioffsetdenom[d] = gfext.stride()[dirs[d]];
+          ioffset[d] =
+              (iorigin[d] % gfext.stride()[dirs[d]] + gfext.stride()[dirs[d]]) %
+              gfext.stride()[dirs[d]];
+          assert((iorigin[d] - ioffset[d]) % gfext.stride()[dirs[d]] == 0);
+          iorigin[d] = (iorigin[d] - ioffset[d]) / gfext.stride()[dirs[d]];
         }
-        H5E_END_TRY;
       }
-      // free I/O request structure
-      if (request != slice_requests.at(vi + n)) {
-        IOUtil_FreeIORequest(&request);
-      }
-
-      // write the dataset
-      hid_t dataset, index_dataset;
-      HDF5_ERROR(dataset = H5Dcreate(file, datasetname.c_str(), slice_type,
-                                     slice_space, plist));
-      if (indexfile != -1) {
-        HDF5_ERROR(index_dataset = H5Dcreate(indexfile, datasetname.c_str(),
-                                             slice_type, slice_space, plist));
-      }
-
-      HDF5_ERROR(H5Dwrite(dataset, mem_type, mem_space, H5S_ALL, H5P_DEFAULT,
-                          gfdatas[n]->storage()));
-      error_count += AddSliceAttributes(
-          cctkGH, fullname, rl, ml, m, tl, origin, delta, iorigin, ioffset,
-          ioffsetdenom, bbox, nghostzones, active, dataset, slice_shape, false);
-      HDF5_ERROR(H5Dclose(dataset));
-
-      if (indexfile != -1) {
-        error_count += AddSliceAttributes(
-            cctkGH, fullname, rl, ml, m, tl, origin, delta, iorigin, ioffset,
-            ioffsetdenom, bbox, nghostzones, active, index_dataset, slice_shape,
-            true);
-        HDF5_ERROR(H5Dclose(index_dataset));
-      }
-      free(fullname);
-
-      io_bytes +=
-          H5Sget_simple_extent_npoints(slice_space) * H5Tget_size(slice_type);
-    } // for n
-
-    HDF5_ERROR(H5Sclose(mem_space));
-    HDF5_ERROR(H5Sclose(slice_space));
-
-  } else { // taking care of the diagonal
-
-    const ivect lo = gfext.lower();
-    const ivect up = gfext.upper();
-    const ivect str = gfext.stride();
-    const ibbox ext(lo, up, str);
-
-    gh const &hh = *vhh.at(m);
-    ibbox const &base = hh.baseextents.at(mglevel).at(reflevel);
-
-    assert(base.stride()[0] == base.stride()[1] and
-           base.stride()[0] == base.stride()[2]);
-
-    // count the number of points on the diagonal
-    hsize_t npoints = 0;
-    for (int i = maxval(base.lower()); i <= minval(base.upper());
-         i += base.stride()[0]) {
-      if (gfext.contains(i)) {
-        ++npoints;
-      }
-    }
-    assert(npoints > 0);
-
-    // allocate a contiguous buffer for the diagonal points
-    vector<char> buffer(CCTK_VarTypeSize(groupdata.vartype) * npoints *
-                        gfdatas.size());
-
-    // copy diagonal points into contiguous buffer
-    hsize_t offset = 0;
-    for (int i = maxval(base.lower()); i <= minval(base.upper());
-         i += base.stride()[0]) {
-      ivect const pos = ivect(i, i, i);
-      if (gfext.contains(pos)) {
-        for (size_t n = 0; n < gfdatas.size(); n++) {
-          switch (specific_cactus_type(groupdata.vartype)) {
-#define TYPECASE(N, T)                                                         \
-  case N: {                                                                    \
-    T *typed_buffer = (T *)&buffer.front();                                    \
-    typed_buffer[offset + n * npoints] =                                       \
-        (*(const data<T> *)gfdatas.at(n))[pos];                                \
-    break;                                                                     \
-  }
-#include "typecase.hh"
-#undef TYPECASE
+      string active;
+      {
+        // Determine extent of hyperslab that is output
+        ivect lo = gfext.lower();
+        ivect up = gfext.upper();
+        ivect str = gfext.stride();
+        for (int d = 0; d < dim; ++d) {
+          bool isoutdir = false;
+          for (int e = 0; e < outdim; ++e)
+            isoutdir |= d == dirs[e];
+          if (!isoutdir) {
+            lo[d] = org[d];
+            up[d] = org[d];
           }
         }
-        ++offset;
+        const ibbox outputslab(lo, up, str);
+        // Intersect active region with this hyperslab
+        const int lc = vhh.at(m)->get_local_component(rl, c);
+        const ibset &active0 = vdd.at(m)->level_boxes.at(ml).at(rl).active;
+        const ibset active1 = active0 & outputslab;
+        // Reduce dimensionality of active region
+        bboxset<int, outdim> active2;
+        for (ibset::const_iterator bi = active1.begin(), be = active1.end();
+             bi != be; ++bi) {
+          const ibbox &box0 = *bi;
+          const vect<int, outdim> lo = box0.lower()[dirs];
+          const vect<int, outdim> up = box0.upper()[dirs];
+          const vect<int, outdim> str = box0.stride()[dirs];
+          const ::bbox<int, outdim> box(lo, up, str);
+          active2 += box;
+        }
+        ostringstream buf;
+        buf << active2;
+        active = buf.str();
       }
-    }
-    assert(offset == npoints);
 
-    const hsize_t size = npoints * H5Tget_size(slice_type);
-    if (compression_level and size > hsize_t(minimum_size_for_compression)) {
-      HDF5_ERROR(H5Pset_shuffle(plist));
-      HDF5_ERROR(H5Pset_deflate(plist, compression_level));
-    }
-    if (compression_level or use_checksums) {
-      HDF5_ERROR(H5Pset_chunk(plist, 1, &npoints));
-    }
-    hid_t slice_space;
-    HDF5_ERROR(slice_space = H5Screate_simple(1, &npoints, NULL));
+      // store cctk_bbox and cctk_nghostzones (for grid arrays only)
+      if (groupdata.grouptype != CCTK_SCALAR) {
+        const b2vect obnds = vhh.at(m)->outer_boundaries(rl, c);
+        const i2vect ghost_width = arrdata.at(gi).at(m).dd->ghost_widths.AT(rl);
+        for (int d = 0; d < outdim; d++) {
+          nghostzones[d] = output_ghost_points ? ghost_width[0][dirs[d]] : 0;
+          assert(all(ghost_width[0] == ghost_width[1]));
 
-    // loop over all variables and write out diagonals
-    for (size_t n = 0; n < gfdatas.size(); n++) {
+          bbox[2 * d] = obnds[0][dirs[d]];
+          bbox[2 * d + 1] = obnds[1][dirs[d]];
+        }
+      }
 
-      // create a unique name for this variable's dataset
-      char *fullname = CCTK_FullName(vi + n);
-      string datasetname(fullname);
-      free(fullname);
-      datasetname.append(datasetname_suffix.str());
+      // now loop over all variables
+      for (size_t n = 0; n < gfdatas.size(); n++) {
 
-      // remove an already existing dataset of the same name
-      ioRequest *request = slice_requests.at(vi + n);
-      if (not request) {
+        // create a unique name for this variable's dataset
+        char *fullname = CCTK_FullName(vi + n);
+        string datasetname(fullname);
+        datasetname.append(datasetname_suffix.str());
+
+        // remove an already existing dataset of the same name
+        ioRequest *request = slice_requests.at(vi + n);
+        if (not request) {
 #ifdef IOUTIL_PARSER_HAS_OUT_DT
-        request = IOUtil_DefaultIORequest(cctkGH, vi + n, 1, -1.0);
+          request = IOUtil_DefaultIORequest(cctkGH, vi + n, 1, -1.0);
 #else
-        request = IOUtil_DefaultIORequest(cctkGH, vi + n, 1);
+          request = IOUtil_DefaultIORequest(cctkGH, vi + n, 1);
 #endif
-      }
-      if (request->check_exist) {
-        H5E_BEGIN_TRY { H5Gunlink(file, datasetname.c_str()); }
-        H5E_END_TRY;
-      }
-      // free I/O request structure
-      if (request != slice_requests.at(vi + n)) {
-        IOUtil_FreeIORequest(&request);
-      }
+        }
+        if (request->check_exist) {
+          H5E_BEGIN_TRY {
+            H5Gunlink(file, datasetname.c_str());
+            if (indexfile != -1)
+              H5Gunlink(indexfile, datasetname.c_str());
+          }
+          H5E_END_TRY;
+        }
+        // free I/O request structure
+        if (request != slice_requests.at(vi + n)) {
+          IOUtil_FreeIORequest(&request);
+        }
 
-      // write the dataset
-      hid_t dataset;
-      HDF5_ERROR(dataset = H5Dcreate(file, datasetname.c_str(), slice_type,
-                                     slice_space, plist));
-      HDF5_ERROR(H5Dwrite(dataset, mem_type, H5S_ALL, H5S_ALL, H5P_DEFAULT,
-                          &buffer.front() + n * npoints * gfdatas.size()));
-      HDF5_ERROR(H5Dclose(dataset));
+        // write the dataset
+        hid_t dataset, index_dataset;
+        HDF5_ERROR(dataset = H5Dcreate(file, datasetname.c_str(), slice_type,
+                                       slice_space, plist));
+        if (indexfile != -1) {
+          HDF5_ERROR(index_dataset = H5Dcreate(indexfile, datasetname.c_str(),
+                                               slice_type, slice_space, plist));
+        }
 
-      io_bytes +=
-          H5Sget_simple_extent_npoints(slice_space) * H5Tget_size(slice_type);
+        HDF5_ERROR(H5Dwrite(dataset, mem_type, mem_space, H5S_ALL, H5P_DEFAULT,
+                            gfdatas[n]->storage()));
+        error_count += AddSliceAttributes(
+            cctk_time, cctk_iteration,
+            fullname, rl, ml, m, tl, origin, delta, iorigin, ioffset,
+            ioffsetdenom, bbox, nghostzones, active, dataset, slice_shape, false);
+        HDF5_ERROR(H5Dclose(dataset));
+
+        if (indexfile != -1) {
+          error_count += AddSliceAttributes(
+              cctk_time, cctk_iteration,
+              fullname, rl, ml, m, tl, origin, delta, iorigin, ioffset,
+              ioffsetdenom, bbox, nghostzones, active, index_dataset, slice_shape,
+              true);
+          HDF5_ERROR(H5Dclose(index_dataset));
+        }
+        free(fullname);
+
+        io_bytes +=
+            H5Sget_simple_extent_npoints(slice_space) * H5Tget_size(slice_type);
+      } // for n
+
+      HDF5_ERROR(H5Sclose(mem_space));
+      HDF5_ERROR(H5Sclose(slice_space));
+
+    } else { // taking care of the diagonal
+
+      const ivect lo = gfext.lower();
+      const ivect up = gfext.upper();
+      const ivect str = gfext.stride();
+      const ibbox ext(lo, up, str);
+
+      gh const &hh = *vhh.at(m);
+      ibbox const &base = hh.baseextents.at(mglevel).at(reflevel);
+
+      assert(base.stride()[0] == base.stride()[1] and
+             base.stride()[0] == base.stride()[2]);
+
+      // count the number of points on the diagonal
+      hsize_t npoints = 0;
+      for (int i = maxval(base.lower()); i <= minval(base.upper());
+           i += base.stride()[0]) {
+        if (gfext.contains(i)) {
+          ++npoints;
+        }
+      }
+      assert(npoints > 0);
+
+      // allocate a contiguous buffer for the diagonal points
+      vector<char> buffer(CCTK_VarTypeSize(groupdata.vartype) * npoints *
+                          gfdatas.size());
+
+      // copy diagonal points into contiguous buffer
+      hsize_t offset = 0;
+      for (int i = maxval(base.lower()); i <= minval(base.upper());
+           i += base.stride()[0]) {
+        ivect const pos = ivect(i, i, i);
+        if (gfext.contains(pos)) {
+          for (size_t n = 0; n < gfdatas.size(); n++) {
+            switch (specific_cactus_type(groupdata.vartype)) {
+#define TYPECASE(N, T)                                                         \
+    case N: {                                                                    \
+      T *typed_buffer = (T *)&buffer.front();                                    \
+      typed_buffer[offset + n * npoints] =                                       \
+          (*(const data<T> *)gfdatas.at(n))[pos];                                \
+      break;                                                                     \
     }
+#include "typecase.hh"
+#undef TYPECASE
+            }
+          }
+          ++offset;
+        }
+      }
+      assert(offset == npoints);
 
-    HDF5_ERROR(H5Sclose(slice_space));
+      const hsize_t size = npoints * H5Tget_size(slice_type);
+      if (compression_level and size > hsize_t(minimum_size_for_compression)) {
+        HDF5_ERROR(H5Pset_shuffle(plist));
+        HDF5_ERROR(H5Pset_deflate(plist, compression_level));
+      }
+      if (compression_level or use_checksums) {
+        HDF5_ERROR(H5Pset_chunk(plist, 1, &npoints));
+      }
+      hid_t slice_space;
+      HDF5_ERROR(slice_space = H5Screate_simple(1, &npoints, NULL));
 
-  } // if(not diagonal_output)
+      // loop over all variables and write out diagonals
+      for (size_t n = 0; n < gfdatas.size(); n++) {
 
-  HDF5_ERROR(H5Pclose(plist));
+        // create a unique name for this variable's dataset
+        char *fullname = CCTK_FullName(vi + n);
+        string datasetname(fullname);
+        free(fullname);
+        datasetname.append(datasetname_suffix.str());
+
+        // remove an already existing dataset of the same name
+        ioRequest *request = slice_requests.at(vi + n);
+        if (not request) {
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
+          request = IOUtil_DefaultIORequest(cctkGH, vi + n, 1, -1.0);
+#else
+          request = IOUtil_DefaultIORequest(cctkGH, vi + n, 1);
+#endif
+        }
+        if (request->check_exist) {
+          H5E_BEGIN_TRY { H5Gunlink(file, datasetname.c_str()); }
+          H5E_END_TRY;
+        }
+        // free I/O request structure
+        if (request != slice_requests.at(vi + n)) {
+          IOUtil_FreeIORequest(&request);
+        }
+
+        // write the dataset
+        hid_t dataset;
+        HDF5_ERROR(dataset = H5Dcreate(file, datasetname.c_str(), slice_type,
+                                       slice_space, plist));
+        HDF5_ERROR(H5Dwrite(dataset, mem_type, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+                            &buffer.front() + n * npoints * gfdatas.size()));
+        HDF5_ERROR(H5Dclose(dataset));
+
+        io_bytes +=
+            H5Sget_simple_extent_npoints(slice_space) * H5Tget_size(slice_type);
+      }
+
+      HDF5_ERROR(H5Sclose(slice_space));
+
+    } // if(not diagonal_output)
+
+    HDF5_ERROR(H5Pclose(plist));
+  }
+
+  HDF5_ERROR(H5Fclose(file));
+  if(indexfile >= 0)
+    HDF5_ERROR(H5Fclose(indexfile));
 
   return error_count;
 }
