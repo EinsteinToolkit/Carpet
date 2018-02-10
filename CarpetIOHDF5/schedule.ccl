@@ -8,6 +8,13 @@ schedule CarpetIOHDF5_Startup at STARTUP after IOUtil_Startup
   LANG: C
 } "Startup routine"
 
+# this needs to happen before Carpet's Driver Shutdown routine so that the grid
+# layout data structures are still intact
+schedule CarpetIOHDF5_Shutdown at SHUTDOWN
+{
+  LANG: C
+} "Shutdown routine"
+
 schedule CarpetIOHDF5_Init at INITIAL
 {
   LANG: C

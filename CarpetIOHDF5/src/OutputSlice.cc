@@ -6,9 +6,13 @@
 #include <cstring>
 
 #include <map>
+#include <queue>
 #include <string>
 
+#include <pthread.h>
+
 #include <cctk.h>
+#include <cctk_Functions.h>
 #include <util_Table.h>
 
 #include "CactusBase/IOUtil/src/ioGH.h"
@@ -34,6 +38,17 @@ namespace CarpetIOHDF5 {
 
 using namespace std;
 using namespace Carpet;
+
+// todo warp all this in a class
+typedef function<void(void)> io_task;
+bool io_worker_active = false;
+bool io_tried_create_worker = false;
+pthread_t io_worker;
+pthread_mutex_t io_lock;
+// all variables below are protected by io_lock
+std::queue<io_task> io_tasks;
+pthread_cond_t io_ready, io_queue_empty;
+template <int outdim> bool IOHDF5<outdim>::io_active;
 
 // routines which are independent of the output dimension
 static ibset GetOutputBBoxes(const cGH *cctkGH, int group, int rl, int m, int c,
@@ -208,6 +223,43 @@ template <int outdim> int IOHDF5<outdim>::OutputGH(const cGH *const cctkGH) {
 
   timer.start();
 
+  if(!io_worker_active && !io_tried_create_worker) {
+    io_tried_create_worker = true;
+    pthread_mutex_init(&io_lock, NULL);
+    pthread_cond_init(&io_ready, NULL);
+    pthread_cond_init(&io_queue_empty, NULL);
+    auto worker_proc = [](void*) {
+      while(true) {
+        pthread_mutex_lock(&io_lock);
+        while(io_tasks.empty())
+          pthread_cond_wait(&io_ready, &io_lock);
+        auto io_task = io_tasks.front();
+        io_tasks.pop();
+        if(io_tasks.empty())
+          pthread_cond_signal(&io_queue_empty);
+        pthread_mutex_unlock(&io_lock);
+        io_task();
+      }
+      return (void*)NULL;
+    };
+    const int ierr = pthread_create(&io_worker, NULL, worker_proc, NULL);
+    if(ierr == 0) {
+      io_worker_active = true;
+    } else {
+      CCTK_VWARN(2, "Could not creaet IO thread falling back to serial IO: %s", strerror(errno));
+    }
+  }
+
+  // wait for previous IO for this dim to finish so that the slice parameters
+  // can be re-used
+  if(io_worker_active) {
+    pthread_mutex_lock(&io_lock);
+    while(io_active)
+      pthread_cond_wait(&io_queue_empty, &io_lock);
+    io_active = true;
+    pthread_mutex_unlock(&io_lock);
+  }
+
   CheckSteerableParameters(cctkGH);
   if (strcmp(my_out_slice_vars, "")) {
     for (int vi = 0; vi < CCTK_NumVars(); ++vi) {
@@ -216,6 +268,22 @@ template <int outdim> int IOHDF5<outdim>::OutputGH(const cGH *const cctkGH) {
       }
     }
   }
+
+  if(io_worker_active) {
+    // TODO: this relies on the worker having a fifo queue which is bad idea to
+    // rely on
+    auto done_fn = []{
+      pthread_mutex_lock(&io_lock);
+      io_active = false;
+      pthread_cond_signal(&io_queue_empty);
+      pthread_mutex_unlock(&io_lock);
+    };
+    pthread_mutex_lock(&io_lock);
+    io_tasks.push(done_fn);
+    pthread_cond_signal(&io_ready);
+    pthread_mutex_unlock(&io_lock);
+  }
+
   timer.stop();
 
   return 0;
@@ -635,7 +703,7 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
               HDF5_ERROR(clone_index_file = H5Freopen(index_file));
             const CCTK_INT iteration = cctkGH->cctk_iteration;
             const CCTK_REAL time = cctkGH->cctk_time;
-            auto write_fn = [=](){
+            io_task write_fn = [=](){
               int c_offset = 0;
               for (ibset::const_iterator ext = exts.begin(); ext != exts.end();
                    ++ext, ++c_offset) {
@@ -652,9 +720,14 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
               } // for n
               delete pool; // actually get rid of memory
             };
-            // TODO: use a single pthread for all IO
-//#pragma omp task
-            write_fn();
+            if(io_worker_active) {
+              pthread_mutex_lock(&io_lock);
+              io_tasks.push(write_fn);
+              pthread_cond_signal(&io_ready);
+              pthread_mutex_unlock(&io_lock);
+            } else {
+              write_fn();
+            }
           }
 
         } // for tl
@@ -1613,6 +1686,39 @@ template <int outdim> int IOHDF5<outdim>::IOProcForProc(int proc) {
   // according to IOUtil::SetupGH a proc with rank % nioprocs == 0 is an
   // ioproc
   return (proc / ioproc_every) * ioproc_every;
+}
+
+extern "C" void CarpetIOHDF5_PreRecompose(const CCTK_POINTER_TO_CONST cctkGH_)
+{
+  if(io_worker_active) {
+    // wait for all IO to finish
+    pthread_mutex_lock(&io_lock);
+    while(!io_tasks.empty())
+      pthread_cond_wait(&io_queue_empty, &io_lock);
+    pthread_mutex_unlock(&io_lock);
+  }
+}
+
+extern "C" int CarpetIOHDF5_Shutdown(void)
+{
+  if(io_worker_active) {
+    // wait for all IO to finish
+    pthread_mutex_lock(&io_lock);
+    while(!io_tasks.empty())
+      pthread_cond_wait(&io_queue_empty, &io_lock);
+    pthread_mutex_unlock(&io_lock);
+
+    pthread_cancel(io_worker);
+    pthread_join(io_worker, NULL);
+    assert(io_tasks.empty());
+    io_worker_active = false;
+
+    pthread_cond_destroy(&io_queue_empty);
+    pthread_cond_destroy(&io_ready);
+    pthread_mutex_destroy(&io_lock);
+  }
+
+  return 1;
 }
 
 // Explicit instantiation for all slice output dimensions

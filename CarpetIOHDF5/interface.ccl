@@ -73,6 +73,12 @@ PROVIDES FUNCTION IO_SetCheckpointGroups \
     WITH CarpetIOHDF5_SetCheckpointGroups \
     LANGUAGE C
 
+# Callback from Carpet to be called before the grid structure changes so that
+# pendion IO can finish
+# The true prototype of the routine below:
+#   int Carpet_PreRecompose (cGH const * cctkGH);
+void FUNCTION Carpet_PreRecompose (CCTK_POINTER_TO_CONST IN cctkGH)
+PROVIDES FUNCTION Carpet_PreRecompose WITH CarpetIOHDF5_PreRecompose LANGUAGE C
 
 
 # Return a pointer to an unmodifiable C string

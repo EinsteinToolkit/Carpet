@@ -167,6 +167,8 @@ template <int outdim> struct IOHDF5 {
   static int ioproc;
   static int ioproc_every;
 
+  static bool io_active;
+
   // Scheduled functions
   static int Startup();
 
