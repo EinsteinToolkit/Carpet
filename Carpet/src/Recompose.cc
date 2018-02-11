@@ -152,6 +152,8 @@ bool Regrid(cGH const *const cctkGH, bool const force_recompose,
   bool const have_regridmaps = CCTK_IsFunctionAliased("Carpet_RegridMaps");
   bool const use_regridmaps = regrid_in_level_mode and have_regridmaps;
 
+  bool const have_prerecompose = CCTK_IsFunctionAliased("Carpet_PreRecompose");
+
   if (not use_regridmaps and not have_regrid) {
     static bool didtell = false;
     if (maxreflevels > 1 and not didtell) {
@@ -190,6 +192,8 @@ bool Regrid(cGH const *const cctkGH, bool const force_recompose,
       did_change = did_change or do_recompose;
 
       if (do_recompose) {
+        if(have_prerecompose)
+          Carpet_PreRecompose(cctkGH);
         RegridMap(cctkGH, map, superregss, regsss, do_init);
       }
     }
@@ -219,6 +223,8 @@ bool Regrid(cGH const *const cctkGH, bool const force_recompose,
     did_change = did_change or do_recompose;
 
     if (do_recompose) {
+      if(have_prerecompose)
+        Carpet_PreRecompose(cctkGH);
       BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
         gh::rregs const &superregss = superregsss.AT(map);
         gh::mregs const &regsss = regssss.AT(map);

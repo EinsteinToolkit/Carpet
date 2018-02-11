@@ -390,6 +390,12 @@ CCTK_INT FUNCTION Carpet_RegridMaps (CCTK_POINTER_TO_CONST IN cctkGH, \
                                      CCTK_INT IN force)
 USES FUNCTION Carpet_RegridMaps
 
+# Callback from Carpet to be called before the grid structure changes so that
+# pendion IO can finish
+# The true prototype of the routine below:
+#   int Carpet_PreRecompose (cGH const * cctkGH);
+void FUNCTION Carpet_PreRecompose (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION Carpet_PreRecompose
 
 
 # function to check whether existing output files should be truncated or not
