@@ -4,6 +4,7 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Arguments_CarpetIntegrateTest.h"
 
 #include "carpet.hh"
 #include "defs.hh"
@@ -14,7 +15,7 @@
 extern "C" void CarpetIntegrate_Global(CCTK_ARGUMENTS);
 
 void CarpetIntegrate_Global(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetIntegrate_Global;
   DECLARE_CCTK_PARAMETERS;
 
   using namespace std;

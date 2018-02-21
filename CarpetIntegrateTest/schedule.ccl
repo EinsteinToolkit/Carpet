@@ -3,6 +3,7 @@ STORAGE: integrand[3]
 schedule CarpetIntegrate_Local AT CCTK_INITIAL
 {
   LANG: C
+  WRITES: CarpetIntegrateTest::integrand(everywhere)
 } "Setup integrand function"
 
 schedule CarpetIntegrate_Local AT CCTK_EVOL

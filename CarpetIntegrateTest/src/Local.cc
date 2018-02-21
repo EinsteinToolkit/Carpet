@@ -1,11 +1,12 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Arguments_CarpetIntegrateTest.h"
 
 extern "C" void CarpetIntegrate_Local(CCTK_ARGUMENTS);
 
 void CarpetIntegrate_Local(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetIntegrate_Local;
   DECLARE_CCTK_PARAMETERS;
 
   int nx = cctk_lsh[0];
