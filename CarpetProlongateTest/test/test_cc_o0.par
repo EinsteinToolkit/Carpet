@@ -29,6 +29,9 @@ Carpet::refinement_centering = "cell"
 Carpet::prolongation_order_space = 0
 Carpet::prolongation_order_time  = 2
 
+Carpet::use_psync = "yes"
+Carpet::psync_only = "yes"
+
 # Restriction introduces an error that we do not want to test here
 Carpet::suppress_restriction     = yes
 
@@ -39,7 +42,7 @@ CarpetLib::poison_new_memory  = yes
 
 
 
-ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
+ActiveThorns = "Boundary2 CartGrid3D CoordBase SymBase"
 
 CoordBase::domainsize = "minmax"
 

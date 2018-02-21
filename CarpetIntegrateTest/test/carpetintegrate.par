@@ -57,6 +57,9 @@ coordbase::boundary_shiftout_z_lower = 1
 carpet::use_buffer_zones        = yes
 carpet::num_integrator_substeps = 3
 
+Carpet::use_psync = "yes"
+Carpet::psync_only = "yes"
+
 carpet::max_refinement_levels   = 12
 carpetregrid::refinement_levels = 3
 
