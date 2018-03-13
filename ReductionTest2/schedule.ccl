@@ -8,6 +8,7 @@ SCHEDULE CoM2_Local AT CCTK_INITIAL AFTER Whisky_Initial
   
   LANG: C
   SYNC: redvars
+  WRITES: ReductionTest2::redvar(everywhere)
 } "Setup integrands for CoM calculation"
 
 SCHEDULE CoM2_Local AT CCTK_EVOL AFTER MoL_Evolution

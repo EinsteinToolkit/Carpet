@@ -10,7 +10,7 @@ ActiveThorns	=  "	time
 			cartgrid3d 
 			coordbase 
 			mol 
-			boundary 
+			boundary2
 			spacemask 
 			carpetiobasic 
 			ioutil 
@@ -78,6 +78,8 @@ Carpet::init_each_timelevel 			= "no"
 
 #--- Grid Setup and carpet parameters
 
+Carpet::use_psync = "yes"
+Carpet::psync_only = "yes"
 
 carpet::buffer_width 				= 6
 

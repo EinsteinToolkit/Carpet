@@ -1,12 +1,13 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Arguments_ReductionTest2.h"
 #include "util_Table.h"
 #include <assert.h>
 #include <math.h>
 
 void CoM2_Local(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CoM2_Local;
   DECLARE_CCTK_PARAMETERS;
 
   int i, j, k, index;
