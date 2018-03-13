@@ -13,6 +13,7 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Arguments_CarpetRegridTest.h"
 
 static CCTK_REAL sqr(CCTK_REAL val) { return val * val; }
 
@@ -39,7 +40,7 @@ void IDScalarWaveC_InitialData(CCTK_ARGUMENTS);
 @@*/
 
 void IDScalarWaveC_InitialData(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS
+  DECLARE_CCTK_ARGUMENTS_IDScalarWaveC_InitialData
   DECLARE_CCTK_PARAMETERS
 
   int i, j, k;

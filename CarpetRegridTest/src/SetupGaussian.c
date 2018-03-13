@@ -3,10 +3,11 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Arguments_CarpetRegridTest.h"
 
 void CarpetRegrid_SetupGaussian(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetRegrid_SetupGaussian;
 
   int i, j, k;
 

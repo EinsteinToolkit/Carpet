@@ -11,11 +11,16 @@ schedule CarpetRegrid_SetupGaussian at INITIAL
 {
   STORAGE:       testscalar[3]
   LANG:          C
+  READS: grid::r
+  WRITES: CarpetRegridTest::phi(everywhere)
 } "Gaussian Initial Data"
 
 schedule CarpetRegrid_TestGaussian at Analysis
 {
   STORAGE:       testscalar[3]
   LANG:          C
+  READS: grid::x, y, z
+  WRITES: CarpetRegridTest::phi
+  WRITES: CarpetRegridTest::phi_error(everywhere), phi_relerror
 } "Test Gaussian Data"
 
