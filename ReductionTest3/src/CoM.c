@@ -1,12 +1,13 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Arguments_ReductionTest3.h"
 #include "util_Table.h"
 #include <assert.h>
 #include <math.h>
 
 void CoM3_Local(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CoM3_Local;
   DECLARE_CCTK_PARAMETERS;
 
   int i, j, k, index;
@@ -28,7 +29,7 @@ void CoM3_Local(CCTK_ARGUMENTS) {
 }
 
 void CoM3(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CoM3;
   DECLARE_CCTK_PARAMETERS;
 
   int varindex = -1;
