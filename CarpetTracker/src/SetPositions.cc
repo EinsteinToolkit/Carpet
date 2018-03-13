@@ -4,6 +4,7 @@
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
+#include "cctk_Arguments_CarpetTracker.h"
 #include "cctk_Parameters.h"
 #include "cctk_Functions.h"
 
@@ -19,7 +20,7 @@ void CarpetTracker_SetPositions(CCTK_ARGUMENTS);
 }
 
 void CarpetTracker_SetPositions(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetTracker_SetPositions;
   DECLARE_CCTK_PARAMETERS;
 
   static int cctk_iteration_done = -1;
