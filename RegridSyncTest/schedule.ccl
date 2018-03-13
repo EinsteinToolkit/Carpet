@@ -6,6 +6,7 @@ schedule RegridSyncTest_setup AT CCTK_INITIAL
 {
   LANG: Fortran
   SYNC: myregridtestgf
+  WRITES: RegridSyncTest::myregridtestgf(everywhere)
 } "Do something at inital"
 
 
@@ -13,6 +14,7 @@ schedule RegridSyncTest_do_something AT PostRegrid
 {
   LANG: Fortran
   SYNC: myregridtestgf
+  WRITES: RegridSyncTest::myregridtestgf(everywhere)
 } "Do something at postregrid and try to sync"
 
 
@@ -20,15 +22,17 @@ schedule RegridSyncTest_evolve AT CCTK_EVOL
 {
   LANG: Fortran
   SYNC: myregridtestgf
+  WRITES: RegridSyncTest::myregridtestgf(everywhere)
 } "Do something at evol"
 
-schedule regridsynctest_sync AT POSTREGRID BEFORE regridsynctest_output
+#This function is unneeded with presync and could be removed.
+schedule RegridSyncTest_sync AT POSTREGRID BEFORE regridsynctest_output
 {
   LANG: Fortran
   SYNC: myregridtestgf
 } "Dummy routine for sync-ing"
 
-schedule regridsynctest_output AT POSTREGRID BEFORE RegridSyncTest_do_something
+schedule RegridSyncTest_output AT POSTREGRID BEFORE RegridSyncTest_do_something
 {
   LANG: C
 } "Do something at postregrid"
