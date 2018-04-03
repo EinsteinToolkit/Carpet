@@ -11,6 +11,7 @@
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_Checked.h>
 #include <cctk_Parameters.h>
 #include <cctk_Version.h>
 #include <util_Table.h>
@@ -76,7 +77,7 @@ int CarpetIOHDF5_Startup(void) {
 
 // Called at basegrid during regular startup
 void CarpetIOHDF5_Init(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetIOHDF5_Init;
 
   *this_iteration = -1;
   *next_output_iteration = 0;
@@ -94,14 +95,14 @@ void CarpetIOHDF5_Init(CCTK_ARGUMENTS) {
 
 // Called after recovering
 void CarpetIOHDF5_InitCheckpointingIntervals(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetIOHDF5_InitCheckpointingIntervals;
 
   last_checkpoint_iteration = cctk_iteration;
   last_checkpoint_walltime = CCTK_RunTime() / 3600.0;
 }
 
 void CarpetIOHDF5_InitialDataCheckpoint(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetIOHDF5_InitialDataCheckpoint;
   DECLARE_CCTK_PARAMETERS;
 
   if (checkpoint and checkpoint_ID) {
@@ -117,7 +118,7 @@ void CarpetIOHDF5_InitialDataCheckpoint(CCTK_ARGUMENTS) {
 }
 
 void CarpetIOHDF5_EvolutionCheckpoint(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetIOHDF5_EvolutionCheckpoint;
   DECLARE_CCTK_PARAMETERS;
 
   CCTK_INT const iteration = cctk_iteration;
@@ -157,7 +158,7 @@ void CarpetIOHDF5_EvolutionCheckpoint(CCTK_ARGUMENTS) {
 }
 
 void CarpetIOHDF5_TerminationCheckpoint(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetIOHDF5_TerminationCheckpoint;
   DECLARE_CCTK_PARAMETERS;
 
   if (checkpoint and checkpoint_on_terminate) {
@@ -1016,6 +1017,17 @@ static int OutputVarAs(const cGH *const cctkGH, const char *const fullname,
                mglevel, reflevel);
   }
   for (int var = firstvar; var < firstvar + numvars; var++) {
+
+    // Synchronize and apply BCs if needed
+    int valid = Carpet_GetValidRegion(var,0);
+    if(valid == WH_INTERIOR) {
+      Carpet_ManualSyncGF(cctkGH,var);
+    } else if(valid == WH_NOWHERE || valid == WH_BOUNDARY || valid == WH_GHOSTS) {
+      std::string vname = CCTK_FullName(var);
+      std::string msg = "Attempted HDF5 output of the variable " + vname + " failed because the interior was invalid";
+      CCTK_ERROR(msg.c_str());
+    }
+
     ioRequest *r = myGH->requests[var];
     if (not r) {
 #ifdef IOUTIL_PARSER_HAS_OUT_DT

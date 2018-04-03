@@ -7,6 +7,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <cctk_Arguments_Checked.h>
 
 #include "util_Table.h"
 #include "cctk.h"
@@ -292,7 +293,7 @@ int CarpetIOHDF5_SetNumRefinementLevels() {
 // close all open checkpoint/filereader files after recovering grid variables
 //////////////////////////////////////////////////////////////////////////////
 void CarpetIOHDF5_CloseFiles(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetIOHDF5_CloseFiles;
   DECLARE_CCTK_PARAMETERS;
   int error_count = 0;
 

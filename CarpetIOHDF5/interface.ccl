@@ -98,3 +98,12 @@ USES FUNCTION UniqueSimulationID
 CCTK_POINTER_TO_CONST \
 FUNCTION UniqueRunID (CCTK_POINTER_TO_CONST IN cctkGH)
 USES FUNCTION UniqueRunID
+
+# Presync functions to interface with read/write data
+CCTK_INT FUNCTION Carpet_GetValidRegion
+      (CCTK_INT IN vi, CCTK_INT IN tl)
+USES FUNCTION Carpet_GetValidRegion
+
+void FUNCTION Carpet_ManualSyncGF
+      (CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN vi)
+USES FUNCTION Carpet_ManualSyncGF
