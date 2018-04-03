@@ -13,7 +13,7 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
-#include "cctk_Arguments_CarpetRegridTest.h"
+#include "cctk_Arguments_Checked.h"
 
 static CCTK_REAL sqr(CCTK_REAL val) { return val * val; }
 

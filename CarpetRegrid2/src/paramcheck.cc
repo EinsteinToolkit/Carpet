@@ -1,5 +1,6 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_Checked.h>
 #include <cctk_Parameters.h>
 
 #include <carpet.hh>
@@ -13,7 +14,7 @@ void CarpetRegrid2_ParamCheck(CCTK_ARGUMENTS);
 }
 
 void CarpetRegrid2_ParamCheck(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetRegrid2_ParamCheck;
   DECLARE_CCTK_PARAMETERS;
 
   enum sym_t { sym_unknown, sym_90, sym_180, sym_parity };

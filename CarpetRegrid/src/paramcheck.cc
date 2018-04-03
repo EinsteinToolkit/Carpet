@@ -2,6 +2,7 @@
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
+#include "cctk_Arguments_Checked.h"
 #include "cctk_Parameters.h"
 
 #include "carpet.hh"
@@ -13,7 +14,7 @@ using namespace std;
 using namespace Carpet;
 
 void CarpetRegridParamcheck(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetRegridParamcheck;
   DECLARE_CCTK_PARAMETERS;
 
   if (refinement_levels > maxreflevels) {

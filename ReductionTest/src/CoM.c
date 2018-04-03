@@ -1,7 +1,7 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
-#include "cctk_Arguments_ReductionTest.h"
+#include "cctk_Arguments_Checked.h"
 #include "util_Table.h"
 #include <assert.h>
 #include <math.h>

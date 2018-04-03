@@ -2,6 +2,7 @@
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_Checked.h>
 #include <cctk_Parameters.h>
 
 #include "indexing.hh"
@@ -13,7 +14,7 @@ void CarpetRegrid2_Initialise(CCTK_ARGUMENTS);
 }
 
 void CarpetRegrid2_Initialise(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetRegrid2_Initialise;
   DECLARE_CCTK_PARAMETERS;
 
   // Initialise meta-information
