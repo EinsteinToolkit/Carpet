@@ -253,6 +253,17 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
       }
     }
 
+    // Synchronize and apply BCs if needed
+    int valid = Carpet_GetValidRegion(n,0);
+    if(valid == WH_INTERIOR) {
+      Carpet_ManualSyncGF(cctkGH,n);
+    } else if(valid == WH_NOWHERE || valid == WH_BOUNDARY || valid == WH_GHOSTS) {
+      std::string vname = varname;
+      std::string msg = "Attempted Scalar output of the variable " + vname + " failed because the interior was invalid";
+      CCTK_ERROR(msg.c_str());
+    }
+
+
     // Output in global mode
     BEGIN_GLOBAL_MODE(cctkGH) {
 
