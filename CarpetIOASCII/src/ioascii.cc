@@ -17,7 +17,7 @@
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
-#include <cctk_Arguments_CarpetIOASCII.h>
+#include <cctk_Arguments_Checked.h>
 #include <util_Network.h>
 #include <util_Table.h>
 
