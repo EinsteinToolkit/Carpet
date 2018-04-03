@@ -5,6 +5,7 @@
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_Checked.h>
 #include <cctk_Parameters.h>
 
 #include <loopcontrol.h>
@@ -25,7 +26,7 @@ int const num_excluded = 10;
  */
 
 void CarpetSurfaceParamCheck(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetSurfaceParamCheck;
   DECLARE_CCTK_PARAMETERS;
 
   for (int n = 0; n < num_excluded; ++n) {
@@ -49,7 +50,7 @@ void CarpetSurfaceParamCheck(CCTK_ARGUMENTS) {
  */
 
 void CarpetSurfaceSetup(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetSurfaceSetup;
   DECLARE_CCTK_PARAMETERS;
 
   // Some state verbose output

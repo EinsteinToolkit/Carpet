@@ -1,7 +1,7 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
-#include "cctk_Arguments_CarpetIntegrateTest.h"
+#include "cctk_Arguments_Checked.h"
 
 extern "C" void CarpetIntegrate_Local(CCTK_ARGUMENTS);
 

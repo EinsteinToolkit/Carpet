@@ -17,14 +17,17 @@ SCHEDULE CarpetExcludedSetup IN SetupIMask
 {
   LANG: C
   OPTIONS: global loop-local
+  READS: grid::x, y, z
 } "Set up the weight function for the excluded regions"
 
 SCHEDULE CarpetSurfaceSetup IN SetupIMask
 {
   LANG: C
   OPTIONS: global loop-local
+  READS: grid::x, y, z
+  READS: SphericalSurface::sf_coordinate_descriptors, sf_ntheta, sf_nphi
+  READS: SphericalSurface::sf_radius, sf_active, sf_origin, sf_mean_radius
 } "Set up the weight function for the excluded spherical surfaces"
-
 
 
 

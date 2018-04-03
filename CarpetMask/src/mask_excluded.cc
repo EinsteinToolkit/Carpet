@@ -2,6 +2,7 @@
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
+#include <cctk_Arguments_Checked.h>
 #include <cctk_Parameters.h>
 
 #include <loopcontrol.h>
@@ -19,7 +20,7 @@ using namespace std;
  */
 
 void CarpetExcludedSetup(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_CarpetExcludedSetup;
   DECLARE_CCTK_PARAMETERS;
 
   CCTK_INT *restrict const iweight = static_cast<CCTK_INT *>(
