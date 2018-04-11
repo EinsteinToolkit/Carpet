@@ -190,6 +190,8 @@ string serialize_grid_structure(const cGH *cctkGH);
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void init_comm();
+void finalize_comm();
 void send_data(int ioproc, const void *data, int cactustype,
                const dbox<long long> &memshape, const dbox<long long> &membox);
 vector<char> recv_data(int dataproc, int cactustype,

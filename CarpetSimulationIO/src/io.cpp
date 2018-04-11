@@ -81,6 +81,8 @@ extern "C" void CarpetSimulationIO_Init(CCTK_ARGUMENTS) {
   *next_output_iteration = 0;
 
   last_checkpoint_iteration = cctk_iteration;
+
+  init_comm();
 }
 
 // Scheduled finalization routine
@@ -89,6 +91,8 @@ extern "C" void CarpetSimulationIO_Finalize(CCTK_ARGUMENTS) {
 
   // Wait for all output threads before shutting down
   output_pthreads.clear();
+
+  finalize_comm();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

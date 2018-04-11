@@ -361,15 +361,31 @@ tuple<string, int> split_filename(const string &filename) {
 ////////////////////////////////////////////////////////////////////////////////
 
 const int tag = 2;
+MPI_Comm comm = MPI_COMM_NULL;
+
+void init_comm() {
+  assert(comm == MPI_COMM_NULL);
+  MPI_Comm_dup(dist::comm(), &comm);
+  assert(comm != MPI_COMM_NULL);
+}
+void finalize_comm() {
+  assert(comm != MPI_COMM_NULL);
+  MPI_Comm_free(&comm);
+  assert(comm == MPI_COMM_NULL);
+}
 
 void send_data(int ioproc, const void *data, int cactustype,
                const dbox<long long> &memshape, const dbox<long long> &membox) {
+  // ptrdiff_t count = membox.size();
+  // vector<char> buf(count * CCTK_VarTypeSize(cactustype));
+  // assert(membox == memshape);
+  // memcpy(buf.data(), data, buf.size());
+  // MPI_Datatype mpitype = cactustype2mpitype(cactustype);
+  // MPI_Send(buf.data(), count, mpitype, ioproc, tag, comm);
   ptrdiff_t count = membox.size();
-  vector<char> buf(count * CCTK_VarTypeSize(cactustype));
   assert(membox == memshape);
-  memcpy(buf.data(), data, buf.size());
   MPI_Datatype mpitype = cactustype2mpitype(cactustype);
-  MPI_Send(buf.data(), count, mpitype, ioproc, tag, dist::comm());
+  MPI_Send(data, count, mpitype, ioproc, tag, comm);
 }
 
 vector<char> recv_data(int dataproc, int cactustype,
@@ -377,8 +393,7 @@ vector<char> recv_data(int dataproc, int cactustype,
   ptrdiff_t count = membox.size();
   MPI_Datatype mpitype = cactustype2mpitype(cactustype);
   vector<char> buf(count * CCTK_VarTypeSize(cactustype));
-  MPI_Recv(buf.data(), count, mpitype, dataproc, tag, dist::comm(),
-           MPI_STATUS_IGNORE);
+  MPI_Recv(buf.data(), count, mpitype, dataproc, tag, comm, MPI_STATUS_IGNORE);
   return buf;
 }
 

@@ -3,6 +3,7 @@
 
 #include <CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h>
 
+#include <HighResTimer.hh>
 #include <Timer.hh>
 #include <carpet.hh>
 
@@ -775,18 +776,18 @@ void output_file_t::write() {
     auto fapl = H5::FileAccPropList();
     fapl.setFcloseDegree(H5F_CLOSE_STRONG);
     fapl.setLibverBounds(H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
-    // static Timers::Timer timer1("SimulationIO::H5File");
-    // timer1.start();
+    static HighResTimer::HighResTimer timer1("SimulationIO::H5File");
+    auto timer1_clock = timer1.start();
     // H5F_ACC_EXCL or H5F_ACC_TRUNC,
     file =
         H5::H5File(tmpname, H5F_ACC_EXCL, H5::FileCreatPropList::DEFAULT, fapl);
-    // timer1.stop();
+    timer1_clock.stop(0);
     if (verbose)
       CCTK_VINFO("Writing project \"%s\"", filename.c_str());
-    // static Timers::Timer timer2("SimulationIO::write");
-    // timer2.start();
+    static HighResTimer::HighResTimer timer2("SimulationIO::write");
+    auto timer2_clock = timer2.start();
     project->write(file);
-    // timer2.stop();
+    timer2_clock.stop(0);
   }
   if (verbose)
     CCTK_VINFO("Writing data for project \"%s\"", filename.c_str());

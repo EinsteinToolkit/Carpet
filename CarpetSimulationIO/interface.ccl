@@ -5,6 +5,7 @@ IMPLEMENTS: CarpetSimulationIO
 # INHERITS: grid
 
 USES INCLUDE: carpet.hh
+USES INCLUDE: HighResTimer.hh
 USES INCLUDE: Timer.hh
 
 
