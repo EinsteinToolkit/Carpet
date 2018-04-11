@@ -1628,7 +1628,7 @@ void fasterp_setup_gen_t<FASTERP>::interpolate(
         assert(varptrs.AT(v));
       }
 
-      // TODO: This loops seems unbalanced.  Maybe the different
+      // TODO: This loop seems unbalanced.  Maybe the different
       // interpolations have different costs.
       interpolate_timer.start();
 #pragma omp parallel for schedule(dynamic, 1000)
