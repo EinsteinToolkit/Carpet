@@ -4,7 +4,7 @@ SHARES: IO
 
 USES STRING filereader_ID_dir AS IO_filereader_ID_dir
 
-# USES KEYWORD recover
+USES KEYWORD recover
 USES STRING recover_dir AS IO_recover_dir
 USES STRING recover_file
 

@@ -22,6 +22,7 @@
 #include <cassert>
 #include <cstdio>
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -528,8 +529,8 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
 
 // Input
 
-// Recovery information
-static int recovery_iteration = -1;
+#warning "TODO: free this data structure"
+map<string, unique_ptr<input_file_t> > input_file_ptrs;
 
 int Input(cGH *cctkGH, const char *basefilename, int called_from) {
   DECLARE_CCTK_PARAMETERS;
@@ -538,6 +539,7 @@ int Input(cGH *cctkGH, const char *basefilename, int called_from) {
          called_from == CP_RECOVER_DATA or called_from == FILEREADER_DATA);
   bool do_recover =
       called_from == CP_RECOVER_PARAMETERS or called_from == CP_RECOVER_DATA;
+  bool read_parameters = called_from == CP_RECOVER_PARAMETERS;
 
   if (not do_recover) {
     assert(Carpet::is_level_mode());
@@ -545,10 +547,28 @@ int Input(cGH *cctkGH, const char *basefilename, int called_from) {
       return 0; // no error
   }
 
+  string projectname;
+  int iteration;
+  if (do_recover) {
+    // Split basename into the actual basename and the iteration number
+    auto pi = split_filename(basefilename);
+    projectname = get<0>(pi);
+    iteration = get<1>(pi);
+  } else {
+    projectname = basefilename;
+    iteration = filereader_ID_iteration;
+  }
+
   if (do_recover)
-    CCTK_VINFO("Recovering iteration %d", recovery_iteration);
+    if (read_parameters)
+      CCTK_VINFO("Recovering parameters for iteration %d from file \"%s\"",
+                 iteration, projectname.c_str());
+    else
+      CCTK_VINFO("Recovering variables for iteration %d from file \"%s\"",
+                 iteration, projectname.c_str());
   else
-    CCTK_VINFO("Reading iteration %d", filereader_ID_iteration);
+    CCTK_VINFO("Reading iteration %d from file \"%s\"", iteration,
+               projectname.c_str());
 
   // Determine which variables to read
   const ioGH *ioUtilGH = (const ioGH *)CCTK_GHExtension(cctkGH, "IO");
@@ -559,13 +579,25 @@ int Input(cGH *cctkGH, const char *basefilename, int called_from) {
       input_vars.push_back(vindex);
 
   io_dir_t io_dir = do_recover ? io_dir_t::recover : io_dir_t::input;
-  // string projectname = do_recover ? recover_file : filereader_file;
-  string projectname = basefilename;
-  int iteration = do_recover ? cctkGH->cctk_iteration : filereader_ID_iteration;
-  input_file_t input_file(cctkGH, io_dir, projectname, iteration, -1, -1);
-  input_file.read_vars(input_vars, -1, -1);
+  if (not input_file_ptrs.count(projectname))
+    input_file_ptrs[projectname] = make_unique<input_file_t>(
+        cctkGH, io_dir, projectname, iteration, -1, -1);
+  const auto &input_file_ptr = input_file_ptrs.at(projectname);
+  if (read_parameters) {
+    input_file_ptr->read_params();
+  } else {
+    input_file_ptr->read_vars(input_vars, -1, -1);
+  }
 
   return 0; // no error
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Recovering
+
+extern "C" int CarpetSimulationIO_RecoverParameters() {
+  return IOUtil_RecoverParameters(Input, ".s5", "SimulationIO");
 }
 
 } // end namespace CarpetSimulationIO

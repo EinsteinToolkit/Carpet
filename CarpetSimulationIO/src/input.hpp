@@ -30,6 +30,9 @@ public:
   input_file_t(const cGH *cctkGH, io_dir_t io_dir, const string &projectname,
                int iteration, int ioproc, int nioprocs);
 
+  // Read parameters from project
+  void read_params() const;
+
   // Read variables from project
   void read_vars(const vector<int> &varindices, int reflevel,
                  int timelevel) const;

@@ -343,6 +343,21 @@ string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
   return path;
 }
 
+tuple<string, int> split_filename(const string &filename) {
+  string itprefix = ".it";
+  auto itpos = filename.find(itprefix);
+  assert(itpos != string::npos);
+  string basename = filename.substr(0, itpos);
+  string itstr = filename.substr(itpos + itprefix.length());
+  int iteration;
+  try {
+    iteration = stoi(itstr);
+  } catch (...) {
+    assert(0);
+  }
+  return {basename, iteration};
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 const int tag = 2;

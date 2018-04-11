@@ -1,6 +1,8 @@
 #include "input.hpp"
 #include "util.hpp"
 
+#include <CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h>
+
 #include <carpet.hh>
 
 #include <cctk.h>
@@ -10,6 +12,9 @@
 #include <iomanip>
 #include <memory>
 #include <string>
+
+#warning "TODO"
+#include <iostream>
 
 namespace CarpetSimulationIO {
 using namespace SimulationIO;
@@ -27,6 +32,22 @@ input_file_t::input_file_t(const cGH *cctkGH, io_dir_t io_dir,
     CCTK_VINFO("Reading file \"%s\"", filename.c_str());
   auto file = H5::H5File(filename, H5F_ACC_RDONLY);
   project = readProject(file);
+}
+
+void input_file_t::read_params() const {
+  DECLARE_CCTK_PARAMETERS;
+
+  auto parameter_all_params = project->parameters().at("All Parameters");
+
+  // TODO: If there are multiple parameter values, then maybe select
+  // by iteration number?
+  assert(parameter_all_params->parametervalues().size() == 1);
+  auto value_all_params =
+      parameter_all_params->parametervalues().begin()->second;
+  assert(value_all_params->value_type == ParameterValue::type_string);
+  string all_params = value_all_params->value_string;
+
+  IOUtil_SetAllParameters(all_params.c_str());
 }
 
 void input_file_t::read_vars(const vector<int> &varindices, const int reflevel,

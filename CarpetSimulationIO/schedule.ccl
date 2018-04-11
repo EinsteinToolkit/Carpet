@@ -11,13 +11,13 @@ SCHEDULE CarpetSimulationIO_Startup AT startup AFTER Driver_Startup
   LANG: C
 } "Register I/O method"
 
-# if (!CCTK_EQUALS(recover, "no")) {
-#   SCHEDULE CarpetSimulationIO_RecoverParameters AT recover_parameters
-#   {
-#     LANG: C
-#     OPTIONS: level
-#   } "Recover parameters"
-# }
+if (!CCTK_EQUALS(recover, "no")) {
+  SCHEDULE CarpetSimulationIO_RecoverParameters AT recover_parameters
+  {
+    LANG: C
+    OPTIONS: global
+  } "Recover parameters"
+}
 
 SCHEDULE CarpetSimulationIO_Init AT basegrid
 {

@@ -184,6 +184,7 @@ string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
                          const string &basename, const string &extra_suffix,
                          int iteration, file_type output_type, int myioproc,
                          int ioproc_every);
+tuple<string, int> split_filename(const string &filename);
 
 string serialize_grid_structure(const cGH *cctkGH);
 
