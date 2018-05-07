@@ -20,8 +20,6 @@ schedule CarpetParamCheck at PARAMCHECK
   LANG: C
 } "Parameter checking routine"
 
-
-
 # Correct time step for finer levels when there are non-trivial
 # time refinement factors
 
@@ -49,4 +47,26 @@ if (use_unusedpoints_mask)
     LANG: C
     WRITES: Carpet::carpet_unusedpoints_mask(everywhere)
   } "Set mask of unused points"
+}
+
+if(use_psync)
+{
+  # Scheduling bins for boundary condition registration and selection with PreSync
+  schedule GROUP PreSync_Registration at CCTK_WRAGH
+  {
+    LANG: C
+    OPTIONS: global
+  } "Group for functions which register boundary conditions."
+  
+  schedule GROUP PreSync_Selection at CCTK_WRAGH AFTER PreSync_Registration
+  {
+    LANG: C
+    OPTIONS: global
+  } "Group for functions which select BCs for variables and groups."
+
+  # PreSync Recovery
+  schedule Carpet_SynchronizationRecovery at RECOVER_VARIABLES after IOUtil_RecoverGH
+  {
+    LANG: C
+  } "Sets region validity at recovery"
 }

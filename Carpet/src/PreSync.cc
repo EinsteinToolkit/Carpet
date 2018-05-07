@@ -474,23 +474,20 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 
   for(auto i = reads_m.begin();i != reads_m.end(); ++i) {
     const var_tuple& vt = i->first;
-      if(!strcmp(CCTK_FullVarName(vt.vi),testing_parameter)) {
-        std::string valid_name;
-        switch(valid_k[vt]) {
-          case 7: valid_name = "everywhere"; break;
-          case 6: valid_name = "interior & boundaries"; break;
-          case 5: valid_name = "interior & ghosts"; break;
-          case 4: valid_name = "interior"; break;
-          case 3: valid_name = "boundaries & ghosts"; break;
-          case 2: valid_name = "boundaries"; break;
-          case 1: valid_name = "ghosts"; break;
-          case 0: valid_name = "nowhere"; break;
-          default: valid_name = "invalid type";
-        }
-        std::cout << CCTK_FullVarName(vt.vi);
-        std::cout << " has validity " << valid_name;
-        std::cout << " in routine " << current_routine << std::endl;
+    if(!strcmp(CCTK_FullVarName(vt.vi),testing_parameter)) {
+      std::string valid_name;
+      switch(valid_k[vt]) {
+        case 7: valid_name = "everywhere"; break;
+        case 6: valid_name = "interior & boundaries"; break;
+        case 5: valid_name = "interior & ghosts"; break;
+        case 4: valid_name = "interior"; break;
+        case 3: valid_name = "boundaries & ghosts"; break;
+        case 2: valid_name = "boundaries"; break;
+        case 1: valid_name = "ghosts"; break;
+        case 0: valid_name = "nowhere"; break;
+        default: valid_name = "invalid type";
       }
+    }
     if(!on(valid_k[vt],WH_INTERIOR) and !silent_psync) {
       // If the read spec is everywhere and we only have
       // interior, that's ok. The system will sync.
@@ -512,7 +509,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
           << " not satisfied. Wanted '" << wstr(i->second)
           << "' found '" << wstr(valid_k[vt])
           << "' at the start of routine " << r;
-        CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str()); 
+        CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
       }
     }
     if(i->second == WH_EVERYWHERE) {
@@ -639,6 +636,17 @@ extern "C" void ManualSyncGF(const cGH *cctkGH,int vi) {
     abort();
   }
   valid_k[vt] = WH_EVERYWHERE;
+}
+
+extern "C"
+void Carpet_SynchronizationRecovery(CCTK_ARGUMENTS) {
+  for(int vi = 0; vi < CCTK_NumVars(); vi++) {
+    SetValidRegion(vi,0,WH_INTERIOR);
+    int tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
+    for(int time = 1; time < tl; time++) {
+      SetValidRegion(vi,time,WH_EVERYWHERE);
+    }
+  }
 }
 
 typedef void (*boundary_function)(
