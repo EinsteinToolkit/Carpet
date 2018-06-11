@@ -42,7 +42,7 @@ template <> inline MPI_Datatype mpi_datatype<islab>() {
   islab dummy;
   return mpi_datatype(dummy);
 }
-}
+} // namespace dist
 
 // A generic data storage without type information
 class gdata {
@@ -61,7 +61,7 @@ protected:
   operator_type transport_operator;
 
   bool _has_storage; // has storage associated (on some process)
-  int _size;         // size (number of elements including padding)
+  size_type _size;   // size (number of elements including padding)
 
   int _proc; // stored on process
 
@@ -118,7 +118,7 @@ public:
     return _storage;
   }
 
-  int size() const {
+  size_type size() const {
     assert(_has_storage);
     return _size;
   }
@@ -211,6 +211,6 @@ public:
 inline size_t memoryof(gdata const &d) { return d.memory(); }
 
 inline ostream &operator<<(ostream &os, const gdata &d) { return d.output(os); }
-}
+} // namespace CarpetLib
 
 #endif // GDATA_HH
