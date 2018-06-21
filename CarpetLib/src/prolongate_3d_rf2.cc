@@ -454,9 +454,9 @@ void prolongate_3d_rf2(T const *restrict const src,
 
   // size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
   size_t const srcdi = 1;
-  assert(srcdi == SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0));
-  size_t const srcdj = SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0);
-  size_t const srcdk = SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0);
+  assert(srcdi == (srciext > 1 ? SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0) : 1));
+  size_t const srcdj = srcjext > 1 ? SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0) : 0;
+  size_t const srcdk = srckext > 1 ? SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0) : 0;
 
   // Loop over fine region
   // Label scheme: l 8 fk fj fi
