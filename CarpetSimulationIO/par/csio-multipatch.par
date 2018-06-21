@@ -28,7 +28,7 @@ IO::out_dir = $parfile
 
 Carpet::domain_from_multipatch = yes
 CartGrid3D::type = "multipatch"
-Coordinates::coordinate_system  = "Thornburg04"
+Coordinates::coordinate_system = "Thornburg04"
 Coordinates::h_cartesian = 0.25
 Coordinates::h_radial = 0.25
 Coordinates::sphere_inner_radius = 1.0
@@ -49,6 +49,8 @@ CarpetIOHDF5::out_vars = "
     grid::coordinates
 "
 
+CarpetSimulationIO::output_hdf5 = yes
+CarpetSimulationIO::output_asdf = yes
 CarpetSimulationIO::async_output = yes
 CarpetSimulationIO::max_nioprocs = 2
 CarpetSimulationIO::out_every = 1

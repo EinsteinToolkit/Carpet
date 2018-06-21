@@ -11,3 +11,11 @@ csio-uniform-input.par
 csio-refined-input.par
 csio-refined-cell-input.par
 csio-multipatch-input.par
+
+
+
+for par in csio-{uniform,refined,refined-cell,array}; do for fmt in carpet hdf5 asdf; do ./simfactory/bin/sim purge $par-$fmt; ./simfactory/bin/sim submit $par-$fmt --parfile=arrangements/Carpet/CarpetSimulationIO/par/$par.rpar --procs=4 --num-threads=1 --define format $fmt; done; done
+
+for par in csio-{uniform,refined,refined-cell}-input; do for fmt in hdf5 asdf; do ./simfactory/bin/sim purge $par-$fmt; ./simfactory/bin/sim submit $par-$fmt --parfile=arrangements/Carpet/CarpetSimulationIO/par/$par.rpar --procs=4 --num-threads=1 --define format $fmt; done; done
+
+for par in csio-{checkpoint,recover}; do for fmt in hdf5 asdf; do ./simfactory/bin/sim purge $par-$fmt; ./simfactory/bin/sim submit $par-$fmt --parfile=arrangements/Carpet/CarpetSimulationIO/par/$par.rpar --procs=4 --num-threads=1 --define format $fmt; done; done

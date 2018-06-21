@@ -9,33 +9,42 @@
 #include <cctk_Parameters.h>
 
 #include <cassert>
+#include <fstream>
 #include <iomanip>
+#include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 
-#warning "TODO"
-#include <iostream>
-
 namespace CarpetSimulationIO {
+namespace RC = RegionCalculus;
 using namespace SimulationIO;
 using namespace std;
 
-input_file_t::input_file_t(const cGH *cctkGH, io_dir_t io_dir,
-                           const string &projectname, int iteration, int ioproc,
+input_file_t::input_file_t(io_dir_t io_dir, const string &projectname,
+                           file_format input_format, int iteration, int ioproc,
                            int nioprocs)
-    : cctkGH(cctkGH), iteration(iteration) {
+    : input_format(input_format), iteration(iteration) {
   DECLARE_CCTK_PARAMETERS;
 
-  auto filename = generate_filename(cctkGH, io_dir, projectname, "", iteration,
-                                    file_type::global, -1, -1);
+  auto filename = generate_filename(io_dir, projectname, "", iteration,
+                                    input_format, file_type::global, -1, -1);
   if (verbose)
     CCTK_VINFO("Reading file \"%s\"", filename.c_str());
-  auto file = H5::H5File(filename, H5F_ACC_RDONLY);
-  project = readProject(file);
+  switch (input_format) {
+  case file_format::hdf5:
+    project = readProjectHDF5(filename);
+    break;
+  case file_format::asdf:
+    project = readProjectASDF(filename);
+    break;
+  default:
+    assert(0);
+  }
 }
 
 void input_file_t::read_params() const {
-  DECLARE_CCTK_PARAMETERS;
+  // DECLARE_CCTK_PARAMETERS;
 
   auto parameter_all_params = project->parameters().at("All Parameters");
 
@@ -50,8 +59,144 @@ void input_file_t::read_params() const {
   IOUtil_SetAllParameters(all_params.c_str());
 }
 
-void input_file_t::read_vars(const vector<int> &varindices, const int reflevel,
-                             const int timelevel) const {
+void input_file_t::read_grid_structure(cGH *cctkGH) const {
+  DECLARE_CCTK_PARAMETERS;
+  if (verbose)
+    CCTK_INFO("Recovering grid structure");
+
+  auto parameter_grid_structure = project->parameters().at("Grid Structure v7");
+
+  // TODO: If there are multiple parameter values, then maybe select
+  // by iteration number?
+  assert(parameter_grid_structure->parametervalues().size() == 1);
+  auto value_grid_structure =
+      parameter_grid_structure->parametervalues().begin()->second;
+  assert(value_grid_structure->value_type == ParameterValue::type_string);
+  string grid_structure_string = value_grid_structure->value_string;
+
+  grid_structure_v7 grid_structure =
+      deserialise_grid_structure(grid_structure_string);
+
+  vector<vector<vector<CarpetLib::region_t> > > superregsss(Carpet::maps);
+  for (int m = 0; m < Carpet::maps; ++m)
+    superregsss.at(m) = move(grid_structure.maps.at(m).superregions);
+  vector<vector<vector<vector<CarpetLib::region_t> > > > regssss(Carpet::maps);
+
+  int type;
+  const void *ptr = CCTK_ParameterGet("regrid_in_level_mode", "Carpet", &type);
+  assert(ptr != 0);
+  assert(type == PARAMETER_BOOLEAN);
+  const CCTK_INT regrid_in_level_mode = *static_cast<const CCTK_INT *>(ptr);
+
+  if (not regrid_in_level_mode) {
+    // Distribute each map independently
+
+    for (int m = 0; m < Carpet::maps; ++m) {
+      vector<vector<CarpetLib::region_t> > &superregss = superregsss.at(m);
+
+      // Make multiprocessor aware
+      vector<vector<CarpetLib::region_t> > regss(superregss.size());
+      for (size_t rl = 0; rl < superregss.size(); ++rl)
+        Carpet::SplitRegions(cctkGH, superregss.at(rl), regss.at(rl));
+
+      // Make multigrid aware
+      Carpet::MakeMultigridBoxes(cctkGH, m, regss, regssss.at(m));
+    } // for m
+
+  } else { // if regrid_in_level_mode
+    // Distribute all maps at the same time
+
+    vector<vector<vector<CarpetLib::region_t> > > regsss(Carpet::maps);
+
+    // Count levels
+    vector<int> rls(Carpet::maps);
+    for (int m = 0; m < Carpet::maps; ++m)
+      rls.at(m) = superregsss.at(m).size();
+    int maxrl = 0;
+    for (int m = 0; m < Carpet::maps; ++m)
+      maxrl = max(maxrl, rls.at(m));
+    // All maps must have the same number of levels
+    for (int m = 0; m < Carpet::maps; ++m) {
+      superregsss.at(m).resize(maxrl);
+      regsss.at(m).resize(maxrl);
+    }
+
+    // Make multiprocessor aware
+    for (int rl = 0; rl < maxrl; ++rl) {
+      vector<vector<CarpetLib::region_t> > superregss(Carpet::maps);
+      for (int m = 0; m < Carpet::maps; ++m)
+        superregss.at(m) = move(superregsss.at(m).at(rl));
+      vector<vector<CarpetLib::region_t> > regss(Carpet::maps);
+      Carpet::SplitRegionsMaps(cctkGH, superregss, regss);
+      for (int m = 0; m < Carpet::maps; ++m) {
+        superregsss.at(m).at(rl) = move(superregss.at(m));
+        regsss.at(m).at(rl) = move(regss.at(m));
+      }
+    } // for rl
+
+    // Make multigrid aware
+    Carpet::MakeMultigridBoxesMaps(cctkGH, regsss, regssss);
+
+  } // if regrid_in_level_mode
+
+  // Regrid
+  for (int m = 0; m < Carpet::maps; ++m)
+    Carpet::RegridMap(cctkGH, m, superregsss.at(m), regssss.at(m), false);
+
+  // Set time hierarchy correctly after RegridMap created it
+  for (int rl = 0; rl < Carpet::vhh.at(0)->reflevels(); ++rl) {
+    for (int tl = 0; tl < Carpet::tt->timelevels; ++tl)
+      Carpet::tt->set_time(Carpet::mglevel, rl, tl,
+                           grid_structure.times.at(rl).at(tl));
+    Carpet::tt->set_delta(Carpet::mglevel, rl, grid_structure.deltas.at(rl));
+  }
+
+  // We are in level mode here (we probably shouldn't be, but that's how Cactus
+  // I/O was designed), so we need to fix up certain things. See Carpet's
+  // function leave_level_mode to see what happens when we leave level mode.
+  {
+    // TODO: Switch to global mode instead of fixing up things manually
+    assert(Carpet::reflevel != -1);
+    const int tl = 0;
+    Carpet::global_time = grid_structure.global_time;
+    cctkGH->cctk_time =
+        Carpet::tt->get_time(Carpet::mglevel, Carpet::reflevel, tl);
+    Carpet::delta_time = grid_structure.delta_time;
+    cctkGH->cctk_delta_time = Carpet::delta_time;
+  }
+
+  Carpet::PostRegrid(cctkGH);
+
+  for (int rl = 0; rl < Carpet::reflevels; ++rl)
+    Carpet::Recompose(cctkGH, rl, false);
+
+  Carpet::RegridFree(cctkGH, false);
+
+  // Check ghost and buffer widths and prolongation orders
+  // TODO: Instead of only checking them, set them during regridding.
+  // (This requires setting them during regridding instead of during setup.)
+  for (int m = 0; m < Carpet::maps; ++m) {
+    const auto &dd = *Carpet::vdd.at(m);
+    const auto &map_structure = grid_structure.maps.at(m);
+    assert(map_structure.ghost_widths.size() == dd.ghost_widths.size());
+    for (size_t rl = 0; rl < map_structure.ghost_widths.size(); ++rl)
+      assert(all(
+          all(map_structure.ghost_widths.at(rl) == dd.ghost_widths.at(rl))));
+    assert(map_structure.buffer_widths.size() == dd.buffer_widths.size());
+    for (size_t rl = 0; rl < map_structure.buffer_widths.size(); ++rl)
+      assert(all(
+          all(map_structure.buffer_widths.at(rl) == dd.buffer_widths.at(rl))));
+    assert(map_structure.prolongation_orders_space.size() ==
+           dd.prolongation_orders_space.size());
+    for (size_t rl = 0; rl < map_structure.prolongation_orders_space.size();
+         ++rl)
+      assert(map_structure.prolongation_orders_space.at(rl) ==
+             dd.prolongation_orders_space.at(rl));
+  }
+}
+
+void input_file_t::read_vars(const vector<int> &varindices, const int reflevel1,
+                             const int timelevel1) const {
   DECLARE_CCTK_PARAMETERS;
 
   auto parameter_iteration = project->parameters().at("iteration");
@@ -89,11 +234,6 @@ void input_file_t::read_vars(const vector<int> &varindices, const int reflevel,
     }
     const int dimension = groupdata.dim;
     assert(dimension <= Carpet::dim);
-
-    // Manifold
-    const auto manifold = project->manifolds().at(manifoldname);
-    // TangentSpace
-    const auto tangentspace = project->tangentspaces().at(tangentspacename);
 
     // TensorType
     vector<int> tensorindices;
@@ -149,9 +289,15 @@ void input_file_t::read_vars(const vector<int> &varindices, const int reflevel,
                  varname.c_str());
       continue;
     }
-    auto field = project->fields().at(fieldname);
+    const auto field = project->fields().at(fieldname);
 
-    // const int iteration = cctkGH->cctk_iteration;
+    // Manifold
+    const auto manifold = field->manifold();
+    assert(manifold->dimension() == dimension);
+
+    // TangentSpace
+    const auto tangentspace = field->tangentspace();
+    assert(tangentspace->dimension() == dimension);
 
     const int min_mapindex = 0;
     const int max_mapindex = Carpet::arrdata.at(groupindex).size();
@@ -162,13 +308,13 @@ void input_file_t::read_vars(const vector<int> &varindices, const int reflevel,
       const int mglevel = Carpet::mglevel;
       assert(mglevel == 0);
 
-      const int min_reflevel = reflevel >= 0 ? reflevel : 0;
-      const int max_reflevel = reflevel >= 0 ? reflevel + 1 : hh->reflevels();
+      const int min_reflevel = reflevel1 >= 0 ? reflevel1 : 0;
+      const int max_reflevel = reflevel1 >= 0 ? reflevel1 + 1 : hh->reflevels();
       for (int reflevel = min_reflevel; reflevel < max_reflevel; ++reflevel) {
 
-        const int min_timelevel = timelevel >= 0 ? timelevel : 0;
-        const int max_timelevel = timelevel >= 0
-                                      ? timelevel + 1
+        const int min_timelevel = timelevel1 >= 0 ? timelevel1 : 0;
+        const int max_timelevel = timelevel1 >= 0
+                                      ? timelevel1 + 1
                                       : Carpet::groupdata.at(groupindex)
                                             .activetimelevels.at(mglevel)
                                             .at(reflevel);
@@ -192,7 +338,14 @@ void input_file_t::read_vars(const vector<int> &varindices, const int reflevel,
           }
           auto configuration = project->configurations().at(configurationname);
 
+          // TODO: traverse all discretizations, then find matching components
+          // instead of the other way around. This would ensure that every
+          // dataset is read at most once, so that it can be flushed from memory
+          // afterwards.
+
           // Get discretization
+          // TODO: traverse all discretizations, choose by semantics instead of
+          // by name
           const auto create_discretizationname = [&](int rl) {
             ostringstream buf;
             if (groupdata.grouptype != CCTK_GF)
@@ -200,7 +353,8 @@ void input_file_t::read_vars(const vector<int> &varindices, const int reflevel,
             buf << configuration->name();
             if (max_mapindex > 1)
               buf << "-map." << setfill('0') << setw(width_m) << mapindex;
-            if (max_reflevel > 1)
+            if (groupdata.grouptype == CCTK_GF &&
+                GetMaxRefinementLevels(nullptr) > 1)
               buf << "-level." << setfill('0') << setw(width_rl) << rl;
             return buf.str();
           };
@@ -222,8 +376,34 @@ void input_file_t::read_vars(const vector<int> &varindices, const int reflevel,
             continue;
           }
           auto discretefield = field->discretefields().at(discretefieldname);
+          // auto discretization = discretefield->discretization();
 
-          // TODO: Keep track of which part of which component has been read
+          // Keep track of which part of which component needs to be read, and
+          // has been read. We need to read everything that cannot be
+          // recalculated. We can skip inter-process ghost points on all time
+          // levels, and we can skip prolongation ghost, buffer points, and
+          // restricted points on the current time level. However, prolongated
+          // and restricted points on past time levels can not be recalculated
+          // and need to be read. To simplify things, we read everything.
+
+          // TODO: We could cut off inter-process ghost points that can be
+          // synchronized (same as for writing).
+          map<int, RC::region_t> local_components_need_read;
+          map<int, RC::region_t> local_components_did_read;
+          const int min_local_component = 0;
+          const int max_local_component = hh->local_components(reflevel);
+          for (int local_component = min_local_component;
+               local_component < max_local_component; ++local_component) {
+            int component = hh->get_component(reflevel, local_component);
+            const auto &light_box =
+                dd->light_boxes.at(mglevel).at(reflevel).at(component);
+            local_components_need_read[local_component] =
+                bboxset2region_t(ibset(light_box.exterior), dimension);
+            local_components_did_read[local_component] =
+                RC::region_t(dimension);
+          }
+
+          vector<ASDF::memoized<ASDF::block_t> > blocks;
 
           // Loop over all discrete field blocks in the file
           // TODO: Split this over processes?
@@ -233,35 +413,31 @@ void input_file_t::read_vars(const vector<int> &varindices, const int reflevel,
 
             auto discretizationblock =
                 discretefieldblock->discretizationblock();
-            auto active = discretizationblock->active();
-            // auto will_read = active & need_read;
-            // if (will_read.empty())
-            //   continue;
+            auto box = discretizationblock->box();
+            // auto active = discretizationblock->active();
+            assert(not box.empty());
 
             // Get discrete field block component
             // TODO: Access via storage index instead of name
             if (not discretefieldblock->discretefieldblockcomponents().count(
-                    tensortype->name()))
+                    tensorcomponent->name()))
               continue;
             auto discretefieldblockcomponent =
                 discretefieldblock->discretefieldblockcomponents().at(
                     tensorcomponent->name());
 
-            // Get DataSet
-            // TODO: Read this lazily (needs changes in
+            // Get DataSet TODO: Read this lazily (needs changes in
             // DiscreteFieldBlockComponent)
-            auto dataset = discretefieldblockcomponent->copyobj();
 
             // Read data
-            const int min_local_component = 0;
-            const int max_local_component = hh->local_components(reflevel);
             for (int local_component = min_local_component;
                  local_component < max_local_component; ++local_component) {
-              const auto &local_box =
-                  dd->local_boxes.at(mglevel).at(reflevel).at(local_component);
-              auto read_box = (active & bboxset2dregion<long long>(
-                                            local_box.active, dimension))
-                                  .bounding_box();
+              const auto &need_read =
+                  local_components_need_read.at(local_component);
+              const auto &did_read =
+                  local_components_did_read.at(local_component);
+              auto read_box =
+                  (RC::region_t(box) & (need_read - did_read)).bounding_box();
               if (not read_box.empty()) {
                 auto ggf = Carpet::arrdata.at(groupindex)
                                .at(mapindex)
@@ -272,22 +448,102 @@ void input_file_t::read_vars(const vector<int> &varindices, const int reflevel,
                 assert(gdata);
                 assert(gdata->has_storage());
                 auto memdata = gdata->storage();
+                assert(memdata);
                 H5::DataType memtype = cactustype2hdf5type(groupdata.vartype);
-                auto membox = bbox2dbox<long long>(gdata->extent(), dimension);
+                auto membytes =
+                    gdata->size() * CCTK_VarTypeSize(groupdata.vartype);
+                auto membox = bbox2box_t(gdata->extent(), dimension);
                 assert(read_box <= membox);
-                auto memshape = dbox<long long>(
+                auto memlayout = RC::box_t(
                     membox.lower(),
-                    vect2dpoint<long long>(gdata->padded_shape(), dimension));
+                    membox.lower() +
+                        vect2point_t(gdata->padded_shape(), dimension));
 
                 // TODO: check dataset's datatype in file
                 if (verbose)
                   CCTK_VINFO("Reading dataset \"%s\"",
                              discretefieldname.c_str());
-                dataset->readData(memdata, memtype, memshape, read_box);
+                // auto reread_box =
+                //     read_box & local_components_read.at(local_component);
+                switch (input_format) {
+                case file_format::hdf5: {
+                  auto dataset = discretefieldblockcomponent->copyobj();
+                  dataset->readData(memdata, memtype, memlayout, read_box);
+                  break;
+                }
+                case file_format::asdf: {
+                  // TODO: Move most of this into a new "readASDF" function
+                  auto dataset_asdf = discretefieldblockcomponent->asdfdata();
+                  auto dataset_ref = discretefieldblockcomponent->asdfref();
+                  shared_ptr<ASDF::ndarray> arr;
+                  if (dataset_asdf) {
+                    arr = dataset_asdf->ndarray();
+                  } else if (dataset_ref) {
+                    auto ref = dataset_ref->reference();
+                    auto rsn = ref->resolve();
+                    // TODO: Allow multiple layers of references, i.e.
+                    // references to other references
+                    arr = make_shared<ASDF::ndarray>(rsn.first, rsn.second);
+                  } else {
+                    assert(0);
+                  }
+                  const auto arrdata = arr->get_data();
+                  blocks.push_back(arrdata);
+                  const auto type_size = arr->get_datatype()->type_size();
+                  assert(int(type_size) == CCTK_VarTypeSize(groupdata.vartype));
+                  assert(arrdata->nbytes() % type_size == 0);
+                  const auto mem_off_str =
+                      HyperSlab::layout2strides(memlayout, read_box, type_size);
+                  const auto arr_offset = HyperSlab::layout2offset(
+                      arr->get_offset(), arr->get_strides(), box, read_box);
+                  HyperSlab::copy(memdata, membytes,
+                                  mem_off_str.first, mem_off_str.second,
+                                  arrdata->ptr(), arrdata->nbytes(),
+                                  arr_offset, arr->get_strides(),
+                                  read_box.shape(), type_size);
+                  break;
+                }
+                default:
+                  assert(0);
+                }
+                local_components_did_read.at(local_component) |= read_box;
               } // not read_box.empty()
             }   // local_component
 
           } // discretefieldblock
+
+          // Free ASDF data blocks to reduce memory usage
+          for (const auto &block : blocks)
+            block.forget();
+
+          bool have_error = false;
+          for (const auto &kv : local_components_did_read)
+            assert(kv.first >= min_local_component and
+                   kv.first < max_local_component);
+          for (int local_component = min_local_component;
+               local_component < max_local_component; ++local_component) {
+            int component = hh->get_component(reflevel, local_component);
+            const auto &need_read =
+                local_components_need_read.at(local_component);
+            const auto &did_read =
+                local_components_did_read.at(local_component);
+            // We allow reading more
+            if (did_read < need_read) {
+              have_error = true;
+              ostringstream buf;
+              buf << "For variable " << varindex << " \"" << varname
+                  << "\", time level " << timelevel << ", map " << mapindex
+                  << ", refinement level " << reflevel << ", local component "
+                  << local_component << ", component " << component
+                  << ": did not read all active+boundary points: read "
+                  << did_read << " instead of " << need_read
+                  << "; unnecessary points are " << (did_read - need_read)
+                  << ", missing points are " << (need_read - did_read);
+              CCTK_WARN(CCTK_WARN_ALERT, buf.str().c_str());
+            }
+          }
+          if (have_error)
+            CCTK_ERROR("Aborting");
 
         } // timelevel
       }   // reflevel

@@ -1,9 +1,36 @@
-# -*-sh-*-
+#!/usr/bin/env python
 
+import re
+import sys
+from string import Template
+
+def expand(par, default):
+    return par if par[0] != "@" else default
+
+def yesno(cond):
+    return "yes" if cond else "no"
+
+format = "@format@"
+assert format == "carpet" or format == "hdf5" or format == "asdf"
+
+output_carpet = yesno(format == "carpet") # CarpetIOHDF5
+output_hdf5 = yesno(format == "hdf5")
+output_asdf = yesno(format == "asdf")
+output_sio = yesno(format == "hdf5" or format == "asdf")
+
+ioutput_carpet = int(format == "carpet") # CarpetIOHDF5
+ioutput_hdf5 = int(format == "hdf5")
+ioutput_asdf = int(format == "asdf")
+ioutput_sio = int(format == "hdf5" or format == "asdf")
+
+suffix = "-%s" % format
+
+lines = """
 ActiveThorns = "
     AEILocalInterp
     Boundary
     Carpet
+    CarpetIOASCII
     CarpetIOHDF5
     CarpetInterp
     CarpetLib
@@ -11,11 +38,13 @@ ActiveThorns = "
     CartGrid3D
     CoordBase
     Formaline
+    IDScalarWaveC
     IOUtil
     InitBase
     InterpToArray
-    LocalInterp
     SymBase
+    Time
+    WaveToyC
 "
 
 Cactus::cctk_run_title = "SimulationIO"
@@ -23,8 +52,6 @@ Cactus::cctk_full_warnings = yes
 Cactus::highlight_warning_messages = no
 
 Cactus::cctk_itlast = 2
-
-IO::out_dir = $parfile
 
 Carpet::domain_from_coordbase = yes
 CartGrid3D::type = "coordbase"
@@ -39,20 +66,28 @@ CoordBase::dx = 0.025
 CoordBase::dy = 0.025
 CoordBase::dz = 0.025
 
+IDScalarWave::initial_data = "standing"
+IDScalarWaveC::kx = 0.25
+IDScalarWaveC::ky = 0.25
+IDScalarWaveC::kz = 0.25
+
+Time::dtfac = 0.5
+WaveToy::bound = "zero"
+
 InterpToArray::nscalars = 1
-InterpToArray::scalar_vars[0] = "grid::r"
+InterpToArray::scalar_vars[0] = "wavetoy::phi"
 InterpToArray::narrays1d = 1
-InterpToArray::array1d_vars[0] = "grid::r"
+InterpToArray::array1d_vars[0] = "wavetoy::phi"
 InterpToArray::array1d_npoints_i = 10
 InterpToArray::array1d_dx_i = 0.05
 InterpToArray::narrays2d = 1
-InterpToArray::array2d_vars[0] = "grid::r"
+InterpToArray::array2d_vars[0] = "wavetoy::phi"
 InterpToArray::array2d_npoints_i = 10
 InterpToArray::array2d_npoints_j =  9
 InterpToArray::array2d_dx_i = 0.05
 InterpToArray::array2d_dy_j = 0.05
 InterpToArray::narrays3d = 1
-InterpToArray::array3d_vars[0] = "grid::r"
+InterpToArray::array3d_vars[0] = "wavetoy::phi"
 InterpToArray::array3d_npoints_i = 10
 InterpToArray::array3d_npoints_j =  9
 InterpToArray::array3d_npoints_k =  8
@@ -60,17 +95,17 @@ InterpToArray::array3d_dx_i = 0.05
 InterpToArray::array3d_dy_j = 0.05
 InterpToArray::array3d_dz_k = 0.05
 InterpToArray::nparrays1d = 1
-InterpToArray::parray1d_vars[0] = "grid::r"
+InterpToArray::parray1d_vars[0] = "wavetoy::phi"
 InterpToArray::parray1d_npoints_i = 10
 InterpToArray::parray1d_dx_i = 0.05
 InterpToArray::nparrays2d = 1
-InterpToArray::parray2d_vars[0] = "grid::r"
+InterpToArray::parray2d_vars[0] = "wavetoy::phi"
 InterpToArray::parray2d_npoints_i = 10
 InterpToArray::parray2d_npoints_j =  9
 InterpToArray::parray2d_dx_i = 0.05
 InterpToArray::parray2d_dy_j = 0.05
 InterpToArray::nparrays3d = 1
-InterpToArray::parray3d_vars[0] = "grid::r"
+InterpToArray::parray3d_vars[0] = "wavetoy::phi"
 InterpToArray::parray3d_npoints_i = 10
 InterpToArray::parray3d_npoints_j =  9
 InterpToArray::parray3d_npoints_k =  8
@@ -78,7 +113,24 @@ InterpToArray::parray3d_dx_i = 0.05
 InterpToArray::parray3d_dy_j = 0.05
 InterpToArray::parray3d_dz_k = 0.05
 
-CarpetIOHDF5::out_every = 2
+IO::out_dir = $$parfile
+
+CarpetIOASCII::one_file_per_group = yes
+CarpetIOASCII::out0D_every = 2
+CarpetIOASCII::out0D_vars = "
+    InterpToArray::scalars
+"
+CarpetIOASCII::out1D_every = 2
+CarpetIOASCII::out1D_vars = "
+    InterpToArray::arrays1d
+    InterpToArray::arrays2d
+    InterpToArray::arrays3d
+    InterpToArray::parrays1d
+    InterpToArray::parrays2d
+    InterpToArray::parrays3d
+"
+
+CarpetIOHDF5::out_every = 2 * $ioutput_carpet
 CarpetIOHDF5::one_file_per_group = yes
 CarpetIOHDF5::out_vars = "
     InterpToArray::scalars
@@ -90,9 +142,14 @@ CarpetIOHDF5::out_vars = "
     InterpToArray::parrays3d
 "
 
+# CarpetSimulationIO::verbose = yes
+
 CarpetSimulationIO::async_output = yes
 CarpetSimulationIO::max_nioprocs = 2
-CarpetSimulationIO::out_every = 2
+CarpetSimulationIO::output_hdf5 = $output_hdf5
+CarpetSimulationIO::output_asdf = $output_asdf
+
+CarpetSimulationIO::out_every = 2 * $ioutput_sio
 CarpetSimulationIO::out_vars = "
     InterpToArray::scalars
     InterpToArray::arrays1d
@@ -104,3 +161,7 @@ CarpetSimulationIO::out_vars = "
 "
 
 Formaline::output_source = no
+"""
+
+open(re.sub(r'(.*)\.rpar$', r'\1.par', sys.argv[0]), 'w').write(
+    Template(lines).substitute(locals()))

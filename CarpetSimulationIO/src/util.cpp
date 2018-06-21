@@ -108,6 +108,42 @@ H5::DataType cactustype2hdf5type(int cactustype) {
   }
 }
 
+ASDF::datatype_t cactustype2asdftype(int cactustype) {
+  switch (cactustype) {
+  case CCTK_VARIABLE_BYTE:
+    return ASDF::datatype_t(ASDF::get_scalar_type_id<uint8_t>::value);
+  case CCTK_VARIABLE_INT:
+    return ASDF::datatype_t(ASDF::get_scalar_type_id<CCTK_INT>::value);
+  case CCTK_VARIABLE_INT1:
+    return ASDF::datatype_t(ASDF::get_scalar_type_id<int8_t>::value);
+  case CCTK_VARIABLE_INT2:
+    return ASDF::datatype_t(ASDF::get_scalar_type_id<int16_t>::value);
+  case CCTK_VARIABLE_INT4:
+    return ASDF::datatype_t(ASDF::get_scalar_type_id<int32_t>::value);
+  case CCTK_VARIABLE_INT8:
+    return ASDF::datatype_t(ASDF::get_scalar_type_id<int64_t>::value);
+  case CCTK_VARIABLE_REAL:
+    return ASDF::datatype_t(ASDF::get_scalar_type_id<CCTK_REAL>::value);
+  case CCTK_VARIABLE_REAL4:
+    return ASDF::datatype_t(ASDF::get_scalar_type_id<ASDF::float32_t>::value);
+  case CCTK_VARIABLE_REAL8:
+    return ASDF::datatype_t(ASDF::get_scalar_type_id<ASDF::float64_t>::value);
+  // case CCTK_VARIABLE_REAL16:
+  //   return ASDF::datatype_t(ASDF::get_scalar_type_id<CCTK_REAL16>::value);
+  case CCTK_VARIABLE_COMPLEX:
+    return ASDF::datatype_t(ASDF::get_scalar_type_id<CCTK_COMPLEX>::value);
+  case CCTK_VARIABLE_COMPLEX8:
+    return ASDF::datatype_t(ASDF::get_scalar_type_id<ASDF::complex64_t>::value);
+  case CCTK_VARIABLE_COMPLEX16:
+    return ASDF::datatype_t(
+        ASDF::get_scalar_type_id<ASDF::complex128_t>::value);
+  // case CCTK_VARIABLE_COMPLEX32:
+  //   return ASDF::datatype_t(ASDF::get_scalar_type_id<CCTK_COMPLEX32>::value);
+  default:
+    CCTK_VERROR("Unsupported Cactus datatype %d", cactustype);
+  }
+}
+
 MPI_Datatype cactustype2mpitype(int cactustype) {
   switch (cactustype) {
   case CCTK_VARIABLE_BYTE:
@@ -147,12 +183,23 @@ MPI_Datatype cactustype2mpitype(int cactustype) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-string serialize_grid_structure(const cGH *cctkGH) {
+string serialise_grid_structure(const cGH *cctkGH) {
   using namespace CarpetLib;
-  ostringstream buf;
   const auto &tt = *Carpet::tt;
+  vector<vector<CCTK_REAL> > times;
+  times.resize(Carpet::reflevels);
+  for (int rl = 0; rl < Carpet::reflevels; ++rl) {
+    times.AT(rl).resize(tt.timelevels);
+    for (int tl = 0; tl < tt.timelevels; ++tl)
+      times.AT(rl).AT(tl) = tt.get_time(Carpet::mglevel, rl, tl);
+  }
+  vector<CCTK_REAL> deltas;
+  deltas.resize(Carpet::reflevels);
+  for (int rl = 0; rl < Carpet::reflevels; ++rl)
+    deltas.AT(rl) = tt.get_delta(Carpet::mglevel, rl);
+  ostringstream buf;
   buf << setprecision(17);
-  buf << "Grid Structure v6"
+  buf << "Grid Structure v7"
       << "{"
       << "maps=" << Carpet::maps << ","
       << "[";
@@ -160,22 +207,80 @@ string serialize_grid_structure(const cGH *cctkGH) {
     const auto &hh = *Carpet::vhh.AT(m);
     const auto &dd = *Carpet::vdd.AT(m);
     buf << "[" << m << "]={"
-        << "superregions:" << hh.superregions
-        << ","
-        // We could omit the regions
-        << "regions:" << hh.regions.AT(0) << ","
+        << "superregions:" << hh.superregions << ","
         << "ghost_widths:" << dd.ghost_widths << ","
         << "buffer_widths:" << dd.buffer_widths << ","
         << "overlap_widths:" << dd.overlap_widths << ","
-        << "prolongation_orders_space:" << dd.prolongation_orders_space << ","
+        << "prolongation_orders_space:";
+    output(buf, dd.prolongation_orders_space);
+    buf << ","
         << "},";
   }
   buf << "],"
+      << "times:";
+  output(buf, times);
+  buf << ","
+      << "deltas:";
+  output(buf, deltas);
+  buf << ","
       << "global_time:" << Carpet::global_time << ","
       << "delta_time:" << Carpet::delta_time << ","
-      << "times:" << tt << ","
       << "}.";
   return buf.str();
+}
+
+grid_structure_v7
+deserialise_grid_structure(const string &grid_structure_string) {
+  grid_structure_v7 grid_structure;
+  istringstream buf(grid_structure_string);
+  skipws(buf);
+  consume(buf, "Grid Structure v7");
+  consume(buf, "{");
+  consume(buf, "maps=");
+  int nmaps;
+  buf >> nmaps;
+  assert(nmaps == Carpet::maps);
+  consume(buf, ",");
+  consume(buf, "[");
+  for (int m = 0; m < nmaps; ++m) {
+    consume(buf, "[");
+    int mm;
+    buf >> mm;
+    assert(mm == m);
+    consume(buf, "]={");
+    grid_structure.maps.push_back({});
+    consume(buf, "superregions:");
+    buf >> grid_structure.maps[m].superregions;
+    consume(buf, ",");
+    consume(buf, "ghost_widths:");
+    buf >> grid_structure.maps[m].ghost_widths;
+    consume(buf, ",");
+    consume(buf, "buffer_widths:");
+    buf >> grid_structure.maps[m].buffer_widths;
+    consume(buf, ",");
+    consume(buf, "overlap_widths:");
+    buf >> grid_structure.maps[m].overlap_widths;
+    consume(buf, ",");
+    consume(buf, "prolongation_orders_space:");
+    buf >> grid_structure.maps[m].prolongation_orders_space;
+    consume(buf, ",");
+    consume(buf, "},");
+  }
+  consume(buf, "],");
+  consume(buf, "times:");
+  buf >> grid_structure.times;
+  consume(buf, ",");
+  consume(buf, "deltas:");
+  buf >> grid_structure.deltas;
+  consume(buf, ",");
+  consume(buf, "global_time:");
+  buf >> grid_structure.global_time;
+  consume(buf, ",");
+  consume(buf, "delta_time:");
+  buf >> grid_structure.delta_time;
+  consume(buf, ",");
+  consume(buf, "}.");
+  return grid_structure;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -213,7 +318,7 @@ const vector<vector<vector<int> > > syminds{
 ////////////////////////////////////////////////////////////////////////////////
 
 // Generate a good file name ("alias") for a variable
-string generate_projectname(const cGH *cctkGH, int vindex) {
+string generate_projectname(int vindex) {
   DECLARE_CCTK_PARAMETERS;
 
   assert(vindex >= 0);
@@ -245,7 +350,7 @@ string generate_projectname(const cGH *cctkGH, int vindex) {
 }
 
 // Generate a good file name
-string generate_projectname(const cGH *cctkGH) {
+string generate_projectname() {
   DECLARE_CCTK_PARAMETERS;
 
   ostringstream filename_buf;
@@ -273,10 +378,10 @@ string generate_projectname(const cGH *cctkGH) {
 }
 
 // Generate the final file name on a particular processor
-string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
-                         const string &basename, const string &extra_suffix,
-                         int iteration, file_type output_type, int myioproc,
-                         int ioproc_every) {
+string generate_filename(io_dir_t io_dir, const string &basename,
+                         const string &extra_suffix, int iteration,
+                         file_format output_format, file_type output_type,
+                         int myioproc, int ioproc_every) {
   DECLARE_CCTK_PARAMETERS;
 
   string IO_dir;
@@ -308,7 +413,7 @@ string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
   string path = S5_dir.empty() ? IO_dir : S5_dir;
 
   if (output_type == file_type::local) {
-    const int nprocs = CCTK_nProcs(cctkGH);
+    const int nprocs = CCTK_nProcs(nullptr);
     const int nioprocs = (nprocs + ioproc_every - 1) / ioproc_every;
 
     // Create additional directory levels until we can handle all I/O processes
@@ -337,7 +442,17 @@ string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
   if (output_type == file_type::local)
     buf << ".p" << setw(processor_digits) << setfill('0')
         << (myioproc / ioproc_every);
-  buf << extra_suffix << out_extension;
+  buf << extra_suffix;
+  switch (output_format) {
+  case file_format::hdf5:
+    buf << out_extension;
+    break;
+  case file_format::asdf:
+    buf << out_extension_asdf;
+    break;
+  default:
+    assert(0);
+  }
   path = buf.str();
 
   return path;
@@ -368,7 +483,7 @@ void init_comm() {
   MPI_Comm_dup(dist::comm(), &comm);
   assert(comm != MPI_COMM_NULL);
 }
-void finalize_comm() {
+void finalise_comm() {
   assert(comm != MPI_COMM_NULL);
   MPI_Comm_free(&comm);
   assert(comm == MPI_COMM_NULL);

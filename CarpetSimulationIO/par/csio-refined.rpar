@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+
+import re
+import sys
+from string import Template
+
+def expand(par, default):
+    return par if par[0] != "@" else default
+
+def yesno(cond):
+    return "yes" if cond else "no"
+
+format = "@format@"
+assert format == "carpet" or format == "hdf5" or format == "asdf"
+
+output_carpet = yesno(format == "carpet") # CarpetIOHDF5
+output_hdf5 = yesno(format == "hdf5")
+output_asdf = yesno(format == "asdf")
+output_sio = yesno(format == "hdf5" or format == "asdf")
+
+ioutput_carpet = int(format == "carpet") # CarpetIOHDF5
+ioutput_hdf5 = int(format == "hdf5")
+ioutput_asdf = int(format == "asdf")
+ioutput_sio = int(format == "hdf5" or format == "asdf")
+
+suffix = "-%s" % format
+
+lines = """
+ActiveThorns = "
+    Boundary
+    Carpet
+    CarpetIOASCII
+    CarpetIOHDF5
+    CarpetLib
+    CarpetRegrid2
+    CarpetSimulationIO
+    CartGrid3D
+    CoordBase
+    Formaline
+    IDScalarWaveC
+    IOUtil
+    InitBase
+    SymBase
+    Time
+    WaveToyC
+"
+
+Cactus::cctk_run_title = "SimulationIO"
+Cactus::cctk_full_warnings = yes
+Cactus::highlight_warning_messages = no
+
+Cactus::cctk_itlast = 1024
+
+Carpet::domain_from_coordbase = yes
+CartGrid3D::type = "coordbase"
+CoordBase::domainsize = "minmax"
+CoordBase::xmin = -1.0
+CoordBase::ymin = -1.0
+CoordBase::zmin = -1.0
+CoordBase::xmax = +1.0
+CoordBase::ymax = +1.0
+CoordBase::zmax = +1.0
+CoordBase::dx = 0.25
+CoordBase::dy = 0.25
+CoordBase::dz = 0.25
+
+Carpet::max_refinement_levels = 10
+CarpetRegrid2::num_centres = 1
+CarpetRegrid2::num_levels_1 = 3
+CarpetRegrid2::radius_1[1] = 0.5
+CarpetRegrid2::radius_1[2] = 0.2
+
+InitBase::initial_data_setup_method = "init_all_levels"
+IDScalarWave::initial_data = "standing"
+IDScalarWaveC::kx = 0.25
+IDScalarWaveC::ky = 0.25
+IDScalarWaveC::kz = 0.25
+
+Time::dtfac = 0.5
+WaveToy::bound = "zero"
+
+IO::out_dir = $$parfile
+
+CarpetIOASCII::one_file_per_group = yes
+CarpetIOASCII::out1D_every = 256
+CarpetIOASCII::out1D_vars = "
+    wavetoy::scalarevolve
+"
+
+CarpetIOHDF5::out_every = 256 * $ioutput_carpet
+CarpetIOHDF5::one_file_per_group = yes
+CarpetIOHDF5::out_vars = "
+    grid::coordinates
+    wavetoy::scalarevolve
+"
+
+# CarpetSimulationIO::verbose = yes
+
+CarpetSimulationIO::async_output = yes
+CarpetSimulationIO::max_nioprocs = 2
+CarpetSimulationIO::output_hdf5 = $output_hdf5
+CarpetSimulationIO::output_asdf = $output_asdf
+
+CarpetSimulationIO::out_every = 256 * $ioutput_sio
+CarpetSimulationIO::out_vars = "
+    wavetoy::scalarevolve
+"
+
+Formaline::output_source = no
+"""
+
+open(re.sub(r'(.*)\.rpar$', r'\1.par', sys.argv[0]), 'w').write(
+    Template(lines).substitute(locals()))

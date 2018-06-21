@@ -11,18 +11,42 @@
 #include <SimulationIO/SimulationIO.hpp>
 
 #include <array>
+#include <cassert>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace CarpetSimulationIO {
+namespace RC = RegionCalculus;
 using namespace SimulationIO;
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+enum class file_format { hdf5, asdf };
 enum class file_type { local, global };
+
+inline ostream &operator<<(ostream &os, file_format format) {
+  switch (format) {
+  case file_format::hdf5:
+    return os << "file_format::hdf5";
+  case file_format::asdf:
+    return os << "file_format::asdf";
+  }
+  assert(0);
+}
+
+inline ostream &operator<<(ostream &os, file_type type) {
+  switch (type) {
+  case file_type::local:
+    return os << "local";
+  case file_type::global:
+    return os << "global";
+  }
+  assert(0);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -141,9 +165,25 @@ dregion<R> bboxset2dregion(const CarpetLib::bboxset<T, DT> &iset, int DR) {
   }
 }
 
+template <typename T, int DT>
+RC::point_t vect2point_t(const CarpetLib::vect<T, DT> &ipos, int DR) {
+  return vect2dpoint<long long>(ipos, DR);
+}
+
+template <typename T, int DT>
+RC::box_t bbox2box_t(const CarpetLib::bbox<T, DT> &ibox, int DR) {
+  return bbox2dbox<long long>(ibox, DR);
+}
+
+template <typename T, int DT>
+RC::region_t bboxset2region_t(const CarpetLib::bboxset<T, DT> &iset, int DR) {
+  return bboxset2dregion<long long>(iset, DR);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 H5::DataType cactustype2hdf5type(int cactustype);
+ASDF::datatype_t cactustype2asdftype(int cactustype);
 MPI_Datatype cactustype2mpitype(int cactustype);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -178,20 +218,39 @@ string charptr2string(const char *const &str);
 string charptr2string(char *&&str);
 string charptr2string(char *const &str);
 
-string generate_projectname(const cGH *cctkGH, int variable);
-string generate_projectname(const cGH *cctkGH);
-string generate_filename(const cGH *cctkGH, io_dir_t io_dir,
-                         const string &basename, const string &extra_suffix,
-                         int iteration, file_type output_type, int myioproc,
-                         int ioproc_every);
+string generate_projectname(int variable);
+string generate_projectname();
+string generate_filename(io_dir_t io_dir, const string &basename,
+                         const string &extra_suffix, int iteration,
+                         file_format output_format, file_type output_type,
+                         int myioproc, int ioproc_every);
 tuple<string, int> split_filename(const string &filename);
 
-string serialize_grid_structure(const cGH *cctkGH);
+////////////////////////////////////////////////////////////////////////////////
+
+struct grid_structure_v7 {
+  struct map_structure {
+    vector<vector<Carpet::region_t> > superregions;
+    // vector<vector<Carpet::region_t> > regions;
+    vector<i2vect> ghost_widths;
+    vector<i2vect> buffer_widths;
+    vector<i2vect> overlap_widths;
+    vector<int> prolongation_orders_space;
+  };
+  vector<map_structure> maps;
+  vector<vector<CCTK_REAL> > times;
+  vector<CCTK_REAL> deltas;
+  CCTK_REAL global_time;
+  CCTK_REAL delta_time;
+};
+
+string serialise_grid_structure(const cGH *cctkGH);
+grid_structure_v7 deserialise_grid_structure(const string &grid_structure);
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void init_comm();
-void finalize_comm();
+void finalise_comm();
 void send_data(int ioproc, const void *data, int cactustype,
                const dbox<long long> &memshape, const dbox<long long> &membox);
 vector<char> recv_data(int dataproc, int cactustype,

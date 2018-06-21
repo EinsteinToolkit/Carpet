@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+
+import re
+import sys
+from string import Template
+
+def expand(par, default):
+    return par if par[0] != "@" else default
+
+def yesno(cond):
+    return "yes" if cond else "no"
+
+format = "@format@"
+assert format == "hdf5" or format == "asdf"
+
+output_hdf5 = yesno(format == "hdf5")
+output_asdf = yesno(format == "asdf")
+
+suffix = "-%s" % format
+
+lines = """
+ActiveThorns = "
+    Boundary
+    Carpet
+    CarpetIOASCII
+    CarpetLib
+    CarpetSimulationIO
+    CartGrid3D
+    CoordBase
+    Formaline
+    IOUtil
+    InitBase
+    SymBase
+    Time
+    WaveToyC
+"
+
+Cactus::cctk_run_title = "SimulationIO"
+Cactus::cctk_full_warnings = yes
+Cactus::highlight_warning_messages = no
+
+Cactus::cctk_itlast = 0
+
+Carpet::domain_from_coordbase = yes
+CartGrid3D::type = "coordbase"
+CoordBase::domainsize = "minmax"
+CoordBase::xmin = -1.0
+CoordBase::ymin = -1.0
+CoordBase::zmin = -1.0
+CoordBase::xmax = +1.0
+CoordBase::ymax = +1.0
+CoordBase::zmax = +1.0
+CoordBase::dx = 0.25
+CoordBase::dy = 0.25
+CoordBase::dz = 0.25
+
+Time::dtfac = 0.5
+WaveToy::bound = "zero"
+
+IO::out_dir = $$parfile
+
+CarpetIOASCII::one_file_per_group = yes
+CarpetIOASCII::out1D_every = 2
+CarpetIOASCII::out1D_vars = "
+    wavetoy::scalarevolve
+"
+
+# CarpetSimulationIO::verbose = yes
+
+CarpetSimulationIO::input_hdf5 = $output_hdf5
+CarpetSimulationIO::input_asdf = $output_asdf
+IO::filereader_ID_dir = "../../csio-uniform$suffix/output-0000/csio-uniform"
+IO::filereader_ID_files = "csio-uniform"
+CarpetSimulationIO::filereader_ID_iteration = 2
+IO::filereader_ID_vars = "
+    wavetoy::scalarevolve
+"
+
+CarpetSimulationIO::async_output = yes
+CarpetSimulationIO::max_nioprocs = 3
+CarpetSimulationIO::output_hdf5 = $output_hdf5
+CarpetSimulationIO::output_asdf = $output_asdf
+
+CarpetSimulationIO::out_every = 2
+CarpetSimulationIO::out_vars = "
+    wavetoy::scalarevolve
+"
+
+Formaline::output_source = no
+"""
+
+open(re.sub(r'(.*)\.rpar$', r'\1.par', sys.argv[0]), 'w').write(
+    Template(lines).substitute(locals()))

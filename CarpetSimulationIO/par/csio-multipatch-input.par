@@ -10,8 +10,8 @@ ActiveThorns = "
     CoordBase
     Coordinates
     Formaline
-    InitBase
     IOUtil
+    InitBase
     SymBase
 "
 

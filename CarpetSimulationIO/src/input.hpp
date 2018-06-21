@@ -16,7 +16,7 @@ using namespace SimulationIO;
 using namespace std;
 
 class input_file_t {
-  const cGH *const cctkGH;
+  const file_format input_format;
   const int iteration;
   shared_ptr<Project> project;
 
@@ -27,11 +27,15 @@ public:
   input_file_t &operator=(const input_file_t &) = delete;
   input_file_t &operator=(input_file_t &&) = delete;
 
-  input_file_t(const cGH *cctkGH, io_dir_t io_dir, const string &projectname,
-               int iteration, int ioproc, int nioprocs);
+  input_file_t(io_dir_t io_dir, const string &projectname,
+               file_format input_format, int iteration, int ioproc,
+               int nioprocs);
 
   // Read parameters from project
   void read_params() const;
+
+  // Read grid structure from project
+  void read_grid_structure(cGH *cctkGH) const;
 
   // Read variables from project
   void read_vars(const vector<int> &varindices, int reflevel,

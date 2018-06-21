@@ -85,14 +85,22 @@ extern "C" void CarpetSimulationIO_Init(CCTK_ARGUMENTS) {
   init_comm();
 }
 
+void finalise_input_file_ptrs();
+
+extern "C" void CarpetSimulationIO_FinaliseInit(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_ARGUMENTS;
+
+  finalise_input_file_ptrs();
+}
+
 // Scheduled finalization routine
-extern "C" void CarpetSimulationIO_Finalize(CCTK_ARGUMENTS) {
+extern "C" void CarpetSimulationIO_Finalise(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
 
   // Wait for all output threads before shutting down
   output_pthreads.clear();
 
-  finalize_comm();
+  finalise_comm();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -141,8 +149,10 @@ public:
 selection_t output_variables;
 
 struct output_state_t {
-  unique_ptr<output_file_t> output_file_ptr;
-  unique_ptr<output_file_t> global_file_ptr;
+  unique_ptr<output_file_t> output_file_hdf5_ptr;
+  unique_ptr<output_file_t> global_file_hdf5_ptr;
+  unique_ptr<output_file_t> output_file_asdf_ptr;
+  unique_ptr<output_file_t> global_file_asdf_ptr;
   bool did_write;
   output_state_t(const cGH *cctkGH, io_dir_t io_dir, const string &projectname)
       : did_write(false) {
@@ -163,26 +173,55 @@ struct output_state_t {
     assert(nioprocs <= nprocs);
     int myioproc = myproc / ioproc_every * ioproc_every;
 
-    output_file_ptr.reset(new output_file_t(
-        cctkGH, io_dir, projectname, file_type::local, myioproc, ioproc_every));
-    if (myproc == 0)
-      global_file_ptr.reset(new output_file_t(cctkGH, io_dir, projectname,
-                                              file_type::global, myioproc,
-                                              ioproc_every));
+    if (not output_hdf5 and not output_asdf)
+      CCTK_WARN(CCTK_WARN_ALERT, "No file format is active -- no SimulationIO "
+                                 "output files be written");
+
+    if (output_hdf5) {
+      output_file_hdf5_ptr.reset(
+          new output_file_t(cctkGH, io_dir, projectname, file_format::hdf5,
+                            file_type::local, myioproc, ioproc_every));
+      if (myproc == 0)
+        global_file_hdf5_ptr.reset(
+            new output_file_t(cctkGH, io_dir, projectname, file_format::hdf5,
+                              file_type::global, myioproc, ioproc_every));
+    }
+    if (output_asdf) {
+      output_file_asdf_ptr.reset(
+          new output_file_t(cctkGH, io_dir, projectname, file_format::asdf,
+                            file_type::local, myioproc, ioproc_every));
+      if (myproc == 0)
+        global_file_asdf_ptr.reset(
+            new output_file_t(cctkGH, io_dir, projectname, file_format::asdf,
+                              file_type::global, myioproc, ioproc_every));
+    }
   }
   ~output_state_t() { assert(did_write); }
   void insert_vars(const vector<int> &varindices, int reflevel, int timelevel,
                    data_handling handle_data) {
-    output_file_ptr->insert_vars(varindices, reflevel, timelevel, handle_data);
-    if (global_file_ptr)
-      global_file_ptr->insert_vars(varindices, reflevel, timelevel,
-                                   handle_data);
+    if (output_file_hdf5_ptr)
+      output_file_hdf5_ptr->insert_vars(varindices, reflevel, timelevel,
+                                        handle_data);
+    if (global_file_hdf5_ptr)
+      global_file_hdf5_ptr->insert_vars(varindices, reflevel, timelevel,
+                                        handle_data);
+    if (output_file_asdf_ptr)
+      output_file_asdf_ptr->insert_vars(varindices, reflevel, timelevel,
+                                        handle_data);
+    if (global_file_asdf_ptr)
+      global_file_asdf_ptr->insert_vars(varindices, reflevel, timelevel,
+                                        handle_data);
   }
   void write() {
     assert(not did_write);
-    output_file_ptr->write();
-    if (global_file_ptr)
-      global_file_ptr->write();
+    if (output_file_hdf5_ptr)
+      output_file_hdf5_ptr->write();
+    if (global_file_hdf5_ptr)
+      global_file_hdf5_ptr->write();
+    if (output_file_asdf_ptr)
+      output_file_asdf_ptr->write();
+    if (global_file_asdf_ptr)
+      global_file_asdf_ptr->write();
     did_write = true;
   }
 };
@@ -237,7 +276,7 @@ int OutputGH(const cGH *cctkGH) {
       // overlapping output threads if we wanted do.)
       output_pthreads.clear();
       // Create new thread
-      string projectname = generate_projectname(cctkGH);
+      string projectname = generate_projectname();
       output_pthreads.emplace_back(new pthread_wrapper_t(projectname, task));
     } else {
       // Output synchronously
@@ -350,7 +389,7 @@ int TriggerVar(const cGH *cctkGH, int vindex, int reflevel,
                charptr2string(CCTK_FullName(vindex)).c_str());
 
   if (not output_state_ptr) {
-    string projectname = generate_projectname(cctkGH);
+    string projectname = generate_projectname();
     output_state_ptr.reset(
         new output_state_t(cctkGH, io_dir_t::output, projectname));
   }
@@ -452,7 +491,7 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
     // Do not checkpoint groups with a "checkpoint=no" tag
     int len = Util_TableGetString(gdata.tagstable, 0, nullptr, "checkpoint");
     if (len > 0) {
-      vector<char> buf(1000);
+      array<char, 10> buf;
       Util_TableGetString(gdata.tagstable, buf.size(), buf.data(),
                           "checkpoint");
       if (CCTK_EQUALS(buf.data(), "no"))
@@ -465,6 +504,9 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
     for (int vindex1 = 0; vindex1 < numvars; ++vindex1)
       varindices.push_back(varindex0 + vindex1);
   }
+
+  string projectname =
+      called_from == CP_INITIAL_DATA ? checkpoint_ID_file : checkpoint_file;
 
   // We split processes into "I/O groups" which range from myioproc to
   // myioproc + ioproc_every - 1 (inclusive). Within each group, only
@@ -479,22 +521,40 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
   assert(nioprocs <= nprocs);
   int myioproc = myproc / ioproc_every * ioproc_every;
 
+  // TODO: Allow asynchronous checkpointing? We would start writing
+  // checkpoint files, but only wait for them at a later time (e.g. a
+  // few iterations or a certain time later, probably at least before
+  // the next checkpoint).
+
   // Wait for all output threads to ensure all previous output has
   // been written when the checkpoint file is created
   output_pthreads.clear();
 
-  string projectname =
-      called_from == CP_INITIAL_DATA ? checkpoint_ID_file : checkpoint_file;
-  output_file_t output_file(cctkGH, io_dir_t::checkpoint, projectname,
-                            file_type::local, myioproc, ioproc_every);
-  output_file.insert_vars(varindices, -1, -1, data_handling::write);
-  output_file.write();
+  vector<file_format> formats;
+  if (output_hdf5)
+    formats.push_back(file_format::hdf5);
+  if (output_asdf)
+    formats.push_back(file_format::asdf);
+  if (formats.empty())
+    CCTK_WARN(CCTK_WARN_ALERT, "No file format is active -- no SimulationIO "
+                               "checkpoints will be written");
 
-  if (myproc == 0) {
-    output_file_t global_file(cctkGH, io_dir_t::checkpoint, projectname,
-                              file_type::global, myioproc, ioproc_every);
-    global_file.insert_vars(varindices, -1, -1, data_handling::write);
-    global_file.write();
+  for (const auto format : formats) {
+    {
+      output_file_t output_file(cctkGH, io_dir_t::checkpoint, projectname,
+                                format, file_type::local, myioproc,
+                                ioproc_every);
+      output_file.insert_vars(varindices, -1, -1, data_handling::write);
+      output_file.write();
+    }
+
+    if (myproc == 0) {
+      output_file_t global_file(cctkGH, io_dir_t::checkpoint, projectname,
+                                format, file_type::global, myioproc,
+                                ioproc_every);
+      global_file.insert_vars(varindices, -1, -1, data_handling::write);
+      global_file.write();
+    }
   }
 
   last_checkpoint_iteration = cctkGH->cctk_iteration;
@@ -513,15 +573,17 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
         int iteration = *iterpos;
         if (myproc == 0)
           CCTK_VINFO("Deleting old checkpoint for iteration %d...", iteration);
-        auto filename = generate_filename(
-            cctkGH, io_dir_t::checkpoint, projectname, "", iteration,
-            file_type::local, myioproc, ioproc_every);
-        remove(filename.c_str());
-        if (myproc == 0) {
+        for (const auto format : formats) {
           auto filename = generate_filename(
-              cctkGH, io_dir_t::checkpoint, projectname, "", iteration,
-              file_type::global, myioproc, ioproc_every);
+              io_dir_t::checkpoint, projectname, "", iteration, format,
+              file_type::local, myioproc, ioproc_every);
           remove(filename.c_str());
+          if (myproc == 0) {
+            auto filename = generate_filename(
+                io_dir_t::checkpoint, projectname, "", iteration, format,
+                file_type::global, myioproc, ioproc_every);
+            remove(filename.c_str());
+          }
         }
         checkpoint_iterations.erase(iterpos);
       }
@@ -533,8 +595,12 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
 
 // Input
 
-#warning "TODO: free this data structure"
-map<string, unique_ptr<input_file_t> > input_file_ptrs;
+map<string, unique_ptr<input_file_t> > input_file_hdf5_ptrs;
+map<string, unique_ptr<input_file_t> > input_file_asdf_ptrs;
+void finalise_input_file_ptrs() {
+  input_file_hdf5_ptrs.clear();
+  input_file_asdf_ptrs.clear();
+}
 
 int Input(cGH *cctkGH, const char *basefilename, int called_from) {
   DECLARE_CCTK_PARAMETERS;
@@ -554,8 +620,14 @@ int Input(cGH *cctkGH, const char *basefilename, int called_from) {
   string projectname;
   int iteration;
   if (do_recover) {
-    // Split basename into the actual basename and the iteration number
-    auto pi = split_filename(basefilename);
+    // basename is only passed for CP_RECOVER_PARAMETERS, and needs to
+    // be remembered
+    static string saved_basefilename;
+    if (called_from == CP_RECOVER_PARAMETERS)
+      // Split basename into the actual basename and the iteration number
+      saved_basefilename = basefilename;
+    assert(not saved_basefilename.empty());
+    auto pi = split_filename(saved_basefilename);
     projectname = get<0>(pi);
     iteration = get<1>(pi);
   } else {
@@ -574,25 +646,95 @@ int Input(cGH *cctkGH, const char *basefilename, int called_from) {
     CCTK_VINFO("Reading iteration %d from file \"%s\"", iteration,
                projectname.c_str());
 
+  if (do_recover and not read_parameters) {
+    // Set global Cactus variables
+    // CCTK_SetMainLoopIndex(main_loop_index);
+    cctkGH->cctk_iteration = iteration;
+  }
+
   // Determine which variables to read
   const ioGH *ioUtilGH = (const ioGH *)CCTK_GHExtension(cctkGH, "IO");
   vector<int> input_vars;
-  int numvars = CCTK_NumVars();
-  for (int vindex = 0; vindex < numvars; ++vindex)
-    if (not ioUtilGH->do_inVars or ioUtilGH->do_inVars[vindex])
-      input_vars.push_back(vindex);
+  input_vars.reserve(CCTK_NumVars());
+  if (do_recover) {
+    for (int gindex = 0; gindex < CCTK_NumGroups(); ++gindex) {
+      // We can't check for storage here, since this requires at least
+      // level mode
+      if (not CCTK_QueryGroupStorageI(cctkGH, gindex))
+        continue;
 
-  io_dir_t io_dir = do_recover ? io_dir_t::recover : io_dir_t::input;
-  if (not input_file_ptrs.count(projectname))
-    input_file_ptrs[projectname] = make_unique<input_file_t>(
-        cctkGH, io_dir, projectname, iteration, -1, -1);
-  const auto &input_file_ptr = input_file_ptrs.at(projectname);
-  if (read_parameters) {
-    input_file_ptr->read_params();
+      cGroup gdata;
+      CCTK_GroupData(gindex, &gdata);
+
+      // Do not recover groups with a "checkpoint=no" tag
+      int len = Util_TableGetString(gdata.tagstable, 0, nullptr, "checkpoint");
+      if (len > 0) {
+        array<char, 10> buf;
+        Util_TableGetString(gdata.tagstable, buf.size(), buf.data(),
+                            "checkpoint");
+        if (CCTK_EQUALS(buf.data(), "no"))
+          continue;
+        assert(CCTK_EQUALS(buf.data(), "yes"));
+      }
+
+      int varindex0 = CCTK_FirstVarIndexI(gindex);
+      int numvars = CCTK_NumVarsInGroupI(gindex);
+      for (int vindex1 = 0; vindex1 < numvars; ++vindex1)
+        input_vars.push_back(varindex0 + vindex1);
+    }
   } else {
-    input_file_ptr->read_vars(input_vars, -1, -1);
+    for (int vindex = 0; vindex < CCTK_NumVars(); ++vindex)
+      if (not ioUtilGH->do_inVars or ioUtilGH->do_inVars[vindex])
+        input_vars.push_back(vindex);
   }
 
+  io_dir_t io_dir = do_recover ? io_dir_t::recover : io_dir_t::input;
+  bool did_read_parameters = false;
+  bool did_read_grid_structure = false;
+  // TODO: Emit this warning only if both kinds of files were actually found, in
+  // particular when recovering
+  // if (bool(input_hdf5) + bool(input_asdf) > 1)
+  //   CCTK_WARN(
+  //       CCTK_WARN_ALERT,
+  //       "Reading both HDF5 and ASDF files -- this usually does not make
+  //       sense");
+  if (input_hdf5) {
+    if (not input_file_hdf5_ptrs.count(projectname))
+      input_file_hdf5_ptrs[projectname] = make_unique<input_file_t>(
+          io_dir, projectname, file_format::hdf5, iteration, -1, -1);
+    const auto &input_file_ptr = input_file_hdf5_ptrs.at(projectname);
+    if (read_parameters) {
+      input_file_ptr->read_params();
+      did_read_parameters = true;
+    } else {
+      if (not did_read_grid_structure) {
+        input_file_ptr->read_grid_structure(cctkGH);
+        did_read_grid_structure = true;
+      }
+      input_file_ptr->read_vars(input_vars, -1, -1);
+    }
+  }
+  if (input_asdf) {
+    if (not input_file_asdf_ptrs.count(projectname))
+      input_file_asdf_ptrs[projectname] = make_unique<input_file_t>(
+          io_dir, projectname, file_format::asdf, iteration, -1, -1);
+    const auto &input_file_ptr = input_file_asdf_ptrs.at(projectname);
+    if (read_parameters) {
+      input_file_ptr->read_params();
+      did_read_parameters = true;
+    } else {
+      if (not did_read_grid_structure) {
+        input_file_ptr->read_grid_structure(cctkGH);
+        did_read_grid_structure = true;
+      }
+      input_file_ptr->read_vars(input_vars, -1, -1);
+    }
+  }
+
+  if (read_parameters)
+    return did_read_parameters ? 1 : 0;
+
+  assert(did_read_grid_structure);
   return 0; // no error
 }
 
@@ -601,7 +743,13 @@ int Input(cGH *cctkGH, const char *basefilename, int called_from) {
 // Recovering
 
 extern "C" int CarpetSimulationIO_RecoverParameters() {
-  return IOUtil_RecoverParameters(Input, ".s5", "SimulationIO");
+  DECLARE_CCTK_PARAMETERS;
+  int iret = 0;
+  if (input_hdf5 and iret == 0)
+    iret = IOUtil_RecoverParameters(Input, out_extension, "SimulationIO");
+  if (input_asdf and iret == 0)
+    iret = IOUtil_RecoverParameters(Input, out_extension_asdf, "SimulationIO");
+  return iret;
 }
 
 } // end namespace CarpetSimulationIO

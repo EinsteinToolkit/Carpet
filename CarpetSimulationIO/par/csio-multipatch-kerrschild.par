@@ -94,6 +94,7 @@ ADMBase::initial_dtshift = "Exact"
 Exact::exact_model = "Kerr/Kerr-Schild"
 Exact::Kerr_KerrSchild__mass = 1.0
 Exact::Kerr_KerrSchild__spin = 0.8
+Exact::Kerr_KerrSchild__parabolic = yes
 Exact::Kerr_KerrSchild__epsilon = 1.0e-4
 
 ADMBase::evolution_method = "ML_BSSN"
@@ -102,8 +103,9 @@ ADMBase::shift_evolution_method = "ML_BSSN"
 ADMBase::dtlapse_evolution_method = "ML_BSSN"
 ADMBase::dtshift_evolution_method = "ML_BSSN"
 
-ML_BSSN::harmonicN = 1      # 1+log
-ML_BSSN::harmonicF = 2.0    # 1+log
+ML_BSSN::conformalMethod = 1   # phi:0, W:1
+ML_BSSN::harmonicN = 1         # 1+log
+ML_BSSN::harmonicF = 2.0       # 1+log
 ML_BSSN::ShiftGammaCoeff = 0.75
 ML_BSSN::BetaDriver = 1.0
 ML_BSSN::advectLapse = 1
@@ -165,6 +167,8 @@ CarpetIOHDF5::out_vars = "
 
 
 
+CarpetSimulationIO::output_hdf5 = yes
+CarpetSimulationIO::output_asdf = yes
 CarpetSimulationIO::async_output = yes
 CarpetSimulationIO::max_nioprocs = 2
 

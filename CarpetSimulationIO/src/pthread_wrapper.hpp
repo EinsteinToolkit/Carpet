@@ -43,6 +43,6 @@ struct pthread_wrapper_t {
 };
 
 #endif
-}
+} // namespace CarpetSimulationIO
 
 #endif // #ifndef PTHREAD_WRAPPER_HPP

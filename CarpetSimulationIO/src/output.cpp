@@ -19,6 +19,8 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <cstring>
+#include <fstream>
 #include <functional>
 #include <iomanip>
 #include <map>
@@ -32,6 +34,28 @@
 namespace CarpetSimulationIO {
 using namespace SimulationIO;
 using namespace std;
+
+void add_parametervalue(shared_ptr<Configuration> &configuration,
+                        const string &name, double value) {
+  if (!configuration->project()->parameters().count(name))
+    configuration->project()->createParameter(name);
+  auto parameter = configuration->project()->parameters().at(name);
+  auto checksum = adler32(
+      static_cast<const unsigned char *>(static_cast<const void *>(&value)),
+      sizeof value);
+  auto parametervaluename = stringify(name, "-", hex, setfill('0'),
+                                      setw(2 * sizeof(checksum)), checksum);
+  if (!parameter->parametervalues().count(parametervaluename)) {
+    auto parametervalue = parameter->createParameterValue(parametervaluename);
+    parametervalue->setValue(value);
+  }
+  auto parametervalue = parameter->parametervalues().at(parametervaluename);
+  assert(parametervalue->value_type == ParameterValue::type_double);
+  // assert(parametervalue->value_double == value);
+  static_assert(sizeof parametervalue->value_double == sizeof value, "");
+  assert(memcmp(&parametervalue->value_double, &value, sizeof value) == 0);
+  configuration->insertParameterValue(parametervalue);
+}
 
 void add_parametervalue(shared_ptr<Configuration> &configuration,
                         const string &name, const string &value) {
@@ -62,11 +86,13 @@ void add_parametervalue(shared_ptr<Configuration> &configuration,
 ////////////////////////////////////////////////////////////////////////////////
 
 output_file_t::output_file_t(const cGH *cctkGH, io_dir_t io_dir,
-                             const string &projectname, file_type output_type,
+                             const string &projectname,
+                             file_format output_format, file_type output_type,
                              int myioproc, int ioproc_every)
     : cctkGH(cctkGH), io_dir(io_dir), projectname(projectname),
-      output_type(output_type), iteration(cctkGH->cctk_iteration),
-      myioproc(myioproc), ioproc_every(ioproc_every) {
+      output_format(output_format), output_type(output_type),
+      iteration(cctkGH->cctk_iteration), myioproc(myioproc),
+      ioproc_every(ioproc_every) {
   DECLARE_CCTK_PARAMETERS;
   if (verbose)
     CCTK_VINFO("Creating project \"%s\"", projectname.c_str());
@@ -127,11 +153,15 @@ void output_file_t::insert_vars(const vector<int> &varindices,
       if (CCTK_IsFunctionAliased("UniqueSimulationID"))
         add_parametervalue(global_configuration, "simulation id",
                            (const char *)UniqueSimulationID(cctkGH));
-      if (CCTK_IsFunctionAliased("UniqueRunID"))
-        add_parametervalue(global_configuration, "run id",
-                           (const char *)UniqueRunID(cctkGH));
+      // Each checkpointing segment has a different Run ID. Do not
+      // store the Run ID, as this prevents combining configurations
+      // from different checkpointing segments.
+      // if (CCTK_IsFunctionAliased("UniqueRunID"))
+      //   add_parametervalue(global_configuration, "run id",
+      //                      (const char *)UniqueRunID(cctkGH));
     }
   }
+
   auto global_configuration = project->configurations().at("global");
   // TensorTypes
   if (not project->tensortypes().count("Scalar0D"))
@@ -266,8 +296,8 @@ void output_file_t::insert_vars(const vector<int> &varindices,
           int p = hh->processor(reflevel, c);
           assert(p == 0);
           proc2components.at(p).push_back(c);
-
         } else {
+          assert(groupdata.grouptype != CCTK_SCALAR);
           for (int component = 0; component < hh->components(reflevel);
                ++component)
             proc2components.at(hh->processor(reflevel, component))
@@ -313,13 +343,18 @@ void output_file_t::insert_vars(const vector<int> &varindices,
             auto value_timelevel =
                 parameter_timelevel->parametervalues().at(value_timelevel_name);
             configuration->insertParameterValue(value_timelevel);
+            // Time
+            double time = cctkGH->cctk_time;
+            add_parametervalue(configuration, "cctk_time", time);
+            double delta_time = cctkGH->cctk_delta_time;
+            add_parametervalue(configuration, "cctk_delta_time", delta_time);
             // Cactus parameters
             auto parameters =
                 charptr2string(IOUtil_GetAllParameters(cctkGH, 1 /*all*/));
             add_parametervalue(configuration, "All Parameters", parameters);
             // Grid structure
-            auto grid_structure = serialize_grid_structure(cctkGH);
-            add_parametervalue(configuration, "Grid Structure v6",
+            auto grid_structure = serialise_grid_structure(cctkGH);
+            add_parametervalue(configuration, "Grid Structure v7",
                                grid_structure);
           }
           auto configuration = project->configurations().at(configurationname);
@@ -351,7 +386,8 @@ void output_file_t::insert_vars(const vector<int> &varindices,
             buf << configuration->name();
             if (max_mapindex > 1)
               buf << "-map." << setfill('0') << setw(width_m) << mapindex;
-            if (max_reflevel > 1)
+            if (groupdata.grouptype == CCTK_GF &&
+                GetMaxRefinementLevels(nullptr) > 1)
               buf << "-level." << setfill('0') << setw(width_rl) << rl;
             return buf.str();
           };
@@ -476,21 +512,31 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                                        discretization, basis);
           auto discretefield = field->discretefields().at(discretefieldname);
 
+          int min_dataproc, max_dataproc;
           switch (output_type) {
-          case file_type::global: {
-            const int min_component = 0;
-            const int max_component = hh->components(reflevel);
-            for (int component = min_component; component < max_component;
-                 ++component) {
-              int proc = hh->processor(reflevel, component);
-              int other_ioproc = proc;
+          case file_type::global:
+            min_dataproc = 0;
+            max_dataproc = nprocs;
+            break;
+          case file_type::local:
+            min_dataproc = myproc == myioproc ? myioproc : myproc;
+            max_dataproc = myproc == myioproc
+                               ? min(myioproc + ioproc_every, nprocs)
+                               : myproc + 1;
+            break;
+          default:
+            assert(0);
+          }
+          for (int dataproc = min_dataproc; dataproc < max_dataproc;
+               ++dataproc) {
 
-              // The name choices here must be consistent with the local
-              // output below
+            for (int component : proc2components[dataproc]) {
 
               // Get discretization block
               string discretizationblockname =
-                  stringify("c.", setfill('0'), setw(width_c), component);
+                  groupdata.disttype == CCTK_DISTRIB_DEFAULT
+                      ? stringify("c.", setfill('0'), setw(width_c), component)
+                      : "replicated";
               if (not discretization->discretizationblocks().count(
                       discretizationblockname)) {
                 auto discretizationblock =
@@ -500,14 +546,16 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                     dd->level_boxes.at(mglevel).at(reflevel);
                 const auto &light_box =
                     dd->light_boxes.at(mglevel).at(reflevel).at(component);
-                // const auto &local_box =
-                //     dd->local_boxes.at(mglevel).at(reflevel).at(
-                //         local_component);
-                // TODO: Cut off ghosts?
+                // TODO: We could cut off inter-process ghost points that can be
+                // synchronized. However, we can not cut off prolongation ghost
+                // or buffer points on past time levels, since these cannot be
+                // recalculated.
                 discretizationblock->setBox(
-                    bbox2dbox<long long>(light_box.exterior, dimension));
-                discretizationblock->setActive(bboxset2dregion<long long>(
-                    level_box.active & light_box.owned, dimension));
+                    bbox2box_t(light_box.exterior, dimension));
+                auto outer_boundaries = light_box.interior - light_box.owned;
+                discretizationblock->setActive(bboxset2region_t(
+                    (level_box.active & light_box.owned) | outer_boundaries,
+                    dimension));
               }
               auto discretizationblock =
                   discretization->discretizationblocks().at(
@@ -531,226 +579,266 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                   discretefieldblock->discretefieldblockcomponents().at(
                       tensorcomponent->name());
 
-              // Create external links
-              if (verbose)
-                CCTK_VINFO("Creating external link \"%s\"",
-                           discretefieldname.c_str());
-              auto otherfilename = generate_filename(
-                  cctkGH, io_dir_t::none, projectname, "", iteration,
-                  file_type::local, other_ioproc, ioproc_every);
-              auto dataset = discretefieldblockcomponent->createExtLink(
-                  otherfilename,
-                  stringify(discretefieldblockcomponent->getPath(), "/",
-                            discretefieldblockcomponent->getName()));
+              switch (output_type) {
+              case file_type::global: {
 
-#if 0
-                tasks.push_back([=]() {
-                  // TODO: Use SimulationIO mechanism for this
-                  H5::createExternalLink(
-                      h5file,
-                      "manifolds/" + manifold->name() + "/discretizations/" +
-                          discretization->name() + "/discretizationblocks/" +
-                          discretizationblockname,
+                int proc = hh->processor(reflevel, component);
+                int other_ioproc = proc;
+
+                // Create external links
+                switch (output_format) {
+                case file_format::hdf5: {
+                  // Write HDF5 data
+                  if (verbose)
+                    CCTK_VINFO("Creating external link \"%s\"",
+                               discretefieldname.c_str());
+                  auto otherfilename = generate_filename(
+                      io_dir_t::none, projectname, "", iteration, output_format,
+                      file_type::local, other_ioproc, ioproc_every);
+                  discretefieldblockcomponent->createExtLink(
                       otherfilename,
-                      "manifolds/" + manifold->name() + "/discretizations/" +
-                          discretization->name() + "/discretizationblocks/" +
-                          discretizationblockname);
-                  H5::createExternalLink(
-                      h5file,
-                      "fields/" + field->name() + "/discretefields/" +
-                          discretefield->name() + "/discretefieldblocks/" +
-                          discretefieldblockname,
+                      stringify(discretefieldblockcomponent->getPath(), "/",
+                                discretefieldblockcomponent->getName()));
+                  break;
+                }
+
+                case file_format::asdf: {
+                  // Write ASDF data
+                  if (verbose)
+                    CCTK_VINFO("Creating external link \"%s\"",
+                               discretefieldname.c_str());
+                  auto otherfilename = generate_filename(
+                      io_dir_t::none, projectname, "", iteration, output_format,
+                      file_type::local, other_ioproc, ioproc_every);
+                  const auto concat{
+                      [](vector<string> xs, const vector<string> &ys) {
+                        auto rs(move(xs));
+                        for (const auto &y : ys)
+                          rs.push_back(y);
+                        return rs;
+                      }};
+                  discretefieldblockcomponent->createASDFRef(
                       otherfilename,
-                      "fields/" + field->name() + "/discretefields/" +
-                          discretefield->name() + "/discretefieldblocks/" +
-                          discretefieldblockname);
-                });
-#endif
+                      concat(discretefieldblockcomponent->yaml_path(),
+                             {discretefieldblockcomponent->getName()}));
+                  break;
+                }
+
+                default:
+                  assert(0);
+                }
+
+                break;
+              } // file_type::global
+
+              case file_type::local: {
+
+                switch (output_format) {
+                case file_format::hdf5: {
+                  // Write HDF5 data
+                  if (verbose)
+                    CCTK_VINFO("Creating dataset \"%s\"",
+                               discretefieldname.c_str());
+                  int cactustype = groupdata.vartype;
+                  H5::DataType type = cactustype2hdf5type(cactustype);
+                  auto dataset =
+                      discretefieldblockcomponent->createDataSet(type);
+
+                  auto task = [=]() {
+                    auto memtype = dataset->datatype(); // by construction
+                    auto membox = bbox2box_t(dd->light_boxes.at(mglevel)
+                                                 .at(reflevel)
+                                                 .at(component)
+                                                 .exterior,
+                                             dimension);
+
+                    if (myproc == dataproc) {
+                      // We have the data, we need to either write or send them
+                      const int local_component =
+                          hh->get_local_component(reflevel, component);
+                      auto ggf = Carpet::arrdata.at(groupindex)
+                                     .at(mapindex)
+                                     .data.at(groupvarindex);
+                      assert(ggf);
+                      auto gdata = ggf->data_pointer(timelevel, reflevel,
+                                                     local_component, mglevel);
+                      assert(gdata);
+                      auto memshape = box_t(
+                          membox.lower(),
+                          membox.lower() +
+                              vect2point_t(gdata->padded_shape(), dimension));
+                      assert(membox == bbox2box_t(gdata->extent(), dimension));
+                      assert(gdata->has_storage());
+                      auto memdata = gdata->storage();
+
+                      if (myproc == myioproc) {
+                        switch (handle_data) {
+                        case data_handling::attach:
+                          // Attach data
+                          if (verbose)
+                            CCTK_VINFO("Attaching dataset \"%s\"",
+                                       discretefieldname.c_str());
+                          dataset->attachData(memdata, memtype, memshape,
+                                              membox);
+                          break;
+                        case data_handling::write:
+                          // Write data to file
+                          if (verbose)
+                            CCTK_VINFO("Writing dataset \"%s\"",
+                                       discretefieldname.c_str());
+                          dataset->writeData(memdata, memtype, memshape,
+                                             membox);
+                          break;
+                        default:
+                          assert(0);
+                        }
+                      } else {
+                        // Send data to I/O process
+                        if (verbose)
+                          CCTK_VINFO("Sending dataset \"%s\"",
+                                     discretefieldname.c_str());
+                        send_data(myioproc, memdata, cactustype, memshape,
+                                  membox);
+                      }
+
+                    } else if (myproc == myioproc) {
+                      // We don't have the data; we need to receive and write
+                      // them
+
+                      if (verbose)
+                        CCTK_VINFO("Receiving dataset \"%s\"",
+                                   discretefieldname.c_str());
+                      const vector<char> buf =
+                          recv_data(dataproc, cactustype, membox);
+                      assert(ptrdiff_t(buf.size()) ==
+                             membox.size() * CCTK_VarTypeSize(cactustype));
+                      switch (handle_data) {
+                      case data_handling::attach:
+                        if (verbose)
+                          CCTK_VINFO("Attaching dataset \"%s\"",
+                                     discretefieldname.c_str());
+                        dataset->attachData(buf.data(), memtype, membox,
+                                            membox);
+                        break;
+                      case data_handling::write:
+                        if (verbose)
+                          CCTK_VINFO("Writing dataset \"%s\"",
+                                     discretefieldname.c_str());
+                        dataset->writeData(buf.data(), memtype, membox, membox);
+                        break;
+                      default:
+                        assert(0);
+                      }
+
+                    } else {
+                      assert(0);
+                    }
+                  };
+
+                  switch (handle_data) {
+                  case data_handling::attach:
+                    std::move(task)();
+                    break;
+                  case data_handling::write:
+                    tasks.push_back(std::move(task));
+                    break;
+                  default:
+                    assert(0);
+                  }
+
+                  break;
+                }
+
+                case file_format::asdf: {
+                  // Write ASDF data
+
+                  if (verbose)
+                    CCTK_VINFO("Creating dataset \"%s\"",
+                               discretefieldname.c_str());
+
+                  const auto &box = discretizationblock->box();
+                  int cactustype = groupdata.vartype;
+                  auto datatype = make_shared<ASDF::datatype_t>(
+                      cactustype2asdftype(cactustype));
+
+                  if (myproc == dataproc) {
+                    // We have the data, we need to either write or send them
+
+                    auto ggf = Carpet::arrdata.at(groupindex)
+                                   .at(mapindex)
+                                   .data.at(groupvarindex);
+                    assert(ggf);
+                    int local_component =
+                        hh->get_local_component(reflevel, component);
+                    auto gdata = ggf->data_pointer(timelevel, reflevel,
+                                                   local_component, mglevel);
+                    assert(gdata);
+                    const box_t memlayout(
+                        box.lower(),
+                        box.lower() +
+                            vect2point_t(gdata->padded_shape(), dimension));
+                    assert(gdata->has_storage());
+                    auto memdata = gdata->storage();
+                    assert(memdata);
+                    size_t mempoints = gdata->size();
+
+                    if (myproc == myioproc) {
+                      // Write the data
+
+                      if (verbose)
+                        CCTK_VINFO("Writing dataset \"%s\"",
+                                   discretefieldname.c_str());
+                      discretefieldblockcomponent->createASDFData(
+                          memdata, mempoints, memlayout, datatype);
+
+                    } else {
+                      // Send the data
+
+                      if (verbose)
+                        CCTK_VINFO("Sending dataset \"%s\"",
+                                   discretefieldname.c_str());
+                      send_data(myioproc, memdata, cactustype, memlayout, box);
+                    }
+
+                  } else if (myproc == myioproc) {
+                    // Receive and write the data
+
+                    if (verbose)
+                      CCTK_VINFO("Receiving dataset \"%s\"",
+                                 discretefieldname.c_str());
+                    const vector<char> buf =
+                        recv_data(dataproc, cactustype, box);
+
+                    if (verbose)
+                      CCTK_VINFO("Writing dataset \"%s\"",
+                                 discretefieldname.c_str());
+                    discretefieldblockcomponent->createASDFData(
+                        ASDF::make_constant_memoized(shared_ptr<ASDF::block_t>(
+                            make_shared<ASDF::typed_block_t<char> >(
+                                move(buf)))),
+                        datatype);
+                  }
+
+                  break;
+                }
+
+                default:
+                  assert(0);
+                }
+
+                break;
+              } // file_type::local
+
+              default:
+                assert(0);
+              } // switch output_type
 
               if (bool(create_coordinate_discretefieldblockcomponent))
                 create_coordinate_discretefieldblockcomponent(
                     component, discretizationblock);
 
             } // component
-          } break;
-
-          case file_type::local: {
-            const int min_proc = myproc == myioproc ? myioproc : myproc;
-            const int max_proc = myproc == myioproc
-                                     ? min(myioproc + ioproc_every, nprocs)
-                                     : myproc + 1;
-            for (int dataproc = min_proc; dataproc < max_proc; ++dataproc) {
-
-              for (int component : proc2components[dataproc]) {
-
-                // Get discretization block
-                string discretizationblockname =
-                    stringify("c.", setfill('0'), setw(width_c), component);
-                if (not discretization->discretizationblocks().count(
-                        discretizationblockname)) {
-                  auto discretizationblock =
-                      discretization->createDiscretizationBlock(
-                          discretizationblockname);
-                  const auto &level_box =
-                      dd->level_boxes.at(mglevel).at(reflevel);
-                  const auto &light_box =
-                      dd->light_boxes.at(mglevel).at(reflevel).at(component);
-                  // const auto &local_box =
-                  //     dd->local_boxes.at(mglevel).at(reflevel).at(
-                  //         local_component);
-                  // TODO: Cut off ghosts?
-                  discretizationblock->setBox(
-                      bbox2dbox<long long>(light_box.exterior, dimension));
-                  // assert((level_box.active & light_box.owned) ==
-                  //        local_box.active);
-                  // discretizationblock->setActive(
-                  //     bboxset2dregion<long long>(local_box.active,
-                  //     dimension));
-                  const ibset active = level_box.active & light_box.owned;
-                  discretizationblock->setActive(
-                      bboxset2dregion<long long>(active, dimension));
-                }
-                auto discretizationblock =
-                    discretization->discretizationblocks().at(
-                        discretizationblockname);
-
-                // Get discrete field block
-                string discretefieldblockname = discretizationblockname;
-                if (not discretefield->discretefieldblocks().count(
-                        discretefieldblockname))
-                  discretefield->createDiscreteFieldBlock(
-                      discretizationblock->name(), discretizationblock);
-                auto discretefieldblock =
-                    discretefield->discretefieldblocks().at(
-                        discretefieldblockname);
-
-                // Get discrete field block data
-                if (not discretefieldblock->discretefieldblockcomponents()
-                            .count(tensorcomponent->name()))
-                  discretefieldblock->createDiscreteFieldBlockComponent(
-                      tensorcomponent->name(), tensorcomponent);
-                auto discretefieldblockcomponent =
-                    discretefieldblock->discretefieldblockcomponents().at(
-                        tensorcomponent->name());
-
-                // Write data
-                if (verbose)
-                  CCTK_VINFO("Creating dataset \"%s\"",
-                             discretefieldname.c_str());
-                int cactustype = groupdata.vartype;
-                H5::DataType type = cactustype2hdf5type(cactustype);
-                auto dataset = discretefieldblockcomponent->createDataSet(type);
-
-                auto task = [=]() {
-                  auto memtype = dataset->datatype(); // by construction
-                  auto membox = bbox2dbox<long long>(dd->light_boxes.at(mglevel)
-                                                         .at(reflevel)
-                                                         .at(component)
-                                                         .exterior,
-                                                     dimension);
-
-                  if (myproc == dataproc) {
-                    // We have the data, we need to either write or send them
-                    const int local_component =
-                        hh->get_local_component(reflevel, component);
-                    auto ggf = Carpet::arrdata.at(groupindex)
-                                   .at(mapindex)
-                                   .data.at(groupvarindex);
-                    assert(ggf);
-                    auto gdata = ggf->data_pointer(timelevel, reflevel,
-                                                   local_component, mglevel);
-                    assert(gdata);
-                    auto memshape = dbox<long long>(
-                        membox.lower(),
-                        membox.lower() + vect2dpoint<long long>(
-                                             gdata->padded_shape(), dimension));
-                    assert(membox ==
-                           bbox2dbox<long long>(gdata->extent(), dimension));
-                    assert(gdata->has_storage());
-                    auto memdata = gdata->storage();
-
-                    if (myproc == myioproc) {
-                      switch (handle_data) {
-                      case data_handling::attach:
-                        // Attach data
-                        if (verbose)
-                          CCTK_VINFO("Attaching dataset \"%s\"",
-                                     discretefieldname.c_str());
-                        dataset->attachData(memdata, memtype, memshape, membox);
-                        break;
-                      case data_handling::write:
-                        // Write data to file
-                        if (verbose)
-                          CCTK_VINFO("Writing dataset \"%s\"",
-                                     discretefieldname.c_str());
-                        dataset->writeData(memdata, memtype, memshape, membox);
-                        break;
-                      default:
-                        assert(0);
-                      }
-                    } else {
-                      // Send data to I/O process
-                      if (verbose)
-                        CCTK_VINFO("Sending dataset \"%s\"",
-                                   discretefieldname.c_str());
-                      send_data(myioproc, memdata, cactustype, memshape,
-                                membox);
-                    }
-
-                  } else if (myproc == myioproc) {
-                    // We don't have the data; we need to receive and write them
-
-                    if (verbose)
-                      CCTK_VINFO("Receiving dataset \"%s\"",
-                                 discretefieldname.c_str());
-                    const vector<char> buf =
-                        recv_data(dataproc, cactustype, membox);
-                    assert(ptrdiff_t(buf.size()) ==
-                           membox.size() * CCTK_VarTypeSize(cactustype));
-                    switch (handle_data) {
-                    case data_handling::attach:
-                      if (verbose)
-                        CCTK_VINFO("Attaching dataset \"%s\"",
-                                   discretefieldname.c_str());
-                      dataset->attachData(buf.data(), memtype, membox, membox);
-                      break;
-                    case data_handling::write:
-                      if (verbose)
-                        CCTK_VINFO("Writing dataset \"%s\"",
-                                   discretefieldname.c_str());
-                      dataset->writeData(buf.data(), memtype, membox, membox);
-                      break;
-                    default:
-                      assert(0);
-                    }
-
-                  } else {
-                    assert(0);
-                  }
-
-                };
-
-                switch (handle_data) {
-                case data_handling::attach:
-                  std::move(task)();
-                  break;
-                case data_handling::write:
-                  tasks.push_back(std::move(task));
-                  break;
-                default:
-                  assert(0);
-                }
-
-                if (bool(create_coordinate_discretefieldblockcomponent))
-                  create_coordinate_discretefieldblockcomponent(
-                      component, discretizationblock);
-
-              } // component
-            }   // dataproc
-
-          } break;
-
-          } // switch (output_type)
+          }   // dataproc
 
         } // timelevel
       }   // reflevel
@@ -758,35 +846,37 @@ void output_file_t::insert_vars(const vector<int> &varindices,
   }       // varindex
 } // namespace CarpetSimulationIO
 
-void output_file_t::write() {
+void output_file_t::write_hdf5() {
   DECLARE_CCTK_PARAMETERS;
-  const int myproc = CCTK_MyProc(cctkGH);
+  const int myproc = CCTK_MyProc(nullptr);
   const string filename =
-      generate_filename(cctkGH, io_dir, projectname, "", iteration, output_type,
-                        myioproc, ioproc_every);
-  const string tmpname =
-      generate_filename(cctkGH, io_dir, projectname, ".tmp", iteration,
+      generate_filename(io_dir, projectname, "", iteration, output_format,
                         output_type, myioproc, ioproc_every);
-  H5::H5File file;
+  const string tmpname =
+      generate_filename(io_dir, projectname, ".tmp", iteration, output_format,
+                        output_type, myioproc, ioproc_every);
+  // H5::H5File file;
   if (myproc == myioproc) {
     if (verbose)
       CCTK_VINFO("Creating file \"%s\"", filename.c_str());
     const int mode = 0777;
     CCTK_CreateDirectory(mode, basename(filename).c_str());
-    auto fapl = H5::FileAccPropList();
-    fapl.setFcloseDegree(H5F_CLOSE_STRONG);
-    fapl.setLibverBounds(H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
-    static HighResTimer::HighResTimer timer1("SimulationIO::H5File");
-    auto timer1_clock = timer1.start();
-    // H5F_ACC_EXCL or H5F_ACC_TRUNC,
-    file =
-        H5::H5File(tmpname, H5F_ACC_EXCL, H5::FileCreatPropList::DEFAULT, fapl);
-    timer1_clock.stop(0);
+    // auto fapl = H5::FileAccPropList();
+    // fapl.setFcloseDegree(H5F_CLOSE_STRONG);
+    // fapl.setLibverBounds(H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+    // static HighResTimer::HighResTimer timer1("SimulationIO::H5File");
+    // auto timer1_clock = timer1.start();
+    // // H5F_ACC_EXCL or H5F_ACC_TRUNC,
+    // file =
+    //     H5::H5File(tmpname, H5F_ACC_EXCL, H5::FileCreatPropList::DEFAULT,
+    //     fapl);
+    // timer1_clock.stop(0);
     if (verbose)
       CCTK_VINFO("Writing project \"%s\"", filename.c_str());
     static HighResTimer::HighResTimer timer2("SimulationIO::write");
     auto timer2_clock = timer2.start();
-    project->write(file);
+    // project->write(file);
+    project->writeHDF5(tmpname);
     timer2_clock.stop(0);
   }
   if (verbose)
@@ -796,15 +886,15 @@ void output_file_t::write() {
   for (auto &task : tasks)
     std::move(task)();
   // timer3.stop();
-  if (myproc == myioproc) {
-    if (verbose)
-      CCTK_VINFO("Deleting project \"%s\"", filename.c_str());
-    // static Timers::Timer timer4("SimulationIO::close");
-    // timer4.start();
-    file.close();
-    H5garbage_collect();
-    // timer4.stop();
-  }
+  // if (myproc == myioproc) {
+  //   if (verbose)
+  //     CCTK_VINFO("Deleting project \"%s\"", filename.c_str());
+  //   // static Timers::Timer timer4("SimulationIO::close");
+  //   // timer4.start();
+  //   // file.close();
+  //   H5garbage_collect();
+  //   // timer4.stop();
+  // }
   // static Timers::Timer timer5("SimulationIO::cleanup");
   // timer5.start();
   tasks.clear();
@@ -813,7 +903,7 @@ void output_file_t::write() {
   if (verbose)
     CCTK_VINFO("Done deleting project \"%s\"", filename.c_str());
   if (output_type == file_type::local) {
-    CCTK_Barrier(cctkGH);
+    CCTK_Barrier(nullptr);
     if (verbose)
       CCTK_INFO("Done waiting for other processes");
   }
@@ -823,6 +913,70 @@ void output_file_t::write() {
       CCTK_VERROR("Could not rename output file \"%s\"", filename.c_str());
     if (verbose)
       CCTK_VINFO("Done renaming file \"%s\"", filename.c_str());
+  }
+}
+
+void output_file_t::write_asdf() {
+  DECLARE_CCTK_PARAMETERS;
+
+  static HighResTimer::HighResTimer timer("SimulationIO::asdf_output");
+  auto timer_clock = timer.start();
+
+  const int myproc = CCTK_MyProc(nullptr);
+  const string filename =
+      generate_filename(io_dir, projectname, "", iteration, output_format,
+                        output_type, myioproc, ioproc_every);
+  const string tmpname =
+      generate_filename(io_dir, projectname, ".tmp", iteration, output_format,
+                        output_type, myioproc, ioproc_every);
+
+  if (myproc == myioproc) {
+    if (verbose)
+      CCTK_VINFO("Writing ASDF document \"%s\"", filename.c_str());
+    static HighResTimer::HighResTimer timer1("SimulationIO::asdf_write");
+    auto timer1_clock = timer1.start();
+    const int mode = 0777;
+    CCTK_CreateDirectory(mode, basename(filename).c_str());
+    // ofstream file(tmpname, ios::binary | ios::trunc | ios::out);
+    // project->writeASDF(file);
+    project->writeASDF(tmpname);
+    // file.close();
+    timer1_clock.stop(0);
+  }
+
+  if (output_type == file_type::local) {
+    if (verbose)
+      CCTK_INFO("Waiting for other processes");
+    CCTK_Barrier(nullptr);
+  }
+
+  if (myproc == myioproc) {
+    if (verbose)
+      CCTK_VINFO("Finalising output \"%s\"", filename.c_str());
+    int ierr = rename(tmpname.c_str(), filename.c_str());
+    if (ierr)
+      CCTK_VERROR("Could not rename output file \"%s\"", filename.c_str());
+  }
+
+  if (verbose)
+    CCTK_INFO("Cleaning up");
+  assert(tasks.empty());
+  project.reset();
+
+  timer_clock.stop(0);
+
+  if (verbose)
+    CCTK_INFO("Done.");
+}
+
+void output_file_t::write() {
+  switch (output_format) {
+  case file_format::hdf5:
+    return write_hdf5();
+  case file_format::asdf:
+    return write_asdf();
+  default:
+    assert(0);
   }
 }
 

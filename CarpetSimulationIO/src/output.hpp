@@ -22,6 +22,7 @@ class output_file_t {
   const cGH *const cctkGH;
   const io_dir_t io_dir;
   const string projectname;
+  const file_format output_format;
   const file_type output_type;
   const int iteration;
   const int myioproc, ioproc_every;
@@ -36,7 +37,8 @@ public:
   output_file_t &operator=(output_file_t &&) = delete;
 
   output_file_t(const cGH *cctkGH, io_dir_t io_dir, const string &projectname,
-                file_type output_type, int myioproc, int ioproc_every);
+                file_format output_format, file_type output_type, int myioproc,
+                int ioproc_every);
   ~output_file_t();
 
   // Insert variables into project
@@ -44,6 +46,11 @@ public:
                    data_handling handle_data);
 
   // Write project to file
+private:
+  void write_hdf5();
+  void write_asdf();
+
+public:
   void write();
 };
 } // namespace CarpetSimulationIO

@@ -10,6 +10,10 @@ USES INCLUDE: Timer.hh
 
 
 
+CCTK_INT FUNCTION GetMaxRefinementLevels \
+  (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION GetMaxRefinementLevels
+
 # Return a pointer to an unmodifiable C string
 # which contains a unique ID for this configuration
 CCTK_POINTER_TO_CONST FUNCTION UniqueConfigID \

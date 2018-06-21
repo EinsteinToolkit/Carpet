@@ -25,11 +25,17 @@ SCHEDULE CarpetSimulationIO_Init AT basegrid
   OPTIONS: global
 } "Initialise I/O data structures"
 
-SCHEDULE CarpetSimulationIO_Finalize AT terminate AFTER CarpetSimulationIO_TerminationCheckpoint
+SCHEDULE CarpetSimulationIO_FinaliseInit AT poststep
 {
   LANG: C
   OPTIONS: global
-} "Finalize I/O data structures"
+} "Finalise input data structures"
+
+SCHEDULE CarpetSimulationIO_Finalise AT terminate AFTER CarpetSimulationIO_TerminationCheckpoint
+{
+  LANG: C
+  OPTIONS: global
+} "Finalise I/O data structures"
 
 
 

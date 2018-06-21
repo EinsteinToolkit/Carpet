@@ -8,24 +8,22 @@ ActiveThorns = "
     Carpet
     CarpetIOASCII
     CarpetIOBasic
-    CarpetSimulationIO
     CarpetIOScalar
     CarpetLib
     CarpetReduce
     CarpetRegrid2
+    CarpetSimulationIO
     CartGrid3D
     CoordBase
     CoordGauge
     Coordinates
-    F5
+    DriftCorrect5
+    Exact
     Formaline
     GenericFD
-    GSL
-    HDF5
-    IDFileADM
-    InitBase
     IOUtil
-    LoopControl
+    InitBase
+    KerrSchild
     ML_BSSN
     ML_BSSN_Helper
     MoL
@@ -55,42 +53,48 @@ Carpet::use_buffer_zones = yes
 
 Carpet::domain_from_multipatch = yes
 CartGrid3D::type = "multipatch"
+# CartGrid3D::set_coordinate_ranges_on = "first level"
 Coordinates::coordinate_system = "Thornburg04"
-Coordinates::h_cartesian = 0.05 # 0.1
-Coordinates::h_radial = 0.05 # 0.1
+Coordinates::h_cartesian = 0.05   # 0.1
+Coordinates::h_radial = 0.05   # 0.1
 Coordinates::sphere_inner_radius = 1.0
 Coordinates::sphere_outer_radius = 3.0
-Coordinates::n_angular = 40 # 20
+Coordinates::n_angular = 40   # 20
 Coordinates::additional_overlap_size = 1
 Coordinates::patch_boundary_size = 3
 Coordinates::outer_boundary_size = 3
 
 Carpet::max_refinement_levels = 10
-CarpetRegrid2::num_centres =  1
-CarpetRegrid2::num_levels_1 =  3
-CarpetRegrid2::radius_1[1] =  0.5
-CarpetRegrid2::radius_1[2] =  0.2
+CarpetRegrid2::num_centres = 1
+CarpetRegrid2::num_levels_1 = 3
+CarpetRegrid2::radius_1[1] = 0.5
+CarpetRegrid2::radius_1[2] = 0.2
 
-InitBase::initial_data_setup_method = "init_all_levels"
+InitBase::initial_data_setup_method = "init_single_level"
+Carpet::init_fill_timelevels = yes
 
 
 
-ADMBase::initial_data = "read from file"
-ADMBase::initial_lapse = "read from file"
-ADMBase::initial_shift = "read from file"
-ADMBase::initial_dtlapse = "read from file"
-ADMBase::initial_dtshift = "read from file"
+# ADMBase::initial_data = "KerrSchild"
+# ADMBase::initial_lapse = "KerrSchild"
+# ADMBase::initial_shift = "KerrSchild"
+# ADMBase::initial_dtlapse = "KerrSchild"
+# ADMBase::initial_dtshift = "KerrSchild"
 
-IO::filereader_ID_dir = "iof5-multipatch-kerrschild"
-IO::filereader_ID_files = "iof5-multipatch-kerrschild"
-#IO::filereader_ID_vars = "
-#    ADMBase::metric
-#    ADMBase::curv
-#    ADMBase::lapse
-#    ADMBase::shift
-#    ADMBase::dtlapse
-#    ADMBase::dtshift
-#"
+# KerrSchild::M = 1.0
+# KerrSchild::a = 0.8
+
+ADMBase::initial_data = "Exact"
+ADMBase::initial_lapse = "Exact"
+ADMBase::initial_shift = "Exact"
+ADMBase::initial_dtlapse = "Exact"
+ADMBase::initial_dtshift = "Exact"
+
+Exact::exact_model = "Kerr/Kerr-Schild"
+Exact::Kerr_KerrSchild__mass = 1.0
+Exact::Kerr_KerrSchild__spin = 0.8
+Exact::Kerr_KerrSchild__parabolic = yes
+Exact::Kerr_KerrSchild__epsilon = 1.0e-4
 
 ADMBase::evolution_method = "ML_BSSN"
 ADMBase::lapse_evolution_method = "ML_BSSN"
@@ -98,17 +102,18 @@ ADMBase::shift_evolution_method = "ML_BSSN"
 ADMBase::dtlapse_evolution_method = "ML_BSSN"
 ADMBase::dtshift_evolution_method = "ML_BSSN"
 
-ML_BSSN::harmonicN = 1      # 1+log
-ML_BSSN::harmonicF = 2.0    # 1+log
+ML_BSSN::conformalMethod = 1   # phi:0, W:1
+ML_BSSN::harmonicN = 1         # 1+log
+ML_BSSN::harmonicF = 2.0       # 1+log
 ML_BSSN::ShiftGammaCoeff = 0.75
 ML_BSSN::BetaDriver = 1.0
-ML_BSSN::LapseAdvectionCoeff = 1
-ML_BSSN::ShiftAdvectionCoeff = 1
+ML_BSSN::advectLapse = 1
+ML_BSSN::advectShift = 1
 
 ML_BSSN::MinimumLapse = 1.0e-8
 
-ML_BSSN::my_initial_boundary_condition = "extrapolate-gammas"
-ML_BSSN::my_rhs_boundary_condition = "NewRad"
+ML_BSSN::initial_boundary_condition = "extrapolate-gammas"
+ML_BSSN::rhs_boundary_condition = "NewRad"
 Boundary::radpower = 2
 
 MoL::ODE_Method = "RK4"
@@ -119,7 +124,9 @@ Time::timestep_method = "given"
 Time::timestep = 0.01
 
 CarpetIOBasic::outInfo_every = 1
-CarpetIOBasic::outInfo_vars = "ADMBase::lapse"
+CarpetIOBasic::outInfo_vars = "
+    ADMBase::lapse
+"
 
 CarpetIOScalar::all_reductions_in_one_file = yes
 CarpetIOScalar::outScalar_every = 1
@@ -146,16 +153,20 @@ CarpetIOASCII::out1D_vars = "
 "
 
 
-
 CarpetSimulationIO::verbose = yes
-
 CarpetSimulationIO::async_output = yes
 CarpetSimulationIO::max_nioprocs = 3
 IO::filereader_ID_dir = "../../csio-multipatch-kerrschild/output-0000/csio-multipatch-kerrschild"
-IO::filereader_ID_files = "csio-uniform"
+IO::filereader_ID_files = "csio-multipatch-kerrschild"
 CarpetSimulationIO::filereader_ID_iteration = 0
 IO::filereader_ID_vars = "
     grid::coordinates
+    ADMBase::metric
+    ADMBase::curv
+    ADMBase::lapse
+    ADMBase::shift
+    ADMBase::dtlapse
+    ADMBase::dtshift
 "
 
 CarpetSimulationIO::out_every = 1024

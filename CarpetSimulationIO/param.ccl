@@ -42,10 +42,22 @@ BOOLEAN verbose "Verbosity" STEERABLE=always
 
 
 
+################################################################################
+# Output
+ 
 BOOLEAN async_output "Asynchronous output method" STEERABLE=always
 {
 } "no"
  
+
+
+BOOLEAN output_hdf5 "Output HDF5 files" STEERABLE=always
+{
+} "yes"
+
+BOOLEAN output_asdf "Output ASDF files" STEERABLE=always
+{
+} "no"
 
 
 
@@ -113,10 +125,15 @@ CCTK_INT processor_digits "Minimum number of digits for processor number" STEERA
   0:* :: ""
 } 6
 
-STRING out_extension "File name extension" STEERABLE=always
+STRING out_extension "HDF5 file name extension" STEERABLE=always
 {
   "" :: "File extension (including a leading dot, if desired)"
 } ".s5"
+
+STRING out_extension_asdf "ASDF file name extension" STEERABLE=always
+{
+  "" :: "File extension (including a leading dot, if desired)"
+} ".asdf"
 
 
 
@@ -140,7 +157,17 @@ BOOLEAN output_all_timelevels "Output all timelevels (instead of only the curren
 
 
 
+################################################################################
+# Input
  
+BOOLEAN input_hdf5 "Output HDF5 files" STEERABLE=always
+{
+} "yes"
+
+BOOLEAN input_asdf "Input ASDF files" STEERABLE=always
+{
+} "no"
+
 STRING filereader_ID_dir "Input directory (overrides IO::filereader_ID_dir)" STEERABLE=always
 {
   "^$" :: "Empty: use IO::filereader_ID_dir"
@@ -153,6 +180,9 @@ CCTK_INT filereader_ID_iteration "Input iteration" STEERABLE=always
 } 0
 
 
+
+################################################################################
+# Checkpointing and Recovery
 
 STRING recover_dir "Recover directory (overrides IO::recover_dir)" STEERABLE=always
 {
