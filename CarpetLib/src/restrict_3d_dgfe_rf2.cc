@@ -100,9 +100,9 @@ void restrict_3d_dgfe_rf2(
 
   // int const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
   int const srcdi = 1;
-  assert(srcdi == SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0));
-  int const srcdj = SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0);
-  int const srcdk = SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0);
+  assert(srcdi == (srciext > 1 ? SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0) : 1));
+  size_t const srcdj = srcjext > 1 ? SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0) : 0;
+  size_t const srcdk = srckext > 1 ? SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0) : 0;
 
   // int const dstdi = DSTIND3(1,0,0) - DSTIND3(0,0,0);
   int const dstdi = 1;
