@@ -450,6 +450,7 @@ CCTK_REAL timing TAGS='checkpoint="no"'
   comm_bytes_count
   
   time_levels
+  total_threads
 } "Physical timing information"
 
 CCTK_REAL timing_procs TYPE=array DIM=1 SIZE=1 DISTRIB=constant TAGS='checkpoint="no"'

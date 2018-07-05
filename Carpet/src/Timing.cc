@@ -181,6 +181,8 @@ void InitTimingStats(cGH const *const cctkGH) {
     time_level[rl] = 0.0;
     time_level_count[rl] = 0.0;
   }
+
+  *total_threads = dist::total_num_threads();
 }
 
 // Begin timing (to be called after initialisation, just before the
