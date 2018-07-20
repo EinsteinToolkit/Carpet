@@ -3,6 +3,7 @@ ActiveThorns = "
     Carpet
     CarpetIOASCII
     CarpetLib
+    Boundary2
     CartGrid3D
     CoordBase
     IOUtil

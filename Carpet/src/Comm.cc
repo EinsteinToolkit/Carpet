@@ -167,8 +167,8 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
     }
 
 // This was found to be necessary on Hopper, otherwise memory
-// seems to be overwritten while prolongating/syncronizing. It
-// looks liks this might be an MPI implementation issue, but
+// seems to be overwritten while prolongating/synchronizing. It
+// looks like this might be an MPI implementation issue, but
 // this is not clear. A barrier at this point seems to be a
 // sufficient workaround, and is now used on Hopper. For more
 // information about this ask Frank Loeffler

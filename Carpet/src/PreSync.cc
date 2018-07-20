@@ -649,7 +649,7 @@ void Carpet_SynchronizationRecovery(CCTK_ARGUMENTS) {
   }
 }
 
-typedef void (*boundary_function)(
+typedef CCTK_INT (*boundary_function)(
   const cGH *cctkGH,
   int num_vars,
   int *var_indices,
@@ -669,13 +669,20 @@ struct Func {
   int before;
 };
 
-std::map<std::string,Func> boundary_functions;
-std::map<std::string,Func> symmetry_functions;
+struct SymFunc {
+  boundary_function func;
+  int handle;
+  int faces;
+  int width;
+};
+
+extern std::map<std::string,Func> boundary_functions;
+extern std::map<std::string,SymFunc> symmetry_functions;
 /**
  * The index into the array is the same as the "before"
  * argument defined when registering a BC.
  */
-std::array<std::map<int,std::vector<Bound>>,2> boundary_conditions;
+extern std::array<std::map<int,std::vector<Bound>>,2> boundary_conditions;
 
 extern "C"
 void RegisterPhysicalBC(
@@ -698,15 +705,18 @@ void RegisterSymmetryBC(
     const cGH *cctkGH,
     boundary_function func,
     const char *bc_name,
-    int before) {
-  if(before != 0) before = 1;
+    int handle,
+    int faces,
+    int width) {
   if(NULL==func) {
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
                "Symmetry Boundary condition '%s' points to NULL.", bc_name);
   }
-  Func& f = symmetry_functions[bc_name];
+  SymFunc& f = symmetry_functions[bc_name];
   f.func = func;
-  f.before = before;
+  f.handle = handle;
+  f.faces = faces;
+  f.width = width;
 }
 
 void Carpet_SelectVarForBCI(
@@ -760,15 +770,6 @@ CCTK_INT SelectGroupForBC(
   return 0;
 }
 
-extern "C"
-void Carpet_ClearBCForVarI(
-    const cGH *cctkGH,
-    int var_index) {
-  CCTK_ASSERT(var_index != 0);
-  boundary_conditions[0][var_index].resize(0);
-  boundary_conditions[1][var_index].resize(0);
-}
-
 /**
  * Apply boundary conditions for a single variable.
  */
@@ -796,12 +797,13 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
         }
 */
         if(faces != 0) {
-          (*f.func)(cctkGH,1,&var_index,&faces,&b.width,&b.table_handle);
-          std::map<std::string, Func>::iterator iter = symmetry_functions.begin();
+          int ierr = (*f.func)(cctkGH,1,&var_index,&faces,&b.width,&b.table_handle);
+          std::map<std::string, SymFunc>::iterator iter = symmetry_functions.begin();
           for (auto iter = symmetry_functions.begin(); iter != symmetry_functions.end(); iter++) {
             std::string name = iter->first;
-            Func& fsym = symmetry_functions.at(name);
-            (*fsym.func)(cctkGH,1,&var_index,&faces,&b.width,&b.table_handle);
+            SymFunc& fsym = symmetry_functions.at(name);
+            std::cout << name << " BC applied to " << CCTK_FullName(var_index) << std::endl;
+            ierr = (*fsym.func)(cctkGH,1,&var_index,&fsym.faces,&fsym.width,&fsym.handle);
           }
         }
         var_tuple vt{var_index};

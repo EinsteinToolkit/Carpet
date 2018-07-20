@@ -1,5 +1,5 @@
 # Test for trivial domain in z-direction
-ActiveThorns = "CoordBase CartGrid3D SymBase InitBase IOUtil Carpet CarpetIOASCII CarpetLib LoopControl"
+ActiveThorns = "CoordBase CartGrid3D SymBase InitBase IOUtil Carpet CarpetIOASCII CarpetLib LoopControl Boundary2"
 
 #----------------------------------------------------
 # Flesh and CCTK parameters

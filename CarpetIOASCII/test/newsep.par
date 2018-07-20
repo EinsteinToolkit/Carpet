@@ -5,6 +5,7 @@ ActiveThorns = "
    CarpetIOASCII
    CarpetLib
    CarpetReduce
+   Boundary2
    CartGrid3D
    CoordBase
    InterpToArray

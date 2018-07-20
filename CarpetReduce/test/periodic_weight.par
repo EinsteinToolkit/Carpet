@@ -48,10 +48,13 @@ CartGrid3D::type = "coordbase"
 PeriodicCarpet::periodic   = "yes"
 
 ##################################################################################
-ActiveThorns = "IOUtil Carpet CarpetLib CarpetInterp LoopControl CarpetReduce CarpetSlab"
+ActiveThorns = "IOUtil Carpet CarpetLib CarpetInterp LoopControl CarpetReduce CarpetSlab Boundary2"
 ##################################################################################
 
 Carpet::adaptive_stepsize = "no"
+
+Carpet::use_psync = "yes"
+Carpet::psync_only = "yes"
 
 Carpet::schedule_barriers = no
 CarpetLib::output_bboxes  = no

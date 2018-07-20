@@ -36,7 +36,7 @@ BOOLEAN domain_from_multipatch "Use the domain description from MultiPatch"
 {
 } "no"
 
-STRING testing_parameter"For printing out region validity for a variable"
+STRING testing_parameter "For printing out region validity for a variable"
 {
   "" :: "Must be a valid variable name with format THORN::variable"
 } ""
@@ -617,7 +617,7 @@ BOOLEAN use_psync "Whether presync is active"
 {
 } "no"
 
-BOOLEAN psync_only "Whether SYNC statements are evaluated"
+BOOLEAN psync_only "Whether SYNC statements are ignored"
 {
 } "no"
 

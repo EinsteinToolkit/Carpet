@@ -10,6 +10,7 @@ ActiveThorns = "
    IOUtil
    LoopControl
    SymBase
+   Boundary2
 "
 
 IO::out_dir             = $parfile

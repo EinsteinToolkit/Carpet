@@ -358,24 +358,6 @@ PROVIDES FUNCTION GetTimeLevelOffset \
     WITH Carpet_GetTimeLevelOffset   \
     LANGUAGE C
 
-# Presync functions for registering physical and symmetry boundary conditions.
-
-#CCTK_INT FUNCTION
-#    Carpet_RegisterPhysicalBC(
-#        CCTK_POINTER_TO_CONST IN cctkGH,
-#        CCTK_INT IN CCTK_FPOINTER func(
-#            CCTK_POINTER_TO_CONST IN cctkGH,
-#            CCTK_POINTER_TO_CONST IN num_vars,
-#            CCTK_INT IN var_indices,
-#            CCTK_INT IN faces,
-#            CCTK_INT IN width,
-#            CCTK_INT IN table_handle),
-#        CCTK_INT IN before,
-#        CCTK_STRING IN bc_name)
-#PROVIDES FUNCTION Carpet_RegisterPhysicalBC WITH
-#    RegisterPhysicalBC LANGUAGE C
-
-
 # Presync functions for selecting boundary conditions.
 
 CCTK_INT FUNCTION
