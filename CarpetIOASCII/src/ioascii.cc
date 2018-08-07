@@ -494,14 +494,16 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
     assert(not ierr);
   }
 
-  int valid = Carpet_GetValidRegion(vindex,0);
-  if(valid == WH_INTERIOR) {
-    std::cout << "ASCII Syncing " << CCTK_FullName(vindex) << std::endl;
-    Carpet_ManualSyncGF(cctkGH,vindex);
-  } else if(valid == WH_NOWHERE || valid == WH_BOUNDARY || valid == WH_GHOSTS) {
-    std::string vname = CCTK_FullName(vindex);
-    std::string msg = "Attempted ASCII output of the variable " + vname + " failed because the interior was invalid";
-    CCTK_ERROR(msg.c_str());
+  if(CCTK_ParameterValInt("use_psync","Carpet") == 1) {
+    int valid = Carpet_GetValidRegion(vindex,0);
+    if(valid == WH_INTERIOR) {
+      std::cout << "ASCII Syncing " << CCTK_FullName(vindex) << std::endl;
+      Carpet_ManualSyncGF(cctkGH,vindex);
+    } else if(valid == WH_NOWHERE || valid == WH_BOUNDARY || valid == WH_GHOSTS) {
+      std::string vname = CCTK_FullName(vindex);
+      std::string msg = "Attempted ASCII output of the variable " + vname + " failed because the interior was invalid";
+      CCTK_ERROR(msg.c_str());
+    }
   }
 
   const int ml = groupdata.grouptype == CCTK_GF ? mglevel : 0;
