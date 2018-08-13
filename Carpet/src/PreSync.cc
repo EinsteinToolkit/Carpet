@@ -802,7 +802,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
           for (auto iter = symmetry_functions.begin(); iter != symmetry_functions.end(); iter++) {
             std::string name = iter->first;
             SymFunc& fsym = symmetry_functions.at(name);
-            std::cout << name << " BC applied to " << CCTK_FullName(var_index) << std::endl;
+//            std::cout << name << " BC applied to " << CCTK_FullName(var_index) << std::endl;
             ierr = (*fsym.func)(cctkGH,1,&var_index,&fsym.faces,&fsym.width,&fsym.handle);
           }
         }

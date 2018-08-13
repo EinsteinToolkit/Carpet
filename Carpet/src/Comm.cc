@@ -19,6 +19,8 @@
 
 extern "C" void Carpet_ApplyPhysicalBCsForGroupI(const cGH *cctkGH,int group,bool before);
 
+int Sync_Num_Total = 0;
+
 namespace Carpet {
 
 using namespace std;
@@ -78,7 +80,6 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
                          cFunctionData const *function_data) {
   int retval = 0;
   DECLARE_CCTK_PARAMETERS;
-
   assert(groups.size() > 0);
 
   // check consistency of all groups:
@@ -138,6 +139,10 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
 
   if (goodgroups.size() > 0) {
 
+  for (size_t gp = 0; gp < goodgroups.size(); gp++) {
+    const int g = goodgroups.AT(gp);
+    Sync_Num_Total += CCTK_NumVarsInGroupI(g);
+  }
 #ifdef REQUIREMENTS_HH
     Requirements::Sync(function_data, goodgroups, cctkGH->cctk_iteration,
                        reflevel, timelevel);
@@ -410,3 +415,8 @@ int DisableGroupComm(const cGH *cctkGH, const char *groupname) {
 }
 
 } // namespace Carpet
+
+void SynchronizationCounterOutput(CCTK_ARGUMENTS) {
+  CCTK_VInfo(CCTK_THORNSTRING, "A total of %i variable synchronizations occured during this run.", Sync_Num_Total);
+}
+

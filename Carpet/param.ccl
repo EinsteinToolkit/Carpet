@@ -629,3 +629,7 @@ BOOLEAN psync_error "Whether presync causes fatal errors"
 BOOLEAN silent_psync "Silences presync error messages; overrides psync_error"
 {
 } "no"
+
+BOOLEAN sync_count "Reports the total number of variable syncs that occur during the run"
+{
+} "yes"
