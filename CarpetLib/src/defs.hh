@@ -176,6 +176,11 @@ inline T align_up(T const x, T const align, T const offset = T(0)) {
   return div_up(x + align - offset, align) * align - align + offset;
 }
 
+// Align towards minus infinity
+template <typename T> inline T ialign(T const x, T const y) {
+  return idiv(x, y) * y;
+}
+
 // Useful helpers
 template <class T> inline T square(const T x) { return x * x; }
 

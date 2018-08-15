@@ -115,20 +115,21 @@ bool gdata::fence_is_energized() {
 
 // Data manipulators
 
-void gdata::copy_from(comm_state &state, gdata const *const src,
+void gdata::copy_data(gdata * const dst, comm_state &state, gdata const *const src,
                       ibbox const &dstbox, ibbox const &srcbox,
                       islab const *restrict const slabinfo, int const dstproc,
                       int const srcproc) {
+  assert(dst or src); // why should we be here?
   vector<gdata const *> const srcs(1, src);
   CCTK_REAL const time = 0.0;
   vector<CCTK_REAL> const times(1, time);
-  int const order_space = cent == vertex_centered ? 1 : 0;
+  int const order_space = (dst ? dst->cent : src->cent) == vertex_centered ? 1 : 0;
   int const order_time = 0;
-  transfer_from(state, srcs, times, dstbox, srcbox, slabinfo, dstproc, srcproc,
+  transfer_data(dst, state, srcs, times, dstbox, srcbox, slabinfo, dstproc, srcproc,
                 time, order_space, order_time);
 }
 
-void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
+void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata const *> const &srcs,
                           vector<CCTK_REAL> const &times, ibbox const &dstbox,
                           ibbox const &srcbox,
                           islab const *restrict const slabinfo,
@@ -139,19 +140,20 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
 
   bool const is_dst = dist::rank() == dstproc;
   bool const is_src = dist::rank() == srcproc;
+  assert(not is_dst or dst);
   // Return early if this communication does not concern us
   assert(is_dst or is_src); // why should we be here?
   if (not is_dst and not is_src)
     return;
 
   if (is_dst) {
-    assert(proc() == dstproc);
-    assert(has_storage());
+    assert(dst->proc() == dstproc);
+    assert(dst->has_storage());
     assert(not dstbox.empty());
-    assert(all(dstbox.lower() >= extent().lower()));
-    assert(all(dstbox.upper() <= extent().upper()));
-    assert(all(dstbox.stride() == extent().stride()));
-    assert(all((dstbox.lower() - extent().lower()) % dstbox.stride() == 0));
+    assert(all(dstbox.lower() >= dst->extent().lower()));
+    assert(all(dstbox.upper() <= dst->extent().upper()));
+    assert(all(dstbox.stride() == dst->extent().stride()));
+    assert(all((dstbox.lower() - dst->extent().lower()) % dstbox.stride() == 0));
   }
 
   if (is_src) {
@@ -165,7 +167,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
   gdata const *const src = srcs.AT(0);
 
   operator_type const my_transport_operator =
-      is_dst ? transport_operator : src->transport_operator;
+      is_dst ? dst->transport_operator : src->transport_operator;
   assert(my_transport_operator != op_error);
   assert(my_transport_operator != op_none); // why should we be here?
   if (my_transport_operator == op_none)
@@ -174,7 +176,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
   // Interpolate either on the source or on the destination process,
   // depending on whether this increases or reduces the amount of data
   int timelevel0, ntimelevels;
-  find_source_timelevel(times, time, order_time, my_transport_operator,
+  dst->find_source_timelevel(times, time, order_time, my_transport_operator,
                         timelevel0, ntimelevels);
   if (is_src)
     assert(int(srcs.size()) >= ntimelevels);
@@ -191,7 +193,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
     if (not(is_dst and is_src)) {
       if (is_dst)
         // increment the recv buffer size
-        state.reserve_recv_space(c_datatype(), srcproc, npoints);
+        state.reserve_recv_space(dst->c_datatype(), srcproc, npoints);
       if (is_src)
         // increment the send buffer size
         state.reserve_send_space(src->c_datatype(), dstproc, npoints);
@@ -285,7 +287,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
           my_slabinfo = *slabinfo;
         const auto transfer = [=]() {
           const islab *slabinfo = have_slabinfo ? &my_slabinfo : nullptr;
-          transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
+          dst->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
                                   order_space, order_time);
         };
         // TODO: Handle this better
@@ -303,7 +305,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
       if (is_dst) {
         // copy from the recv buffer
         if (interp_on_src) {
-          size_t const recvbufsize = c_datatype_size() * dstbox.size();
+          size_t const recvbufsize = dst->c_datatype_size() * dstbox.size();
           void *const recvbuf =
               state.recv_buffer(c_datatype(), srcproc, dstbox.size());
           gdata *const buf = make_typed(varindex, cent, transport_operator);
@@ -311,7 +313,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
                         recvbufsize);
           state.commit_recv_space(c_datatype(), srcproc, dstbox.size());
           const auto transfer = [=]() {
-            copy_from_innerloop(buf, dstbox, dstbox, NULL);
+            dst->copy_from_innerloop(buf, dstbox, dstbox, NULL);
             delete buf;
           };
           // TODO: Handle this better
@@ -325,7 +327,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
           vector<gdata const *> bufs(ntimelevels, null);
           vector<CCTK_REAL> timebuf(ntimelevels);
           for (int tl = 0; tl < ntimelevels; ++tl) {
-            size_t const recvbufsize = c_datatype_size() * srcbox.size();
+            size_t const recvbufsize = dst->c_datatype_size() * srcbox.size();
             void *const recvbuf =
                 state.recv_buffer(c_datatype(), srcproc, srcbox.size());
             gdata *const buf = make_typed(varindex, cent, transport_operator);
@@ -341,7 +343,7 @@ void gdata::transfer_from(comm_state &state, vector<gdata const *> const &srcs,
             my_slabinfo = *slabinfo;
           const auto transfer = [=]() {
             const islab *slabinfo = have_slabinfo ? &my_slabinfo : nullptr;
-            transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo,
+            dst->transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo,
                                     time, order_space, order_time);
             for (auto buf : bufs)
               delete buf;

@@ -623,7 +623,7 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
 
             for (comm_state state; not state.done(); state.step()) {
               for (size_t n = 0; n < datas.size(); ++n) {
-                tmpdatas.at(n)->copy_from(state, datas.at(n), data_ext,
+                gdata::copy_data(tmpdatas.at(n), state, datas.at(n), data_ext,
                                           data_ext, NULL, ioproc, proc);
               }
             }
@@ -1292,7 +1292,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
     // ext      - gfext in the output dimension(s)
     // data_ext and gfext are used to construct the hyperslab location and
     // size, ext is just a shorthand.
-    // TODO: maybe transfer only ext instead of data_ext in copy_from
+    // TODO: maybe transfer only ext instead of data_ext in copy_data
     const vect<int, outdim> lo = gfext.lower()[dirs];
     const vect<int, outdim> up = gfext.upper()[dirs];
     const vect<int, outdim> str = gfext.stride()[dirs];

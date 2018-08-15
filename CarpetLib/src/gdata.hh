@@ -177,11 +177,16 @@ private:
   // Data manipulators
 
 public:
-  void copy_from(comm_state &state, gdata const *src, ibbox const &dstbox,
+  // the next two cannot be member functions since they is invoked even when
+  // this rank only serves as a source and not also as a destination in which
+  // case dst is NULL
+  static
+  void copy_data(gdata * const dst, comm_state &state, gdata const *src, ibbox const &dstbox,
                  ibbox const &srcbox, islab const *restrict const slabinfo,
                  int dstproc, int srcproc);
 
-  void transfer_from(comm_state &state, vector<gdata const *> const &srcs,
+  static
+  void transfer_data(gdata * const dst, comm_state &state, vector<gdata const *> const &srcs,
                      vector<CCTK_REAL> const &times, ibbox const &dstbox,
                      ibbox const &srcbox, islab const *restrict const slabinfo,
                      int dstproc, int srcproc, CCTK_REAL time, int order_space,
