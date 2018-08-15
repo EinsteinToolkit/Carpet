@@ -12,6 +12,8 @@
 #include "cctk_Parameters.h"
 #include "util_Table.h"
 
+#include "HighResTimer.hh"
+
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 #include "CarpetIOHDF5.hh"
@@ -272,8 +274,9 @@ int CarpetIOHDF5_SetNumRefinementLevels() {
       char *buffer =
           CCTK_ParameterValString("refinement_levels", "CarpetRegrid");
       assert(buffer);
-      CCTK_VInfo(CCTK_THORNSTRING, "Using %i reflevels from checkpoint file. "
-                                   "Ignoring value '%s' in parameter file.",
+      CCTK_VInfo(CCTK_THORNSTRING,
+                 "Using %i reflevels from checkpoint file. "
+                 "Ignoring value '%s' in parameter file.",
                  num_reflevels, buffer);
       free(buffer);
     }
@@ -330,9 +333,13 @@ void CarpetIOHDF5_CloseFiles(CCTK_ARGUMENTS) {
 // Opens the checkpoint/data file on the first time through,
 // recovers parameters and variables
 //////////////////////////////////////////////////////////////////////////////
+#warning "TODO: Add timers"
 int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
   int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
+
+  static HighResTimer::HighResTimer timer("CarpetIOHDF5::Recover");
+  auto timer_clock = timer.start();
 
   assert(called_from == CP_RECOVER_PARAMETERS or
          called_from == CP_RECOVER_DATA or called_from == FILEREADER_DATA);
@@ -356,14 +363,20 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
     assert(called_from == CP_RECOVER_PARAMETERS or
            called_from == FILEREADER_DATA);
 
+    static HighResTimer::HighResTimer timer1("CarpetIOHDF5::OpenFileSet");
+    auto timer1_clock = timer1.start();
     fileset = OpenFileSet(cctkGH, setname, basefilename, called_from);
+    timer1_clock.stop(0);
+
     if (fileset == filesets.end()) {
+      timer_clock.stop(0);
       return (-1);
     }
 
     if (called_from == CP_RECOVER_PARAMETERS) {
       // return here if only parameters should be recovered
       // (come back later with called_from == CP_RECOVER_DATA)
+      timer_clock.stop(0);
       return (1);
     }
   }
@@ -385,7 +398,11 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
       static bool have_grid_structure = false;
       if (not have_grid_structure) {
         have_grid_structure = true;
+        static HighResTimer::HighResTimer timer1(
+            "CarpetIOHDF5::RecoverGridStructure");
+        auto timer1_clock = timer1.start();
         CarpetIOHDF5_RecoverGridStructure(cctkGH);
+        timer1_clock.stop(0);
       }
     }
   }
@@ -549,6 +566,9 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
       myGH->cp_filename_index = (myGH->cp_filename_index + 1) % checkpoint_keep;
     }
   }
+
+  static HighResTimer::HighResTimer timer1("CarpetIOHDF5::read_variables");
+  auto timer1_clock = timer1.start();
 
   // loop over all input files of this set
   for (unsigned int i = 0; i < fileset->files.size(); i++) {
@@ -735,6 +755,8 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
     }
   }
 
+  timer1_clock.stop(0);
+
   // check that all variables have been read completely on this mglevel/reflevel
   int num_incomplete = 0;
   for (unsigned int vindex = 0; vindex < read_completely.size(); vindex++) {
@@ -849,11 +871,14 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
   }
 
   if (in_recovery and not CCTK_Equals(verbose, "none")) {
-    CCTK_VInfo(
-        CCTK_THORNSTRING, "restarting simulation on mglevel %d reflevel %d "
-                          "at iteration %d (simulation time %g)",
-        mglevel, reflevel, cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
+    CCTK_VInfo(CCTK_THORNSTRING,
+               "restarting simulation on mglevel %d reflevel %d "
+               "at iteration %d (simulation time %g)",
+               mglevel, reflevel, cctkGH->cctk_iteration,
+               (double)cctkGH->cctk_time);
   }
+
+  timer_clock.stop(0);
 
   return (0);
 }
@@ -973,8 +998,9 @@ static list<fileset_t>::iterator OpenFileSet(const cGH *const cctkGH,
   // recover parameters
   if (called_from == CP_RECOVER_PARAMETERS) {
     if (not CCTK_Equals(verbose, "none")) {
-      CCTK_VInfo(CCTK_THORNSTRING, "Recovering parameters from checkpoint "
-                                   "file '%s'",
+      CCTK_VInfo(CCTK_THORNSTRING,
+                 "Recovering parameters from checkpoint "
+                 "file '%s'",
                  file.filename);
     }
     hid_t dataset, datatype, memtype = -1;
@@ -1402,7 +1428,7 @@ static int ReadVar(const cGH *const cctkGH, file_t &file, CCTK_REAL &io_bytes,
         upper[dir] = newupper;
       }
       const ibbox filebox(lower, upper, stride);
-// cout << "Found in file: " << filebox << endl;
+      // cout << "Found in file: " << filebox << endl;
 
 #if 0
       const ibbox& interior_membox =

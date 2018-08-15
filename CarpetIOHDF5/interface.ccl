@@ -4,6 +4,7 @@ IMPLEMENTS: IOHDF5
 
 includes header: CarpetIOHDF5.hh in CarpetIOHDF5.hh
 
+uses include header: HighResTimer.hh
 uses include header: Timer.hh
 
 uses include header: carpet.hh
