@@ -49,8 +49,8 @@ template <> MPI_Datatype mpi_datatype<xferinfo_t>() {
   xferinfo_t dummy;
   return mpi_datatype(dummy);
 }
-}
-}
+} // namespace dist
+} // namespace CarpetLib
 
 #include <mpi_string.hh>
 
@@ -79,8 +79,8 @@ MPI_Datatype mpi_datatype(xferinfo_t const &) {
   }
   return newtype;
 }
-}
-}
+} // namespace dist
+} // namespace CarpetLib
 
 struct levelinfo_t {
   int regridding_epoch;
@@ -519,8 +519,12 @@ extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
 
   CCTK_INT stencil[dim];
   for (int d = 0; d < dim; ++d) {
-    assert(width[d] == width[d + 1]);
-    stencil[d] = width[2 * d];
+    if (do_periodic[d]) {
+      assert(width[2 * d] == width[2 * d + 1]);
+      stencil[d] = width[2 * d];
+    } else {
+      stencil[d] = 0;
+    }
   }
 
   for (int n = 0; n < nvars; ++n) {
