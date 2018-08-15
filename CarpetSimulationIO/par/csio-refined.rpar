@@ -60,11 +60,12 @@ CoordBase::zmin = -1.0
 CoordBase::xmax = +1.0
 CoordBase::ymax = +1.0
 CoordBase::zmax = +1.0
-CoordBase::dx = 0.25
-CoordBase::dy = 0.25
-CoordBase::dz = 0.25
+CoordBase::dx = 0.025
+CoordBase::dy = 0.025
+CoordBase::dz = 0.025
 
 Carpet::max_refinement_levels = 10
+Carpet::max_timelevels = 3
 CarpetRegrid2::num_centres = 1
 CarpetRegrid2::num_levels_1 = 3
 CarpetRegrid2::radius_1[1] = 0.5

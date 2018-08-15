@@ -50,9 +50,9 @@ CoordBase::zmin = -1.0
 CoordBase::xmax = +1.0
 CoordBase::ymax = +1.0
 CoordBase::zmax = +1.0
-CoordBase::dx = 0.25
-CoordBase::dy = 0.25
-CoordBase::dz = 0.25
+CoordBase::dx = 0.025
+CoordBase::dy = 0.025
+CoordBase::dz = 0.025
 
 Time::dtfac = 0.5
 WaveToy::bound = "zero"

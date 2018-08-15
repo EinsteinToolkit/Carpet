@@ -162,6 +162,10 @@ void output_file_t::insert_vars(const vector<int> &varindices,
     }
   }
 
+  // Cache some expensive values
+  string parameters;
+  string grid_structure;
+
   auto global_configuration = project->configurations().at("global");
   // TensorTypes
   if (not project->tensortypes().count("Scalar0D"))
@@ -349,11 +353,13 @@ void output_file_t::insert_vars(const vector<int> &varindices,
             double delta_time = cctkGH->cctk_delta_time;
             add_parametervalue(configuration, "cctk_delta_time", delta_time);
             // Cactus parameters
-            auto parameters =
-                charptr2string(IOUtil_GetAllParameters(cctkGH, 1 /*all*/));
+            if (parameters.empty())
+              parameters =
+                  charptr2string(IOUtil_GetAllParameters(cctkGH, 1 /*all*/));
             add_parametervalue(configuration, "All Parameters", parameters);
             // Grid structure
-            auto grid_structure = serialise_grid_structure(cctkGH);
+            if (grid_structure.empty())
+              grid_structure = serialise_grid_structure(cctkGH);
             add_parametervalue(configuration, "Grid Structure v7",
                                grid_structure);
           }
@@ -848,78 +854,10 @@ void output_file_t::insert_vars(const vector<int> &varindices,
 
 void output_file_t::write_hdf5() {
   DECLARE_CCTK_PARAMETERS;
-  const int myproc = CCTK_MyProc(nullptr);
-  const string filename =
-      generate_filename(io_dir, projectname, "", iteration, output_format,
-                        output_type, myioproc, ioproc_every);
-  const string tmpname =
-      generate_filename(io_dir, projectname, ".tmp", iteration, output_format,
-                        output_type, myioproc, ioproc_every);
-  // H5::H5File file;
-  if (myproc == myioproc) {
-    if (verbose)
-      CCTK_VINFO("Creating file \"%s\"", filename.c_str());
-    const int mode = 0777;
-    CCTK_CreateDirectory(mode, basename(filename).c_str());
-    // auto fapl = H5::FileAccPropList();
-    // fapl.setFcloseDegree(H5F_CLOSE_STRONG);
-    // fapl.setLibverBounds(H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
-    // static HighResTimer::HighResTimer timer1("SimulationIO::H5File");
-    // auto timer1_clock = timer1.start();
-    // // H5F_ACC_EXCL or H5F_ACC_TRUNC,
-    // file =
-    //     H5::H5File(tmpname, H5F_ACC_EXCL, H5::FileCreatPropList::DEFAULT,
-    //     fapl);
-    // timer1_clock.stop(0);
-    if (verbose)
-      CCTK_VINFO("Writing project \"%s\"", filename.c_str());
-    static HighResTimer::HighResTimer timer2("SimulationIO::write");
-    auto timer2_clock = timer2.start();
-    // project->write(file);
-    project->writeHDF5(tmpname);
-    timer2_clock.stop(0);
-  }
   if (verbose)
-    CCTK_VINFO("Writing data for project \"%s\"", filename.c_str());
-  // static Timers::Timer timer3("SimulationIO::tasks");
-  // timer3.start();
-  for (auto &task : tasks)
-    std::move(task)();
-  // timer3.stop();
-  // if (myproc == myioproc) {
-  //   if (verbose)
-  //     CCTK_VINFO("Deleting project \"%s\"", filename.c_str());
-  //   // static Timers::Timer timer4("SimulationIO::close");
-  //   // timer4.start();
-  //   // file.close();
-  //   H5garbage_collect();
-  //   // timer4.stop();
-  // }
-  // static Timers::Timer timer5("SimulationIO::cleanup");
-  // timer5.start();
-  tasks.clear();
-  project.reset();
-  // timer5.stop();
-  if (verbose)
-    CCTK_VINFO("Done deleting project \"%s\"", filename.c_str());
-  if (output_type == file_type::local) {
-    CCTK_Barrier(nullptr);
-    if (verbose)
-      CCTK_INFO("Done waiting for other processes");
-  }
-  if (myproc == myioproc) {
-    int ierr = rename(tmpname.c_str(), filename.c_str());
-    if (ierr)
-      CCTK_VERROR("Could not rename output file \"%s\"", filename.c_str());
-    if (verbose)
-      CCTK_VINFO("Done renaming file \"%s\"", filename.c_str());
-  }
-}
+    CCTK_VINFO("Writing HDF5 output...");
 
-void output_file_t::write_asdf() {
-  DECLARE_CCTK_PARAMETERS;
-
-  static HighResTimer::HighResTimer timer("SimulationIO::asdf_output");
+  static HighResTimer::HighResTimer timer("SimulationIO::output_hdf5");
   auto timer_clock = timer.start();
 
   const int myproc = CCTK_MyProc(nullptr);
@@ -932,15 +870,73 @@ void output_file_t::write_asdf() {
 
   if (myproc == myioproc) {
     if (verbose)
-      CCTK_VINFO("Writing ASDF document \"%s\"", filename.c_str());
-    static HighResTimer::HighResTimer timer1("SimulationIO::asdf_write");
+      CCTK_VINFO("Writing project \"%s\"...", filename.c_str());
+    static HighResTimer::HighResTimer timer1("SimulationIO::write_hdf5");
     auto timer1_clock = timer1.start();
     const int mode = 0777;
     CCTK_CreateDirectory(mode, basename(filename).c_str());
-    // ofstream file(tmpname, ios::binary | ios::trunc | ios::out);
-    // project->writeASDF(file);
+    project->writeHDF5(tmpname);
+    timer1_clock.stop(0);
+  }
+
+  if (verbose)
+    CCTK_VINFO("Writing data for project \"%s\"...", filename.c_str());
+  static HighResTimer::HighResTimer timer2("SimulationIO::write_hdf5_data");
+  auto timer2_clock = timer2.start();
+  for (auto &task : tasks)
+    move(task)();
+  tasks.clear();
+  timer2_clock.stop(0);
+
+  if (output_type == file_type::local) {
+    if (verbose)
+      CCTK_INFO("Waiting for other processes...");
+    CCTK_Barrier(nullptr);
+  }
+
+  if (myproc == myioproc) {
+    if (verbose)
+      CCTK_VINFO("Finalising output \"%s\"...", filename.c_str());
+    int ierr = rename(tmpname.c_str(), filename.c_str());
+    if (ierr)
+      CCTK_VERROR("Could not rename output file \"%s\"", filename.c_str());
+  }
+
+  if (verbose)
+    CCTK_INFO("Cleaning up...");
+  assert(tasks.empty());
+  project.reset();
+
+  timer_clock.stop(0);
+
+  if (verbose)
+    CCTK_VINFO("Done.");
+}
+
+void output_file_t::write_asdf() {
+  DECLARE_CCTK_PARAMETERS;
+  if (verbose)
+    CCTK_VINFO("Writing ASDF output...");
+
+  static HighResTimer::HighResTimer timer("SimulationIO::output_asdf");
+  auto timer_clock = timer.start();
+
+  const int myproc = CCTK_MyProc(nullptr);
+  const string filename =
+      generate_filename(io_dir, projectname, "", iteration, output_format,
+                        output_type, myioproc, ioproc_every);
+  const string tmpname =
+      generate_filename(io_dir, projectname, ".tmp", iteration, output_format,
+                        output_type, myioproc, ioproc_every);
+
+  if (myproc == myioproc) {
+    if (verbose)
+      CCTK_VINFO("Writing ASDF document \"%s\"...", filename.c_str());
+    static HighResTimer::HighResTimer timer1("SimulationIO::write_asdf");
+    auto timer1_clock = timer1.start();
+    const int mode = 0777;
+    CCTK_CreateDirectory(mode, basename(filename).c_str());
     project->writeASDF(tmpname);
-    // file.close();
     timer1_clock.stop(0);
   }
 
@@ -952,14 +948,14 @@ void output_file_t::write_asdf() {
 
   if (myproc == myioproc) {
     if (verbose)
-      CCTK_VINFO("Finalising output \"%s\"", filename.c_str());
+      CCTK_VINFO("Finalising output \"%s\"...", filename.c_str());
     int ierr = rename(tmpname.c_str(), filename.c_str());
     if (ierr)
       CCTK_VERROR("Could not rename output file \"%s\"", filename.c_str());
   }
 
   if (verbose)
-    CCTK_INFO("Cleaning up");
+    CCTK_INFO("Cleaning up...");
   assert(tasks.empty());
   project.reset();
 

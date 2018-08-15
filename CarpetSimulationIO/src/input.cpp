@@ -8,6 +8,7 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <iomanip>
@@ -15,6 +16,8 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <tuple>
+#include <vector>
 
 namespace CarpetSimulationIO {
 namespace RC = RegionCalculus;
@@ -202,6 +205,19 @@ void input_file_t::read_vars(const vector<int> &varindices, const int reflevel1,
   auto parameter_iteration = project->parameters().at("iteration");
   auto parameter_timelevel = project->parameters().at("timelevel");
 
+  // A schedule deciding which discretization blocks should be read for which
+  // local components, minimizing the number of discretization blocks that need
+  // to be read for each local component.
+  typedef vector<shared_ptr<DiscretizationBlock> > read_schedule_t;
+  struct component_read_schedules_t {
+    int mapindex;
+    int reflevel;
+    int proc;
+    map<int, read_schedule_t> read_schedules; // [local_component]
+  };
+  map<shared_ptr<Discretization>, component_read_schedules_t>
+      discretization_read_schedules;
+
   for (int varindex : varindices) {
     if (verbose)
       CCTK_VINFO("Reading variable \"%s\"",
@@ -378,172 +394,252 @@ void input_file_t::read_vars(const vector<int> &varindices, const int reflevel1,
           auto discretefield = field->discretefields().at(discretefieldname);
           // auto discretization = discretefield->discretization();
 
-          // Keep track of which part of which component needs to be read, and
-          // has been read. We need to read everything that cannot be
-          // recalculated. We can skip inter-process ghost points on all time
-          // levels, and we can skip prolongation ghost, buffer points, and
-          // restricted points on the current time level. However, prolongated
-          // and restricted points on past time levels can not be recalculated
-          // and need to be read. To simplify things, we read everything.
-
-          // TODO: We could cut off inter-process ghost points that can be
-          // synchronized (same as for writing).
-          map<int, RC::region_t> local_components_need_read;
-          map<int, RC::region_t> local_components_did_read;
+          // Determine which discretization blocks should be read for which
+          // local components, minimizing the number of discretization blocks
+          // that need to be read.
+          const int proc = CCTK_MyProc(nullptr);
           const int min_local_component = 0;
           const int max_local_component = hh->local_components(reflevel);
-          for (int local_component = min_local_component;
-               local_component < max_local_component; ++local_component) {
-            int component = hh->get_component(reflevel, local_component);
-            const auto &light_box =
-                dd->light_boxes.at(mglevel).at(reflevel).at(component);
-            local_components_need_read[local_component] =
-                bboxset2region_t(ibset(light_box.exterior), dimension);
-            local_components_did_read[local_component] =
-                RC::region_t(dimension);
-          }
+          if (not discretization_read_schedules.count(discretization)) {
+            component_read_schedules_t component_read_schedules{mapindex,
+                                                                reflevel, proc};
+            // We need to read everything that cannot be recalculated. We can
+            // skip inter-process ghost points on all time levels, and we can
+            // skip prolongation ghost, buffer points, and restricted points on
+            // the current time level. However, prolongated and restricted
+            // points on past time levels can not be recalculated and need to be
+            // read. To simplify things, we read everything.
 
-          vector<ASDF::memoized<ASDF::block_t> > blocks;
-
-          // Loop over all discrete field blocks in the file
-          // TODO: Split this over processes?
-          for (const auto &discretefieldblock_pair :
-               discretefield->discretefieldblocks()) {
-            const auto &discretefieldblock = discretefieldblock_pair.second;
-
-            auto discretizationblock =
-                discretefieldblock->discretizationblock();
-            auto box = discretizationblock->box();
-            // auto active = discretizationblock->active();
-            assert(not box.empty());
-
-            // Get discrete field block component
-            // TODO: Access via storage index instead of name
-            if (not discretefieldblock->discretefieldblockcomponents().count(
-                    tensorcomponent->name()))
-              continue;
-            auto discretefieldblockcomponent =
-                discretefieldblock->discretefieldblockcomponents().at(
-                    tensorcomponent->name());
-
-            // Get DataSet TODO: Read this lazily (needs changes in
-            // DiscreteFieldBlockComponent)
-
-            // Read data
             for (int local_component = min_local_component;
                  local_component < max_local_component; ++local_component) {
-              const auto &need_read =
-                  local_components_need_read.at(local_component);
-              const auto &did_read =
-                  local_components_did_read.at(local_component);
-              auto read_box =
-                  (RC::region_t(box) & (need_read - did_read)).bounding_box();
-              if (not read_box.empty()) {
-                auto ggf = Carpet::arrdata.at(groupindex)
-                               .at(mapindex)
-                               .data.at(groupvarindex);
-                assert(ggf);
-                auto gdata = ggf->data_pointer(timelevel, reflevel,
-                                               local_component, mglevel);
-                assert(gdata);
-                assert(gdata->has_storage());
-                auto memdata = gdata->storage();
-                assert(memdata);
-                H5::DataType memtype = cactustype2hdf5type(groupdata.vartype);
-                auto membytes =
-                    gdata->size() * CCTK_VarTypeSize(groupdata.vartype);
-                auto membox = bbox2box_t(gdata->extent(), dimension);
-                assert(read_box <= membox);
-                auto memlayout = RC::box_t(
-                    membox.lower(),
-                    membox.lower() +
-                        vect2point_t(gdata->padded_shape(), dimension));
+              const int component =
+                  hh->get_component(reflevel, local_component);
+              const auto &light_box =
+                  dd->light_boxes.at(mglevel).at(reflevel).at(component);
+              const auto need_read =
+                  bboxset2region_t(ibset(light_box.exterior), dimension);
+              // We use a greedy algorithm.
+              // 1. Find overlaps for local components and discretization blocks
+              struct overlap_t {
+                shared_ptr<DiscretizationBlock> discretizationblock;
+                RC::region_t overlap;
+              };
+              vector<overlap_t> overlaps;
+              for (const auto &discretefieldblock_pair :
+                   discretefield->discretefieldblocks()) {
+                const auto &discretefieldblock = discretefieldblock_pair.second;
+                auto discretizationblock =
+                    discretefieldblock->discretizationblock();
+                auto box = discretizationblock->box();
+                if (not need_read.isdisjoint(box))
+                  overlaps.emplace_back(
+                      overlap_t{discretizationblock, need_read & box});
+              }
+              // 2. Sort overlaps by size (largest first)
+              sort(overlaps.begin(), overlaps.end(),
+                   [&](const overlap_t &a, const overlap_t &b) {
+                     // TODO: overlap.size is not O(1)
+                     return a.overlap.size() > b.overlap.size();
+                   });
+              // 3. Walk overlaps and create schedule
+              read_schedule_t read_schedule;
+              auto still_need_read = need_read;
+              for (const auto &overlap : overlaps) {
+                if (not still_need_read.isdisjoint(overlap.overlap)) {
+                  read_schedule.push_back(overlap.discretizationblock);
+                  still_need_read -= overlap.overlap;
+                }
+              }
+              assert(still_need_read.empty());
+              if (verbose) {
+                CCTK_VINFO(
+                    "Read schedule for component [m=%d,rl=%d,c=%d,p=%d,lc=%d]:",
+                    mapindex, reflevel, component, proc, local_component);
+                for (const auto &db : read_schedule)
+                  CCTK_VINFO("  %s", db->name().c_str());
+              }
+              component_read_schedules.read_schedules[local_component] =
+                  move(read_schedule);
+            }
+            discretization_read_schedules[discretization] =
+                move(component_read_schedules);
+          }
+          const auto &component_read_schedules =
+              discretization_read_schedules.at(discretization);
+          assert(component_read_schedules.mapindex == mapindex);
+          assert(component_read_schedules.reflevel == reflevel);
+          assert(component_read_schedules.proc == proc);
 
-                // TODO: check dataset's datatype in file
-                if (verbose)
-                  CCTK_VINFO("Reading dataset \"%s\"",
-                             discretefieldname.c_str());
-                // auto reread_box =
-                //     read_box & local_components_read.at(local_component);
-                switch (input_format) {
-                case file_format::hdf5: {
-                  auto dataset = discretefieldblockcomponent->copyobj();
-                  dataset->readData(memdata, memtype, memlayout, read_box);
+          // Cache ASDF arrays
+          // TODO: Do this in SimulationIO
+          map<shared_ptr<DiscreteFieldBlockComponent>,
+              shared_ptr<ASDF::ndarray> >
+              ndarrays;
+
+          for (int local_component = min_local_component;
+               local_component < max_local_component; ++local_component) {
+            const int component = hh->get_component(reflevel, local_component);
+            // TODO: We could cut off inter-process ghost points that can be
+            // synchronized (same as for writing).
+            const auto &light_box =
+                dd->light_boxes.at(mglevel).at(reflevel).at(component);
+            const auto need_read =
+                bboxset2region_t(ibset(light_box.exterior), dimension);
+            auto still_need_read = need_read;
+            // auto did_read = RC::region_t(dimension);
+
+            // Loop over the discretization blocks that need to be read
+            const auto &discretizationblocks =
+                component_read_schedules.read_schedules.at(local_component);
+            for (const auto &discretizationblock : discretizationblocks) {
+
+              // Find respective discrete field block
+              // TODO: Use a more efficient lookup method
+              shared_ptr<DiscreteFieldBlock> discretefieldblock;
+              for (const auto &discretefieldblock_pair :
+                   discretefield->discretefieldblocks()) {
+                const auto &dfb = discretefieldblock_pair.second;
+                if (dfb->discretizationblock() == discretizationblock) {
+                  discretefieldblock = dfb;
                   break;
                 }
-                case file_format::asdf: {
-                  // TODO: Move most of this into a new "readASDF" function
+              }
+              assert(discretefieldblock);
+
+              // Get discrete field block component
+              // TODO: Access via storage index instead of name
+              if (not discretefieldblock->discretefieldblockcomponents().count(
+                      tensorcomponent->name()))
+                continue;
+              auto discretefieldblockcomponent =
+                  discretefieldblock->discretefieldblockcomponents().at(
+                      tensorcomponent->name());
+
+              auto box = discretizationblock->box();
+              // auto active = discretizationblock->active();
+              assert(not box.empty());
+              auto read_box =
+                  (RC::region_t(box) & still_need_read).bounding_box();
+              assert(not read_box.empty());
+
+              // Get DataSet
+              // TODO: Read this lazily (needs changes in
+              // DiscreteFieldBlockComponent)
+
+              auto ggf = Carpet::arrdata.at(groupindex)
+                             .at(mapindex)
+                             .data.at(groupvarindex);
+              assert(ggf);
+              auto gdata = ggf->data_pointer(timelevel, reflevel,
+                                             local_component, mglevel);
+              assert(gdata);
+              assert(gdata->has_storage());
+              auto memdata = gdata->storage();
+              assert(memdata);
+              H5::DataType memtype = cactustype2hdf5type(groupdata.vartype);
+              auto membytes =
+                  gdata->size() * CCTK_VarTypeSize(groupdata.vartype);
+              auto membox = bbox2box_t(gdata->extent(), dimension);
+              assert(read_box <= membox);
+              auto memlayout =
+                  RC::box_t(membox.lower(),
+                            membox.lower() +
+                                vect2point_t(gdata->padded_shape(), dimension));
+
+              // TODO: check dataset's datatype in file
+              if (verbose)
+                CCTK_VINFO("Reading dataset \"%s\"", discretefieldname.c_str());
+              switch (input_format) {
+              case file_format::hdf5: {
+                auto dataset = discretefieldblockcomponent->copyobj();
+                dataset->readData(memdata, memtype, memlayout, read_box);
+                break;
+              }
+              case file_format::asdf: {
+                // TODO: Move most of this into a new "readASDF" function
+                if (not ndarrays.count(discretefieldblockcomponent)) {
+                  shared_ptr<ASDF::ndarray> ndarray;
                   auto dataset_asdf = discretefieldblockcomponent->asdfdata();
                   auto dataset_ref = discretefieldblockcomponent->asdfref();
-                  shared_ptr<ASDF::ndarray> arr;
                   if (dataset_asdf) {
-                    arr = dataset_asdf->ndarray();
+                    ndarray = dataset_asdf->ndarray();
                   } else if (dataset_ref) {
                     auto ref = dataset_ref->reference();
                     auto rsn = ref->resolve();
                     // TODO: Allow multiple layers of references, i.e.
                     // references to other references
-                    arr = make_shared<ASDF::ndarray>(rsn.first, rsn.second);
+                    ndarray = make_shared<ASDF::ndarray>(rsn.first, rsn.second);
                   } else {
                     assert(0);
                   }
-                  const auto arrdata = arr->get_data();
-                  blocks.push_back(arrdata);
-                  const auto type_size = arr->get_datatype()->type_size();
-                  assert(int(type_size) == CCTK_VarTypeSize(groupdata.vartype));
-                  assert(arrdata->nbytes() % type_size == 0);
-                  const auto mem_off_str =
-                      HyperSlab::layout2strides(memlayout, read_box, type_size);
-                  const auto arr_offset = HyperSlab::layout2offset(
-                      arr->get_offset(), arr->get_strides(), box, read_box);
-                  HyperSlab::copy(memdata, membytes,
-                                  mem_off_str.first, mem_off_str.second,
-                                  arrdata->ptr(), arrdata->nbytes(),
-                                  arr_offset, arr->get_strides(),
-                                  read_box.shape(), type_size);
-                  break;
+                  ndarrays[discretefieldblockcomponent] = ndarray;
                 }
-                default:
-                  assert(0);
-                }
-                local_components_did_read.at(local_component) |= read_box;
-              } // not read_box.empty()
-            }   // local_component
+                const auto &ndarray = ndarrays.at(discretefieldblockcomponent);
+                const auto block = ndarray->get_data();
+                const auto type_size = ndarray->get_datatype()->type_size();
+                assert(int(type_size) == CCTK_VarTypeSize(groupdata.vartype));
+                assert(block->nbytes() % type_size == 0);
+                const auto mem_off_str =
+                    HyperSlab::layout2strides(memlayout, read_box, type_size);
+                const auto offset = HyperSlab::layout2offset(
+                    ndarray->get_offset(), RC::point_t(ndarray->get_strides()),
+                    box, read_box);
+                HyperSlab::copy(memdata, membytes, mem_off_str.first,
+                                mem_off_str.second, block->ptr(),
+                                block->nbytes(), offset,
+                                RC::point_t(ndarray->get_strides()),
+                                read_box.shape(), type_size);
+                break;
+              }
+              default:
+                assert(0);
+              }
 
-          } // discretefieldblock
+              still_need_read -= read_box;
+              // did_read |= read_box;
+
+            } // for discretizationblock
+
+            assert(still_need_read.empty());
+
+#if 0
+            bool have_error = false;
+            for (const auto &kv : local_components_did_read)
+              assert(kv.first >= min_local_component and
+                     kv.first < max_local_component);
+            for (int local_component = min_local_component;
+                 local_component < max_local_component; ++local_component) {
+              int component = hh->get_component(reflevel, local_component);
+              const auto &need_read =
+                  local_components_need_read.at(local_component);
+              const auto &did_read =
+                  local_components_did_read.at(local_component);
+              // We allow reading more
+              if (did_read < need_read) {
+                have_error = true;
+                ostringstream buf;
+                buf << "For variable " << varindex << " \"" << varname
+                    << "\", time level " << timelevel << ", map " << mapindex
+                    << ", refinement level " << reflevel << ", local component "
+                    << local_component << ", component " << component
+                    << ": did not read all active+boundary points: read "
+                    << did_read << " instead of " << need_read
+                    << "; unnecessary points are " << (did_read - need_read)
+                    << ", missing points are " << (need_read - did_read);
+                CCTK_WARN(CCTK_WARN_ALERT, buf.str().c_str());
+              }
+            }
+            if (have_error)
+              CCTK_ERROR("Aborting");
+#endif
+
+          } // for local_component
 
           // Free ASDF data blocks to reduce memory usage
-          for (const auto &block : blocks)
-            block.forget();
-
-          bool have_error = false;
-          for (const auto &kv : local_components_did_read)
-            assert(kv.first >= min_local_component and
-                   kv.first < max_local_component);
-          for (int local_component = min_local_component;
-               local_component < max_local_component; ++local_component) {
-            int component = hh->get_component(reflevel, local_component);
-            const auto &need_read =
-                local_components_need_read.at(local_component);
-            const auto &did_read =
-                local_components_did_read.at(local_component);
-            // We allow reading more
-            if (did_read < need_read) {
-              have_error = true;
-              ostringstream buf;
-              buf << "For variable " << varindex << " \"" << varname
-                  << "\", time level " << timelevel << ", map " << mapindex
-                  << ", refinement level " << reflevel << ", local component "
-                  << local_component << ", component " << component
-                  << ": did not read all active+boundary points: read "
-                  << did_read << " instead of " << need_read
-                  << "; unnecessary points are " << (did_read - need_read)
-                  << ", missing points are " << (need_read - did_read);
-              CCTK_WARN(CCTK_WARN_ALERT, buf.str().c_str());
-            }
+          for (const auto &kv : ndarrays) {
+            const auto &ndarray = kv.second;
+            ndarray->get_data().forget();
           }
-          if (have_error)
-            CCTK_ERROR("Aborting");
 
         } // timelevel
       }   // reflevel

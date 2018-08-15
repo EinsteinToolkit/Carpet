@@ -617,6 +617,9 @@ int Input(cGH *cctkGH, const char *basefilename, int called_from) {
       return 0; // no error
   }
 
+  static HighResTimer::HighResTimer timer("SimulationIO::input");
+  auto timer_clock = timer.start();
+
   string projectname;
   int iteration;
   if (do_recover) {
@@ -653,7 +656,7 @@ int Input(cGH *cctkGH, const char *basefilename, int called_from) {
   }
 
   // Determine which variables to read
-  const ioGH *ioUtilGH = (const ioGH *)CCTK_GHExtension(cctkGH, "IO");
+  auto ioUtilGH = static_cast<const ioGH *>(CCTK_GHExtension(cctkGH, "IO"));
   vector<int> input_vars;
   input_vars.reserve(CCTK_NumVars());
   if (do_recover) {
@@ -699,37 +702,71 @@ int Input(cGH *cctkGH, const char *basefilename, int called_from) {
   //       "Reading both HDF5 and ASDF files -- this usually does not make
   //       sense");
   if (input_hdf5) {
-    if (not input_file_hdf5_ptrs.count(projectname))
+    if (not input_file_hdf5_ptrs.count(projectname)) {
+      static HighResTimer::HighResTimer timer1("SimulationIO::read_file_hdf5");
+      auto timer1_clock = timer1.start();
       input_file_hdf5_ptrs[projectname] = make_unique<input_file_t>(
           io_dir, projectname, file_format::hdf5, iteration, -1, -1);
+      timer1_clock.stop(0);
+    }
     const auto &input_file_ptr = input_file_hdf5_ptrs.at(projectname);
     if (read_parameters) {
+      static HighResTimer::HighResTimer timer1(
+          "SimulationIO::read_parameters_hdf5");
+      auto timer1_clock = timer1.start();
       input_file_ptr->read_params();
       did_read_parameters = true;
+      timer1_clock.stop(0);
     } else {
       if (not did_read_grid_structure) {
+        static HighResTimer::HighResTimer timer1(
+            "SimulationIO::read_grid_structure_hdf5");
+        auto timer1_clock = timer1.start();
         input_file_ptr->read_grid_structure(cctkGH);
         did_read_grid_structure = true;
+        timer1_clock.stop(0);
       }
+      static HighResTimer::HighResTimer timer1(
+          "SimulationIO::read_variables_hdf5");
+      auto timer1_clock = timer1.start();
       input_file_ptr->read_vars(input_vars, -1, -1);
+      timer1_clock.stop(0);
     }
   }
   if (input_asdf) {
-    if (not input_file_asdf_ptrs.count(projectname))
+    if (not input_file_asdf_ptrs.count(projectname)) {
+      static HighResTimer::HighResTimer timer1("SimulationIO::read_file_asdf");
+      auto timer1_clock = timer1.start();
       input_file_asdf_ptrs[projectname] = make_unique<input_file_t>(
           io_dir, projectname, file_format::asdf, iteration, -1, -1);
+      timer1_clock.stop(0);
+    }
     const auto &input_file_ptr = input_file_asdf_ptrs.at(projectname);
     if (read_parameters) {
+      static HighResTimer::HighResTimer timer1(
+          "SimulationIO::read_parameters_asdf");
+      auto timer1_clock = timer1.start();
       input_file_ptr->read_params();
       did_read_parameters = true;
+      timer1_clock.stop(0);
     } else {
       if (not did_read_grid_structure) {
+        static HighResTimer::HighResTimer timer1(
+            "SimulationIO::read_grid_structure_asdf");
+        auto timer1_clock = timer1.start();
         input_file_ptr->read_grid_structure(cctkGH);
         did_read_grid_structure = true;
+        timer1_clock.stop(0);
       }
+      static HighResTimer::HighResTimer timer1(
+          "SimulationIO::read_variables_asdf");
+      auto timer1_clock = timer1.start();
       input_file_ptr->read_vars(input_vars, -1, -1);
+      timer1_clock.stop(0);
     }
   }
+
+  timer_clock.stop(0);
 
   if (read_parameters)
     return did_read_parameters ? 1 : 0;

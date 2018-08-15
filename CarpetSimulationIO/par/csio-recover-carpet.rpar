@@ -11,24 +11,26 @@ def yesno(cond):
     return "yes" if cond else "no"
 
 format = "@format@"
-assert format == "hdf5" or format == "asdf"
+assert format == "carpet"
 
-output_hdf5 = yesno(format == "hdf5")
-output_asdf = yesno(format == "asdf")
-
-suffix = "-%s" % format
+nodes = expand("@nodes@", None)
+if nodes:
+    suffix = "-n%s-%s" % (nodes, format)
+else:
+    suffix = "-%s" % format
 
 lines = """
 ActiveThorns = "
     Boundary
     Carpet
     CarpetIOASCII
+    CarpetIOHDF5
     CarpetLib
     CarpetRegrid2
-    CarpetSimulationIO
     CartGrid3D
     CoordBase
     Formaline
+    IDScalarWaveC
     IOUtil
     InitBase
     SymBase
@@ -40,7 +42,7 @@ Cactus::cctk_run_title = "SimulationIO"
 Cactus::cctk_full_warnings = yes
 Cactus::highlight_warning_messages = no
 
-Cactus::cctk_itlast = 0
+Cactus::cctk_itlast = 2048
 
 Carpet::domain_from_coordbase = yes
 CartGrid3D::type = "coordbase"
@@ -63,6 +65,10 @@ CarpetRegrid2::radius_1[1] = 0.5
 CarpetRegrid2::radius_1[2] = 0.2
 
 InitBase::initial_data_setup_method = "init_all_levels"
+IDScalarWave::initial_data = "standing"
+IDScalarWaveC::kx = 0.25
+IDScalarWaveC::ky = 0.25
+IDScalarWaveC::kz = 0.25
 
 Time::dtfac = 0.5
 WaveToy::bound = "zero"
@@ -75,26 +81,14 @@ CarpetIOASCII::out1D_vars = "
     wavetoy::scalarevolve
 "
 
-# CarpetSimulationIO::verbose = yes
+IO::recover = "auto"
+IO::recover_dir = "../../csio-checkpoint$suffix/output-0000/csio-checkpoint"
 
-CarpetSimulationIO::input_hdf5 = $output_hdf5
-CarpetSimulationIO::input_asdf = $output_asdf
-IO::filereader_ID_dir = "../../csio-refined$suffix/output-0000/csio-refined"
-IO::filereader_ID_files = "csio-refined"
-CarpetSimulationIO::filereader_ID_iteration = 1024
-IO::filereader_ID_vars = "
-    wavetoy::scalarevolve
-"
-
-CarpetSimulationIO::async_output = yes
-CarpetSimulationIO::max_nioprocs = 3
-CarpetSimulationIO::output_hdf5 = $output_hdf5
-CarpetSimulationIO::output_asdf = $output_asdf
-
-CarpetSimulationIO::out_every = 256
-CarpetSimulationIO::out_vars = "
-    wavetoy::scalarevolve
-"
+CarpetIOHDF5::checkpoint = yes
+IO::checkpoint_every = 512
+IO::checkpoint_ID = yes
+IO::checkpoint_on_terminate = yes
+IO::checkpoint_dir = $$parfile
 
 Formaline::output_source = no
 """

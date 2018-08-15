@@ -11,7 +11,7 @@ def yesno(cond):
     return "yes" if cond else "no"
 
 format = "@format@"
-assert format == "carpet" or format == "hdf5" or format == "asdf"
+assert format == "hdf5" or format == "asdf"
 
 # output_carpet = yesno(format == "carpet") # CarpetIOHDF5
 output_hdf5 = yesno(format == "hdf5")
@@ -23,14 +23,17 @@ ioutput_hdf5 = int(format == "hdf5")
 ioutput_asdf = int(format == "asdf")
 ioutput_sio = int(format == "hdf5" or format == "asdf")
 
-suffix = "-%s" % format
+nodes = expand("@nodes@", None)
+if nodes:
+    suffix = "-n%s-%s" % (nodes, format)
+else:
+    suffix = "-%s" % format
 
 lines = """
 ActiveThorns = "
     Boundary
     Carpet
     CarpetIOASCII
-    # CarpetIOHDF5
     CarpetLib
     CarpetRegrid2
     CarpetSimulationIO
@@ -60,11 +63,12 @@ CoordBase::zmin = -1.0
 CoordBase::xmax = +1.0
 CoordBase::ymax = +1.0
 CoordBase::zmax = +1.0
-CoordBase::dx = 0.25
-CoordBase::dy = 0.25
-CoordBase::dz = 0.25
+CoordBase::dx = 0.025
+CoordBase::dy = 0.025
+CoordBase::dz = 0.025
 
 Carpet::max_refinement_levels = 10
+Carpet::max_timelevels = 3
 CarpetRegrid2::num_centres = 1
 CarpetRegrid2::num_levels_1 = 3
 CarpetRegrid2::radius_1[1] = 0.5
@@ -87,7 +91,7 @@ CarpetIOASCII::out1D_vars = "
     wavetoy::scalarevolve
 "
 
-CarpetSimulationIO::verbose = yes
+# CarpetSimulationIO::verbose = yes
 
 CarpetSimulationIO::input_hdf5 = $output_hdf5
 CarpetSimulationIO::input_asdf = $output_asdf
@@ -99,7 +103,6 @@ CarpetSimulationIO::max_nioprocs = 3
 CarpetSimulationIO::output_hdf5 = $output_hdf5
 CarpetSimulationIO::output_asdf = $output_asdf
 
-# CarpetIOHDF5::checkpoint = $$output_carpet
 CarpetSimulationIO::checkpoint = $output_sio
 IO::checkpoint_every = 512
 IO::checkpoint_ID = yes

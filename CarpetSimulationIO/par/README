@@ -14,8 +14,26 @@ csio-multipatch-input.par
 
 
 
-for par in csio-{uniform,refined,refined-cell,array}; do for fmt in carpet hdf5 asdf; do ./simfactory/bin/sim purge $par-$fmt; ./simfactory/bin/sim submit $par-$fmt --parfile=arrangements/Carpet/CarpetSimulationIO/par/$par.rpar --procs=4 --num-threads=1 --define format $fmt; done; done
+# Write output and checkpoint
+for par in csio-{uniform,refined,refined-cell,array,checkpoint}; do for fmt in carpet hdf5 asdf; do ./simfactory/bin/sim purge $par-$fmt; ./simfactory/bin/sim submit $par-$fmt --parfile=arrangements/Carpet/CarpetSimulationIO/par/$par.rpar --procs=4 --num-threads=1 --define format $fmt; done; done
 
-for par in csio-{uniform,refined,refined-cell}-input; do for fmt in hdf5 asdf; do ./simfactory/bin/sim purge $par-$fmt; ./simfactory/bin/sim submit $par-$fmt --parfile=arrangements/Carpet/CarpetSimulationIO/par/$par.rpar --procs=4 --num-threads=1 --define format $fmt; done; done
+# Read input files and recover
+for par in csio-{{uniform,refined,refined-cell}-input,recover}; do for fmt in hdf5 asdf; do ./simfactory/bin/sim purge $par-$fmt; ./simfactory/bin/sim submit $par-$fmt --parfile=arrangements/Carpet/CarpetSimulationIO/par/$par.rpar --procs=4 --num-threads=1 --define format $fmt; done; done
+for par in csio-recover; do for fmt in carpet; do ./simfactory/bin/sim purge $par-$fmt; ./simfactory/bin/sim submit $par-$fmt --parfile=arrangements/Carpet/CarpetSimulationIO/par/$par-$fmt.rpar --procs=4 --num-threads=1 --define format $fmt; done; done
 
-for par in csio-{checkpoint,recover}; do for fmt in hdf5 asdf; do ./simfactory/bin/sim purge $par-$fmt; ./simfactory/bin/sim submit $par-$fmt --parfile=arrangements/Carpet/CarpetSimulationIO/par/$par.rpar --procs=4 --num-threads=1 --define format $fmt; done; done
+
+
+# I/O benchmarks
+
+ppn=32
+ppn=40
+
+nodes=1
+nodes=8
+nodes=20
+nodes=64
+
+for par in csio-checkpoint; do for fmt in carpet hdf5 asdf; do ./simfactory/bin/sim purge $par-n$nodes-$fmt; ./simfactory/bin/sim submit $par-n$nodes-$fmt --parfile=arrangements/Carpet/CarpetSimulationIO/par/$par.rpar --walltime=1:0:0 --procs=$[ppn*nodes] --num-threads=1 --define format $fmt --define nodes $nodes; done; done
+
+for par in csio-recover; do for fmt in hdf5 asdf; do ./simfactory/bin/sim purge $par-n$nodes-$fmt; ./simfactory/bin/sim submit $par-n$nodes-$fmt --parfile=arrangements/Carpet/CarpetSimulationIO/par/$par.rpar --walltime=1:0:0 --procs=$[ppn*nodes] --num-threads=1 --define format $fmt --define nodes $nodes; done; done
+for par in csio-recover; do for fmt in carpet; do ./simfactory/bin/sim purge $par-n$nodes-$fmt; ./simfactory/bin/sim submit $par-n$nodes-$fmt --parfile=arrangements/Carpet/CarpetSimulationIO/par/$par-$fmt.rpar --walltime=1:0:0 --procs=$[ppn*nodes] --num-threads=1 --define format $fmt --define nodes $nodes; done; done
