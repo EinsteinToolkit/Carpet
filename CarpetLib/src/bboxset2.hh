@@ -373,14 +373,14 @@ public:
   /** Copy constructor */
   bboxset(const bboxset &other);
 
-  /** Copy constructor */
-  // bboxset(bboxset&& other);
+  /** Move constructor */
+  bboxset(bboxset &&other);
 
   /** Assignment */
   bboxset &operator=(const bboxset &other);
 
-  /** Assignment */
-  // bboxset& operator=(bboxset&& other);
+  /** Move assignment */
+  bboxset &operator=(bboxset &&other);
 
   /** Create set from bbox */
   bboxset(const bbox &b);
@@ -853,11 +853,11 @@ bboxset<T, D>::bboxset(const bboxset &other)
   }
 }
 
-/** Copy constructor */
-// bboxset(bboxset&& other): stride(other.stride), offset(other.offset)
-// {
-//   swap(subsets, other.subsets);
-// }
+/** Move constructor */
+template <typename T, int D>
+bboxset<T, D>::bboxset(bboxset &&other)
+    : subsets(move(other.subsets)), stride(other.stride), offset(other.offset),
+      is_poison_(other.is_poison_) {}
 
 /** Assignment */
 template <typename T, int D>
@@ -876,15 +876,16 @@ bboxset<T, D> &bboxset<T, D>::operator=(const bboxset &other) {
   return *this;
 }
 
-/** Assignment */
-// bboxset& operator=(bboxset&& other)
-// {
-//   if (&other == this) return *this;
-//   swap(subsets, other.subsets);
-//   stride = other.stride;
-//   offset = other.offset;
-//   return *this;
-// }
+/** Move assignment */
+template <typename T, int D>
+bboxset<T, D> &bboxset<T, D>::operator=(bboxset &&other) {
+  assert(&other != this);
+  subsets = move(other.subsets);
+  stride = other.stride;
+  offset = other.offset;
+  is_poison_ = other.is_poison_;
+  return *this;
+}
 
 /** Create set from bbox */
 template <typename T, int D>
