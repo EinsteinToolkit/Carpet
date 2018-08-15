@@ -437,4 +437,4 @@ template size_t memoryof(bintree<int, dim, pseudoregion_t> const &f);
 
 template ostream &operator<<(ostream &os,
                              bintree<int, dim, pseudoregion_t> const &f);
-}
+} // namespace CarpetLib

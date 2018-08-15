@@ -63,7 +63,7 @@ size_t get_max_cache_linesize() {
   assert(max_cache_linesize > 0);
   return max_cache_linesize;
 }
-}
+} // namespace
 
 // TODO: Make this a plain class instead of a template
 
@@ -281,4 +281,4 @@ size_t mempool::memory() const {
 #define TYPECASE(N, T) template class mem<T>;
 #include "typecase.hh"
 #undef TYPECASE
-}
+} // namespace CarpetLib

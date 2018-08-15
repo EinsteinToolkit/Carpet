@@ -186,4 +186,4 @@ void CarpetLib_printmemstats(CCTK_ARGUMENTS) {
     }   // if output to file
   }
 }
-}
+} // namespace CarpetLib

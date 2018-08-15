@@ -180,17 +180,18 @@ public:
   // the next two cannot be member functions since they is invoked even when
   // this rank only serves as a source and not also as a destination in which
   // case dst is NULL
-  static
-  void copy_data(gdata * const dst, comm_state &state, gdata const *src, ibbox const &dstbox,
-                 ibbox const &srcbox, islab const *restrict const slabinfo,
-                 int dstproc, int srcproc);
+  static void copy_data(gdata *const dst, comm_state &state, gdata const *src,
+                        ibbox const &dstbox, ibbox const &srcbox,
+                        islab const *restrict const slabinfo, int dstproc,
+                        int srcproc);
 
-  static
-  void transfer_data(gdata * const dst, comm_state &state, vector<gdata const *> const &srcs,
-                     vector<CCTK_REAL> const &times, ibbox const &dstbox,
-                     ibbox const &srcbox, islab const *restrict const slabinfo,
-                     int dstproc, int srcproc, CCTK_REAL time, int order_space,
-                     int order_time);
+  static void transfer_data(gdata *const dst, comm_state &state,
+                            vector<gdata const *> const &srcs,
+                            vector<CCTK_REAL> const &times, ibbox const &dstbox,
+                            ibbox const &srcbox,
+                            islab const *restrict const slabinfo, int dstproc,
+                            int srcproc, CCTK_REAL time, int order_space,
+                            int order_time);
 
 protected:
   void find_source_timelevel(vector<CCTK_REAL> const &times, CCTK_REAL time,

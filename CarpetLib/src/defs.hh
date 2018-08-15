@@ -176,11 +176,6 @@ inline T align_up(T const x, T const align, T const offset = T(0)) {
   return div_up(x + align - offset, align) * align - align + offset;
 }
 
-// Align towards minus infinity
-template <typename T> inline T ialign(T const x, T const y) {
-  return idiv(x, y) * y;
-}
-
 // Useful helpers
 template <class T> inline T square(const T x) { return x * x; }
 
@@ -248,7 +243,7 @@ inline const char *typestring(const CCTK_COMPLEX32 &) {
   return "CCTK_COMPLEX32";
 }
 #endif
-}
+} // namespace CarpetLib
 
 namespace std {
 namespace Cactus {
@@ -284,8 +279,8 @@ IMPLEMENT_FUNCTIONS(CCTK_COMPLEX32)
 #endif
 
 #undef IMPLEMENT_FUNCTIONS
-}
-}
+} // namespace Cactus
+} // namespace std
 
 namespace CarpetLib {
 
@@ -382,6 +377,6 @@ template <class T> inline ostream &operator<<(ostream &os, const stack<T> &s) {
 template <class T> inline ostream &operator<<(ostream &os, const vector<T> &v) {
   return output(os, v);
 }
-}
+} // namespace CarpetLib
 
 #endif // DEFS_HH

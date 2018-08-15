@@ -152,7 +152,9 @@ template <typename RT, int ORDER, int di, int OFFSET = 0> struct coeffs1d {
                                                                                \
   template <>                                                                  \
   const RT coeffs1dc<RT, 2, -1>::coeffs[] = {                                  \
-      -0.09375, +0.4375, +0.65625,                                             \
+      -0.09375,                                                                \
+      +0.4375,                                                                 \
+      +0.65625,                                                                \
   };                                                                           \
                                                                                \
   template <> const RT coeffs1dc<RT, 2, 1>::coeffs[] = {0, 0, 0};              \
@@ -178,7 +180,7 @@ template <typename RT, int ORDER, int di, int OFFSET = 0> struct coeffs1d {
 #include "typecase.hh"
 #undef TYPECASE
 
-} // namespace coeffs_3d_cc_rf2_eno
+} // namespace coeffs_3d_cc_eno_rf2
 
 using namespace coeffs_3d_cc_eno_rf2;
 
@@ -741,18 +743,14 @@ static inline T interp3(T const *restrict const p, size_t const d1,
     if (std::fabs(lV) < std::fabs(rV)) {
       // use left-shifted stencil since it is smoother
       for (ptrdiff_t i = lcoeffs::imin; i < lcoeffs::imax; ++i) {
-        res +=
-            lcoeffs::get(i) *
-            f[i -
-              lcoeffs::minimin]; // interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+        res += lcoeffs::get(i) * f[i - lcoeffs::minimin]; // interp2<T,ORDER,di,dj>
+                                                          // (p + i*d3, d1, d2);
       }
     } else {
       // use right-shifted stencil since it is smoother
       for (ptrdiff_t i = rcoeffs::imin; i < rcoeffs::imax; ++i) {
-        res +=
-            rcoeffs::get(i) *
-            f[i -
-              lcoeffs::minimin]; // interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+        res += rcoeffs::get(i) * f[i - lcoeffs::minimin]; // interp2<T,ORDER,di,dj>
+                                                          // (p + i*d3, d1, d2);
       }
     }
   } break;
@@ -814,28 +812,22 @@ static inline T interp3(T const *restrict const p, size_t const d1,
     case 0:
       // use maximally left-shifted stencil since it is smoother
       for (ptrdiff_t i = lcoeffs::imin; i < lcoeffs::imax; ++i) {
-        res +=
-            lcoeffs::get(i) *
-            f[i -
-              lcoeffs::minimin]; // interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+        res += lcoeffs::get(i) * f[i - lcoeffs::minimin]; // interp2<T,ORDER,di,dj>
+                                                          // (p + i*d3, d1, d2);
       }
       break;
     case 1:
       // use centered stencil since it is smoother
       for (ptrdiff_t i = ccoeffs::imin; i < ccoeffs::imax; ++i) {
-        res +=
-            ccoeffs::get(i) *
-            f[i -
-              lcoeffs::minimin]; // interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+        res += ccoeffs::get(i) * f[i - lcoeffs::minimin]; // interp2<T,ORDER,di,dj>
+                                                          // (p + i*d3, d1, d2);
       }
       break;
     case 2:
       // use right-shifted stencil since it is smoother
       for (ptrdiff_t i = rcoeffs::imin; i < rcoeffs::imax; ++i) {
-        res +=
-            rcoeffs::get(i) *
-            f[i -
-              lcoeffs::minimin]; // interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+        res += rcoeffs::get(i) * f[i - lcoeffs::minimin]; // interp2<T,ORDER,di,dj>
+                                                          // (p + i*d3, d1, d2);
       }
       break;
     }

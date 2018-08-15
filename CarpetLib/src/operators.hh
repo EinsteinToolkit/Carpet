@@ -23,6 +23,6 @@ enum operator_type {
   op_STAGGER110, // use STAGGER110 stencils (for staggered A-field evolutions)
   op_STAGGER111, // use STAGGER111 stencils (for staggered A-field evolutions)
 };
-}
+} // namespace CarpetLib
 
 #endif // OPERATORS_HH

@@ -666,8 +666,8 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
                                   ibbox const &srcbox, int const order_space) {
   DECLARE_CCTK_PARAMETERS;
 
-// TODO static Timer total("prolongate");
-// TODO total.start();
+  // TODO static Timer total("prolongate");
+  // TODO total.start();
 
 #if CARPET_DIM == 3
 
@@ -1072,8 +1072,8 @@ void data<T>::transfer_restrict(data const *const src, ibbox const &dstregbox,
                                 int const /*order_space*/) {
   DECLARE_CCTK_PARAMETERS;
 
-// TODO static Timer total("restrict");
-// TODO total.start();
+  // TODO static Timer total("restrict");
+  // TODO total.start();
 
 #if CARPET_DIM == 3
 
@@ -1276,8 +1276,8 @@ void data<T>::time_interpolate(vector<data *> const &srcs, ibbox const &dstbox,
                                ibbox const &srcbox,
                                vector<CCTK_REAL> const &times,
                                CCTK_REAL const time, int const order_time) {
-// TODO static Timer total("time_interpolate");
-// TODO total.start();
+  // TODO static Timer total("time_interpolate");
+  // TODO total.start();
 
 #if CARPET_DIM == 3
 
@@ -1436,4 +1436,4 @@ template <typename T> ostream &data<T>::output(ostream &os) const {
 #define TYPECASE(N, T) template class data<T>;
 #include "typecase.hh"
 #undef TYPECASE
-}
+} // namespace CarpetLib

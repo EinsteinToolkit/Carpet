@@ -113,6 +113,6 @@ public:
 };
 
 inline size_t memoryof(mempool const &m) { return m.memory(); }
-}
+} // namespace CarpetLib
 
 #endif // ifndef MEM_HH

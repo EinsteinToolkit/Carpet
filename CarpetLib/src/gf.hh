@@ -72,6 +72,6 @@ private:
   gf(const gf &);            // canonical copy construtor
   gf &operator=(const gf &); // canonical copy
 };
-}
+} // namespace CarpetLib
 
 #endif // GF_HH

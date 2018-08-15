@@ -195,6 +195,6 @@ private:
 inline size_t memoryof(ggf const &f) { return f.memory(); }
 
 inline ostream &operator<<(ostream &os, const ggf &f) { return f.output(os); }
-}
+} // namespace CarpetLib
 
 #endif // GGF_HH

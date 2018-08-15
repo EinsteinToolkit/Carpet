@@ -424,9 +424,10 @@ void collect_total_num_threads() {
   }
   int const max_threads = omp_get_max_threads();
   if (max_threads != num_threads or thread_count != num_threads) {
-    CCTK_VWARN(CCTK_WARN_ALERT, "Unexpected OpenMP setup: "
-                                "omp_get_num_threads=%d, "
-                                "omp_get_max_threads=%d, thread_count=%d",
+    CCTK_VWARN(CCTK_WARN_ALERT,
+               "Unexpected OpenMP setup: "
+               "omp_get_num_threads=%d, "
+               "omp_get_max_threads=%d, thread_count=%d",
                num_threads, max_threads, thread_count);
   }
 #endif
@@ -486,4 +487,4 @@ char const *c_datatype_name(unsigned const type) {
 }
 
 } // namespace dist
-}
+} // namespace CarpetLib

@@ -385,12 +385,11 @@ public:
   /** Create set from bbox */
   bboxset(const bbox &b);
 
-  /** Create set from container of bboxes, bboxsets, or container
-      thereof */
+  /** Create set from container of bboxes, bboxsets, or container thereof */
   template <typename C> bboxset(const C &elts);
 
-  /** Create set from container of structs containing a bbox, bboxset,
-      or container thereof */
+  /** Create set from container of structs containing a bbox, bboxset, or
+   * container thereof */
   template <typename C, typename S, typename B>
   bboxset(const C &elts, const B S::*const mptr);
 
@@ -512,12 +511,12 @@ public:
   //   - create union of BS1 and BS2
   bboxset expanded_for(const bbox &target) const;
 
-  /** Shrink the set (changing the stride): find the largest
-      b-compatible bboxset inside this bboxset */
+  /** Shrink the set (changing the stride): find the largest b-compatible
+      bboxset inside this bboxset */
   bboxset contracted_for(const bbox &target) const;
 
-  /** Expande the set (changing the stride): find the smallest open
-      b-compatible bboxset around this bboxset */
+  /** Expande the set (changing the stride): find the smallest open b-compatible
+      bboxset around this bboxset */
   bboxset anti_contracted_for(const bbox &target) const;
 
   /** Serialise the set */
@@ -1002,6 +1001,21 @@ template <typename T, int D> bbox<T, D> bboxset<T, D>::container() const {
 template <typename T, int D>
 bool bboxset<T, D>::operator==(const bboxset &other) const {
   return (*this ^ other).empty();
+  // TODO: This should be faster than an exclusive or, but it doesn't work.
+  // assert(not is_poison() and not other.is_poison());
+  // if (any(stride != other.stride) or any(offset != other.offset))
+  //   return false;
+  // if (subsets.size() != other.subsets.size())
+  //   return false;
+  // for (auto si = subsets.begin(), se = subsets.end(),
+  //           osi = other.subsets.begin();
+  //      si != se; ++si, ++osi) {
+  //   if (si->first != osi->first)
+  //     return false;
+  //   if (*si->second != *osi->second)
+  //     return false;
+  // }
+  // return true;
 }
 
 /** Test for is-subset-of */

@@ -125,6 +125,6 @@ public:
   // Output
   virtual ostream &output(ostream &os) const;
 };
-}
+} // namespace CarpetLib
 
 #endif // DATA_HH

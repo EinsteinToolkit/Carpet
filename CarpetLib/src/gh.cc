@@ -570,4 +570,4 @@ ostream &gh::output(ostream &os) const {
   os << "}}";
   return os;
 }
-}
+} // namespace CarpetLib

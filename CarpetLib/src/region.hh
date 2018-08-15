@@ -79,7 +79,7 @@ template <> inline MPI_Datatype mpi_datatype<pseudoregion_t>() {
   pseudoregion_t dummy;
   return mpi_datatype(dummy);
 }
-}
+} // namespace dist
 
 bool operator==(pseudoregion_t const &a,
                 pseudoregion_t const &b) CCTK_ATTRIBUTE_PURE;
@@ -111,7 +111,7 @@ template <> inline MPI_Datatype mpi_datatype<sendrecv_pseudoregion_t>() {
   sendrecv_pseudoregion_t dummy;
   return mpi_datatype(dummy);
 }
-}
+} // namespace dist
 
 inline size_t memoryof(sendrecv_pseudoregion_t const &srp) {
   return memoryof(srp.send) + memoryof(srp.recv);
@@ -119,6 +119,6 @@ inline size_t memoryof(sendrecv_pseudoregion_t const &srp) {
 
 istream &operator>>(istream &os, sendrecv_pseudoregion_t &srp);
 ostream &operator<<(ostream &os, sendrecv_pseudoregion_t const &srp);
-}
+} // namespace CarpetLib
 
 #endif // #ifndef REGION_HH

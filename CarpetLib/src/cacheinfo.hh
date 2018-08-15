@@ -65,6 +65,6 @@ padding_t<int, D> pad_shape(bbox<int, D> const &extent,
 template <int D>
 padding_t<int, D> pad_shape(vect<int, D> const &shape,
                             vect<int, D> const &offset) /*CCTK_ATTRIBUTE_PURE*/;
-}
+} // namespace CarpetLib
 
 #endif // CACHEINFO_HH

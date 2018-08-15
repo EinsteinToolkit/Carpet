@@ -34,5 +34,5 @@ template bboxset<int, 3>::bboxset(const vector<region_t> &,
                                   const bbox region_t::*);
 
 } // namespace bboxset2
-}
+} // namespace CarpetLib
 #endif // #ifdef CARPET_ENABLE_BBOXSET2

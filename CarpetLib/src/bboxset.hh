@@ -15,6 +15,6 @@ using namespace bboxset2;
 #warning "Using bboxset1"
 using namespace bboxset1;
 #endif
-}
+} // namespace CarpetLib
 
 #endif // #ifndef BBOXSET_HH

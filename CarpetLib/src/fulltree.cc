@@ -467,4 +467,4 @@ template size_t memoryof(fulltree<int, dim, pseudoregion_t> const &f);
 
 template ostream &operator<<(ostream &os,
                              fulltree<int, dim, pseudoregion_t> const &f);
-}
+} // namespace CarpetLib

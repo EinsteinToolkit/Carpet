@@ -175,6 +175,6 @@ private:
 inline size_t memoryof(gh const &g) { return g.memory(); }
 
 inline ostream &operator<<(ostream &os, gh const &h) { return h.output(os); }
-}
+} // namespace CarpetLib
 
 #endif // GH_HH

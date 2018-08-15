@@ -843,8 +843,8 @@ void dh::regrid(bool const do_init) {
 
         {
 
-// Synchronisation should fill as many boundary points as
-// possible
+          // Synchronisation should fill as many boundary points as
+          // possible
 
 #if 0
           // Outer boundaries are not synchronised, since they cannot
@@ -2332,7 +2332,7 @@ MPI_Datatype mpi_datatype(dh::fast_dboxes const &) {
   }
   return newtype;
 }
-}
+} // namespace dist
 
 // Memory usage
 
@@ -2710,4 +2710,4 @@ ostream &dh::fast_dboxes::output(ostream &os) const {
      << eol << "}" << eol;
   return os;
 }
-}
+} // namespace CarpetLib

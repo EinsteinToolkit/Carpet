@@ -672,9 +672,8 @@ void comm_state::commit_send_space(unsigned const type, int const proc,
 
   if (not combine_sends) {
     // post the send if the buffer is full
-    if (procbuf.sendbuf ==
-        &procbuf.sendbufbase.front() +
-            procbuf.sendbufsize * typebuf.datatypesize) {
+    if (procbuf.sendbuf == &procbuf.sendbufbase.front() +
+                               procbuf.sendbufsize * typebuf.datatypesize) {
       if (message_size_multiplier > 1) {
         ptrdiff_t const nbytes = procbuf.sendbufsize * typebuf.datatypesize *
                                  (message_size_multiplier - 1);
@@ -730,4 +729,4 @@ void comm_state::insert(qthread::future<void> &&f) {
   futures.push_back(move(f));
 }
 #endif
-}
+} // namespace CarpetLib

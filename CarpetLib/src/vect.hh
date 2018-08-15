@@ -268,7 +268,7 @@ public:
   DECLARE_MEMBER_OPERATOR_0(operator+, +)
   DECLARE_MEMBER_OPERATOR_0(operator-, -)
   DECLARE_MEMBER_OPERATOR_0(operator~, ~)
-// DECLARE_MEMBER_OPERATOR_0_RET (operator!, !, bool)
+  // DECLARE_MEMBER_OPERATOR_0_RET (operator!, !, bool)
 
 #if 0
   /** This corresponds to the ?: operator.  Return a vector with the
@@ -372,7 +372,7 @@ DECLARE_FUNCTION_1(sqrt, std::sqrt)
 DECLARE_FUNCTION_1(trunc, std::trunc)
 
 DECLARE_FUNCTION_1_RET(lrint, std::lrint, int)
-}
+} // namespace CarpetLib
 
 namespace std {
 namespace Cactus {
@@ -383,8 +383,8 @@ DECLARE_FUNCTION_1_RET(good_isfinite, good_isfinite, int)
 DECLARE_FUNCTION_1_RET(good_isinf, good_isinf, int)
 DECLARE_FUNCTION_1_RET(good_isnan, good_isnan, int)
 DECLARE_FUNCTION_1_RET(good_isnormal, good_isnormal, int)
-}
-}
+} // namespace Cactus
+} // namespace std
 
 namespace CarpetLib {
 DECLARE_OPERATOR_1_RET(operator!, !, bool)
@@ -627,7 +627,7 @@ inline ostream &operator<<(ostream &os, const vect<T, D> &a) {
   a.output(os);
   return os;
 }
-}
+} // namespace CarpetLib
 
 // Comparison
 
@@ -695,7 +695,7 @@ struct not_equal_to<vect<T, D> >
     return not equal_to<vect<T, D> >()(x, y);
   }
 };
-}
+} // namespace std
 
 namespace CarpetLib {
 using namespace std;
@@ -711,7 +711,7 @@ template <> inline MPI_Datatype mpi_datatype<ivect>() {
   ivect dummy;
   return mpi_datatype(dummy);
 }
-}
+} // namespace dist
 
 #if 0  
 // Specialise explicit constructors
@@ -823,6 +823,6 @@ inline vect<CCTK_REAL, dim> imod(const vect<CCTK_REAL, dim> &a,
   }
   return r;
 }
-}
+} // namespace CarpetLib
 
 #endif // VECT_HH

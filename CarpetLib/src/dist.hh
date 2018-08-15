@@ -358,6 +358,6 @@ template <> inline MPI_Datatype mpi_datatype<CCTK_COMPLEX32>() {
 #endif
 
 } // namespace dist
-}
+} // namespace CarpetLib
 
 #endif // DIST_HH

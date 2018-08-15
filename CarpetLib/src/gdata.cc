@@ -115,27 +115,26 @@ bool gdata::fence_is_energized() {
 
 // Data manipulators
 
-void gdata::copy_data(gdata * const dst, comm_state &state, gdata const *const src,
-                      ibbox const &dstbox, ibbox const &srcbox,
-                      islab const *restrict const slabinfo, int const dstproc,
-                      int const srcproc) {
+void gdata::copy_data(gdata *const dst, comm_state &state,
+                      gdata const *const src, ibbox const &dstbox,
+                      ibbox const &srcbox, islab const *restrict const slabinfo,
+                      int const dstproc, int const srcproc) {
   assert(dst or src); // why should we be here?
   vector<gdata const *> const srcs(1, src);
   CCTK_REAL const time = 0.0;
   vector<CCTK_REAL> const times(1, time);
-  int const order_space = (dst ? dst->cent : src->cent) == vertex_centered ? 1 : 0;
+  int const order_space =
+      (dst ? dst->cent : src->cent) == vertex_centered ? 1 : 0;
   int const order_time = 0;
-  transfer_data(dst, state, srcs, times, dstbox, srcbox, slabinfo, dstproc, srcproc,
-                time, order_space, order_time);
+  transfer_data(dst, state, srcs, times, dstbox, srcbox, slabinfo, dstproc,
+                srcproc, time, order_space, order_time);
 }
 
-void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata const *> const &srcs,
-                          vector<CCTK_REAL> const &times, ibbox const &dstbox,
-                          ibbox const &srcbox,
-                          islab const *restrict const slabinfo,
-                          int const dstproc, int const srcproc,
-                          CCTK_REAL const time, int const order_space,
-                          int const order_time) {
+void gdata::transfer_data(
+    gdata *const dst, comm_state &state, vector<gdata const *> const &srcs,
+    vector<CCTK_REAL> const &times, ibbox const &dstbox, ibbox const &srcbox,
+    islab const *restrict const slabinfo, int const dstproc, int const srcproc,
+    CCTK_REAL const time, int const order_space, int const order_time) {
   DECLARE_CCTK_PARAMETERS;
 
   bool const is_dst = dist::rank() == dstproc;
@@ -153,7 +152,8 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
     assert(all(dstbox.lower() >= dst->extent().lower()));
     assert(all(dstbox.upper() <= dst->extent().upper()));
     assert(all(dstbox.stride() == dst->extent().stride()));
-    assert(all((dstbox.lower() - dst->extent().lower()) % dstbox.stride() == 0));
+    assert(
+        all((dstbox.lower() - dst->extent().lower()) % dstbox.stride() == 0));
   }
 
   if (is_src) {
@@ -177,7 +177,7 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
   // depending on whether this increases or reduces the amount of data
   int timelevel0, ntimelevels;
   dst->find_source_timelevel(times, time, order_time, my_transport_operator,
-                        timelevel0, ntimelevels);
+                             timelevel0, ntimelevels);
   if (is_src)
     assert(int(srcs.size()) >= ntimelevels);
   // Communication buffers are neither padded nor aligned
@@ -270,9 +270,9 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
         // send-buffer filling runs as fast as possible to reduce latency.
         state.insert(qthread::async(qthread::launch::async, [=]() {
           auto clock_threads = timer_threads.start();
-          transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
-                                  order_space, order_time);
-          clock_threads.stop(dstbox.size() * elementsize());
+          dst->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo,
+                                       time, order_space, order_time);
+          clock_threads.stop(dstbox.size() * dst->elementsize());
         }));
         clock_submit.stop(00);
 #else
@@ -287,8 +287,8 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
           my_slabinfo = *slabinfo;
         const auto transfer = [=]() {
           const islab *slabinfo = have_slabinfo ? &my_slabinfo : nullptr;
-          dst->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo, time,
-                                  order_space, order_time);
+          dst->transfer_from_innerloop(srcs, times, dstbox, srcbox, slabinfo,
+                                       time, order_space, order_time);
         };
         // TODO: Handle this better
         if (enable_openmp_tasks_in_comm && enable_openmp_tasks_in_copy)
@@ -307,11 +307,12 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
         if (interp_on_src) {
           size_t const recvbufsize = dst->c_datatype_size() * dstbox.size();
           void *const recvbuf =
-              state.recv_buffer(c_datatype(), srcproc, dstbox.size());
-          gdata *const buf = make_typed(varindex, cent, transport_operator);
+              state.recv_buffer(dst->c_datatype(), srcproc, dstbox.size());
+          gdata *const buf = dst->make_typed(dst->varindex, dst->cent,
+                                             dst->transport_operator);
           buf->allocate(dstbox, dstbox.sizes(), ivect(0), dstproc, recvbuf,
                         recvbufsize);
-          state.commit_recv_space(c_datatype(), srcproc, dstbox.size());
+          state.commit_recv_space(dst->c_datatype(), srcproc, dstbox.size());
           const auto transfer = [=]() {
             dst->copy_from_innerloop(buf, dstbox, dstbox, NULL);
             delete buf;
@@ -329,11 +330,12 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
           for (int tl = 0; tl < ntimelevels; ++tl) {
             size_t const recvbufsize = dst->c_datatype_size() * srcbox.size();
             void *const recvbuf =
-                state.recv_buffer(c_datatype(), srcproc, srcbox.size());
-            gdata *const buf = make_typed(varindex, cent, transport_operator);
+                state.recv_buffer(dst->c_datatype(), srcproc, srcbox.size());
+            gdata *const buf = dst->make_typed(dst->varindex, dst->cent,
+                                               dst->transport_operator);
             buf->allocate(srcbox, srcbox.sizes(), ivect(0), dstproc, recvbuf,
                           recvbufsize);
-            state.commit_recv_space(c_datatype(), srcproc, srcbox.size());
+            state.commit_recv_space(dst->c_datatype(), srcproc, srcbox.size());
             bufs.AT(tl) = buf;
             timebuf.AT(tl) = times.AT(timelevel0 + tl);
           }
@@ -343,8 +345,9 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
             my_slabinfo = *slabinfo;
           const auto transfer = [=]() {
             const islab *slabinfo = have_slabinfo ? &my_slabinfo : nullptr;
-            dst->transfer_from_innerloop(bufs, timebuf, dstbox, srcbox, slabinfo,
-                                    time, order_space, order_time);
+            dst->transfer_from_innerloop(bufs, timebuf, dstbox, srcbox,
+                                         slabinfo, time, order_space,
+                                         order_time);
             for (auto buf : bufs)
               delete buf;
           };

@@ -162,6 +162,6 @@ ostream &operator<<(ostream &os, bintree<T, D, P> const &f) {
   f.output(os);
   return os;
 }
-}
+} // namespace CarpetLib
 
 #endif // #ifndef BINTREE_HH

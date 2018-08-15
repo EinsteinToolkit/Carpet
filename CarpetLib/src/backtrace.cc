@@ -553,4 +553,4 @@ extern "C" void CarpetLib_BacktraceTest(CCTK_ARGUMENTS) {
   kill(0, SIGABRT);
   CCTK_WARN(CCTK_WARN_ABORT, "Backtrace test failed");
 }
-}
+} // namespace CarpetLib

@@ -35,7 +35,7 @@ struct cache_info_t {
 };
 bool have_cache_info = false;
 vector<cache_info_t> cache_info;
-}
+} // namespace
 
 template <int D>
 padding_t<int, D> pad_shape(vect<int, D> const &shape,
@@ -217,4 +217,4 @@ template padding_t<int, 4> pad_shape(bbox<int, 4> const &extent,
                                      bbox<int, 4> const &owned);
 template padding_t<int, 4> pad_shape(vect<int, 4> const &shape,
                                      vect<int, 4> const &offset);
-}
+} // namespace CarpetLib

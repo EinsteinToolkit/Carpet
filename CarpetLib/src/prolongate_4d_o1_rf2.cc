@@ -610,4 +610,4 @@ l91:
 #include "typecase.hh"
 #undef TYPECASE
 
-} // CarpetLib
+} // namespace CarpetLib

@@ -81,6 +81,6 @@ static inline int specific_cactus_type(int const vartype) {
   }
   return vartype;
 }
-}
+} // namespace CarpetLib
 
 #endif // #ifndef TYPEPROPS_HH

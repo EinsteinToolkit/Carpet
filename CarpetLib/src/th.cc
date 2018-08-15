@@ -194,4 +194,4 @@ ostream &th::output(ostream &os) const {
      << "deltas=" << deltas << "}";
   return os;
 }
-}
+} // namespace CarpetLib

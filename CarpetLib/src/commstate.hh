@@ -133,6 +133,6 @@ public:
   void insert(qthread::future<void> &&f);
 #endif
 };
-}
+} // namespace CarpetLib
 
 #endif // COMMSTATE_HH

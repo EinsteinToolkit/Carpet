@@ -257,7 +257,7 @@ inline ostream &operator<<(ostream &os, const bbox<T, D> &b) {
   b.output(os);
   return os;
 }
-}
+} // namespace CarpetLib
 
 // Comparison
 
@@ -307,6 +307,6 @@ struct not_equal_to<bbox<T, D> >
     return not equal_to<bbox<T, D> >()(x, y);
   }
 };
-}
+} // namespace std
 
 #endif // BBOX_HH

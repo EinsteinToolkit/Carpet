@@ -102,6 +102,6 @@ public:
 inline size_t memoryof(th const &t) { return t.memory(); }
 inline istream &operator>>(istream &is, th &t) { return t.input(is); }
 inline ostream &operator<<(ostream &os, const th &t) { return t.output(os); }
-}
+} // namespace CarpetLib
 
 #endif // TH_HH

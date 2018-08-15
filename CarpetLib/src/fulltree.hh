@@ -183,6 +183,6 @@ ostream &operator<<(ostream &os, fulltree<T, D, P> const &f) {
   f.output(os);
   return os;
 }
-}
+} // namespace CarpetLib
 
 #endif // #ifndef FULLTREE_HH

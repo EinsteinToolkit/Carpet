@@ -37,7 +37,7 @@ template istream &operator>>(istream &is, bboxset<int, 3> &s);
 template ostream &operator<<(ostream &os, const bboxset<int, 3> &s);
 
 } // namespace bboxset1
-}
+} // namespace CarpetLib
 
 #include "dh.hh"
 #include "region.hh"
@@ -56,4 +56,4 @@ template bboxset<int, dim>::bboxset(const vector<region_t> &vb,
                                     const bbox<int, dim> region_t::*const v);
 
 } // namespace bboxset1
-}
+} // namespace CarpetLib

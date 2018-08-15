@@ -399,7 +399,7 @@ MPI_Datatype mpi_datatype(sendrecv_pseudoregion_t const &) {
   }
   return newtype;
 }
-}
+} // namespace dist
 
 // Compare two pseudoregions for equality.
 bool operator==(pseudoregion_t const &a, pseudoregion_t const &b) {
@@ -448,4 +448,4 @@ ostream &operator<<(ostream &os, sendrecv_pseudoregion_t const &srp) {
 
 template vector<sendrecv_pseudoregion_t>
 alltoallv1(MPI_Comm comm, vector<vector<sendrecv_pseudoregion_t> > const &data);
-}
+} // namespace CarpetLib

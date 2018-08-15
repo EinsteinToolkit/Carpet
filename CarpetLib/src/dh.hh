@@ -289,7 +289,7 @@ template <> inline MPI_Datatype mpi_datatype<dh::fast_dboxes>() {
   dh::fast_dboxes dummy;
   return mpi_datatype(dummy);
 }
-}
+} // namespace dist
 
 inline size_t memoryof(dh::light_dboxes const &b) { return b.memory(); }
 
@@ -344,6 +344,6 @@ inline ostream &operator<<(ostream &os, dh::fast_dboxes const &b) {
 }
 
 inline ostream &operator<<(ostream &os, dh const &d) { return d.output(os); }
-}
+} // namespace CarpetLib
 
 #endif // DH_HH
