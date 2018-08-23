@@ -2197,7 +2197,7 @@ operator_type get_transport_operator(cGH const *const cctkGH, int const group,
   } else if (CCTK_Equals(prolong_string, "Lagrange")) {
     return op_Lagrange;
   } else if (CCTK_Equals(prolong_string, "Lagrange_third_order_prolong")) {
-    return op_Lagrange_third_order_prolong:;
+    return op_Lagrange_third_order_prolong;
   } else if (CCTK_Equals(prolong_string, "ENO")) {
     return op_ENO;
   } else if (CCTK_Equals(prolong_string, "WENO")) {
