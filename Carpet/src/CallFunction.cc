@@ -117,8 +117,7 @@ int CallFunction(void *function,           ///< the function to call
   // Filled in by PreSyncGroups
   std::set<int> pregroups;
 
-  if(use_psync)
-    PreCheckValid(attribute,cctkGH,pregroups);
+  PreCheckValid(attribute,cctkGH,pregroups);
   if (attribute->meta or attribute->meta_early or attribute->meta_late or
       is_meta_mode()) {
     // Convtest operation

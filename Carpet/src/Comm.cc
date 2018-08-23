@@ -417,6 +417,6 @@ int DisableGroupComm(const cGH *cctkGH, const char *groupname) {
 } // namespace Carpet
 
 void SynchronizationCounterOutput(CCTK_ARGUMENTS) {
-  CCTK_VInfo(CCTK_THORNSTRING, "A total of %i variable synchronizations occured during this run.", Sync_Num_Total);
+  CCTK_VInfo(CCTK_THORNSTRING, "A total of %i variable synchronizations occurred during this run.", Sync_Num_Total);
 }
 
