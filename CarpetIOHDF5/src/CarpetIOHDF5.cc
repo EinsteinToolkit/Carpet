@@ -1020,14 +1020,7 @@ static int OutputVarAs(const cGH *const cctkGH, const char *const fullname,
 
     // Synchronize and apply BCs if needed
     if(CCTK_ParameterValInt("use_psync","Carpet") == 1) {
-      int valid = Carpet_GetValidRegion(var,0);
-      if(valid == WH_INTERIOR) {
-        Carpet_ManualSyncGF(cctkGH,var);
-      } else if(valid == WH_NOWHERE || valid == WH_BOUNDARY || valid == WH_GHOSTS) {
-        std::string vname = CCTK_FullName(var);
-        std::string msg = "Attempted HDF5 output of the variable " + vname + " failed because the interior was invalid";
-        CCTK_ERROR(msg.c_str());
-      }
+      Carpet_ManualSyncGF(cctkGH,var);
     }
 
     ioRequest *r = myGH->requests[var];

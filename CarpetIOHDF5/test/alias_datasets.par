@@ -17,6 +17,9 @@ Carpet::max_refinement_levels    = 3
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time  = 2
 
+Carpet::use_psync = "yes"
+Carpet::psync_only = "yes"
+
 CarpetRegrid::refinement_levels = 1
 CarpetRegrid::refined_regions   = "manual-gridpoint-list"
 CarpetRegrid::gridpoints        = "[[ ([28,4,4]:[68,12,12]:[2,2,2]) ]]"
