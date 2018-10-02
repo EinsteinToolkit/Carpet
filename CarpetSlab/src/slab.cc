@@ -222,7 +222,7 @@ void FillSlab(const cGH *const cgh, const int dest_proc, const int n,
 
         // Copy data
         int const proc = myhh->processor(reflevel, component);
-        alldata->copy_from(state, mydata, *ext_iter, *ext_iter, NULL,
+        gdata::copy_data(alldata, state, mydata, *ext_iter, *ext_iter, NULL,
                            collect_proc, proc);
       }
     }
@@ -246,7 +246,7 @@ void FillSlab(const cGH *const cgh, const int dest_proc, const int n,
     for (comm_state state; not state.done(); state.step()) {
       for (int proc = 0; proc < CCTK_nProcs(cgh); ++proc) {
         if (proc != collect_proc) {
-          tmpdata.at(proc)->copy_from(state, alldata, alldata->extent(),
+          gdata::copy_data(tmpdata.at(proc), state, alldata, alldata->extent(),
                                       alldata->extent(), NULL, proc,
                                       collect_proc);
         }

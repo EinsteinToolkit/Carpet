@@ -524,7 +524,7 @@ void ggf::transfer_from_all(comm_state &state, int const tl1, int const rl1,
     for (int i = 0; i < (int)gsrcs.size(); ++i)
       gsrcs.AT(i) = lc2 >= 0 ? srcs.AT(lc2).AT(tl2s.AT(i)) : NULL;
 
-    dst->transfer_from(state, gsrcs, times, recv, send, slabinfo, p1, p2, time,
+    gdata::transfer_data(dst, state, gsrcs, times, recv, send, slabinfo, p1, p2, time,
                        pos, pot);
   }
 
