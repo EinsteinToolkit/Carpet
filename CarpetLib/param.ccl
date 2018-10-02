@@ -234,6 +234,9 @@ BOOLEAN use_mpi_ssend "Use MPI_Ssend instead of MPI_Isend" STEERABLE=always
 
 
 
+BOOLEAN pad_to_cachelines "Pad arrays to the cache line size (only when VECTORISE_ALIGNED_ARRAYS is set) DEPRECARED" STEERABLE=recover # DEPRECATED
+{
+} "yes"
 
 
 
