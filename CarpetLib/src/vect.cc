@@ -4,11 +4,12 @@
 #include <iostream>
 #include <typeinfo>
 
-#include "defs.hh"
 #include "bboxset.hh"
+#include "defs.hh"
 
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // Input
@@ -46,15 +47,14 @@ template <typename T, int D> MPI_Datatype vect<T, D>::mpi_datatype() const {
     vect<T, D> const &s = *this;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type), /* count elements */                         \
-        (const char *) & s.name - (const char *) &                             \
-            s,                      /* offsetof doesn't work (why?) */         \
-        dist::mpi_datatype<type>(), /* find MPI datatype */                    \
-        STRINGIFY(name),            /* field name */                           \
-        STRINGIFY(type),            /* type name */                            \
+      sizeof s.name / sizeof(type), /* count elements */                       \
+      (const char *)&s.name -                                                  \
+          (const char *)&s,       /* offsetof doesn't work (why?) */           \
+      dist::mpi_datatype<type>(), /* find MPI datatype */                      \
+      STRINGIFY(name),            /* field name */                             \
+      STRINGIFY(type),            /* type name */                              \
   }
-    dist::mpi_struct_descr_t const descr[] = {
-        ENTRY(T, elt), {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}};
+    dist::mpi_struct_descr_t const descr[] = {ENTRY(T, elt)};
 #undef ENTRY
     ostringstream buf;
     buf << "vect<" << typeid(T).name() << "," << D << ">";
@@ -173,3 +173,4 @@ DEFINE_FAKE_VECT_OPERATIONS(T1, dim)
 DEFINE_FAKE_VECT_OPERATIONS(T2, dim)
 
 #undef DEFINE_FAKE_VECT_OPERATIONS
+}

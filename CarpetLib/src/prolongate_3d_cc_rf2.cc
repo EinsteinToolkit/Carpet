@@ -9,6 +9,7 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 //
@@ -36,14 +37,10 @@ using namespace std;
 // minus the offset. Example: fine grid 8 -> coarse grid 8, fine grid
 // 12 -> also coarse grid 8.
 
-namespace CarpetLib {
-
 #define SRCIND3(i, j, k)                                                       \
   index3(i, j, k, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext)
 #define DSTIND3(i, j, k)                                                       \
   index3(i, j, k, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext)
-#define SRCOFF3(i, j, k) offset3(i, j, k, srciext, srcjext, srckext)
-#define DSTOFF3(i, j, k) offset3(i, j, k, dstiext, dstjext, dstkext)
 
 namespace coeffs_3d_cc_rf2 {
 
@@ -97,7 +94,7 @@ template <typename RT, int ORDER, int di> struct coeffs1d {
       RT const y0 = ipow(x0, n);
       // Allow losing 3 digits:
       CCTK_REAL const eps = RT(1.0e+3) * numeric_limits<RT>::epsilon();
-      if (not(fabs(res - y0) < eps)) {
+      if (not(std::fabs(res - y0) < eps)) {
         RT rt;
         ostringstream buf;
         buf << "Error in prolongate_3d_cc_rf2::coeffs_3d_cc_rf2\n"
@@ -359,11 +356,11 @@ void prolongate_3d_cc_rf2(
   size_t const j0 = srcjoff / 2;
   size_t const k0 = srckoff / 2;
 
-  // size_t const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
+  // size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
   size_t const srcdi = 1;
-  assert(srcdi == SRCOFF3(1, 0, 0) - SRCOFF3(0, 0, 0));
-  size_t const srcdj = SRCOFF3(0, 1, 0) - SRCOFF3(0, 0, 0);
-  size_t const srcdk = SRCOFF3(0, 0, 1) - SRCOFF3(0, 0, 0);
+  assert(srcdi == (srciext > 1 ? SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0) : 1));
+  size_t const srcdj = srcjext > 1 ? SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0) : 0;
+  size_t const srcdk = srckext > 1 ? SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0) : 0;
 
   // Loop over fine region
   // Label scheme: l 8 fk fj fi

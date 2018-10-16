@@ -16,6 +16,7 @@
 #include "defs.hh"
 #include "mem.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 double const gmem::KILO = 1000.0;
@@ -67,9 +68,9 @@ size_t get_max_cache_linesize() {
 // TODO: Make this a plain class instead of a template
 
 template <typename T>
-mem<T>::mem(size_t const vectorlength, size_t const nelems, T *const memptr,
-            size_t const memsize)
-    : storage_base_(memptr), storage_(memptr), nelems_(nelems),
+mem<T>::mem(size_t const vectorlength, size_t const nelems, size_t const offset,
+            T *const memptr, size_t const memsize)
+    : storage_base_(memptr), storage_(memptr), nelems_(nelems), offset_(offset),
       vectorlength_(vectorlength), owns_storage_(false),
       clients_(vectorlength, false), num_clients_(0) {
   DECLARE_CCTK_PARAMETERS;
@@ -82,51 +83,53 @@ mem<T>::mem(size_t const vectorlength, size_t const nelems, T *const memptr,
 #endif
     size_t const canary = electric_fence ? 2 * fence_width : 0;
     size_t const final_padding = vector_size - 1;
+    size_t const vector_size_bytes = vector_size * sizeof(T);
     size_t const max_cache_linesize = get_max_cache_linesize();
-    size_t const alignment =
-        align_up(max_cache_linesize, vector_size * sizeof(T));
-    assert(alignment >= 1);
+    size_t const alignment_bytes =
+        align_up(max_cache_linesize, vector_size_bytes);
+    assert(alignment_bytes >= 1);
+    size_t const offset_bytes = offset * sizeof(T);
+    assert(offset_bytes >= 0 && offset_bytes < alignment_bytes);
     // Safety check
-    assert(alignment <= 1024);
+    assert(alignment_bytes <= 1024);
 
-    const size_t nbytes =
-        (vectorlength * nelems + canary + final_padding) * sizeof(T);
+    nbytes_ = (vectorlength * nelems + canary + final_padding) * sizeof(T);
     if (max_allowed_memory_MB > 0 and
-        (total_allocated_bytes + nbytes > MEGA * max_allowed_memory_MB)) {
+        (total_allocated_bytes + nbytes_ > MEGA * max_allowed_memory_MB)) {
       T Tdummy;
-      CCTK_VError(
-          __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VERROR(
           "Refusing to allocate %.0f bytes (%.3f MB) of memory for type %s.  "
           "%.0f bytes (%.3f MB) are currently allocated in %d objects.  The "
           "parameter file specifies a maximum of %d MB",
-          double(nbytes), double(nbytes / MEGA), typestring(Tdummy),
+          double(nbytes_), double(nbytes_ / MEGA), typestring(Tdummy),
           double(total_allocated_bytes), double(total_allocated_bytes / MEGA),
           int(total_allocated_objects), int(max_allowed_memory_MB));
     }
 
     // void* ptr;
-    // const int ierr = posix_memalign(&ptr, alignment, nbytes);
-    void *ptr = malloc(nbytes + alignment - 1);
+    // const int ierr = posix_memalign(&ptr, alignment, nbytes_);
+    void *ptr = malloc(nbytes_ + alignment_bytes - 1);
     if (not ptr) {
       T Tdummy;
-      CCTK_VError(
-          __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VERROR(
           "Failed to allocate %.0f bytes (%.3f MB) of memory for type %s.  "
           "%.0f bytes (%.3f MB) are currently allocated in %d objects",
-          double(nbytes), double(nbytes / MEGA), typestring(Tdummy),
+          double(nbytes_), double(nbytes_ / MEGA), typestring(Tdummy),
           double(total_allocated_bytes), double(total_allocated_bytes / MEGA),
           int(total_allocated_objects));
     }
 
     storage_base_ = (T *)ptr;
-    storage_ = (T *)align_up(size_t(storage_base_ + canary / 2), alignment);
-    assert(size_t(storage_) % alignment == 0);
+    storage_ = (T *)align_up(size_t(storage_base_ + canary / 2),
+                             alignment_bytes, offset_bytes);
+    assert((size_t(storage_) - offset_bytes) % alignment_bytes == 0);
+    assert((size_t(storage_) - offset_bytes) % vector_size_bytes == 0);
+    assert(align_down(size_t(storage_), vector_size_bytes) >=
+           size_t(storage_base_ + canary / 2));
     owns_storage_ = true;
 
-    total_allocated_bytes += nbytes;
-    max_allocated_bytes = max(max_allocated_bytes, total_allocated_bytes);
     if (poison_new_memory) {
-      memset(storage_, poison_value, nbytes);
+      memset(storage_, poison_value, nbytes_);
     }
     if (electric_fence) {
       // put poison just before and just after payload region
@@ -138,12 +141,17 @@ mem<T>::mem(size_t const vectorlength, size_t const nelems, T *const memptr,
     }
 
   } else {
+    nbytes_ = 0;
     assert(memsize >= vectorlength * nelems * sizeof(T));
     // Don't poison the memory.  Passing in a pointer allows the
     // pointer to be re-interpreted as a mem object, keeping the
     // previous content.  This is e.g. used to turn communication
     // buffers into mem objects.
   }
+
+  total_allocated_bytes += nbytes_;
+  max_allocated_bytes = max(max_allocated_bytes, total_allocated_bytes);
+
   ++total_allocated_objects;
   max_allocated_objects = max(max_allocated_objects, total_allocated_objects);
 }
@@ -157,19 +165,8 @@ template <typename T> mem<T>::~mem() {
     if (electric_fence)
       assert(is_fence_intact(0) && is_fence_intact(1));
     free(storage_base_);
-
-#if VECTORISE
-    size_t const vector_size = CCTK_REAL_VEC_SIZE;
-#else
-    size_t const vector_size = 1;
-#endif
-    size_t const canary = electric_fence ? 2 * fence_width : 0;
-    size_t const final_padding = vector_size - 1;
-
-    const size_t nbytes =
-        (vectorlength_ * nelems_ + canary + final_padding) * sizeof(T);
-    total_allocated_bytes -= nbytes;
   }
+  total_allocated_bytes -= nbytes_;
   --total_allocated_objects;
 }
 
@@ -258,8 +255,7 @@ void *mempool::alloc(size_t nbytes) {
     freeptr = malloc(freesize);
     allocated += freesize;
     if (not freeptr) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Failed to allocate %.3f MB of memory",
+      CCTK_VWARN(CCTK_WARN_ABORT, "Failed to allocate %.3f MB of memory",
                  double(freesize / gmem::MEGA));
     }
     // Remember the pointer so that it can be freed
@@ -283,7 +279,6 @@ size_t mempool::memory() const {
 }
 
 #define TYPECASE(N, T) template class mem<T>;
-
 #include "typecase.hh"
-
 #undef TYPECASE
+}

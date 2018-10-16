@@ -9,6 +9,7 @@
 
 #include <vect.hh>
 
+namespace CarpetLib {
 using namespace std;
 
 // This is a "full tree" data structure, i.e. a tree data structure
@@ -181,6 +182,7 @@ template <typename T, int D, typename P>
 ostream &operator<<(ostream &os, fulltree<T, D, P> const &f) {
   f.output(os);
   return os;
+}
 }
 
 #endif // #ifndef FULLTREE_HH

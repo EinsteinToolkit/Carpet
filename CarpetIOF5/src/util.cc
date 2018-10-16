@@ -15,11 +15,11 @@
 #include <string>
 #include <vector>
 
-#include <hdf5.h>
 #include <F5/F5F.h>
 #include <F5/F5R.h>
 #include <F5/F5iterate.h>
 #include <F5/F5uniform.h>
+#include <hdf5.h>
 
 #include <bbox.hh>
 #include <defs.hh>
@@ -29,7 +29,7 @@
 
 #include "iof5.hh"
 
-ostream &operator<<(ostream &os, CarpetIOF5::indent_t const &indent) {
+std::ostream &operator<<(std::ostream &os, CarpetIOF5::indent_t const &indent) {
   return indent.output(os);
 }
 
@@ -170,7 +170,10 @@ string create_filename(cGH const *const cctkGH, string const basename,
       path = buf.str();
       if (create_directories) {
         if (proc % 10000 == 0) {
-          check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
+          int ierr = CCTK_CreateDirectory(mode, path.c_str());
+          if (ierr < 0)
+            CCTK_VERROR("Could not create output directory \"%s\"",
+                        path.c_str());
         }
         CCTK_Barrier(cctkGH);
       }
@@ -183,7 +186,10 @@ string create_filename(cGH const *const cctkGH, string const basename,
       path = buf.str();
       if (create_directories) {
         if (proc % 100 == 0) {
-          check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
+          int ierr = CCTK_CreateDirectory(mode, path.c_str());
+          if (ierr < 0)
+            CCTK_VERROR("Could not create output directory \"%s\"",
+                        path.c_str());
         }
         CCTK_Barrier(cctkGH);
       }
@@ -195,7 +201,9 @@ string create_filename(cGH const *const cctkGH, string const basename,
         << proc << "/";
     path = buf.str();
     if (create_directories) {
-      check(CCTK_CreateDirectory(mode, path.c_str()) >= 0);
+      int ierr = CCTK_CreateDirectory(mode, path.c_str());
+      if (ierr < 0)
+        CCTK_VERROR("Could not create output directory \"%s\"", path.c_str());
     }
   }
   ostringstream buf;

@@ -112,8 +112,7 @@ int CactusTimerSet::redirect(const cGH *const cctkGH,
   const int mode = 0644;    // rw-r--r--, or a+r u+w
   const int fdfile = open(fullname, flags, mode);
   if (fdfile < 0) {
-    CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Could not open timer output file \"%s\"", fullname);
+    CCTK_VERROR("Could not open timer output file \"%s\"", fullname);
     close(oldfd);
     return -1;
   }

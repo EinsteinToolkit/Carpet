@@ -28,6 +28,8 @@
 #include "gh.hh"
 #include "th.hh"
 
+namespace CarpetLib {
+
 struct mstat {
   // Carpet object statistics
   double total_bytes;
@@ -120,19 +122,22 @@ void CarpetLib_printmemstats(CCTK_ARGUMENTS) {
         double avg_free_bytes = 0;
         double cnt_free_bytes = 0;
         for (size_t n = 0; n < allbuf.size(); ++n) {
-          max_total_bytes = max(max_total_bytes, allbuf[n].total_bytes);
+          max_total_bytes = std::max(max_total_bytes, allbuf[n].total_bytes);
           avg_total_bytes += allbuf[n].total_bytes;
           ++cnt_total_bytes;
-          max_max_bytes = max(max_max_bytes, allbuf[n].max_bytes);
+          max_max_bytes = std::max(max_max_bytes, allbuf[n].max_bytes);
           avg_max_bytes += allbuf[n].max_bytes;
           ++cnt_max_bytes;
-          max_admin_bytes = max(max_admin_bytes, allbuf[n].total_admin_bytes);
+          max_admin_bytes =
+              std::max(max_admin_bytes, allbuf[n].total_admin_bytes);
           avg_admin_bytes += allbuf[n].total_admin_bytes;
           ++cnt_admin_bytes;
-          max_used_bytes = max(max_used_bytes, allbuf[n].malloc_used_bytes);
+          max_used_bytes =
+              std::max(max_used_bytes, allbuf[n].malloc_used_bytes);
           avg_used_bytes += allbuf[n].malloc_used_bytes;
           ++cnt_used_bytes;
-          max_free_bytes = max(max_free_bytes, allbuf[n].malloc_free_bytes);
+          max_free_bytes =
+              std::max(max_free_bytes, allbuf[n].malloc_free_bytes);
           avg_free_bytes += allbuf[n].malloc_free_bytes;
           ++cnt_free_bytes;
         }
@@ -181,4 +186,5 @@ void CarpetLib_printmemstats(CCTK_ARGUMENTS) {
       } // if on root process
     }   // if output to file
   }
+}
 }

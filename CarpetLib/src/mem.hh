@@ -10,6 +10,7 @@
 
 #include "defs.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // A chunk of memory, possibly shared between some clients
@@ -35,14 +36,17 @@ template <typename T> class mem : public gmem {
   T *storage_base_;
   T *storage_;
   size_t nelems_;
+  size_t offset_; // offset between storage and actual data
   size_t vectorlength_;
   bool owns_storage_;
+  size_t nbytes_;
 
   vector<bool> clients_;
   size_t num_clients_;
 
 public:
-  mem(size_t vectorlength, size_t nelems, T *memptr = NULL, size_t memsize = 0);
+  mem(size_t vectorlength, size_t nelems, size_t offset, T *memptr = NULL,
+      size_t memsize = 0);
   ~mem();
 
   T *storage(size_t vectorindex) const {
@@ -109,5 +113,6 @@ public:
 };
 
 inline size_t memoryof(mempool const &m) { return m.memory(); }
+}
 
 #endif // ifndef MEM_HH

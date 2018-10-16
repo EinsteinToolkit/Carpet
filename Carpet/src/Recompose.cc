@@ -621,7 +621,7 @@ void OutputGrids(cGH const *const cctkGH, int const m, gh const &hh,
       }
     }
     cout.precision(oldprecision);
-    cout.setf(oldflags);
+    cout.flags(oldflags);
 
     fflush(stdout);
   }
@@ -842,7 +842,7 @@ void OutputGridStatistics(cGH const *const cctkGH) {
   CCTK_REAL size_total_array_points = 0;
   for (int g = 0; g < CCTK_NumGroups(); ++g) {
     cGroup gdata;
-    check(not CCTK_GroupData(g, &gdata));
+    CCTK_GroupData(g, &gdata);
     int const num_tl = CCTK_ActiveTimeLevelsGI(cctkGH, g);
     int const num_vars = gdata.numvars;
     int const size_vars = gdata.numvars * CCTK_VarTypeSize(gdata.vartype);
@@ -1238,8 +1238,8 @@ void SplitRegionsMaps(cGH const *const cctkGH,
     for (size_t r = 0; r < regss.AT(m).size(); ++r) {
       bool const good_regs = regss.AT(m).AT(r).check_region(false);
       if (not good_regs) {
-        cout << "regs[" << m << "][" << r << "]:\n" << regss.AT(m).AT(r)
-             << "\n";
+        cout << "regs[" << m << "][" << r << "]:\n"
+             << regss.AT(m).AT(r) << "\n";
         cout << "all superregions:\n" << superregss << "\n";
         cout << "all regions:\n" << regss << "\n";
         CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -1305,7 +1305,7 @@ static void SplitRegionsMaps_Automatic_Recursively(bvect const &dims,
 
     // Create a new region
     region_t newreg(superreg);
-    newreg.outer_boundaries = b2vect(false);
+    newreg.outer_boundaries = b2vect(bvect(false));
     if (recompose_verbose)
       cout << "SRMAR newreg " << newreg << endl;
 
@@ -1890,13 +1890,13 @@ static void MakeMultigridBoxes(cGH const *const cctkGH, int const m,
     jjvect nboundaryzones, is_internal, is_staggered, shiftout;
     if (domain_from_multipatch and
         CCTK_IsFunctionAliased("MultiPatch_GetBoundarySpecification")) {
-      check(not MultiPatch_GetBoundarySpecification(
-          m, 2 * dim, &nboundaryzones[0][0], &is_internal[0][0],
-          &is_staggered[0][0], &shiftout[0][0]));
+      MultiPatch_GetBoundarySpecification(m, 2 * dim, &nboundaryzones[0][0],
+                                          &is_internal[0][0],
+                                          &is_staggered[0][0], &shiftout[0][0]);
     } else {
-      check(not GetBoundarySpecification(2 * dim, &nboundaryzones[0][0],
-                                         &is_internal[0][0],
-                                         &is_staggered[0][0], &shiftout[0][0]));
+      GetBoundarySpecification(2 * dim, &nboundaryzones[0][0],
+                               &is_internal[0][0], &is_staggered[0][0],
+                               &shiftout[0][0]);
     }
     // (distance in grid points between the exterior and the physical boundary)
     iivect offset;

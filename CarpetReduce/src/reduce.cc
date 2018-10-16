@@ -192,6 +192,44 @@ template <> inline CCTK_INT16 mysqrt(CCTK_INT16 const x) {
 }
 #endif
 
+// Ensure that nans are handled properly for min and max
+
+#ifdef HAVE_CCTK_REAL4
+
+template <> inline CCTK_REAL4 mymin(const CCTK_REAL4 x, const CCTK_REAL4 y) {
+  return CCTK_isnan(x) ? x : CCTK_isnan(y) ? y : min(x, y);
+}
+
+template <> inline CCTK_REAL4 mymax(const CCTK_REAL4 x, const CCTK_REAL4 y) {
+  return CCTK_isnan(x) ? x : CCTK_isnan(y) ? y : max(x, y);
+}
+
+#endif
+
+#ifdef HAVE_CCTK_REAL8
+
+template <> inline CCTK_REAL8 mymin(const CCTK_REAL8 x, const CCTK_REAL8 y) {
+  return CCTK_isnan(x) ? x : CCTK_isnan(y) ? y : min(x, y);
+}
+
+template <> inline CCTK_REAL8 mymax(const CCTK_REAL8 x, const CCTK_REAL8 y) {
+  return CCTK_isnan(x) ? x : CCTK_isnan(y) ? y : max(x, y);
+}
+
+#endif
+
+#ifdef HAVE_CCTK_REAL16
+
+template <> inline CCTK_REAL16 mymin(const CCTK_REAL16 x, const CCTK_REAL16 y) {
+  return CCTK_isnan(x) ? x : CCTK_isnan(y) ? y : min(x, y);
+}
+
+template <> inline CCTK_REAL16 mymax(const CCTK_REAL16 x, const CCTK_REAL16 y) {
+  return CCTK_isnan(x) ? x : CCTK_isnan(y) ? y : max(x, y);
+}
+
+#endif
+
 // Overload the above helper functions and types for complex values
 
 #ifdef HAVE_CCTK_REAL4
@@ -662,9 +700,9 @@ void reduce(const int *const lsh, const int *const ash, const int *const bbox,
   }
 
 #if !(defined(__PGI) && (__PGIC__ > 9))
-// Regular case
+  // Regular case
 
-#pragma omp parallel
+  // #pragma omp parallel
   {
     T myoutval_local;
     T mycnt_local;
@@ -1365,14 +1403,15 @@ int ReduceGVs(const cGH *const cgh, const int proc, const int num_outvals,
     assert(vhh.AT(m)->reflevels() == vhh.AT(0)->reflevels());
   }
   int const minrl = reduce_arrays ? 0 : want_global_mode ? 0 : reflevel;
-  int const maxrl = reduce_arrays ? 1 : want_global_mode
-                                            ? vhh.AT(0)->reflevels()
-                                            : reflevel + 1;
+  int const maxrl =
+      reduce_arrays ? 1
+                    : want_global_mode ? vhh.AT(0)->reflevels() : reflevel + 1;
   int const minm =
       reduce_arrays ? 0 : want_global_mode or want_level_mode ? 0 : Carpet::map;
-  int const maxm = reduce_arrays ? 1 : want_global_mode or want_level_mode
-                                           ? maps
-                                           : Carpet::map + 1;
+  int const maxm =
+      reduce_arrays
+          ? 1
+          : want_global_mode or want_level_mode ? maps : Carpet::map + 1;
 
   // Find the time interpolation order
   int partype;
@@ -1600,20 +1639,15 @@ int ReduceGVs(const cGH *const cgh, const int proc, const int num_outvals,
                 for (int tl = 0; tl < num_tl; ++tl) {
                   myinarrays.AT(tl).resize(num_invars);
                   for (int n = 0; n < num_invars; ++n) {
-#if 0
-                      myinarrays.AT(tl).AT(n)
-                        = CCTK_VarDataPtrI(cgh, tl, invars[n]);
-#else
                     int const vi1 = invars[n];
                     int const gi = CCTK_GroupIndexFromVarI(vi1);
                     int const vi0 = CCTK_FirstVarIndexI(gi);
                     ggf const *const ff =
                         arrdata.AT(gi).AT(Carpet::map).data.AT(vi1 - vi0);
-                    void const *const ptr =
-                        ff->data_pointer(tl, reflevel, local_component, mglevel)
-                            ->storage();
+                    gdata const *const dd = ff->data_pointer(
+                        tl, reflevel, local_component, mglevel);
+                    void const *const ptr = dd->storage();
                     myinarrays.AT(tl).AT(n) = ptr;
-#endif
                     assert(myinarrays.AT(tl).AT(n));
                   }
                   inarrays.AT(tl) = &myinarrays.AT(tl).AT(0);

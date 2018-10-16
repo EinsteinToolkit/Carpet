@@ -4,9 +4,9 @@
 
 #include "carpet.hh"
 
+#include "Get.hh"
 #include "mapping.hh"
 #include "slab.hh"
-#include "Get.hh"
 
 namespace CarpetSlab {
 

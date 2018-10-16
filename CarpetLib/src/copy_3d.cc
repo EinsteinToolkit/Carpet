@@ -12,9 +12,8 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND3(i, j, k)                                                       \
   index3(srcioff + (i), srcjoff + (j), srckoff + (k), srcipadext, srcjpadext,  \
@@ -37,14 +36,12 @@ void copy_3d(T const *restrict const src, ivect3 const &restrict srcpadext,
   if (any(srcbbox.stride() != dstregbbox.stride() or
           dstbbox.stride() != dstregbbox.stride() or
           srcregbbox1.stride() != dstregbbox.stride())) {
-    {
-      cout << "copy_3d.cc:" << endl
-           << "srcbbox=" << srcbbox << endl
-           << "dstbbox=" << dstbbox << endl
-           << "srcregbbox=" << srcregbbox1 << endl
-           << "dstregbbox=" << dstregbbox << endl;
-      CCTK_ERROR("Internal error: strides disagree");
-    }
+    cout << "copy_3d.cc:" << endl
+         << "srcbbox=" << srcbbox << endl
+         << "dstbbox=" << dstbbox << endl
+         << "srcregbbox=" << srcregbbox1 << endl
+         << "dstregbbox=" << dstregbbox << endl;
+    CCTK_ERROR("Internal error: strides disagree");
   }
 
   if (any(srcbbox.stride() != dstbbox.stride())) {
@@ -65,21 +62,18 @@ void copy_3d(T const *restrict const src, ivect3 const &restrict srcpadext,
 
   if (not srcregbbox.is_contained_in(srcbbox) or
       not dstregbbox.is_contained_in(dstbbox)) {
-    {
-      cerr << "copy_3d.cc:" << endl
-           << "srcbbox=" << srcbbox << endl
-           << "dstbbox=" << dstbbox << endl
-           << "srcregbbox=" << srcregbbox << endl
-           << "dstregbbox=" << dstregbbox << endl;
-      if (slabinfo) {
-        cerr << "slabinfo=" << *slabinfo << endl;
-      }
-      CCTK_ERROR(
-          "Internal error: region extent is not contained in array extent");
-    }
+    cerr << "copy_3d.cc:" << endl
+         << "srcbbox=" << srcbbox << endl
+         << "dstbbox=" << dstbbox << endl
+         << "srcregbbox=" << srcregbbox << endl
+         << "dstregbbox=" << dstregbbox << endl;
+    if (slabinfo)
+      cerr << "slabinfo=" << *slabinfo << endl;
+    CCTK_ERROR(
+        "Internal error: region extent is not contained in array extent");
   }
 
-  ivect3 const regext = dstregbbox.shape() / dstregbbox.stride();
+  ivect3 const regext = dstregbbox.sizes();
   assert(all((srcregbbox.lower() - srcbbox.lower()) % srcbbox.stride() == 0));
   ivect3 const srcoff =
       (srcregbbox.lower() - srcbbox.lower()) / srcbbox.stride();
@@ -115,24 +109,13 @@ void copy_3d(T const *restrict const src, ivect3 const &restrict srcpadext,
   ptrdiff_t const dstjoff = dstoff[1];
   ptrdiff_t const dstkoff = dstoff[2];
 
-  // Loop over region
-  if (use_openmp) {
-#pragma omp parallel for collapse(3)
-    for (int k = 0; k < regkext; ++k) {
-      for (int j = 0; j < regjext; ++j) {
-        for (int i = 0; i < regiext; ++i) {
-
-          dst[DSTIND3(i, j, k)] = src[SRCIND3(i, j, k)];
-        }
-      }
-    }
-  } else {
-    for (int k = 0; k < regkext; ++k) {
-      for (int j = 0; j < regjext; ++j) {
-        for (int i = 0; i < regiext; ++i) {
-
-          dst[DSTIND3(i, j, k)] = src[SRCIND3(i, j, k)];
-        }
+// Loop over region
+#pragma omp parallel for collapse(2) if (use_openmp)
+  for (int k = 0; k < regkext; ++k) {
+    for (int j = 0; j < regjext; ++j) {
+#pragma omp simd
+      for (int i = 0; i < regiext; ++i) {
+        dst[DSTIND3(i, j, k)] = src[SRCIND3(i, j, k)];
       }
     }
   }

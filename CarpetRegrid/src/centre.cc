@@ -55,7 +55,7 @@ int Centre(cGH const *const cctkGH, gh const &hh, gh::rregs &regss) {
     ibbox const ext(rlb, rub, rstr);
     regs.at(0).extent = ext;
 
-    b2vect const ob(false);
+    b2vect const ob(bvect(false));
     regs.at(0).outer_boundaries = ob;
 
     regs.at(0).map = Carpet::map;

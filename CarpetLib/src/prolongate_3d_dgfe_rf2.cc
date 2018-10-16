@@ -11,19 +11,17 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
+namespace CarpetLib {
+
 using namespace std;
 #ifdef HRSCC_GLL_ELEMENT_HH
 using namespace hrscc;
 #endif
 
-namespace CarpetLib {
-
 #define SRCIND3(i, j, k)                                                       \
   index3(i, j, k, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext)
 #define DSTIND3(i, j, k)                                                       \
   index3(i, j, k, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext)
-#define SRCOFF3(i, j, k) offset3(i, j, k, srciext, srcjext, srckext)
-#define DSTOFF3(i, j, k) offset3(i, j, k, dstiext, dstjext, dstkext)
 
 template <typename T, int ORDER>
 void prolongate_3d_dgfe_rf2(
@@ -125,11 +123,11 @@ void prolongate_3d_dgfe_rf2(
     assert(regext[2] % (2 * (ORDER + 1)) == 0);
 
     int const srcdi = 1; // 2d face
-    int const srcdj = SRCOFF3(0, 1, 0) - SRCOFF3(0, 0, 0);
-    int const srcdk = SRCOFF3(0, 0, 1) - SRCOFF3(0, 0, 0);
+    int const srcdj = SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0);
+    int const srcdk = SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0);
     int const dstdi = 1; // 2d face
-    int const dstdj = DSTOFF3(0, 1, 0) - DSTOFF3(0, 0, 0);
-    int const dstdk = DSTOFF3(0, 0, 1) - DSTOFF3(0, 0, 0);
+    int const dstdj = DSTIND3(0, 1, 0) - DSTIND3(0, 0, 0);
+    int const dstdk = DSTIND3(0, 0, 1) - DSTIND3(0, 0, 0);
     int const srcstr2d[2] = {srcdj, srcdk};
     int const dststr2d[2] = {dstdj, dstdk};
 
@@ -156,16 +154,16 @@ void prolongate_3d_dgfe_rf2(
     assert(regext[0] % (2 * (ORDER + 1)) == 0);
     assert(regext[2] % (2 * (ORDER + 1)) == 0);
 
-    // int const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
+    // int const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
     int const srcdi = 1;
-    assert(srcdi == SRCOFF3(1, 0, 0) - SRCOFF3(0, 0, 0));
+    assert(srcdi == SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0));
     int const srcdj = 1; // 2d face
-    int const srcdk = SRCOFF3(0, 0, 1) - SRCOFF3(0, 0, 0);
-    // int const dstdi = DSTOFF3(1,0,0) - DSTOFF3(0,0,0);
+    int const srcdk = SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0);
+    // int const dstdi = DSTIND3(1,0,0) - DSTIND3(0,0,0);
     int const dstdi = 1;
-    assert(dstdi == DSTOFF3(1, 0, 0) - DSTOFF3(0, 0, 0));
+    assert(dstdi == DSTIND3(1, 0, 0) - DSTIND3(0, 0, 0));
     int const dstdj = 1; // 2d face
-    int const dstdk = DSTOFF3(0, 0, 1) - DSTOFF3(0, 0, 0);
+    int const dstdk = DSTIND3(0, 0, 1) - DSTIND3(0, 0, 0);
     int const srcstr2d[2] = {srcdi, srcdk};
     int const dststr2d[2] = {dstdi, dstdk};
 
@@ -192,15 +190,15 @@ void prolongate_3d_dgfe_rf2(
     assert(regext[0] % (2 * (ORDER + 1)) == 0);
     assert(regext[1] % (2 * (ORDER + 1)) == 0);
 
-    // int const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
+    // int const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
     int const srcdi = 1;
-    assert(srcdi == SRCOFF3(1, 0, 0) - SRCOFF3(0, 0, 0));
-    int const srcdj = SRCOFF3(0, 1, 0) - SRCOFF3(0, 0, 0);
+    assert(srcdi == SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0));
+    int const srcdj = SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0);
     int const srcdk = 1; // 2d face
-    // int const dstdi = DSTOFF3(1,0,0) - DSTOFF3(0,0,0);
+    // int const dstdi = DSTIND3(1,0,0) - DSTIND3(0,0,0);
     int const dstdi = 1;
-    assert(dstdi == DSTOFF3(1, 0, 0) - DSTOFF3(0, 0, 0));
-    int const dstdj = DSTOFF3(0, 1, 0) - DSTOFF3(0, 0, 0);
+    assert(dstdi == DSTIND3(1, 0, 0) - DSTIND3(0, 0, 0));
+    int const dstdj = DSTIND3(0, 1, 0) - DSTIND3(0, 0, 0);
     int const dstdk = 1; // 2d face
     int const srcstr2d[2] = {srcdi, srcdj};
     int const dststr2d[2] = {dstdi, dstdj};
@@ -226,16 +224,16 @@ void prolongate_3d_dgfe_rf2(
     // Ensure we traverse an even integer number of elements
     assert(all(regext % (2 * (ORDER + 1)) == 0));
 
-    // int const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
+    // int const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
     int const srcdi = 1;
-    assert(srcdi == SRCOFF3(1, 0, 0) - SRCOFF3(0, 0, 0));
-    int const srcdj = SRCOFF3(0, 1, 0) - SRCOFF3(0, 0, 0);
-    int const srcdk = SRCOFF3(0, 0, 1) - SRCOFF3(0, 0, 0);
-    // int const dstdi = DSTOFF3(1,0,0) - DSTOFF3(0,0,0);
+    assert(srcdi == SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0));
+    int const srcdj = SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0);
+    int const srcdk = SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0);
+    // int const dstdi = DSTIND3(1,0,0) - DSTIND3(0,0,0);
     int const dstdi = 1;
-    assert(dstdi == DSTOFF3(1, 0, 0) - DSTOFF3(0, 0, 0));
-    int const dstdj = DSTOFF3(0, 1, 0) - DSTOFF3(0, 0, 0);
-    int const dstdk = DSTOFF3(0, 0, 1) - DSTOFF3(0, 0, 0);
+    assert(dstdi == DSTIND3(1, 0, 0) - DSTIND3(0, 0, 0));
+    int const dstdj = DSTIND3(0, 1, 0) - DSTIND3(0, 0, 0);
+    int const dstdk = DSTIND3(0, 0, 1) - DSTIND3(0, 0, 0);
     int const srcstr[3] = {srcdi, srcdj, srcdk};
     int const dststr[3] = {dstdi, dstdj, dstdk};
 

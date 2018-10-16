@@ -151,7 +151,7 @@ int ManualCoordinateList(cGH const *const cctkGH, gh const &hh,
       for (int rl = 0; rl < (int)newobss.size(); ++rl) {
         newobss.at(rl).resize(newbbss.at(rl).size());
         for (int c = 0; c < (int)newobss.at(rl).size(); ++c) {
-          newobss.at(rl).at(c) = b2vect(false);
+          newobss.at(rl).at(c) = b2vect(bvect(false));
         }
       }
     }

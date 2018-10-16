@@ -54,9 +54,6 @@ static int TimeToOutput(const cGH *cctkGH, int vindex);
 static int TriggerOutput(const cGH *cctkGH, int vindex);
 
 // Internal functions
-#if 0
-  static void SetFlag (int index, const char* optstring, void* arg);
-#endif
 static void CheckSteerableParameters(const cGH *const cctkGH,
                                      bool first_time = false);
 
@@ -173,8 +170,7 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
 
     const int n = CCTK_VarIndex(varname);
     if (n < 0) {
-      CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Variable \"%s\" does not exist", varname);
+      CCTK_VWARN(CCTK_WARN_ALERT, "Variable \"%s\" does not exist", varname);
       return -1;
     }
     assert(n >= 0 and n < CCTK_NumVars());
@@ -189,7 +185,7 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
 
     // Check for storage
     if (not CCTK_QueryGroupStorageI(cctkGH, group)) {
-      CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWARN(CCTK_WARN_ALERT,
                  "Cannot output variable \"%s\" because it has no storage",
                  varname);
       return 0;
@@ -211,16 +207,14 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
     }
     int const iret = IOUtil_CreateDirectory(cctkGH, myoutdir, 0, 0);
     if (iret < 0) {
-      CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Could not create output directory \"%s\"", myoutdir);
+      CCTK_VWARN(CCTK_WARN_ALERT, "Could not create output directory \"%s\"",
+                 myoutdir);
     } else if (CCTK_Equals(verbose, "full")) {
       static bool firsttime = true;
       if (firsttime and iret > 0) {
-        CCTK_VInfo(CCTK_THORNSTRING, "Output directory \"%s\" exists already",
-                   myoutdir);
+        CCTK_VINFO("Output directory \"%s\" exists already", myoutdir);
       } else if (not firsttime and iret == 0) {
-        CCTK_VInfo(CCTK_THORNSTRING, "Created output directory \"%s\"",
-                   myoutdir);
+        CCTK_VINFO("Created output directory \"%s\"", myoutdir);
       }
       firsttime = false;
     }
@@ -241,7 +235,7 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
       string const reduction(start, end);
       int const handle = CCTK_ReductionHandle(reduction.c_str());
       if (handle < 0) {
-        CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
+        CCTK_VWARN(CCTK_WARN_ALERT,
                    "Reduction operator \"%s\" does not exist (maybe there is "
                    "no reduction thorn active?)",
                    reduction.c_str());
@@ -306,8 +300,7 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
               file.open(filename, ios::out | ios::app);
             }
             if (not file.good()) {
-              CCTK_VWarn(
-                  0, __LINE__, __FILE__, CCTK_THORNSTRING,
+              CCTK_VERROR(
                   "Could not open output file \"%s\" for variable \"%s\"",
                   filename, varname);
             }
@@ -341,7 +334,7 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
               want_parfilename = true;
               want_other = true;
             } else {
-              CCTK_WARN(0, "internal error");
+              CCTK_ERROR("internal error");
             }
             file << "# Scalar ASCII output created by CarpetIOScalar" << eol;
             if (want_date) {
@@ -422,16 +415,20 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
 
         } // if on the root processor
 
+        ostringstream buf;
+        buf << setprecision(out_precision);
+
         if (CCTK_MyProc(cctkGH) == 0) {
           if (not all_reductions_in_one_file or
               ireduction == reductions.begin()) {
-            file << cctk_iteration << " " << cctk_time;
+            buf << cctk_iteration << " " << cctk_time;
           }
         }
 
         int const handle = ireduction->handle;
 
-        char result[100]; // assuming no type is larger
+        char resultbuf[100]; // assuming no type is larger
+        void *const result = &resultbuf;
 
         int const firstvar =
             one_file_per_group ? CCTK_FirstVarIndexI(group) : n;
@@ -440,24 +437,25 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
 
         for (int n = firstvar; n < firstvar + numvars; ++n) {
 
+          assert(CCTK_VarTypeSize(vartype) <= int(sizeof resultbuf));
           int const ierr =
               CCTK_Reduce(cctkGH, 0, handle, 1, vartype, result, 1, n);
           if (ierr) {
             char *const fullname = CCTK_FullName(n);
-            CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
+            CCTK_VWARN(CCTK_WARN_ALERT,
                        "Error during reduction for variable \"%s\"", fullname);
             free(fullname);
-            memset(result, 0, sizeof result);
+            memset(result, 0, sizeof resultbuf);
           }
 
           if (CCTK_MyProc(cctkGH) == 0) {
-            file << " ";
+            buf << " ";
 
             switch (specific_cactus_type(vartype)) {
 #define CARPET_NO_COMPLEX
 #define TYPECASE(N, T)                                                         \
   case N:                                                                      \
-    file << *(T const *)result;                                                \
+    buf << *(T const *)result;                                                 \
     break;
 #include "typecase.hh"
 #undef TYPECASE
@@ -465,7 +463,7 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
 #define CARPET_COMPLEX
 #define TYPECASE(N, T)                                                         \
   case N:                                                                      \
-    file << real(*(T const *)result) << " " << imag(*(T const *)result);       \
+    buf << real(*(T const *)result) << " " << imag(*(T const *)result);        \
     break;
 #include "typecase.hh"
 #undef TYPECASE
@@ -476,6 +474,8 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
           }
 
         } // for n
+
+        file << buf.str();
 
         if (not all_reductions_in_one_file) {
           if (CCTK_MyProc(cctkGH) == 0) {
@@ -657,10 +657,9 @@ int TimeToOutput(const cGH *const cctkGH, int const vindex) {
   if (last_output.at(vindex) == cctk_iteration) {
     // Has already been output during this iteration
     char *const varname = CCTK_FullName(vindex);
-    CCTK_VWarn(5, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Skipping output for variable \"%s\", because this variable "
-               "has already been output during the current iteration -- "
-               "probably via a trigger during the analysis stage",
+    CCTK_VWARN(5, "Skipping output for variable \"%s\", because this variable "
+                  "has already been output during the current iteration -- "
+                  "probably via a trigger during the analysis stage",
                varname);
     free(varname);
     return 0;
@@ -808,19 +807,5 @@ static void CheckSteerableParameters(const cGH *const cctkGH, bool first_time) {
     }
   }
 }
-
-#if 0
-  void
-  SetFlag (int const index, const char * const optstring, void * const arg)
-  {
-    const void *dummy;
-
-    dummy = &optstring;
-    dummy = &dummy;
-
-    vector<bool>& flags = *(vector<bool>*)arg;
-    flags.at(index) = true;
-  }
-#endif
 
 } // namespace CarpetIOScalar

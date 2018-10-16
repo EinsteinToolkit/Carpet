@@ -1,9 +1,9 @@
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
-#include <cctype>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -182,7 +182,7 @@ int OutputGH(const cGH *const cctkGH) {
     last_output = cctk_iteration;
 
     cout.precision(oldprec);
-    cout.setf(oldflags);
+    cout.flags(oldflags);
 
   } // if time to output
 
@@ -476,7 +476,7 @@ void OutputVar(const cGH *const cctkGH, int n, const char *out_reductions) {
 
     // Restore cout state
     cout.precision(oldprec);
-    cout.setf(oldflags);
+    cout.flags(oldflags);
   }
   END_GLOBAL_MODE;
 }

@@ -275,6 +275,11 @@ template <typename T> T aligndown(const T i, const T j) {
   return divdown(i, j) * j;
 }
 
+template <typename T> T aligndown(const T i, const T j, const T k) {
+  assert(k >= 0 && k < j);
+  return divdown(i + (j - k), j) * j - (j - k);
+}
+
 // random uniform integer
 template <typename T> T randomui(const T imin, const T imax, const T istr = 1) {
   assert(imin < imax);
@@ -309,6 +314,7 @@ ostream &operator<<(ostream &os, const lc_space_t &s) {
   return os;
 }
 
+ostream &operator<<(ostream &os, const lc_control_t &c) CCTK_ATTRIBUTE_UNUSED;
 ostream &operator<<(ostream &os, const lc_control_t &c) {
   os << "lc_control{\n"
      << "   ash:" << c.ash << ",\n"
@@ -373,6 +379,7 @@ bool space_global2local(lc_space_t &space, ptrdiff_t gidx) {
   return gidx != 0;
 }
 
+int space_local2global(const lc_space_t &space) CCTK_ATTRIBUTE_UNUSED;
 int space_local2global(const lc_space_t &space) {
   int gidx = 0;
   int fact = 1;
@@ -518,7 +525,8 @@ void lc_control_init(lc_control_t *restrict const control,
                      lc_descr_t *const descr, ptrdiff_t imin, ptrdiff_t jmin,
                      ptrdiff_t kmin, ptrdiff_t imax, ptrdiff_t jmax,
                      ptrdiff_t kmax, ptrdiff_t iash, ptrdiff_t jash,
-                     ptrdiff_t kash, ptrdiff_t istr) {
+                     ptrdiff_t kash, ptrdiff_t ialn, ptrdiff_t ioff,
+                     ptrdiff_t istr) {
   DECLARE_CCTK_PARAMETERS;
 
   // Get cache line size
@@ -548,10 +556,21 @@ void lc_control_init(lc_control_t *restrict const control,
   }
 
   ptrdiff_t tilesize_alignment = 1;
-  if (align_with_cachelines) {
+  ptrdiff_t tilesize_offset CCTK_ATTRIBUTE_UNUSED = 0;
+  if (VECTORISE && VECTORISE_ALIGNED_ARRAYS) {
+    assert(ialn > 0);
+    assert(ioff >= 0 && ioff < ialn);
+    assert(istr > 0);
+    assert(ialn % istr == 0);
+    tilesize_alignment = alignup(tilesize_alignment, ialn);
+    tilesize_offset = ioff;
+  }
+  if ((VECTORISE && VECTORISE_ALIGNED_ARRAYS && VECTORISE_ALIGN_FOR_CACHE) ||
+      align_with_cachelines) {
     tilesize_alignment =
-        divup(max_cache_linesize, ptrdiff_t(sizeof(CCTK_REAL)));
-    tilesize_alignment = alignup(tilesize_alignment, istr);
+        alignup(tilesize_alignment,
+                divup(max_cache_linesize, ptrdiff_t(sizeof(CCTK_REAL))));
+    // don't know what to do with tilesize_offset here
   }
 
 #pragma omp barrier
@@ -683,12 +702,10 @@ void lc_control_init(lc_control_t *restrict const control,
       assert(not descr->current_params);
       descr->current_params = params_p;
       setup.current_params = descr->current_params;
-      if (not setup.default_params) {
+      if (not setup.default_params)
         setup.default_params = setup.current_params;
-      }
-      if (not setup.best_params) {
+      if (not setup.best_params)
         setup.best_params = setup.current_params;
-      }
     }
   }
 #pragma omp barrier
@@ -752,7 +769,7 @@ void lc_control_init(lc_control_t *restrict const control,
     const int num_fine_threads = get_num_fine_threads();
     // If possible, stagger fine threads in the i direction, so that
     // they share cache lines
-    if (istr * num_fine_threads <= loopsize[0]) {
+    if (ialn * num_fine_threads <= loopsize[0]) {
       smt_size[0] = num_fine_threads;
     } else if (num_fine_threads <= loopsize[1]) {
       smt_size[1] = num_fine_threads;
@@ -768,9 +785,8 @@ void lc_control_init(lc_control_t *restrict const control,
   const ptrdiff_t vect_size[LC_DIM] = {istr, 1, 1};
 
   // Copy ash arguments
-  for (int d = 0; d < LC_DIM; ++d) {
+  for (int d = 0; d < LC_DIM; ++d)
     control->ash.v[d] = ash[d];
-  }
 
   // Set up multithreading state
   {
@@ -785,13 +801,17 @@ void lc_control_init(lc_control_t *restrict const control,
     // Overall loop: as specified
     control->overall.min.v[d] = loop_min[d];
     control->overall.max.v[d] = loop_max[d];
-// Thread loop
-#if VECTORISE && VECTORISE_ALIGNED_ARRAYS
-    // Move start to be aligned with vector size
-    control->coarse_thread.min.v[d] =
-        aligndown(control->overall.min.v[d], vect_size[d]);
-#else
+    // Thread loop
     control->coarse_thread.min.v[d] = control->overall.min.v[d];
+#if VECTORISE && VECTORISE_ALIGNED_ARRAYS
+    // // Move start to be aligned with vector size
+    // control->coarse_thread.min.v[d] =
+    //     aligndown(control->overall.min.v[d], vect_size[d]);
+    // Move start to be aligned with cache
+    if (d == 0)
+      control->coarse_thread.min.v[d] = aligndown(
+          control->coarse_thread.min.v[d], tilesize_alignment,
+          (tilesize_alignment - tilesize_offset) % tilesize_alignment);
 #endif
     control->coarse_thread.max.v[d] = loop_max[d];
     // Fine threads
@@ -838,24 +858,32 @@ void lc_control_init(lc_control_t *restrict const control,
 
   if (veryverbose) {
 #pragma omp master
-    CCTK_VInfo(
-        CCTK_THORNSTRING,
-        "Loop %s (%s:%d): imin=[%td,%td,%td] imax=[%td,%td,%td]\n"
-        "   threads=%d coarse_threads=%d fine_threads=%d\n"
-        "   fine_thread.step=[%td,%td,%td] fine_loop.step=[%td,%td,%td] "
+    CCTK_VINFO(
+        "Loop %s (%s:%d):\n"
+        "  imin=[%td,%td,%td] imax=[%td,%td,%td]\n"
+        "  ash=[%td,%td,%td] aln=%td off=%td str=%td\n"
+        "  max_threads=%d threads=%d coarse_threads=%d fine_threads=%d\n"
+        "  coarse_thread.min=[%td,%td,%td]\n"
+        "  fine_thread.step=[%td,%td,%td] fine_loop.step=[%td,%td,%td] "
         "coarse_loop.step=[%td,%td,%td] coarse_thread.step=[%td,%td,%td]",
         descr->name.c_str(), descr->file.c_str(), descr->line,
         control->overall.min.v[0], control->overall.min.v[1],
         control->overall.min.v[2], control->overall.max.v[0],
-        control->overall.max.v[1], control->overall.max.v[2],
-        omp_get_num_threads(), get_num_coarse_threads(), get_num_fine_threads(),
-        control->fine_thread.step.v[0], control->fine_thread.step.v[1],
-        control->fine_thread.step.v[2], control->fine_loop.step.v[0],
-        control->fine_loop.step.v[1], control->fine_loop.step.v[2],
-        control->coarse_loop.step.v[0], control->coarse_loop.step.v[1],
-        control->coarse_loop.step.v[2], control->coarse_thread.step.v[0],
-        control->coarse_thread.step.v[1], control->coarse_thread.step.v[2]);
+        control->overall.max.v[1], control->overall.max.v[2], iash, jash, kash,
+        ialn, ioff, istr, omp_get_num_threads(), omp_get_max_threads(),
+        get_num_coarse_threads(), get_num_fine_threads(),
+        control->coarse_thread.min.v[0], control->coarse_thread.min.v[1],
+        control->coarse_thread.min.v[2], control->fine_thread.step.v[0],
+        control->fine_thread.step.v[1], control->fine_thread.step.v[2],
+        control->fine_loop.step.v[0], control->fine_loop.step.v[1],
+        control->fine_loop.step.v[2], control->coarse_loop.step.v[0],
+        control->coarse_loop.step.v[1], control->coarse_loop.step.v[2],
+        control->coarse_thread.step.v[0], control->coarse_thread.step.v[1],
+        control->coarse_thread.step.v[2]);
   }
+  // This is not always true, but it will catch weird cases
+  if (omp_get_num_threads() > 1)
+    assert(omp_get_num_threads() == omp_get_max_threads());
 
   // Initialise selftest
   if (selftest) {
@@ -897,10 +925,8 @@ void lc_control_finish(lc_control_t *restrict const control,
           }
         }
       }
-      if (nfailed > 0) {
-        CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                    "LoopControl self-test failed");
-      }
+      if (nfailed > 0)
+        CCTK_ERROR("LoopControl self-test failed");
       delete[] control->selftest_array;
     }
     control->selftest_array = NULL;
@@ -930,11 +956,10 @@ void lc_control_finish(lc_control_t *restrict const control,
       if (descr->stats.count == 0.0) {
         const double time_point =
             elapsed_time * omp_get_num_threads() / npoints;
-        CCTK_VInfo(CCTK_THORNSTRING, "Loop %s: time=%g, time/point=%g s",
-                   descr->name.c_str(), elapsed_time, time_point);
+        CCTK_VINFO("Loop %s: time=%g, time/point=%g s", descr->name.c_str(),
+                   elapsed_time, time_point);
       } else {
-        CCTK_VInfo(CCTK_THORNSTRING,
-                   "Loop %s: count=%g, avg/thread=%g s, avg/point=%g s",
+        CCTK_VINFO("Loop %s: count=%g, avg/thread=%g s, avg/point=%g s",
                    descr->name.c_str(), descr->stats.count,
                    descr->stats.avg_thread(), descr->stats.avg_point());
       }
@@ -1004,23 +1029,28 @@ void lc_thread_step(lc_control_t *restrict const control) {
 }
 
 void lc_selftest_set(const lc_control_t *restrict control, const ptrdiff_t imin,
-                     const ptrdiff_t imax, const ptrdiff_t istr,
+                     const ptrdiff_t imax, const ptrdiff_t ialn,
+                     const ptrdiff_t ioff, const ptrdiff_t istr,
                      const ptrdiff_t i0, const ptrdiff_t j, const ptrdiff_t k) {
   DECLARE_CCTK_PARAMETERS;
   assert(selftest);
   assert(imin >= 0 and imin < imax and imax <= control->ash.v[0]);
+  assert(ioff >= 0 && ioff < ialn);
   assert(istr > 0);
+  if (VECTORISE && VECTORISE_ALIGNED_ARRAYS)
+    assert(ialn % istr == 0);
   assert(j >= 0 and j < control->ash.v[1]);
   assert(k >= 0 and k < control->ash.v[2]);
   assert(i0 + istr - 1 >= control->overall.min.v[0] and
          i0 < control->overall.max.v[0]);
   if (imin > control->overall.min.v[0]) {
     const ptrdiff_t ipos_imin = ind(control->ash, imin, j, k);
-    assert(ipos_imin % istr == 0);
+    assert((ipos_imin + ioff) % ialn == 0);
+    assert((ipos_imin + ioff) % istr == 0);
   }
   if (imax < control->overall.max.v[0]) {
     const ptrdiff_t ipos_imax = ind(control->ash, imax, j, k);
-    assert(ipos_imax % istr == 0);
+    assert((ipos_imax + ioff) % ialn == 0);
   }
   assert(j >= control->overall.min.v[1] and j < control->overall.max.v[1]);
   assert(k >= control->overall.min.v[2] and k < control->overall.max.v[2]);
@@ -1106,18 +1136,15 @@ void lc_statistics(CCTK_ARGUMENTS) {
          (sizeof(lc_setup_key_t) + sizeof(lc_setup_t *) + sizeof(lc_setup_t))) +
         (nparams * (sizeof(lc_params_key_t) + sizeof(lc_params_t *) +
                     sizeof(lc_params_t)));
-    CCTK_VInfo(CCTK_THORNSTRING, "  Loops traversed:    %td", nloops);
-    CCTK_VInfo(CCTK_THORNSTRING, "  Setups encountered: %td", nsetups);
-    CCTK_VInfo(CCTK_THORNSTRING, "  Params explored:    %td", nparams);
-    CCTK_VInfo(CCTK_THORNSTRING, "    Actual time spent:                %g s",
-               time_actual);
-    CCTK_VInfo(CCTK_THORNSTRING,
-               "    Unoptimized time would have been: %g s   (%+.1f%%)",
+    CCTK_VINFO("  Loops traversed:    %td", nloops);
+    CCTK_VINFO("  Setups encountered: %td", nsetups);
+    CCTK_VINFO("  Params explored:    %td", nparams);
+    CCTK_VINFO("    Actual time spent:                %g s", time_actual);
+    CCTK_VINFO("    Unoptimized time would have been: %g s   (%+.1f%%)",
                time_default, 100.0 * ratio_unopt);
-    CCTK_VInfo(CCTK_THORNSTRING,
-               "    Ideal time could have been:       %g s   (%+.1f%%)",
+    CCTK_VINFO("    Ideal time could have been:       %g s   (%+.1f%%)",
                time_best, 100.0 * ratio_ideal);
-    CCTK_VInfo(CCTK_THORNSTRING, "  Memory allocated: %g MB", nbytes / 1.0e+6);
+    CCTK_VINFO("  Memory allocated: %g MB", nbytes / 1.0e+6);
   }
 
   if (strcmp(statistics_filename, "") == 0)
@@ -1232,18 +1259,19 @@ extern "C" CCTK_FCALL void CCTK_FNAME(lc_descr_init)(CCTK_POINTER &descr,
   free(file);
 }
 
-extern "C" CCTK_FCALL void CCTK_FNAME(lc_control_init)(
-    lc_control_t &restrict control, CCTK_POINTER &descr, const int &imin,
-    const int &jmin, const int &kmin, const int &imax, const int &jmax,
-    const int &kmax, const int &iash, const int &jash, const int &kash,
-    const int &istr) {
+extern "C" CCTK_FCALL void
+CCTK_FNAME(lc_control_init)(lc_control_t &restrict control, CCTK_POINTER &descr,
+                            const int &imin, const int &jmin, const int &kmin,
+                            const int &imax, const int &jmax, const int &kmax,
+                            const int &iash, const int &jash, const int &kash,
+                            const int &ialn, const int &ioff, const int &istr) {
   lc_control_init(&control, (lc_descr_t *)descr, imin, jmin, kmin, imax, jmax,
-                  kmax, iash, jash, kash, istr);
+                  kmax, iash, jash, kash, ialn, ioff, istr);
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(lc_control_finish)(lc_control_t &restrict control,
-                                  CCTK_POINTER &descr) {
+CCTK_FNAME(lc_control_finish)(lc_control_t &restrict control,
+                              CCTK_POINTER &descr) {
   lc_control_finish(&control, (lc_descr_t *)descr);
 }
 
@@ -1252,7 +1280,7 @@ extern "C" CCTK_FCALL void CCTK_FNAME(lc_thread_init)(lc_control_t &control) {
 }
 
 extern "C" CCTK_FCALL int
-    CCTK_FNAME(lc_thread_done)(const lc_control_t &control) {
+CCTK_FNAME(lc_thread_done)(const lc_control_t &control) {
   return lc_thread_done(&control);
 }
 

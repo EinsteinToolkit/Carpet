@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <hdf5.h>
+
 #include <F5/F5F.h>
 #include <F5/F5R.h>
 #include <F5/F5iterate.h>
@@ -140,8 +141,8 @@ private:
     herr_t herr;
 
     cout << indent << "topology=" << topologyname << ""
-         << " (" << (index_depth == 0 ? "vertex" : "cell") << ")\n" << indent
-         << "topological dimension=" << topological_dimension << "\n";
+         << " (" << (index_depth == 0 ? "vertex" : "cell") << ")\n"
+         << indent << "topological dimension=" << topological_dimension << "\n";
 
     // Ignore topologies that are only an alias for another topology
     H5G_stat_t stat;
@@ -153,8 +154,8 @@ private:
           H5Gget_linkval(path->Grid_hid, topologyname, sizeof linkval, linkval);
       assert(not herr);
       indent_t indent2;
-      cout << indent2 << "alias for topology \"" << linkval << "\"\n" << indent2
-           << "ignoring this topology\n";
+      cout << indent2 << "alias for topology \"" << linkval << "\"\n"
+           << indent2 << "ignoring this topology\n";
       return;
     }
 
@@ -378,7 +379,7 @@ private:
 
     // Read the fragment offset. This is stored with the dataset
     // group.
-    ivect foff = 0;
+    ivect foff = ivect(0);
     if (fragmentname) {
       hsize_t hoff[FIBER_MAX_RANK];
       iret = F5LAget_dimensions(fragment_is_group ? fragment : element,
@@ -419,7 +420,7 @@ private:
     herr = H5Sclose(space);
     assert(not herr);
 
-    ibbox const fbox(foff, foff + flen - 1, 1);
+    ibbox const fbox(foff, foff + flen - 1, ivect(1));
     {
       indent_t indent2;
       cout << indent2 << "dataset bbox is " << foff << ":" << foff + flen - 1

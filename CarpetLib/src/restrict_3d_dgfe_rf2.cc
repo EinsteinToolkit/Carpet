@@ -11,19 +11,17 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
+namespace CarpetLib {
+
 using namespace std;
 #ifdef HRSCC_GLL_ELEMENT_HH
 using namespace hrscc;
 #endif
 
-namespace CarpetLib {
-
 #define SRCIND3(i, j, k)                                                       \
   index3(i, j, k, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext)
 #define DSTIND3(i, j, k)                                                       \
   index3(i, j, k, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext)
-#define SRCOFF3(i, j, k) offset3(i, j, k, srciext, srcjext, srckext)
-#define DSTOFF3(i, j, k) offset3(i, j, k, dstiext, dstjext, dstkext)
 
 template <typename T, int ORDER>
 void restrict_3d_dgfe_rf2(
@@ -100,17 +98,17 @@ void restrict_3d_dgfe_rf2(
   ptrdiff_t const dstjoff = dstoff[1];
   ptrdiff_t const dstkoff = dstoff[2];
 
-  // int const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
+  // int const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
   int const srcdi = 1;
-  assert(srcdi == SRCOFF3(1, 0, 0) - SRCOFF3(0, 0, 0));
-  int const srcdj = SRCOFF3(0, 1, 0) - SRCOFF3(0, 0, 0);
-  int const srcdk = SRCOFF3(0, 0, 1) - SRCOFF3(0, 0, 0);
+  assert(srcdi == (srciext > 1 ? SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0) : 1));
+  size_t const srcdj = srcjext > 1 ? SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0) : 0;
+  size_t const srcdk = srckext > 1 ? SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0) : 0;
 
-  // int const dstdi = DSTOFF3(1,0,0) - DSTOFF3(0,0,0);
+  // int const dstdi = DSTIND3(1,0,0) - DSTIND3(0,0,0);
   int const dstdi = 1;
-  assert(dstdi == DSTOFF3(1, 0, 0) - DSTOFF3(0, 0, 0));
-  int const dstdj = DSTOFF3(0, 1, 0) - DSTOFF3(0, 0, 0);
-  int const dstdk = DSTOFF3(0, 0, 1) - DSTOFF3(0, 0, 0);
+  assert(dstdi == DSTIND3(1, 0, 0) - DSTIND3(0, 0, 0));
+  int const dstdj = DSTIND3(0, 1, 0) - DSTIND3(0, 0, 0);
+  int const dstdk = DSTIND3(0, 0, 1) - DSTIND3(0, 0, 0);
 
   int const srcstr[3] = {srcdi, srcdj, srcdk};
   int const dststr[3] = {dstdi, dstdj, dstdk};

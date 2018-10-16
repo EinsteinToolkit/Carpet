@@ -75,7 +75,7 @@ struct f_bbox {
 
   f_bbox() {}
   f_bbox(ibbox const &box) {
-    assert(::dim == 3);
+    assert(CarpetLib::dim == 3);
     for (int d = 0; d < 3; ++d) {
       dim[d].lower = box.lower()[d];
       dim[d].upper = box.upper()[d];
@@ -84,7 +84,7 @@ struct f_bbox {
   }
   /*explicit*/ operator ibbox() const {
     ivect lower, upper, stride;
-    assert(::dim == 3);
+    assert(CarpetLib::dim == 3);
     for (int d = 0; d < 3; ++d) {
       lower[d] = dim[d].lower;
       upper[d] = dim[d].upper;
@@ -99,7 +99,7 @@ struct f_boundary {
 
   f_boundary() {}
   f_boundary(b2vect const &ob) {
-    assert(::dim == 3);
+    assert(CarpetLib::dim == 3);
     for (int d = 0; d < 3; ++d) {
       for (int f = 0; f < 2; ++f) {
         obound[f][d] = ob[f][d];
@@ -108,7 +108,7 @@ struct f_boundary {
   }
   /*explicit*/ operator b2vect() const {
     b2vect ob;
-    assert(::dim == 3);
+    assert(CarpetLib::dim == 3);
     for (int d = 0; d < 3; ++d) {
       for (int f = 0; f < 2; ++f) {
         ob[f][d] = obound[f][d];
@@ -329,7 +329,7 @@ void SplitRegionsMaps_Recursively(cGH const *const cctkGH,
       dummy.extent =
           ibbox(ext.lower(), ext.lower() - ext.stride(), ext.stride());
       assert(dummy.extent.empty());
-      dummy.outer_boundaries = b2vect(true);
+      dummy.outer_boundaries = b2vect(bvect(true));
       dummy.map = nmaps - 1; // arbitrary choice
       // Insert dummy regions at the end
       regs.resize(nregs + missingcomps, dummy);
@@ -473,24 +473,24 @@ void SplitRegionsMaps_Recursively(cGH const *const cctkGH,
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(carpet_get_region)(CCTK_POINTER &cxx_superregs, int const &i,
-                                  CCTK_POINTER &cxx_superreg) {
+CCTK_FNAME(carpet_get_region)(CCTK_POINTER &cxx_superregs, int const &i,
+                              CCTK_POINTER &cxx_superreg) {
   vector<region_t> &superregs = *static_cast<vector<region_t> *>(cxx_superregs);
   region_t &superreg = superregs.AT(i);
   cxx_superreg = &superreg;
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(carpet_get_bbox)(CCTK_POINTER &cxx_superreg, f_bbox &box,
-                                f_boundary &obound) {
+CCTK_FNAME(carpet_get_bbox)(CCTK_POINTER &cxx_superreg, f_bbox &box,
+                            f_boundary &obound) {
   region_t &superreg = *static_cast<region_t *>(cxx_superreg);
   box = f_bbox(superreg.extent);
   obound = f_boundary(superreg.outer_boundaries);
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(carpet_insert_region)(CCTK_POINTER &cxx_regs,
-                                     f_superregion2slim const &reg) {
+CCTK_FNAME(carpet_insert_region)(CCTK_POINTER &cxx_regs,
+                                 f_superregion2slim const &reg) {
   vector<region_t> &regs = *static_cast<vector<region_t> *>(cxx_regs);
   regs.push_back(region_t(reg));
 }
@@ -512,14 +512,14 @@ extern "C" CCTK_FCALL void CCTK_FNAME(carpet_create_tree_branch)(
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(carpet_create_tree_leaf)(f_superregion2slim const &sreg,
-                                        CCTK_POINTER &cxx_tree) {
+CCTK_FNAME(carpet_create_tree_leaf)(f_superregion2slim const &sreg,
+                                    CCTK_POINTER &cxx_tree) {
   cxx_tree = new ipfulltree(pseudoregion_t(sreg));
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(carpet_set_tree)(CCTK_POINTER &cxx_superreg,
-                                CCTK_POINTER &cxx_tree) {
+CCTK_FNAME(carpet_set_tree)(CCTK_POINTER &cxx_superreg,
+                            CCTK_POINTER &cxx_tree) {
   region_t &superreg = *static_cast<region_t *>(cxx_superreg);
   ipfulltree *tree = static_cast<ipfulltree *>(cxx_tree);
   assert(not superreg.processors);

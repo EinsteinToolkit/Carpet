@@ -94,7 +94,7 @@
                            (imin_), (jmin_), (kmin_),                   \
                            (imax_), (jmax_), (kmax_),                   \
                            name/**/_ash1, name/**/_ash2, name/**/_ash3, \
-                           name/**/_str1)                               \
+                           name/**/_str1, name/**/_str1, 0)             \
                                                                         \
       /* Multithreading */                                              \
    && call lc_thread_init(name/**/_control)                             \
@@ -137,9 +137,9 @@
 
 
 /* Replace CCTK_LOOP macros */
-#if (!defined CCTK_LOOP3STR_NORMAL_DECLARE ||           \
-     !defined CCTK_LOOP3STR_NORMAL_OMP_PRIVATE ||       \
-     !defined CCTK_LOOP3STR_NORMAL ||                   \
+#if (!defined CCTK_LOOP3STR_NORMAL_DECLARE ||        \
+     !defined CCTK_LOOP3STR_NORMAL_OMP_PRIVATE ||    \
+     !defined CCTK_LOOP3STR_NORMAL ||                \
      !defined CCTK_ENDLOOP3STR_NORMAL)
 #  error "internal error"
 #endif

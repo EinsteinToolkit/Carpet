@@ -118,7 +118,7 @@ void Automatic_OneLevel(const cGH *const cctkGH, const gh &hh, const int rl,
   }
 
   // Remove grid points outside the outer boundary
-  b2vect const obp(false);
+  b2vect const obp(bvect(false));
   for (size_t c = 0; c < regs.size(); ++c) {
     const ivect lb = either(
         obp[0], regs.at(c).extent.lower(),
@@ -149,16 +149,15 @@ void Automatic_Recursive(const cGH *const cctkGH, const gh &hh,
   {
     ivect const off = (region.extent.lower() - errordata.extent().lower()) /
                       region.extent.stride();
-    ivect const len = region.extent.shape() / region.extent.stride();
-    ivect const lsh = errordata.extent().shape() / region.extent.stride();
+    ivect const len = region.extent.sizes();
+    ivect const &ash = errordata.padded_shape();
     CCTK_REAL const *const errorptr = (CCTK_REAL const *)errordata.storage();
     for (int k = 0; k < len[2]; ++k) {
       for (int j = 0; j < len[1]; ++j) {
         for (int i = 0; i < len[0]; ++i) {
           int const ind =
-              (off[0] + i) + lsh[0] * ((off[1] + j) + lsh[1] * (off[2] + k));
-          if (errorptr[ind] > maxerror)
-            ++cnt;
+              (off[0] + i) + ash[0] * ((off[1] + j) + ash[1] * (off[2] + k));
+          cnt += errorptr[ind] > maxerror;
         }
       }
     }

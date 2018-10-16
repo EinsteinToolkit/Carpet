@@ -1,3 +1,6 @@
+#ifndef MPI_STRING_HH
+#define MPI_STRING_HH
+
 #include <cctk.h>
 
 #include <string>
@@ -10,9 +13,9 @@
 #endif
 
 #include "defs.hh"
+#include "region.hh"
 
 namespace CarpetLib {
-
 using namespace std;
 
 // String communication
@@ -45,7 +48,6 @@ vector<T> alltoallv1(MPI_Comm comm, vector<vector<T> > const &data);
 
 template <typename T>
 vector<vector<T> > allgatherv(MPI_Comm comm, vector<T> const &data) {
-  // cerr << "QQQ: allgatherv[0]" << endl;
   // Get the total number of processes
   int num_procs;
   MPI_Comm_size(comm, &num_procs);
@@ -54,10 +56,8 @@ vector<vector<T> > allgatherv(MPI_Comm comm, vector<T> const &data) {
   int const size_in = data.size();
   assert(size_in >= 0);
   vector<int> sizes_out(num_procs);
-  // cerr << "QQQ: allgatherv[1] size_in=" << size_in << endl;
   MPI_Allgather(const_cast<int *>(&size_in), 1, MPI_INT, &sizes_out.front(), 1,
                 MPI_INT, comm);
-  // cerr << "QQQ: allgatherv[2]" << endl;
 
   // Allocate space for all data vectors
   vector<int> offsets_out(num_procs + 1);
@@ -72,10 +72,9 @@ vector<vector<T> > allgatherv(MPI_Comm comm, vector<T> const &data) {
 
   // Exchange all data vectors
   T dummy;
-  MPI_Datatype const type = mpi_datatype(dummy);
+  MPI_Datatype const type = dist::mpi_datatype(dummy);
   int datatypesize;
   MPI_Type_size(type, &datatypesize);
-// cerr << "QQQ: allgatherv[3] total_length_out=" << total_length_out << "
 // datatypesize=" << datatypesize << endl;
 #if 0
     MPI_Allgatherv (const_cast <T *> (& data.front()),
@@ -97,7 +96,6 @@ vector<vector<T> > allgatherv(MPI_Comm comm, vector<T> const &data) {
     offsets_out.AT(n) /= typesize;
   }
 #endif
-  // cerr << "QQQ: allgatherv[4]" << endl;
 
   // Convert data buffer to vectors
   vector<vector<T> > alldata_out(num_procs);
@@ -111,13 +109,11 @@ vector<vector<T> > allgatherv(MPI_Comm comm, vector<T> const &data) {
     assert(p == alldata_buffer_out.end());
   }
 
-  // cerr << "QQQ: allgatherv[5]" << endl;
   return alldata_out;
 }
 
 template <typename T>
 vector<T> allgatherv1(MPI_Comm comm, vector<T> const &data) {
-  // cerr << "QQQ: allgatherv[0]" << endl;
   // Get the total number of processes
   int num_procs;
   MPI_Comm_size(comm, &num_procs);
@@ -126,10 +122,8 @@ vector<T> allgatherv1(MPI_Comm comm, vector<T> const &data) {
   int const size_in = data.size();
   assert(size_in >= 0);
   vector<int> sizes_out(num_procs);
-  // cerr << "QQQ: allgatherv[1] size_in=" << size_in << endl;
   MPI_Allgather(const_cast<int *>(&size_in), 1, MPI_INT, &sizes_out.front(), 1,
                 MPI_INT, comm);
-  // cerr << "QQQ: allgatherv[2]" << endl;
 
   // Allocate space for all data vectors
   vector<int> offsets_out(num_procs + 1);
@@ -144,11 +138,9 @@ vector<T> allgatherv1(MPI_Comm comm, vector<T> const &data) {
 
   // Exchange all data vectors
   T dummy;
-  MPI_Datatype const type = mpi_datatype(dummy);
+  MPI_Datatype const type = dist::mpi_datatype(dummy);
   int datatypesize;
   MPI_Type_size(type, &datatypesize);
-// cerr << "QQQ: allgatherv[3] total_length_out=" << total_length_out << "
-// datatypesize=" << datatypesize << endl;
 #if 0
     MPI_Allgatherv (const_cast <T *> (& data.front()),
                     size_in, type,
@@ -169,9 +161,7 @@ vector<T> allgatherv1(MPI_Comm comm, vector<T> const &data) {
     offsets_out.AT(n) /= typesize;
   }
 #endif
-  // cerr << "QQQ: allgatherv[4]" << endl;
 
-  // cerr << "QQQ: allgatherv[5]" << endl;
   return alldata_buffer_out;
 }
 
@@ -264,10 +254,8 @@ vector<T> alltoallv1(MPI_Comm const comm, vector<vector<T> > const &data) {
     sizes_in.AT(n) = data.AT(n).size();
   }
   vector<int> sizes_out(num_procs);
-  // cerr << "QQQ: alltoallv1[1]" << endl;
   MPI_Alltoall(&sizes_in.front(), 1, MPI_INT, &sizes_out.front(), 1, MPI_INT,
                comm);
-// cerr << "QQQ: alltoallv1[2]" << endl;
 
 #if 0
     // Copy vectors to data buffer
@@ -299,13 +287,11 @@ vector<T> alltoallv1(MPI_Comm const comm, vector<vector<T> > const &data) {
     // Exchange all data vectors
     T const dummy;
     MPI_Datatype const type = mpi_datatype (dummy);
-    // cerr << "QQQ: alltoallv1[3]" << endl;
     MPI_Alltoallv (& alldata_buffer_in.front(),
                    & sizes_in.front(), & offsets_in.front(), type,
                    & alldata_buffer_out.front(),
                    & sizes_out.front(), & offsets_out.front(), type,
                    comm);
-    // cerr << "QQQ: alltoallv1[4]" << endl;
 #endif
 
   // Allocate space for all data vectors
@@ -319,11 +305,10 @@ vector<T> alltoallv1(MPI_Comm const comm, vector<vector<T> > const &data) {
 
   // Exchange all data vectors
   T dummy;
-  MPI_Datatype const type = mpi_datatype(dummy);
+  MPI_Datatype const type = dist::mpi_datatype(dummy);
   int const tag = 4711;
   vector<MPI_Request> reqs(2 * num_procs);
   int nreqs = 0;
-  // cerr << "QQQ: alltoallv1[5]" << endl;
   for (int n = 0; n < num_procs; ++n) {
     if (sizes_out.AT(n) > 0) {
       MPI_Irecv(&alldata_buffer_out.AT(offsets_out.AT(n)), sizes_out.AT(n),
@@ -331,7 +316,6 @@ vector<T> alltoallv1(MPI_Comm const comm, vector<vector<T> > const &data) {
       ++nreqs;
     }
   }
-  // cerr << "QQQ: alltoallv1[6]" << endl;
   for (int n = 0; n < num_procs; ++n) {
     if (sizes_in.AT(n) > 0) {
       MPI_Isend(const_cast<T *>(&data.AT(n).front()), sizes_in.AT(n), type, n,
@@ -339,11 +323,11 @@ vector<T> alltoallv1(MPI_Comm const comm, vector<vector<T> > const &data) {
       ++nreqs;
     }
   }
-  // cerr << "QQQ: alltoallv1[7]" << endl;
   MPI_Waitall(nreqs, &reqs.front(), MPI_STATUSES_IGNORE);
-  // cerr << "QQQ: alltoallv1[8]" << endl;
 
   return alldata_buffer_out;
 }
 
 } // namespace CarpetLib
+
+#endif // #ifndef MPI_STRING_HH

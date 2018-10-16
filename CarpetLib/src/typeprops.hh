@@ -3,6 +3,8 @@
 
 #include <cctk.h>
 
+namespace CarpetLib {
+
 template <typename T> struct typeprops {
   typedef T complex;
   typedef T real;
@@ -78,6 +80,7 @@ static inline int specific_cactus_type(int const vartype) {
     return -1;
   }
   return vartype;
+}
 }
 
 #endif // #ifndef TYPEPROPS_HH

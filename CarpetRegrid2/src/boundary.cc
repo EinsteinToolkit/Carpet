@@ -243,13 +243,14 @@ level_boundary::level_boundary(gh const &hh, dh const &dd, int const rl)
          << i2vect(level_physical_ilower, level_physical_iupper) << "\n";
     cout << "Refinement level " << rl
          << ": reconstructed physical coordinate boundary is at "
-         << r2vect(
-                ipos2rpos(level_physical_ilower -
-                              (hh.refcent == cell_centered ? istride / 2 : 0),
-                          origin, scale, hh, rl),
-                ipos2rpos(level_physical_iupper +
-                              (hh.refcent == cell_centered ? istride / 2 : 0),
-                          origin, scale, hh, rl))
+         << r2vect(ipos2rpos(level_physical_ilower -
+                                 (hh.refcent == cell_centered ? istride / 2
+                                                              : ivect(0)),
+                             origin, scale, hh, rl),
+                   ipos2rpos(level_physical_iupper +
+                                 (hh.refcent == cell_centered ? istride / 2
+                                                              : ivect(0)),
+                             origin, scale, hh, rl))
          << "\n";
   }
 
@@ -257,6 +258,12 @@ level_boundary::level_boundary(gh const &hh, dh const &dd, int const rl)
       rpos2ipos(level_exterior_lower, origin, scale, hh, rl);
   level_exterior_iupper =
       rpos2ipos1(level_exterior_upper, origin, scale, hh, rl);
+  if (not(all(level_exterior_ilower >= baseextent.lower()) and
+          all(level_exterior_iupper <= baseextent.upper()))) {
+    cerr << "Refinement level " << rl << ": exterior boundary is at "
+         << i2vect(level_exterior_ilower, level_exterior_iupper) << "\n"
+         << "Basegrid: extent is " << baseextent << "\n";
+  }
   assert(all(level_exterior_ilower >= baseextent.lower()));
   assert(all(level_exterior_iupper <= baseextent.upper()));
   if (veryverbose) {
@@ -284,7 +291,8 @@ level_boundary::level_boundary(gh const &hh, dh const &dd, int const rl)
 
 } // namespace CarpetRegrid2
 
-ostream &operator<<(ostream &os, CarpetRegrid2::domain_boundary const &bnd) {
+std::ostream &operator<<(std::ostream &os,
+                         CarpetRegrid2::domain_boundary const &bnd) {
   return os << "domain_boundary:{"
             << "nboundaryzones=" << bnd.nboundaryzones << ","
             << "is_internal=" << bnd.is_internal << ","
@@ -303,7 +311,8 @@ ostream &operator<<(ostream &os, CarpetRegrid2::domain_boundary const &bnd) {
             << "physical_iupper=" << bnd.physical_iupper << "}";
 }
 
-ostream &operator<<(ostream &os, CarpetRegrid2::level_boundary const &bnd) {
+std::ostream &operator<<(std::ostream &os,
+                         CarpetRegrid2::level_boundary const &bnd) {
   return os << "level_boundary:{"
             << *static_cast<CarpetRegrid2::domain_boundary const *>(&bnd) << ","
             << "level_physical_lower=" << bnd.level_physical_lower << ","

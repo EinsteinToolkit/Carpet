@@ -42,8 +42,8 @@ int SyncGroupsByDirI(const cGH *cctkGH, int num_groups, const int *groups,
 
   // individual directions aren't supported (yet?)
   if (directions != NULL) {
-    CCTK_WARN(0, "Carpet doesn't support synchronisation of individual "
-                 "directions");
+    CCTK_ERROR(
+        "Carpet doesn't support synchronisation of individual directions");
   }
 
   for (group = 0; group < num_groups; group++) {
@@ -96,29 +96,25 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
 
     if (grouptype == CCTK_GF) {
       if (reflevel == -1) {
-        CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                   "Cannot synchronise in global mode "
+        CCTK_VERROR("Cannot synchronise in global mode "
                    "(Tried to synchronise group \"%s\")",
                    groupname);
       }
       if (map != -1 and component == -1) {
         if (maps == 1) {
-          CCTK_VWarn(2, __LINE__, __FILE__, CCTK_THORNSTRING,
-                     "Synchronising group \"%s\" in singlemap mode", groupname);
+          CCTK_VWARN(2, "Synchronising group \"%s\" in singlemap mode",
+                     groupname);
         } else {
-          CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                     "Cannot synchronise in singlemap mode "
+          CCTK_VERROR("Cannot synchronise in singlemap mode "
                      "(Tried to synchronise group \"%s\")",
                      groupname);
         }
       }
       if (component != -1) {
         if (maps == 1 and vhh.AT(map)->local_components(reflevel) == 1) {
-          CCTK_VWarn(2, __LINE__, __FILE__, CCTK_THORNSTRING,
-                     "Synchronising group \"%s\" in local mode", groupname);
+          CCTK_VWARN(2, "Synchronising group \"%s\" in local mode", groupname);
         } else {
-          CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                     "Cannot synchronise in local mode "
+          CCTK_VERROR("Cannot synchronise in local mode "
                      "(Tried to synchronise group \"%s\")",
                      groupname);
         }
@@ -126,8 +122,7 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
     }
 
     if (not CCTK_QueryGroupStorageI(cctkGH, g)) {
-      CCTK_VWarn(4, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Cannot synchronise group \"%s\" because it has no storage",
+      CCTK_VWARN(4, "Cannot synchronise group \"%s\" because it has no storage",
                  groupname);
       retval = -1;
     } else if (CCTK_NumVarsInGroupI(g) > 0) {

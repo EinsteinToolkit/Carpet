@@ -11,9 +11,8 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND3(i, j, k)                                                       \
   index3(srcioff + (i), srcjoff + (j), srckoff + (k), srcipadext, srcjpadext,  \
@@ -32,6 +31,8 @@ void interpolate_3d_2tl(T const *restrict const src1, CCTK_REAL const t1,
                         ibbox3 const &restrict srcbbox,
                         ibbox3 const &restrict dstbbox, ibbox3 const &restrict,
                         ibbox3 const &restrict regbbox, void *extraargs) {
+  DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   typedef typename typeprops<T>::real RT;
@@ -57,7 +58,7 @@ void interpolate_3d_2tl(T const *restrict const src1, CCTK_REAL const t1,
               "Internal error: region extent is not contained in array extent");
   }
 
-  ivect3 const regext = regbbox.shape() / regbbox.stride();
+  ivect3 const regext = regbbox.sizes();
   assert(all((regbbox.lower() - srcbbox.lower()) % srcbbox.stride() == 0));
   ivect3 const srcoff = (regbbox.lower() - srcbbox.lower()) / srcbbox.stride();
   assert(all((regbbox.lower() - dstbbox.lower()) % dstbbox.stride() == 0));
@@ -93,12 +94,13 @@ void interpolate_3d_2tl(T const *restrict const src1, CCTK_REAL const t1,
 
   // Linear (first order) interpolation
 
-  RT const eps = 1.0e-10;
-  if (fabs(t1 - t2) < eps) {
-    CCTK_WARN(0, "Internal error: arrays have same time");
+  RT const eps = 1.0e-12;
+
+  if (std::fabs(t1 - t2) < eps) {
+    CCTK_ERROR("Internal error: arrays have same time");
   }
-  if (t < min(t1, t2) - eps or t > max(t1, t2) + eps) {
-    CCTK_WARN(0, "Internal error: extrapolation in time");
+  if (t < std::min(t1, t2) - eps or t > std::max(t1, t2) + eps) {
+    CCTK_ERROR("Internal error: extrapolation in time");
   }
 
   RT const s1fac = (t - t2) / (t1 - t2);
@@ -108,9 +110,8 @@ void interpolate_3d_2tl(T const *restrict const src1, CCTK_REAL const t1,
 #pragma omp parallel
   CCTK_LOOP3(interpolate_3d_2tl, i, j, k, 0, 0, 0, regiext, regjext, regkext,
              dstipadext, dstjpadext, dstkpadext) {
-
     dst[DSTIND3(i, j, k)] =
-        +s1fac * src1[SRCIND3(i, j, k)] + s2fac * src2[SRCIND3(i, j, k)];
+        s1fac * src1[SRCIND3(i, j, k)] + s2fac * src2[SRCIND3(i, j, k)];
   }
   CCTK_ENDLOOP3(interpolate_3d_2tl);
 }

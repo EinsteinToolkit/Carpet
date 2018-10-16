@@ -8,6 +8,7 @@
 #include <ostream>
 
 namespace CarpetRegrid2 {
+using namespace CarpetLib;
 
 // Convert a coordinate location to an index location.  For cell
 // centring, shift upwards.
@@ -96,7 +97,9 @@ struct level_boundary : public domain_boundary {
 
 } // namespace CarpetRegrid2
 
-ostream &operator<<(ostream &os, CarpetRegrid2::domain_boundary const &bnd);
-ostream &operator<<(ostream &os, CarpetRegrid2::level_boundary const &bnd);
+std::ostream &operator<<(std::ostream &os,
+                         CarpetRegrid2::domain_boundary const &bnd);
+std::ostream &operator<<(std::ostream &os,
+                         CarpetRegrid2::level_boundary const &bnd);
 
 #endif // #ifndef BOUNDARY_HH

@@ -1,6 +1,5 @@
-#define _GNU_SOURCE                                                            \
-  1 // needed for sched_getaffinity, best at the top to avoid inconsistent
-    // includes
+// Needed for sched_getaffinity, best at the top to avoid inconsistent includes
+#define _GNU_SOURCE 1
 
 #include <algorithm>
 #include <cassert>
@@ -117,10 +116,6 @@ static bool can_transfer_variable_type(cGH const *cctkGH, int group,
                                        cGroup const &gdata);
 
 static void ensure_CartGrid3D_type();
-#if 0
-  static void
-  ensure_CartGrid3D_domain ();  // UNUSED
-#endif
 static void ensure_CartGrid3D_avoid_origin();
 static void ensure_ReflectionSymmetry_avoid_origin(centering refcentering);
 static void ensure_ghostzones(int m, vector<i2vect> const &ghosts);
@@ -635,7 +630,8 @@ void setup_map_information() {
     assert(num_maps == 1); // must be the default to avoid confusion
     assert(CCTK_IsFunctionAliased("MultiPatch_GetSystemSpecification"));
     CCTK_INT maps1;
-    check(not MultiPatch_GetSystemSpecification(&maps1));
+    int ierr = MultiPatch_GetSystemSpecification(&maps1);
+    assert(not ierr);
     maps = maps1;
   } else {
     maps = num_maps;
@@ -778,14 +774,15 @@ void allocate_data_hierarchy(cGH const *const cctkGH, int const m) {
 
   const streamsize oldprecision = cout.precision();
   const ios_base::fmtflags oldflags = cout.flags();
+  // TODO: Should we also set a different precision here?
   cout.setf(ios::fixed);
   CCTK_INFO("Buffer zone counts (excluding ghosts):");
   vector<i2vect> buffers(maxreflevels);
   for (int rl = 0; rl < maxreflevels; ++rl) {
-    buffers.AT(rl) =
-        rl == 0 ? i2vect(0) : taper_factor * (buffer_factor * ghosts.AT(rl) +
-                                              int(additional_buffer_zones)) -
-                                  ghosts.AT(rl);
+    buffers.AT(rl) = rl == 0 ? i2vect(ivect(0))
+                             : taper_factor * (buffer_factor * ghosts.AT(rl) +
+                                               int(additional_buffer_zones)) -
+                                   ghosts.AT(rl);
     cout << "   [" << rl << "]: " << buffers.AT(rl) << "\n";
     assert(all(all(buffers.AT(rl) >= 0)));
   }
@@ -794,16 +791,16 @@ void allocate_data_hierarchy(cGH const *const cctkGH, int const m) {
   for (int rl = 0; rl < maxreflevels; ++rl) {
     gh const &hh = *vhh.AT(m);
     overlaps.AT(rl) =
-        rl == 0 ? i2vect(0)
+        rl == 0 ? i2vect(ivect(0))
                 : (use_overlap_zones
                        ? hh.reffacts.AT(rl) / hh.reffacts.AT(rl - 1) *
                              (ghosts.AT(rl) + int(additional_overlap_zones))
-                       : i2vect(0));
+                       : i2vect(ivect(0)));
     cout << "   [" << rl << "]: " << overlaps.AT(rl) << "\n";
     assert(all(all(overlaps.AT(rl) >= 0)));
   }
   cout.precision(oldprecision);
-  cout.setf(oldflags);
+  cout.flags(oldflags);
 
   vector<int> const my_prolongation_orders_space =
       get_prolongation_orders_space();
@@ -952,7 +949,8 @@ void allocate_group_data(cGH const *const cctkGH) {
   for (int group = 0; group < CCTK_NumGroups(); ++group) {
 
     cGroup gdata;
-    check(not CCTK_GroupData(group, &gdata));
+    int ierr = CCTK_GroupData(group, &gdata);
+    assert(not ierr);
 
     // Check for compact, contiguous, and staggered groups
     ensure_group_options(group, gdata);
@@ -1044,7 +1042,7 @@ void allocate_group_hierarchies(int const group, ivect const &sizes,
   vector<vector<ibbox> > baseexts(1);
   baseexts.AT(0).resize(1);
   baseexts.AT(0).AT(0) = baseext;
-  i2vect const nboundaryzones(0);
+  i2vect const nboundaryzones(ivect(0));
 
   // One refinement level
   vector<int> grouptimereffacts(1);
@@ -1059,8 +1057,8 @@ void allocate_group_hierarchies(int const group, ivect const &sizes,
       new gh(groupspacereffacts, vertex_centered, convergence_factor,
              vertex_centered, baseexts, nboundaryzones);
 
-  vector<i2vect> const buffers(1, i2vect(0));
-  vector<i2vect> const overlaps(1, i2vect(0));
+  vector<i2vect> const buffers(1, i2vect(ivect(0)));
+  vector<i2vect> const overlaps(1, i2vect(ivect(0)));
   vector<int> const my_prolongation_orders_space(1, 0);
   arrdata.AT(group).AT(m).dd =
       new dh(*arrdata.AT(group).AT(m).hh, ghosts, buffers, overlaps,
@@ -1091,7 +1089,7 @@ void setup_group_grid_hierarchy(cGH const *const cctkGH, int const group,
     int const c = 0;
     superregs.AT(c).extent =
         arrdata.AT(group).AT(m).hh->baseextents.AT(rl).AT(c);
-    superregs.AT(c).outer_boundaries = b2vect(true);
+    superregs.AT(c).outer_boundaries = b2vect(bvect(true));
     superregs.AT(c).map = m;
   }
   vector<region_t> regs;
@@ -1339,7 +1337,7 @@ vector<i2vect> get_ghostzones() {
     }
     assert(int(ghostzones1.size()) >= maxreflevels);
     for (int rl = 0; rl < maxreflevels; ++rl) {
-      ghostzones.AT(rl) = i2vect(ghostzones1.AT(rl));
+      ghostzones.AT(rl) = i2vect(ivect(ghostzones1.AT(rl)));
     }
   }
   for (int rl = 0; rl < maxreflevels; ++rl) {
@@ -1438,13 +1436,15 @@ void get_boundary_specification(cGH const *const cctkGH, int const m,
 
     jjvect nboundaryzones_, is_internal_, is_staggered_, shiftout_;
     if (CCTK_IsFunctionAliased("MultiPatch_GetBoundarySpecification")) {
-      check(not MultiPatch_GetBoundarySpecification(
+      int ierr = MultiPatch_GetBoundarySpecification(
           m, 2 * dim, &nboundaryzones_[0][0], &is_internal_[0][0],
-          &is_staggered_[0][0], &shiftout_[0][0]));
+          &is_staggered_[0][0], &shiftout_[0][0]);
+      assert(not ierr);
     } else {
-      check(not GetBoundarySpecification(
+      int ierr = GetBoundarySpecification(
           2 * dim, &nboundaryzones_[0][0], &is_internal_[0][0],
-          &is_staggered_[0][0], &shiftout_[0][0]));
+          &is_staggered_[0][0], &shiftout_[0][0]);
+      assert(not ierr);
     }
     nboundaryzones = xpose(nboundaryzones_);
     is_internal = xpose(is_internal_);
@@ -1469,7 +1469,7 @@ void get_boundary_specification(cGH const *const cctkGH, int const m,
       check (not GetSymmetryBoundaries (cctkGH, 2*dim, &symbnd_[0][0]));
       b2vect const symbnd = xpose (symbnd_);
 #else
-    b2vect const symbnd = b2vect(true);
+    b2vect const symbnd = b2vect(bvect(true));
 #endif
 
     for (int f = 0; f < 2; ++f) {
@@ -1509,7 +1509,7 @@ void get_boundary_specification(cGH const *const cctkGH, int const m,
             CCTK_ERROR("The parameters CoordBase::boundary_staggered specify a "
                        "staggered boundary.  Carpet does not support staggered "
                        "boundaries when Carpet::max_refinement_levels > 1 with "
-                       "Carpet::centering = \"vertex\"");
+                       "Carpet::refinement_centering = \"vertex\"");
           }
         } else if (CCTK_EQUALS(refinement_centering, "cell")) {
           if (not is_staggered[f][d]) {
@@ -1517,7 +1517,7 @@ void get_boundary_specification(cGH const *const cctkGH, int const m,
                        "non-staggered boundary.  Carpet does not support "
                        "non-staggered boundaries when "
                        "Carpet::max_refinement_levels > 1 with "
-                       "Carpet::centering = \"cell\"");
+                       "Carpet::refinement_centering = \"cell\"");
           }
         } else {
           assert(0);
@@ -1543,10 +1543,10 @@ void get_domain_specification(cGH const *cctkGH, int const m,
     // altogether, maybe creating a new thorn
 
     assert(CCTK_IsFunctionAliased("MultiPatch_GetDomainSpecification"));
-    check(not MultiPatch_GetDomainSpecification(
+    int ierr = MultiPatch_GetDomainSpecification(
         m, dim, &physical_min[0], &physical_max[0], &interior_min[0],
-        &interior_max[0], &exterior_min[0], &exterior_max[0],
-        &base_spacing[0]));
+        &interior_max[0], &exterior_min[0], &exterior_max[0], &base_spacing[0]);
+    assert(not ierr);
 
   } else if (domain_from_coordbase) {
 
@@ -1555,10 +1555,10 @@ void get_domain_specification(cGH const *cctkGH, int const m,
     // Ensure that CartGrid3D::type = "coordbase"
     ensure_CartGrid3D_type();
 
-    check(not GetDomainSpecification(dim, &physical_min[0], &physical_max[0],
-                                     &interior_min[0], &interior_max[0],
-                                     &exterior_min[0], &exterior_max[0],
-                                     &base_spacing[0]));
+    int ierr = GetDomainSpecification(
+        dim, &physical_min[0], &physical_max[0], &interior_min[0],
+        &interior_max[0], &exterior_min[0], &exterior_max[0], &base_spacing[0]);
+    assert(not ierr);
 
   } else {
     // Legacy code
@@ -1579,13 +1579,13 @@ void get_domain_specification(cGH const *cctkGH, int const m,
     // TODO: This is not the true domain specification.  However, it
     // is later written to the domainspec, and it is used by Carpet
     // for screen output.
-    exterior_min = 0.0;
+    exterior_min = rvect(0.0);
     exterior_max = rvect(npoints - 1);
-    base_spacing = 1.0;
-    check(not ConvertFromExteriorBoundary(dim, &physical_min[0],
-                                          &physical_max[0], &interior_min[0],
-                                          &interior_max[0], &exterior_min[0],
-                                          &exterior_max[0], &base_spacing[0]));
+    base_spacing = rvect(1.0);
+    int ierr = ConvertFromExteriorBoundary(
+        dim, &physical_min[0], &physical_max[0], &interior_min[0],
+        &interior_max[0], &exterior_min[0], &exterior_max[0], &base_spacing[0]);
+    assert(not ierr);
 
   } // if legacy domain specification
 
@@ -1616,13 +1616,15 @@ void adapt_domain_specification(int const m, rvect const &physical_min,
   if (domain_from_multipatch and
       CCTK_IsFunctionAliased("MultiPatch_ConvertFromPhysicalBoundary")) {
     assert(not domain_from_coordbase);
-    check(not MultiPatch_ConvertFromPhysicalBoundary(
+    int ierr = MultiPatch_ConvertFromPhysicalBoundary(
         m, dim, &physical_min[0], &physical_max[0], &interior_min[0],
-        &interior_max[0], &exterior_min[0], &exterior_max[0], &spacing[0]));
+        &interior_max[0], &exterior_min[0], &exterior_max[0], &spacing[0]);
+    assert(not ierr);
   } else {
-    check(not ConvertFromPhysicalBoundary(
+    int ierr = ConvertFromPhysicalBoundary(
         dim, &physical_min[0], &physical_max[0], &interior_min[0],
-        &interior_max[0], &exterior_min[0], &exterior_max[0], &spacing[0]));
+        &interior_max[0], &exterior_min[0], &exterior_max[0], &spacing[0]);
+    assert(not ierr);
   }
 
   ostringstream buf;
@@ -1675,7 +1677,7 @@ void calculate_grid_points(int const m, vector<i2vect> const &ghosts,
 #endif
   {
     CCTK_REAL const total_npoints = prod(rvect(npoints));
-    CCTK_REAL const size_max = numeric_limits<size_type>::max();
+    CCTK_REAL const size_max = CCTK_REAL(numeric_limits<size_type>::max());
     if (total_npoints > size_max) {
       CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
                   "The domain for map %d contains %g grid points.  This number "
@@ -1838,7 +1840,7 @@ void find_processor_decomposition(
 void get_group_size(int const group, cGroup const &gdata, ivect &sizes,
                     vector<i2vect> &ghosts) {
   // Default values
-  sizes = 1;
+  sizes = ivect(1);
   ghosts.resize(1, i2vect(ivect(0)));
 
   switch (gdata.grouptype) {
@@ -1919,10 +1921,10 @@ void get_convergence_options(int const group, cGroup const &gdata,
           gdata.tagstable, gdata.dim, &convpowers1[0], "convergence_power");
       if (status == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
         // use default: independent of convergence level
-        convpowers = 0;
+        convpowers = ivect(0);
       } else if (status == 1) {
         // a scalar was given
-        convpowers = convpowers1[0];
+        convpowers = ivect(convpowers1[0]);
       } else if (status == gdata.dim) {
         convpowers = convpowers1;
       } else {
@@ -1942,7 +1944,7 @@ void get_convergence_options(int const group, cGroup const &gdata,
           gdata.tagstable, gdata.dim, &convoffsets1[0], "convergence_offset");
       if (status == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
         // use default: offset is 0
-        convoffsets = 0;
+        convoffsets = ivect(0);
       } else if (status == 1) {
         // a scalar was given
 
@@ -2009,7 +2011,8 @@ void output_group_statistics(cGH const *const cctkGH) {
   for (int group = 0; group < CCTK_NumGroups(); ++group) {
 
     cGroup gdata;
-    check(not CCTK_GroupData(group, &gdata));
+    int ierr = CCTK_GroupData(group, &gdata);
+    assert(not ierr);
 
     switch (gdata.grouptype) {
     case CCTK_GF:
@@ -2512,7 +2515,7 @@ void ensure_ghostzones(int const m, vector<i2vect> const &ghosts) {
         ((prolongation_stencil_size + refinement_factor - 1) /
          (refinement_factor - 1));
     int const min_nghosts_restrict = restriction_order_space / 2;
-    if (any(any(ghosts.AT(rl) < i2vect(min_nghosts)))) {
+    if (any(any(ghosts.AT(rl) < i2vect(ivect(min_nghosts))))) {
       CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
                   "There are not enough ghost zones for the desired spatial "
                   "prolongation order on map %d, refinement level %d.  With a "
@@ -2521,7 +2524,7 @@ void ensure_ghostzones(int const m, vector<i2vect> const &ghosts) {
                   m, rl, my_prolongation_order_space, min_nghosts);
     }
     if (use_higher_order_restriction and
-        any(any(ghosts.AT(rl) < i2vect(min_nghosts_restrict)))) {
+        any(any(ghosts.AT(rl) < i2vect(ivect(min_nghosts_restrict))))) {
       CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
                   "There are not enough ghost zones for the desired "
                   "restriction order on map %d, refinement level %d.  With a "

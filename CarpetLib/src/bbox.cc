@@ -19,6 +19,7 @@
 #pragma GCC optimization_level 1
 #endif
 
+namespace CarpetLib {
 using namespace std;
 
 // Consistency checks
@@ -54,19 +55,30 @@ template <typename T, int D> bool bbox<T, D>::is_poison() const {
 }
 
 // Accessors
+template <typename T, int D> vect<T, D> bbox<T, D>::offset() const {
+  return imod(_lower, _stride);
+}
+
+template <typename T, int D> vect<T, D> bbox<T, D>::shape() const {
+  return empty() ? vect<T, D>(T(0)) : _upper - _lower + _stride;
+}
+
+template <typename T, int D> vect<T, D> bbox<T, D>::sizes() const {
+  return shape() / stride();
+}
+
 template <typename T, int D> size_type bbox<T, D>::size() const {
   if (empty())
     return 0;
-  const vect<T, D> sh(shape() / stride());
+  const vect<T, D> sh(sizes());
 #ifndef CARPET_DEBUG
   return prod(vect<size_type, D>(sh));
 #else
   size_type sz = 1, max = numeric_limits<size_type>::max();
   for (int d = 0; d < D; ++d) {
     if (sh[d] > max) {
-      CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "size of bbox of type %s is too large -- integer overflow",
-                 typeid(*this).name());
+      CCTK_VERROR("size of bbox of type %s is too large -- integer overflow",
+                  typeid(*this).name());
     }
     sz *= sh[d];
     max /= sh[d];
@@ -345,6 +357,7 @@ template <typename T, int D> void bbox<T, D>::output(ostream &os) const {
      << idiv(lower(), stride()) << ":" << idiv(upper(), stride()) << "/"
      << shape() / stride() << "/" << size() << ")";
 }
+}
 
 // Comparison
 
@@ -394,12 +407,15 @@ bool less<bbox<T, D> >::operator()(const bbox<T, D> &x,
 }
 
 // Note: We need all dimensions all the time.
+namespace CarpetLib {
+using namespace std;
 template class bbox<int, 0>;
 template class bbox<int, 1>;
 template class bbox<int, 2>;
 template class bbox<int, 3>;
 template class bbox<int, 4>;
 template class bbox<CCTK_REAL, dim>;
+}
 
 namespace std {
 template struct less<bbox<int, 0> >;

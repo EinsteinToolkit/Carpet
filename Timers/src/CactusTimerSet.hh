@@ -4,8 +4,8 @@
 #include <iostream>
 #include <set>
 
-#include <cctk.h>
 #include "CactusTimer.hh"
+#include <cctk.h>
 
 namespace Timers {
 

@@ -39,10 +39,10 @@ void UnsupportedVarType(const int vindex);
 }
 
 #define GetParameter(parameter)                                                \
-  (outdim == 0 ? out0D_##parameter : outdim == 1                               \
-                                         ? out1D_##parameter                   \
-                                         : outdim == 2 ? out2D_##parameter     \
-                                                       : out3D_##parameter)
+  (outdim == 0                                                                 \
+       ? out0D_##parameter                                                     \
+       : outdim == 1 ? out1D_##parameter                                       \
+                     : outdim == 2 ? out2D_##parameter : out3D_##parameter)
 
 namespace CarpetIOASCII {
 
@@ -115,9 +115,8 @@ void *IOASCII<outdim>::SetupGH(tFleshConfig *const fc, const int convLevel,
   dummy = &dummy;
 
   if (not CCTK_Equals(verbose, "none")) {
-    CCTK_VInfo(CCTK_THORNSTRING,
-               "I/O Method 'IOASCII_%dD' registered: "
-               "%dD AMR output of grid variables to ASCII files",
+    CCTK_VINFO("I/O Method 'IOASCII_%dD' registered: %dD AMR output of grid "
+               "variables to ASCII files",
                outdim, outdim);
   }
 
@@ -154,12 +153,11 @@ void IOASCII<outdim>::CheckSteerableParameters(const cGH *const cctkGH) {
     // create the output directory
     const int result = IOUtil_CreateDirectory(cctkGH, my_out_dir, 0, 0);
     if (result < 0) {
-      CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Problem creating %dD-output directory '%s'", outdim,
-                 my_out_dir);
-    } else if (result > 0 and CCTK_Equals(verbose, "full")) {
-      CCTK_VInfo(CCTK_THORNSTRING, "%dD-output directory '%s' already exists",
+      CCTK_VWARN(CCTK_WARN_ALERT, "Problem creating %dD-output directory '%s'",
                  outdim, my_out_dir);
+    } else if (result > 0 and CCTK_Equals(verbose, "full")) {
+      CCTK_VINFO("%dD-output directory '%s' already exists", outdim,
+                 my_out_dir);
     }
   }
 
@@ -347,10 +345,10 @@ static void GetVarIndex(const int vindex, const char *const optstring,
                         void *const arg) {
   if (optstring) {
     char *const fullname = CCTK_FullName(vindex);
-    CCTK_VWarn(CCTK_WARN_COMPLAIN, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Option string '%s' will be ignored for ASCII output of "
-               "variable '%s'",
-               optstring, fullname);
+    CCTK_VWARN(
+        CCTK_WARN_COMPLAIN,
+        "Option string '%s' will be ignored for ASCII output of variable '%s'",
+        optstring, fullname);
     free(fullname);
   }
 
@@ -366,7 +364,7 @@ int IOASCII<outdim>::OutputVarAs(const cGH *const cctkGH,
   int vindex = -1;
 
   if (CCTK_TraverseString(varname, GetVarIndex, &vindex, CCTK_VAR) < 0) {
-    CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+    CCTK_VWARN(CCTK_WARN_ALERT,
                "error while parsing variable name '%s' (alias name '%s')",
                varname, alias);
     return -1;
@@ -400,7 +398,7 @@ int IOASCII<outdim>::OutputVarAs(const cGH *const cctkGH,
     }
 
     if (outdim > groupdata.dim) {
-      CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWARN(CCTK_WARN_ALERT,
                  "Cannot produce %dD ASCII output file '%s' for variable '%s' "
                  "because it has only %d dimensions",
                  outdim, alias, varname, groupdata.dim);
@@ -411,7 +409,7 @@ int IOASCII<outdim>::OutputVarAs(const cGH *const cctkGH,
     if (not CCTK_QueryGroupStorageI(cctkGH, group)) {
       // This may be okay if storage is e.g. scheduled only in the
       // analysis bin
-      CCTK_VWarn(CCTK_WARN_DEBUG, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWARN(CCTK_WARN_DEBUG,
                  "Cannot output variable '%s' because it has no storage",
                  varname);
       return 0;
@@ -517,8 +515,9 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
              truncate_file, file);
 
     // Find the output offset
-    const ivect offset =
-        groupdata.grouptype == CCTK_GF ? GetOutputOffset(cctkGH, m, dirs) : 0;
+    const ivect offset = groupdata.grouptype == CCTK_GF
+                             ? GetOutputOffset(cctkGH, m, dirs)
+                             : ivect(0);
 
     const gh *const hh = arrdata.at(group).at(m).hh;
     const dh *const dd = arrdata.at(group).at(m).dd;
@@ -599,17 +598,19 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
               const ggf *const ff = arrdata.at(group).at(m).data.at(n + n_min);
               tmpdatas.at(n) = ff->new_typed_data();
               size_t const memsize =
-                  tmpdatas.at(n)->allocsize(data_ext, ioproc);
+                  tmpdatas.at(n)->allocsize(data_ext, data_ext.sizes(), ioproc);
               void *const memptr = pool.alloc(memsize);
-              tmpdatas.at(n)->allocate(data_ext, ioproc, memptr, memsize);
+              tmpdatas.at(n)->allocate(data_ext, data_ext.sizes(), ivect(0),
+                                       ioproc, memptr, memsize);
             } // for n
             for (size_t n = 0; n < coords.size(); ++n) {
               const ggf *const ff = arrdata.at(coord_group).at(m).data.at(n);
               tmpcoords.at(n) = ff->new_typed_data();
-              size_t const memsize =
-                  tmpcoords.at(n)->allocsize(data_ext, ioproc);
+              size_t const memsize = tmpcoords.at(n)->allocsize(
+                  data_ext, data_ext.sizes(), ioproc);
               void *const memptr = pool.alloc(memsize);
-              tmpcoords.at(n)->allocate(data_ext, ioproc, memptr, memsize);
+              tmpcoords.at(n)->allocate(data_ext, data_ext.sizes(), ivect(0),
+                                        ioproc, memptr, memsize);
             } // for n
 
             for (comm_state state; not state.done(); state.step()) {
@@ -634,9 +635,12 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
           }
 
           if (dist::rank() == ioproc) {
-            WriteASCII(file, tmpdatas, ext, vindex, cctkGH->cctk_iteration,
+            ostringstream buf;
+            buf << setprecision(out_precision);
+            WriteASCII(buf, tmpdatas, ext, vindex, cctkGH->cctk_iteration,
                        offset1, dirs, rl, ml, m, c, tl, coord_time, coord_lower,
                        coord_upper, tmpcoords);
+            file << buf.str();
           }
 
           if (proc != ioproc) {
@@ -713,10 +717,9 @@ bool IOASCII<outdim>::DidOutput(const cGH *const cctkGH, const int vindex,
   if (last_output == cctkGH->cctk_iteration) {
     // has already been output during this iteration
     char *const fullname = CCTK_FullName(vindex);
-    CCTK_VWarn(5, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Skipping output for variable '%s', because this variable "
-               "has already been output during the current iteration -- "
-               "probably via a trigger during the analysis stage",
+    CCTK_VWARN(5, "Skipping output for variable '%s', because this variable "
+                  "has already been output during the current iteration -- "
+                  "probably via a trigger during the analysis stage",
                fullname);
     free(fullname);
     return true;
@@ -779,8 +782,7 @@ void IOASCII<outdim>::OpenFile(const cGH *const cctkGH, const int m,
     file.open(filename, ios::out | (truncate_file ? ios::trunc : ios::app));
     if (not file.good()) {
       char *const fullname = CCTK_FullName(vindex);
-      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Could not open output file '%s' for variable '%s'", filename,
+      CCTK_VERROR("Could not open output file '%s' for variable '%s'", filename,
                   fullname);
       free(fullname);
     }
@@ -1200,7 +1202,7 @@ int CoordToOffset(const cGH *cctkGH, const int m, const int dir,
                               cctk_levoff[dir - 1] / cctk_levoffdenom[dir - 1];
 
   const CCTK_REAL rindex = (coord - lower) / delta;
-  int cindex = (int)floor(rindex + 0.75);
+  int cindex = lrint(floor(rindex + 0.75));
 
   return cindex;
 }

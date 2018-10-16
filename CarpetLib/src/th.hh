@@ -11,6 +11,7 @@
 #include "defs.hh"
 #include "gh.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // Forward declaration
@@ -55,7 +56,7 @@ public:
   void regrid_free();
 
   // Time management
-  void set_time(int const ml, int const rl, int const tl, CCTK_REAL const &t) {
+  void set_time(int const ml, int const rl, int const tl, CCTK_REAL const t) {
     assert(ml >= 0 and ml < h.mglevels());
     assert(rl >= 0 and rl < h.reflevels());
     assert(tl >= 0 and tl < timelevels);
@@ -72,7 +73,7 @@ public:
     return t;
   }
 
-  void set_delta(int const ml, int const rl, CCTK_REAL const &dt) {
+  void set_delta(int const ml, int const rl, CCTK_REAL const dt) {
     assert(ml >= 0 and ml < h.mglevels());
     assert(rl >= 0 and rl < h.reflevels());
     // assert (isfinite(dt));
@@ -101,5 +102,6 @@ public:
 inline size_t memoryof(th const &t) { return t.memory(); }
 inline istream &operator>>(istream &is, th &t) { return t.input(is); }
 inline ostream &operator<<(ostream &os, const th &t) { return t.output(os); }
+}
 
 #endif // TH_HH

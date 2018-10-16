@@ -8,13 +8,14 @@
 #include <string>
 #include <vector>
 
+#include "bbox.hh"
 #include "defs.hh"
 #include "dist.hh"
-#include "bbox.hh"
 #include "gdata.hh"
 #include "mem.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 template <typename T> class data;
@@ -41,10 +42,6 @@ public:
        const operator_type transport_operator = op_error,
        const int vectorlength = 1, const int vectorindex = 0,
        data *const vectorleader = NULL);
-  data(const int varindex, const centering cent,
-       const operator_type transport_operator, const int vectorlength,
-       const int vectorindex, data *const vectorleader, const ibbox &extent,
-       const int proc);
 
   // Destructors
   virtual ~data();
@@ -54,10 +51,12 @@ public:
                            const operator_type transport_operator) const;
 
   // Storage management
-  virtual void allocate(const ibbox &extent, const int proc,
+  virtual void allocate(const ibbox &extent, const ivect &padded_shape,
+                        const ivect &padding_offset, const int proc,
                         void *const memptr = NULL, size_t const memsize = 0);
   virtual void free();
-  virtual size_t allocsize(const ibbox &extent, const int proc) const;
+  virtual size_t allocsize(const ibbox &extent, const ivect &padded_shape,
+                           const int proc) const;
   virtual bool check_fence(const int upperlower) const;
 
 public:
@@ -126,5 +125,6 @@ public:
   // Output
   virtual ostream &output(ostream &os) const;
 };
+}
 
 #endif // DATA_HH

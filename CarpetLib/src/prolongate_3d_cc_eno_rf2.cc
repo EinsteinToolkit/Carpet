@@ -11,6 +11,7 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 //
@@ -38,14 +39,10 @@ using namespace std;
 // minus the offset. Example: fine grid 8 -> coarse grid 8, fine grid
 // 12 -> also coarse grid 8.
 
-namespace CarpetLib {
-
 #define SRCIND3(i, j, k)                                                       \
   index3(i, j, k, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext)
 #define DSTIND3(i, j, k)                                                       \
   index3(i, j, k, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext)
-#define SRCOFF3(i, j, k) offset3(i, j, k, srciext, srcjext, srckext)
-#define DSTOFF3(i, j, k) offset3(i, j, k, dstiext, dstjext, dstkext)
 
 namespace coeffs_3d_cc_eno_rf2 {
 
@@ -124,7 +121,7 @@ template <typename RT, int ORDER, int di, int OFFSET = 0> struct coeffs1d {
       RT const x0 = RT(0.25) + di * RT(0.5);
       // cout << "x0=" << x0 << endl;
       RT const y0 = ipow(x0, n);
-      if (not(fabs(res - y0) < 1.0e-12)) {
+      if (not(std::fabs(res - y0) < 1.0e-12)) {
         RT rt;
         ostringstream buf;
         buf << "Error in prolongate_3d_cc_rf2::coeffs_3d_cc_rf2\n"
@@ -193,7 +190,7 @@ minmod(const T a, const T b)
 {
    if (a * b < 0)
       return T(0);
-   else if (fabs(a) < fabs(b))
+   else if (std::fabs(a) < std::fabs(b))
       return a;
    else
       return b;
@@ -258,7 +255,7 @@ static inline T interp1(T const *restrict const p, size_t const d1) {
     if (lV * rV <= 0)
     // if minmod linear slope is smaller than high-order left and right
     // undivided differences, use lowest-order TVD interpolation!
-    // if (fabs(slope) < fabs(lV) || fabs(slope) < fabs(rV))
+    // if (std::fabs(slope) < std::fabs(lV) || std::fabs(slope) < std::fabs(rV))
     {
       // switch back to first order TVD scheme!
       res = 0;
@@ -282,7 +279,7 @@ static inline T interp1(T const *restrict const p, size_t const d1) {
       break;
     }
 
-    if (fabs(lV) < fabs(rV)) {
+    if (std::fabs(lV) < std::fabs(rV)) {
       // cout << "left ";
       // use left-shifted stencil since it is smoother
       for (ptrdiff_t i = lcoeffs::imin; i < lcoeffs::imax; ++i) {
@@ -328,8 +325,9 @@ static inline T interp1(T const *restrict const p, size_t const d1) {
     if (V[0] * V[2] <= 0 || V[0] * V[1] <= 0 || V[1] * V[2] <= 0)
     // if minmod linear slope is smaller than high-order left and right
     // undivided differences, use lowest-order TVD interpolation!
-    // if (fabs(slope) < fabs(V[0]) || fabs(slope) < fabs(V[1]) || fabs(slope) <
-    // fabs(V[2]))
+    // if (std::fabs(slope) < std::fabs(V[0]) || std::fabs(slope) <
+    // std::fabs(V[1]) || std::fabs(slope) <
+    // std::fabs(V[2]))
     {
       // switch back to first order!
       res = 0;
@@ -346,7 +344,7 @@ static inline T interp1(T const *restrict const p, size_t const d1) {
 
     int min = 1; // start off with centered stencil
     for (int i = 0; i < 3; ++i)
-      if (fabs(V[i]) < fabs(V[min]))
+      if (std::fabs(V[i]) < std::fabs(V[min]))
         min = i;
 
     switch (min) {
@@ -486,7 +484,7 @@ static inline T interp2(T const *restrict const p, size_t const d1,
     if (lV * rV <= 0)
     // if minmod linear slope is smaller than high-order left and right
     // undivided differences, use lowest-order TVD interpolation!
-    // if (fabs(slope) < fabs(lV) || fabs(slope) < fabs(rV))
+    // if (std::fabs(slope) < std::fabs(lV) || std::fabs(slope) < std::fabs(rV))
     {
       // res = 0;
       // typedef coeffs1d<RT,1,dj,0> coeffs1;
@@ -512,7 +510,7 @@ static inline T interp2(T const *restrict const p, size_t const d1,
       break;
     }
 
-    if (fabs(lV) < fabs(rV)) {
+    if (std::fabs(lV) < std::fabs(rV)) {
       // use left-shifted stencil since it is smoother
       for (ptrdiff_t i = lcoeffs::imin; i < lcoeffs::imax; ++i) {
         res += lcoeffs::get(i) *
@@ -555,8 +553,9 @@ static inline T interp2(T const *restrict const p, size_t const d1,
     if (V[0] * V[2] <= 0 || V[0] * V[1] <= 0 || V[1] * V[2] <= 0)
     // if minmod linear slope is smaller than high-order left and right
     // undivided differences, use lowest-order TVD interpolation!
-    // if (fabs(slope) < fabs(V[0]) || fabs(slope) < fabs(V[1]) || fabs(slope) <
-    // fabs(V[2]))
+    // if (std::fabs(slope) < std::fabs(V[0]) || std::fabs(slope) <
+    // std::fabs(V[1]) || std::fabs(slope) <
+    // std::fabs(V[2]))
     {
       // switch back to first order!
       res = 0;
@@ -573,7 +572,7 @@ static inline T interp2(T const *restrict const p, size_t const d1,
 
     int min = 1;
     for (int i = 0; i < 3; ++i)
-      if (fabs(V[i]) < fabs(V[min]))
+      if (std::fabs(V[i]) < std::fabs(V[min]))
         min = i;
 
     switch (min) {
@@ -713,7 +712,7 @@ static inline T interp3(T const *restrict const p, size_t const d1,
     if (lV * rV <= 0)
     // if minmod linear slope is smaller than high-order left and right
     // undivided differences, use lowest-order TVD interpolation!
-    // if (fabs(slope) < fabs(lV) || fabs(slope) < fabs(rV))
+    // if (std::fabs(slope) < std::fabs(lV) || std::fabs(slope) < std::fabs(rV))
     {
       // res = 0;
       // typedef coeffs1d<RT,1,dk,0> coeffs1;
@@ -739,7 +738,7 @@ static inline T interp3(T const *restrict const p, size_t const d1,
       break;
     }
 
-    if (fabs(lV) < fabs(rV)) {
+    if (std::fabs(lV) < std::fabs(rV)) {
       // use left-shifted stencil since it is smoother
       for (ptrdiff_t i = lcoeffs::imin; i < lcoeffs::imax; ++i) {
         res +=
@@ -789,8 +788,9 @@ static inline T interp3(T const *restrict const p, size_t const d1,
     if (V[0] * V[2] <= 0 || V[0] * V[1] <= 0 || V[1] * V[2] <= 0)
     // if minmod linear slope is smaller than high-order left and right
     // undivided differences, use lowest-order TVD interpolation!
-    // if (fabs(slope) < fabs(V[0]) || fabs(slope) < fabs(V[1]) || fabs(slope) <
-    // fabs(V[2]))
+    // if (std::fabs(slope) < std::fabs(V[0]) || std::fabs(slope) <
+    // std::fabs(V[1]) || std::fabs(slope) <
+    // std::fabs(V[2]))
     {
       // switch back to first order!
       res = 0;
@@ -807,7 +807,7 @@ static inline T interp3(T const *restrict const p, size_t const d1,
 
     int min = 1;
     for (int i = 0; i < 3; ++i)
-      if (fabs(V[i]) < fabs(V[min]))
+      if (std::fabs(V[i]) < std::fabs(V[min]))
         min = i;
 
     switch (min) {
@@ -948,6 +948,7 @@ void prolongate_3d_cc_eno_rf2(
     ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
     ibbox3 const &restrict, ibbox3 const &restrict regbbox, void *extraargs) {
   DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   static_assert(ORDER >= 0, "ORDER must be non-negative");
@@ -1064,11 +1065,11 @@ void prolongate_3d_cc_eno_rf2(
   size_t const j0 = srcjoff / 2;
   size_t const k0 = srckoff / 2;
 
-  // size_t const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
+  // size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
   size_t const srcdi = 1;
-  assert(srcdi == SRCOFF3(1, 0, 0) - SRCOFF3(0, 0, 0));
-  size_t const srcdj = SRCOFF3(0, 1, 0) - SRCOFF3(0, 0, 0);
-  size_t const srcdk = SRCOFF3(0, 0, 1) - SRCOFF3(0, 0, 0);
+  assert(srcdi == (srciext > 1 ? SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0) : 1));
+  size_t const srcdj = srcjext > 1 ? SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0) : 0;
+  size_t const srcdk = srckext > 1 ? SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0) : 0;
 
   if (not use_loopcontrol_in_operators) {
 

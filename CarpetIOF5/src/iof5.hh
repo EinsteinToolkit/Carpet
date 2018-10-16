@@ -12,11 +12,11 @@
 #include <string>
 #include <vector>
 
-#include <hdf5.h>
 #include <F5/F5F.h>
 #include <F5/F5R.h>
 #include <F5/F5iterate.h>
 #include <F5/F5uniform.h>
+#include <hdf5.h>
 
 #include <bbox.hh>
 #include <defs.hh>
@@ -61,8 +61,8 @@ static T failwarn0(bool &error_flag, T const expr, int const line,
 
 namespace CarpetIOF5 {
 class indent_t;
-};
-ostream &operator<<(ostream &os, CarpetIOF5::indent_t const &indent);
+}
+std::ostream &operator<<(std::ostream &os, CarpetIOF5::indent_t const &indent);
 
 namespace CarpetIOF5 {
 

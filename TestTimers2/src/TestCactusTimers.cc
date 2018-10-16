@@ -1,6 +1,6 @@
+#include <cassert>
 #include <cctk.h>
 #include <unistd.h>
-#include <cassert>
 using namespace std;
 
 extern "C" int TestTimers2_TestCactusTimers() {

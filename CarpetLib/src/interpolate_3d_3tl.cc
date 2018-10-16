@@ -11,9 +11,8 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND3(i, j, k)                                                       \
   index3(srcioff + (i), srcjoff + (j), srckoff + (k), srcipadext, srcjpadext,  \
@@ -33,6 +32,8 @@ void interpolate_3d_3tl(T const *restrict const src1, CCTK_REAL const t1,
                         ibbox3 const &restrict srcbbox,
                         ibbox3 const &restrict dstbbox, ibbox3 const &restrict,
                         ibbox3 const &restrict regbbox, void *extraargs) {
+  DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   typedef typename typeprops<T>::real RT;
@@ -58,7 +59,7 @@ void interpolate_3d_3tl(T const *restrict const src1, CCTK_REAL const t1,
         "Internal error: region extent is not contained in array extent");
   }
 
-  ivect3 const regext = regbbox.shape() / regbbox.stride();
+  ivect3 const regext = regbbox.sizes();
   assert(all((regbbox.lower() - srcbbox.lower()) % srcbbox.stride() == 0));
   ivect3 const srcoff = (regbbox.lower() - srcbbox.lower()) / srcbbox.stride();
   assert(all((regbbox.lower() - dstbbox.lower()) % dstbbox.stride() == 0));
@@ -94,12 +95,18 @@ void interpolate_3d_3tl(T const *restrict const src1, CCTK_REAL const t1,
 
   // Quadratic (second order) interpolation
 
-  RT const eps = 1.0e-10;
+  RT const eps = 1.0e-12;
 
-  if (fabs(t1 - t2) < eps or fabs(t1 - t3) < eps or fabs(t2 - t3) < eps) {
+  if (std::fabs(t1 - t2) < eps or std::fabs(t1 - t3) < eps or
+      std::fabs(t2 - t3) < eps) {
+    CCTK_VWARN(CCTK_WARN_ALERT, "t1=%.17g t2=%.17g t3=%.17g eps=%.17g",
+               double(t1), double(t2), double(t3), double(eps));
     CCTK_ERROR("Internal error: arrays have same time");
   }
-  if (t < fmin(fmin(t1, t2), t3) - eps or t > fmax(fmax(t1, t2), t3) + eps) {
+  if (t < std::fmin(std::fmin(t1, t2), t3) - eps or
+      t > std::fmax(std::fmax(t1, t2), t3) + eps) {
+    CCTK_VWARN(CCTK_WARN_ALERT, "t1=%.17g t2=%.17g t3=%.17g eps=%.17g",
+               double(t1), double(t2), double(t3), double(eps));
     CCTK_ERROR("Internal error: extrapolation in time");
   }
 
@@ -111,8 +118,7 @@ void interpolate_3d_3tl(T const *restrict const src1, CCTK_REAL const t1,
 #pragma omp parallel
   CCTK_LOOP3(interpolate_3d_3tl, i, j, k, 0, 0, 0, regiext, regjext, regkext,
              dstipadext, dstjpadext, dstkpadext) {
-
-    dst[DSTIND3(i, j, k)] = +s1fac * src1[SRCIND3(i, j, k)] +
+    dst[DSTIND3(i, j, k)] = s1fac * src1[SRCIND3(i, j, k)] +
                             s2fac * src2[SRCIND3(i, j, k)] +
                             s3fac * src3[SRCIND3(i, j, k)];
   }

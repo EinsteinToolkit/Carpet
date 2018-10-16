@@ -59,8 +59,8 @@ int CarpetJacobi_solve(const cGH *const cctkGH, const int *const var,
 
   if (!CCTK_IsThornActive(CCTK_THORNSTRING)) {
     CCTK_WARN(0, "Thorn " CCTK_THORNSTRING " has not been activated.  It is "
-                                           "therefore not possible to call "
-                                           "CarpetJacobi_solve.");
+                 "therefore not possible to call "
+                 "CarpetJacobi_solve.");
   }
 
   // Check arguments

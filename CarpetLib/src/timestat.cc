@@ -28,7 +28,6 @@
 #include "timestat.hh"
 
 namespace CarpetLib {
-
 using namespace std;
 
 // Call a timer

@@ -12,9 +12,8 @@ extern "C" void MaskBase_TestMask(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS_MaskBase_TestMask;
   DECLARE_CCTK_PARAMETERS;
 
-  if (verbose) {
+  if (verbose)
     CCTK_INFO("Testing weight");
-  }
 
   int const sum = CCTK_ReductionHandle("sum");
   assert(sum >= 0);
@@ -43,17 +42,14 @@ extern "C" void MaskBase_TestMask(CCTK_ARGUMENTS) {
 
   if (proc == -1 || CCTK_MyProc(cctkGH) == proc) {
 
-    if (verbose) {
-      CCTK_VInfo(CCTK_THORNSTRING, "Reduction weight sum: %.17g",
-                 (double)sum_weight);
-    }
+    if (verbose)
+      CCTK_VINFO("Reduction weight sum: %.17g", (double)sum_weight);
 
     CCTK_REAL domain_volume = 0.0;
 
     int maps = 1;
-    if (CCTK_IsFunctionAliased("MultiPatch_GetMaps")) {
+    if (CCTK_IsFunctionAliased("MultiPatch_GetMaps"))
       maps = MultiPatch_GetMaps(cctkGH);
-    }
 
     for (int m = 0; m < maps; ++m) {
 
@@ -80,14 +76,11 @@ extern "C" void MaskBase_TestMask(CCTK_ARGUMENTS) {
       }
 
       CCTK_REAL map_volume = 1.0;
-      for (int d = 0; d < cctk_dim; ++d) {
+      for (int d = 0; d < cctk_dim; ++d)
         map_volume *= (physical_max[d] - physical_min[d]) / spacing[d];
-      }
 
-      if (verbose) {
-        CCTK_VInfo(CCTK_THORNSTRING, "Volume of map #%d: %.17g", m,
-                   (double)map_volume);
-      }
+      if (verbose)
+        CCTK_VINFO("Volume of map #%d: %.17g", m, (double)map_volume);
 
       domain_volume += map_volume;
 
@@ -97,10 +90,8 @@ extern "C" void MaskBase_TestMask(CCTK_ARGUMENTS) {
     domain_volume -= *excised_cells;
 
     if (verbose) {
-      CCTK_VInfo(CCTK_THORNSTRING, "Simulation domain volume:  %.17g",
-                 (double)domain_volume);
-      CCTK_VInfo(CCTK_THORNSTRING, "Additional excised volume: %.17g",
-                 (double)*excised_cells);
+      CCTK_VINFO("Simulation domain volume:  %.17g", (double)domain_volume);
+      CCTK_VINFO("Additional excised volume: %.17g", (double)*excised_cells);
     }
 
     int const there_is_a_problem = fabs(sum_weight - domain_volume) >
@@ -108,15 +99,12 @@ extern "C" void MaskBase_TestMask(CCTK_ARGUMENTS) {
 
     if (there_is_a_problem) {
       if (!verbose) {
-        CCTK_VInfo(CCTK_THORNSTRING, "Simulation domain volume:  %.17g",
-                   (double)domain_volume);
-        CCTK_VInfo(CCTK_THORNSTRING, "Additional excised volume: %.17g",
-                   (double)*excised_cells);
-        CCTK_VInfo(CCTK_THORNSTRING, "Reduction weight sum:      %.17g",
-                   (double)sum_weight);
+        CCTK_VINFO("Simulation domain volume:  %.17g", (double)domain_volume);
+        CCTK_VINFO("Additional excised volume: %.17g", (double)*excised_cells);
+        CCTK_VINFO("Reduction weight sum:      %.17g", (double)sum_weight);
       }
-      CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Simulation domain volume and reduction weight sum differ");
+      CCTK_WARN(CCTK_WARN_ALERT,
+                "Simulation domain volume and reduction weight sum differ");
     }
   }
 

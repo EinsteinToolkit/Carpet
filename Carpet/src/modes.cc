@@ -105,7 +105,8 @@ void enter_global_mode(cGH *const cctkGH, int const ml) {
   // Set array information
   for (int group = 0; group < CCTK_NumGroups(); ++group) {
     cGroup gp;
-    check(not CCTK_GroupData(group, &gp));
+    int ierr = CCTK_GroupData(group, &gp);
+    assert(not ierr);
     if (gp.grouptype != CCTK_GF) {
 
       const int rl = 0;
@@ -116,6 +117,8 @@ void enter_global_mode(cGH *const cctkGH, int const ml) {
           arrdata.AT(group).AT(m).hh->baseextents.AT(ml).AT(rl);
       const ibbox &ext =
           arrdata.AT(group).AT(m).dd->light_boxes.AT(ml).AT(rl).AT(c).exterior;
+      const ibbox &own =
+          arrdata.AT(group).AT(m).dd->light_boxes.AT(ml).AT(rl).AT(c).owned;
       const b2vect &obnds = arrdata.AT(group).AT(m).hh->outer_boundaries(rl, c);
 
       cGroupDynamicData &info = groupdata.AT(group).info;
@@ -124,11 +127,15 @@ void enter_global_mode(cGH *const cctkGH, int const ml) {
           arrdata.AT(group).AT(m).dd->ghost_widths.AT(0)[0];
       assert(all(ivect_ref(info.nghostzones) ==
                  arrdata.AT(group).AT(m).dd->ghost_widths.AT(0)[1]));
-      ivect_ref(info.gsh) = baseext.shape() / baseext.stride();
+      ivect_ref(info.gsh) = baseext.sizes();
+      ivect_ref(info.lsh) = ext.sizes();
       ivect_ref(info.lbnd) = (ext.lower() - baseext.lower()) / ext.stride();
-      ivect_ref(info.ubnd) = (ext.upper() - baseext.lower()) / ext.stride();
-      ivect_ref(info.lsh) = ext.shape() / ext.stride();
-      ivect_ref(info.ash) = pad_shape(ext);
+      // ivect_ref(info.ubnd) = (ext.upper() - baseext.lower()) / ext.stride();
+      ivect_ref(info.ubnd) = ivect_ref(info.lbnd) + ivect_ref(info.lsh) - 1;
+      const auto shp = pad_shape(ext, own);
+      ivect_ref(info.ash) = shp.padded_shape;
+      info.alignment = shp.padding_alignment[0];
+      info.alignment_offset = shp.padding_offset[0];
       // CCTK_DISTRIB_CONSTANT groups are handled by extending an extra
       // dimension to nprocs elements. Here we undo this so that the user
       // code does not see this trick.
@@ -240,15 +247,17 @@ void leave_global_mode(cGH *const cctkGH) {
       // ivect_ref(info.nghostzones) = deadbeef;
       ivect_ref(info.nghostzones) =
           arrdata.AT(group).AT(m).dd->ghost_widths.AT(0)[0];
-      ivect_ref(info.gsh) = deadbeef;
-      ivect_ref(info.lbnd) = -deadbeef;
-      ivect_ref(info.ubnd) = deadbeef;
-      ivect_ref(info.lsh) = deadbeef;
+      ivect_ref(info.gsh) = ivect(deadbeef);
+      ivect_ref(info.lbnd) = ivect(-deadbeef);
+      ivect_ref(info.ubnd) = ivect(deadbeef);
+      ivect_ref(info.lsh) = ivect(deadbeef);
       for (int d = 0; d < dim; ++d) {
         const_cast<int *>(info.bbox)[2 * d] = deadbeef;
         const_cast<int *>(info.bbox)[2 * d + 1] = deadbeef;
       }
-      ivect_ref(info.ash) = deadbeef;
+      ivect_ref(info.ash) = ivect(deadbeef);
+      info.alignment = deadbeef;
+      info.alignment_offset = deadbeef;
       info.activetimelevels = deadbeef;
 
       const int numvars = CCTK_NumVarsInGroupI(group);
@@ -442,7 +451,7 @@ void enter_singlemap_mode(cGH *const cctkGH, int const m, int const grouptype) {
 
     ivect_ref(cctkGH->cctk_levoff) = baseext.lower() - coarseext.lower();
     ivect_ref(cctkGH->cctk_levoffdenom) = baseext.stride();
-    ivect_ref(cctkGH->cctk_gsh) = baseext.shape() / baseext.stride();
+    ivect_ref(cctkGH->cctk_gsh) = baseext.sizes();
     assert(all(vdd.AT(map)->ghost_widths.AT(reflevel)[0] ==
                vdd.AT(map)->ghost_widths.AT(reflevel)[1]));
     ivect_ref(cctkGH->cctk_nghostzones) =
@@ -513,10 +522,10 @@ void leave_singlemap_mode(cGH *const cctkGH) {
     }
 
     // Unset grid shape
-    ivect_ref(cctkGH->cctk_levoff) = deadbeef;
-    ivect_ref(cctkGH->cctk_levoffdenom) = 0;
-    ivect_ref(cctkGH->cctk_gsh) = deadbeef;
-    ivect_ref(cctkGH->cctk_nghostzones) = deadbeef;
+    ivect_ref(cctkGH->cctk_levoff) = ivect(deadbeef);
+    ivect_ref(cctkGH->cctk_levoffdenom) = ivect(0);
+    ivect_ref(cctkGH->cctk_gsh) = ivect(deadbeef);
+    ivect_ref(cctkGH->cctk_nghostzones) = ivect(deadbeef);
 
     for (int group = 0; group < CCTK_NumGroups(); ++group) {
       if (CCTK_GroupTypeI(group) == CCTK_GF) {
@@ -574,19 +583,21 @@ void enter_local_mode(cGH *const cctkGH, int const c, int const lc,
 
     // Set cGH fields
     const ibbox &baseext = vhh.AT(map)->baseextents.AT(mglevel).AT(reflevel);
-    const ibbox &ext = vdd.AT(map)
-                           ->light_boxes.AT(mglevel)
-                           .AT(reflevel)
-                           .AT(component)
-                           .exterior;
+    const auto &comp =
+        vdd.AT(map)->light_boxes.AT(mglevel).AT(reflevel).AT(component);
+    const ibbox &ext = comp.exterior;
+    const ibbox &own = comp.owned;
     const b2vect &obnds = vhh.AT(map)->outer_boundaries(reflevel, component);
 
     ivect_ref(cctkGH->cctk_lbnd) =
         (ext.lower() - baseext.lower()) / ext.stride();
     ivect_ref(cctkGH->cctk_ubnd) =
         (ext.upper() - baseext.lower()) / ext.stride();
-    ivect_ref(cctkGH->cctk_lsh) = ext.shape() / ext.stride();
-    ivect_ref(cctkGH->cctk_ash) = pad_shape(ext);
+    ivect_ref(cctkGH->cctk_lsh) = ext.sizes();
+    const auto shp = pad_shape(ext, own);
+    ivect_ref(cctkGH->cctk_ash) = shp.padded_shape;
+    cctkGH->cctk_alignment = shp.padding_alignment[0];
+    cctkGH->cctk_alignment_offset = shp.padding_offset[0];
 
     for (int d = 0; d < dim; ++d) {
       cctkGH->cctk_bbox[2 * d] = obnds[0][d];
@@ -622,6 +633,8 @@ void enter_local_mode(cGH *const cctkGH, int const c, int const lc,
         ivect_ref(info.ubnd) = ivect_ref(cctkGH->cctk_ubnd);
         ivect_ref(info.lsh) = ivect_ref(cctkGH->cctk_lsh);
         ivect_ref(info.ash) = ivect_ref(cctkGH->cctk_ash);
+        info.alignment = cctkGH->cctk_alignment;
+        info.alignment_offset = cctkGH->cctk_alignment_offset;
 
         for (int d = 0; d < dim; ++d) {
           const_cast<int *>(info.bbox)[2 * d] = cctkGH->cctk_bbox[2 * d];
@@ -718,12 +731,14 @@ void leave_local_mode(cGH *const cctkGH) {
     CCTK_INT const deadbeef = get_deadbeef();
 
     // Unset cGH fields
-    ivect_ref(cctkGH->cctk_lbnd) = -deadbeef;
-    ivect_ref(cctkGH->cctk_ubnd) = deadbeef;
-    ivect_ref(cctkGH->cctk_from) = -deadbeef;
-    ivect_ref(cctkGH->cctk_to) = deadbeef;
-    ivect_ref(cctkGH->cctk_lsh) = deadbeef;
-    ivect_ref(cctkGH->cctk_ash) = deadbeef;
+    ivect_ref(cctkGH->cctk_lbnd) = ivect(-deadbeef);
+    ivect_ref(cctkGH->cctk_ubnd) = ivect(deadbeef);
+    ivect_ref(cctkGH->cctk_from) = ivect(-deadbeef);
+    ivect_ref(cctkGH->cctk_to) = ivect(deadbeef);
+    ivect_ref(cctkGH->cctk_lsh) = ivect(deadbeef);
+    ivect_ref(cctkGH->cctk_ash) = ivect(deadbeef);
+    cctkGH->cctk_alignment = deadbeef;
+    cctkGH->cctk_alignment_offset = deadbeef;
 
     for (int d = 0; d < dim; ++d) {
       cctkGH->cctk_bbox[2 * d] = deadbeef;
@@ -739,6 +754,8 @@ void leave_local_mode(cGH *const cctkGH) {
         ivect_ref(info.ubnd) = ivect_ref(cctkGH->cctk_ubnd);
         ivect_ref(info.lsh) = ivect_ref(cctkGH->cctk_lsh);
         ivect_ref(info.ash) = ivect_ref(cctkGH->cctk_ash);
+        info.alignment = cctkGH->cctk_alignment;
+        info.alignment_offset = cctkGH->cctk_alignment_offset;
 
         for (int d = 0; d < dim; ++d) {
           const_cast<int *>(info.bbox)[2 * d] = cctkGH->cctk_bbox[2 * d];

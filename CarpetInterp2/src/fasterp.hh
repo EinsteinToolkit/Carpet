@@ -214,7 +214,7 @@ inline ostream &operator<<(ostream &os, fasterp_src_loc_t const &sloc) {
 */
 class fasterp_eno2_src_loc_t {
   CCTK_REAL
-      coeffs[dim][2]; // interpolation coefficients for first-order stencil
+  coeffs[dim][2]; // interpolation coefficients for first-order stencil
   CCTK_REAL coeffsLeft[dim][3];  // interpolation coefficients for left stencil
   CCTK_REAL coeffsRight[dim][3]; // interpolation coefficients for right stencil
   bvect exact;

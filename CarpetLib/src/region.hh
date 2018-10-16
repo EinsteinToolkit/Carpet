@@ -4,12 +4,15 @@
 #include <iostream>
 #include <vector>
 
-#include "defs.hh"
-#include "dist.hh"
 #include "bbox.hh"
 #include "bboxset.hh"
+#include "defs.hh"
+#include "dist.hh"
 #include "fulltree.hh"
 #include "vect.hh"
+
+namespace CarpetLib {
+using namespace std;
 
 // Region description
 struct region_t {
@@ -70,8 +73,8 @@ struct pseudoregion_t {
       : extent(extent_), component(component_) {}
 };
 
-MPI_Datatype mpi_datatype(pseudoregion_t const &) CCTK_ATTRIBUTE_PURE;
 namespace dist {
+MPI_Datatype mpi_datatype(pseudoregion_t const &) CCTK_ATTRIBUTE_PURE;
 template <> inline MPI_Datatype mpi_datatype<pseudoregion_t>() {
   pseudoregion_t dummy;
   return mpi_datatype(dummy);
@@ -102,8 +105,8 @@ struct sendrecv_pseudoregion_t {
         recv(pseudoregion_t(recv_extent, recv_component)) {}
 };
 
-MPI_Datatype mpi_datatype(sendrecv_pseudoregion_t const &) CCTK_ATTRIBUTE_PURE;
 namespace dist {
+MPI_Datatype mpi_datatype(sendrecv_pseudoregion_t const &) CCTK_ATTRIBUTE_PURE;
 template <> inline MPI_Datatype mpi_datatype<sendrecv_pseudoregion_t>() {
   sendrecv_pseudoregion_t dummy;
   return mpi_datatype(dummy);
@@ -116,5 +119,6 @@ inline size_t memoryof(sendrecv_pseudoregion_t const &srp) {
 
 istream &operator>>(istream &os, sendrecv_pseudoregion_t &srp);
 ostream &operator<<(ostream &os, sendrecv_pseudoregion_t const &srp);
+}
 
 #endif // #ifndef REGION_HH

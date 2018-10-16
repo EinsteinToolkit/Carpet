@@ -5,14 +5,13 @@
 
 #include <cstdlib>
 
-#include "defs.hh"
 #include "bbox.hh"
+#include "defs.hh"
 #include "vect.hh"
 
 #include "operator_prototypes.hh"
 
 namespace CarpetLib {
-
 using namespace std;
 
 static inline size_t index3(size_t const i, size_t const j, size_t const k,
@@ -20,18 +19,12 @@ static inline size_t index3(size_t const i, size_t const j, size_t const k,
                             size_t const padextk, size_t const exti,
                             size_t const extj, size_t const extk) {
 #ifdef CARPET_DEBUG
-  assert(static_cast<ptrdiff_t>(i) >= 0 and i < exti);
-  assert(static_cast<ptrdiff_t>(j) >= 0 and j < extj);
-  assert(static_cast<ptrdiff_t>(k) >= 0 and k < extk);
+  assert(i < exti);
+  assert(j < extj);
+  assert(k < extk);
 #endif
 
   return i + padexti * (j + padextj * k);
-}
-
-static inline size_t offset3(size_t const i, size_t const j, size_t const k,
-                             size_t const exti, size_t const extj,
-                             size_t const extk) {
-  return i + exti * (j + extj * k);
 }
 
 static int const dim3 = 3;

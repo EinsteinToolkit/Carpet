@@ -31,7 +31,7 @@ void property::enforce(gh const &hh, dh const &dd, level_boundary const &bnd,
   enforce_impl(hh, dd, bnd, regions, rl);
   if (not test(hh, dd, bnd, regions, rl)) {
     cout << "Property " << typeid(*this).name() << "\n";
-    CCTK_WARN(CCTK_WARN_ABORT, "Property does not hold after being enforced");
+    CCTK_ERROR("Property does not hold after being enforced");
   }
 }
 
@@ -52,7 +52,7 @@ ibset proper_nesting::enlarged_fine_grid(gh const &hh, dh const &dd,
   // on the coarse and a certain amount on the fine grid.
   i2vect const fdistance = dd.ghost_widths.at(rl + 1);
   i2vect const cdistance =
-      i2vect(min_distance + dd.prolongation_stencil_size(rl));
+      i2vect(ivect(min_distance + dd.prolongation_stencil_size(rl)));
 
   ibset enlarged;
 
@@ -119,8 +119,8 @@ ibset add_buffers::buffered_regions(gh const &hh, dh const &dd,
                                     level_boundary const &bnd,
                                     vector<ibset> const &regions,
                                     int const rl) {
-  return regions.at(rl)
-      .expand(dd.buffer_widths.at(rl) + dd.overlap_widths.at(rl));
+  return regions.at(rl).expand(dd.buffer_widths.at(rl) +
+                               dd.overlap_widths.at(rl));
 }
 
 bool add_buffers::test_impl(gh const &hh, dh const &dd,
@@ -208,7 +208,7 @@ ibset granulated::granulated_regions(gh const &hh, dh const &dd,
   assert(rl > 0);
 
   ibbox const &base = hh.baseextent(0, rl);
-#warning "TODO: Correct this"
+  // TODO: Correct this
   ivect const origin = base.lower();
 
   ibset granned;
@@ -879,7 +879,7 @@ ibset boundary_clip::clipped_regions(gh const &hh, dh const &dd,
           << "  level_physical_ilower=" << bnd.level_physical_ilower
           << "  level_physical_iupper=" << bnd.level_physical_iupper
           << "  baseextent=" << baseextent;
-      CCTK_WARN(CCTK_WARN_ABORT, msg.str().c_str());
+      CCTK_ERROR(msg.str().c_str());
     }
 
     ibbox const clipped_bb(
@@ -909,7 +909,7 @@ ibset boundary_clip::clipped_regions(gh const &hh, dh const &dd,
           << "  level_physical_ilower=" << bnd.level_physical_ilower
           << "  level_physical_iupper=" << bnd.level_physical_iupper
           << "  baseextent=" << baseextent;
-      CCTK_WARN(CCTK_WARN_ABORT, msg.str().c_str());
+      CCTK_ERROR(msg.str().c_str());
     }
     assert(clipped_bb.is_contained_in(baseextent));
 
@@ -963,7 +963,7 @@ void in_domain::enforce_impl(gh const &hh, dh const &dd,
                              int const rl) {
   // There is nothing we can do here, since we can't enlarge the
   // domain
-  CCTK_WARN(CCTK_WARN_ABORT, "internal error");
+  CCTK_ERROR("internal error");
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1028,7 +1028,7 @@ void is_symmetric::enforce_impl(gh const &hh, dh const &dd,
                                 level_boundary const &bnd,
                                 vector<ibset> &regions, int const rl) {
   // There is nothing we want to do here
-  CCTK_WARN(CCTK_WARN_ABORT, "internal error");
+  CCTK_ERROR("internal error");
 }
 
 } // namespace CarpetRegrid2

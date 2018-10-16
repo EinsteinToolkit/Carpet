@@ -15,6 +15,7 @@
 #include "gh.hh"
 #include "th.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // Forward declaration
@@ -194,5 +195,6 @@ private:
 inline size_t memoryof(ggf const &f) { return f.memory(); }
 
 inline ostream &operator<<(ostream &os, const ggf &f) { return f.output(os); }
+}
 
 #endif // GGF_HH

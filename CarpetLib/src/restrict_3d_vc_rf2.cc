@@ -10,9 +10,8 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND3(i, j, k)                                                       \
   index3(srcioff + (i), srcjoff + (j), srckoff + (k), srcipadext, srcjpadext,  \
@@ -20,12 +19,6 @@ namespace CarpetLib {
 #define DSTIND3(i, j, k)                                                       \
   index3(dstioff + (i), dstjoff + (j), dstkoff + (k), dstipadext, dstjpadext,  \
          dstkpadext, dstiext, dstjext, dstkext)
-#define SRCOFF3(i, j, k)                                                       \
-  offset3(srcioff + (i), srcjoff + (j), srckoff + (k), srciext, srcjext,       \
-          srckext)
-#define DSTOFF3(i, j, k)                                                       \
-  offset3(dstioff + (i), dstjoff + (j), dstkoff + (k), dstiext, dstjext,       \
-          dstkext)
 
 // 0D "restriction"
 template <typename T> struct restrict0 {
@@ -203,18 +196,19 @@ void restrict_3d_vc_rf2(T const *restrict const src,
   int const dstjoff = dstoff[1];
   int const dstkoff = dstoff[2];
 
-  // size_t const srcdi == SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
+  // size_t const srcdi == SRCIND3(1,0,0) - SRCIND3(0,0,0);
   size_t const srcdi = 1;
-  assert(srcdi == SRCOFF3(1, 0, 0) - SRCOFF3(0, 0, 0));
-  size_t const srcdj = SRCOFF3(0, 1, 0) - SRCOFF3(0, 0, 0);
-  size_t const srcdk = SRCOFF3(0, 0, 1) - SRCOFF3(0, 0, 0);
+  assert(srcdi == (srciext > 1 ? SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0) : 1));
+  size_t const srcdj = srcjext > 1 ? SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0) : 0;
+  size_t const srcdk = srckext > 1 ? SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0) : 0;
 
   if (not use_loopcontrol_in_operators) {
 
 // Loop over coarse region
-#pragma omp parallel for collapse(3)
+#pragma omp parallel for collapse(2)
     for (int k = 0; k < regkext; ++k) {
       for (int j = 0; j < regjext; ++j) {
+#pragma omp simd
         for (int i = 0; i < regiext; ++i) {
 #ifdef CARPET_DEBUG
           if (not(2 * k + centk < srckext and 2 * j + centj < srcjext and

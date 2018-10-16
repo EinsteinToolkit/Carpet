@@ -11,9 +11,8 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND3(i, j, k)                                                       \
   index3(srcioff + (i), srcjoff + (j), srckoff + (k), srcipadext, srcjpadext,  \
@@ -21,12 +20,6 @@ namespace CarpetLib {
 #define DSTIND3(i, j, k)                                                       \
   index3(dstioff + (i), dstjoff + (j), dstkoff + (k), dstipadext, dstjpadext,  \
          dstkpadext, dstiext, dstjext, dstkext)
-#define SRCOFF3(i, j, k)                                                       \
-  offset3(srcioff + (i), srcjoff + (j), srckoff + (k), srciext, srcjext,       \
-          srckext)
-#define DSTOFF3(i, j, k)                                                       \
-  offset3(dstioff + (i), dstjoff + (j), dstkoff + (k), dstiext, dstjext,       \
-          dstkext)
 
 // This operator offers fifth-order accurate restriction operators for cell
 // centered grids when use_higher_order_restriction is set. This interpolation
@@ -48,8 +41,8 @@ inline T restrict1(T const *restrict const p, size_t const d1) {
   typedef typename typeprops<T>::real RT;
   RT const den = 256;
   RT const f2 = 3 / den, f1 = 25 / den, f0 = 150 / den;
-  T const res = +f2 * p[-2] - f1 * p[-1] + f0 * p[-0] + f0 * p[+1] -
-                f1 * p[+2] + f2 * p[+3];
+  T const res = f2 * p[-2] - f1 * p[-1] + f0 * p[-0] + f0 * p[+1] - f1 * p[+2] +
+                f2 * p[+3];
   return res;
 }
 
@@ -61,7 +54,7 @@ inline T restrict2(T const *restrict const p, size_t const d1,
   RT const den = 256;
   RT const f2 = 3 / den, f1 = 25 / den, f0 = 150 / den;
   T const res =
-      +f2 * restrict1(p - 2 * d2, d1) - f1 * restrict1(p - 1 * d2, d1) +
+      f2 * restrict1(p - 2 * d2, d1) - f1 * restrict1(p - 1 * d2, d1) +
       f0 * restrict1(p - 0 * d2, d1) + f0 * restrict1(p + 1 * d2, d1) -
       f1 * restrict1(p + 2 * d2, d1) + f2 * restrict1(p + 3 * d2, d1);
   return res;
@@ -75,7 +68,7 @@ inline T restrict3(T const *restrict const p, size_t const d1, size_t const d2,
   RT const den = 256;
   RT const f2 = 3 / den, f1 = 25 / den, f0 = 150 / den;
   T const res =
-      +f2 * restrict2(p - 2 * d3, d1, d2) - f1 * restrict2(p - 1 * d3, d1, d2) +
+      f2 * restrict2(p - 2 * d3, d1, d2) - f1 * restrict2(p - 1 * d3, d1, d2) +
       f0 * restrict2(p - 0 * d3, d1, d2) + f0 * restrict2(p + 1 * d3, d1, d2) -
       f1 * restrict2(p + 2 * d3, d1, d2) + f2 * restrict2(p + 3 * d3, d1, d2);
   return res;
@@ -159,18 +152,19 @@ void restrict_3d_cc_o5_rf2(
   int const dstjoff = dstoff[1];
   int const dstkoff = dstoff[2];
 
-  // size_t const srcdi == SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
+  // size_t const srcdi == SRCIND3(1,0,0) - SRCIND3(0,0,0);
   size_t const srcdi = 1;
-  assert(srcdi == SRCOFF3(1, 0, 0) - SRCOFF3(0, 0, 0));
-  size_t const srcdj = SRCOFF3(0, 1, 0) - SRCOFF3(0, 0, 0);
-  size_t const srcdk = SRCOFF3(0, 0, 1) - SRCOFF3(0, 0, 0);
+  assert(srcdi == (srciext > 1 ? SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0) : 1));
+  size_t const srcdj = srcjext > 1 ? SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0) : 0;
+  size_t const srcdk = srckext > 1 ? SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0) : 0;
 
   if (not use_loopcontrol_in_operators) {
 
 // Loop over coarse region
-#pragma omp parallel for collapse(3)
+#pragma omp parallel for collapse(2)
     for (int k = 0; k < regkext; ++k) {
       for (int j = 0; j < regjext; ++j) {
+#pragma omp simd
         for (int i = 0; i < regiext; ++i) {
 
 #ifdef CARPET_DEBUG

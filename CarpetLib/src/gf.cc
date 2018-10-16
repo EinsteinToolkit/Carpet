@@ -6,6 +6,7 @@
 
 #include "gf.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // Constructors
@@ -32,7 +33,6 @@ template <typename T> ostream &gf<T>::output(ostream &os) const {
 }
 
 #define TYPECASE(N, T) template class gf<T>;
-
 #include "typecase.hh"
-
 #undef TYPECASE
+}

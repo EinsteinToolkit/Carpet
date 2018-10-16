@@ -4,8 +4,8 @@
 #include <algorithm>
 #include <cassert>
 #include <climits>
-#include <cstdlib>
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -28,12 +28,13 @@
 #include "operator_prototypes_3d.hh"
 #include "operator_prototypes_4d.hh"
 
+namespace CarpetLib {
 using namespace std;
-using namespace CarpetLib;
 
 template <typename T>
 static void
-call_operator(void (*the_operator)(
+call_operator(const char *restrict const name,
+              void (*the_operator)(
                   T const *restrict const src, ivect3 const &restrict srcpadext,
                   ivect3 const &restrict srcext, T *restrict const dst,
                   ivect3 const &restrict dstpadext,
@@ -73,8 +74,9 @@ call_operator(void (*the_operator)(
       int const my_num_points =
           (num_points / stride + num_threads - 1) / num_threads * stride;
       int const my_first_point =
-          min(last_point, first_point + thread_num * my_num_points);
-      int const my_last_point = min(last_point, my_first_point + my_num_points);
+          std::min(last_point, first_point + thread_num * my_num_points);
+      int const my_last_point =
+          std::min(last_point, my_first_point + my_num_points);
       assert(my_last_point >= my_first_point);
       ibbox3 const mydstregbbox(
           dstregbbox.lower().replace(dir, my_first_point),
@@ -96,12 +98,16 @@ call_operator(void (*the_operator)(
     }
     assert(alldstregbboxes == ibset(dstregbbox));
 #endif
+  } else { // serial
+    (*the_operator)(src, srcpadext, srcext, dst, dstpadext, dstext, srcbbox,
+                    dstbbox, srcregbbox, dstregbbox, extraargs);
   }
 }
 
 template <typename T>
 static void
-call_operator(void (*the_operator)(
+call_operator(const char *restrict const name,
+              void (*the_operator)(
                   T const *restrict const src, ivect4 const &restrict srcpadext,
                   ivect4 const &restrict srcext, T *restrict const dst,
                   ivect4 const &restrict dstpadext,
@@ -141,8 +147,9 @@ call_operator(void (*the_operator)(
       int const my_num_points =
           (num_points / stride + num_threads - 1) / num_threads * stride;
       int const my_first_point =
-          min(last_point, first_point + thread_num * my_num_points);
-      int const my_last_point = min(last_point, my_first_point + my_num_points);
+          std::min(last_point, first_point + thread_num * my_num_points);
+      int const my_last_point =
+          std::min(last_point, my_first_point + my_num_points);
       assert(my_last_point >= my_first_point);
       ibbox4 const mydstregbbox(
           dstregbbox.lower().replace(dir, my_first_point),
@@ -331,21 +338,6 @@ data<T>::data(const int varindex_, const centering cent_,
          (vectorindex != 0 and vectorleader));
 }
 
-template <typename T>
-data<T>::data(const int varindex_, const centering cent_,
-              const operator_type transport_operator_, const int vectorlength_,
-              const int vectorindex_, data *const vectorleader_,
-              const ibbox &extent_, const int proc_)
-    : gdata(varindex_, cent_, transport_operator_), _memory(NULL),
-      vectorlength(vectorlength_), vectorindex(vectorindex_),
-      vectorleader(vectorleader_) {
-  assert(vectorlength >= 1);
-  assert(vectorindex >= 0 and vectorindex < vectorlength);
-  assert((vectorindex == 0 and not vectorleader) or
-         (vectorindex != 0 and vectorleader));
-  allocate(extent_, proc_);
-}
-
 // Destructors
 template <typename T> data<T>::~data() {
   if (_memory)
@@ -361,7 +353,8 @@ data<T> *data<T>::make_typed(const int varindex_, const centering cent_,
 
 // Storage management
 template <typename T>
-void data<T>::allocate(const ibbox &extent_, const int proc_,
+void data<T>::allocate(const ibbox &extent_, const ivect &padded_shape_,
+                       const ivect &padding_offset_, const int proc_,
                        void *const memptr, size_t const memsize) {
   assert(not _has_storage);
   _has_storage = true;
@@ -373,19 +366,21 @@ void data<T>::allocate(const ibbox &extent_, const int proc_,
 
   // data
   _extent = extent_;
-  _shape = max(ivect(0), _extent.shape() / _extent.stride());
-  _padded_shape = pad_shape(_shape);
+  _shape = _extent.sizes();
+  _padded_shape = padded_shape_;
+  _padding_offset = padding_offset_;
+  assert(all(_shape <= _padded_shape));
   _stride[0] = 1;
-  for (int d = 1; d < dim; ++d) {
+  for (int d = 1; d < dim; ++d)
     _stride[d] = _stride[d - 1] * _padded_shape[d - 1];
-  }
   _size = _stride[dim - 1] * _padded_shape[dim - 1];
 
   _proc = proc_;
   if (dist::rank() == _proc) {
     if (vectorindex == 0) {
       assert(not vectorleader);
-      _memory = new mem<T>(vectorlength, _size, (T *)memptr, memsize);
+      _memory = new mem<T>(vectorlength, _size, sum(_padding_offset * _stride),
+                           (T *)memptr, memsize);
     } else {
       assert(vectorleader);
       _memory = vectorleader->_memory;
@@ -410,13 +405,15 @@ template <typename T> void data<T>::free() {
 }
 
 template <typename T>
-size_t data<T>::allocsize(const ibbox &extent_, const int proc_) const {
+size_t data<T>::allocsize(const ibbox &extent_, const ivect &padded_shape_,
+                          const int proc_) const {
   if (dist::rank() != proc_)
     return 0;
   if (vectorindex != 0)
     return 0;
   assert(not vectorleader);
-  return vectorlength * prod(pad_shape(extent_)) * sizeof(T);
+  assert(all(extent_.sizes() <= padded_shape_));
+  return vectorlength * prod(padded_shape_) * sizeof(T);
 }
 
 template <typename T> bool data<T>::check_fence(const int upperlower) const {
@@ -509,7 +506,7 @@ void data<T>::transfer_time(vector<gdata const *> const &gsrcs,
     for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++tl) {
       tmps.AT(tl) =
           new data(this->varindex, this->cent, this->transport_operator);
-      tmps.AT(tl)->allocate(dstbox, this->proc());
+      tmps.AT(tl)->allocate(dstbox, dstbox.sizes(), ivect(0), this->proc());
 
       assert(gsrcs.AT(tl));
       // data const * const src = dynamic_cast <data const *> (gsrcs.AT(tl));
@@ -519,9 +516,8 @@ void data<T>::transfer_time(vector<gdata const *> const &gsrcs,
 
     time_interpolate(tmps, dstbox, dstbox, times, time, order_time);
 
-    for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++tl) {
+    for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++tl)
       delete tmps.AT(tl);
-    }
 
   } else {
     // No time interpolation
@@ -604,21 +600,18 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
           NULL, &prolongate_3d_rf2<T, 9>, NULL, &prolongate_3d_rf2<T, 11>,
       };
 #if defined(CCTK_REAL_PRECISION_4)
-      if (order_space == 11) {
+      if (order_space == 11)
         CCTK_ERROR("There is no single precision vertex-centred stencil for "
                    "op=\"LAGRANGE\" or op=\"COPY\" with order_space=11");
-      }
 #endif
-      if (order_space < 0 or order_space > 11 or
-          not the_operators[order_space]) {
+      if (order_space < 0 or order_space > 11 or not the_operators[order_space])
         CCTK_ERROR("There is no vertex-centred stencil for op=\"LAGRANGE\" or "
                    "op=\"COPY\" with order_space not in {1, 3, 5, 7, 9, 11}");
-      }
       call_operator<T>(
-          the_operators[order_space], static_cast<T const *>(src->storage()),
-          src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
-          this->padded_shape(), this->shape(), src->extent(), this->extent(),
-          srcbox, dstbox, NULL);
+          "prolongate", the_operators[order_space],
+          static_cast<T const *>(src->storage()), src->padded_shape(),
+          src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
+          this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
       break;
     }
     case cell_centered: {
@@ -641,15 +634,14 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
           &prolongate_3d_cc_rf2<T, 0>, &prolongate_3d_cc_rf2<T, 1>,
           &prolongate_3d_cc_rf2<T, 2>, &prolongate_3d_cc_rf2<T, 3>,
           &prolongate_3d_cc_rf2<T, 4>, &prolongate_3d_cc_rf2<T, 5>};
-      if (order_space < 0 or order_space > 5) {
+      if (order_space < 0 or order_space > 5)
         CCTK_ERROR("There is no cell-centred stencil for op=\"LAGRANGE\" or "
                    "op=\"COPY\" with order_space not in {0, 1, 2, 3, 4, 5}");
-      }
       call_operator<T>(
-          the_operators[order_space], static_cast<T const *>(src->storage()),
-          src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
-          this->padded_shape(), this->shape(), src->extent(), this->extent(),
-          srcbox, dstbox, NULL);
+          "prolongate", the_operators[order_space],
+          static_cast<T const *>(src->storage()), src->padded_shape(),
+          src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
+          this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
       break;
     }
     default:
@@ -670,21 +662,23 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
         CCTK_ERROR("There is no stencil for op=\"ENO\" with order_space=1");
         break;
       case 3:
-        call_operator<T>(
-            &prolongate_3d_eno, static_cast<T const *>(src->storage()),
-            src->padded_shape(), src->shape(),
-            static_cast<T *>(this->storage()), this->padded_shape(),
-            this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
+        call_operator<T>("prolongate", &prolongate_3d_eno,
+                         static_cast<T const *>(src->storage()),
+                         src->padded_shape(), src->shape(),
+                         static_cast<T *>(this->storage()),
+                         this->padded_shape(), this->shape(), src->extent(),
+                         this->extent(), srcbox, dstbox, NULL);
         break;
       case 5:
         // There is only one parameter for the prolongation order, but
         // Whisky may want 5th order for spacetime and 3rd order for
         // hydro, so we cheat here.
-        call_operator<T>(
-            &prolongate_3d_eno, static_cast<T const *>(src->storage()),
-            src->padded_shape(), src->shape(),
-            static_cast<T *>(this->storage()), this->padded_shape(),
-            this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
+        call_operator<T>("prolongate", &prolongate_3d_eno,
+                         static_cast<T const *>(src->storage()),
+                         src->padded_shape(), src->shape(),
+                         static_cast<T *>(this->storage()),
+                         this->padded_shape(), this->shape(), src->extent(),
+                         this->extent(), srcbox, dstbox, NULL);
         break;
       default:
         CCTK_ERROR("There is no stencil for op=\"ENO\" with order_space!=3");
@@ -701,26 +695,25 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
           ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
           void *const extraargs) = {
           &prolongate_3d_cc_eno_rf2<T, 2>,
-          &prolongate_3d_cc_eno_rf2<T, 2>, // note that we cheat here: order is
-                                           // still 2 even though 3 was
-                                           // requested!
-          &prolongate_3d_cc_eno_rf2<T, 2>, // note that we cheat here: order is
-                                           // 2 even though 4 was requested!
-          &prolongate_3d_cc_eno_rf2<T, 3> // note that we cheat here: order is 3
-                                          // even though 5 was requested!
+          // note that we cheat here: order is still 2 even though 3 was
+          // requested!
+          &prolongate_3d_cc_eno_rf2<T, 2>,
+          // note that we cheat here: order is 2 even though 4 was requested!
+          &prolongate_3d_cc_eno_rf2<T, 2>,
+          // note that we cheat here: order is 3 even though 5 was requested!
+          &prolongate_3d_cc_eno_rf2<T, 3>
           // have cheated here for two reasons: first, the ENO prolongation
           // operator stencil radius is larger than Lagrange (and dh.cc assumes
           // that the stencil goes as order_space/2!),
           // and second, we want to allow spacetime interpolation to be of
           // higher order while keeping the implemeneted ENO order!
       };
-      if (order_space < 2 or order_space > 5) {
+      if (order_space < 2 or order_space > 5)
         CCTK_ERROR("There is no cell-centred stencil for op=\"ENO\" with "
                    "order_space not in {2,3,4,5}");
-      }
 
       call_operator<T>(
-          the_operators[order_space - 2],
+          "prolongate", the_operators[order_space - 2],
           static_cast<T const *>(src->storage()), src->padded_shape(),
           src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
           this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
@@ -745,11 +738,12 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
         CCTK_ERROR("There is no stencil for op=\"WENO\" with order_space=3");
         break;
       case 5:
-        call_operator<T>(
-            &prolongate_3d_eno, static_cast<T const *>(src->storage()),
-            src->padded_shape(), src->shape(),
-            static_cast<T *>(this->storage()), this->padded_shape(),
-            this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
+        call_operator<T>("prolongate", &prolongate_3d_eno,
+                         static_cast<T const *>(src->storage()),
+                         src->padded_shape(), src->shape(),
+                         static_cast<T *>(this->storage()),
+                         this->padded_shape(), this->shape(), src->extent(),
+                         this->extent(), srcbox, dstbox, NULL);
         break;
       default:
         CCTK_ERROR("There is no stencil for op=\"WENO\" with order_space!=5");
@@ -775,11 +769,12 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
     case vertex_centered: {
       switch (order_space) {
       case 1:
-        call_operator<T>(
-            &prolongate_3d_tvd, static_cast<T const *>(src->storage()),
-            src->padded_shape(), src->shape(),
-            static_cast<T *>(this->storage()), this->padded_shape(),
-            this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
+        call_operator<T>("prolongate", &prolongate_3d_tvd,
+                         static_cast<T const *>(src->storage()),
+                         src->padded_shape(), src->shape(),
+                         static_cast<T *>(this->storage()),
+                         this->padded_shape(), this->shape(), src->extent(),
+                         this->extent(), srcbox, dstbox, NULL);
         break;
       default:
         CCTK_ERROR("There is no stencil for op=\"TVD\" with order_space!=1");
@@ -790,11 +785,12 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
     case cell_centered: {
       switch (order_space) {
       case 1:
-        call_operator<T>(
-            &prolongate_3d_cc_tvd, static_cast<T const *>(src->storage()),
-            src->padded_shape(), src->shape(),
-            static_cast<T *>(this->storage()), this->padded_shape(),
-            this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
+        call_operator<T>("prolongate", &prolongate_3d_cc_tvd,
+                         static_cast<T const *>(src->storage()),
+                         src->padded_shape(), src->shape(),
+                         static_cast<T *>(this->storage()),
+                         this->padded_shape(), this->shape(), src->extent(),
+                         this->extent(), srcbox, dstbox, NULL);
         break;
       default:
         CCTK_ERROR("There is no stencil for op=\"TVD\" with order_space!=1");
@@ -822,7 +818,7 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
       break;
     case 5:
       call_operator<T>(
-          &prolongate_3d_o5_monotone_rf2,
+          "prolongate", &prolongate_3d_o5_monotone_rf2,
           static_cast<T const *>(src->storage()), src->padded_shape(),
           src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
           this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
@@ -849,10 +845,10 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
     static Timer timer("prolongate_STAGGER011");
     timer.start();
     call_operator<T>(
-        the_operators[order_space - 2], static_cast<T const *>(src->storage()),
-        src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
-        this->padded_shape(), this->shape(), src->extent(), this->extent(),
-        srcbox, dstbox, NULL);
+        "prolongate", the_operators[order_space - 2],
+        static_cast<T const *>(src->storage()), src->padded_shape(),
+        src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
+        this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
     timer.stop(0);
     break;
   }
@@ -871,10 +867,10 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
     static Timer timer("prolongate_STAGGER101");
     timer.start();
     call_operator<T>(
-        the_operators[order_space - 2], static_cast<T const *>(src->storage()),
-        src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
-        this->padded_shape(), this->shape(), src->extent(), this->extent(),
-        srcbox, dstbox, NULL);
+        "prolongate", the_operators[order_space - 2],
+        static_cast<T const *>(src->storage()), src->padded_shape(),
+        src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
+        this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
     timer.stop(0);
     break;
   }
@@ -893,10 +889,10 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
     static Timer timer("prolongate_STAGGER110");
     timer.start();
     call_operator<T>(
-        the_operators[order_space - 2], static_cast<T const *>(src->storage()),
-        src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
-        this->padded_shape(), this->shape(), src->extent(), this->extent(),
-        srcbox, dstbox, NULL);
+        "prolongate", the_operators[order_space - 2],
+        static_cast<T const *>(src->storage()), src->padded_shape(),
+        src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
+        this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
     timer.stop(0);
     break;
   }
@@ -915,10 +911,10 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
     static Timer timer("prolongate_STAGGER111");
     timer.start();
     call_operator<T>(
-        the_operators[order_space - 2], static_cast<T const *>(src->storage()),
-        src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
-        this->padded_shape(), this->shape(), src->extent(), this->extent(),
-        srcbox, dstbox, NULL);
+        "prolongate", the_operators[order_space - 2],
+        static_cast<T const *>(src->storage()), src->padded_shape(),
+        src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
+        this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
     timer.stop(0);
     break;
   }
@@ -993,38 +989,42 @@ void data<T>::transfer_restrict(data const *const src, ibbox const &dstregbox,
 
   case op_STAGGER011:
     assert(not slabinfo);
-    call_operator<T>(
-        &restrict_3d_stagger011, static_cast<T const *>(src->storage()),
-        src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
-        this->padded_shape(), this->shape(), src->extent(), this->extent(),
-        srcregbox, dstregbox, NULL);
+    call_operator<T>("restrict", &restrict_3d_stagger011,
+                     static_cast<T const *>(src->storage()),
+                     src->padded_shape(), src->shape(),
+                     static_cast<T *>(this->storage()), this->padded_shape(),
+                     this->shape(), src->extent(), this->extent(), srcregbox,
+                     dstregbox, NULL);
     break;
 
   case op_STAGGER101:
     assert(not slabinfo);
-    call_operator<T>(
-        &restrict_3d_stagger101, static_cast<T const *>(src->storage()),
-        src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
-        this->padded_shape(), this->shape(), src->extent(), this->extent(),
-        srcregbox, dstregbox, NULL);
+    call_operator<T>("restrict", &restrict_3d_stagger101,
+                     static_cast<T const *>(src->storage()),
+                     src->padded_shape(), src->shape(),
+                     static_cast<T *>(this->storage()), this->padded_shape(),
+                     this->shape(), src->extent(), this->extent(), srcregbox,
+                     dstregbox, NULL);
     break;
 
   case op_STAGGER110:
     assert(not slabinfo);
-    call_operator<T>(
-        &restrict_3d_stagger110, static_cast<T const *>(src->storage()),
-        src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
-        this->padded_shape(), this->shape(), src->extent(), this->extent(),
-        srcregbox, dstregbox, NULL);
+    call_operator<T>("restrict", &restrict_3d_stagger110,
+                     static_cast<T const *>(src->storage()),
+                     src->padded_shape(), src->shape(),
+                     static_cast<T *>(this->storage()), this->padded_shape(),
+                     this->shape(), src->extent(), this->extent(), srcregbox,
+                     dstregbox, NULL);
     break;
 
   case op_STAGGER111:
     assert(not slabinfo);
-    call_operator<T>(
-        &restrict_3d_stagger111, static_cast<T const *>(src->storage()),
-        src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
-        this->padded_shape(), this->shape(), src->extent(), this->extent(),
-        srcregbox, dstregbox, NULL);
+    call_operator<T>("restrict", &restrict_3d_stagger111,
+                     static_cast<T const *>(src->storage()),
+                     src->padded_shape(), src->shape(),
+                     static_cast<T *>(this->storage()), this->padded_shape(),
+                     this->shape(), src->extent(), this->extent(), srcregbox,
+                     dstregbox, NULL);
     break;
 
   case op_copy:
@@ -1038,15 +1038,15 @@ void data<T>::transfer_restrict(data const *const src, ibbox const &dstregbox,
     switch (cent) {
     case vertex_centered:
       assert(not slabinfo);
-      call_operator<T>(&restrict_3d_rf2, static_cast<T const *>(src->storage()),
-                       src->padded_shape(), src->shape(),
-                       static_cast<T *>(this->storage()), this->padded_shape(),
-                       this->shape(), src->extent(), this->extent(), srcregbox,
-                       dstregbox, NULL);
+      call_operator<T>(
+          "restrict", &restrict_3d_rf2, static_cast<T const *>(src->storage()),
+          src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
+          this->padded_shape(), this->shape(), src->extent(), this->extent(),
+          srcregbox, dstregbox, NULL);
       break;
     case cell_centered: {
       assert(all(dstregbox.stride() == this->extent().stride()));
-      ivect const is_centered = slabinfo ? slabinfo->is_centered : 1;
+      ivect const is_centered = slabinfo ? slabinfo->is_centered : ivect(1);
 
       ibbox const &srcbox = src->extent();
       ibbox const &dstbox = this->extent();
@@ -1336,6 +1336,7 @@ template <typename T> ostream &data<T>::output(ostream &os) const {
      << "extent=" << extent() << ","
      << "shape=" << shape() << ","
      << "padded_shape=" << padded_shape() << ","
+     << "padding_offset=" << padding_offset() << ","
      << "stride=" << stride() << ",size=" << size();
   return os;
 }
@@ -1343,3 +1344,4 @@ template <typename T> ostream &data<T>::output(ostream &os) const {
 #define TYPECASE(N, T) template class data<T>;
 #include "typecase.hh"
 #undef TYPECASE
+}

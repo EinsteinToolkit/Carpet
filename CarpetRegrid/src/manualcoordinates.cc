@@ -41,7 +41,7 @@ int ManualCoordinates(cGH const *const cctkGH, gh const &hh, gh::rregs &regss) {
 
   for (size_t rl = 1; rl < regss.size(); ++rl) {
 
-    b2vect const ob(false);
+    b2vect const ob(bvect(false));
     region_t reg;
     reg.map = Carpet::map;
     reg.outer_boundaries = ob;

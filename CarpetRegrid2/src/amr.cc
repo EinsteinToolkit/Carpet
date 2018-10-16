@@ -38,7 +38,7 @@ void evaluate_level_mask(cGH const *restrict const cctkGH,
         }
 
         // Determine the block size
-        ivect block_size = adaptive_block_size;
+        ivect block_size(adaptive_block_size);
         if (adaptive_block_size_x > 0)
           block_size[0] = adaptive_block_size_x;
         if (adaptive_block_size_y > 0)
@@ -63,7 +63,7 @@ void evaluate_level_mask(cGH const *restrict const cctkGH,
             // next upper grid point in this case. We subtract 0.25
             // just for proper rounding.
             origin[d] =
-                ceil(-CCTK_ORIGIN_SPACE(d) / CCTK_DELTA_SPACE(d) - 0.25);
+                lrint(ceil(-CCTK_ORIGIN_SPACE(d) / CCTK_DELTA_SPACE(d) - 0.25));
             rorigin[d] = CCTK_ORIGIN_SPACE(d) + origin[d] * CCTK_DELTA_SPACE(d);
           }
         }
@@ -109,9 +109,10 @@ void evaluate_level_mask(cGH const *restrict const cctkGH,
           ivect const imax = lsh - either(bboxhi, 0, nghostzones);
 
           ivect const bmin =
-              max(0, ((lbnd + imin + block_offset + block_size - overlap) /
-                      block_size) -
-                         1);
+              max(0,
+                  ((lbnd + imin + block_offset + block_size - overlap) /
+                   block_size) -
+                      1);
           ivect const bmax = (lbnd + imax + block_offset) / block_size;
 
           // Loop over all blocks
@@ -124,9 +125,9 @@ void evaluate_level_mask(cGH const *restrict const cctkGH,
 
                 ivect const bimin =
                     max(imin, (bind)*block_size - block_offset - lbnd);
-                ivect const bimax =
-                    min(imax, (bind + 1) * block_size - block_offset - lbnd +
-                                  overlap);
+                ivect const bimax = min(imax,
+                                        (bind + 1) * block_size - block_offset -
+                                            lbnd + overlap);
 
                 bool refine = false;
                 bool have_nan = false;

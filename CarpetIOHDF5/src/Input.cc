@@ -1,7 +1,9 @@
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
 #include <list>
+#include <map>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -9,13 +11,13 @@
 #include <algorithm>
 #include <cctk_Arguments_Checked.h>
 
-#include "util_Table.h"
 #include "cctk.h"
 #include "cctk_Parameters.h"
+#include "util_Table.h"
 
-#include "CarpetIOHDF5.hh"
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
+#include "CarpetIOHDF5.hh"
 
 #include "defs.hh"
 
@@ -1216,7 +1218,7 @@ static herr_t BrowseDatasets(hid_t group, const char *objectname, void *args) {
   HDF5_ERROR(dataset = H5Dopen(group, objectname));
   HDF5_ERROR(dataspace = H5Dget_space(dataset));
   patch.rank = H5Sget_simple_extent_ndims(dataspace);
-  assert(patch.rank > 0 and patch.rank <= ::dim);
+  assert(patch.rank > 0 and patch.rank <= CarpetLib::dim);
   patch.shape.resize(patch.rank);
   if (file->indexfile >= 0) { // index files store shape of master file in attr
     HDF5_ERROR(attr = H5Aopen_name(dataset, "h5shape"));
@@ -1259,10 +1261,10 @@ static herr_t BrowseDatasets(hid_t group, const char *objectname, void *args) {
   HDF5_ERROR(dataspace = H5Aget_space(attr));
   assert(H5Sget_simple_extent_npoints(dataspace) == patch.rank);
   HDF5_ERROR(H5Sclose(dataspace));
-  patch.iorigin = 0;
+  patch.iorigin = ivect(0);
   HDF5_ERROR(H5Aread(attr, H5T_NATIVE_INT, &patch.iorigin[0]));
   HDF5_ERROR(H5Aclose(attr));
-  patch.ioffset = 0;
+  patch.ioffset = ivect(0);
   H5E_BEGIN_TRY { attr = H5Aopen_name(dataset, "ioffset"); }
   H5E_END_TRY;
   // ioffset and ioffsetdenom may not be present; if so, use a default
@@ -1273,7 +1275,7 @@ static herr_t BrowseDatasets(hid_t group, const char *objectname, void *args) {
     HDF5_ERROR(H5Aread(attr, H5T_NATIVE_INT, &patch.ioffset[0]));
     HDF5_ERROR(H5Aclose(attr));
   }
-  patch.ioffsetdenom = 1;
+  patch.ioffsetdenom = ivect(1);
   H5E_BEGIN_TRY { attr = H5Aopen_name(dataset, "ioffsetdenom"); }
   H5E_END_TRY;
   if (attr >= 0) {
@@ -1320,7 +1322,7 @@ static int ReadVar(const cGH *const cctkGH, file_t &file, CCTK_REAL &io_bytes,
   DECLARE_CCTK_PARAMETERS;
 
   const int gindex = CCTK_GroupIndexFromVarI(patch->vindex);
-  assert(gindex >= 0 and (unsigned int)gindex < Carpet::arrdata.size());
+  assert(gindex >= 0 and (unsigned int) gindex < Carpet::arrdata.size());
   cGroup group;
   CCTK_GroupData(gindex, &group);
 
@@ -1368,7 +1370,7 @@ static int ReadVar(const cGH *const cctkGH, file_t &file, CCTK_REAL &io_bytes,
                                    .AT(patch->map)
                                    .hh->baseextent(mglevel, reflevel)
                                    .stride()
-                             : 1;
+                             : ivect(1);
     assert(all(stride % patch->ioffsetdenom == 0));
     ivect lower =
         patch->iorigin * stride + patch->ioffset * stride / patch->ioffsetdenom;

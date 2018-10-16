@@ -12,9 +12,8 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND3(i, j, k)                                                       \
   index3(srcioff + (i), srcjoff + (j), srckoff + (k), srcipadext, srcjpadext,  \
@@ -141,6 +140,7 @@ void restrict_3d_stagger111(
 #pragma omp parallel
     CCTK_LOOP3(restrict_3d_stagger111, i, j, k, 0, 0, 0, regiext, regjext,
                regkext, dstipadext, dstjpadext, dstkpadext) {
+
       dst[DSTIND3(i, j, k)] = typeprops<T>::fromreal(0);
 
       if (ORDER_STAG == 2) {

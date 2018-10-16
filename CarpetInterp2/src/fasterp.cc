@@ -15,10 +15,10 @@
 #include "nompi.h"
 #endif
 
+#include <Timer.hh>
 #include <cacheinfo.hh>
 #include <carpet.hh>
 #include <vect.hh>
-#include <Timer.hh>
 
 #include "fasterp.hh"
 
@@ -70,22 +70,18 @@ MPI_Datatype fasterp_iloc_t::mpi_datatype() {
     static fasterp_iloc_t s;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type),         /* count elements */                 \
-        (char *) & s.name - (char *) & s, /* offsetof doesn't work (why?) */   \
-        dist::mpi_datatype<type>(),       /* find MPI datatype */              \
-        STRINGIFY(name),                  /* field name */                     \
-        STRINGIFY(type),                  /* type name */                      \
+      sizeof s.name / sizeof(type), /* count elements */                       \
+      (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */         \
+      dist::mpi_datatype<type>(),   /* find MPI datatype */                    \
+      STRINGIFY(name),              /* field name */                           \
+      STRINGIFY(type),              /* type name */                            \
   }
     dist::mpi_struct_descr_t const descr[] = {
         ENTRY(int, mrc),
 #ifdef CARPETINTERP2_CHECK
-        ENTRY(int, pn),
-        ENTRY(int, ipos),
-        ENTRY(int, ind),
+        ENTRY(int, pn),    ENTRY(int, ipos),        ENTRY(int, ind),
 #endif
-        ENTRY(int, ind3d),
-        ENTRY(CCTK_REAL, offset),
-        {1, sizeof(s), MPI_UB, "MPI_UB", "MPI_UB"}};
+        ENTRY(int, ind3d), ENTRY(CCTK_REAL, offset)};
 #undef ENTRY
     newtype =
         dist::create_mpi_datatype(sizeof descr / sizeof descr[0], descr,
@@ -213,13 +209,11 @@ int fasterp_src_loc_t::calc_stencil(fasterp_iloc_t const &iloc,
   for (int d = 0; d < dim; ++d) {
     // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
     CCTK_REAL const x = offset[d];
-    // round is not available with PGI compilers
-    // CCTK_REAL const rx = round(x);
-    CCTK_REAL const rx = floor(x + 0.5);
+    CCTK_REAL const rx = rint(x);
     if (abs(x - rx) < eps * (1.0 + abs(x))) {
       // The interpolation point coincides with a grid point; no
       // interpolation is necessary (this is a special case)
-      iorigin[d] += int(rx);
+      iorigin[d] += lrint(rx);
       exact[d] = true;
     } else {
       for (int n = 0; n <= order; ++n) {
@@ -527,13 +521,11 @@ int fasterp_eno2_src_loc_t::calc_stencil(fasterp_iloc_t const &iloc,
     for (int d = 0; d < dim; ++d) {
       // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
       CCTK_REAL const x = offset[d];
-      // round is not available with PGI compilers
-      // CCTK_REAL const rx = round(x);
-      CCTK_REAL const rx = floor(x + 0.5);
+      CCTK_REAL const rx = rint(x);
       if (abs(x - rx) < eps * (1.0 + abs(x))) {
         // The interpolation point coincides with a grid point; no
         // interpolation is necessary (this is a special case)
-        iorigin[d] += int(rx);
+        iorigin[d] += lrint(rx);
         exact[d] = true;
       } else {
         for (int n = 0; n <= order; ++n) {
@@ -583,13 +575,11 @@ int fasterp_eno2_src_loc_t::calc_stencil(fasterp_iloc_t const &iloc,
     for (int d = 0; d < dim; ++d) {
       // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
       CCTK_REAL const x = offset[d];
-      // round is not available with PGI compilers
-      // CCTK_REAL const rx = round(x);
-      CCTK_REAL const rx = floor(x + 0.5);
+      CCTK_REAL const rx = rint(x);
       if (abs(x - rx) < eps * (1.0 + abs(x))) {
         // The interpolation point coincides with a grid point; no
         // interpolation is necessary (this is a special case)
-        iorigin[d] += int(rx);
+        iorigin[d] += lrint(rx);
         exact[d] = true;
       } else {
         for (int n = 0; n <= order; ++n) {
@@ -662,13 +652,11 @@ int fasterp_eno2_src_loc_t::calc_stencil(fasterp_iloc_t const &iloc,
     for (int d = 0; d < dim; ++d) {
       // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
       CCTK_REAL const x = offset[d];
-      // round is not available with PGI compilers
-      // CCTK_REAL const rx = round(x);
-      CCTK_REAL const rx = floor(x + 0.5);
+      CCTK_REAL const rx = rint(x);
       if (abs(x - rx) < eps * (1.0 + abs(x))) {
         // The interpolation point coincides with a grid point; no
         // interpolation is necessary (this is a special case)
-        iorigin[d] += int(rx);
+        iorigin[d] += lrint(rx);
         exact[d] = true;
       } else {
         for (int n = 0; n <= order; ++n) {
@@ -1072,6 +1060,8 @@ void fasterp_setup_gen_t<FASTERP>::setup(cGH const *restrict const cctkGH,
   } else if (Carpet::is_global_mode()) {
     min_rl = 0;
     max_rl = Carpet::reflevels;
+  } else {
+    assert(0);
   }
 #pragma omp parallel for
   for (int n = 0; n < npoints; ++n) {
@@ -1110,11 +1100,10 @@ void fasterp_setup_gen_t<FASTERP>::setup(cGH const *restrict const cctkGH,
     }
     assert(rl >= 0 and c >= 0);
 
-    ibbox const &ext = Carpet::vdd.AT(m)
-                           ->light_boxes.AT(Carpet::mglevel)
-                           .AT(rl)
-                           .AT(c)
-                           .exterior;
+    const auto &cmp =
+        Carpet::vdd.AT(m)->light_boxes.AT(Carpet::mglevel).AT(rl).AT(c);
+    ibbox const &ext = cmp.exterior;
+    ibbox const &own = cmp.owned;
     rvect dpos = rpos - rvect(ipos);
 
     // Convert from Carpet indexing to grid point indexing
@@ -1129,7 +1118,7 @@ void fasterp_setup_gen_t<FASTERP>::setup(cGH const *restrict const cctkGH,
     assert(all(fabs(dpos) <= rvect(0.5)));
 
     ivect const ind = ipos - ext.lower() / ext.stride();
-    ivect const ash = pad_shape(ext);
+    ivect const ash = pad_shape(ext, own).padded_shape;
     int const ind3d = index(ash, ind);
 #if 0
       ENTER_SINGLEMAP_MODE (cctkGH, m, CCTK_GF) {
@@ -1371,12 +1360,11 @@ void fasterp_setup_gen_t<FASTERP>::setup(cGH const *restrict const cctkGH,
       int const rl = themrc.rl;
       int const c = themrc.c;
       assert(Carpet::vhh.AT(m)->is_local(rl, c));
-      ibbox const &ext = Carpet::vdd.AT(m)
-                             ->light_boxes.AT(Carpet::mglevel)
-                             .AT(rl)
-                             .AT(c)
-                             .exterior;
-      send_comp.ash = pad_shape(ext);
+      const auto &cmp =
+          Carpet::vdd.AT(m)->light_boxes.AT(Carpet::mglevel).AT(rl).AT(c);
+      ibbox const &ext = cmp.exterior;
+      ibbox const &own = cmp.owned;
+      send_comp.ash = pad_shape(ext, own).padded_shape;
 #ifdef CARPETINTERP2_CHECK
       send_comp.lsh = ext.shape() / ext.stride();
 #endif
@@ -1546,7 +1534,8 @@ void fasterp_setup_gen_t<FASTERP>::interpolate(
     int const gi = CCTK_GroupIndexFromVarI(vi);
     assert(gi >= 0);
     cGroup group;
-    check(not CCTK_GroupData(gi, &group));
+    int const ierr = CCTK_GroupData(gi, &group);
+    assert(not ierr);
     assert(group.grouptype == CCTK_GF);
     assert(group.vartype == CCTK_VARIABLE_REAL);
     assert(group.dim == dim);
@@ -1639,7 +1628,7 @@ void fasterp_setup_gen_t<FASTERP>::interpolate(
         assert(varptrs.AT(v));
       }
 
-      // TODO: This loops seems unbalanced.  Maybe the different
+      // TODO: This loop seems unbalanced.  Maybe the different
       // interpolations have different costs.
       interpolate_timer.start();
 #pragma omp parallel for schedule(dynamic, 1000)

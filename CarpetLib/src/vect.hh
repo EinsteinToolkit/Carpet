@@ -8,11 +8,13 @@
 #include <cmath>
 #include <functional>
 #include <iostream>
+#include <type_traits>
 
 #include "defs.hh"
 #include "dist.hh"
 #include "vect_helpers.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 #ifdef CARPET_DEBUG
@@ -69,7 +71,7 @@ public:
 
   /** Constructor from a single element.  This constructor might be
       confusing, but it is very convenient.  */
-  vect(const T &x) {
+  explicit vect(const T &x) {
     for (int d = 0; d < D; ++d)
       elt[d] = x;
   }
@@ -170,7 +172,7 @@ public:
   /** Create a vector with one element set to 1 and all other elements
       set to zero.  */
   static vect dir(const int d) {
-    vect r = (T)0;
+    vect r(T(0));
     r[d] = 1;
     return r;
   }
@@ -360,34 +362,38 @@ inline vect<T, D> ipow(const vect<T, D> &a, const vect<int, D> &b) {
   return r;
 }
 
-DECLARE_FUNCTION_1(abs)
-DECLARE_FUNCTION_1(ceil)
-DECLARE_FUNCTION_1(fabs)
-DECLARE_FUNCTION_1(floor)
-DECLARE_FUNCTION_1(rint)
-DECLARE_FUNCTION_1(round)
-DECLARE_FUNCTION_1(sqrt)
-DECLARE_FUNCTION_1(trunc)
+DECLARE_FUNCTION_1(abs, std::abs)
+DECLARE_FUNCTION_1(ceil, std::ceil)
+DECLARE_FUNCTION_1(fabs, std::fabs)
+DECLARE_FUNCTION_1(floor, std::floor)
+DECLARE_FUNCTION_1(rint, std::rint)
+DECLARE_FUNCTION_1(round, std::round)
+DECLARE_FUNCTION_1(sqrt, std::sqrt)
+DECLARE_FUNCTION_1(trunc, std::trunc)
 
-DECLARE_FUNCTION_1_RET(lrint, int)
+DECLARE_FUNCTION_1_RET(lrint, std::lrint, int)
+}
 
 namespace std {
 namespace Cactus {
-DECLARE_FUNCTION_1_RET(good_fpclassify, int)
-DECLARE_FUNCTION_1_RET(good_isfinite, int)
-DECLARE_FUNCTION_1_RET(good_isinf, int)
-DECLARE_FUNCTION_1_RET(good_isnan, int)
-DECLARE_FUNCTION_1_RET(good_isnormal, int)
+using namespace CarpetLib;
+
+DECLARE_FUNCTION_1_RET(good_fpclassify, good_fpclassify, int)
+DECLARE_FUNCTION_1_RET(good_isfinite, good_isfinite, int)
+DECLARE_FUNCTION_1_RET(good_isinf, good_isinf, int)
+DECLARE_FUNCTION_1_RET(good_isnan, good_isnan, int)
+DECLARE_FUNCTION_1_RET(good_isnormal, good_isnormal, int)
 }
 }
 
+namespace CarpetLib {
 DECLARE_OPERATOR_1_RET(operator!, !, bool)
 
-DECLARE_FUNCTION_2(max)
-DECLARE_FUNCTION_2(min)
-DECLARE_FUNCTION_2(pow)
-DECLARE_FUNCTION_2(idiv)
-DECLARE_FUNCTION_2(imod)
+DECLARE_FUNCTION_2(max, std::max)
+DECLARE_FUNCTION_2(min, std::min)
+DECLARE_FUNCTION_2(pow, std::pow)
+DECLARE_FUNCTION_2(idiv, idiv)
+DECLARE_FUNCTION_2(imod, imod)
 
 DECLARE_OPERATOR_2(operator+, +)
 DECLARE_OPERATOR_2(operator-, -)
@@ -505,7 +511,7 @@ inline T index(const vect<T, D> &ash, const vect<T, D> &ind) {
     ASSERT_VECT(ash[d] >= 0);
     // Be generous, and allow relative indices which may be negtive
     // ASSERT_VECT (ind[d]>=0 and ind[d]<ash[d]);
-    ASSERT_VECT(abs(ind[d]) <= ash[d]);
+    ASSERT_VECT(std::abs(ind[d]) <= ash[d]);
     r = r * ash[d] + ind[d];
   }
   return r;
@@ -621,10 +627,13 @@ inline ostream &operator<<(ostream &os, const vect<T, D> &a) {
   a.output(os);
   return os;
 }
+}
 
 // Comparison
 
 namespace std {
+using namespace CarpetLib;
+
 // ==
 template <typename T, int D>
 struct equal_to<vect<T, D> > : binary_function<vect<T, D>, vect<T, D>, bool> {
@@ -688,13 +697,16 @@ struct not_equal_to<vect<T, D> >
 };
 }
 
+namespace CarpetLib {
+using namespace std;
+
 // MPI
 
+namespace dist {
 template <typename T, int D>
 inline MPI_Datatype mpi_datatype(vect<T, D> const &a) {
   return a.mpi_datatype();
 }
-namespace dist {
 template <> inline MPI_Datatype mpi_datatype<ivect>() {
   ivect dummy;
   return mpi_datatype(dummy);
@@ -788,7 +800,7 @@ inline vect<CCTK_REAL, dim> idiv(const vect<CCTK_REAL, dim> &a,
                                  const vect<CCTK_REAL, dim> &b) {
   vect<CCTK_REAL, dim> r;
   for (int d = 0; d < dim; ++d) {
-    r[d] = floor(a[d] / b[d]);
+    r[d] = std::floor(a[d] / b[d]);
     if (r[d] > b[d] * (CCTK_REAL)(1.0 - 1.0e-10))
       r[d] = (CCTK_REAL)0;
     if (r[d] < b[d] * (CCTK_REAL)(1.0e-10))
@@ -803,13 +815,14 @@ inline vect<CCTK_REAL, dim> imod(const vect<CCTK_REAL, dim> &a,
   vect<CCTK_REAL, dim> r;
   for (int d = 0; d < dim; ++d) {
     r[d] = a[d] / b[d];
-    r[d] = b[d] * (r[d] - floor(r[d]));
+    r[d] = b[d] * (r[d] - std::floor(r[d]));
     if (r[d] > b[d] * (CCTK_REAL)(1.0 - 1.0e-10))
       r[d] = (CCTK_REAL)0;
     if (r[d] < b[d] * (CCTK_REAL)(1.0e-10))
       r[d] = (CCTK_REAL)0;
   }
   return r;
+}
 }
 
 #endif // VECT_HH

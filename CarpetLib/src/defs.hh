@@ -17,6 +17,9 @@
 
 #include "typeprops.hh"
 
+namespace CarpetLib {
+using namespace std;
+
 // Disable bboxset2 if C++11 is not supported
 #if !defined(HAVE_CCTK_CXX_AUTO_SPECIFIER) ||                                  \
     !defined(HAVE_CCTK_CXX_LAMBDA) || !defined(HAVE_CCTK_CXX_RANGE_BASED_FOR)
@@ -32,8 +35,6 @@
 #define CARPET_USE_BBOXSET2
 #endif
 
-using namespace std;
-
 // TODO: autoconf these
 
 #ifdef CARPET_USE_BOOST_FOREACH
@@ -48,8 +49,8 @@ using namespace std;
 #endif
 
 #ifdef CARPET_USE_BOOST_SHARED_PTR
-#include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/shared_ptr.hpp>
 #define shared_ptr boost::shared_ptr
 #define make_shared boost::make_shared
 #endif
@@ -75,13 +76,6 @@ typedef long long int size_type;
 
 // Begin a new line without flushing the output buffer
 char const *const eol = "\n";
-
-// Check a return value
-#define check(_expr)                                                           \
-  do {                                                                         \
-    bool const _val = (_expr);                                                 \
-    assert(_val);                                                              \
-  } while (0)
 
 // Use this macro AT instead of vector's operator[] or at().
 // Depending on the macro CARPET_OPTIMISE, this macro AT either checks
@@ -149,6 +143,10 @@ template <typename T> inline T imod(T const x, T const y) {
   // return x - idiv(x,y)*y;
   return (x ^ y) >= T(0) ? x % y : (x - y + 1) % y + y - 1;
 }
+// Align towards minus infinity
+template <typename T> inline T ialign(T const x, T const y) {
+  return idiv(x, y) * y;
+}
 
 template <typename T> inline T div_down(T const x, T const y) {
   assert(x >= 0);
@@ -162,21 +160,20 @@ template <typename T> inline T div_up(T const x, T const y) {
   return (x + y - 1) / y;
 }
 
-template <typename T> inline T align_down(T const x, T const align) {
+template <typename T>
+inline T align_down(T const x, T const align, T const offset = T(0)) {
   assert(x >= 0);
   assert(align > 0);
-  return div_down(x, align) * align;
+  assert(offset >= 0 && offset < align);
+  return div_down(x + align - offset, align) * align - align + offset;
 }
 
-template <typename T> inline T align_up(T const x, T const align) {
+template <typename T>
+inline T align_up(T const x, T const align, T const offset = T(0)) {
   assert(x >= 0);
   assert(align > 0);
-  return div_up(x, align) * align;
-}
-
-// Align towards minus infinity
-template <typename T> inline T ialign(T const x, T const y) {
-  return idiv(x, y) * y;
+  assert(offset >= 0 && offset < align);
+  return div_up(x + align - offset, align) * align - align + offset;
 }
 
 // Useful helpers
@@ -246,6 +243,10 @@ inline const char *typestring(const CCTK_COMPLEX32 &) {
   return "CCTK_COMPLEX32";
 }
 #endif
+}
+
+namespace std {
+namespace Cactus {
 
 // Provide implementations for some functions for complex numbers
 
@@ -267,9 +268,6 @@ inline const char *typestring(const CCTK_COMPLEX32 &) {
     return isnormal(x.real()) and isnormal(x.imag());                          \
   }
 
-namespace std {
-namespace Cactus {
-
 #ifdef HAVE_CCTK_COMPLEX8
 IMPLEMENT_FUNCTIONS(CCTK_COMPLEX8)
 #endif
@@ -279,10 +277,12 @@ IMPLEMENT_FUNCTIONS(CCTK_COMPLEX16)
 #ifdef HAVE_CCTK_COMPLEX32
 IMPLEMENT_FUNCTIONS(CCTK_COMPLEX32)
 #endif
+
+#undef IMPLEMENT_FUNCTIONS
 }
 }
 
-#undef IMPLEMENT_FUNCTIONS
+namespace CarpetLib {
 
 // Container memory usage
 inline size_t memoryof(char const &e) { return sizeof e; }
@@ -376,6 +376,7 @@ template <class T> inline ostream &operator<<(ostream &os, const stack<T> &s) {
 
 template <class T> inline ostream &operator<<(ostream &os, const vector<T> &v) {
   return output(os, v);
+}
 }
 
 #endif // DEFS_HH

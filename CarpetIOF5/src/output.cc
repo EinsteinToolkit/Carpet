@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <hdf5.h>
+
 #include <F5/F5F.h>
 #include <F5/F5R.h>
 #include <F5/F5X.h>
@@ -64,8 +65,8 @@ class output_iterator_t {
 
       if (gindex == -1) {
         // grid function
-        dim = ::dim;
-        for (int d = 0; d < (::dim); ++d) {
+        dim = CarpetLib::dim;
+        for (int d = 0; d < CarpetLib::dim; ++d) {
           gsh[d] = cctk_gsh[d];
           origin[d] = CCTK_ORIGIN_SPACE(d);
           delta[d] = CCTK_DELTA_SPACE(d);
@@ -82,13 +83,13 @@ class output_iterator_t {
           origin[d] = 0.0;
           delta[d] = 1.0;
         }
-        for (int d = dyndata.dim; d < (::dim); ++d) {
+        for (int d = dyndata.dim; d < CarpetLib::dim; ++d) {
           gsh[d] = 1;
           origin[d] = 0.0;
           delta[d] = 1.0;
         }
       }
-      for (int d = 0; d < (::dim); ++d) {
+      for (int d = 0; d < CarpetLib::dim; ++d) {
         lower[d] = origin[d];
         upper[d] = lower[d] + (gsh[d] - 1) * delta[d];
       }
@@ -109,7 +110,7 @@ class output_iterator_t {
 
       if (gindex == -1) {
         // grid function
-        for (int d = 0; d < (::dim); ++d) {
+        for (int d = 0; d < CarpetLib::dim; ++d) {
           ash[d] = cctk_ash[d];
           lbnd[d] = cctk_lbnd[d];
           lsh[d] = cctk_lsh[d];
@@ -128,7 +129,7 @@ class output_iterator_t {
           lghosts[d] = dyndata.bbox[2 * d] ? 0 : dyndata.nghostzones[d];
           ughosts[d] = dyndata.bbox[2 * d + 1] ? 0 : dyndata.nghostzones[d];
         }
-        for (int d = dyndata.dim; d < (::dim); ++d) {
+        for (int d = dyndata.dim; d < CarpetLib::dim; ++d) {
           ash[d] = 1;
           lbnd[d] = 0;
           lsh[d] = 1;
@@ -136,7 +137,7 @@ class output_iterator_t {
           ughosts[d] = 0;
         }
       }
-      for (int d = 0; d < (::dim); ++d) {
+      for (int d = 0; d < CarpetLib::dim; ++d) {
         imin[d] = 0;
         imax[d] = lsh[d];
         if (slice_ipos[d] != -1) {
@@ -285,7 +286,7 @@ private:
               // 0D output
               if (group_index < 0 and my_out0D_every > 0 and
                   cctk_iteration % my_out0D_every == 0) {
-                slice_ipos = 0;
+                slice_ipos = rvect(0);
                 output_reflevel(file);
               }
 
@@ -336,7 +337,7 @@ private:
               // 3D output
               if (my_out3D_every > 0 and cctk_iteration % my_out3D_every == 0) {
                 // xyz
-                slice_ipos = -1;
+                slice_ipos = rvect(-1);
                 output_reflevel(file);
               }
             }
@@ -854,7 +855,7 @@ private:
         csd <<= ci.dim;
         assert(ci.dim > 0);
       }
-      ivect chunkshape = cs;
+      ivect chunkshape(cs);
       chunkshape[ci.dim - 1] = cs / (csd / chunksize);
       chunkshape = max(chunkshape, 1);
       chunkshape = min(chunkshape, ci.ilen);
@@ -915,10 +916,10 @@ private:
       if (data[d]) {
         switch (vartype) {
         case CCTK_VARIABLE_INT:
-          delete[](CCTK_INT const *)data[d];
+          delete[](CCTK_INT const *) data[d];
           break;
         case CCTK_VARIABLE_REAL:
-          delete[](CCTK_REAL const *)data[d];
+          delete[](CCTK_REAL const *) data[d];
           break;
         default:
           assert(0);

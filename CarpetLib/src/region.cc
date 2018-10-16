@@ -8,6 +8,7 @@
 #include "mpi_string.hh"
 #include "region.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 region_t::region_t() : processor(-1), processors(NULL) { assert(invariant()); }
@@ -85,7 +86,7 @@ region_t region_t::split(CCTK_REAL const ratio_new_over_old) {
   int const idir = maxloc1(extent.shape());
   int const np = extent.shape()[idir];
   // Keep the lower part, and split off the upper part
-  int const new_np = floor(np * ratio_new_over_old + 0.5);
+  int const new_np = std::lrint(np * ratio_new_over_old);
   int const keep_np = np - new_np;
   // Calculate new region extents
   ivect const lo = extent.lower();
@@ -101,8 +102,8 @@ region_t region_t::split(CCTK_REAL const ratio_new_over_old) {
   newreg.extent = ibbox(locut, up, str);
 
   // Mark cutting boundary as not outer boundary
-  outer_boundaries[idir][1] = false;
-  newreg.outer_boundaries[idir][0] = false;
+  outer_boundaries[1][idir] = false;
+  newreg.outer_boundaries[0][idir] = false;
 
   return newreg;
 }
@@ -351,6 +352,7 @@ ostream &operator<<(ostream &os, region_t const &reg) {
   return os;
 }
 
+namespace dist {
 // Create an MPI datatype for a pseudoretion
 MPI_Datatype mpi_datatype(pseudoregion_t const &) {
   static bool initialised = false;
@@ -359,16 +361,14 @@ MPI_Datatype mpi_datatype(pseudoregion_t const &) {
     static pseudoregion_t s;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type),         /* count elements */                 \
-        (char *) & s.name - (char *) & s, /* offsetof doesn't work (why?) */   \
-        dist::mpi_datatype<type>(),       /* find MPI datatype */              \
-        STRINGIFY(name),                  /* field name */                     \
-        STRINGIFY(type),                  /* type name */                      \
+      sizeof s.name / sizeof(type), /* count elements */                       \
+      (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */         \
+      dist::mpi_datatype<type>(),   /* find MPI datatype */                    \
+      STRINGIFY(name),              /* field name */                           \
+      STRINGIFY(type),              /* type name */                            \
   }
-    dist::mpi_struct_descr_t const descr[] = {
-        ENTRY(int, extent),
-        ENTRY(int, component),
-        {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}};
+    dist::mpi_struct_descr_t const descr[] = {ENTRY(int, extent),
+                                              ENTRY(int, component)};
 #undef ENTRY
     newtype = dist::create_mpi_datatype(sizeof descr / sizeof descr[0], descr,
                                         "pseudoregion_t", sizeof s);
@@ -384,22 +384,21 @@ MPI_Datatype mpi_datatype(sendrecv_pseudoregion_t const &) {
     static sendrecv_pseudoregion_t s;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type),         /* count elements */                 \
-        (char *) & s.name - (char *) & s, /* offsetof doesn't work (why?) */   \
-        dist::mpi_datatype<type>(),       /* find MPI datatype */              \
-        STRINGIFY(name),                  /* field name */                     \
-        STRINGIFY(type),                  /* type name */                      \
+      sizeof s.name / sizeof(type), /* count elements */                       \
+      (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */         \
+      dist::mpi_datatype<type>(),   /* find MPI datatype */                    \
+      STRINGIFY(name),              /* field name */                           \
+      STRINGIFY(type),              /* type name */                            \
   }
-    dist::mpi_struct_descr_t const descr[] = {
-        ENTRY(pseudoregion_t, send),
-        ENTRY(pseudoregion_t, recv),
-        {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}};
+    dist::mpi_struct_descr_t const descr[] = {ENTRY(pseudoregion_t, send),
+                                              ENTRY(pseudoregion_t, recv)};
 #undef ENTRY
     newtype = dist::create_mpi_datatype(sizeof descr / sizeof descr[0], descr,
                                         "sendrecv_pseudoregion_t", sizeof s);
     initialised = true;
   }
   return newtype;
+}
 }
 
 // Compare two pseudoregions for equality.
@@ -446,8 +445,6 @@ ostream &operator<<(ostream &os, pseudoregion_t const &p) {
 ostream &operator<<(ostream &os, sendrecv_pseudoregion_t const &srp) {
   return os << "(send:" << srp.send << ",recv:" << srp.recv << ")";
 }
-
-namespace CarpetLib {
 
 template vector<sendrecv_pseudoregion_t>
 alltoallv1(MPI_Comm comm, vector<vector<sendrecv_pseudoregion_t> > const &data);

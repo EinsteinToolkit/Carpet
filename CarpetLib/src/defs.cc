@@ -9,8 +9,8 @@
 #include <memory>
 #include <set>
 #include <stack>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "bbox.hh"
 #include "defs.hh"
@@ -18,12 +18,13 @@
 #include "region.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 template <typename T>
 inline T ipow_helper(T x, unsigned int y) CCTK_ATTRIBUTE_CONST;
 template <typename T> inline T ipow_helper(T x, unsigned int y) {
-  T z = y & 1 ? x : 1;
+  T z = y & 1 ? x : T(1);
   while (y >>= 1) {
     x *= x;
     if (y & 1)
@@ -307,6 +308,7 @@ template <class T> ostream &output(ostream &os, const vector<T> &v) {
   os << "]";
   return os;
 }
+}
 
 #include "bbox.hh"
 #include "bboxset.hh"
@@ -317,6 +319,9 @@ template <class T> ostream &output(ostream &os, const vector<T> &v) {
 #include "region.hh"
 #include "th.hh"
 #include "vect.hh"
+
+namespace CarpetLib {
+using namespace std;
 
 template int ipow(int x, int y);
 template CCTK_REAL ipow(CCTK_REAL x, int y);
@@ -437,6 +442,7 @@ template ostream &output(ostream &os, const set<bbox<int, 3> > &s);
 template ostream &output(ostream &os, const vector<bool> &v);
 template ostream &output(ostream &os, const vector<int> &v);
 template ostream &output(ostream &os, const vector<CCTK_REAL> &v);
+template ostream &output(ostream &os, const vector<bbox<int, 0> > &v);
 template ostream &output(ostream &os, const vector<bbox<int, 1> > &v);
 template ostream &output(ostream &os, const vector<bbox<int, 2> > &v);
 template ostream &output(ostream &os, const vector<bbox<int, 3> > &v);
@@ -502,3 +508,4 @@ template ostream &output(ostream &os,
                          const vector<vector<vector<dh::local_dboxes> > > &b);
 template ostream &output(ostream &os,
                          const vector<vector<vector<region_t> > > &v);
+}

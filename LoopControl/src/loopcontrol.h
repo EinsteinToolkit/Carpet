@@ -1,21 +1,22 @@
 #ifndef LOOPCONTROL_H
 #define LOOPCONTROL_H
 
-/* This file uses the namespace LC_* for macros and lc_* for C
-   identifiers. */
+/* This file uses the namespace LC_* for macros and lc_* for C identifiers. */
 
 #define LC_DIM 3
 
 #ifdef CCODE
 
-#include <assert.h>
-#include <stddef.h>
-#include <stdlib.h>
-
 #include <cctk.h>
 
-/* #define lc_assert(x) ((void)0) */
-#define lc_assert(x) assert(x)
+#include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h> // TODO
+#include <stdlib.h>
+
+#define lc_assert(x) ((void)0)
+/* #define lc_assert(x) assert(x) */
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,9 +38,8 @@ struct lc_descr_t;
 typedef struct { ptrdiff_t v[LC_DIM]; } lc_vec_t;
 
 typedef struct {
-  /* Traverse pos from min (inclusive) to max (exclusive) with a
-     stride of step. Equivalently, traverse idx from 0 (inclusive)
-     to count (exclusive). */
+  /* Traverse pos from min (inclusive) to max (exclusive) with a stride of step.
+   * Equivalently, traverse idx from 0 (inclusive) to count (exclusive). */
   lc_vec_t min, max, step, pos;
   lc_vec_t count, idx;
 } lc_space_t;
@@ -76,7 +76,7 @@ void lc_control_init(lc_control_t *restrict control, struct lc_descr_t *descr,
                      ptrdiff_t imin, ptrdiff_t jmin, ptrdiff_t kmin,
                      ptrdiff_t imax, ptrdiff_t jmax, ptrdiff_t kmax,
                      ptrdiff_t iash, ptrdiff_t jash, ptrdiff_t kash,
-                     ptrdiff_t istr);
+                     ptrdiff_t ialn, ptrdiff_t ioff, ptrdiff_t istr);
 void lc_control_finish(lc_control_t *restrict control,
                        struct lc_descr_t *descr);
 
@@ -85,8 +85,8 @@ int lc_thread_done(const lc_control_t *restrict control);
 void lc_thread_step(lc_control_t *restrict control);
 
 void lc_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
-                     ptrdiff_t imax, ptrdiff_t istr, ptrdiff_t i, ptrdiff_t j,
-                     ptrdiff_t k);
+                     ptrdiff_t imax, ptrdiff_t ialn, ptrdiff_t ioff,
+                     ptrdiff_t istr, ptrdiff_t i, ptrdiff_t j, ptrdiff_t k);
 
 #define LC_COARSE_SETUP(D)                                                     \
   lc_control.coarse_loop.min.v[D] = lc_control.coarse_thread.pos.v[D];         \
@@ -119,70 +119,98 @@ void lc_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
             : lc_dir##D < 0 ? I + 1 : lc_control.overall.max.v[D] - I;
 
 #if VECTORISE && VECTORISE_ALIGNED_ARRAYS
-/* Arrays are aligned: fmin0 is the aligned loop boundary; keep it,
-   and set up imin to be the intended loop boundary */
+/* Arrays are aligned: fmin0 is the aligned loop boundary; update it at the
+ * lower boundary to skip unnecessary points, and set up imin to be the intended
+ * loop boundary */
 #define LC_ALIGN(i, j, k, vec_imin, vec_imax)                                  \
+  lc_assert(lc_fmin0 >= -lc_aln0 + 1);                                         \
+  if (lc_fmin0 <= lc_control.overall.min.v[0]) {                               \
+    lc_fmin0 += (lc_control.overall.min.v[0] - lc_fmin0) / lc_str0 * lc_str0;  \
+    lc_assert(lc_fmin0 <= lc_control.overall.min.v[0]);                        \
+  }                                                                            \
+  lc_assert(lc_fmin0 + lc_str0 - 1 >= lc_control.overall.min.v[0]);            \
   const ptrdiff_t vec_imin = lc_max(lc_control.overall.min.v[0], lc_fmin0);    \
   const ptrdiff_t vec_imax = lc_fmax0;                                         \
-  lc_assert(lc_fmin0 >= 0);                                                    \
-  lc_assert(lc_fmin0 < lc_fmax0);                                              \
-  lc_assert(lc_fmax0 <= lc_control.overall.max.v[0]);                          \
-  const ptrdiff_t lc_iminpos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);         \
-  const ptrdiff_t lc_iminoffset CCTK_ATTRIBUTE_UNUSED = lc_iminpos % lc_str0;  \
-  const int lc_fmax0_is_outer = lc_fmax0 == lc_control.overall.max.v[0];       \
-  const ptrdiff_t lc_imaxpos = lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);         \
-  const ptrdiff_t lc_imaxoffset CCTK_ATTRIBUTE_UNUSED = lc_imaxpos % lc_str0;  \
-  lc_assert(lc_iminoffset == 0);                                               \
-  if (!lc_fmax0_is_outer)                                                      \
-    lc_assert(lc_imaxoffset == 0);                                             \
-  lc_assert(vec_imin >= lc_control.overall.min.v[0]);                          \
-  lc_assert(vec_imax <= lc_control.overall.max.v[0]);                          \
-  lc_assert(vec_imin >= lc_fmin0);                                             \
-  lc_assert(vec_imax <= lc_fmax0);                                             \
-  lc_assert(vec_imin < vec_imax);
+  {                                                                            \
+    lc_assert(lc_fmin0 >= -lc_str0 + 1);                                       \
+    lc_assert(lc_fmin0 < lc_fmax0);                                            \
+    lc_assert(lc_fmax0 <= lc_control.overall.max.v[0]);                        \
+    const bool lc_fmin0_is_outer = lc_fmin0 <= lc_control.overall.min.v[0];    \
+    const bool lc_fmax0_is_outer = lc_fmax0 == lc_control.overall.max.v[0];    \
+    if (lc_fmin0_is_outer)                                                     \
+      lc_assert((lc_fmin0 + lc_off0) % lc_str0 == 0);                          \
+    else                                                                       \
+      lc_assert((lc_fmin0 + lc_off0) % lc_aln0 == 0);                          \
+    if (!lc_fmax0_is_outer) {                                                  \
+      lc_assert((lc_fmax0 + lc_off0) % lc_aln0 == 0);                          \
+      lc_assert((lc_fmax0 + lc_off0) % lc_str0 == 0);                          \
+    }                                                                          \
+    const ptrdiff_t lc_iminpos CCTK_ATTRIBUTE_UNUSED =                         \
+        lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);                                \
+    const ptrdiff_t lc_imaxpos CCTK_ATTRIBUTE_UNUSED =                         \
+        lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);                                \
+    if (!lc_fmin0_is_outer)                                                    \
+      lc_assert((lc_iminpos + lc_off0) % lc_aln0 == 0);                        \
+    lc_assert((lc_iminpos + lc_off0) % lc_str0 == 0);                          \
+    if (!lc_fmax0_is_outer) {                                                  \
+      lc_assert((lc_imaxpos + lc_off0) % lc_aln0 == 0);                        \
+      lc_assert((lc_imaxpos + lc_off0) % lc_str0 == 0);                        \
+    }                                                                          \
+    lc_assert(vec_imin >= lc_control.overall.min.v[0]);                        \
+    lc_assert(vec_imax <= lc_control.overall.max.v[0]);                        \
+    lc_assert(vec_imin >= lc_fmin0);                                           \
+    lc_assert(vec_imax <= lc_fmax0);                                           \
+    lc_assert(vec_imin < vec_imax);                                            \
+  }
 #else
-/* Arrays are not aligned: fine.min[0] and fine.max[0] are the
-   intended loop boundaries; override fmin0 and fmax0 to be aligned,
-   and set imin and imax; this may move the fine loop boundaries
-   except at outer boundaries to avoid partial stores */
+/* Arrays are not aligned: fine.min[0] and fine.max[0] are the intended loop
+ * boundaries; override fmin0 and fmax0 to be aligned, and set imin and imax;
+ * this may move the fine loop boundaries except at outer boundaries to avoid
+ * partial stores */
 #define LC_ALIGN(i, j, k, vec_imin, vec_imax)                                  \
   lc_fmin0 = lc_control.fine_loop.min.v[0];                                    \
   lc_fmax0 = lc_control.fine_loop.max.v[0];                                    \
   ptrdiff_t vec_imin = lc_fmin0;                                               \
   ptrdiff_t vec_imax = lc_fmax0;                                               \
-  lc_assert(lc_fmin0 >= 0);                                                    \
-  lc_assert(lc_fmin0 < lc_fmax0);                                              \
-  lc_assert(lc_fmin0 >= lc_control.overall.min.v[0]);                          \
-  lc_assert(lc_fmax0 <= lc_control.overall.max.v[0]);                          \
-  const int lc_fmin0_is_outer = lc_fmin0 == lc_control.overall.min.v[0];       \
-  const int lc_fmax0_is_outer = lc_fmax0 == lc_control.overall.max.v[0];       \
-  const ptrdiff_t lc_iminpos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);         \
-  const ptrdiff_t lc_iminoffset = lc_iminpos % lc_str0;                        \
-  const ptrdiff_t lc_imaxpos = lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);         \
-  const ptrdiff_t lc_imaxoffset = lc_imaxpos % lc_str0;                        \
-  lc_fmin0 -= lc_iminoffset;                                                   \
-  if (!lc_fmax0_is_outer)                                                      \
-    lc_fmax0 -= lc_imaxoffset;                                                 \
-  lc_assert(lc_fmin0 < lc_fmax0);                                              \
-  if (!lc_fmin0_is_outer)                                                      \
-    vec_imin = lc_fmin0;                                                       \
-  if (!lc_fmax0_is_outer)                                                      \
-    vec_imax = lc_fmax0;                                                       \
-  lc_assert(vec_imin >= lc_control.overall.min.v[0]);                          \
-  lc_assert(vec_imax <= lc_control.overall.max.v[0]);                          \
-  lc_assert(vec_imin >= lc_fmin0);                                             \
-  lc_assert(vec_imax <= lc_fmax0);                                             \
-  lc_assert(vec_imin < vec_imax);
+  {                                                                            \
+    lc_assert(lc_fmin0 >= 0);                                                  \
+    lc_assert(lc_fmin0 < lc_fmax0);                                            \
+    lc_assert(lc_fmin0 >= lc_control.overall.min.v[0]);                        \
+    lc_assert(lc_fmax0 <= lc_control.overall.max.v[0]);                        \
+    const bool lc_fmin0_is_outer = lc_fmin0 == lc_control.overall.min.v[0];    \
+    const bool lc_fmax0_is_outer = lc_fmax0 == lc_control.overall.max.v[0];    \
+    const ptrdiff_t lc_iminpos = lc_fmin0 + lc_ash0 * (j + lc_ash1 * k);       \
+    const ptrdiff_t lc_iminoffset =                                            \
+        (lc_iminpos + lc_str0 - lc_off0) % lc_str0;                            \
+    const ptrdiff_t lc_imaxpos = lc_fmax0 + lc_ash0 * (j + lc_ash1 * k);       \
+    const ptrdiff_t lc_imaxoffset =                                            \
+        (lc_imaxpos + lc_str0 - lc_off0) % lc_str0;                            \
+    lc_fmin0 -= lc_iminoffset;                                                 \
+    if (!lc_fmax0_is_outer)                                                    \
+      lc_fmax0 -= lc_imaxoffset;                                               \
+    lc_assert(lc_fmin0 < lc_fmax0);                                            \
+    if (!lc_fmin0_is_outer)                                                    \
+      vec_imin = lc_fmin0;                                                     \
+    if (!lc_fmax0_is_outer)                                                    \
+      vec_imax = lc_fmax0;                                                     \
+    lc_assert(vec_imin >= lc_control.overall.min.v[0]);                        \
+    lc_assert(vec_imax <= lc_control.overall.max.v[0]);                        \
+    lc_assert(vec_imin >= lc_fmin0);                                           \
+    lc_assert(vec_imax <= lc_fmax0);                                           \
+    lc_assert(vec_imin < vec_imax);                                            \
+  }
 #endif
 
 #define LC_SELFTEST(i, j, k, vec_imin, vec_imax)                               \
   if (CCTK_BUILTIN_EXPECT(lc_control.selftest_array != NULL, 0)) {             \
-    lc_selftest_set(&lc_control, vec_imin, vec_imax, lc_str0, i, j, k);        \
+    lc_selftest_set(&lc_control, vec_imin, vec_imax, lc_aln0, lc_off0,         \
+                    lc_str0, i, j, k);                                         \
   }
 
-#define LC_LOOP3STR_NORMAL(name, i, j, k, ni, nj, nk, idir_, jdir_, kdir_,     \
-                           imin_, jmin_, kmin_, imax_, jmax_, kmax_, iash_,    \
-                           jash_, kash_, vec_imin, vec_imax, istr_)            \
+#define LC_LOOP3STROFF_NORMAL(name, i, j, k, ni, nj, nk, idir_, jdir_, kdir_,  \
+                              imin_, jmin_, kmin_, imax_, jmax_, kmax_, iash_, \
+                              jash_, kash_, ialn_, ioff_, vec_imin, vec_imax,  \
+                              istr_)                                           \
   do {                                                                         \
     typedef int lc_loop3vec_##name;                                            \
                                                                                \
@@ -194,6 +222,9 @@ void lc_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
     const ptrdiff_t lc_ash1 CCTK_ATTRIBUTE_UNUSED = (jash_);                   \
     const ptrdiff_t lc_ash2 CCTK_ATTRIBUTE_UNUSED = (kash_);                   \
                                                                                \
+    const ptrdiff_t lc_aln0 CCTK_ATTRIBUTE_UNUSED = (ialn_);                   \
+    const ptrdiff_t lc_off0 CCTK_ATTRIBUTE_UNUSED = (ioff_);                   \
+                                                                               \
     const ptrdiff_t lc_str0 CCTK_ATTRIBUTE_UNUSED = (istr_);                   \
                                                                                \
     static struct lc_descr_t *lc_descr = NULL;                                 \
@@ -201,7 +232,8 @@ void lc_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
                                                                                \
     lc_control_t lc_control;                                                   \
     lc_control_init(&lc_control, lc_descr, (imin_), (jmin_), (kmin_), (imax_), \
-                    (jmax_), (kmax_), lc_ash0, lc_ash1, lc_ash2, lc_str0);     \
+                    (jmax_), (kmax_), lc_ash0, lc_ash1, lc_ash2, lc_aln0,      \
+                    lc_off0, lc_str0);                                         \
                                                                                \
     /* Multithreading */                                                       \
     for (lc_thread_init(&lc_control); !lc_thread_done(&lc_control);            \
@@ -225,7 +257,7 @@ void lc_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
                 LC_FINE_LOOP(i, ni, 0) {                                       \
                   LC_SELFTEST(i, j, k, vec_imin, vec_imax) {
 
-#define LC_ENDLOOP3STR_NORMAL(name)                                            \
+#define LC_ENDLOOP3STROFF_NORMAL(name)                                         \
   } /* body */                                                                 \
   }                                                                            \
   }                                                                            \
@@ -242,14 +274,13 @@ void lc_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
   }                                                                            \
   while (0)
 
-/* Definitions to ensure compatibility with earlier versions of
-   LoopControl */
+/* Definitions to ensure compatibility with earlier versions of LoopControl */
 #define LC_LOOP3VEC(name, i, j, k, imin, jmin, kmin, imax, jmax, kmax, iash,   \
                     jash, kash, vec_imin, vec_imax, istr)                      \
-  LC_LOOP3STR_NORMAL(name, i, j, k, lc_ni, lc_nj, lc_nk, 0, 0, 0, imin, jmin,  \
-                     kmin, imax, jmax, kmax, iash, jash, kash, vec_imin,       \
-                     vec_imax, istr)
-#define LC_ENDLOOP3VEC(name) LC_ENDLOOP3STR_NORMAL(name)
+  LC_LOOP3STROFF_NORMAL(name, i, j, k, lc_ni, lc_nj, lc_nk, 0, 0, 0, imin,     \
+                        jmin, kmin, imax, jmax, kmax, iash, jash, kash, istr,  \
+                        0, vec_imin, vec_imax, istr)
+#define LC_ENDLOOP3VEC(name) LC_ENDLOOP3STROFF_NORMAL(name)
 
 #define LC_LOOP3(name, i, j, k, imin, jmin, kmin, imax, jmax, kmax, iash,      \
                  jash, kash)                                                   \
@@ -258,18 +289,19 @@ void lc_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
 #define LC_ENDLOOP3(name) LC_ENDLOOP3VEC(name)
 
 /* Replace CCTK_LOOP macros */
-#if !defined CCTK_LOOP3STR_NORMAL || !defined CCTK_ENDLOOP3STR_NORMAL
+#if !defined CCTK_LOOP3STROFF_NORMAL || !defined CCTK_ENDLOOP3STROFF_NORMAL
 #error "internal error"
 #endif
-#undef CCTK_LOOP3STR_NORMAL
-#undef CCTK_ENDLOOP3STR_NORMAL
-#define CCTK_LOOP3STR_NORMAL(name, i, j, k, ni, nj, nk, idir, jdir, kdir,      \
-                             imin, jmin, kmin, imax, jmax, kmax, iash, jash,   \
-                             kash, vec_imin, vec_imax, istr)                   \
-  LC_LOOP3STR_NORMAL(name, i, j, k, ni, nj, nk, idir, jdir, kdir, imin, jmin,  \
-                     kmin, imax, jmax, kmax, iash, jash, kash, vec_imin,       \
-                     vec_imax, istr)
-#define CCTK_ENDLOOP3STR_NORMAL(name) LC_ENDLOOP3STR_NORMAL(name)
+#undef CCTK_LOOP3STROFF_NORMAL
+#undef CCTK_ENDLOOP3STROFF_NORMAL
+#define CCTK_LOOP3STROFF_NORMAL(name, i, j, k, ni, nj, nk, idir, jdir, kdir,   \
+                                imin, jmin, kmin, imax, jmax, kmax, iash,      \
+                                jash, kash, ialn, ioff, vec_imin, vec_imax,    \
+                                istr)                                          \
+  LC_LOOP3STROFF_NORMAL(name, i, j, k, ni, nj, nk, idir, jdir, kdir, imin,     \
+                        jmin, kmin, imax, jmax, kmax, iash, jash, kash, ialn,  \
+                        ioff, vec_imin, vec_imax, istr)
+#define CCTK_ENDLOOP3STROFF_NORMAL(name) LC_ENDLOOP3STROFF_NORMAL(name)
 
 #ifdef __cplusplus
 }
@@ -278,7 +310,7 @@ void lc_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
 #endif /* #ifdef CCODE */
 
 #ifdef FCODE
-#include "loopcontrol_fortran.h"
+#include "loopcontrol_fortran.inc"
 #endif
 
 #endif /* #ifndef LOOPCONTROL_H */

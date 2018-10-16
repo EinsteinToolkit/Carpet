@@ -22,6 +22,7 @@
 
 #include "dist.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 namespace dist {
@@ -250,8 +251,10 @@ MPI_Datatype create_mpi_datatype(size_t const count,
     displacements[n] = descr[n].displacement;
     types[n] = descr[n].type;
   }
+  MPI_Datatype newtype0;
+  MPI_Type_create_struct(count, blocklengths, displacements, types, &newtype0);
   MPI_Datatype newtype;
-  MPI_Type_struct(count, blocklengths, displacements, types, &newtype);
+  MPI_Type_create_resized(newtype0, 0, size, &newtype);
   MPI_Type_commit(&newtype);
   if (verbose) {
     CCTK_VInfo(CCTK_THORNSTRING, "Creating new MPI type for C type %s:", name);
@@ -322,9 +325,9 @@ MPI_Datatype create_mpi_datatype(size_t const count,
     
     // Create MPI type
     size_t const count = entries.size();
-    int          blocklengths [count+1];
-    MPI_Aint     displacements[count+1];
-    MPI_Datatype types        [count+1];
+    int          blocklengths [count];
+    MPI_Aint     displacements[count];
+    MPI_Datatype types        [count];
     {
       size_t n = 0;
       for (list<field_t>::const_iterator ifield =
@@ -335,13 +338,8 @@ MPI_Datatype create_mpi_datatype(size_t const count,
         types        [n] = ifield->mpi_datatype;
       }
       assert (n == count);
-      // Add MPI_UB
-      blocklengths [n] = 1;
-      displacements[n] = type_size();
-      types        [n] = MPI_UB;
     }
-    
-    MPI_Type_struct
+    MPI_Type_create_struct
       (count+1, blocklengths, displacements, types, &mpi_datatype);
     MPI_Type_commit (&mpi_datatype);
   }
@@ -389,8 +387,7 @@ void set_num_threads(int const num_threads) {
   if (num_threads > 0) {
     // Set number of threads which should be used
     // TODO: do this at startup, not in this routine
-    CCTK_VInfo(CCTK_THORNSTRING,
-               "Setting number of OpenMP threads per process to %d",
+    CCTK_VINFO("Setting number of OpenMP threads per process to %d",
                num_threads);
     omp_set_num_threads(num_threads);
     collect_total_num_threads();
@@ -412,12 +409,18 @@ void collect_total_num_threads() {
 #pragma omp master
     { num_threads = omp_get_num_threads(); }
   }
+  int thread_count = 0;
+#pragma omp parallel
+  {
+#pragma omp atomic
+    thread_count += 1;
+  }
   int const max_threads = omp_get_max_threads();
-  if (max_threads != num_threads) {
-    CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Unexpected OpenMP setup: omp_get_max_threads=%d, "
-               "omp_get_num_threads=%d",
-               max_threads, num_threads);
+  if (max_threads != num_threads or thread_count != num_threads) {
+    CCTK_VWARN(CCTK_WARN_ALERT, "Unexpected OpenMP setup: "
+                                "omp_get_num_threads=%d, "
+                                "omp_get_max_threads=%d, thread_count=%d",
+               num_threads, max_threads, thread_count);
   }
 #endif
   assert(num_threads >= 1);
@@ -476,3 +479,4 @@ char const *c_datatype_name(unsigned const type) {
 }
 
 } // namespace dist
+}

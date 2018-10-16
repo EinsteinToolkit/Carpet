@@ -14,8 +14,8 @@
 #include "bboxset.hh"
 #include "dh.hh"
 #include "gdata.hh"
-#include "gh.hh"
 #include "ggf.hh"
+#include "gh.hh"
 #include "vect.hh"
 
 #include "carpet.hh"
@@ -198,7 +198,8 @@ void FillSlab(const cGH *const cgh, const int dest_proc, const int n,
   void *myhdata = rank == collect_proc ? hdata : 0;
   size_t const mymemsize = totalsize * typesize;
   gdata *const alldata = mydata->make_typed(-1, error_centered, op_sync);
-  alldata->allocate(hextent, collect_proc, myhdata, mymemsize);
+  alldata->allocate(hextent, hextent.sizes(), ivect(0), collect_proc, myhdata,
+                    mymemsize);
 
   // Done with the temporary stuff
   mydata = 0;
@@ -237,7 +238,8 @@ void FillSlab(const cGH *const cgh, const int dest_proc, const int n,
       if (proc != collect_proc) {
         void *myhdata = rank == proc ? hdata : 0;
         tmpdata.at(proc) = mydata->make_typed(-1, error_centered, op_sync);
-        tmpdata.at(proc)->allocate(alldata->extent(), proc, myhdata);
+        tmpdata.at(proc)->allocate(alldata->extent(), alldata->extent().sizes(),
+                                   ivect(0), proc, myhdata);
       }
     }
 

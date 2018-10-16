@@ -5,8 +5,8 @@
 
 #include <cassert>
 #include <cstdlib>
-#include <queue>
 #include <iostream>
+#include <queue>
 #include <string>
 #include <vector>
 
@@ -18,6 +18,7 @@
 #include "timestat.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 // Slabbing description
@@ -33,15 +34,15 @@ typedef slab<int, dim> islab;
 template <typename T, int D>
 ostream &operator<<(ostream &os, slab<T, D> const &slabinfo);
 
+namespace dist {
 template <typename T, int D>
 MPI_Datatype mpi_datatype(slab<T, D> const &) CCTK_ATTRIBUTE_CONST;
-namespace dist {
 template <> inline MPI_Datatype mpi_datatype<islab>() CCTK_ATTRIBUTE_CONST;
 template <> inline MPI_Datatype mpi_datatype<islab>() {
   islab dummy;
   return mpi_datatype(dummy);
 }
-}
+} // namespace dist
 
 // A generic data storage without type information
 class gdata {
@@ -60,12 +61,13 @@ protected:
   operator_type transport_operator;
 
   bool _has_storage; // has storage associated (on some process)
-  int _size;         // size (number of elements including padding)
+  size_type _size;   // size (number of elements including padding)
 
   int _proc; // stored on process
 
   ivect _shape;                 // shape
   ivect _padded_shape, _stride; // allocated shape and index order
+  ivect _padding_offset;
 
   ibbox _extent; // bbox for all data
 
@@ -91,11 +93,13 @@ public:
              const operator_type transport_operator = op_error) const = 0;
 
   // Storage management
-  virtual void allocate(const ibbox &extent, const int proc,
+  virtual void allocate(const ibbox &extent, const ivect &padded_shape,
+                        const ivect &padding_offset, const int proc,
                         void *const memptr = NULL,
                         size_t const memsize = 0) = 0;
   virtual void free() = 0;
-  virtual size_t allocsize(const ibbox &extent, const int proc) const = 0;
+  virtual size_t allocsize(const ibbox &extent, const ivect &padded_shape,
+                           const int proc) const = 0;
 
   // true if fence is intact
   virtual bool check_fence(const int upperlower) const = 0;
@@ -114,7 +118,7 @@ public:
     return _storage;
   }
 
-  int size() const {
+  size_type size() const {
     assert(_has_storage);
     return _size;
   }
@@ -132,6 +136,11 @@ public:
   const ivect &padded_shape() const {
     assert(_has_storage);
     return _padded_shape;
+  }
+
+  const ivect &padding_offset() const {
+    assert(_has_storage);
+    return _padding_offset;
   }
 
   const ivect &stride() const {
@@ -207,5 +216,6 @@ public:
 inline size_t memoryof(gdata const &d) { return d.memory(); }
 
 inline ostream &operator<<(ostream &os, const gdata &d) { return d.output(os); }
+} // namespace CarpetLib
 
 #endif // GDATA_HH

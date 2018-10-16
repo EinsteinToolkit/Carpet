@@ -65,14 +65,14 @@
 #define false 0
 
 #define _GNU_SOURCE
-#include <string.h>
+#include <bfd.h>
+#include <dlfcn.h>
+#include <execinfo.h>
+#include <libiberty.h>
+#include <link.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <execinfo.h>
-#include <bfd.h>
-#include <libiberty.h>
-#include <dlfcn.h>
-#include <link.h>
+#include <string.h>
 
 namespace CarpetLib {
 
@@ -438,7 +438,8 @@ void generate_backtrace(ostream &stacktrace) {
   if (n < 2) {
     stacktrace << "Backtrace not available!\n";
   } else {
-    stacktrace.flags(ios::hex);
+    auto oldflags = stacktrace.flags();
+    stacktrace.setf(ios::hex);
 #ifdef HAVE_BACKTRACE_SYMBOLS
     char **names = backtrace_symbols(addresses, n);
     for (int i = 2; i < n; i++) {
@@ -478,6 +479,7 @@ void generate_backtrace(ostream &stacktrace) {
     }
     free(names);
 #endif
+    stacktrace.flags(oldflags);
   }
 }
 
@@ -544,8 +546,11 @@ void request_backtraces() {
 #include <cctk.h>
 #include <cctk_Arguments.h>
 
+namespace CarpetLib {
+
 extern "C" void CarpetLib_BacktraceTest(CCTK_ARGUMENTS) {
   CCTK_INFO("Generating backtrace...");
   kill(0, SIGABRT);
   CCTK_WARN(CCTK_WARN_ABORT, "Backtrace test failed");
+}
 }

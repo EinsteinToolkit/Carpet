@@ -16,8 +16,8 @@
 
 #include "carpet.hh"
 
-#include "slab.hh"
 #include "GetHyperslab.hh"
+#include "slab.hh"
 
 namespace CarpetSlab {
 
@@ -163,7 +163,7 @@ void *GetSlab(const cGH *const cgh, const int dest_proc, const int n,
   // Create collector data object
   void *myhdata = rank == collect_proc ? hdata : 0;
   gdata *const alldata = mydata->make_typed(-1, error_centered, op_sync);
-  alldata->allocate(hextent, collect_proc, myhdata);
+  alldata->allocate(hextent, hextent.sizes(), ivect(0), collect_proc, myhdata);
 
   // Done with the temporary stuff
   mydata = 0;
@@ -202,7 +202,8 @@ void *GetSlab(const cGH *const cgh, const int dest_proc, const int n,
       if (proc != collect_proc) {
         void *myhdata = rank == proc ? hdata : 0;
         tmpdata.at(proc) = mydata->make_typed(-1, error_centered, op_sync);
-        tmpdata.at(proc)->allocate(alldata->extent(), proc, myhdata);
+        tmpdata.at(proc)->allocate(alldata->extent(), alldata->extent().sizes(),
+                                   ivect(0), proc, myhdata);
       }
     }
 

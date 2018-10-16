@@ -15,6 +15,7 @@
 
 #include "gh.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 set<gh *> gh::allgh;
@@ -57,8 +58,7 @@ gh::gh(vector<ivect> const &reffacts_, centering const refcent_,
     for (int rl = 0; rl < (int)baseextents.AT(ml).size(); ++rl) {
       ibbox const &box = baseextents.AT(ml).AT(rl);
       // This condition must hold even for zero-sized grid arrays
-      assert(all(box.shape() / box.stride() >=
-                 boundary_width[0] + boundary_width[1]));
+      assert(all(box.sizes() >= boundary_width[0] + boundary_width[1]));
     }
   }
 
@@ -569,4 +569,5 @@ ostream &gh::output(ostream &os) const {
   }
   os << "}}";
   return os;
+}
 }

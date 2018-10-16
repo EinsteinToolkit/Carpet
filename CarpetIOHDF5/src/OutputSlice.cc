@@ -25,10 +25,10 @@ void UnsupportedVarType(const int vindex);
 }
 
 #define GetParameter(parameter)                                                \
-  outdim == 0 ? out0D_##parameter : outdim == 1                                \
-                                        ? out1D_##parameter                    \
-                                        : outdim == 2 ? out2D_##parameter      \
-                                                      : out3D_##parameter
+  outdim == 0                                                                  \
+      ? out0D_##parameter                                                      \
+      : outdim == 1 ? out1D_##parameter                                        \
+                    : outdim == 2 ? out2D_##parameter : out3D_##parameter
 
 namespace CarpetIOHDF5 {
 
@@ -532,8 +532,9 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
                             dirs, is_new_file, truncate_file, file, index_file);
 
     // Find the output offset
-    const ivect offset =
-        groupdata.grouptype == CCTK_GF ? GetOutputOffset(cctkGH, m, dirs) : 0;
+    const ivect offset = groupdata.grouptype == CCTK_GF
+                             ? GetOutputOffset(cctkGH, m, dirs)
+                             : ivect(0);
 
     const gh *const hh = arrdata.at(group).at(m).hh;
     const dh *const dd = arrdata.at(group).at(m).dd;
@@ -614,9 +615,10 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
               const ggf *const ff = arrdata.at(group).at(m).data.at(n + n_min);
               tmpdatas.at(n) = ff->new_typed_data();
               size_t const memsize =
-                  tmpdatas.at(n)->allocsize(data_ext, ioproc);
+                  tmpdatas.at(n)->allocsize(data_ext, data_ext.sizes(), ioproc);
               void *const memptr = pool.alloc(memsize);
-              tmpdatas.at(n)->allocate(data_ext, ioproc, memptr, memsize);
+              tmpdatas.at(n)->allocate(data_ext, data_ext.sizes(), ivect(0),
+                                       ioproc, memptr, memsize);
             } // for n
 
             for (comm_state state; not state.done(); state.step()) {
@@ -1391,7 +1393,6 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
       }
       const ibbox outputslab(lo, up, str);
       // Intersect active region with this hyperslab
-      const int lc = vhh.at(m)->get_local_component(rl, c);
       const ibset &active0 = vdd.at(m)->level_boxes.at(ml).at(rl).active;
       const ibset active1 = active0 & outputslab;
       // Reduce dimensionality of active region
@@ -1402,7 +1403,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
         const vect<int, outdim> lo = box0.lower()[dirs];
         const vect<int, outdim> up = box0.upper()[dirs];
         const vect<int, outdim> str = box0.stride()[dirs];
-        const ::bbox<int, outdim> box(lo, up, str);
+        const CarpetLib::bbox<int, outdim> box(lo, up, str);
         active2 += box;
       }
       ostringstream buf;
@@ -1502,7 +1503,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
     hsize_t npoints = 0;
     for (int i = maxval(base.lower()); i <= minval(base.upper());
          i += base.stride()[0]) {
-      if (gfext.contains(i)) {
+      if (gfext.contains(ivect(i))) {
         ++npoints;
       }
     }

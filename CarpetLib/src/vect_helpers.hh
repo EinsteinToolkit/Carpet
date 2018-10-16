@@ -43,12 +43,12 @@
 
 // Declare a function which takes 1 argument and returns type R
 
-#define DECLARE_FUNCTION_1_RET(fn, R)                                          \
+#define DECLARE_FUNCTION_1_RET(fn, impl, R)                                    \
                                                                                \
   template <typename T, int D> inline vect<R, D> fn(const vect<T, D> &a) {     \
     vect<R, D> r;                                                              \
     for (int d = 0; d < D; ++d)                                                \
-      r[d] = fn(a[d]);                                                         \
+      r[d] = impl(a[d]);                                                       \
     return r;                                                                  \
   }                                                                            \
                                                                                \
@@ -56,23 +56,23 @@
   inline vect<R, D> fn(const vect<vect<T, D>, E> &a) {                         \
     vect<R, D> r;                                                              \
     for (int e = 0; e < E; ++e)                                                \
-      r[e] = fn(a[e]);                                                         \
+      r[e] = impl(a[e]);                                                       \
     return r;                                                                  \
   }
 
 // Declare a function which takes 1 argument
 
-#define DECLARE_FUNCTION_1(fn) DECLARE_FUNCTION_1_RET(fn, T)
+#define DECLARE_FUNCTION_1(fn, impl) DECLARE_FUNCTION_1_RET(fn, impl, T)
 
 // Declare a function which takes 2 arguments and returns type R
 
-#define DECLARE_FUNCTION_2_RET(fn, R)                                          \
+#define DECLARE_FUNCTION_2_RET(fn, impl, R)                                    \
                                                                                \
   template <typename T, int D>                                                 \
   inline vect<R, D> fn(const vect<T, D> &a, const vect<T, D> &b) {             \
     vect<R, D> r;                                                              \
     for (int d = 0; d < D; ++d)                                                \
-      r[d] = fn(a[d], b[d]);                                                   \
+      r[d] = impl(a[d], b[d]);                                                 \
     return r;                                                                  \
   }                                                                            \
                                                                                \
@@ -80,7 +80,7 @@
   inline vect<R, D> fn(const T &a, const vect<T, D> &b) {                      \
     vect<R, D> r;                                                              \
     for (int d = 0; d < D; ++d)                                                \
-      r[d] = fn(a, b[d]);                                                      \
+      r[d] = impl(a, b[d]);                                                    \
     return r;                                                                  \
   }                                                                            \
                                                                                \
@@ -88,7 +88,7 @@
   inline vect<R, D> fn(const vect<T, D> &a, const T &b) {                      \
     vect<R, D> r;                                                              \
     for (int d = 0; d < D; ++d)                                                \
-      r[d] = fn(a[d], b);                                                      \
+      r[d] = impl(a[d], b);                                                    \
     return r;                                                                  \
   }                                                                            \
                                                                                \
@@ -97,7 +97,7 @@
                                 const vect<vect<T, D>, E> &b) {                \
     vect<vect<R, D>, E> r;                                                     \
     for (int e = 0; e < E; ++e)                                                \
-      r[e] = fn(a[e], b[e]);                                                   \
+      r[e] = impl(a[e], b[e]);                                                 \
     return r;                                                                  \
   }                                                                            \
                                                                                \
@@ -105,7 +105,7 @@
   inline vect<vect<R, D>, E> fn(const T &a, const vect<vect<T, D>, E> &b) {    \
     vect<vect<R, D>, E> r;                                                     \
     for (int e = 0; e < E; ++e)                                                \
-      r[e] = fn(a, b[e]);                                                      \
+      r[e] = impl(a, b[e]);                                                    \
     return r;                                                                  \
   }                                                                            \
                                                                                \
@@ -113,13 +113,13 @@
   inline vect<vect<R, D>, E> fn(const vect<vect<T, D>, E> &a, const T &b) {    \
     vect<vect<R, D>, E> r;                                                     \
     for (int e = 0; e < E; ++e)                                                \
-      r[e] = fn(a[e], b);                                                      \
+      r[e] = impl(a[e], b);                                                    \
     return r;                                                                  \
   }
 
 // Declare a function which takes 2 arguments
 
-#define DECLARE_FUNCTION_2(fn) DECLARE_FUNCTION_2_RET(fn, T)
+#define DECLARE_FUNCTION_2(fn, impl) DECLARE_FUNCTION_2_RET(fn, impl, T)
 
 // Declare an operator which takes 1 argument and returns type R
 
@@ -245,11 +245,20 @@
 // Declare a reduction function which takes 1 argument
 
 #define DECLARE_REDUCTION_FUNCTION_1(fn, init, op, final)                      \
-                                                                               \
+  }                                                                            \
+  namespace CarpetLib_vect {                                                   \
+  template <typename T> inline void fn(T &r, const T &a) {                     \
+    using namespace std;                                                       \
+    using namespace CarpetLib;                                                 \
+    op(r, a);                                                                  \
+  }                                                                            \
+  }                                                                            \
+  namespace CarpetLib {                                                        \
   template <typename T, int D> inline T fn(const vect<T, D> &a) {              \
     T r(init);                                                                 \
     for (int d = 0; d < D; ++d)                                                \
-      op(r, a[d]);                                                             \
+      /* op(r, a[d]); */                                                       \
+      CarpetLib_vect::fn(r, a[d]);                                             \
     return final(r);                                                           \
   }
 

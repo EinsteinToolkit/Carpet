@@ -11,9 +11,8 @@
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
-using namespace std;
-
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND3(i, j, k)                                                       \
   index3(srcioff + (i), srcjoff + (j), srckoff + (k), srcipadext, srcjpadext,  \
@@ -23,11 +22,11 @@ namespace CarpetLib {
          dstkpadext, dstiext, dstjext, dstkext)
 
 template <typename T> inline T min3(T const &x, T const &y, T const &z) {
-  return min(x, min(y, z));
+  return std::min(x, std::min(y, z));
 }
 
 template <typename T> inline T max3(T const &x, T const &y, T const &z) {
-  return max(x, max(y, z));
+  return std::max(x, std::max(y, z));
 }
 
 template <typename T>
@@ -40,6 +39,8 @@ void interpolate_eno_3d_3tl(
     ivect3 const &restrict dstext, ibbox3 const &restrict srcbbox,
     ibbox3 const &restrict dstbbox, ibbox3 const &restrict,
     ibbox3 const &restrict regbbox, void *extraargs) {
+  DECLARE_CCTK_PARAMETERS;
+
   assert(not extraargs);
 
   typedef typename typeprops<T>::real RT;
@@ -65,7 +66,7 @@ void interpolate_eno_3d_3tl(
               "Internal error: region extent is not contained in array extent");
   }
 
-  ivect3 const regext = regbbox.shape() / regbbox.stride();
+  ivect3 const regext = regbbox.sizes();
   assert(all((regbbox.lower() - srcbbox.lower()) % srcbbox.stride() == 0));
   ivect3 const srcoff = (regbbox.lower() - srcbbox.lower()) / srcbbox.stride();
   assert(all((regbbox.lower() - dstbbox.lower()) % dstbbox.stride() == 0));
@@ -103,13 +104,14 @@ void interpolate_eno_3d_3tl(
 
   RT const tmin = min3(t1, t2, t3);
   RT const tmax = max3(t1, t2, t3);
-  RT const eps = 1.0e-10 * (tmax - tmin);
+  RT const eps = 1.0e-12 * (tmax - tmin);
 
-  if (fabs(t1 - t2) < eps or fabs(t1 - t3) < eps or fabs(t2 - t3) < eps) {
-    CCTK_WARN(0, "Internal error: arrays have same time");
+  if (std::fabs(t1 - t2) < eps or std::fabs(t1 - t3) < eps or
+      std::fabs(t2 - t3) < eps) {
+    CCTK_ERROR("Internal error: arrays have same time");
   }
   if (t < min3(t1, t2, t3) - eps or t > max3(t1, t2, t3) + eps) {
-    CCTK_WARN(0, "Internal error: extrapolation in time");
+    CCTK_ERROR("Internal error: extrapolation in time");
   }
 
   // Calculate stencil coefficients for 3-point and 2-point
@@ -126,8 +128,10 @@ void interpolate_eno_3d_3tl(
 
   // Choose which two time levels should be used for linear
   // interpolation
-  bool const use_12 = t >= min(t1, t2) - eps and t <= max(t1, t2) + eps;
-  bool const use_23 = t >= min(t2, t3) - eps and t <= max(t2, t3) + eps;
+  bool const use_12 =
+      t >= std::min(t1, t2) - eps and t <= std::max(t1, t2) + eps;
+  bool const use_23 =
+      t >= std::min(t2, t3) - eps and t <= std::max(t2, t3) + eps;
   assert(use_12 or use_23);
 // TODO: Instead of use_12, calculate 3 coefficents that perform
 // the desired 2-point interpolation, which would avoid the if

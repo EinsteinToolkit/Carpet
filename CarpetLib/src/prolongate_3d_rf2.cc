@@ -9,20 +9,17 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "vectors.h"
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
-
-using namespace std;
+#include "vectors.h"
 
 namespace CarpetLib {
+using namespace std;
 
 #define SRCIND3(i, j, k)                                                       \
   index3(i, j, k, srcipadext, srcjpadext, srckpadext, srciext, srcjext, srckext)
 #define DSTIND3(i, j, k)                                                       \
   index3(i, j, k, dstipadext, dstjpadext, dstkpadext, dstiext, dstjext, dstkext)
-#define SRCOFF3(i, j, k) offset3(i, j, k, srciext, srcjext, srckext)
-#define DSTOFF3(i, j, k) offset3(i, j, k, dstiext, dstjext, dstkext)
 
 namespace coeffs_3d_rf2 {
 
@@ -76,7 +73,7 @@ template <typename RT, int ORDER> struct coeffs1d {
       RT const y0 = ipow(x0, n);
       // Allow losing 3 digits:
       CCTK_REAL const eps = RT(1.0e+3) * numeric_limits<RT>::epsilon();
-      if (not(fabs(res - y0) < eps)) {
+      if (not(std::fabs(res - y0) < eps)) {
         RT rt;
         ostringstream buf;
         buf << "Error in prolongate_3d_rf2::coeffs_3d_rf2\n"
@@ -88,9 +85,8 @@ template <typename RT, int ORDER> struct coeffs1d {
         error = true;
       }
     } // for n
-    if (error) {
-      CCTK_WARN(CCTK_WARN_ABORT, "Aborting.");
-    }
+    if (error)
+      CCTK_ERROR("Aborting.");
   }
 };
 
@@ -376,33 +372,26 @@ void prolongate_3d_rf2(T const *restrict const src,
   coeffs1d<RT, ORDER>::test();
 
   if (any(srcbbox.stride() <= regbbox.stride() or
-          dstbbox.stride() != regbbox.stride())) {
-    CCTK_WARN(0, "Internal error: strides disagree");
-  }
+          dstbbox.stride() != regbbox.stride()))
+    CCTK_ERROR("Internal error: strides disagree");
 
-  if (any(srcbbox.stride() != reffact2 * dstbbox.stride())) {
-    CCTK_WARN(
-        0,
+  if (any(srcbbox.stride() != reffact2 * dstbbox.stride()))
+    CCTK_ERROR(
         "Internal error: source strides are not twice the destination strides");
-  }
 
-  if (any(srcbbox.lower() % srcbbox.stride() != 0)) {
-    CCTK_WARN(0, "Internal error: source bbox is not aligned with vertices");
-  }
-  if (any(dstbbox.lower() % dstbbox.stride() != 0)) {
-    CCTK_WARN(0,
-              "Internal error: destination bbox is not aligned with vertices");
-  }
-  if (any(regbbox.lower() % regbbox.stride() != 0)) {
-    CCTK_WARN(0, "Internal error: prolongation region bbox is not aligned with "
-                 "vertices");
-  }
+  if (any(srcbbox.lower() % srcbbox.stride() != 0))
+    CCTK_ERROR("Internal error: source bbox is not aligned with vertices");
+  if (any(dstbbox.lower() % dstbbox.stride() != 0))
+    CCTK_ERROR("Internal error: destination bbox is not aligned with vertices");
+  if (any(regbbox.lower() % regbbox.stride() != 0))
+    CCTK_ERROR("Internal error: prolongation region bbox is not aligned with "
+               "vertices");
 
   // This could be handled, but is likely to point to an error elsewhere
   if (regbbox.empty())
     CCTK_ERROR("Internal error: region extent is empty");
 
-  ivect3 const regext = regbbox.shape() / regbbox.stride();
+  ivect3 const regext = regbbox.sizes();
   assert(all((regbbox.lower() - srcbbox.lower()) % regbbox.stride() == 0));
   ivect3 const srcoff = (regbbox.lower() - srcbbox.lower()) / regbbox.stride();
   assert(all((regbbox.lower() - dstbbox.lower()) % regbbox.stride() == 0));
@@ -424,8 +413,8 @@ void prolongate_3d_rf2(T const *restrict const src,
          << "dstbbox=" << dstbbox << "\n"
          << "regbbox.expand=" << regbbox.expand(offsetlo, offsethi) << "\n"
          << "srcbbox=" << srcbbox << "\n";
-    CCTK_WARN(0,
-              "Internal error: region extent is not contained in array extent");
+    CCTK_ERROR(
+        "Internal error: region extent is not contained in array extent");
   }
 
   size_t const srcipadext = srcpadext[0];
@@ -464,11 +453,11 @@ void prolongate_3d_rf2(T const *restrict const src,
   size_t const j0 = srcjoff / 2;
   size_t const k0 = srckoff / 2;
 
-  // size_t const srcdi = SRCOFF3(1,0,0) - SRCOFF3(0,0,0);
+  // size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
   size_t const srcdi = 1;
-  assert(srcdi == SRCOFF3(1, 0, 0) - SRCOFF3(0, 0, 0));
-  size_t const srcdj = SRCOFF3(0, 1, 0) - SRCOFF3(0, 0, 0);
-  size_t const srcdk = SRCOFF3(0, 0, 1) - SRCOFF3(0, 0, 0);
+  assert(srcdi == (srciext > 1 ? SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0) : 1));
+  size_t const srcdj = srcjext > 1 ? SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0) : 0;
+  size_t const srcdk = srckext > 1 ? SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0) : 0;
 
   // Loop over fine region
   // Label scheme: l 8 fk fj fi

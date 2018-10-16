@@ -1,5 +1,5 @@
-#include "clause.hh"
 #include "clauses.hh"
+#include "clause.hh"
 #include "util.hh"
 
 #include <cctk.h>

@@ -37,7 +37,7 @@ CactusTimer::CactusTimer(string timername) : running(false) {
 // Destroy a timer
 CactusTimer::~CactusTimer() {
   timerSet.remove(this);
-  check(not CCTK_TimerDestroyI(handle));
+  CCTK_TimerDestroyI(handle);
 }
 
 // Start the timer
@@ -80,9 +80,8 @@ double CactusTimer::getTime() {
   const cTimerVal *tv = CCTK_GetClockValue(xml_clock, timer);
   double val;
   if (not tv) {
-    CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Clock \"%s\" not found for timer #%d \"%s\"", xml_clock, handle,
-               CCTK_TimerName(handle));
+    CCTK_VWARN(CCTK_WARN_ALERT, "Clock \"%s\" not found for timer #%d \"%s\"",
+               xml_clock, handle, CCTK_TimerName(handle));
     val = -1.0;
   } else {
     val = CCTK_TimerClockSeconds(tv);
@@ -113,8 +112,7 @@ void CactusTimer::getGlobalTime(double &avg, double &max) {
   ierr = CCTK_ReduceLocScalar(cctkGH, -1, op_sum, &val1, &sum1,
                               CCTK_VARIABLE_REAL);
   if (ierr) {
-    CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Error in sum reduction");
+    CCTK_VWARN(CCTK_WARN_ALERT, "Error in sum reduction");
   }
   avg = sum1 / CCTK_nProcs(cctkGH);
 
@@ -122,8 +120,7 @@ void CactusTimer::getGlobalTime(double &avg, double &max) {
   ierr = CCTK_ReduceLocScalar(cctkGH, -1, op_max, &val1, &max1,
                               CCTK_VARIABLE_REAL);
   if (ierr) {
-    CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Error in maximum reduction");
+    CCTK_VWARN(CCTK_WARN_ALERT, "Error in maximum reduction");
   }
   max = max1;
 }
@@ -191,7 +188,7 @@ void CactusTimer::printData() {
     stop();
 
 #if 0
-    check (not CCTK_TimerPrintDataI (handle, -1)); // -1 means: all clocks
+  CCTK_TimerPrintDataI(handle, -1); // -1 means: all clocks
 #endif
 
   static cTimerData *timer = 0;
@@ -239,28 +236,28 @@ void CactusTimer::printData() {
 void CactusTimer::msgCreate() const {
   DECLARE_CCTK_PARAMETERS;
   if (verbose) {
-    CCTK_VInfo(CCTK_THORNSTRING, "Timer \"%s\" created", name().c_str());
+    CCTK_VINFO("Timer \"%s\" created", name().c_str());
   }
 }
 
 void CactusTimer::msgStart() const {
   DECLARE_CCTK_PARAMETERS;
   if (verbose) {
-    CCTK_VInfo(CCTK_THORNSTRING, "Timer \"%s\" starting", name().c_str());
+    CCTK_VINFO("Timer \"%s\" starting", name().c_str());
   }
 }
 
 void CactusTimer::msgStop() const {
   DECLARE_CCTK_PARAMETERS;
   if (verbose) {
-    CCTK_VInfo(CCTK_THORNSTRING, "Timer \"%s\" stopping", name().c_str());
+    CCTK_VINFO("Timer \"%s\" stopping", name().c_str());
   }
 }
 
 void CactusTimer::msgRead(double val) const {
   DECLARE_CCTK_PARAMETERS;
   if (verbose) {
-    CCTK_VInfo(CCTK_THORNSTRING, "Timer \"%s\" read: %g", name().c_str(), val);
+    CCTK_VINFO("Timer \"%s\" read: %g", name().c_str(), val);
   }
 }
 

@@ -45,11 +45,9 @@ extern "C" void CoordBase_SetupMask(CCTK_ARGUMENTS) {
     CCTK_ERROR("Could not get boundary specification");
   }
 
-  for (int d = 0; d < cctk_dim; ++d) {
-    for (int f = 0; f < 2; ++f) {
+  for (int d = 0; d < cctk_dim; ++d)
+    for (int f = 0; f < 2; ++f)
       is_periodic[2 * d + f] = 0;
-    }
-  }
   CCTK_INT const *const periodic = static_cast<CCTK_INT const *>(
       CCTK_ParameterGet("periodic", "PeriodicCarpet", NULL));
   CCTK_INT const *const periodic_x = static_cast<CCTK_INT const *>(
@@ -96,9 +94,8 @@ extern "C" void CoordBase_SetupMask(CCTK_ARGUMENTS) {
   for (int d = 0; d < cctk_dim; ++d) {
     int_points[d] =
         (gmax[d] - bnd_points[2 * d + 1]) - (gmin[d] + bnd_points[2 * d]);
-    if (int_points[d] < 0) {
+    if (int_points[d] < 0)
       CCTK_ERROR("Number of internal grid points is negative");
-    }
   }
 
   /* Loop over all dimensions and faces */
@@ -108,9 +105,8 @@ extern "C" void CoordBase_SetupMask(CCTK_ARGUMENTS) {
       /* If this processor has the outer boundary */
       if (cctk_bbox[2 * d + f]) {
 
-        if (bnd_points[2 * d + f] < 0 || bnd_points[2 * d + f] > cctk_lsh[d]) {
+        if (bnd_points[2 * d + f] < 0 || bnd_points[2 * d + f] > cctk_lsh[d])
           CCTK_ERROR("Illegal number of boundary points");
-        }
 
         /* Calculate the extent of the local part of the domain */
         for (int dd = 0; dd < cctk_dim; ++dd) {
@@ -132,11 +128,10 @@ extern "C" void CoordBase_SetupMask(CCTK_ARGUMENTS) {
         }
 
         /* Loop over the boundary */
-        if (verbose) {
-          CCTK_VInfo(CCTK_THORNSTRING, "Setting boundary points in direction "
-                                       "%d face %d to weight 0 on level %d",
+        if (verbose)
+          CCTK_VINFO("Setting boundary points in direction %d face %d to "
+                     "weight 0 on level %d",
                      d, f, reflevel);
-        }
 #pragma omp parallel
         CCTK_LOOP3(CoordBase_SetupMask_boundary, i, j, k, bmin[0], bmin[1],
                    bmin[2], bmax[0], bmax[1], bmax[2], cctk_ash[0], cctk_ash[1],
@@ -185,17 +180,14 @@ extern "C" void CoordBase_SetupMask(CCTK_ARGUMENTS) {
             unsigned const bits = BMSK(cctk_dim);
             unsigned bmask = 0;
             for (unsigned b = 0; b < bits; ++b) {
-              if (BGET(b, d) == !f) {
+              if (BGET(b, d) == !f)
                 bmask = BSET(bmask, b);
-              }
             }
             assert(BCNT(bmask) == bits / 2);
-            if (verbose) {
-              CCTK_VInfo(CCTK_THORNSTRING, "Setting non-staggered boundary "
-                                           "points on level %d in direction %d "
-                                           "face %d to bmask 0x%x",
+            if (verbose)
+              CCTK_VINFO("Setting non-staggered boundary points on level %d in "
+                         "direction %d face %d to bmask 0x%x",
                          reflevel, d, f, bmask);
-            }
 #pragma omp parallel
             CCTK_LOOP3(CoordBase_SetupMask_boundary2, i, j, k, bmin[0], bmin[1],
                        bmin[2], bmax[0], bmax[1], bmax[2], cctk_ash[0],
@@ -231,11 +223,10 @@ extern "C" void CoordBase_SetupMask(CCTK_ARGUMENTS) {
         }
 
         /* Loop over the boundary */
-        if (verbose) {
-          CCTK_VInfo(CCTK_THORNSTRING, "Setting ghost points in direction %d "
-                                       "face %d to weight 0 on level %d",
+        if (verbose)
+          CCTK_VINFO("Setting ghost points in direction %d face %d to weight 0 "
+                     "on level %d",
                      d, f, reflevel);
-        }
 #pragma omp parallel
         CCTK_LOOP3(CoordBase_SetupMask_ghost, i, j, k, bmin[0], bmin[1],
                    bmin[2], bmax[0], bmax[1], bmax[2], cctk_ash[0], cctk_ash[1],

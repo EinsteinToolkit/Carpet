@@ -18,8 +18,8 @@
 
 #include "dh.hh"
 
+namespace CarpetLib {
 using namespace std;
-using namespace CarpetLib;
 
 set<dh *> dh::alldh;
 
@@ -486,7 +486,7 @@ void dh::regrid(bool const do_init) {
       timer_buffers.start();
 
       // Enlarge active part of domain
-      i2vect const safedist = i2vect(0);
+      i2vect const safedist = i2vect(ivect(0));
       ibbox const domain_enlarged = domain_active.expand(safedist);
 
       // All owned regions
@@ -738,7 +738,8 @@ void dh::regrid(bool const do_init) {
 
           ibset oneedrecv = obox.active;
 
-          i2vect const stencil_size = i2vect(prolongation_stencil_size(rl));
+          i2vect const stencil_size =
+              i2vect(ivect(prolongation_stencil_size(rl)));
 
           ibset const expanded_active(box.active.expanded_for(obox.interior));
           ibset const ovlp = oneedrecv & expanded_active;
@@ -777,7 +778,8 @@ void dh::regrid(bool const do_init) {
 
           ibset needrecv = box.active + box.overlaps;
 
-          i2vect const stencil_size = i2vect(prolongation_stencil_size(rl));
+          i2vect const stencil_size =
+              i2vect(ivect(prolongation_stencil_size(rl)));
 
           ASSERT_c(
               all(h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
@@ -930,7 +932,8 @@ void dh::regrid(bool const do_init) {
 
           ibset &bndref = box.bndref;
 
-          i2vect const stencil_size = i2vect(prolongation_stencil_size(rl));
+          i2vect const stencil_size =
+              i2vect(ivect(prolongation_stencil_size(rl)));
 
           ASSERT_c(
               all(h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
@@ -1059,14 +1062,15 @@ void dh::regrid(bool const do_init) {
             else
               shrink_by = 0;
             ibbox const contracted_exterior =
-                box.exterior.expand(ivect(-shrink_by)).contracted_for(odomext);
+                box.exterior.expand(-shrink_by, -shrink_by)
+                    .contracted_for(odomext);
             ibset const ovlp = needrecv & contracted_exterior;
 
             for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end();
                  ++ri) {
               ibbox const &recv = *ri;
               ibbox const send =
-                  recv.expanded_for(box.exterior).expand(ivect(shrink_by));
+                  recv.expanded_for(box.exterior).expand(shrink_by, shrink_by);
               ASSERT_c(send <= box.exterior, "Refinement restriction: Send "
                                              "region must be contained in "
                                              "exterior");
@@ -1614,8 +1618,8 @@ void dh::regrid(bool const do_init) {
             switch (h.refcent) {
             case vertex_centered: {
               ivect const dir = ivect::dir(d);
-              enlarged[d][f] =
-                  ibset(notrefined.expand(f == 1 ? dir : 0, f == 0 ? dir : 0));
+              enlarged[d][f] = ibset(notrefined.expand(
+                  f == 1 ? dir : ivect(0), f == 0 ? dir : ivect(0)));
               break;
             }
             case cell_centered: {
@@ -1791,7 +1795,8 @@ void dh::regrid(bool const do_init) {
             // of the new grid structure.  It must fill what cannot be
             // synchronised.
 
-            i2vect const stencil_size = i2vect(prolongation_stencil_size(rl));
+            i2vect const stencil_size =
+                i2vect(ivect(prolongation_stencil_size(rl)));
 
             ASSERT_c(
                 all(h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
@@ -2255,6 +2260,7 @@ bool dh::full_dboxes::operator==(full_dboxes const &b) const {
 
 // MPI datatypes
 
+namespace dist {
 MPI_Datatype mpi_datatype(dh::light_dboxes const &) {
   static bool initialised = false;
   static MPI_Datatype newtype;
@@ -2262,20 +2268,16 @@ MPI_Datatype mpi_datatype(dh::light_dboxes const &) {
     static dh::light_dboxes s;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type),     /* count elements */                     \
-        (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */       \
-        dist::mpi_datatype<type>(),   /* find MPI datatype */                  \
-        STRINGIFY(name),              /* field name */                         \
-        STRINGIFY(type),              /* type name */                          \
+      sizeof s.name / sizeof(type), /* count elements */                       \
+      (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */         \
+      dist::mpi_datatype<type>(),   /* find MPI datatype */                    \
+      STRINGIFY(name),              /* field name */                           \
+      STRINGIFY(type),              /* type name */                            \
   }
     dist::mpi_struct_descr_t const descr[] = {
-        ENTRY(int, exterior),
-        ENTRY(int, owned),
-        ENTRY(int, interior),
-        ENTRY(size_type, exterior_size),
-        ENTRY(size_type, owned_size),
-        ENTRY(size_type, active_size),
-        {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}};
+        ENTRY(int, exterior),         ENTRY(int, owned),
+        ENTRY(int, interior),         ENTRY(size_type, exterior_size),
+        ENTRY(size_type, owned_size), ENTRY(size_type, active_size)};
 #undef ENTRY
     newtype = dist::create_mpi_datatype(sizeof descr / sizeof descr[0], descr,
                                         "dh::light::dboxes", sizeof s);
@@ -2300,11 +2302,11 @@ MPI_Datatype mpi_datatype(dh::fast_dboxes const &) {
     static dh::fast_dboxes s;
 #define ENTRY(type, name)                                                      \
   {                                                                            \
-    sizeof s.name / sizeof(type),     /* count elements */                     \
-        (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */       \
-        dist::mpi_datatype<type>(),   /* find MPI datatype */                  \
-        STRINGIFY(name),              /* field name */                         \
-        STRINGIFY(type),              /* type name */                          \
+      sizeof s.name / sizeof(type), /* count elements */                       \
+      (char *)&s.name - (char *)&s, /* offsetof doesn't work (why?) */         \
+      dist::mpi_datatype<type>(),   /* find MPI datatype */                    \
+      STRINGIFY(name),              /* field name */                           \
+      STRINGIFY(type),              /* type name */                            \
   }
     dist::mpi_struct_descr_t const descr[] = {
         ENTRY(dh::srpvect, fast_mg_rest_sendrecv),
@@ -2326,14 +2328,14 @@ MPI_Datatype mpi_datatype(dh::fast_dboxes const &) {
         ENTRY(dh::srpvect, fast_ref_refl_prol_sendrecv_1_0),
         ENTRY(dh::srpvect, fast_ref_refl_prol_sendrecv_1_1),
         ENTRY(dh::srpvect, fast_ref_refl_prol_sendrecv_2_0),
-        ENTRY(dh::srpvect, fast_ref_refl_prol_sendrecv_2_1),
-        {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}};
+        ENTRY(dh::srpvect, fast_ref_refl_prol_sendrecv_2_1)};
 #undef ENTRY
     newtype = dist::create_mpi_datatype(sizeof descr / sizeof descr[0], descr,
                                         "dh::fast_dboxes", sizeof s);
     initialised = true;
   }
   return newtype;
+}
 }
 
 // Memory usage
@@ -2711,4 +2713,5 @@ ostream &dh::fast_dboxes::output(ostream &os) const {
      << "   fast_old2new_ref_prol_sendrecv: " << fast_old2new_ref_prol_sendrecv
      << eol << "}" << eol;
   return os;
+}
 }

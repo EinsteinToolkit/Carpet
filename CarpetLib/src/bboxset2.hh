@@ -20,6 +20,7 @@
 #include "defs.hh"
 #include "vect.hh"
 
+namespace CarpetLib {
 using namespace std;
 
 /* A note on CARPET_AVOID_LAMBDA:
@@ -102,10 +103,10 @@ namespace bboxset2 {
 
 template <typename T, int D> class bboxset {
   template <typename, int> friend class bboxset;
-  typedef ::vect<T, D> vect;
-  typedef ::bbox<T, D> bbox;
-  typedef ::vect<T, D - 1> vect1;
-  typedef ::bbox<T, D - 1> bbox1;
+  typedef CarpetLib::vect<T, D> vect;
+  typedef CarpetLib::bbox<T, D> bbox;
+  typedef CarpetLib::vect<T, D - 1> vect1;
+  typedef CarpetLib::bbox<T, D - 1> bbox1;
   typedef bboxset<T, D - 1> bboxset1;
 
 #if 0
@@ -178,7 +179,7 @@ template <typename T, int D> class bboxset {
           iter0 != end0 ? iter0->first : numeric_limits<T>::max();
       const T next_pos1 =
           iter1 != end1 ? iter1->first : numeric_limits<T>::max();
-      const T pos = min(next_pos0, next_pos1);
+      const T pos = std::min(next_pos0, next_pos1);
       const bool active0 = next_pos0 == pos;
       const bool active1 = next_pos1 == pos;
       const bboxset1 *const subset0p = active0 ? iter0->second.get() : 0;
@@ -314,23 +315,24 @@ template <typename T, int D> class bboxset {
     }                                                                          \
                                                                                \
     bboxset1 old_decoded_subsetr;                                              \
-    TRAVERSE_SUBSETS2(const T &pos(_1); const bboxset1 &decoded_subset0(_2);   \
-                      const bboxset1 &decoded_subset1(_3); {                   \
-                        bboxset1 decoded_subsetr;                              \
-                        {                                                      \
-                          auto &_0(decoded_subsetr);                           \
-                          const auto &_1(decoded_subset0);                     \
-                          const auto &_2(decoded_subset1);                     \
-                          op;                                                  \
-                        }                                                      \
-                        const auto subsetrp = make_shared<bboxset1>(           \
-                            decoded_subsetr ^ old_decoded_subsetr);            \
-                        if (not subsetrp->empty()) {                           \
-                          res.subsets.insert(res.subsets.end(),                \
-                                             make_pair(pos, subsetrp));        \
-                        }                                                      \
-                        swap(old_decoded_subsetr, decoded_subsetr);            \
-                      }, other);                                               \
+    TRAVERSE_SUBSETS2(                                                         \
+        const T &pos(_1); const bboxset1 &decoded_subset0(_2);                 \
+        const bboxset1 &decoded_subset1(_3); {                                 \
+          bboxset1 decoded_subsetr;                                            \
+          {                                                                    \
+            auto &_0(decoded_subsetr);                                         \
+            const auto &_1(decoded_subset0);                                   \
+            const auto &_2(decoded_subset1);                                   \
+            op;                                                                \
+          }                                                                    \
+          const auto subsetrp =                                                \
+              make_shared<bboxset1>(decoded_subsetr ^ old_decoded_subsetr);    \
+          if (not subsetrp->empty()) {                                         \
+            res.subsets.insert(res.subsets.end(), make_pair(pos, subsetrp));   \
+          }                                                                    \
+          swap(old_decoded_subsetr, decoded_subsetr);                          \
+        },                                                                     \
+                                             other);                           \
     assert(old_decoded_subsetr.empty());                                       \
                                                                                \
     _0 = res;                                                                  \
@@ -472,11 +474,24 @@ public:
   /** Shift all points */
   bboxset shift(const vect &dist, const vect &dist_denom = vect(1)) const;
 
+  /** Shift all points */
+  bboxset shift(const vect &dist, const T &dist_denom) const {
+    return shift(dist, vect(dist_denom));
+  }
+
   /** Expand the set (convolute with a bbox) */
   bboxset expand(const vect &lo, const vect &hi) const;
 
   /** Expand the set (convolute with a bbox) */
-  bboxset expand(const ::vect<vect, 2> &lohi) const {
+  bboxset expand(const T &lo, const T &hi) const {
+    return expand(vect(lo), vect(hi));
+  }
+
+  /** Expand the set (convolute with a bbox) */
+  bboxset expand(const T &lohi) const { return expand(lohi, lohi); }
+
+  /** Expand the set (convolute with a bbox) */
+  bboxset expand(const CarpetLib::vect<vect, 2> &lohi) const {
     return expand(lohi[0], lohi[1]);
   }
 
@@ -544,8 +559,8 @@ public:
 
 template <typename T> class bboxset<T, 0> {
   template <typename, int> friend class bboxset;
-  typedef ::vect<T, 0> vect;
-  typedef ::bbox<T, 0> bbox;
+  typedef CarpetLib::vect<T, 0> vect;
+  typedef CarpetLib::bbox<T, 0> bbox;
 
   bool state;
   vect stride, offset;
@@ -671,7 +686,7 @@ public:
     assert(not is_poison());
     return *this;
   }
-  bboxset expand(const ::vect<vect, 2> &lohi) const {
+  bboxset expand(const CarpetLib::vect<vect, 2> &lohi) const {
     return expand(lohi[0], lohi[1]);
   }
 
@@ -703,10 +718,12 @@ inline bboxset<T, D> operator&(const bbox<T, D> &b, const bboxset<T, D> &bs) {
 template <typename T, int D>
 inline bboxset<T, D> operator^(const bboxset<T, D> &bs, const bbox<T, D> &b) {
   return bs ^ bboxset<T, D>(b);
-} template <typename T, int D>
+}
+template <typename T, int D>
 inline bboxset<T, D> operator^(const bbox<T, D> &b, const bboxset<T, D> &bs) {
   return bboxset<T, D>(b) ^ bs;
-} template <typename T, int D>
+}
+template <typename T, int D>
 inline bboxset<T, D> operator^(const bbox<T, D> &b1, const bbox<T, D> &b2) {
   return bboxset<T, D>(b1) ^ bboxset<T, D>(b2);
 }
@@ -1004,9 +1021,9 @@ bboxset<T, D> bboxset<T, D>::operator^(const bboxset &other) const {
 // TODO: If other is much smaller than this, direct insertion may
 // be faster
 #ifndef CARPET_AVOID_LAMBDA
-  return binary_operator([](const bboxset1 &set0, const bboxset1 &set1) {
-    return set0 ^ set1;
-  }, other);
+  return binary_operator(
+      [](const bboxset1 &set0, const bboxset1 &set1) { return set0 ^ set1; },
+      other);
 #else
   bboxset _0;
   BINARY_OPERATOR(const bboxset1 &set0(_1); const bboxset1 &set1(_2);
@@ -1026,9 +1043,9 @@ bboxset<T, D> &bboxset<T, D>::operator^=(const bboxset &other) {
 template <typename T, int D>
 bboxset<T, D> bboxset<T, D>::operator&(const bboxset &other) const {
 #ifndef CARPET_AVOID_LAMBDA
-  return binary_operator([](const bboxset1 &set0, const bboxset1 &set1) {
-    return set0 & set1;
-  }, other);
+  return binary_operator(
+      [](const bboxset1 &set0, const bboxset1 &set1) { return set0 & set1; },
+      other);
 #else
   bboxset _0;
   BINARY_OPERATOR(const bboxset1 &set0(_1); const bboxset1 &set1(_2);
@@ -1047,9 +1064,9 @@ bboxset<T, D> &bboxset<T, D>::operator&=(const bboxset &other) {
 template <typename T, int D>
 bboxset<T, D> bboxset<T, D>::operator|(const bboxset &other) const {
 #ifndef CARPET_AVOID_LAMBDA
-  return binary_operator([](const bboxset1 &set0, const bboxset1 &set1) {
-    return set0 | set1;
-  }, other);
+  return binary_operator(
+      [](const bboxset1 &set0, const bboxset1 &set1) { return set0 | set1; },
+      other);
 #else
   bboxset _0;
   BINARY_OPERATOR(const bboxset1 &set0(_1); const bboxset1 &set1(_2);
@@ -1088,9 +1105,9 @@ bboxset<T, D> &bboxset<T, D>::operator+=(const bboxset &other) {
 template <typename T, int D>
 bboxset<T, D> bboxset<T, D>::operator-(const bboxset &other) const {
 #ifndef CARPET_AVOID_LAMBDA
-  return binary_operator([](const bboxset1 &set0, const bboxset1 &set1) {
-    return set0 - set1;
-  }, other);
+  return binary_operator(
+      [](const bboxset1 &set0, const bboxset1 &set1) { return set0 - set1; },
+      other);
 #else
   bboxset _0;
   BINARY_OPERATOR(const bboxset1 &set0(_1); const bboxset1 &set1(_2);
@@ -1137,7 +1154,7 @@ bboxset<T, D> bboxset<T, D>::expand(const vect &lo, const vect &hi) const {
     T to_expand = (hi + lo)[d];
     T current_size = 1;
     while (to_expand > 0) {
-      const T this_expand = min(to_expand, current_size);
+      const T this_expand = std::min(to_expand, current_size);
       res |= res.shift(vect::dir(d) * this_expand);
       current_size += this_expand;
       to_expand -= this_expand;
@@ -1181,7 +1198,7 @@ bboxset<T, D> bboxset<T, D>::contracted_for(const bbox &target) const {
   assert(not target.empty());
   assert(strides_are_compatible(stride, target.stride()));
   const bbox cont = container();
-  const vect safety = 10;
+  const T safety = 10;
   const bbox good_world = cont.anti_contracted_for(target).expand(safety);
   const bbox world1 = good_world.anti_contracted_for(cont).expand(safety);
   const bbox world2 = world1.anti_contracted_for(target).expand(safety);
@@ -1404,11 +1421,14 @@ ostream &bboxset<T, D>::debug_output(ostream &os) const {
 }
 
 template <typename T, int D> ostream &bboxset<T, D>::output(ostream &os) const {
-  assert(not is_poison());
   T Tdummy;
+  os << "bboxset<" << typestring(Tdummy) << "," << D << ">";
+  if (is_poison())
+    return os << "(poison)";
+  assert(not is_poison());
   set<bbox> bs;
   serialise(bs);
-  return os << "bboxset<" << typestring(Tdummy) << "," << D << ">("
+  return os << "("
             << "set<bbox>:" << bs << ","
             << "stride:" << stride << ","
             << "offset:" << offset << ")";
@@ -1466,5 +1486,7 @@ template <typename T> ostream &bboxset<T, 0>::output(ostream &os) const {
 } // namespace bboxset2
 
 #endif // #ifdef CARPET_ENABLE_BBOXSET2
+
+} // namespace CarpetLib
 
 #endif // #ifndef BBOXSET2_HH

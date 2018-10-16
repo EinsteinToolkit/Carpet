@@ -9,8 +9,8 @@
 
 #include "gh.hh"
 
-#include "carpet.hh"
 #include "CAR.hh"
+#include "carpet.hh"
 
 namespace CarpetAdaptiveRegrid {
 
