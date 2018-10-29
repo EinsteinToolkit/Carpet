@@ -11,6 +11,8 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 #include <cctk_Version.h>
+#include <util_ErrorCodes.h>
+#include <util_Table.h>
 
 #include <SimulationIO/H5Helpers.hpp>
 #include <SimulationIO/RegionCalculus.hpp>
@@ -28,8 +30,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
-#include <iostream>
 
 namespace CarpetSimulationIO {
 using namespace SimulationIO;
@@ -186,6 +186,8 @@ void output_file_t::insert_vars(const vector<int> &varindices,
     cGroupDynamicData dynamicdata;
     ierr = CCTK_GroupDynamicData(cctkGH, groupindex, &dynamicdata);
     assert(not ierr);
+    const int grouptable = CCTK_GroupTagsTableI(groupindex);
+    assert(grouptable >= 0);
 
     // const string varname(charptr2string(CCTK_VarName(varindex)));
     const string groupname(tolower(charptr2string(CCTK_GroupName(groupindex))));
@@ -225,6 +227,7 @@ void output_file_t::insert_vars(const vector<int> &varindices,
     const auto basis = tangentspace->bases().at(basisname);
 
     // TensorType
+    // TODO: Turn this decoding into a separate function
     vector<int> tensorindices;
     string tensortypename;
     bool uniqueindices =
@@ -236,24 +239,82 @@ void output_file_t::insert_vars(const vector<int> &varindices,
       tensortypename = tensortypes_scalars.at(dimension);
       uniqueindices = false;
     } else {
-      // TODO: use the tensor type instead
-      if (groupdata.numvars == 1) {
+      string tensortypealias;
+      char buf[100];
+      ierr =
+          Util_TableGetString(grouptable, sizeof buf, buf, "tensortypealias");
+      if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY)
+        tensortypealias = "";
+      else if (ierr < 0)
+        CCTK_VERROR("Error in tensor type alias declaration for group \"%s\"",
+                    groupname.c_str());
+      else
+        tensortypealias = buf;
+      if (tensortypealias == "scalar") {
         tensorindices = {};
-        tensortypename = tensortypes_scalars.at(dimension);
-      } else if (groupdata.numvars == dimension) {
+        tensortypename = tensortypes_scalars.at(3);
+        uniqueindices = groupdata.numvars == 1;
+      } else if (tensortypealias == "4scalar") {
+        tensorindices = {};
+        tensortypename = tensortypes_scalars.at(4);
+        uniqueindices = groupdata.numvars == 1;
+      } else if (tensortypealias == "u" || tensortypealias == "d") {
+        if (groupdata.numvars != 3)
+          CCTK_VERROR(
+              "Group \"%s\" has tensor type alias \"%s\" which requires "
+              "%d variables, but group has %d variables",
+              groupname.c_str(), tensortypealias.c_str(), 3, groupdata.numvars);
         tensorindices = {varindex - varindex0};
-        tensortypename = tensortypes_vectors.at(dimension);
-      } else if (groupdata.numvars == dimension * (dimension + 1) / 2) {
-        tensorindices = syminds.at(dimension).at(groupvarindex);
-        tensortypename = tensortypes_symmetric_tensors.at(dimension);
-      } else if (groupdata.numvars == dimension * dimension) {
-        tensorindices = {groupvarindex / dimension, groupvarindex % dimension};
-        tensortypename = tensortypes_tensors.at(dimension);
+        tensortypename = tensortypes_vectors.at(3);
+      } else if (tensortypealias == "4u" || tensortypealias == "4d") {
+        if (groupdata.numvars != 4)
+          CCTK_VERROR(
+              "Group \"%s\" has tensor type alias \"%s\" which requires "
+              "%d variables, but group has %d variables",
+              groupname.c_str(), tensortypealias.c_str(), 4, groupdata.numvars);
+        tensorindices = {varindex - varindex0};
+        tensortypename = tensortypes_vectors.at(4);
+      } else if (tensortypealias == "uu_sym" || tensortypealias == "dd_sym") {
+        if (groupdata.numvars != 6)
+          CCTK_VERROR(
+              "Group \"%s\" has tensor type alias \"%s\" which requires "
+              "%d variables, but group has %d variables",
+              groupname.c_str(), tensortypealias.c_str(), 6, groupdata.numvars);
+        tensorindices = syminds.at(3).at(groupvarindex);
+        tensortypename = tensortypes_symmetric_tensors.at(3);
+      } else if (tensortypealias == "4uu_sym" || tensortypealias == "4dd_sym") {
+        if (groupdata.numvars != 10)
+          CCTK_VERROR(
+              "Group \"%s\" has tensor type alias \"%s\" which requires "
+              "%d variables, but group has %d variables",
+              groupname.c_str(), tensortypealias.c_str(), 10,
+              groupdata.numvars);
+        tensorindices = syminds.at(4).at(groupvarindex);
+        tensortypename = tensortypes_symmetric_tensors.at(4);
+      } else if (tensortypealias == "") {
+        // Use number of variables in group as fallback
+        if (groupdata.numvars == 1) {
+          tensorindices = {};
+          tensortypename = tensortypes_scalars.at(dimension);
+        } else if (groupdata.numvars == dimension) {
+          tensorindices = {varindex - varindex0};
+          tensortypename = tensortypes_vectors.at(dimension);
+        } else if (groupdata.numvars == dimension * (dimension + 1) / 2) {
+          tensorindices = syminds.at(dimension).at(groupvarindex);
+          tensortypename = tensortypes_symmetric_tensors.at(dimension);
+        } else if (groupdata.numvars == dimension * dimension) {
+          tensorindices = {groupvarindex / dimension,
+                           groupvarindex % dimension};
+          tensortypename = tensortypes_tensors.at(dimension);
+        } else {
+          // Fallback: treat as scalars
+          tensorindices = {};
+          tensortypename = tensortypes_scalars.at(dimension);
+          uniqueindices = false;
+        }
       } else {
-        // Fallback: treat as scalars
-        tensorindices = {};
-        tensortypename = tensortypes_scalars.at(dimension);
-        uniqueindices = false;
+        CCTK_VERROR("Group \"%s\"' has unknown tensor type alias \"%s\"",
+                    groupname.c_str(), tensortypealias.c_str());
       }
     }
     const int tensorrank = tensorindices.size();
