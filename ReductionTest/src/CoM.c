@@ -7,7 +7,7 @@
 #include <math.h>
 
 void CoM_Local(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS_CoM_Local;
+  DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
   int i, j, k, index;
@@ -29,7 +29,7 @@ void CoM_Local(CCTK_ARGUMENTS) {
 }
 
 void CoM(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS_CoM;
+  DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
   int varindex = -1;

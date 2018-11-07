@@ -617,6 +617,7 @@ extern "C" int GetValidRegion(int vi,int tl) {
 extern "C" void ManualSyncGF(const cGH *cctkGH,int vi) {
   var_tuple vt{vi};
   auto f = valid_k.find(vt);
+  std::cout << "ManualSyncGF(" << CCTK_FullName(vi) << ")" << std::endl;
   CCTK_ASSERT(f != valid_k.end());
   // Check if anything needs to be done
   if(f->second == WH_EVERYWHERE) {
@@ -695,16 +696,16 @@ struct SymFunc {
   int width;
 };
 
-extern std::map<std::string,Func> boundary_functions;
-extern std::map<std::string,SymFunc> symmetry_functions;
+std::map<std::string,Func> boundary_functions;
+std::map<std::string,SymFunc> symmetry_functions;
 /**
  * The index into the array is the same as the "before"
  * argument defined when registering a BC.
  */
-extern std::array<std::map<int,std::vector<Bound>>,2> boundary_conditions;
+std::array<std::map<int,std::vector<Bound>>,2> boundary_conditions;
 
 extern "C"
-void RegisterPhysicalBC(
+void Carpet_RegisterPhysicalBC(
     const cGH *cctkGH,
     boundary_function func,
     const char *bc_name,

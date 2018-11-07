@@ -67,8 +67,8 @@ Carpet::time_refinement_factors         = "[1,2,4,8,16,32,64,128,256,512]"
 Carpet::max_refinement_levels           = 5
 Carpet::max_timelevels                  = 3
 
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
+Carpet::use_psync = "no"
+Carpet::psync_only = "no"
 
 CarpetRegrid2::num_centres              = 1
 CarpetRegrid2::num_levels_1             = 3

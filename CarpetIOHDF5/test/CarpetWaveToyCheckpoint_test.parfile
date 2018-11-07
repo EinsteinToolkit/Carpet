@@ -24,8 +24,8 @@ Carpet::prolongation_order_time  = 2
 Carpet::max_refinement_levels    = 4
 CarpetRegrid::refinement_levels  = 4
 
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
+
+
 
 # Output
 IO::out_dir       = $parfile
