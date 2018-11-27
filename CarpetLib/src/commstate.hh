@@ -118,6 +118,8 @@ public:
   void commit_send_space(unsigned type, int proc, ptrdiff_t npoints);
 
   void commit_recv_space(unsigned type, int proc, ptrdiff_t npoints);
+
+  static void free_buffers();
 };
 }
 
