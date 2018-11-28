@@ -18,6 +18,3 @@ Carpet::enable_no_storage = yes
 
 IO::out_dir = $parfile
 IO::out_fileinfo = "none"
-
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"

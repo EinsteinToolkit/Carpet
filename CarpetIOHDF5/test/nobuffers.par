@@ -1,4 +1,4 @@
-ActiveThorns = "Carpet CarpetLib CarpetRegrid2 LoopControl GSL Boundary2 CoordBase InitBase SymBase CartGrid3D Time MoL IOUtil HDF5 CarpetIOHDF5"
+ActiveThorns = "Carpet CarpetLib CarpetRegrid2 LoopControl GSL Boundary CoordBase InitBase SymBase CartGrid3D Time MoL IOUtil HDF5 CarpetIOHDF5"
 
 
 Cactus::cctk_itlast = 0
@@ -6,9 +6,6 @@ Cactus::cctk_itlast = 0
 Driver::ghost_size = 2
 
 InitBase::initial_data_setup_method = "init_all_levels"
-
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
 
 Carpet::max_refinement_levels    = 3
 Carpet::prolongation_order_space = 3

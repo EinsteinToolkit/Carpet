@@ -14,7 +14,7 @@ Cactus::cctk_final_time = 1
 
 
 #############################################################################################
-ActiveThorns = "Boundary2 CartGrid3D CoordBase Slab SymBase Periodic"
+ActiveThorns = "Boundary CartGrid3D CoordBase Slab SymBase Periodic"
 #############################################################################################
 
 CoordBase::domainsize = "minmax"
@@ -60,9 +60,6 @@ Carpet::init_each_timelevel = "yes"
 
 Carpet::domain_from_coordbase = yes
 Carpet::max_refinement_levels = 2
-
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
 
 driver::ghost_size       = 3
 Carpet::use_buffer_zones = yes

@@ -4,7 +4,7 @@
 ################################################################################
 
 ActiveThorns = "
-  Boundary2
+  Boundary
   Carpet
   CarpetIOASCII
   CarpetIOBasic
@@ -67,9 +67,6 @@ Carpet::time_refinement_factors         = "[1,2,4,8,16,32,64,128,256,512]"
 Carpet::max_refinement_levels           = 5
 Carpet::max_timelevels                  = 3
 
-Carpet::use_psync = "no"
-Carpet::psync_only = "no"
-
 CarpetRegrid2::num_centres              = 1
 CarpetRegrid2::num_levels_1             = 3
 CarpetRegrid2::radius_1             [1] = 16
@@ -97,7 +94,7 @@ InitBase::initial_data_setup_method     = "init_single_level"
 # Boundary conditions
 ################################################################################
 
-Boundary2::radpower                     = 2
+Boundary::radpower                     = 2
 
 ################################################################################
 # Time integration

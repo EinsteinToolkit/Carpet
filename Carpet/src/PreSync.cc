@@ -872,6 +872,26 @@ void Carpet_ApplyPhysicalBCs(const cGH *cctkGH) {
   std::cout << " done" << std::endl;
 }
 
+extern "C"
+void Bdry2_Boundary_RegisterSymmetryBC(
+    const cGH *cctkGH,
+    boundary_function func,
+    int handle,
+    int faces,
+    int width,
+    const char *bc_name) {
+  if(NULL==func) {
+    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
+               "Symmetry Boundary condition '%s' points to NULL.", bc_name);
+  }
+  SymFunc& f = symmetry_functions[bc_name];
+  f.func = func;
+  f.handle = handle;
+  f.faces = faces;
+//  &f.width = width;
+//  std::cout << "Register Width of " << f.width[0] << " for " << bc_name << std::endl;
+}
+
 }
 
 void ShowValid() {

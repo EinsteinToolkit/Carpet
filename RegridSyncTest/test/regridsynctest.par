@@ -10,7 +10,7 @@ ActiveThorns	=  "	time
 			cartgrid3d 
 			coordbase 
 			mol 
-			boundary2 
+			boundary 
 			spacemask 
 			carpetiobasic 
 			ioutil 
@@ -89,9 +89,6 @@ Carpet::init_each_timelevel 			= "no"
 
 #--- Grid Setup and carpet parameters
 
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
-
 carpet::buffer_width 				= 6
 
 driver::ghost_size                      	= 3
@@ -127,7 +124,7 @@ admbase::evolution_method			=	"adm_bssn"
 admbase::lapse_evolution_method			=	"1+log"
 admbase::shift_evolution_method 		= 	"static"
 
-boundary2::radpower				=	2
+boundary::radpower				=	2
 
 admconstraints::bound				=	"static"
 

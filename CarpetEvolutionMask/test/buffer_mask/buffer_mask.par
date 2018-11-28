@@ -1,9 +1,9 @@
 !DESC "Carpet mesh refined, test buffer mask computation"
-ActiveThorns = "time MoL coordbase symbase cartgrid3d ioutil boundary2 Carpet CarpetLib CarpetInterp CarpetReduce CarpetIOScalar CarpetIOBasic LoopControl InitBase CarpetRegrid2 ReflectionSymmetry CarpetIOASCII CarpetEvolutionMask"
+ActiveThorns = "time MoL coordbase symbase cartgrid3d ioutil boundary Carpet CarpetLib CarpetInterp CarpetReduce CarpetIOScalar CarpetIOBasic LoopControl InitBase CarpetRegrid2 ReflectionSymmetry CarpetIOASCII CarpetEvolutionMask"
 
 time::dtfac = 0.375
 
-boundary2::radpower        = 2
+boundary::radpower        = 2
 
 CartGrid3D::type         = "coordbase"
 CartGrid3D::domain       = "full"
@@ -42,8 +42,6 @@ CarpetRegrid2::num_levels_1 = 3
 CarpetRegrid2::radius_1[1]  = 10
 CarpetRegrid2::radius_1[2]  = 5
 
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
 Carpet::poison_new_timelevels           = "yes"
 Carpet::init_fill_timelevels            = "yes"
 CarpetLib::poison_new_memory            = "yes"

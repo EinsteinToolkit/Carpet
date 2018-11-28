@@ -1,4 +1,4 @@
-ActiveThorns = "IOUtil Boundary2 CartGrid3D CoordBase SymBase MoL InitBase"
+ActiveThorns = "IOUtil Boundary CartGrid3D CoordBase SymBase MoL InitBase"
 ActiveThorns = "Carpet CarpetLib CarpetInterp GSL LoopControl CarpetReduce CarpetSlab"
 
 #---Geometry---
@@ -9,8 +9,6 @@ CartGrid3D::type               = coordbase
 driver::ghost_size             = 3
 Carpet::domain_from_coordbase  = yes
 Carpet::convergence_level      = 0
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
 
 CoordBase::ncells_x            = 1
 CoordBase::xmin                = -1

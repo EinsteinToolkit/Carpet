@@ -1,5 +1,5 @@
 ActiveThorns = "
-        Boundary2
+        Boundary
         Carpet
         CarpetIOASCII
         CarpetIOBasic
@@ -28,9 +28,6 @@ IO::parfile_write = no
 
 IOASCII::out1D_every = 1
 IOASCII::out1D_d     = no
-
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
 
 Carpet::max_refinement_levels    = 2
 Carpet::use_buffer_zones         = yes

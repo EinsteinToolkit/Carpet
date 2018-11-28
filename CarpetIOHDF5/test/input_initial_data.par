@@ -1,6 +1,6 @@
 # deactivate the IDScalarWaveMoL thorn
 # initial data is read from files using the filereader
-ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce LoopControl GSL Boundary2 CoordBase InitBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL WaveToyMoL IOUtil CarpetIOBasic CarpetIOScalar HDF5 CarpetIOHDF5"
+ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce LoopControl GSL Boundary CoordBase InitBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL WaveToyMoL IOUtil CarpetIOBasic CarpetIOScalar HDF5 CarpetIOHDF5"
 #ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce LoopControl GSL Boundary CoordBase InitBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL WaveToyMoL IOUtil CarpetIOBasic CarpetIOScalar HDF5 CarpetIOHDF5 IDScalarWaveMoL"
 
 
@@ -16,9 +16,6 @@ InitBase::initial_data_setup_method = "init_all_levels"
 Carpet::max_refinement_levels    = 3
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time  = 2
-
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
 
 CarpetRegrid::refinement_levels = 1
 CarpetRegrid::refined_regions   = "manual-gridpoint-list"

@@ -33,15 +33,11 @@ Carpet::prolongation_order_time  = 2
 #Carpet::init_3_timelevels = yes
 Carpet::init_each_timelevel = yes
 
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
-
-
 ActiveThorns = "NaNChecker"
 
 
 
-ActiveThorns = "Boundary2 CartGrid3D CoordBase SymBase"
+ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
 
 CoordBase::domainsize = minmax
 

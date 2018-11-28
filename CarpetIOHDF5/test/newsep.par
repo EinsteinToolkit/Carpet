@@ -17,9 +17,6 @@ IO::out_dir = $parfile
 IO::out_fileinfo = "none"
 IO::out_group_separator = "-"
 
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
-
 Carpet::global_nx = 7
 Carpet::global_ny = 8
 Carpet::global_nz = 9

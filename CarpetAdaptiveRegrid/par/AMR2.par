@@ -1,5 +1,5 @@
 
-ActiveThorns = "coordbase SymBase NaNChecker carpetReduce CartGrid3D carpet carpetlib carpetadaptiveregrid Boundary2 IOBasic IOUtil carpetIOScalar carpetIOASCII IDWaveMoL carpetSlab WaveMoL Time MoL reflectionsymmetry"
+ActiveThorns = "coordbase SymBase NaNChecker carpetReduce CartGrid3D carpet carpetlib carpetadaptiveregrid Boundary IOBasic IOUtil carpetIOScalar carpetIOASCII IDWaveMoL carpetSlab WaveMoL Time MoL reflectionsymmetry"
 
 
 IDWaveMoL::initial_data = "gaussian"

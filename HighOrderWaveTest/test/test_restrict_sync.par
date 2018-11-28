@@ -4,7 +4,7 @@
 ################################################################################
 
 ActiveThorns = "
-  Boundary2
+  Boundary
   Carpet
   CarpetIOASCII
   CarpetIOBasic
@@ -76,9 +76,6 @@ Time::timestep                          = 0.25
 
 Carpet::max_refinement_levels           = 5
 Carpet::max_timelevels                  = 3
-
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
 
 CarpetRegrid2::num_centres              = 1
 CarpetRegrid2::num_levels_1             = 3

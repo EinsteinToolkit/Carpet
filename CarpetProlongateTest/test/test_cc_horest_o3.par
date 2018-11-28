@@ -29,9 +29,6 @@ Carpet::refinement_centering = "cell"
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time  = 2
 
-Carpet::use_psync = "yes"
-Carpet::psync_only = "yes"
-
 CarpetLib::restriction_order_space = 3
 CarpetLib::use_higher_order_restriction = yes
 
@@ -42,7 +39,7 @@ CarpetLib::poison_new_memory  = yes
 
 
 
-ActiveThorns = "Boundary2 CartGrid3D CoordBase SymBase"
+ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
 
 CoordBase::domainsize = "minmax"
 
