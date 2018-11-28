@@ -1,6 +1,7 @@
 # Interface definition for thorn Carpet
 
 IMPLEMENTS: Driver
+
 include header: carpet_public.hh in carpet.hh
 include header: carpet_public.h in carpet.h
 
@@ -39,6 +40,7 @@ uses include header: gh.hh
 uses include header: th.hh
 
 uses include header: operators.hh
+
 
 
 # Get access to communicators

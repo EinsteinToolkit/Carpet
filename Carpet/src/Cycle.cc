@@ -250,7 +250,6 @@ void FillTimeLevels(const cGH *const cctkGH) {
               CCTK_IsFunctionAliased("Accelerator_NotifyDataModified");
           vector<CCTK_INT> vis, rls, tls;
           const int varn = CCTK_NumVarsInGroupI(group);
-
           for (int var = 0; var < varn; ++var) {
             arrdata.AT(group).AT(m).data.AT(var)->fill_all(reflevel, mglevel);
             if (have_accel) {

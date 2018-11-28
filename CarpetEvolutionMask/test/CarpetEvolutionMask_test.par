@@ -27,6 +27,7 @@ Carpet::init_each_timelevel = yes
 InitBase::initial_data_setup_method="init_single_level"
 Carpet::use_buffer_zones = yes
 
+
 coordbase::xmin					= 0.0
 coordbase::xmax					= 6.4
 coordbase::ymin					= 0.0

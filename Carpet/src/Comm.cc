@@ -80,6 +80,7 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
                          cFunctionData const *function_data) {
   int retval = 0;
   DECLARE_CCTK_PARAMETERS;
+
   assert(groups.size() > 0);
 
   // check consistency of all groups:

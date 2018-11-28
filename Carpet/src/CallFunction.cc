@@ -30,23 +30,6 @@ std::string func_name;
 
 namespace Carpet {
 
-struct AddVariables {
-  std::vector<int> vars;
-  void add(std::set<int> pregroups) {
-    bool newgroup = false;
-    for(int vnum : vars) {
-      int group = CCTK_GroupIndexFromVarI(vnum);
-      if(pregroups.find(group) == pregroups.end()) {
-        newgroup = true;
-        pregroups.insert(group);
-      }
-    }
-    // If nothing was added, the exception shouldn't
-    // have been thrown
-    assert(newgroup);
-  }
-};
-
 using namespace std;
 
 static void CallScheduledFunction(char const *restrict time_and_mode,
@@ -129,29 +112,18 @@ int CallFunction(void *function,           ///< the function to call
         BEGIN_META_MODE(cctkGH) {
           BEGIN_MGLEVEL_LOOP(cctkGH) {
             BEGIN_REFLEVEL_LOOP(cctkGH) {
-              bool done = false;
-              while(!done) {
-                done = true;
-                PreSyncGroups(attribute,cctkGH,pregroups);
-                try {
-                  BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
-                    BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
-                      CallScheduledFunction("Meta time local mode", function,
-                        attribute, data, user_timer);
-                    }
-                    END_LOCAL_COMPONENT_LOOP;
-                  }
-                  END_LOCAL_MAP_LOOP;
-                } catch(AddVariables av) {
-                  av.add(pregroups);
-                  done = false;
-                  // TODO: This is hacky. Probably it should not be kept.
-                  assert(false);
+              PreSyncGroups(attribute,cctkGH,pregroups);
+              BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
+                BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+                  CallScheduledFunction("Meta time local mode", function,
+                      attribute, data, user_timer);
                 }
+                END_LOCAL_COMPONENT_LOOP;
               }
+              END_LOCAL_MAP_LOOP;
               if (not sync_groups.empty()) {
                 SyncGroupsInScheduleBlock(attribute, cctkGH, sync_groups,
-                                          sync_timer);
+                    sync_timer);
               }
             }
             END_REFLEVEL_LOOP;
@@ -306,7 +278,7 @@ int CallFunction(void *function,           ///< the function to call
         END_GLOBAL_MODE;
       } else {
         BEGIN_GLOBAL_MODE(cctkGH) {
-          if (not sync_groups.empty()) {
+          if (not pregroups.empty()) {
             BEGIN_REFLEVEL_LOOP(cctkGH) {
               PreSyncGroups(attribute,cctkGH,pregroups);
             }
