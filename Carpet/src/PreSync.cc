@@ -479,6 +479,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
   DECLARE_CCTK_PARAMETERS;
   if(cctkGH == 0) return;
   if(attribute == 0) return;
+  if(!use_psync) return;
   tmp_read.erase(tmp_read.begin(),tmp_read.end());
   tmp_write.erase(tmp_write.begin(),tmp_write.end());
 
