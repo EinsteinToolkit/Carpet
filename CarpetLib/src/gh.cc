@@ -86,8 +86,9 @@ void gh::regrid(rregs const &superregs, mregs const &regs, bool const do_init) {
   regions = regs;
 
   // Consistency checks
-
+#ifdef CARPET_DEBUG
   // Note: there may be zero refinement levels
+  // Note:: dh::regrid contains stricter checks
 
   // Check multigrid consistency
   assert(mglevels() > 0);
@@ -178,6 +179,7 @@ void gh::regrid(rregs const &superregs, mregs const &regs, bool const do_init) {
       CCTK_WARN(0, "The refinement hierarchy is not properly nested.");
     }
   }
+#endif // CARPET_DEBUG
 
   // Calculate global and local components
   assert(old_global_components_.empty());
