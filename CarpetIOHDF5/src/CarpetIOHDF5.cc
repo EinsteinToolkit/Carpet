@@ -1019,7 +1019,7 @@ static int OutputVarAs(const cGH *const cctkGH, const char *const fullname,
   for (int var = firstvar; var < firstvar + numvars; var++) {
 
     // Synchronize and apply BCs if needed
-    if(CCTK_ParameterValInt("use_psync","Carpet") == 1) {
+    if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
       Carpet_ManualSyncGF(cctkGH,var);
     }
 

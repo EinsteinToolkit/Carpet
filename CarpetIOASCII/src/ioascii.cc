@@ -492,7 +492,7 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
     assert(not ierr);
   }
 
-  if(CCTK_ParameterValInt("use_psync","Carpet") == 1) {
+  if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
     Carpet_ManualSyncGF(cctkGH,vindex);
   }
 

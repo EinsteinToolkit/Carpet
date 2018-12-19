@@ -36,10 +36,7 @@ BOOLEAN domain_from_multipatch "Use the domain description from MultiPatch"
 {
 } "no"
 
-STRING testing_parameter "For printing out region validity for a variable"
-{
-  "" :: "Must be a valid variable name with format THORN::variable"
-} ""
+
 
 CCTK_INT global_nx "Grid size in x direction" STEERABLE=recover
 {
@@ -612,24 +609,3 @@ BOOLEAN adaptive_stepsize "Allow adaptive timestep sizes"
 BOOLEAN use_unusedpoints_mask "Turn on storage and usage of 'unusedpoints_mask'" STEERABLE=recover
 {
 } "no"
-
-BOOLEAN use_psync "Whether presync is active"
-{
-} "no"
-
-BOOLEAN psync_only "Whether SYNC statements are ignored"
-{
-} "no"
-
-# Strange error occurs if this is named "presync_error". Why?
-BOOLEAN psync_error "Whether presync causes fatal errors"
-{
-} "no"
-
-BOOLEAN silent_psync "Silences presync error messages; overrides psync_error"
-{
-} "no"
-
-BOOLEAN sync_count "Reports the total number of variable syncs that occur during the run"
-{
-} "yes"

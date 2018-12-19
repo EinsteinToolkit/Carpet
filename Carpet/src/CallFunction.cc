@@ -86,7 +86,7 @@ int CallFunction(void *function,           ///< the function to call
          1);
   // Create list of all groups that need to be synchronised via SYNC
   vector<int> sync_groups;
-  if(not psync_only) {
+  if(CCTK_ParameterValInt("psync_only","Cactus") == 0) {
     sync_groups.reserve(attribute->n_SyncGroups);
     for (int g = 0; g < attribute->n_SyncGroups; g++) {
       const int group = attribute->SyncGroups[g];
@@ -403,7 +403,8 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
   Checkpoint("%s call at %s to %s::%s", time_and_mode, attribute->where,
              attribute->thorn, attribute->routine);
   int const skip = CallBeforeRoutines(cctkGH, function, attribute, data);
-  if (not skip) {
+  if (not skip)
+  {
     Timers::Timer timer(attribute->routine);
 
     // Save the time step size
@@ -430,14 +431,12 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
       pre_timer.start();
       Accelerator_PreCallFunction(cctkGH, attribute);
       pre_timer.stop();
-      std::cout << "/== " << func_name << std::endl;
     }
     clear_readwrites();
     int const res = CCTK_CallFunction(function, attribute, data);
     check_readwrites();
     assert(res == 0);
     if (CCTK_IsFunctionAliased("Accelerator_PostCallFunction")) {
-      std::cout << "\\== " << func_name << std::endl;
       Timers::Timer post_timer("PostCall");
       post_timer.start();
       Accelerator_PostCallFunction(cctkGH, attribute);

@@ -243,6 +243,24 @@ void compute_clauses(const int num_strings,const char **strings,std::map<var_tup
 
 std::map<std::string,std::map<var_tuple,int>> reads,writes;
 std::map<var_tuple,int> valid_k;
+std::map<var_tuple,int> old_valid_k;
+
+extern "C" void diagnosticPreValid();
+void diagnosticPreValid() {
+  old_valid_k = valid_k;
+}
+
+extern "C" void diagnosticChanged();
+void diagnosticChanged() {
+  for(auto entry = valid_k.begin(); valid_k.end() != entry; ++entry) {
+    auto f = old_valid_k.find(entry->first);
+    if(f == old_valid_k.end()) {
+      std::cout << " NEW: " << entry->first << " = " << wstr(entry->second) << std::endl;
+    } else if(entry->second != f->second) {
+      std::cout << " CHANGED: " << entry->first << " = " << wstr(f->second) << " -> " << wstr(entry->second) << std::endl;
+    }
+  }
+}
 
 extern "C" void TraverseReads(const char *func_name,void(*trace_func)(int,int,int)) {
     std::string f{func_name};
@@ -293,6 +311,8 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
 void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pregroups) {
   DECLARE_CCTK_PARAMETERS;
   std::vector<int> sync_groups;
+  bool use_psync = (CCTK_ParameterValInt("use_psync","Cactus") != 0);
+  bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
   for(auto i=pregroups.begin();i != pregroups.end();++i) {
     int gi = *i;
     int i0 = CCTK_FirstVarIndexI(gi);
@@ -392,6 +412,7 @@ bool hasAccess(const std::map<var_tuple,int>& m, const var_tuple& vt) {
 extern "C"
 int Carpet_hasAccess(const cGH *cctkGH,int var_index) {
   DECLARE_CCTK_PARAMETERS;
+  bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
   if(!psync_error)
     return true;
   int type = CCTK_GroupTypeFromVarI(var_index);
@@ -479,6 +500,8 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
   DECLARE_CCTK_PARAMETERS;
   if(cctkGH == 0) return;
   if(attribute == 0) return;
+  bool use_psync = (CCTK_ParameterValInt("use_psync","Cactus") != 0);
+  bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
   if(!use_psync) return;
   tmp_read.erase(tmp_read.begin(),tmp_read.end());
   tmp_write.erase(tmp_write.begin(),tmp_write.end());
