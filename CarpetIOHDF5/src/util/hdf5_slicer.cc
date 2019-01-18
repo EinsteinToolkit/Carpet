@@ -87,6 +87,9 @@ static hid_t outfile = -1;
 // compression level
 static int compression_level = 0;
 
+// number of output files to record in attributes
+static int nioprocs = 1;
+
 /*****************************************************************************
  *************************     Function Prototypes   *************************
  *****************************************************************************/
@@ -121,6 +124,8 @@ int main(int argc, char *const argv[]) {
     if (strcmp(argv[i], "--help") == 0) {
       help = true;
       break;
+    } else if (strcmp(argv[i], "--nioprocs") == 0) {
+      nioprocs = atoi(argv[++i]);
     } else if (strcmp(argv[i], "--compression-level") == 0) {
       compression_level = atoi(argv[++i]);
       if (compression_level < 0 or compression_level > 9) {
@@ -190,6 +195,7 @@ int main(int argc, char *const argv[]) {
          << indent << "[--timestep <cctk_time value>]" << endl
          << indent << "[--verbose]" << endl
          << indent << "[--compression-level <integer between 0 and 9 inclusive>"
+         << indent << "[--nioprocs <number of HDF5 files in output set>"
          << endl
          << indent
          << "<--out1d-line value value> | <--out2d-plane value> | <out3d-cube>"
@@ -515,7 +521,6 @@ static herr_t ProcessDataset(hid_t group, const char *datasetname,
     CHECK_HDF5(dataspace = H5Screate(H5S_SCALAR));
     CHECK_HDF5(attr = H5Acreate(metadata_group, "nioprocs", H5T_NATIVE_INT,
                                 dataspace, H5P_DEFAULT));
-    const int nioprocs = 1;
     CHECK_HDF5(H5Awrite(attr, H5T_NATIVE_INT, &nioprocs));
     CHECK_HDF5(H5Aclose(attr));
     CHECK_HDF5(H5Sclose(dataspace));
