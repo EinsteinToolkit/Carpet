@@ -88,14 +88,31 @@ void add_parametervalue(shared_ptr<Configuration> &configuration,
 output_file_t::output_file_t(const cGH *cctkGH, io_dir_t io_dir,
                              const string &projectname,
                              file_format output_format, file_type output_type,
-                             int myioproc, int ioproc_every)
+                             bool do_checkpoint, int myioproc, int ioproc_every)
     : cctkGH(cctkGH), io_dir(io_dir), projectname(projectname),
       output_format(output_format), output_type(output_type),
-      iteration(cctkGH->cctk_iteration), myioproc(myioproc),
-      ioproc_every(ioproc_every) {
+      do_checkpoint(do_checkpoint), iteration(cctkGH->cctk_iteration),
+      myioproc(myioproc), ioproc_every(ioproc_every) {
   DECLARE_CCTK_PARAMETERS;
   if (verbose)
     CCTK_VINFO("Creating project \"%s\"", projectname.c_str());
+
+  static Timers::Timer timer_local_hdf5(
+      "SimulationIO::output_file_t[local,hdf5]");
+  static Timers::Timer timer_local_asdf(
+      "SimulationIO::output_file_t[local,asdf]");
+  static Timers::Timer timer_global_hdf5(
+      "SimulationIO::output_file_t[global,hdf5]");
+  static Timers::Timer timer_global_asdf(
+      "SimulationIO::output_file_t[global,asdf]");
+  Timers::Timer &timer =
+      output_type == file_type::local
+          ? (output_format == file_format::hdf5 ? timer_local_hdf5
+                                                : timer_local_asdf)
+          : (output_format == file_format::hdf5 ? timer_global_hdf5
+                                                : timer_local_asdf);
+  timer.start();
+  assert(do_checkpoint == (io_dir == io_dir_t::checkpoint));
   const int myproc = CCTK_MyProc(cctkGH);
   assert(ioproc_every > 0);
   switch (output_type) {
@@ -108,6 +125,7 @@ output_file_t::output_file_t(const cGH *cctkGH, io_dir_t io_dir,
     break;
   }
   project = SimulationIO::createProject(projectname);
+  timer.stop();
 }
 
 output_file_t::~output_file_t() {
@@ -122,8 +140,33 @@ void output_file_t::insert_vars(const vector<int> &varindices,
   if (verbose)
     CCTK_INFO("Outputting variables");
 
+  static Timers::Timer timer_local_hdf5(
+      "SimulationIO::insert_vars[local,hdf5]");
+  static Timers::Timer timer_local_asdf(
+      "SimulationIO::insert_vars[local,asdf]");
+  static Timers::Timer timer_global_hdf5(
+      "SimulationIO::insert_vars[global,hdf5]");
+  static Timers::Timer timer_global_asdf(
+      "SimulationIO::insert_vars[global,asdf]");
+  Timers::Timer &timer =
+      output_type == file_type::local
+          ? (output_format == file_format::hdf5 ? timer_local_hdf5
+                                                : timer_local_asdf)
+          : (output_format == file_format::hdf5 ? timer_global_hdf5
+                                                : timer_local_asdf);
+  timer.start();
+
   const int myproc = CCTK_MyProc(cctkGH);
   const int nprocs = CCTK_nProcs(cctkGH);
+
+  // Write options
+  WriteOptions write_options;
+  write_options.chunk = true;
+  write_options.compress = compression_level > 0;
+  write_options.compression_method = WriteOptions::compression_method_t::zlib;
+  write_options.compression_level = compression_level;
+  write_options.shuffle = true;
+  write_options.checksum = use_checksums;
 
   // Parameters
   if (not project->parameters().count("iteration"))
@@ -250,15 +293,16 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                     groupname.c_str());
       else
         tensortypealias = buf;
-      if (tensortypealias == "scalar") {
+      if (CCTK_EQUALS(tensortypealias.c_str(), "scalar")) {
         tensorindices = {};
         tensortypename = tensortypes_scalars.at(3);
         uniqueindices = groupdata.numvars == 1;
-      } else if (tensortypealias == "4scalar") {
+      } else if (CCTK_EQUALS(tensortypealias.c_str(), "4scalar")) {
         tensorindices = {};
         tensortypename = tensortypes_scalars.at(4);
         uniqueindices = groupdata.numvars == 1;
-      } else if (tensortypealias == "u" || tensortypealias == "d") {
+      } else if (CCTK_EQUALS(tensortypealias.c_str(), "u") ||
+                 CCTK_EQUALS(tensortypealias.c_str(), "d")) {
         if (groupdata.numvars != 3)
           CCTK_VERROR(
               "Group \"%s\" has tensor type alias \"%s\" which requires "
@@ -266,7 +310,8 @@ void output_file_t::insert_vars(const vector<int> &varindices,
               groupname.c_str(), tensortypealias.c_str(), 3, groupdata.numvars);
         tensorindices = {varindex - varindex0};
         tensortypename = tensortypes_vectors.at(3);
-      } else if (tensortypealias == "4u" || tensortypealias == "4d") {
+      } else if (CCTK_EQUALS(tensortypealias.c_str(), "4u") ||
+                 CCTK_EQUALS(tensortypealias.c_str(), "4d")) {
         if (groupdata.numvars != 4)
           CCTK_VERROR(
               "Group \"%s\" has tensor type alias \"%s\" which requires "
@@ -274,7 +319,8 @@ void output_file_t::insert_vars(const vector<int> &varindices,
               groupname.c_str(), tensortypealias.c_str(), 4, groupdata.numvars);
         tensorindices = {varindex - varindex0};
         tensortypename = tensortypes_vectors.at(4);
-      } else if (tensortypealias == "uu_sym" || tensortypealias == "dd_sym") {
+      } else if (CCTK_EQUALS(tensortypealias.c_str(), "uu_sym") ||
+                 CCTK_EQUALS(tensortypealias.c_str(), "dd_sym")) {
         if (groupdata.numvars != 6)
           CCTK_VERROR(
               "Group \"%s\" has tensor type alias \"%s\" which requires "
@@ -282,7 +328,8 @@ void output_file_t::insert_vars(const vector<int> &varindices,
               groupname.c_str(), tensortypealias.c_str(), 6, groupdata.numvars);
         tensorindices = syminds.at(3).at(groupvarindex);
         tensortypename = tensortypes_symmetric_tensors.at(3);
-      } else if (tensortypealias == "4uu_sym" || tensortypealias == "4dd_sym") {
+      } else if (CCTK_EQUALS(tensortypealias.c_str(), "4uu_sym") ||
+                 CCTK_EQUALS(tensortypealias.c_str(), "4dd_sym")) {
         if (groupdata.numvars != 10)
           CCTK_VERROR(
               "Group \"%s\" has tensor type alias \"%s\" which requires "
@@ -550,16 +597,14 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                       delta[d] = 1.0;
                     }
                   }
-                  const auto &light_box =
-                      dd->light_boxes.at(mglevel).at(reflevel).at(component);
-                  const auto &exterior = light_box.exterior;
+                  const auto &box = discretizationblock->getBox();
                   double data_origin =
                       origin[direction] +
-                      exterior.lower()[direction] * delta[direction];
+                      box.lower()[direction] * delta[direction];
                   vector<double> data_delta(manifold->dimension(), 0.0);
                   data_delta.at(direction) = delta[direction];
-                  discretefieldblockcomponent->createDataRange(data_origin,
-                                                               data_delta);
+                  discretefieldblockcomponent->createDataRange(
+                      write_options, data_origin, data_delta);
                 }
               });
             } // direction
@@ -617,12 +662,37 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                 // synchronized. However, we can not cut off prolongation ghost
                 // or buffer points on past time levels, since these cannot be
                 // recalculated.
-                discretizationblock->setBox(
-                    bbox2box_t(light_box.exterior, dimension));
+                const auto &overall =
+                    groupdata.grouptype == CCTK_GF and not output_ghost_zones
+                        ? light_box.interior
+                        : light_box.exterior;
+                ibbox box;
+                if (groupdata.grouptype == CCTK_GF and
+                    not(do_checkpoint or output_symmetry_zones)) {
+                  const int size = 2 * dimension;
+                  vector<CCTK_INT> symbnd(size);
+                  ierr = GetSymmetryBoundaries(cctkGH, size, symbnd.data());
+                  assert(not ierr);
+                  const auto &owned = light_box.owned;
+                  ivect lo, hi;
+                  for (int d = 0; d < Carpet::dim; ++d) {
+                    lo[d] =
+                        symbnd[2 * d] ? owned.lower()[d] : overall.lower()[d];
+                    hi[d] = symbnd[2 * d + 1] ? owned.upper()[d]
+                                              : overall.upper()[d];
+                  }
+                  box = ibbox(lo, hi, overall.stride());
+                  assert(box >= owned && box <= overall);
+                } else {
+                  box = overall;
+                }
+                discretizationblock->setBox(bbox2box_t(box, dimension));
                 auto outer_boundaries = light_box.interior - light_box.owned;
-                discretizationblock->setActive(bboxset2region_t(
-                    (level_box.active & light_box.owned) | outer_boundaries,
-                    dimension));
+                const ibset active =
+                    ((level_box.active & light_box.owned) | outer_boundaries) &
+                    box;
+                discretizationblock->setActive(
+                    bboxset2region_t(active, dimension));
               }
               auto discretizationblock =
                   discretization->discretizationblocks().at(
@@ -663,7 +733,7 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                       io_dir_t::none, projectname, "", iteration, output_format,
                       file_type::local, other_ioproc, ioproc_every);
                   discretefieldblockcomponent->createExtLink(
-                      otherfilename,
+                      write_options, otherfilename,
                       stringify(discretefieldblockcomponent->getPath(), "/",
                                 discretefieldblockcomponent->getName()));
                   break;
@@ -685,7 +755,7 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                         return rs;
                       }};
                   discretefieldblockcomponent->createASDFRef(
-                      otherfilename,
+                      write_options, otherfilename,
                       concat(discretefieldblockcomponent->yaml_path(),
                              {discretefieldblockcomponent->getName()}));
                   break;
@@ -708,16 +778,18 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                                discretefieldname.c_str());
                   int cactustype = groupdata.vartype;
                   H5::DataType type = cactustype2hdf5type(cactustype);
-                  auto dataset =
-                      discretefieldblockcomponent->createDataSet(type);
+                  auto dataset = discretefieldblockcomponent->createDataSet(
+                      write_options, type);
 
                   auto task = [=]() {
                     auto memtype = dataset->datatype(); // by construction
-                    auto membox = bbox2box_t(dd->light_boxes.at(mglevel)
-                                                 .at(reflevel)
-                                                 .at(component)
-                                                 .exterior,
-                                             dimension);
+                    auto membox0 = bbox2box_t(dd->light_boxes.at(mglevel)
+                                                  .at(reflevel)
+                                                  .at(component)
+                                                  .exterior,
+                                              dimension);
+                    auto membox = discretizationblock->getBox();
+                    assert(membox <= membox0);
 
                     if (myproc == dataproc) {
                       // We have the data, we need to either write or send them
@@ -730,11 +802,11 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                       auto gdata = ggf->data_pointer(timelevel, reflevel,
                                                      local_component, mglevel);
                       assert(gdata);
-                      auto memshape = box_t(
-                          membox.lower(),
-                          membox.lower() +
+                      auto memlayout = box_t(
+                          membox0.lower(),
+                          membox0.lower() +
                               vect2point_t(gdata->padded_shape(), dimension));
-                      assert(membox == bbox2box_t(gdata->extent(), dimension));
+                      assert(membox0 == bbox2box_t(gdata->extent(), dimension));
                       assert(gdata->has_storage());
                       auto memdata = gdata->storage();
 
@@ -745,7 +817,7 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                           if (verbose)
                             CCTK_VINFO("Attaching dataset \"%s\"",
                                        discretefieldname.c_str());
-                          dataset->attachData(memdata, memtype, memshape,
+                          dataset->attachData(memdata, memtype, memlayout,
                                               membox);
                           break;
                         case data_handling::write:
@@ -753,7 +825,7 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                           if (verbose)
                             CCTK_VINFO("Writing dataset \"%s\"",
                                        discretefieldname.c_str());
-                          dataset->writeData(memdata, memtype, memshape,
+                          dataset->writeData(memdata, memtype, memlayout,
                                              membox);
                           break;
                         default:
@@ -764,7 +836,7 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                         if (verbose)
                           CCTK_VINFO("Sending dataset \"%s\"",
                                      discretefieldname.c_str());
-                        send_data(myioproc, memdata, cactustype, memshape,
+                        send_data(myioproc, memdata, cactustype, memlayout,
                                   membox);
                       }
 
@@ -856,7 +928,8 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                         CCTK_VINFO("Writing dataset \"%s\"",
                                    discretefieldname.c_str());
                       discretefieldblockcomponent->createASDFData(
-                          memdata, mempoints, memlayout, datatype);
+                          write_options, memdata, mempoints, memlayout,
+                          datatype);
 
                     } else {
                       // Send the data
@@ -880,6 +953,7 @@ void output_file_t::insert_vars(const vector<int> &varindices,
                       CCTK_VINFO("Writing dataset \"%s\"",
                                  discretefieldname.c_str());
                     discretefieldblockcomponent->createASDFData(
+                        write_options,
                         ASDF::make_constant_memoized(shared_ptr<ASDF::block_t>(
                             make_shared<ASDF::typed_block_t<char> >(
                                 move(buf)))),
@@ -911,7 +985,8 @@ void output_file_t::insert_vars(const vector<int> &varindices,
       }   // reflevel
     }     // mapindex
   }       // varindex
-} // namespace CarpetSimulationIO
+  timer.stop();
+}
 
 void output_file_t::write_hdf5() {
   DECLARE_CCTK_PARAMETERS;
@@ -1027,6 +1102,18 @@ void output_file_t::write_asdf() {
 }
 
 void output_file_t::write() {
+  // static Timers::Timer timer_local_hdf5("SimulationIO::write[local,hdf5]");
+  // static Timers::Timer timer_local_asdf("SimulationIO::write[local,asdf]");
+  // static Timers::Timer timer_global_hdf5("SimulationIO::write[global,hdf5]");
+  // static Timers::Timer timer_global_asdf("SimulationIO::write[global,asdf]");
+  // Timers::Timer &timer =
+  //     output_type == file_type::local
+  //         ? (output_format == file_format::hdf5 ? timer_local_hdf5
+  //                                               : timer_local_asdf)
+  //         : (output_format == file_format::hdf5 ? timer_global_hdf5
+  //                                               : timer_local_asdf);
+  // timer.start();
+
   switch (output_format) {
   case file_format::hdf5:
     return write_hdf5();
@@ -1035,6 +1122,8 @@ void output_file_t::write() {
   default:
     assert(0);
   }
+
+  // timer.stop();
 }
 
 } // namespace CarpetSimulationIO

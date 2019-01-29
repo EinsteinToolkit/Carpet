@@ -268,10 +268,10 @@ void input_file_t::read_vars(const vector<int> &varindices, const int reflevel1,
         tensorindices = {};
         tensortypename = tensortypes_scalars.at(dimension);
       } else if (groupdata.numvars == dimension) {
-        tensorindices = {varindex - varindex0};
+        tensorindices = {groupvarindex};
         tensortypename = tensortypes_vectors.at(dimension);
       } else if (groupdata.numvars == dimension * (dimension + 1) / 2) {
-        tensorindices = syminds.at(dimension).at(varindex0);
+        tensorindices = syminds.at(dimension).at(groupvarindex);
         tensortypename = tensortypes_symmetric_tensors.at(dimension);
       } else if (groupdata.numvars == dimension * dimension) {
         tensorindices = {groupvarindex / dimension, groupvarindex % dimension};
@@ -449,6 +449,17 @@ void input_file_t::read_vars(const vector<int> &varindices, const int reflevel1,
                   read_schedule.push_back(overlap.discretizationblock);
                   still_need_read -= overlap.overlap;
                 }
+              }
+              if (not still_need_read.empty()) {
+                CCTK_VWARN(
+                    CCTK_WARN_ALERT,
+                    "Read schedule for component [m=%d,rl=%d,c=%d,p=%d,lc=%d]:",
+                    mapindex, reflevel, component, proc, local_component);
+                for (const auto &db : read_schedule)
+                  CCTK_VWARN(CCTK_WARN_ALERT, "  %s", db->name().c_str());
+                cerr << "need_read=" << need_read << "\n";
+                cerr << "still_need_read=" << still_need_read << "\n";
+                CCTK_ERROR("");
               }
               assert(still_need_read.empty());
               if (verbose) {

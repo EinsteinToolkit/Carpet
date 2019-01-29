@@ -180,20 +180,20 @@ struct output_state_t {
     if (output_hdf5) {
       output_file_hdf5_ptr.reset(
           new output_file_t(cctkGH, io_dir, projectname, file_format::hdf5,
-                            file_type::local, myioproc, ioproc_every));
-      if (myproc == 0)
-        global_file_hdf5_ptr.reset(
-            new output_file_t(cctkGH, io_dir, projectname, file_format::hdf5,
-                              file_type::global, myioproc, ioproc_every));
+                            file_type::local, false, myioproc, ioproc_every));
+      if (output_global_file and myproc == 0)
+        global_file_hdf5_ptr.reset(new output_file_t(
+            cctkGH, io_dir, projectname, file_format::hdf5, file_type::global,
+            false, myioproc, ioproc_every));
     }
     if (output_asdf) {
       output_file_asdf_ptr.reset(
           new output_file_t(cctkGH, io_dir, projectname, file_format::asdf,
-                            file_type::local, myioproc, ioproc_every));
-      if (myproc == 0)
-        global_file_asdf_ptr.reset(
-            new output_file_t(cctkGH, io_dir, projectname, file_format::asdf,
-                              file_type::global, myioproc, ioproc_every));
+                            file_type::local, false, myioproc, ioproc_every));
+      if (output_global_file and myproc == 0)
+        global_file_asdf_ptr.reset(new output_file_t(
+            cctkGH, io_dir, projectname, file_format::asdf, file_type::global,
+            false, myioproc, ioproc_every));
     }
   }
   ~output_state_t() { assert(did_write); }
@@ -542,15 +542,15 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
   for (const auto format : formats) {
     {
       output_file_t output_file(cctkGH, io_dir_t::checkpoint, projectname,
-                                format, file_type::local, myioproc,
+                                format, file_type::local, true, myioproc,
                                 ioproc_every);
       output_file.insert_vars(varindices, -1, -1, data_handling::write);
       output_file.write();
     }
 
-    if (myproc == 0) {
+    if (output_global_file and myproc == 0) {
       output_file_t global_file(cctkGH, io_dir_t::checkpoint, projectname,
-                                format, file_type::global, myioproc,
+                                format, file_type::global, true, myioproc,
                                 ioproc_every);
       global_file.insert_vars(varindices, -1, -1, data_handling::write);
       global_file.write();
@@ -578,7 +578,7 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
               io_dir_t::checkpoint, projectname, "", iteration, format,
               file_type::local, myioproc, ioproc_every);
           remove(filename.c_str());
-          if (myproc == 0) {
+          if (output_global_file and myproc == 0) {
             auto filename = generate_filename(
                 io_dir_t::checkpoint, projectname, "", iteration, format,
                 file_type::global, myioproc, ioproc_every);

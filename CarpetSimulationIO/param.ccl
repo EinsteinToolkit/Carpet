@@ -45,10 +45,14 @@ BOOLEAN verbose "Verbosity" STEERABLE=always
 ################################################################################
 # Output
  
-BOOLEAN async_output "Asynchronous output method" STEERABLE=always
+BOOLEAN async_output "Output asynchronously, while the computation continues" STEERABLE=always
 {
 } "no"
  
+BOOLEAN output_global_file "Output global file with links to process-local files" STEERABLE=always
+{
+} "yes"
+
 
 
 BOOLEAN output_hdf5 "Output HDF5 files" STEERABLE=always
@@ -56,6 +60,17 @@ BOOLEAN output_hdf5 "Output HDF5 files" STEERABLE=always
 } "yes"
 
 BOOLEAN output_asdf "Output ASDF files" STEERABLE=always
+{
+} "no"
+
+
+
+CCTK_INT compression_level "Compression level to use for writing data" STEERABLE = ALWAYS
+{
+  0:9 :: "Higher numbers compress better, a value of zero disables compression"
+} 1
+
+BOOLEAN use_checksums "Use checksums when writing data" STEERABLE = ALWAYS
 {
 } "no"
 
@@ -154,6 +169,14 @@ CCTK_INT max_nioprocs "Maximum number of I/O processes" STEERABLE=always
 BOOLEAN output_all_timelevels "Output all timelevels (instead of only the current)" STEERABLE=always
 {
 } "no"
+
+BOOLEAN output_ghost_zones "Output ghost zones points" STEERABLE=always
+{
+} "yes"
+
+BOOLEAN output_symmetry_zones "Output symmetry boundary points" STEERABLE=always
+{
+} "yes"
 
 
 

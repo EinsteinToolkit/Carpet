@@ -252,7 +252,7 @@ grid_structure_v7 deserialise_grid_structure(const string &grid_structure);
 void init_comm();
 void finalise_comm();
 void send_data(int ioproc, const void *data, int cactustype,
-               const dbox<long long> &memshape, const dbox<long long> &membox);
+               const dbox<long long> &memlayout, const dbox<long long> &membox);
 vector<char> recv_data(int dataproc, int cactustype,
                        const dbox<long long> &membox);
 

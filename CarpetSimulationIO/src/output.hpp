@@ -24,6 +24,7 @@ class output_file_t {
   const string projectname;
   const file_format output_format;
   const file_type output_type;
+  const bool do_checkpoint;
   const int iteration;
   const int myioproc, ioproc_every;
   shared_ptr<Project> project;
@@ -37,8 +38,8 @@ public:
   output_file_t &operator=(output_file_t &&) = delete;
 
   output_file_t(const cGH *cctkGH, io_dir_t io_dir, const string &projectname,
-                file_format output_format, file_type output_type, int myioproc,
-                int ioproc_every);
+                file_format output_format, file_type output_type,
+                bool do_checkpoint, int myioproc, int ioproc_every);
   ~output_file_t();
 
   // Insert variables into project

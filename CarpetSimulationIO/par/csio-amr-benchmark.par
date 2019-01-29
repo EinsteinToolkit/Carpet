@@ -1,0 +1,154 @@
+# # Symmetry
+# for io in cio_hdf5 sio_hdf5 sio_asdf; do
+#     procs=160
+#     ioprocs=8
+#     name="csio-amr-benchmark-procs$procs-ioprocs$ioprocs-$io"
+#     ./simfactory/bin/sim purge $name
+#     ./simfactory/bin/sim submit $name --parfile=arrangements/Carpet/CarpetSimulationIO/par/csio-amr-benchmark.par --procs=$procs --num-threads=1 --replace '$procs='$procs --replace '$ioprocs='$ioprocs --replace '$out_cio_hdf5='$(if [[ $io == cio_hdf5 ]]; then echo yes; else echo no; fi) --replace '$out_sio_hdf5='$(if [[ $io == sio_hdf5 ]]; then echo yes; else echo no; fi) --replace '$out_sio_asdf='$(if [[ $io == sio_asdf ]]; then echo yes; else echo no; fi) --queue=debugq --walltime=1:0:0 &
+# done; wait
+
+
+
+ActiveThorns = "
+    ADMBase
+    Boundary
+    Carpet
+    CarpetIOBasic
+    CarpetIOHDF5
+    CarpetIOScalar
+    CarpetLib
+    CarpetReduce
+    CarpetRegrid2
+    CarpetSimulationIO
+    CartGrid3D
+    CoordBase
+    Formaline
+    HydroBase
+    IOUtil
+    InitBase
+    SymBase
+    SystemTopology
+    TimerReport
+    MoL
+"
+
+$procs = 160
+$ioprocs = 16
+$out_cio_hdf5 = no
+$out_sio_asdf = no
+$out_sio_hdf5 = no
+
+$gridsize = int((20000 * $procs) ** (1.0/3.0))
+
+Cactus::cctk_run_title = "SimulationIO"
+Cactus::cctk_full_warnings = yes
+Cactus::highlight_warning_messages = no
+
+Cactus::cctk_itlast = 0
+
+Carpet::domain_from_coordbase = yes
+CartGrid3D::type = "coordbase"
+CoordBase::domainsize = "minmax"
+CoordBase::xmin = -1.0
+CoordBase::ymin = -1.0
+CoordBase::zmin = -1.0
+CoordBase::xmax = +1.0
+CoordBase::ymax = +1.0
+CoordBase::zmax = +1.0
+CoordBase::dx = 1.0 / $gridsize
+CoordBase::dy = 1.0 / $gridsize
+CoordBase::dz = 1.0 / $gridsize
+
+driver::ghost_size = 3
+Carpet::use_buffer_zones = yes
+Carpet::prolongation_order_space = 5
+Carpet::prolongation_order_time = 2
+
+Carpet::max_refinement_levels = 10
+Carpet::max_timelevels = 3
+CarpetRegrid2::num_centres = 1
+CarpetRegrid2::num_levels_1 = 5
+CarpetRegrid2::radius_1[1] = 0.5
+CarpetRegrid2::radius_1[2] = 0.25
+CarpetRegrid2::radius_1[3] = 0.125
+CarpetRegrid2::radius_1[4] = 0.0625
+
+InitBase::initial_data_setup_method = "init_all_levels"
+
+ADMBase::lapse_timelevels = 3
+ADMBase::shift_timelevels = 3
+ADMBase::metric_timelevels = 3
+
+ADMBase::initial_data = "Cartesian Minkowski"
+ADMBase::initial_lapse = "one"
+ADMBase::initial_shift = "zero"
+ADMBase::initial_dtlapse = "none"
+ADMBase::initial_dtshift = "zero"
+
+IO::out_dir = $parfile
+
+CarpetIOBasic::outInfo_every = 512
+CarpetIOBasic::outInfo_vars = "
+    ADMBase::lapse
+"
+
+CarpetIOScalar::one_file_per_group = yes
+CarpetIOScalar::all_reductions_in_one_file = yes
+CarpetIOScalar::outScalar_every = 512
+CarpetIOScalar::outScalar_vars = "
+    ADMBase::lapse
+    ADMBase::shift
+    ADMBase::dtshift
+    ADMBase::metric
+    ADMBase::curv
+    HydroBase::rho
+    HydroBase::vel
+    HydroBase::eps
+    HydroBase::press
+"
+
+IOUtil::out_mode = "np"
+IOUtil::out_proc_every = int(($procs + $ioprocs - 1) / $ioprocs)
+CarpetIOHDF5::compression_level = 1
+CarpetIOHDF5::use_checksums = no
+CarpetIOHDF5::one_file_per_group = yes
+CarpetIOHDF5::output_ghost_points = no
+
+CarpetIOHDF5::out3D_every = int($out_cio_hdf5) * 512
+CarpetIOHDF5::out3D_vars = "
+    ADMBase::lapse
+    ADMBase::shift
+    ADMBase::dtshift
+    ADMBase::metric
+    ADMBase::curv
+    HydroBase::rho
+    HydroBase::vel
+    HydroBase::eps
+    HydroBase::press
+"
+
+CarpetSimulationIO::async_output = no   #TODO yes
+CarpetSimulationIO::max_nioprocs = $ioprocs
+CarpetSimulationIO::output_global_file = no   # TODO yes
+CarpetSimulationIO::compression_level = 1
+CarpetSimulationIO::use_checksums = no
+CarpetSimulationIO::output_ghost_zones = no
+CarpetSimulationIO::output_hdf5 = $out_sio_hdf5
+CarpetSimulationIO::output_asdf = $out_sio_asdf
+
+CarpetSimulationIO::out_every = int($out_sio_hdf5 || $out_sio_asdf) * 512
+CarpetSimulationIO::out_vars = "
+    ADMBase::lapse
+    ADMBase::shift
+    ADMBase::dtshift
+    ADMBase::metric
+    ADMBase::curv
+    HydroBase::rho
+    HydroBase::vel
+    HydroBase::eps
+    HydroBase::press
+"
+
+TimerReport::out_every = 512
+TimerReport::output_schedule_timers = no
+TimerReport::n_top_timers = 100
