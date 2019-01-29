@@ -274,7 +274,7 @@ void gdata::transfer_data(
                                        time, order_space, order_time);
           clock_threads.stop(dstbox.size() * dst->elementsize());
         }));
-        clock_submit.stop(00);
+        clock_submit.stop(0);
 #else
         CCTK_ERROR("Cannot use CarpetLib::use_funhpc_in_comm without FunHPC");
 #endif
