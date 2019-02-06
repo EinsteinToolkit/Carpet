@@ -303,6 +303,10 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
       }
     }
   }
+  const char *vname = "TMUNUBASE::eTtt";
+  static int vi_ = CCTK_VarIndex(vname);
+  static var_tuple vt_{vi_};
+  std::cout << "   " << vname << " := " << wstr(valid_k[vt_]) << std::endl;
 }
 
 /**
@@ -339,27 +343,30 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
       }
     }
     for(int vi=i0;vi<iN;vi++) {
-      var_tuple vt(vi);
-      int wh = valid_k[vt];
-      if(on(wh,WH_GHOSTS)) {
-        continue;
-      }
-      if(!on(wh,WH_INTERIOR)) {// and !silent_psync) {
-        std::ostringstream msg;
-        msg << "SYNC of variable with invalid interior. Name: "
+      int type = CCTK_GroupTypeFromVarI(vi);
+      if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
+        var_tuple vt(vi);
+        int wh = valid_k[vt];
+        if(on(wh,WH_GHOSTS)) {
+          continue;
+        }
+        if(!on(wh,WH_INTERIOR)) {// and !silent_psync) {
+          std::ostringstream msg;
+          msg << "SYNC of variable with invalid interior. Name: "
             << CCTK_FullName(vi) << " before: " << current_routine;
-        int level = psync_error ? 0 : 1;
-        if(msg1) {
-          msg1 = false;
-          CCTK_WARN(level,msg.str().c_str());
+          int level = psync_error ? 0 : 1;
+          if(msg1) {
+            msg1 = false;
+            CCTK_WARN(level,msg.str().c_str());
+          }
+        }
+        if(push) {
+          sync_groups.push_back(gi);
+          push = false;
+        }
+        valid_k[vt] |= WH_GHOSTS;
         }
       }
-      if(push) {
-        sync_groups.push_back(gi);
-        push = false;
-      }
-      valid_k[vt] |= WH_GHOSTS;
-    }
   }
   if(sync_groups.size()>0) {
     for (int sgi=0;sgi<sync_groups.size();sgi++) {
@@ -531,7 +538,15 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 
   for(auto i = reads_m.begin();i != reads_m.end(); ++i) {
     const var_tuple& vt = i->first;
-    if(!on(valid_k[vt],WH_INTERIOR)) {// and !silent_psync) {
+    int vi = vt.vi;
+    int type = CCTK_GroupTypeFromVarI(vi);
+    //std::cout << "-->|Type " << type << " " << CCTK_FullName(vi) << "\n";
+    if(type != CCTK_GF) {
+      //std::cout << "-->|Skip!\n";
+      continue;
+    }
+    if(!on(valid_k[vt],WH_INTERIOR)) // and !silent_psync) 
+    {
       // If the read spec is everywhere and we only have
       // interior, that's ok. The system will sync.
       std::ostringstream msg; 
@@ -567,7 +582,8 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 
         int g = CCTK_GroupIndexFromVarI(vt.vi);
         pregroups.insert(g);
-      } else if(!on(valid_k[vt],WH_INTERIOR)) {// and !silent_psync) {
+      } else if(!on(valid_k[vt],WH_INTERIOR)) // and !silent_psync) 
+      {
         std::ostringstream msg; 
         msg << "Cannot sync " << CCTK_FullName(vt.vi)
             << " because it is not valid in the interior.";
@@ -603,6 +619,7 @@ void cycle_rdwr(const cGH *cctkGH) {
       }
     }
   }
+  std::cout << "::ROTATE::" << std::endl;
 }
 
 /**
