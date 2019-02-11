@@ -10,6 +10,7 @@
 #include <math.h>
 #include <array>
 #include "variables.hh"
+#include "modes.hh"
 #include "PreSync.h"
 
 extern "C" void ShowValid();
@@ -321,6 +322,20 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
   std::vector<int> sync_groups;
   bool use_psync = (CCTK_ParameterValInt("use_psync","Cactus") != 0);
   bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
+
+  if(use_psync and reflevel > 0) {
+    // recurse to check that all coarsers levels are properly SYNCed
+    CCTK_REAL previous_time = cctkGH->cctk_time;
+    const int parent_reflevel = reflevel - 1;
+    BEGIN_GLOBAL_MODE(cctkGH) {
+      ENTER_LEVEL_MODE(cctkGH, parent_reflevel) {
+        cctkGH->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
+        PreSyncGroups(attribute, cctkGH, pregroups);
+      } LEAVE_LEVEL_MODE;
+    } END_GLOBAL_MODE;
+    cctkGH->cctk_time = previous_time;
+  }
+
   for(auto i=pregroups.begin();i != pregroups.end();++i) {
     int gi = *i;
     int i0 = CCTK_FirstVarIndexI(gi);
