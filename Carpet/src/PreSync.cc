@@ -9,6 +9,7 @@
 #include <carpet.hh>
 #include <math.h>
 #include <array>
+#include "variables.hh"
 #include "PreSync.h"
 
 extern "C" void ShowValid();
@@ -19,10 +20,12 @@ bool msg1 = true, msg2 = true, msg3 = true;
 
 struct var_tuple {
   int vi; // var index
+  int rl; // refinement level
   int tl; // time level;
-  var_tuple() : vi(-1), tl(0) {}
-  var_tuple(int vi_) : vi(vi_), tl(0) {}
-  var_tuple(int vi_,int tl_) : vi(vi_), tl(tl_) {}
+  var_tuple() : vi(-1), rl(0), tl(0) {}
+  var_tuple(int vi_) : vi(vi_), rl(reflevel), tl(0) {}
+  var_tuple(int vi_,int tl_) : vi(vi_), rl(reflevel), tl(tl_) {}
+  var_tuple(int vi_,int rl_,int tl_) : vi(vi_), rl(rl_), tl(tl_) {}
 };
 
 std::ostream& operator<<(std::ostream& o,const var_tuple& vt) {
@@ -201,8 +204,9 @@ void compute_clauses(const int num_strings,const char **strings,std::map<var_tup
         CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
       }
     }
+
     if(vi >= 0) {
-      var_tuple vt{vi,rwc.tl};
+      var_tuple vt{vi, rwc.tl};
       routine_m[vt] = where_val;
     } else {
       // If looking up a specific variable failed, then
@@ -347,7 +351,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
       if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
         var_tuple vt(vi);
         int wh = valid_k[vt];
-        if(on(wh,WH_GHOSTS)) {
+        if(on(wh,WH_EXTERIOR)) {
           continue;
         }
         if(!on(wh,WH_INTERIOR)) {// and !silent_psync) {
@@ -429,10 +433,14 @@ int Carpet_hasAccess(const cGH *cctkGH,int var_index) {
       return true;
     if(hasAccess(writes[current_routine],vi))
       return true;
-    if(hasAccess(tmp_read,vi))
+    if(hasAccess(tmp_read,vi)) {
+      std::cout << "tmp acccess for " << CCTK_FullName(var_index) << std::endl;
       return true;
-    if(hasAccess(tmp_write,vi))
+    }
+    if(hasAccess(tmp_write,vi)) {
+      std::cout << "tmp acccess for " << CCTK_FullName(var_index) << std::endl;
       return true;
+    }
     return false;
   } else {
     return true;
@@ -481,8 +489,7 @@ extern "C" void check_readwrites() {
  * the desired effect.
  */
 extern "C"
-void Carpet_requestAccess(const char *vn,int read_spec,int write_spec) {
-  int var_index = CCTK_VarIndex(vn);
+void Carpet_requestAccess(int var_index,int read_spec,int write_spec) {
   assert(var_index >= 0);
   var_tuple vi(var_index);
   tmp_read[vi]  |= read_spec;
