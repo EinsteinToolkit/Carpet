@@ -23,9 +23,9 @@ struct var_tuple {
   int vi; // var index
   int rl; // refinement level
   int tl; // time level;
-  var_tuple() : vi(-1), rl(0), tl(0) {}
-  var_tuple(int vi_) : vi(vi_), rl(reflevel), tl(0) {}
-  var_tuple(int vi_,int tl_) : vi(vi_), rl(reflevel), tl(tl_) {}
+  var_tuple() : vi(-1), rl(-1), tl(-1) {}
+  var_tuple(int vi_) : vi(vi_), rl(-1), tl(0) {}
+  var_tuple(int vi_,int tl_) : vi(vi_), rl(-1), tl(tl_) {}
   var_tuple(int vi_,int rl_,int tl_) : vi(vi_), rl(rl_), tl(tl_) {}
 };
 
@@ -306,7 +306,7 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
     for(int vi=i0;vi<iN;vi++) {
       int& w = writes[r][vi];
       if(w == WH_INTERIOR) {
-        var_tuple vt{vi};
+        var_tuple vt{vi,reflevel,0};
         valid_k[vt] |= WH_GHOSTS;
       }
     }
@@ -346,7 +346,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     bool push = true;
     if(!use_psync && psync_error) {
       for(int vi=i0;vi<iN;vi++) {
-        var_tuple vt(vi);
+        var_tuple vt{vi,reflevel,0};
         int wh = valid_k[vt];
         if(!on(wh,WH_GHOSTS)) {
           std::ostringstream msg;
@@ -367,7 +367,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     for(int vi=i0;vi<iN;vi++) {
       int type = CCTK_GroupTypeFromVarI(vi);
       if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
-        var_tuple vt(vi);
+        var_tuple vt{vi,reflevel,0};
         int wh = valid_k[vt];
         if(on(wh,WH_EXTERIOR)) {
           continue;
@@ -562,7 +562,9 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
   std::map<var_tuple,int>& reads_m  = reads [r];
 
   for(auto i = reads_m.begin();i != reads_m.end(); ++i) {
-    const var_tuple& vt = i->first;
+    var_tuple vt = i->first;
+    vt.rl = reflevel; // clauses to not refer to reflevel but the valid states
+                      // have them so inject them here
     int vi = vt.vi;
     int type = CCTK_GroupTypeFromVarI(vi);
     //std::cout << "-->|Type " << type << " " << CCTK_FullVarName(vi) << "\n";
@@ -635,11 +637,11 @@ void cycle_rdwr(const cGH *cctkGH) {
       int type = CCTK_GroupTypeFromVarI(vi);
       if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
         for(int t = cactus_tl - 1; t > 0; t--) {
-          var_tuple vold{vi,t};
-          var_tuple vnew{vi,t-1};
+          var_tuple vold{vi,reflevel,t};
+          var_tuple vnew{vi,reflevel,t-1};
           valid_k[vold] = valid_k[vnew];
         }
-        var_tuple vt{vi};
+        var_tuple vt{vi,reflevel,0};
         valid_k[vt] = WH_NOWHERE;
       }
     }
@@ -661,8 +663,9 @@ void Sync1(const cGH *cctkGH,int gi) {
  * Given a variable and a timelevel, set the region
  * of the grid where that variable is valid (i.e. the where_spec).
  */
+// TODO: expand to take a reflevel argument?
 extern "C" void SetValidRegion(int vi,int tl,int wh) {
-  var_tuple vt(vi,tl);
+  var_tuple vt(vi,reflevel,tl);
   valid_k[vt] = wh;
 }
 
@@ -670,8 +673,9 @@ extern "C" void SetValidRegion(int vi,int tl,int wh) {
  * Given a variable and a timelevel, return the region
  * of the grid where that variable is valid (i.e. the where_spec).
  */
+// TODO: expand to take a reflevel argument?
 extern "C" int GetValidRegion(int vi,int tl) {
-  var_tuple vt(vi,tl);
+  var_tuple vt(vi,reflevel,tl);
   return valid_k[vt];
 }
 
@@ -681,7 +685,7 @@ extern "C" int GetValidRegion(int vi,int tl) {
  * the routine finishes, it will be valid everywhere.
  */
 extern "C" void ManualSyncGF(const cGH *cctkGH,int vi) {
-  var_tuple vt{vi};
+  var_tuple vt{vi,reflevel,0};
   auto f = valid_k.find(vt);
   std::cout << "ManualSyncGF(" << CCTK_FullVarName(vi) << ")" << std::endl;
   CCTK_ASSERT(f != valid_k.end());
@@ -696,7 +700,7 @@ extern "C" void ManualSyncGF(const cGH *cctkGH,int vi) {
   int i0 = CCTK_FirstVarIndexI(gi);
   int iN = i0+CCTK_NumVarsInGroupI(gi);
   for(int vi2=i0;vi2<iN;vi2++) {
-    var_tuple vt{vi2};
+    var_tuple vt{vi2,reflevel,0};
     if(on(valid_k[vt],WH_INTERIOR)) {
       valid_k[vt] = WH_EVERYWHERE;
     }
@@ -892,7 +896,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
 //            std::cout << name << " BC applied to " << CCTK_FullVarName(var_index) << std::endl;
             ierr = (*fsym.func)(cctkGH,1,&var_index,&fsym.faces,&fsym.width,&fsym.handle);
           }
-          var_tuple vt{var_index};
+          var_tuple vt{var_index,reflevel,0};
           valid_k[vt] |= WH_BOUNDARY;
         }
       }
