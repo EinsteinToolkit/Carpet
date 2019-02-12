@@ -30,7 +30,7 @@ struct var_tuple {
 };
 
 std::ostream& operator<<(std::ostream& o,const var_tuple& vt) {
-  o << CCTK_FullName(vt.vi);
+  o << CCTK_FullVarName(vt.vi);
   for(int i=0;i<vt.tl;i++)
     o << "_p";
   return o;
@@ -352,14 +352,14 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
           std::ostringstream msg;
           msg << "  Presync: missing sync for ";
           msg << attribute->thorn << "::" << attribute->routine;
-          msg << " in/at " << attribute->where << " variable " << CCTK_FullName(vi);
+          msg << " in/at " << attribute->where << " variable " << CCTK_FullVarName(vi);
           CCTK_WARN(0,msg.str().c_str());
         }
         if(!on(wh,WH_BOUNDARY)) {
           std::ostringstream msg;
           msg << "  Presync: BC not valid for ";
           msg << attribute->thorn << "::" << attribute->routine;
-          msg << " in/at " << attribute->where << " variable " << CCTK_FullName(vi);
+          msg << " in/at " << attribute->where << " variable " << CCTK_FullVarName(vi);
           CCTK_WARN(0,msg.str().c_str());
         }
       }
@@ -375,7 +375,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
         if(!on(wh,WH_INTERIOR)) {// and !silent_psync) {
           std::ostringstream msg;
           msg << "SYNC of variable with invalid interior. Name: "
-            << CCTK_FullName(vi) << " before: " << current_routine;
+            << CCTK_FullVarName(vi) << " before: " << current_routine;
           int level = psync_error ? 0 : 1;
           if(msg1) {
             msg1 = false;
@@ -399,7 +399,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
         msg << "  Presync: syncing for ";
         msg << attribute->thorn << "::" << attribute->routine
           << " in/at " << attribute->where
-          << " variable " << CCTK_FullName(vi);
+          << " variable " << CCTK_FullVarName(vi);
         CCTK_INFO(msg.str().c_str());
       }
     }
@@ -411,7 +411,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
         for (int vi=i0;vi<iN;vi++) {
           if(valid_k[vi] != WH_EVERYWHERE) {
             std::ostringstream msg;
-            msg << "Not Valid Everywhere:" << wstr(valid_k[vi]) << " " << CCTK_FullName(vi);
+            msg << "Not Valid Everywhere:" << wstr(valid_k[vi]) << " " << CCTK_FullVarName(vi);
             msg << " Routine: " << attribute->thorn << "::" << attribute->routine;
             msg << std::endl;
             CCTK_WARN(0,msg.str().c_str());
@@ -452,11 +452,11 @@ int Carpet_hasAccess(const cGH *cctkGH,int var_index) {
     if(hasAccess(writes[current_routine],vi))
       return true;
     if(hasAccess(tmp_read,vi)) {
-      std::cout << "tmp acccess for " << CCTK_FullName(var_index) << std::endl;
+      std::cout << "tmp acccess for " << CCTK_FullVarName(var_index) << std::endl;
       return true;
     }
     if(hasAccess(tmp_write,vi)) {
-      std::cout << "tmp acccess for " << CCTK_FullName(var_index) << std::endl;
+      std::cout << "tmp acccess for " << CCTK_FullVarName(var_index) << std::endl;
       return true;
     }
     return false;
@@ -491,10 +491,10 @@ extern "C" void clear_readwrites() {
 extern "C" void check_readwrites() {
   for(auto i=attempted_readwrites.begin(); i != attempted_readwrites.end(); ++i) {
     if((i->second & 0x01)==0x01 && !hasAccess(reads[current_routine],i->first)) {
-        std::cerr << "Undeclared access: " << current_routine << " read name='" << CCTK_FullName(i->first) << "'" << std::endl;
+        std::cerr << "Undeclared access: " << current_routine << " read name='" << CCTK_FullVarName(i->first) << "'" << std::endl;
     }
     if((i->second & 0x10)==0x10 && !hasAccess(writes[current_routine],i->first)) {
-        std::cerr << "Undeclared access: " << current_routine << " write name='" << CCTK_FullName(i->first) << "'" << std::endl;
+        std::cerr << "Undeclared access: " << current_routine << " write name='" << CCTK_FullVarName(i->first) << "'" << std::endl;
     }
   }
 }
@@ -517,10 +517,10 @@ void Carpet_requestAccess(int var_index,int read_spec,int write_spec) {
 void dump_clauses(std::map<var_tuple,int>& reads_m,std::map<var_tuple,int>& writes_m) {
   std::cout << "ROUTINE: " << current_routine << " {" << std::endl;
   for(auto i = reads_m.begin(); i != reads_m.end(); ++i) {
-    std::cout << "  >>READ:  " << CCTK_FullName(i->first.vi) << "," << wstr(i->second) << std::endl;
+    std::cout << "  >>READ:  " << CCTK_FullVarName(i->first.vi) << "," << wstr(i->second) << std::endl;
   }
   for(auto i = writes_m.begin(); i != writes_m.end(); ++i) {
-    std::cout << "  >>WRITE: " << CCTK_FullName(i->first.vi) << "," << wstr(i->second) << std::endl;
+    std::cout << "  >>WRITE: " << CCTK_FullVarName(i->first.vi) << "," << wstr(i->second) << std::endl;
   }
   std::cout << "}" << std::endl;
 }
@@ -565,7 +565,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
     const var_tuple& vt = i->first;
     int vi = vt.vi;
     int type = CCTK_GroupTypeFromVarI(vi);
-    //std::cout << "-->|Type " << type << " " << CCTK_FullName(vi) << "\n";
+    //std::cout << "-->|Type " << type << " " << CCTK_FullVarName(vi) << "\n";
     if(type != CCTK_GF) {
       //std::cout << "-->|Skip!\n";
       continue;
@@ -601,7 +601,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
         if(vt.tl != 0) {
           std::ostringstream msg;
           msg << "Attempt to sync previous time level (tl=" << vt.tl << ")"
-              << " for " << CCTK_FullName(vt.vi);
+              << " for " << CCTK_FullVarName(vt.vi);
           CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
         }
 
@@ -610,7 +610,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
       } else if(!on(valid_k[vt],WH_INTERIOR)) // and !silent_psync) 
       {
         std::ostringstream msg; 
-        msg << "Cannot sync " << CCTK_FullName(vt.vi)
+        msg << "Cannot sync " << CCTK_FullVarName(vt.vi)
             << " because it is not valid in the interior.";
         int level = psync_error ? 0 : 1;
         if(msg3) {
@@ -683,7 +683,7 @@ extern "C" int GetValidRegion(int vi,int tl) {
 extern "C" void ManualSyncGF(const cGH *cctkGH,int vi) {
   var_tuple vt{vi};
   auto f = valid_k.find(vt);
-  std::cout << "ManualSyncGF(" << CCTK_FullName(vi) << ")" << std::endl;
+  std::cout << "ManualSyncGF(" << CCTK_FullVarName(vi) << ")" << std::endl;
   CCTK_ASSERT(f != valid_k.end());
   // Check if anything needs to be done
   if(f->second == WH_EVERYWHERE) {
@@ -889,7 +889,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
           for (auto iter = symmetry_functions.begin(); iter != symmetry_functions.end(); iter++) {
             std::string name = iter->first;
             SymFunc& fsym = symmetry_functions.at(name);
-//            std::cout << name << " BC applied to " << CCTK_FullName(var_index) << std::endl;
+//            std::cout << name << " BC applied to " << CCTK_FullVarName(var_index) << std::endl;
             ierr = (*fsym.func)(cctkGH,1,&var_index,&fsym.faces,&fsym.width,&fsym.handle);
           }
           var_tuple vt{var_index};
@@ -964,6 +964,6 @@ void ShowValid() {
   for(auto i = Carpet::valid_k.begin();i != Carpet::valid_k.end(); ++i) {
     const Carpet::var_tuple& vt = i->first;
     int wh = i->second;
-    std::cout << "  valid: " << CCTK_FullName(vt.vi) << " tl=" << vt.tl << " wh=" << Carpet::wstr(wh) << std::endl;
+    std::cout << "  valid: " << CCTK_FullVarName(vt.vi) << " tl=" << vt.tl << " wh=" << Carpet::wstr(wh) << std::endl;
   }
 }
