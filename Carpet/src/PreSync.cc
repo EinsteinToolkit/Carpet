@@ -35,13 +35,10 @@ std::ostream& operator<<(std::ostream& o,const var_tuple& vt) {
 }
 
 bool operator<(const var_tuple& v1,const var_tuple& v2) {
-  if(v1.vi < v2.vi) return true;
-  if(v1.vi > v2.vi) return false;
-  if(v1.rl < v2.rl) return true;
-  if(v1.rl > v2.rl) return false;
-  if(v1.tl < v2.tl) return true;
-  if(v1.tl > v2.tl) return false;
-  return false;
+  int diff = v1.vi - v2.vi;
+  if(diff == 0) diff = v1.rl - v2.rl;
+  if(diff == 0) diff = v1.tl - v2.tl;
+  return diff < 0;
 }
 
 inline bool on(int flags,int flag) {
@@ -794,6 +791,7 @@ CCTK_INT Carpet_RegisterPhysicalBC(
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
                "Physical Boundary condition '%s' points to NULL.", bc_name);
   }
+  assert(bc_name != nullptr);
   Func& f = boundary_functions[bc_name];
   f.func = func;
   f.before = before;
