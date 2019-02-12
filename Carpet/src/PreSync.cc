@@ -39,7 +39,10 @@ std::ostream& operator<<(std::ostream& o,const var_tuple& vt) {
 bool operator<(const var_tuple& v1,const var_tuple& v2) {
   if(v1.vi < v2.vi) return true;
   if(v1.vi > v2.vi) return false;
+  if(v1.rl < v2.rl) return true;
+  if(v1.rl > v2.rl) return false;
   if(v1.tl < v2.tl) return true;
+  if(v1.tl > v2.tl) return false;
   return false;
 }
 
