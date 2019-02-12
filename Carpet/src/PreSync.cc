@@ -31,6 +31,7 @@ std::ostream& operator<<(std::ostream& o,const var_tuple& vt) {
   o << CCTK_FullVarName(vt.vi);
   for(int i=0;i<vt.tl;i++)
     o << "_p";
+  if(vt.rl != -1) o << " (rl=" << vt.rl << ")";
   return o;
 }
 
