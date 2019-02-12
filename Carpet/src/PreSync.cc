@@ -289,7 +289,8 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
   current_routine = "";
   std::map<var_tuple,int>& writes_m = writes[r];
   for(auto i = writes_m.begin();i != writes_m.end(); ++i) {
-    const var_tuple& vi = i->first;
+    var_tuple vi = i->first;
+    vi.rl = reflevel;
     valid_k[vi] |= i->second;
   }
 
