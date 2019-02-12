@@ -389,7 +389,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
       }
   }
   if(sync_groups.size()>0) {
-    for (int sgi=0;sgi<sync_groups.size();sgi++) {
+    for (size_t sgi=0;sgi<sync_groups.size();sgi++) {
       int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
       int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
       for (int vi=i0;vi<iN;vi++) {
@@ -403,7 +403,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     }
     if(use_psync) {
       SyncProlongateGroups(cctkGH, sync_groups, attribute);
-      for (int sgi=0;sgi<sync_groups.size();sgi++) {
+      for (size_t sgi=0;sgi<sync_groups.size();sgi++) {
         int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
         int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
         for (int vi=i0;vi<iN;vi++) {
@@ -655,6 +655,7 @@ void Sync1(const cGH *cctkGH,int gi) {
   sync_groups.push_back(gi);
   cFunctionData *attribute = 0;
   int ierr = SyncProlongateGroups(cctkGH, sync_groups, attribute);
+  assert(!ierr);
 }
 
 /**
@@ -682,7 +683,8 @@ extern "C" int GetValidRegion(int vi,int tl) {
  * is already valid everywhere, this routine does nothing. When
  * the routine finishes, it will be valid everywhere.
  */
-extern "C" void ManualSyncGF(const cGH *cctkGH,int vi) {
+extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int vi) {
+  const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
   var_tuple vt{vi,reflevel,0};
   auto f = valid_k.find(vt);
   std::cout << "ManualSyncGF(" << CCTK_FullVarName(vi) << ")" << std::endl;
@@ -786,11 +788,12 @@ void Carpet_RegisterPhysicalBC(
   Func& f = boundary_functions[bc_name];
   f.func = func;
   f.before = before;
+  return 0;
 }
 
 extern "C"
-void RegisterSymmetryBC(
-    const cGH *cctkGH,
+CCTK_INT RegisterSymmetryBC(
+    const CCTK_POINTER_TO_CONST /*cctkGH_*/,
     boundary_function func,
     const char *bc_name,
     int handle,
@@ -805,9 +808,10 @@ void RegisterSymmetryBC(
   f.handle = handle;
   f.faces = faces;
   f.width = width;
+  return 0;
 }
 
-void Carpet_SelectVarForBCI(
+CCTK_INT Carpet_SelectVarForBCI(
     const cGH *cctkGH,
     int faces,
     int width,
@@ -827,28 +831,31 @@ void Carpet_SelectVarForBCI(
   b.table_handle = table_handle;
   b.bc_name = bc_name;
   bv.push_back(b);
+  return 0;
 }
 
 extern "C"
-void SelectVarForBC(
-    const cGH *cctkGH,
+CCTK_INT SelectVarForBC(
+    const CCTK_POINTER_TO_CONST cctkGH_,
     int faces,
     int width,
     int table_handle,
     const char *var_name,
     const char *bc_name) {
+  const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
   int i = CCTK_VarIndex(var_name);
-  Carpet_SelectVarForBCI(cctkGH,faces,width,table_handle,i,bc_name);
+  return Carpet_SelectVarForBCI(cctkGH,faces,width,table_handle,i,bc_name);
 }
 
 extern "C"
 CCTK_INT SelectGroupForBC(
-    const cGH *cctkGH,
+    const CCTK_POINTER_TO_CONST cctkGH_,
     int faces,
     int width,
     int table_handle,
     const char *group_name,
     const char *bc_name) {
+  const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
   int group = CCTK_GroupIndex(group_name);
   int vstart = CCTK_FirstVarIndexI(group);
   int vnum   = CCTK_NumVarsInGroupI(group);
@@ -887,7 +894,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
         #endif
         if(faces != 0) {
           int ierr = (*f.func)(cctkGH,1,&var_index,&faces,&b.width,&b.table_handle);
-          std::map<std::string, SymFunc>::iterator iter = symmetry_functions.begin();
+          assert(!ierr);
           for (auto iter = symmetry_functions.begin(); iter != symmetry_functions.end(); iter++) {
             std::string name = iter->first;
             SymFunc& fsym = symmetry_functions.at(name);
