@@ -258,7 +258,7 @@ ostream& dumpValid(ostream& os, const int vi) {
   os << "\nValid entries:";
   for(auto it : valid_k) {
     if(vi == -1 || it.first.vi == vi) {
-      os << " " << it.first;
+      os << " " << it.first << " " << wstr(valid_k[it.first]);
     }
   }
   return os;
@@ -293,6 +293,8 @@ extern "C" void TraverseWrites(const char *func_name,void(*trace_func)(int,int,i
 }
 
 void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sync_groups) {
+  static const char *vname_debug = "ADMBASE::gxx";
+  static int vi_debug = CCTK_VarIndex(vname_debug);
   std::string r;
   r += attribute->thorn;
   r += "::";
@@ -303,6 +305,9 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
     var_tuple vi = i->first;
     vi.rl = reflevel;
     valid_k[vi] |= i->second;
+    if(vi.vi == vi_debug) {
+      std::cout << "setting " << vname_debug << " to " << wstr(valid_k[vi]) << std::endl;
+    }
   }
 
 
@@ -427,10 +432,11 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
         int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
         int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
         for (int vi=i0;vi<iN;vi++) {
-          if(valid_k[var_tuple(vi,-1,0)] != WH_EVERYWHERE) {
+          if(valid_k[var_tuple(vi,reflevel,0)] != WH_EVERYWHERE) {
             std::ostringstream msg;
-            msg << "Not Valid Everywhere:" << wstr(valid_k[var_tuple(vi,-1,0)]) << " " << CCTK_FullVarName(vi);
+            msg << "Not Valid Everywhere:" << wstr(valid_k[var_tuple(vi,reflevel,0)]) << " " << CCTK_FullVarName(vi);
             msg << " Routine: " << attribute->thorn << "::" << attribute->routine;
+            dumpValid(msg,vi);
             msg << std::endl;
             CCTK_WARN(0,msg.str().c_str());
           }
