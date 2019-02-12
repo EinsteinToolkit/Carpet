@@ -254,6 +254,16 @@ void diagnosticPreValid() {
   old_valid_k = valid_k;
 }
 
+ostream& dumpValid(ostream& os, const int vi) {
+  os << "\nValid entries:";
+  for(auto it : valid_k) {
+    if(vi == -1 || it.first.vi == vi) {
+      os << " " << it.first;
+    }
+  }
+  return os;
+}
+
 extern "C" void diagnosticChanged();
 void diagnosticChanged() {
   for(auto entry = valid_k.begin(); valid_k.end() != entry; ++entry) {
@@ -577,6 +587,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
       msg << "Required read for " << vt 
           << " not satisfied. Invalid interior"
           << " at the start of routine " << r;
+      dumpValid(msg, vt.vi);
       int level = psync_error ? 0 : 1;
       if(msg2) {
         CCTK_WARN(level,msg.str().c_str()); 
@@ -591,6 +602,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
           << " not satisfied. Wanted '" << wstr(i->second)
           << "' found '" << wstr(valid_k[vt])
           << "' at the start of routine " << r;
+        dumpValid(msg, vt.vi);
         CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
       }
     }
@@ -611,6 +623,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
         std::ostringstream msg; 
         msg << "Cannot sync " << CCTK_FullVarName(vt.vi)
             << " because it is not valid in the interior.";
+        dumpValid(msg, vt.vi);
         int level = psync_error ? 0 : 1;
         if(msg3) {
           CCTK_WARN(level,msg.str().c_str()); 
