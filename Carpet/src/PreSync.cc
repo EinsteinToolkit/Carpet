@@ -292,7 +292,7 @@ extern "C" void TraverseWrites(const char *func_name,void(*trace_func)(int,int,i
     }
 }
 
-void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
+void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sync_groups) {
   std::string r;
   r += attribute->thorn;
   r += "::";
@@ -315,13 +315,24 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
       if(w == WH_INTERIOR) {
         var_tuple vt{vi,reflevel,0};
         valid_k[vt] |= WH_GHOSTS;
+        std::cout << "SYNC: " << CCTK_FullVarName(vt.vi) << " " << wstr(valid_k[vt]) << std::endl;
       }
     }
   }
-  const char *vname = "TMUNUBASE::eTtt";
+  #if 0
+  const char *vname = "CARPETREDUCE::iweight";
   static int vi_ = CCTK_VarIndex(vname);
+  assert(vi_ >= 0);
   static var_tuple vt_{vi_,-1,0};
-  std::cout << "   " << vname << " := " << wstr(valid_k[vt_]) << std::endl;
+  int cc = CCTK_GFINDEX3D(cctkGH,0,0,0);
+  //std::cout << "   " << vname << " := " << wstr(valid_k[vt_]) << std::endl;
+  // yyy
+  CCTK_REAL *ptr = (CCTK_REAL*)CCTK_VarDataPtrI(cctkGH,vi_,0);
+  if(ptr == 0)
+    std::cout << "   " << vname << " := " << wstr(valid_k[vt_]) << std::endl;
+  else
+    std::cout << "   " << vname << " := " << wstr(valid_k[vt_]) << " ptr=" << ptr[cc] << std::endl;
+    #endif
 }
 
 /**
@@ -640,6 +651,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
  * then mark the current level as valid nowhere.
  */
 void cycle_rdwr(const cGH *cctkGH) {
+  std::cout << "CYCLE" << std::endl;
   int num = CCTK_NumVars();
   for(int vi=0;vi<num;vi++) {
     int const cactus_tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
@@ -677,6 +689,9 @@ void Sync1(const cGH *cctkGH,int gi) {
 // TODO: expand to take a reflevel argument?
 extern "C" void SetValidRegion(int vi,int tl,int wh) {
   var_tuple vt(vi,reflevel,tl);
+  //if(wh == (WH_INTERIOR|WH_BOUNDARY))
+    //wh = WH_INTERIOR;
+  std::cout << "SetValid(" << CCTK_FullVarName(vi) << ": " << wstr(valid_k[vt]) << " -> " << wstr(wh) << ")" << std::endl;
   valid_k[vt] = wh;
 }
 
@@ -807,7 +822,9 @@ CCTK_INT Carpet_RegisterPhysicalBC(
                "Physical Boundary condition '%s' points to NULL.", bc_name);
   }
   assert(bc_name != nullptr);
-  Func& f = boundary_functions[bc_name];
+  std::string name{bc_name};
+  tolower(name);
+  Func& f = boundary_functions[name];
   f.func = func;
   f.before = before;
   return 0;
@@ -825,6 +842,8 @@ CCTK_INT RegisterSymmetryBC(
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
                "Symmetry Boundary condition '%s' points to NULL.", bc_name);
   }
+  std::string name{bc_name};
+  tolower(name);
   SymFunc& f = symmetry_functions[bc_name];
   f.func = func;
   f.handle = handle;
@@ -844,6 +863,8 @@ CCTK_INT Carpet_SelectVarForBCI(
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
                "Requested BC '%s' not found.", bc_name);
   }
+  std::string name{bc_name};
+  tolower(name);
   Func& f = boundary_functions.at(bc_name);
   CCTK_ASSERT(var_index != 0);
   std::vector<Bound>& bv = boundary_conditions[f.before][var_index];
@@ -851,7 +872,7 @@ CCTK_INT Carpet_SelectVarForBCI(
   b.faces = faces;
   b.width = width;
   b.table_handle = table_handle;
-  b.bc_name = bc_name;
+  b.bc_name = name;
   bv.push_back(b);
   return 0;
 }
@@ -895,6 +916,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
   if(before != 0) before = 1;
   auto bc = boundary_conditions[before];
   if(bc.find(var_index) == bc.end()) {
+    std::cout << "ApplyBC: No bc's for " << CCTK_FullVarName(var_index) << std::endl;
     return;
   }
   std::vector<Bound>& bv = bc[var_index];
@@ -903,6 +925,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
       for(auto j=bv.begin(); j != bv.end(); ++j) {
         Bound& b = *j;
         Func& f = boundary_functions.at(b.bc_name);
+        std::cout << "ApplyBC: Apply " << b.bc_name << " to " << CCTK_FullVarName(var_index) << std::endl;
 
         // Disable faces if they don't apply to this
         // computational region.

@@ -54,7 +54,7 @@ inline void tolower(std::string& s) {
 
 void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pregroups);
 void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups);
-void PostCheckValid(cFunctionData *attribute,const std::vector<int>& sync_groups);
+void PostCheckValid(cFunctionData *attribute,cGH *cctkGH,const std::vector<int>& sync_groups);
 
 /// Traverse one function on all components of one refinement level
 /// of one multigrid level.
@@ -365,7 +365,7 @@ int CallFunction(void *function,           ///< the function to call
       SyncGroupsInScheduleBlock(attribute, cctkGH, sync_groups, sync_timer);
     }
   }
-  PostCheckValid(attribute,sync_groups);
+  PostCheckValid(attribute,cctkGH,sync_groups);
 
   if (schedule_barriers) {
     // Create an ID that is almost unique for this scheduled

@@ -370,7 +370,7 @@ PROVIDES FUNCTION GetTimeLevelOffset \
 # Presync functions for selecting boundary conditions.
 
 CCTK_INT FUNCTION
-   Carpet_SelectGroupForBC
+   Driver_SelectGroupForBC
       (CCTK_POINTER_TO_CONST IN cctkGH,
       CCTK_INT IN faces,
       CCTK_INT IN width,
@@ -381,7 +381,7 @@ PROVIDES FUNCTION Driver_SelectGroupForBC WITH
    SelectGroupForBC LANGUAGE C
 
 CCTK_INT FUNCTION
-   Carpet_SelectVarForBC
+   Driver_SelectVarForBC
       (CCTK_POINTER_TO_CONST IN cctkGH,
       CCTK_INT IN faces,
       CCTK_INT IN width,
