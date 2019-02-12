@@ -24,8 +24,6 @@ struct var_tuple {
   int rl; // refinement level
   int tl; // time level;
   var_tuple() : vi(-1), rl(-1), tl(-1) {}
-  var_tuple(int vi_) : vi(vi_), rl(-1), tl(0) {}
-  var_tuple(int vi_,int tl_) : vi(vi_), rl(-1), tl(tl_) {}
   var_tuple(int vi_,int rl_,int tl_) : vi(vi_), rl(rl_), tl(tl_) {}
 };
 
@@ -210,7 +208,7 @@ void compute_clauses(const int num_strings,const char **strings,std::map<var_tup
     }
 
     if(vi >= 0) {
-      var_tuple vt{vi, rwc.tl};
+      var_tuple vt{vi, -1, rwc.tl};
       routine_m[vt] = where_val;
     } else {
       // If looking up a specific variable failed, then
@@ -226,7 +224,7 @@ void compute_clauses(const int num_strings,const char **strings,std::map<var_tup
         int i0 = CCTK_FirstVarIndexI(gi);
         int iN = i0+CCTK_NumVarsInGroupI(gi);
         for(vi=i0;vi<iN;vi++) {
-          var_tuple vt{vi};
+          var_tuple vt{vi,-1,0};
           routine_m[vt] = where_val;
         }
         assert(i0 < iN);
@@ -239,7 +237,7 @@ void compute_clauses(const int num_strings,const char **strings,std::map<var_tup
           int i0 = CCTK_FirstVarIndexI(gi);
           int iN = i0+CCTK_NumVarsInGroupI(gi);
           for(vi=i0;vi<iN;vi++) {
-            var_tuple vt{vi};
+            var_tuple vt{vi,-1,0};
             routine_m[vt] = where_val;
           }
           assert(i0 < iN);
@@ -304,7 +302,7 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
     int i0 = CCTK_FirstVarIndexI(gi);
     int iN = i0+CCTK_NumVarsInGroupI(gi);
     for(int vi=i0;vi<iN;vi++) {
-      int& w = writes[r][vi];
+      int& w = writes[r][var_tuple(vi,-1,0)];
       if(w == WH_INTERIOR) {
         var_tuple vt{vi,reflevel,0};
         valid_k[vt] |= WH_GHOSTS;
@@ -313,7 +311,7 @@ void PostCheckValid(cFunctionData *attribute, vector<int> const &sync_groups) {
   }
   const char *vname = "TMUNUBASE::eTtt";
   static int vi_ = CCTK_VarIndex(vname);
-  static var_tuple vt_{vi_};
+  static var_tuple vt_{vi_,-1,0};
   std::cout << "   " << vname << " := " << wstr(valid_k[vt_]) << std::endl;
 }
 
@@ -409,9 +407,9 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
         int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
         int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
         for (int vi=i0;vi<iN;vi++) {
-          if(valid_k[vi] != WH_EVERYWHERE) {
+          if(valid_k[var_tuple(vi,-1,0)] != WH_EVERYWHERE) {
             std::ostringstream msg;
-            msg << "Not Valid Everywhere:" << wstr(valid_k[vi]) << " " << CCTK_FullVarName(vi);
+            msg << "Not Valid Everywhere:" << wstr(valid_k[var_tuple(vi,-1,0)]) << " " << CCTK_FullVarName(vi);
             msg << " Routine: " << attribute->thorn << "::" << attribute->routine;
             msg << std::endl;
             CCTK_WARN(0,msg.str().c_str());
@@ -446,7 +444,7 @@ int Carpet_hasAccess(const cGH *cctkGH,int var_index) {
     return true;
   int type = CCTK_GroupTypeFromVarI(var_index);
   if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(var_index)) == sizeof(CCTK_REAL)) {
-    var_tuple vi(var_index);
+    var_tuple vi{var_index,-1,0};
     if(hasAccess(reads[current_routine],vi))
       return true;
     if(hasAccess(writes[current_routine],vi))
@@ -490,10 +488,10 @@ extern "C" void clear_readwrites() {
 }
 extern "C" void check_readwrites() {
   for(auto i=attempted_readwrites.begin(); i != attempted_readwrites.end(); ++i) {
-    if((i->second & 0x01)==0x01 && !hasAccess(reads[current_routine],i->first)) {
+    if((i->second & 0x01)==0x01 && !hasAccess(reads[current_routine],var_tuple(i->first,-1,0))) {
         std::cerr << "Undeclared access: " << current_routine << " read name='" << CCTK_FullVarName(i->first) << "'" << std::endl;
     }
-    if((i->second & 0x10)==0x10 && !hasAccess(writes[current_routine],i->first)) {
+    if((i->second & 0x10)==0x10 && !hasAccess(writes[current_routine],var_tuple(i->first,-1,0))) {
         std::cerr << "Undeclared access: " << current_routine << " write name='" << CCTK_FullVarName(i->first) << "'" << std::endl;
     }
   }
@@ -509,7 +507,7 @@ extern "C" void check_readwrites() {
 extern "C"
 void Carpet_requestAccess(int var_index,int read_spec,int write_spec) {
   assert(var_index >= 0);
-  var_tuple vi(var_index);
+  var_tuple vi{var_index,-1,0};
   tmp_read[vi]  |= read_spec;
   tmp_write[vi] |= write_spec;
 }
