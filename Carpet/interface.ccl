@@ -377,7 +377,7 @@ CCTK_INT FUNCTION
       CCTK_INT IN table_handle,
       CCTK_STRING IN group_name,
       CCTK_STRING IN bc_name)
-PROVIDES FUNCTION Carpet_SelectGroupForBC WITH
+PROVIDES FUNCTION Driver_SelectGroupForBC WITH
    SelectGroupForBC LANGUAGE C
 
 CCTK_INT FUNCTION
@@ -388,7 +388,7 @@ CCTK_INT FUNCTION
       CCTK_INT IN table_handle,
       CCTK_STRING IN var_name,
       CCTK_STRING IN bc_name)
-PROVIDES FUNCTION Carpet_SelectVarForBC WITH
+PROVIDES FUNCTION Driver_SelectVarForBC WITH
    SelectVarForBC LANGUAGE C
 
 # Functions for accessing and changing valid region
