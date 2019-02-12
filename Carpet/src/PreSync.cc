@@ -742,10 +742,18 @@ void Carpet_SynchronizationRecovery(CCTK_ARGUMENTS) {
 typedef CCTK_INT (*boundary_function)(
   const cGH *cctkGH,
   int num_vars,
-  int *var_indices,
-  int *faces,
-  int *widths,
-  int *table_handles);
+  const int *var_indices,
+  const int *faces,
+  const int *widths,
+  const int *table_handles);
+
+typedef CCTK_INT (*iface_boundary_function)(
+  CCTK_POINTER_TO_CONST cctkGH,
+  CCTK_INT num_vars,
+  const CCTK_INT *var_indices,
+  const CCTK_INT *faces,
+  const CCTK_INT *boundary_widths,
+  const CCTK_INT *table_handles);
 
 struct Bound {
   std::string bc_name;
@@ -775,11 +783,12 @@ std::map<std::string,SymFunc> symmetry_functions;
 std::array<std::map<int,std::vector<Bound>>,2> boundary_conditions;
 
 extern "C"
-void Carpet_RegisterPhysicalBC(
-    const cGH *cctkGH,
-    boundary_function func,
-    const char *bc_name,
-    int before) {
+CCTK_INT Carpet_RegisterPhysicalBC(
+    CCTK_POINTER_TO_CONST /*cctkGH_*/,
+    CCTK_POINTER_TO_CONST func_,
+    CCTK_INT before,
+    CCTK_STRING bc_name) {
+  boundary_function func = reinterpret_cast<boundary_function>(func_);
   if(before != 0) before = 1;
   if(NULL==func) {
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
@@ -948,13 +957,14 @@ void Carpet_ApplyPhysicalBCs(const cGH *cctkGH) {
 }
 
 extern "C"
-void Bdry2_Boundary_RegisterSymmetryBC(
-    const cGH *cctkGH,
-    boundary_function func,
-    int handle,
-    int faces,
-    int width,
-    const char *bc_name) {
+CCTK_INT Bdry2_Boundary_RegisterSymmetryBC(
+    CCTK_POINTER_TO_CONST /*cctkGH_*/,
+    iface_boundary_function func_,
+    CCTK_INT handle,
+    CCTK_INT faces,
+    CCTK_INT width,
+    CCTK_STRING bc_name) {
+  boundary_function func = reinterpret_cast<boundary_function>(func_);
   if(NULL==func) {
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
                "Symmetry Boundary condition '%s' points to NULL.", bc_name);
@@ -965,6 +975,7 @@ void Bdry2_Boundary_RegisterSymmetryBC(
   f.faces = faces;
 //  &f.width = width;
 //  std::cout << "Register Width of " << f.width[0] << " for " << bc_name << std::endl;
+  return 0;
 }
 
 }

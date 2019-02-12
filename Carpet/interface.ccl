@@ -56,6 +56,7 @@ CCTK_INT
 FUNCTION Driver_RegisterPhysicalBC(
   CCTK_POINTER_TO_CONST IN cctkGH,
   CCTK_POINTER_TO_CONST IN fptr,
+  CCTK_INT IN before,
   CCTK_STRING IN bc_name)
 PROVIDES FUNCTION Driver_RegisterPhysicalBC WITH Carpet_RegisterPhysicalBC LANGUAGE C
 
