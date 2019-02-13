@@ -200,6 +200,10 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
         barrier_timer.stop();
       }
     }
+    for(auto group : goodgroups) {
+      // yyy
+      Carpet_ApplyPhysicalBCsForGroupI(cctkGH,group,false);
+    }
   }
 
   return retval;
