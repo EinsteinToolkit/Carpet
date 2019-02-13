@@ -13,6 +13,7 @@
 #include <gh.hh>
 
 #include <carpet.hh>
+#include "PreSync.h"
 
 namespace Carpet {
 
@@ -63,6 +64,11 @@ void Restrict(const cGH *cctkGH) {
     timer.start();
     RestrictGroups(cctkGH, groups);
     timer.stop();
+  }
+
+  for(auto g: groups) {
+    for(int i = 0, firstvar = CCTK_FirstVarIndexI(g), nvars = CCTK_NumVarsInGroupI(g); i < nvars ; i++)
+      Carpet_SetValidRegion(firstvar + i, 0, WH_INTERIOR);
   }
 
   // Note: Carpet used to call SyncGroups here. This is now done in
