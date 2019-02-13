@@ -6,6 +6,7 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 #include <iostream>
+#include <sstream>
 #include <carpet.hh>
 #include <math.h>
 #include <array>
@@ -293,8 +294,25 @@ extern "C" void TraverseWrites(const char *func_name,void(*trace_func)(int,int,i
 }
 
 void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sync_groups) {
-  static const char *vname_debug = "ADMBASE::gxx";
-  static int vi_debug = CCTK_VarIndex(vname_debug);
+  bool use_psync = (CCTK_ParameterValInt("use_psync","Cactus") != 0);
+  bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
+  if(!use_psync) return;
+
+  static std::map<int,std::string> watch_vars;
+  static bool init = false;
+  if(!init) {
+    init = true;
+    const char *dbv = getenv("DEBUG_VARS");
+    if(dbv != nullptr) {
+      std::istringstream istr{dbv};
+      while(istr.good()) {
+        std::string vname;
+        istr >> vname;
+        int vi = CCTK_VarIndex(vname.c_str());
+        watch_vars[vi] = vname;
+      }
+    }
+  }
   std::string r;
   r += attribute->thorn;
   r += "::";
@@ -304,9 +322,13 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
   for(auto i = writes_m.begin();i != writes_m.end(); ++i) {
     var_tuple vi = i->first;
     vi.rl = reflevel;
-    valid_k[vi] |= i->second;
-    if(vi.vi == vi_debug) {
-      std::cout << "setting " << vname_debug << " to " << wstr(valid_k[vi]) << std::endl;
+    if(i->second == WH_INTERIOR)
+      valid_k[vi] = WH_INTERIOR;
+    else
+      valid_k[vi] |= i->second;
+    auto res = watch_vars.find(vi.vi);
+    if(res != watch_vars.end()) {
+      std::cout << "setting " << watch_vars[vi.vi] << " to " << wstr(valid_k[vi]) << std::endl;
     }
   }
 
@@ -919,6 +941,9 @@ CCTK_INT SelectGroupForBC(
  */
 extern "C"
 void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before) {
+  bool use_psync = (CCTK_ParameterValInt("use_psync","Cactus") != 0);
+  bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
+  if(!use_psync) return;
   if(before != 0) before = 1;
   auto bc = boundary_conditions[before];
   if(bc.find(var_index) == bc.end()) {
@@ -943,7 +968,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
           }
         }
         #endif
-        if(faces != 0) {
+        if(faces != 0 && use_psync) {
           int ierr = (*f.func)(cctkGH,1,&var_index,&faces,&b.width,&b.table_handle);
           assert(!ierr);
           for (auto iter = symmetry_functions.begin(); iter != symmetry_functions.end(); iter++) {
@@ -954,6 +979,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
           }
           var_tuple vt{var_index,reflevel,0};
           valid_k[vt] |= WH_BOUNDARY;
+          std::cout << " update boundary: " << CCTK_FullVarName(vt.vi) << " -> " << wstr(valid_k[vt]) << std::endl;
         }
       }
     }
