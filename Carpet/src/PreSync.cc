@@ -974,7 +974,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
           for (auto iter = symmetry_functions.begin(); iter != symmetry_functions.end(); iter++) {
             std::string name = iter->first;
             SymFunc& fsym = symmetry_functions.at(name);
-//            std::cout << name << " BC applied to " << CCTK_FullVarName(var_index) << std::endl;
+            std::cout << "SymBC: " << name << " BC applied to " << CCTK_FullVarName(var_index) << std::endl;
             ierr = (*fsym.func)(cctkGH,1,&var_index,&fsym.faces,&fsym.width,&fsym.handle);
           }
           var_tuple vt{var_index,reflevel,0};
@@ -1025,7 +1025,7 @@ void Carpet_ApplyPhysicalBCs(const cGH *cctkGH) {
 }
 
 extern "C"
-CCTK_INT Bdry2_Boundary_RegisterSymmetryBC(
+CCTK_INT Carpet_Boundary_RegisterSymmetryBC(
     CCTK_POINTER_TO_CONST /*cctkGH_*/,
     iface_boundary_function func_,
     CCTK_INT handle,
