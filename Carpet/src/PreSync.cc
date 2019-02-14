@@ -898,6 +898,9 @@ CCTK_INT Carpet_SelectVarForBCI(
     CCTK_INT table_handle,
     CCTK_INT var_index,
     const char *bc_name) {
+  std::string bname{bc_name};
+  tolower(bname);
+  bc_name = bname.c_str();
   if(!boundary_functions.count(bc_name)) {
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
                "Requested BC '%s' not found.", bc_name);
