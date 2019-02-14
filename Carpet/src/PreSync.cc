@@ -618,6 +618,18 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
       //std::cout << "-->|Skip!\n";
       continue;
     }
+    // some thorns only read from variables based on extra parameters, eg
+    // TmunuBase's stress_energy_state grid scalar. This check mimics the
+    // behaviour of calling SYNC on a variable without storage by outputting a
+    // high level warning. A thorn that actually tries to read from the
+    // variable will encounter a SEGFAULT.
+    if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) == 0) {
+      //std::cout << "-->|Skip!\n";
+      CCTK_VWARN(CCTK_WARN_DEBUG,
+                 "Declared access to '%s' which has no storage",
+                 CCTK_FullVarName(vi));
+      continue;
+    }
     if(!on(valid_k[vt],WH_INTERIOR)) // and !silent_psync) 
     {
       // If the read spec is everywhere and we only have
