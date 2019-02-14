@@ -4,61 +4,71 @@ STORAGE: scalar[3] scaled[3] difference[3]
 STORAGE: interp_difference
 STORAGE: errornorm interp_errornorm
 
-
-
 SCHEDULE CarpetProlongateTest_Init AT initial
 {
   LANG: Fortran
   SYNC: scalar scaled
+  WRITES: CarpetProlongateTest::u(interior), uscaled
 } "Set up initial data"
 
 SCHEDULE CarpetProlongateTest_Init AT evol
 {
   LANG: Fortran
   SYNC: scalar scaled
+  READS: grid::x, y, z
+  WRITES: CarpetProlongateTest::u(interior), uscaled
 } "Set up initial data"
 
 SCHEDULE CarpetProlongateTest_Diff IN MoL_PostStep
 {
   LANG: Fortran
+  READS: grid::x, y, z
+  READS: CarpetProlongateTest::u
+  WRITES: CarpetProlongateTest::u0(everywhere), du
 } "Test data"
-
-
 
 SCHEDULE CarpetProlongateTest_InterpInit AT initial
 {
   LANG: Fortran
   OPTIONS: global-late
+  WRITES: CarpetProlongateTest::interp_x(everywhere), interp_y, interp_z
 } "Set up interpolation"
 
 SCHEDULE CarpetProlongateTest_Interp IN MoL_PostStep
 {
   LANG: Fortran
   OPTIONS: global-late
+  READS: CarpetProlongateTest::interp_x, interp_y, interp_z
+  WRITES: CarpetProlongateTest::interp_u(everywhere)
 } "Interpolate"
 
 SCHEDULE CarpetProlongateTest_InterpDiff IN MoL_PostStep AFTER CarpetProlongateTest_Interp
 {
   LANG: Fortran
   OPTIONS: global-late
+  READS: CarpetProlongateTest::interp_x, interp_y, interp_z, interp_u
+  WRITES: CarpetProlongateTest::interp_u0(everywhere), interp_du
 } "Test interpolated data"
-
-
 
 SCHEDULE CarpetProlongateTest_NormInit IN MoL_PostStep AFTER (CarpetProlongateTest_Diff CarpetProlongateTest_InterpDiff)
 {
   LANG: Fortran
   OPTIONS: global-late
+  WRITES: CarpetProlongateTest::errornorm(everywhere), interp_errornorm
 } "Calculate error norm"
 
 SCHEDULE CarpetProlongateTest_NormCalc IN MoL_PostStep AFTER CarpetProlongateTest_NormInit
 {
   LANG: Fortran
   OPTIONS: global-late loop-local
+  READS: CarpetProlongateTest::errornorm, interp_errornorm, du, interp_du
+  WRITES: CarpetProlongateTest::errornorm(everywhere), interp_errornorm
 } "Calculate error norm"
 
 SCHEDULE CarpetProlongateTest_NormReduce IN MoL_PostStep AFTER CarpetProlongateTest_NormCalc
 {
   LANG: Fortran
   OPTIONS: global-late
+  READS: CarpetProlongateTest::errornorm, interp_errornorm
+  WRITES: CarpetProlongateTest::errornorm(everywhere), interp_errornorm
 } "Calculate error norm"
