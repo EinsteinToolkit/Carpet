@@ -5,5 +5,5 @@ export RDWR_DEBUG_INDEXES="1 1 1"
 mv CCTK_Proc0.out CCTK_Proc0.yes
 ./exe/cactus_sim -Roe no.par
 mv CCTK_Proc0.out CCTK_Proc0.no
-python3 trim.py
+python3 ${0%/*}/trim.py
 vimdiff x.yes x.no
