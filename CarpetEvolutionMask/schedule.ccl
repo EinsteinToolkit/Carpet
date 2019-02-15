@@ -25,6 +25,7 @@ SCHEDULE EvolutionMaskBase_InitEvolutionMask IN EvolutionMaskBase_SetupEvolution
 {
   LANG: C
   OPTIONS: global loop-local
+  WRITES: CarpetEvolutionMask::evolution_mask(Everywhere), buffer_mask
 } "Initialise the mask function"
 
 SCHEDULE GROUP SetupEvolutionMask IN EvolutionMaskBase_SetupEvolutionMask AFTER EvolutionMaskBase_InitEvolutionMask
@@ -37,6 +38,7 @@ SCHEDULE CarpetEvolutionMaskSetup IN SetupEvolutionMask
 {
   LANG: C
   OPTIONS: global loop-singlemap
+  WRITES: CarpetEvolutionMask::evolution_mask(Everywhere)
 } "Set up the mask function for the restriction regions"
 
 if (enforce_mask)

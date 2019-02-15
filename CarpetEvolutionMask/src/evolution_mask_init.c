@@ -1,11 +1,12 @@
 #include "cctk.h"
 #include "cctk_Arguments.h"
+#include "cctk_Arguments_Checked.h"
 #include "cctk_Parameters.h"
 
 #include "util_Table.h"
 
 void EvolutionMaskBase_InitEvolutionMask(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_EvolutionMaskBase_InitEvolutionMask;
   DECLARE_CCTK_PARAMETERS;
 
   int i, j, k;

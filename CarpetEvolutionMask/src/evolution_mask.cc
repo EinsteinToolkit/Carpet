@@ -2,7 +2,7 @@
 #include <sstream>
 
 #include "cctk.h"
-#include "cctk_Arguments.h"
+#include "cctk_Arguments_Checked.h"
 #include "cctk_Parameters.h"
 
 #include "carpet.hh"
@@ -158,7 +158,7 @@ void CarpetEvolutionMaskSetup(CCTK_ARGUMENTS) {
 
       BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
 
-        DECLARE_CCTK_ARGUMENTS;
+        DECLARE_CCTK_ARGUMENTS_CarpetEvolutionMaskSetup;
 
         ibbox const &ext =
             dd.light_boxes.at(mglevel).at(reflevel).at(component).exterior;
