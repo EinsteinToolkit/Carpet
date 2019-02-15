@@ -1,4 +1,4 @@
-ActiveThorns = "Boundary2 CartGrid3D Time CoordBase InitBase SymBase Carpet CarpetLib CarpetRegrid CarpetReduce LoopControl GSL IOUtil CarpetIOBasic CarpetIOScalar CarpetIOASCII HDF5 CarpetIOHDF5 HDF5 IDScalarWaveC WaveToyC"
+ActiveThorns = "Boundary CartGrid3D Time CoordBase InitBase SymBase Carpet CarpetLib CarpetRegrid CarpetReduce LoopControl GSL IOUtil CarpetIOBasic CarpetIOScalar CarpetIOASCII HDF5 CarpetIOHDF5 HDF5 IDScalarWaveC WaveToyC"
 
 
 Cactus::cctk_itlast = 64

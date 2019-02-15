@@ -1,4 +1,4 @@
-ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce LoopControl GSL Boundary2 CoordBase InitBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL IDScalarWaveMoL WaveToyMoL IOUtil CarpetIOBasic CarpetIOScalar HDF5 CarpetIOHDF5"
+ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce LoopControl GSL Boundary CoordBase InitBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL IDScalarWaveMoL WaveToyMoL IOUtil CarpetIOBasic CarpetIOScalar HDF5 CarpetIOHDF5"
 
 
 Cactus::cctk_itlast = 128
