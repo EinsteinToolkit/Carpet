@@ -71,13 +71,16 @@ void CycleTimeLevels(cGH *const cctkGH) {
 
         switch (CCTK_GroupTypeI(group)) {
 
-        case CCTK_GF:
+        case CCTK_GF: {
           assert(reflevel >= 0 and reflevel < reflevels);
+          int const firstvarindex = CCTK_FirstVarIndexI(group);
           for (int m = 0; m < (int)arrdata.AT(group).size(); ++m) {
             for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
+              ManualSyncGF(cctkGH, firstvarindex+var);
               arrdata.AT(group).AT(m).data.AT(var)->cycle_all(reflevel,
                                                               mglevel);
             }
+          }
           }
           break;
 
