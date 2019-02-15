@@ -456,7 +456,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
         for (int vi=i0;vi<iN;vi++) {
           if(valid_k[var_tuple(vi,reflevel,0)] != WH_EVERYWHERE) {
             std::ostringstream msg;
-            msg << "Not Valid Everywhere:" << wstr(valid_k[var_tuple(vi,reflevel,0)]) << " " << CCTK_FullVarName(vi);
+            msg << "Required: Valid Everywhere, Observed: Valid " << wstr(valid_k[var_tuple(vi,reflevel,0)]) << " " << CCTK_FullVarName(vi);
             msg << " Routine: " << attribute->thorn << "::" << attribute->routine;
             dumpValid(msg,vi);
             msg << std::endl;

@@ -11,6 +11,7 @@ ActiveThorns = "
    IOUtil
    LoopControl
    SymBase
+   ReadWriteDiagnostic
 "
 
 IO::out_dir = $parfile
