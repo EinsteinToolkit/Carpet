@@ -760,7 +760,7 @@ extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int vi) {
   if(f->second == WH_EVERYWHERE) {
     return;
   }
-  CCTK_ASSERT(f->second == WH_INTERIOR);
+  CCTK_ASSERT((f->second & WH_INTERIOR) == WH_INTERIOR);
 
   // Update valid region info
   int gi = CCTK_GroupIndexFromVarI(vi);
