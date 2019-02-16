@@ -17,7 +17,7 @@
 
 #include <carpet.hh>
 
-extern "C" void Carpet_ApplyPhysicalBCsForGroupI(const cGH *cctkGH,int group,bool before);
+extern "C" void Carpet_ApplyPhysicalBCsForGroupI(const cGH *cctkGH,int group);
 
 int Sync_Num_Total = 0;
 
@@ -62,16 +62,6 @@ int SyncGroupsByDirI(const cGH *cctkGH, int num_groups, const int *groups,
   return retval;
 }
 
-struct ApplyGroup {
-  const cGH *cctkGH;
-  int group;
-  ApplyGroup(const cGH *cctkGH_,int group_) : cctkGH(cctkGH_), group(group_) {
-    Carpet_ApplyPhysicalBCsForGroupI(cctkGH,group,true);
-  }
-  ~ApplyGroup() {
-    Carpet_ApplyPhysicalBCsForGroupI(cctkGH,group,false);
-  }
-};
 
 // synchronises ghostzones and prolongates boundaries of a set of groups
 //
@@ -88,7 +78,6 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
   vector<int> goodgroups;
   goodgroups.reserve(groups.size());
   for (size_t group = 0; group < groups.size(); group++) {
-    ApplyGroup applyGroup(cctkGH,groups[group]);
     const int g = groups.AT(group);
     const int grouptype = CCTK_GroupTypeI(g);
     char *const groupname = CCTK_GroupName(g);
@@ -201,8 +190,7 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
       }
     }
     for(auto group : goodgroups) {
-      // yyy
-      Carpet_ApplyPhysicalBCsForGroupI(cctkGH,group,false);
+      Carpet_ApplyPhysicalBCsForGroupI(cctkGH,group);
     }
   }
 

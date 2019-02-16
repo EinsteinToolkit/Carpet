@@ -54,6 +54,7 @@ if(CCTK_ParameterValInt("sync_count","Cactus") == 1)
   schedule SynchronizationCounterOutput at CCTK_TERMINATE
   {
     LANG: C
+    OPTIONS: meta
   } "Print the number of synchronizations which occurred during the run"
 }
 

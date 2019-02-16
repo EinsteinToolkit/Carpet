@@ -61,7 +61,6 @@ FUNCTION Driver_RegisterPhysicalBC(
                                              CCTK_INT ARRAY IN faces,
                                              CCTK_INT ARRAY IN boundary_widths,
                                              CCTK_INT ARRAY IN table_handles),
-  CCTK_INT IN before,
   CCTK_STRING IN bc_name)
 PROVIDES FUNCTION Driver_RegisterPhysicalBC WITH Carpet_RegisterPhysicalBC LANGUAGE C
 
@@ -538,4 +537,4 @@ CCTK_INT FUNCTION Driver_RegisterSymmetryBC(CCTK_POINTER_TO_CONST IN GH,
                                              CCTK_INT IN var_index),
   CCTK_STRING IN bc_name)
 PROVIDES FUNCTION Driver_RegisterSymmetryBC WITH
-  Carpet_Boundary_RegisterSymmetryBC LANGUAGE C
+  Carpet_RegisterSymmetryBC LANGUAGE C

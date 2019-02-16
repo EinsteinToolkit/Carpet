@@ -839,7 +839,6 @@ struct Bound {
 
 struct Func {
   boundary_function func;
-  int before;
 };
 
 struct SymFunc {
@@ -851,21 +850,14 @@ struct SymFunc {
 
 std::map<std::string,Func> boundary_functions;
 std::map<std::string,SymFunc> symmetry_functions;
-/**
- * The index into the array is the same as the "before"
- * argument defined when registering a BC.
- */
-std::array<std::map<int,std::vector<Bound>>,2> boundary_conditions;
+std::map<int,std::vector<Bound>> boundary_conditions;
 
 extern "C"
 CCTK_INT Carpet_RegisterPhysicalBC(
     CCTK_POINTER_TO_CONST /*cctkGH_*/,
     iface_boundary_function func_,
-    CCTK_INT before,
     CCTK_STRING bc_name) {
-  before = 0;
   boundary_function func = reinterpret_cast<boundary_function>(func_);
-  if(before != 0) before = 1;
   if(NULL==func) {
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
                "Physical Boundary condition '%s' points to NULL.", bc_name);
@@ -875,33 +867,23 @@ CCTK_INT Carpet_RegisterPhysicalBC(
   tolower(name);
   Func& f = boundary_functions[name];
   f.func = func;
-  f.before = before;
   return 0;
 }
 
-#if 0
 extern "C"
-CCTK_INT RegisterSymmetryBC(
-    const CCTK_POINTER_TO_CONST /*cctkGH_*/,
-    boundary_function func,
-    const char *bc_name,
-    int handle,
-    int faces,
-    int width) {
+CCTK_INT Carpet_RegisterSymmetryBC(
+    CCTK_POINTER_TO_CONST /*cctkGH_*/,
+    sym_iface_boundary_function func_,
+    CCTK_STRING bc_name) {
+  sym_boundary_function func = reinterpret_cast<sym_boundary_function>(func_);
   if(NULL==func) {
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
                "Symmetry Boundary condition '%s' points to NULL.", bc_name);
   }
-  std::string name{bc_name};
-  tolower(name);
   SymFunc& f = symmetry_functions[bc_name];
   f.func = func;
-  f.handle = handle;
-  f.faces = faces;
-  f.width = width;
   return 0;
 }
-#endif
 
 CCTK_INT Carpet_SelectVarForBCI(
     const cGH *cctkGH,
@@ -921,7 +903,16 @@ CCTK_INT Carpet_SelectVarForBCI(
   tolower(name);
   Func& f = boundary_functions.at(bc_name);
   CCTK_ASSERT(var_index != 0);
-  std::vector<Bound>& bv = boundary_conditions[f.before][var_index];
+  if(boundary_conditions.find(var_index) != boundary_conditions.end()) {
+    std::cout << "Variable " << CCTK_FullVarName(var_index) << " has been selected twice!" << std::endl;
+//    std::cout << boundary_conditions[var_index].bc_name << " is already selected" << std::endl;
+//    std::cout << boundary_conditions[var_index] << " is already selected" << std::endl;
+//    std::cout << bc_name << " has been chosen this time" << std::endl;
+//    if(strcmp(boundary_conditions[var_index].bc_name,bc_name)) {
+//      std::cout << "They match!" << std::endl;
+//    }
+  }
+  std::vector<Bound>& bv = boundary_conditions[var_index];
   Bound b;
   b.faces = faces;
   b.width = width;
@@ -966,12 +957,11 @@ CCTK_INT SelectGroupForBC(
  * Apply boundary conditions for a single variable.
  */
 extern "C"
-void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before) {
+void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
   bool use_psync = (CCTK_ParameterValInt("use_psync","Cactus") != 0);
   bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
   if(!use_psync) return;
-  if(before != 0) before = 1;
-  auto bc = boundary_conditions[before];
+  auto bc = boundary_conditions;
   if(bc.find(var_index) == bc.end()) {
     std::cout << "ApplyBC: No bc's for " << CCTK_FullVarName(var_index) << std::endl;
     return;
@@ -1017,12 +1007,11 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index,int before)
  * Apply boundary conditions for a group. Called from inside SyncProlongateGroups.
  */
 extern "C"
-void Carpet_ApplyPhysicalBCsForGroupI(const cGH *cctkGH, int group_index,int before) {
-  if(before != 0) before = 1;
+void Carpet_ApplyPhysicalBCsForGroupI(const cGH *cctkGH, int group_index) {
   int vstart = CCTK_FirstVarIndexI(group_index);
   int vnum   = CCTK_NumVarsInGroupI(group_index);
   for(int var_index=vstart;var_index<vstart+vnum;var_index++) {
-    Carpet_ApplyPhysicalBCsForVarI(cctkGH,var_index,before);
+    Carpet_ApplyPhysicalBCsForVarI(cctkGH,var_index);
   }
 }
 
@@ -1034,34 +1023,19 @@ extern "C"
 void Carpet_ApplyPhysicalBCs(const cGH *cctkGH) {
   std::cout << "Carpet_ApplyPhysicalBCs()" << std::endl;
   for(int n=0;n <= 1;n++) {
-    for(auto i=boundary_conditions[n].begin(); i != boundary_conditions[n].end(); ++i) {
+    for(auto i=boundary_conditions.begin(); i != boundary_conditions.end(); ++i) {
       std::cout << "n=" << n << " vi=" << i->first << std::endl;
     }
   }
-  std::cout << " before:" << std::endl;
-  for(auto i=boundary_conditions[1].begin(); i != boundary_conditions[1].end(); ++i) {
-    Carpet_ApplyPhysicalBCsForVarI(cctkGH,i->first,1); // before
-  }
-  std::cout << " after:" << std::endl;
-  for(auto i=boundary_conditions[0].begin(); i != boundary_conditions[0].end(); ++i) {
-    Carpet_ApplyPhysicalBCsForVarI(cctkGH,i->first,0); // after
-  }
+//  std::cout << " before:" << std::endl;
+//  for(auto i=boundary_conditions[1].begin(); i != boundary_conditions[1].end(); ++i) {
+//    Carpet_ApplyPhysicalBCsForVarI(cctkGH,i->first,1); // before
+//  }
+//  std::cout << " after:" << std::endl;
+//  for(auto i=boundary_conditions[0].begin(); i != boundary_conditions[0].end(); ++i) {
+//    Carpet_ApplyPhysicalBCsForVarI(cctkGH,i->first,0); // after
+//  }
   std::cout << " done" << std::endl;
-}
-
-extern "C"
-CCTK_INT Carpet_Boundary_RegisterSymmetryBC(
-    CCTK_POINTER_TO_CONST /*cctkGH_*/,
-    sym_iface_boundary_function func_,
-    CCTK_STRING bc_name) {
-  sym_boundary_function func = reinterpret_cast<sym_boundary_function>(func_);
-  if(NULL==func) {
-    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
-               "Symmetry Boundary condition '%s' points to NULL.", bc_name);
-  }
-  SymFunc& f = symmetry_functions[bc_name];
-  f.func = func;
-  return 0;
 }
 
 }
