@@ -298,7 +298,7 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
   bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
   if(!use_psync) return;
 
-//  static std::map<int,std::string> watch_vars;
+/*  static std::map<int,std::string> watch_vars;
   static bool init = false;
   if(!init) {
     init = true;
@@ -309,10 +309,10 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
         std::string vname;
         istr >> vname;
         int vi = CCTK_VarIndex(vname.c_str());
-//        watch_vars[vi] = vname;
+        watch_vars[vi] = vname;
       }
     }
-  }
+  }*/
   std::string r;
   r += attribute->thorn;
   r += "::";
