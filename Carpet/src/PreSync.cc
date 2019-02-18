@@ -298,7 +298,7 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
   bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
   if(!use_psync) return;
 
-  static std::map<int,std::string> watch_vars;
+//  static std::map<int,std::string> watch_vars;
   static bool init = false;
   if(!init) {
     init = true;
@@ -309,7 +309,7 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
         std::string vname;
         istr >> vname;
         int vi = CCTK_VarIndex(vname.c_str());
-        watch_vars[vi] = vname;
+//        watch_vars[vi] = vname;
       }
     }
   }
@@ -326,10 +326,10 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
       valid_k[vi] = WH_INTERIOR;
     else
       valid_k[vi] |= i->second;
-    auto res = watch_vars.find(vi.vi);
-    if(res != watch_vars.end()) {
-      std::cout << "setting " << watch_vars[vi.vi] << " to " << wstr(valid_k[vi]) << std::endl;
-    }
+//    auto res = watch_vars.find(vi.vi);
+//    if(res != watch_vars.end()) {
+//      std::cout << "setting " << watch_vars[vi.vi] << " to " << wstr(valid_k[vi]) << std::endl;
+//    }
   }
 
 
@@ -439,15 +439,17 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     for (size_t sgi=0;sgi<sync_groups.size();sgi++) {
       int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
       int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
-      for (int vi=i0;vi<iN;vi++) {
-        std::ostringstream msg;
-        msg << "  Presync: syncing for ";
-        msg << attribute->thorn << "::" << attribute->routine
-          << " in/at " << attribute->where
-          << " variable " << CCTK_FullVarName(vi);
-        CCTK_INFO(msg.str().c_str());
+/*      if(verbose) {
+        for (int vi=i0;vi<iN;vi++) {
+          std::ostringstream msg;
+          msg << "  Presync: syncing for ";
+          msg << attribute->thorn << "::" << attribute->routine
+            << " in/at " << attribute->where
+            << " variable " << CCTK_FullVarName(vi);
+          CCTK_INFO(msg.str().c_str());
+        }
       }
-    }
+*/    }
     if(use_psync) {
       SyncProlongateGroups(cctkGH, sync_groups, attribute);
       for (size_t sgi=0;sgi<sync_groups.size();sgi++) {
@@ -731,7 +733,7 @@ extern "C" void SetValidRegion(int vi,int tl,int wh) {
   var_tuple vt(vi,reflevel,tl);
   //if(wh == (WH_INTERIOR|WH_BOUNDARY))
     //wh = WH_INTERIOR;
-  std::cout << "SetValid(" << CCTK_FullVarName(vi) << ": " << wstr(valid_k[vt]) << " -> " << wstr(wh) << ")" << std::endl;
+//  std::cout << "SetValid(" << CCTK_FullVarName(vi) << ": " << wstr(valid_k[vt]) << " -> " << wstr(wh) << ")" << std::endl;
   valid_k[vt] = wh;
 }
 
@@ -754,7 +756,7 @@ extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int vi) {
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
   var_tuple vt{vi,reflevel,0};
   auto f = valid_k.find(vt);
-  std::cout << "ManualSyncGF(" << CCTK_FullVarName(vi) << ")" << std::endl;
+//  std::cout << "ManualSyncGF(" << CCTK_FullVarName(vi) << ")" << std::endl;
   CCTK_ASSERT(f != valid_k.end());
   // Check if anything needs to be done
   if(f->second == WH_EVERYWHERE) {
@@ -972,29 +974,20 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
       for(auto j=bv.begin(); j != bv.end(); ++j) {
         Bound& b = *j;
         Func& f = boundary_functions.at(b.bc_name);
-        std::cout << "ApplyBC: Apply " << b.bc_name << " to " << CCTK_FullVarName(var_index) << std::endl;
+//        std::cout << "ApplyBC: Apply " << b.bc_name << " to " << CCTK_FullVarName(var_index) << std::endl;
 
-        // Disable faces if they don't apply to this
-        // computational region.
-        #if 0
-        for(int i=0;i<6;i++) {
-          if(cctkGH->cctk_bbox[i] == 0) {
-            faces &= ~(1 << i);
-          }
-        }
-        #endif
         if(use_psync) {
           int ierr = (*f.func)(cctkGH,1,&var_index,&b.faces,&b.width,&b.table_handle);
           assert(!ierr);
           for (auto iter = symmetry_functions.begin(); iter != symmetry_functions.end(); iter++) {
             std::string name = iter->first;
             SymFunc& fsym = symmetry_functions.at(name);
-            std::cout << "SymBC: " << name << " BC applied to " << CCTK_FullVarName(var_index) << std::endl;
+//            std::cout << "SymBC: " << name << " BC applied to " << CCTK_FullVarName(var_index) << std::endl;
             ierr = (*fsym.func)(cctkGH,var_index);
           }
           var_tuple vt{var_index,reflevel,0};
           valid_k[vt] |= WH_BOUNDARY;
-          std::cout << " update boundary: " << CCTK_FullVarName(vt.vi) << " -> " << wstr(valid_k[vt]) << std::endl;
+//          std::cout << " update boundary: " << CCTK_FullVarName(vt.vi) << " -> " << wstr(valid_k[vt]) << std::endl;
         }
       }
     }
