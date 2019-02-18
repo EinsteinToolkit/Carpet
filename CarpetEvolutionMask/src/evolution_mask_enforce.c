@@ -4,13 +4,14 @@
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
+#include "cctk_Arguments_Checked.h"
 #include "cctk_Parameters.h"
 
 static void enforce(int const varindex, char const *const optstring,
                     void *const arg);
 
 void enforce_evolution_mask(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_ARGUMENTS_enforce_evolution_mask;
   DECLARE_CCTK_PARAMETERS;
 
   CCTK_TraverseString(enforce_vars, enforce, cctkGH, CCTK_GROUP_OR_VAR);

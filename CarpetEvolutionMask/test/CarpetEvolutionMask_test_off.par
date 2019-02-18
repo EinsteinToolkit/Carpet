@@ -11,6 +11,8 @@ carpetevolutionmask::verbose = "yes"
 carpetevolutionmask::enforce_vars = "ml_bssn::gt11 ml_bssn::At11 ml_bssn::phi"
 carpetevolutionmask::enforce_mask = "no"
 carpetevolutionmask::writeNaNs = "no"
+ADMBase::initial_dtlapse = "zero"
+ADMBase::initial_dtshift = "zero"
 
 # Grid
 

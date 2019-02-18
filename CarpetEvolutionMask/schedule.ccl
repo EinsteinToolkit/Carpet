@@ -46,5 +46,6 @@ if (enforce_mask)
   SCHEDULE enforce_evolution_mask IN MoL_PostRHS
   {
     LANG: C
+    READS: CarpetEvolutionMask::evolution_mask(Everywhere)
   } "Enforce Evolution Mask"
 }
