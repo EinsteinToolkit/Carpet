@@ -17,6 +17,7 @@
 extern "C" void ShowValid();
 
 namespace Carpet {
+int bnd_vi = -1;
 
 bool msg1 = true, msg2 = true, msg3 = true;
 
@@ -808,10 +809,6 @@ void Carpet_SynchronizationRecovery(CCTK_ARGUMENTS) {
   }
 }
 
-typedef CCTK_INT (*sym_boundary_function)(
-  const cGH *cctkGH,
-  const int var_indices);
-
 typedef CCTK_INT (*boundary_function)(
   const cGH *cctkGH,
   int num_vars,
@@ -828,9 +825,11 @@ typedef CCTK_INT (*iface_boundary_function)(
   const CCTK_INT *boundary_widths,
   const CCTK_INT *table_handles);
 
-typedef CCTK_INT (*sym_iface_boundary_function)(
-  CCTK_POINTER_TO_CONST cctkGH,
-  const CCTK_INT var_index);
+typedef void (*sym_boundary_function)(
+  const cGH *cctkGH);
+
+typedef void (*sym_iface_boundary_function)(
+  CCTK_POINTER_TO_CONST cctkGH);
 
 struct Bound {
   std::string bc_name;
@@ -955,6 +954,17 @@ CCTK_INT SelectGroupForBC(
   return 0;
 }
 
+extern "C"
+//CCTK_INT Carpet_SelectedGVs(CCTK_POINTER_TO_CONST _GH, CCTK_INT array_size, CCTK_INT *var_indices, CCTK_INT *faces,
+//                            CCTK_INT *widths, CCTK_INT *table_handles) {
+CCTK_INT Carpet_SelectedGVs() {
+  if(bnd_vi == -1) {
+    std::cout << "No variable is currently having boundary conditions applied, but a boundary condition is attempting to run." << std::endl;
+    return -1;
+  }
+  return bnd_vi;
+}
+
 /**
  * Apply boundary conditions for a single variable.
  */
@@ -968,6 +978,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
     std::cout << "ApplyBC: No bc's for " << CCTK_FullVarName(var_index) << std::endl;
     return;
   }
+  bnd_vi = var_index;
   std::vector<Bound>& bv = bc[var_index];
   BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
     BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
@@ -983,7 +994,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
             std::string name = iter->first;
             SymFunc& fsym = symmetry_functions.at(name);
 //            std::cout << "SymBC: " << name << " BC applied to " << CCTK_FullVarName(var_index) << std::endl;
-            ierr = (*fsym.func)(cctkGH,var_index);
+            (*fsym.func)(cctkGH);
           }
           var_tuple vt{var_index,reflevel,0};
           valid_k[vt] |= WH_BOUNDARY;
@@ -994,6 +1005,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
     END_LOCAL_COMPONENT_LOOP;
   }
   END_LOCAL_MAP_LOOP;
+  bnd_vi = -1;
 }
 
 /**
