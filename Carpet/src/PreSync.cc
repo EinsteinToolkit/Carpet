@@ -825,7 +825,7 @@ typedef CCTK_INT (*iface_boundary_function)(
   const CCTK_INT *boundary_widths,
   const CCTK_INT *table_handles);
 
-typedef void (*sym_boundary_function)(
+typedef CCTK_INT (*sym_boundary_function)(
   const cGH *cctkGH);
 
 typedef void (*sym_iface_boundary_function)(
@@ -994,7 +994,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
             std::string name = iter->first;
             SymFunc& fsym = symmetry_functions.at(name);
 //            std::cout << "SymBC: " << name << " BC applied to " << CCTK_FullVarName(var_index) << std::endl;
-            (*fsym.func)(cctkGH);
+            ierr = (*fsym.func)(cctkGH);
           }
           var_tuple vt{var_index,reflevel,0};
           valid_k[vt] |= WH_BOUNDARY;

@@ -129,3 +129,11 @@ CCTK_INT FUNCTION                               \
          CCTK_INT IN ARRAY do_periodic,         \
          CCTK_STRING IN group_name)
 PROVIDES FUNCTION Periodic_ApplyGN WITH BndPeriodicCarpetGN LANGUAGE C
+
+CCTK_INT FUNCTION Driver_RegisterSymmetryBC(CCTK_POINTER_TO_CONST IN GH,
+  CCTK_INT IN CCTK_FPOINTER function_pointer(CCTK_POINTER_TO_CONST IN GH),
+  CCTK_STRING IN bc_name)
+Uses FUNCTION Driver_RegisterSymmetryBC
+
+CCTK_INT FUNCTION Driver_SelectedGVs()
+USES FUNCTION Driver_SelectedGVs

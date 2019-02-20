@@ -445,6 +445,56 @@ extern "C" CCTK_INT BndPeriodicCarpetGN(CCTK_POINTER_TO_CONST const cctkGH_,
   return 0;
 }
 
+extern "C" CCTK_INT New_PeriodicCarpet_ApplyBC(CCTK_POINTER_TO_CONST const cctkGH_) {
+  cGH const *restrict const cctkGH = static_cast<cGH const *>(cctkGH_);
+  DECLARE_CCTK_PARAMETERS;
+  DECLARE_CCTK_ARGUMENTS;
+
+  assert(cctkGH);
+
+  CCTK_INT do_periodic[dim];
+  assert(dim == 3);
+  do_periodic[0] = periodic or periodic_x;
+  do_periodic[1] = periodic or periodic_y;
+  do_periodic[2] = periodic or periodic_z;
+
+  int const vi = Driver_SelectedGVs();
+  if(vi < 0)
+    CCTK_VWarn(0, __LINE__, __FILE__, "CartGrid3D",
+               "boundary condition application error in PreSync");
+
+  CCTK_INT width[2 * dim];
+  CCTK_INT is_internal[2 * dim];
+  CCTK_INT is_staggered[2 * dim];
+  CCTK_INT shiftout[2 * dim];
+  int ierr = GetBoundarySpecification(2 * dim, width, is_internal, is_staggered,
+                                      shiftout);
+  if (ierr < 0)
+    CCTK_ERROR("Could not get the boundary specification");
+
+  CCTK_INT stencil[dim];
+  for (int d = 0; d < dim; ++d) {
+    if (do_periodic[d]) {
+      assert(width[2 * d] == width[2 * d + 1]);
+      stencil[d] = width[2 * d];
+    } else {
+      stencil[d] = 0;
+    }
+  }
+
+  if (verbose) {
+    char *const fullname = CCTK_FullName(vi);
+    assert(fullname);
+    CCTK_VINFO("Applying periodicity boundary conditions to \"%s\"",
+               fullname);
+    free(fullname);
+  }
+
+  periodic_carpet(cctkGH, dim, stencil, do_periodic, &vi, 1);
+//  PeriodicCarpet_ApplyBC(CCTK_PASS_CTOC);
+  return 0;
+}
+
 extern "C" void PeriodicCarpet_RegisterBC(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -477,6 +527,17 @@ extern "C" void PeriodicCarpet_RegisterBC(CCTK_ARGUMENTS) {
                                           PeriodicCarpet_Interpolate);
   if (ierr < 0)
     CCTK_ERROR("Could not register the symmetry interpolator");
+
+  if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
+    int err = 0;
+    err = Driver_RegisterSymmetryBC(cctkGH, New_PeriodicCarpet_ApplyBC, "PeriodicCarpet");
+    if (err) {
+      CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                 "Error %d when registering routine to handle \"Reflection Symmetry\" "
+                 "boundary condition",
+                 err);
+    }
+  }
 }
 
 extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
@@ -491,43 +552,31 @@ extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
   do_periodic[1] = periodic or periodic_y;
   do_periodic[2] = periodic or periodic_z;
 
-  CCTK_INT const nvars = Boundary_SelectedGVs(cctkGH, 0, 0, 0, 0, 0, 0);
-  assert(nvars >= 0);
-  if (nvars == 0)
-    return;
-
-  vector<CCTK_INT> indices(nvars);
-  vector<CCTK_INT> faces(nvars);
-  vector<CCTK_INT> widths(nvars);
-  vector<CCTK_INT> tables(nvars);
-  int const iret =
-      Boundary_SelectedGVs(cctkGH, nvars, &indices.front(), &faces.front(),
-                           &widths.front(), &tables.front(), 0);
-  assert(iret == nvars);
-
-  CCTK_INT width[2 * dim];
-  CCTK_INT is_internal[2 * dim];
-  CCTK_INT is_staggered[2 * dim];
-  CCTK_INT shiftout[2 * dim];
-  int ierr = GetBoundarySpecification(2 * dim, width, is_internal, is_staggered,
-                                      shiftout);
-  if (ierr < 0)
-    CCTK_ERROR("Could not get the boundary specification");
-
-  CCTK_INT stencil[dim];
-  for (int d = 0; d < dim; ++d) {
-    if (do_periodic[d]) {
-      assert(width[2 * d] == width[2 * d + 1]);
-      stencil[d] = width[2 * d];
-    } else {
-      stencil[d] = 0;
+  if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
+    int const vi = Driver_SelectedGVs();
+    if(vi < 0)
+      CCTK_VWarn(0, __LINE__, __FILE__, "CartGrid3D",
+                 "boundary condition application error in PreSync");
+  
+    CCTK_INT width[2 * dim];
+    CCTK_INT is_internal[2 * dim];
+    CCTK_INT is_staggered[2 * dim];
+    CCTK_INT shiftout[2 * dim];
+    int ierr = GetBoundarySpecification(2 * dim, width, is_internal, is_staggered,
+                                        shiftout);
+    if (ierr < 0)
+      CCTK_ERROR("Could not get the boundary specification");
+  
+    CCTK_INT stencil[dim];
+    for (int d = 0; d < dim; ++d) {
+      if (do_periodic[d]) {
+        assert(width[2 * d] == width[2 * d + 1]);
+        stencil[d] = width[2 * d];
+      } else {
+        stencil[d] = 0;
+      }
     }
-  }
-
-  for (int n = 0; n < nvars; ++n) {
-    int const vi = indices.at(n);
-    assert(vi >= 0 and vi < CCTK_NumVars());
-
+  
     if (verbose) {
       char *const fullname = CCTK_FullName(vi);
       assert(fullname);
@@ -535,9 +584,57 @@ extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
                  fullname);
       free(fullname);
     }
-  } // for n
-
-  periodic_carpet(cctkGH, dim, stencil, do_periodic, &indices.front(), nvars);
+  
+    periodic_carpet(cctkGH, dim, stencil, do_periodic, &vi, 1);
+  } else {
+    CCTK_INT const nvars = Boundary_SelectedGVs(cctkGH, 0, 0, 0, 0, 0, 0);
+    assert(nvars >= 0);
+    if (nvars == 0)
+      return;
+  
+    vector<CCTK_INT> indices(nvars);
+    vector<CCTK_INT> faces(nvars);
+    vector<CCTK_INT> widths(nvars);
+    vector<CCTK_INT> tables(nvars);
+    int const iret =
+        Boundary_SelectedGVs(cctkGH, nvars, &indices.front(), &faces.front(),
+                             &widths.front(), &tables.front(), 0);
+    assert(iret == nvars);
+  
+    CCTK_INT width[2 * dim];
+    CCTK_INT is_internal[2 * dim];
+    CCTK_INT is_staggered[2 * dim];
+    CCTK_INT shiftout[2 * dim];
+    int ierr = GetBoundarySpecification(2 * dim, width, is_internal, is_staggered,
+                                        shiftout);
+    if (ierr < 0)
+      CCTK_ERROR("Could not get the boundary specification");
+  
+    CCTK_INT stencil[dim];
+    for (int d = 0; d < dim; ++d) {
+      if (do_periodic[d]) {
+        assert(width[2 * d] == width[2 * d + 1]);
+        stencil[d] = width[2 * d];
+      } else {
+        stencil[d] = 0;
+      }
+    }
+  
+    for (int n = 0; n < nvars; ++n) {
+      int const vi = indices.at(n);
+      assert(vi >= 0 and vi < CCTK_NumVars());
+  
+      if (verbose) {
+        char *const fullname = CCTK_FullName(vi);
+        assert(fullname);
+        CCTK_VINFO("Applying periodicity boundary conditions to \"%s\"",
+                   fullname);
+        free(fullname);
+      }
+    } // for n
+  
+    periodic_carpet(cctkGH, dim, stencil, do_periodic, &indices.front(), nvars);
+  }
 }
 
 namespace CarpetLib {
