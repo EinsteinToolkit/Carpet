@@ -22,11 +22,11 @@ int bnd_vi = -1;
 bool msg1 = true, msg2 = true, msg3 = true;
 
 struct var_tuple {
-  int vi; // var index
-  int rl; // refinement level
-  int tl; // time level;
+  const int vi; // var index
+  const int rl; // refinement level
+  const int tl; // time level;
   var_tuple() : vi(-1), rl(-1), tl(-1) {}
-  var_tuple(int vi_,int rl_,int tl_) : vi(vi_), rl(rl_), tl(tl_) {}
+  var_tuple(int vi_,int rl_,int tl_) : vi(vi_), rl(CCTK_GroupTypeFromVarI(vi_) == CCTK_GF ? rl_ : -1), tl(tl_) {}
 };
 
 std::ostream& operator<<(std::ostream& o,const var_tuple& vt) {
@@ -322,11 +322,11 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
   std::map<var_tuple,int>& writes_m = writes[r];
   for(auto i = writes_m.begin();i != writes_m.end(); ++i) {
     var_tuple vi = i->first;
-    vi.rl = reflevel;
+    var_tuple vt{vi.vi,reflevel,vi.tl};
     if(i->second == WH_INTERIOR)
-      valid_k[vi] = WH_INTERIOR;
+      valid_k[vt] = WH_INTERIOR;
     else
-      valid_k[vi] |= i->second;
+      valid_k[vt] |= i->second;
 //    auto res = watch_vars.find(vi.vi);
 //    if(res != watch_vars.end()) {
 //      std::cout << "setting " << watch_vars[vi.vi] << " to " << wstr(valid_k[vi]) << std::endl;
@@ -611,9 +611,9 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
   std::map<var_tuple,int>& reads_m  = reads [r];
 
   for(auto i = reads_m.begin();i != reads_m.end(); ++i) {
-    var_tuple vt = i->first;
-    vt.rl = reflevel; // clauses to not refer to reflevel but the valid states
-                      // have them so inject them here
+    var_tuple vtemp = i->first;
+    var_tuple vt{vtemp.vi,reflevel,vtemp.tl}; // clauses to not refer to reflevel but the valid states
+                                              // have them so inject them here
     int vi = vt.vi;
     int type = CCTK_GroupTypeFromVarI(vi);
     //std::cout << "-->|Type " << type << " " << CCTK_FullVarName(vi) << "\n";
@@ -757,12 +757,14 @@ extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int vi) {
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
   var_tuple vt{vi,reflevel,0};
   auto f = valid_k.find(vt);
-//  std::cout << "ManualSyncGF(" << CCTK_FullVarName(vi) << ")" << std::endl;
   CCTK_ASSERT(f != valid_k.end());
   // Check if anything needs to be done
   if(f->second == WH_EVERYWHERE) {
     return;
   }
+  //Only grid functions should reach this point. If not,
+  //something has gone awry.
+  CCTK_ASSERT(CCTK_GroupTypeFromVarI(vi) == CCTK_GF);
   CCTK_ASSERT((f->second & WH_INTERIOR) == WH_INTERIOR);
 
   // Update valid region info
