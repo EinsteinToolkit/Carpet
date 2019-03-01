@@ -168,6 +168,31 @@ template <int outdim> struct IOHDF5 {
   static int ioproc;
   static int ioproc_every;
 
+  // files being kept open for this output
+  struct hdf5_file_t {
+    hid_t file;
+    hid_t index_file;
+
+    hdf5_file_t() : file(-1), index_file(-1){};
+    ~hdf5_file_t() {
+      DECLARE_CCTK_PARAMETERS;
+      // this to make sure all HDF5 objects are properly closed, but user code
+      // should always close handles and reset the handles to -1
+      int error_count = 0;
+      if (file >= 0) {
+        HDF5_ERROR(H5Fclose(file));
+      }
+      if (index_file >= 0) {
+        HDF5_ERROR(H5Fclose(index_file));
+      }
+      if (error_count > 0 and abort_on_io_errors) {
+        CCTK_ERROR("Aborting simulation due to previous I/O errors");
+      }
+    }
+  };
+  typedef std::map<std::string, hdf5_file_t> hdf5_files_t;
+  static hdf5_files_t hdf5_files;
+
   // Scheduled functions
   static int Startup();
 
@@ -177,8 +202,11 @@ template <int outdim> struct IOHDF5 {
   static int OutputGH(const cGH *cctkGH);
   static int OutputVarAs(const cGH *cctkGH, const char *varname,
                          const char *alias);
+  static int OutputVarAs(const cGH *cctkGH, const char *varname,
+                         const char *alias, bool keep_file_open);
   static int TimeToOutput(const cGH *cctkGH, int vindex);
   static int TriggerOutput(const cGH *cctkGH, int vindex);
+  static int TriggerOutput(const cGH *cctkGH, int vindex, bool keep_file_open);
 
   // Other functions
   static void CheckSteerableParameters(const cGH *cctkGH);
@@ -190,8 +218,9 @@ template <int outdim> struct IOHDF5 {
 
   static void OutputDirection(const cGH *cctkGH, int vindex, string alias,
                               string basefilename,
-                              const vect<int, outdim> &dirs, bool is_new_file,
-                              bool truncate_file);
+                              const vect<int, outdim> &dirs,
+                              const bool is_new_file, const bool truncate_file,
+                              const bool keep_file_open);
 
   static int OpenFile(const cGH *cctkGH, int m, int vindex, int numvars,
                       string alias, string basefilename,
@@ -210,6 +239,8 @@ template <int outdim> struct IOHDF5 {
                        const vect<CCTK_REAL, dim> &coord_delta);
 
   static int CloseFile(const cGH *cctkGH, hid_t &file, hid_t &index_file);
+
+  static int CloseFiles(const cGH *const cctkGH);
 
   static ivect GetOutputOffset(const cGH *cctkGH, int m,
                                const vect<int, outdim> &dirs);

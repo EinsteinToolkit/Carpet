@@ -64,6 +64,14 @@ template <int outdim> char *IOHDF5<outdim>::my_out_slice_dir;
 template <int outdim> char *IOHDF5<outdim>::my_out_slice_vars;
 template <int outdim> vector<ioRequest *> IOHDF5<outdim>::slice_requests;
 
+// Caches for open file handles
+template <int outdim>
+typename IOHDF5<outdim>::hdf5_files_t IOHDF5<outdim>::hdf5_files;
+
+// IO performance counters
+CCTK_REAL io_files;
+CCTK_REAL io_bytes;
+
 template <int outdim> int IOHDF5<outdim>::Startup() {
   ostringstream msg;
   msg << "AMR " << outdim << "D HDF5 I/O provided by CarpetIOHDF5";
@@ -202,6 +210,8 @@ void IOHDF5<outdim>::CheckSteerableParameters(const cGH *const cctkGH) {
 }
 
 template <int outdim> int IOHDF5<outdim>::OutputGH(const cGH *const cctkGH) {
+  DECLARE_CCTK_PARAMETERS;
+
   ostringstream timer_name;
   timer_name << "OutputGH<" << outdim << ">";
 
@@ -213,11 +223,16 @@ template <int outdim> int IOHDF5<outdim>::OutputGH(const cGH *const cctkGH) {
   if (strcmp(my_out_slice_vars, "")) {
     for (int vi = 0; vi < CCTK_NumVars(); ++vi) {
       if (TimeToOutput(cctkGH, vi)) {
-        TriggerOutput(cctkGH, vi);
+        TriggerOutput(cctkGH, vi, false);
       }
     }
   }
   timer.stop();
+
+  const int error_count = CloseFiles(cctkGH);
+  if (error_count > 0 and abort_on_io_errors) {
+    CCTK_ERROR("Aborting simulation due to previous I/O errors");
+  }
 
   return 0;
 }
@@ -317,6 +332,12 @@ int IOHDF5<outdim>::TimeToOutput(const cGH *const cctkGH, const int vindex) {
 
 template <int outdim>
 int IOHDF5<outdim>::TriggerOutput(const cGH *const cctkGH, const int vindex) {
+  return TriggerOutput(cctkGH, vindex, false);
+}
+
+template <int outdim>
+int IOHDF5<outdim>::TriggerOutput(const cGH *const cctkGH, const int vindex,
+                                  bool keep_file_open) {
   DECLARE_CCTK_PARAMETERS;
 
   assert(vindex >= 0 and vindex < CCTK_NumVars());
@@ -351,10 +372,10 @@ int IOHDF5<outdim>::TriggerOutput(const cGH *const cctkGH, const int vindex) {
     size_t const oldseppos = alias.find(oldsep);
     assert(oldseppos != string::npos);
     alias.replace(oldseppos, oldsep.size(), out_group_separator);
-    retval = OutputVarAs(cctkGH, fullname, alias.c_str());
+    retval = OutputVarAs(cctkGH, fullname, alias.c_str(), keep_file_open);
   } else {
     const char *const alias = CCTK_VarName(vindex);
-    retval = OutputVarAs(cctkGH, fullname, alias);
+    retval = OutputVarAs(cctkGH, fullname, alias, keep_file_open);
   }
 
   free(fullname);
@@ -380,6 +401,13 @@ template <int outdim>
 int IOHDF5<outdim>::OutputVarAs(const cGH *const cctkGH,
                                 const char *const varname,
                                 const char *const alias) {
+  return OutputVarAs(cctkGH, varname, alias, false);
+}
+
+template <int outdim>
+int IOHDF5<outdim>::OutputVarAs(const cGH *const cctkGH,
+                                const char *const varname,
+                                const char *const alias, bool keep_file_open) {
   DECLARE_CCTK_PARAMETERS;
 
   int vindex = -1;
@@ -468,7 +496,7 @@ int IOHDF5<outdim>::OutputVarAs(const cGH *const cctkGH,
         // Skip output if not requested
         if (DirectionIsRequested(dirs)) {
           OutputDirection(cctkGH, vindex, alias, basefilename, dirs,
-                          is_new_file, truncate_file);
+                          is_new_file, truncate_file, keep_file_open);
         }
 
       } // if ascending
@@ -499,7 +527,8 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
                                      const string basefilename,
                                      const vect<int, outdim> &dirs,
                                      const bool is_new_file,
-                                     const bool truncate_file) {
+                                     const bool truncate_file,
+                                     const bool keep_file_open) {
   DECLARE_CCTK_PARAMETERS;
 
   // Get information
@@ -698,7 +727,19 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
       c_base += exts.setsize();
     } // for c
 
-    error_count += CloseFile(cctkGH, file, index_file);
+    if (not keep_file_open)
+      error_count += CloseFile(cctkGH, file, index_file);
+
+    if (nioprocs > 1) {
+      CCTK_REAL local[2], global[2];
+      local[0] = io_files;
+      local[1] = io_bytes;
+      MPI_Allreduce(local, global, 2, dist::mpi_datatype(local[0]), MPI_SUM,
+                    dist::comm());
+      io_files = global[0];
+      io_bytes = global[1];
+    }
+    EndTimingIO(cctkGH, io_files, io_bytes, true);
     if (error_count > 0 and abort_on_io_errors) {
       CCTK_ERROR("Aborting simulation due to previous I/O errors");
     }
@@ -758,9 +799,6 @@ bool IOHDF5<outdim>::DidOutput(const cGH *const cctkGH, const int vindex,
   return false;
 }
 
-CCTK_REAL io_files;
-CCTK_REAL io_bytes;
-
 template <int outdim>
 int IOHDF5<outdim>::OpenFile(const cGH *const cctkGH, const int m,
                              const int vindex, const int numvars,
@@ -804,43 +842,49 @@ int IOHDF5<outdim>::OpenFile(const cGH *const cctkGH, const int m,
     const string filenamestr = filenamebuf.str();
     const char *const filename = filenamestr.c_str();
 
-    // Open the file
-    bool file_exists = false;
-    if (not truncate_file) {
-      H5E_BEGIN_TRY { file_exists = H5Fis_hdf5(filename) > 0; }
-      H5E_END_TRY;
-    }
-
-    if (truncate_file or not file_exists) {
-      hid_t fapl_id;
-      HDF5_ERROR(fapl_id = H5Pcreate(H5P_FILE_ACCESS));
-      HDF5_ERROR(H5Pset_fclose_degree(fapl_id, H5F_CLOSE_STRONG));
-      HDF5_ERROR(file =
-                     H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id));
-      if (output_index) {
-        HDF5_ERROR(index_file = H5Fcreate(index_filename.c_str(), H5F_ACC_TRUNC,
-                                          H5P_DEFAULT, fapl_id));
+    hdf5_file_t &files = hdf5_files[filenamestr];
+    if (files.file == -1) {
+      // Open the file
+      bool file_exists = false;
+      if (not truncate_file) {
+        H5E_BEGIN_TRY { file_exists = H5Fis_hdf5(filename) > 0; }
+        H5E_END_TRY;
       }
-      HDF5_ERROR(H5Pclose(fapl_id));
-      // write metadata information
-      error_count +=
-          WriteMetadata(cctkGH, nioprocs, vindex, numvars, false, file);
 
-      if (output_index) {
+      if (truncate_file or not file_exists) {
+        hid_t fapl_id;
+        HDF5_ERROR(fapl_id = H5Pcreate(H5P_FILE_ACCESS));
+        HDF5_ERROR(H5Pset_fclose_degree(fapl_id, H5F_CLOSE_STRONG));
+        HDF5_ERROR(files.file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT,
+                                          fapl_id));
+        if (output_index) {
+          HDF5_ERROR(files.index_file =
+                         H5Fcreate(index_filename.c_str(), H5F_ACC_TRUNC,
+                                   H5P_DEFAULT, fapl_id));
+        }
+        HDF5_ERROR(H5Pclose(fapl_id));
+        // write metadata information
         error_count +=
-            WriteMetadata(cctkGH, nioprocs, vindex, numvars, false, index_file);
+            WriteMetadata(cctkGH, nioprocs, vindex, numvars, false, files.file);
+
+        if (output_index) {
+          error_count += WriteMetadata(cctkGH, nioprocs, vindex, numvars, false,
+                                       files.index_file);
+        }
+      } else {
+        hid_t fapl_id;
+        HDF5_ERROR(fapl_id = H5Pcreate(H5P_FILE_ACCESS));
+        HDF5_ERROR(H5Pset_fclose_degree(fapl_id, H5F_CLOSE_STRONG));
+        HDF5_ERROR(files.file = H5Fopen(filename, H5F_ACC_RDWR, fapl_id));
+        if (output_index)
+          HDF5_ERROR(files.index_file = H5Fopen(index_filename.c_str(),
+                                                H5F_ACC_RDWR, fapl_id));
+        HDF5_ERROR(H5Pclose(fapl_id));
       }
-    } else {
-      hid_t fapl_id;
-      HDF5_ERROR(fapl_id = H5Pcreate(H5P_FILE_ACCESS));
-      HDF5_ERROR(H5Pset_fclose_degree(fapl_id, H5F_CLOSE_STRONG));
-      HDF5_ERROR(file = H5Fopen(filename, H5F_ACC_RDWR, fapl_id));
-      if (output_index)
-        HDF5_ERROR(index_file =
-                       H5Fopen(index_filename.c_str(), H5F_ACC_RDWR, fapl_id));
-      HDF5_ERROR(H5Pclose(fapl_id));
+      io_files += 1;
     }
-    io_files += 1;
+    file = files.file;
+    index_file = files.index_file;
 
   } // if on the I/O processor
 
@@ -855,25 +899,29 @@ int IOHDF5<outdim>::CloseFile(const cGH *const cctkGH, hid_t &file,
   int error_count = 0;
 
   if (dist::rank() == ioproc) {
-    if (file >= 0) {
-      HDF5_ERROR(H5Fclose(file));
-    }
-    if (output_index and index_file >= 0) {
-      HDF5_ERROR(H5Fclose(index_file));
+    // close and remove from cache
+    for (auto it = hdf5_files.begin(); it != hdf5_files.end(); ++it) {
+      hdf5_file_t &hdf5_file = it->second;
+      if (hdf5_file.file == file) {
+        assert(hdf5_file.index_file == index_file);
+
+        if (file >= 0) {
+          HDF5_ERROR(H5Fclose(file));
+          hdf5_file.file = file =
+              -1; // mark file as closed in caller's variable
+        }
+        if (output_index and index_file >= 0) {
+          HDF5_ERROR(H5Fclose(index_file));
+          hdf5_file.index_file = index_file =
+              -1; // mark file as closed in caller's variable
+        }
+
+        hdf5_files.erase(it);
+        break;
+      }
     }
     HDF5_ERROR(H5garbage_collect());
   }
-  if (nioprocs > 1) {
-    CCTK_REAL local[2], global[2];
-    local[0] = io_files;
-    local[1] = io_bytes;
-    MPI_Allreduce(local, global, 2, dist::mpi_datatype(local[0]), MPI_SUM,
-                  dist::comm());
-    io_files = global[0];
-    io_bytes = global[1];
-  }
-
-  EndTimingIO(cctkGH, io_files, io_bytes, true);
 
   return error_count;
 }
@@ -1645,6 +1693,30 @@ template <int outdim> int IOHDF5<outdim>::IOProcForProc(int proc) {
   // according to IOUtil::SetupGH a proc with rank % nioprocs == 0 is an
   // ioproc
   return (proc / ioproc_every) * ioproc_every;
+}
+
+template <int outdim> int IOHDF5<outdim>::CloseFiles(const cGH *const cctkGH) {
+  int error_count = 0;
+
+  BeginTimingIO(cctkGH);
+  // these will remain zero as we are not opening any more files or handing any
+  // more data to HDF5 but still take time to flush data to disk
+  io_files = 0;
+  io_bytes = 0;
+
+  for (auto it = hdf5_files.begin(); it != hdf5_files.end(); /* in loop */) {
+    hdf5_file_t &hdf5_file =
+        (it++)->second; // must be before CloseFile which modifies fila_pairs
+    error_count += CloseFile(cctkGH, hdf5_file.file, hdf5_file.index_file);
+  }
+  assert(hdf5_files.empty());
+  hdf5_files.clear();
+
+  assert(io_files == 0 and io_bytes == 0);
+
+  EndTimingIO(cctkGH, io_files, io_bytes, true);
+
+  return error_count;
 }
 
 // Explicit instantiation for all slice output dimensions
