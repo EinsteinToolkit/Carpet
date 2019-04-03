@@ -12,6 +12,7 @@
 #include "CarpetIOHDF5.hh"
 #include "operators.hh"
 #include "typeprops.hh"
+#include "mpi_string.hh"
 
 namespace CarpetIOHDF5 {
 
@@ -22,6 +23,7 @@ using namespace Carpet;
 static int AddAttributes(const cGH *const cctkGH, const char *fullname,
                          int vdim, int refinementlevel,
                          const ioRequest *const request, const ibbox &bbox,
+                         const char *active,
                          hid_t dataset, bool is_index = false);
 
 int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
@@ -203,6 +205,26 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
                                          p);
         }
 
+        // get active region and send to io rank
+        string active;
+        if (local_component != -1) {
+          ostringstream buf;
+          buf << (vdd.at(Carpet::map)
+                      ->local_boxes.at(mglevel)
+                      .at(refinementlevel)
+                      .at(local_component)
+                      .active);
+          active = buf.str();
+        }
+        if (local_component == -1 or dist::rank() != 0) {
+          if (dist::rank() == 0) {
+            int const p = hh->processor(refinementlevel, component);
+            active = recv_string(dist::comm(), p);
+          } else {
+            send_string(dist::comm(), 0, active);
+          }
+        }
+
         // Write data
         if (dist::rank() == 0) {
           const void *data = (const void *)processor_component->storage();
@@ -267,7 +289,7 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
             if (first_time) {
               error_count +=
                   AddAttributes(cctkGH, fullname, group.dim, refinementlevel,
-                                request, *bbox, dataset);
+                                request, *bbox, active.c_str(), dataset);
               first_time = false;
             }
           }
@@ -384,6 +406,26 @@ int WriteVarChunkedSequential(const cGH *const cctkGH, hid_t outfile,
         gdata::copy_data(processor_component, state, data, bbox, bbox, NULL, 0, p);
       }
 
+      // get active region and send to io rank
+      string active;
+      if (local_component != -1) {
+        ostringstream buf;
+        buf << (vdd.at(Carpet::map)
+                    ->local_boxes.at(mglevel)
+                    .at(refinementlevel)
+                    .at(local_component)
+                    .active);
+        active = buf.str();
+      }
+      if (local_component == -1 or dist::rank() != 0) {
+        if (dist::rank() == 0) {
+          int const p = hh->processor(refinementlevel, component);
+          active = recv_string(dist::comm(), p);
+        } else {
+          send_string(dist::comm(), 0, active);
+        }
+      }
+
       // Write data on I/O processor 0
       if (dist::rank() == 0) {
         const void *data = (const void *)processor_component->storage();
@@ -490,13 +532,15 @@ int WriteVarChunkedSequential(const cGH *const cctkGH, hid_t outfile,
           HDF5_ERROR(H5Dwrite(dataset, memdatatype, H5S_ALL, H5S_ALL,
                               H5P_DEFAULT, data));
           error_count += AddAttributes(cctkGH, fullname, group.dim,
-                                       refinementlevel, request, bbox, dataset);
+                                       refinementlevel, request, bbox,
+                                       active.c_str(), dataset);
           HDF5_ERROR(H5Dclose(dataset));
 
           if (indexfile != -1) {
             error_count +=
                 AddAttributes(cctkGH, fullname, group.dim, refinementlevel,
-                              request, bbox, index_dataset, true);
+                              request, bbox, active.c_str(), index_dataset,
+                              true);
             HDF5_ERROR(H5Dclose(index_dataset));
           }
         }
@@ -573,6 +617,18 @@ int WriteVarChunkedParallel(const cGH *const cctkGH, hid_t outfile,
       // Don't create zero-sized components
       if (bbox.empty())
         continue;
+
+      // get active region
+      string active;
+      {
+        ostringstream buf;
+        buf << (vdd.at(Carpet::map)
+                    ->local_boxes.at(mglevel)
+                    .at(refinementlevel)
+                    .at(local_component)
+                    .active);
+        active = buf.str();
+      }
 
       // As per Cactus convention, DISTRIB=CONSTANT arrays
       // (including grid scalars) are assumed to be the same on
@@ -698,13 +754,13 @@ int WriteVarChunkedParallel(const cGH *const cctkGH, hid_t outfile,
       HDF5_ERROR(
           H5Dwrite(dataset, memdatatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data));
       error_count += AddAttributes(cctkGH, fullname, group.dim, refinementlevel,
-                                   request, bbox, dataset);
+                                   request, bbox, active.c_str(), dataset);
       HDF5_ERROR(H5Dclose(dataset));
 
       if (indexfile != -1) {
         error_count +=
             AddAttributes(cctkGH, fullname, group.dim, refinementlevel, request,
-                          bbox, index_dataset, true);
+                          bbox, active.c_str(), index_dataset, true);
         HDF5_ERROR(H5Dclose(index_dataset));
       }
 
@@ -725,6 +781,7 @@ int WriteVarChunkedParallel(const cGH *const cctkGH, hid_t outfile,
 static int AddAttributes(const cGH *const cctkGH, const char *fullname,
                          int vdim, int refinementlevel,
                          const ioRequest *request, const ibbox &bbox,
+                         const char *active,
                          hid_t dataset, bool is_index) {
   assert(vdim >= 0 and vdim <= dim);
   int error_count = 0;
@@ -881,13 +938,7 @@ static int AddAttributes(const cGH *const cctkGH, const char *fullname,
     HDF5_ERROR(H5Awrite(attr, H5T_NATIVE_INT, &ioffset[0]));
     HDF5_ERROR(H5Aclose(attr));
 
-    ostringstream buf;
-    buf << (vdd.at(Carpet::map)
-                ->local_boxes.at(mglevel)
-                .at(refinementlevel)
-                .at(local_component)
-                .active);
-    WriteAttribute(dataset, "active", buf.str().c_str());
+    WriteAttribute(dataset, "active", active);
   }
 
   if (is_index) {

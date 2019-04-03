@@ -22,6 +22,7 @@ uses include header: gh.hh
 uses include header: typecase.hh
 uses include header: typeprops.hh
 
+uses include header: mpi_string.hh
 
 
 CCTK_INT next_output_iteration TYPE=scalar
