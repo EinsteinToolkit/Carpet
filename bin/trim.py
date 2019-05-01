@@ -4,7 +4,7 @@ import os
 vars = {}
 for var in re.findall(r'\S+',os.environ["RDWR_DEBUG_VARS"]):
   vars[var] = 1
-pat = r"^\s*(" +("|".join(vars.keys()))+r")\s+:="
+pat = r"^RDWR:\s*(" +("|".join(vars.keys()))+r")\s+:="
 
 def trimf(fname,wname):
   with open(fname,"r") as fd:
