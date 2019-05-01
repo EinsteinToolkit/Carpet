@@ -11,7 +11,7 @@ def trimf(fname,wname):
     with open(wname,"w") as fw:
       for line in fd.readlines():
         line = line.strip()
-        if re.match(pat,line):
+        if re.match(pat,line, flags=re.IGNORECASE):
           print(line,file=fw)
         elif re.match(r'^[/\\]==',line):
           print(line,file=fw)
