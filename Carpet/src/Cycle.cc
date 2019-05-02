@@ -16,6 +16,7 @@
 namespace Carpet {
 
 void cycle_rdwr(const cGH *cctkGH);
+void uncycle_rdwr(const cGH *cctkGH);
 
 using namespace std;
 
@@ -147,7 +148,11 @@ void UncycleTimeLevels(cGH *const cctkGH) {
       case CCTK_GF:
         assert(reflevel >= 0 and reflevel < reflevels);
         for (int m = 0; m < (int)arrdata.AT(group).size(); ++m) {
+          int const firstvarindex = CCTK_FirstVarIndexI(group);
           for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
+            if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
+              ManualSyncGF(cctkGH, firstvarindex+var);
+            }
             arrdata.AT(group).AT(m).data.AT(var)->uncycle_all(reflevel,
                                                               mglevel);
           }
@@ -182,6 +187,8 @@ void UncycleTimeLevels(cGH *const cctkGH) {
       } // switch grouptype
     }   // if storage
   }     // for group
+
+  uncycle_rdwr(cctkGH);
 }
 
 void FlipTimeLevels(cGH *const cctkGH) {

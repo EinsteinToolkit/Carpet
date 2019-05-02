@@ -697,6 +697,34 @@ void invalidate_rdwr(const cGH *cctkGH, int vi, int tl) {
 }
 
 /**
+ * Inverse rotate timelevels:
+ * Copy all knowledge about read/write levels up one level,
+ * then mark the current level as valid nowhere.
+ */
+void uncycle_rdwr(const cGH *cctkGH) {
+  std::cout << "CYCLE" << std::endl;
+  int num = CCTK_NumVars();
+  for(int vi=0;vi<num;vi++) {
+    int const cactus_tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
+    if(cactus_tl > 1) {
+      int type = CCTK_GroupTypeFromVarI(vi);
+      if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
+        var_tuple first{vi,reflevel,0};
+        int first_valid = valid_k[first]; 
+        for(int t = 0; t < cactus_tl-1; t++) {
+          var_tuple vold{vi,reflevel,t};
+          var_tuple vnew{vi,reflevel,t+1};
+          valid_k[vold] = valid_k[vnew];
+        }
+        var_tuple vt{vi,reflevel,cactus_tl-1};
+        valid_k[vt] = first_valid;
+      }
+    }
+  }
+  std::cout << "::UNROTATE::" << std::endl;
+}
+
+/**
  * Rotate timelevels:
  * Copy all knowledge about read/write levels down one level,
  * wrapping around at the end.
