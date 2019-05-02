@@ -689,9 +689,17 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 }
 
 /**
+ * mark a timelvel as invalid
+ */
+void invalidate_rdwr(const cGH *cctkGH, int vi, int tl) {
+  var_tuple vt{vi,reflevel,tl};
+  valid_k[vt] = WH_NOWHERE;
+}
+
+/**
  * Rotate timelevels:
  * Copy all knowledge about read/write levels down one level,
- * then mark the current level as valid nowhere.
+ * wrapping around at the end.
  */
 void cycle_rdwr(const cGH *cctkGH) {
   std::cout << "CYCLE" << std::endl;
@@ -701,13 +709,15 @@ void cycle_rdwr(const cGH *cctkGH) {
     if(cactus_tl > 1) {
       int type = CCTK_GroupTypeFromVarI(vi);
       if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
+        var_tuple last{vi,reflevel,cactus_tl-1};
+        int last_valid = valid_k[last];
         for(int t = cactus_tl - 1; t > 0; t--) {
           var_tuple vold{vi,reflevel,t};
           var_tuple vnew{vi,reflevel,t-1};
           valid_k[vold] = valid_k[vnew];
         }
         var_tuple vt{vi,reflevel,0};
-        valid_k[vt] = WH_NOWHERE;
+        valid_k[vt] = last_valid;
       }
     }
   }
