@@ -942,25 +942,23 @@ CCTK_INT Carpet_SelectVarForBCI(
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
                "Requested BC '%s' not found.", bc_name);
   }
-  std::string name{bc_name};
-  tolower(name);
   Func& f = boundary_functions.at(bc_name);
   CCTK_ASSERT(var_index != 0);
-  if(boundary_conditions.find(var_index) != boundary_conditions.end()) {
-    std::cout << "Variable " << CCTK_FullVarName(var_index) << " has been selected twice!" << std::endl;
-//    std::cout << boundary_conditions[var_index].bc_name << " is already selected" << std::endl;
-//    std::cout << boundary_conditions[var_index] << " is already selected" << std::endl;
-//    std::cout << bc_name << " has been chosen this time" << std::endl;
-//    if(strcmp(boundary_conditions[var_index].bc_name,bc_name)) {
-//      std::cout << "They match!" << std::endl;
-//    }
+  auto i = boundary_conditions.find(var_index);
+  for(; i != boundary_conditions.end();++i) {
+    for(auto b = i->second.begin(); b != i->second.end(); ++b) {
+      if(b->bc_name == bname) {
+        std::cout << "Variable " << CCTK_FullVarName(var_index) << " has been selected twice for '" << bc_name << "'" << std::endl;
+        return 0;
+      }
+    }
   }
   std::vector<Bound>& bv = boundary_conditions[var_index];
   Bound b;
   b.faces = faces;
   b.width = width;
   b.table_handle = table_handle;
-  b.bc_name = name;
+  b.bc_name = bname;
   bv.push_back(b);
   return 0;
 }
