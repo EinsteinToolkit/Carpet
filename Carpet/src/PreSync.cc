@@ -691,6 +691,20 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 }
 
 /**
+ * reverse the order of timelevel information
+ */
+void flip_rdwr(const cGH *cctkGH, int vi) {
+  int const cactus_tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
+  for(int t = 0; t < cactus_tl-1; t++) {
+    var_tuple vt{vi,reflevel,t};
+    var_tuple vt_flip{vi,reflevel,cactus_tl-t};
+    int tmpdata = valid_k[vt];
+    valid_k[vt] = valid_k[vt_flip];
+    valid_k[vt_flip] = tmpdata;
+  }
+}
+
+/**
  * mark a timelvel as invalid
  */
 void invalidate_rdwr(const cGH *cctkGH, int vi, int tl) {

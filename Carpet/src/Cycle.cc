@@ -17,6 +17,7 @@ namespace Carpet {
 
 void cycle_rdwr(const cGH *cctkGH);
 void uncycle_rdwr(const cGH *cctkGH);
+void flip_rdwr(const cGH *cctkGH, int vi);
 
 using namespace std;
 
@@ -205,6 +206,7 @@ void FlipTimeLevels(cGH *const cctkGH) {
 
   for (int group = 0; group < CCTK_NumGroups(); ++group) {
     if (CCTK_QueryGroupStorageI(cctkGH, group)) {
+      int const firstvarindex = CCTK_FirstVarIndexI(group);
 
       switch (CCTK_GroupTypeI(group)) {
 
@@ -212,6 +214,10 @@ void FlipTimeLevels(cGH *const cctkGH) {
         assert(reflevel >= 0 and reflevel < reflevels);
         for (int m = 0; m < (int)arrdata.AT(group).size(); ++m) {
           for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
+            if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
+              ManualSyncGF(cctkGH, firstvarindex+var);
+            }
+            flip_rdwr(cctkGH, firstvarindex+var);
             arrdata.AT(group).AT(m).data.AT(var)->flip_all(reflevel, mglevel);
           }
         }
@@ -224,6 +230,7 @@ void FlipTimeLevels(cGH *const cctkGH) {
           int const firstvarindex = CCTK_FirstVarIndexI(group);
           for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
             arrdata.AT(group).AT(0).data.AT(var)->flip_all(0, mglevel);
+            flip_rdwr(cctkGH, firstvarindex+var);
             {
               int const varindex = firstvarindex + var;
               for (int tl = 0; tl < numtimelevels; ++tl) {
