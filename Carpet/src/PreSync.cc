@@ -164,6 +164,8 @@ void parse_rwclauses(const char *input,std::vector<RWClause>& vec,int default_wh
         rwc.where = WH_EVERYWHERE;
       } else if(current == "interior" || current == "in") {
         rwc.where = WH_INTERIOR;
+      } else if(current == "interiorwithboundary") {
+        rwc.where = WH_BOUNDARY | WH_INTERIOR;
       } else if(current == "boundary") {
         rwc.where = WH_BOUNDARY;
       } else {
