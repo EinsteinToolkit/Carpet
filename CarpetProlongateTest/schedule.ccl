@@ -4,6 +4,11 @@ STORAGE: scalar[3] scaled[3] difference[3]
 STORAGE: interp_difference
 STORAGE: errornorm interp_errornorm
 
+SCHEDULE CarpetProlongateSelectBCs AT initial
+{
+  LANG: C
+} "Tell Presync about the BCs"
+
 SCHEDULE CarpetProlongateTest_Init AT initial
 {
   LANG: Fortran
