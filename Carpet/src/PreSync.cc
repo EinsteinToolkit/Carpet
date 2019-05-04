@@ -823,6 +823,10 @@ extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int tl,int vi) {
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
   var_tuple vt{vi,reflevel,tl};
   auto f = valid_k.find(vt);
+  if(f == valid_k.end()) {
+    dumpValid(std::cerr, vi) << std::endl;
+    CCTK_VERROR("Could not find validity information for %s rl=%d tl=%d", CCTK_FullVarName(vi), reflevel, tl);
+  }
   CCTK_ASSERT(f != valid_k.end());
   // Check if anything needs to be done
   if(f->second == WH_EVERYWHERE) {
@@ -831,6 +835,10 @@ extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int tl,int vi) {
   //Only grid functions should reach this point. If not,
   //something has gone awry.
   CCTK_ASSERT(CCTK_GroupTypeFromVarI(vi) == CCTK_GF);
+  if((f->second & WH_INTERIOR) != WH_INTERIOR) {
+    dumpValid(std::cerr, vi) << std::endl;
+    CCTK_VERROR("SYNC requires valid data in interior %s rl=%d tl=%d", CCTK_FullVarName(vi), reflevel, tl);
+  }
   CCTK_ASSERT((f->second & WH_INTERIOR) == WH_INTERIOR);
 
   // Update valid region info
