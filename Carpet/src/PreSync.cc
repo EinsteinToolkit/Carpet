@@ -905,7 +905,7 @@ typedef CCTK_INT (*iface_boundary_function)(
 typedef CCTK_INT (*sym_boundary_function)(
   const cGH *cctkGH);
 
-typedef void (*sym_iface_boundary_function)(
+typedef CCTK_INT (*sym_iface_boundary_function)(
   CCTK_POINTER_TO_CONST cctkGH);
 
 struct Bound {
