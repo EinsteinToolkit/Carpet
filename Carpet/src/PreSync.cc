@@ -771,12 +771,24 @@ void cycle_rdwr(const cGH *cctkGH) {
 /**
  * Called by ManualSyncGF.
  */
-void Sync1(const cGH *cctkGH,int gi) {
+void Sync1(const cGH *cctkGH,int tl,int gi) {
   std::vector<int> sync_groups;
   sync_groups.push_back(gi);
   cFunctionData *attribute = 0;
+  // copied out of modes.hh
+  int const old_timelevel_offset = timelevel_offset;
+  int const old_timelevel = timelevel;
+  CCTK_REAL old_cctk_time = cctkGH->cctk_time;
+  auto const old_do_allow_past_timelevels = do_allow_past_timelevels; 
+  do_allow_past_timelevels = tl == 0;
+  timelevel_offset = timelevel = tl;
+  const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
   int ierr = SyncProlongateGroups(cctkGH, sync_groups, attribute);
   assert(!ierr);
+  const_cast<cGH*>(cctkGH)->cctk_time = old_cctk_time;
+  timelevel_offset = old_timelevel_offset;
+  timelevel = old_timelevel;
+  do_allow_past_timelevels = old_do_allow_past_timelevels;
 }
 
 /**
@@ -807,9 +819,9 @@ extern "C" int GetValidRegion(int vi,int tl) {
  * is already valid everywhere, this routine does nothing. When
  * the routine finishes, it will be valid everywhere.
  */
-extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int vi) {
+extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int tl,int vi) {
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
-  var_tuple vt{vi,reflevel,0};
+  var_tuple vt{vi,reflevel,tl};
   auto f = valid_k.find(vt);
   CCTK_ASSERT(f != valid_k.end());
   // Check if anything needs to be done
@@ -826,7 +838,7 @@ extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int vi) {
   int i0 = CCTK_FirstVarIndexI(gi);
   int iN = i0+CCTK_NumVarsInGroupI(gi);
   for(int vi2=i0;vi2<iN;vi2++) {
-    var_tuple vt{vi2,reflevel,0};
+    var_tuple vt{vi2,reflevel,tl};
     if(on(valid_k[vt],WH_INTERIOR)) {
       valid_k[vt] = WH_EVERYWHERE;
     }
@@ -834,16 +846,16 @@ extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int vi) {
 
   // Take action by mode
   if(is_level_mode()) {
-    Sync1(cctkGH,gi);
+    Sync1(cctkGH,tl,gi);
   } else if(is_global_mode()) {
     BEGIN_REFLEVEL_LOOP(cctkGH) {
-      Sync1(cctkGH,gi);
+      Sync1(cctkGH,tl,gi);
     }
     END_REFLEVEL_LOOP;
   } else if(is_meta_mode()) {
     BEGIN_MGLEVEL_LOOP(cctkGH) {
       BEGIN_REFLEVEL_LOOP(cctkGH) {
-        Sync1(cctkGH,gi);
+        Sync1(cctkGH,tl,gi);
       }
       END_REFLEVEL_LOOP;
     }

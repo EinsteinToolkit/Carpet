@@ -1020,7 +1020,7 @@ static int OutputVarAs(const cGH *const cctkGH, const char *const fullname,
 
     // Synchronize and apply BCs if needed
     if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
-      Carpet_ManualSyncGF(cctkGH,var);
+      Carpet_ManualSyncGF(cctkGH,0,var); // TODO: support part timelevels
     }
 
     ioRequest *r = myGH->requests[var];

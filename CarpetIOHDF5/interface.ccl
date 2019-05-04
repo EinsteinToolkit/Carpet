@@ -101,5 +101,5 @@ USES FUNCTION UniqueRunID
 
 # Presync functions to interface with read/write data
 void FUNCTION Carpet_ManualSyncGF
-      (CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN vi)
+      (CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN tl, CCTK_INT IN vi)
 USES FUNCTION Carpet_ManualSyncGF

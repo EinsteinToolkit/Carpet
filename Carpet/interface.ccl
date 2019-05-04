@@ -415,6 +415,7 @@ PROVIDES FUNCTION Carpet_GetValidRegion WITH
 void FUNCTION
       Carpet_ManualSyncGF
       (CCTK_POINTER_TO_CONST IN cctkGH,
+      CCTK_INT IN tl,
       CCTK_INT IN vi)
 PROVIDES FUNCTION Carpet_ManualSyncGF WITH
    ManualSyncGF LANGUAGE C

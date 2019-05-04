@@ -492,10 +492,6 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
     assert(not ierr);
   }
 
-  if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
-    Carpet_ManualSyncGF(cctkGH,vindex);
-  }
-
   const int ml = groupdata.grouptype == CCTK_GF ? mglevel : 0;
   const int rl = groupdata.grouptype == CCTK_GF ? reflevel : 0;
 
@@ -568,6 +564,9 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
               one_file_per_group ? CCTK_NumVarsInGroupI(group) : var + 1;
           vector<const gdata *> datas(n_max - n_min);
           for (size_t n = 0; n < datas.size(); ++n) {
+            if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
+              Carpet_ManualSyncGF(cctkGH,tl,vindex0+n);
+            }
             if (dist::rank() == proc) {
               const ggf *const ff = arrdata.at(group).at(m).data.at(n + n_min);
               datas.at(n) = ff->data_pointer(tl, rl, lc, ml);

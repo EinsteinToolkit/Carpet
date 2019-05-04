@@ -79,7 +79,7 @@ void CycleTimeLevels(cGH *const cctkGH) {
           for (int m = 0; m < (int)arrdata.AT(group).size(); ++m) {
             for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
               if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
-                ManualSyncGF(cctkGH, firstvarindex+var);
+                ManualSyncGF(cctkGH, 0, firstvarindex+var);
               }
               arrdata.AT(group).AT(m).data.AT(var)->cycle_all(reflevel,
                                                               mglevel);
@@ -152,7 +152,7 @@ void UncycleTimeLevels(cGH *const cctkGH) {
           int const firstvarindex = CCTK_FirstVarIndexI(group);
           for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
             if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
-              ManualSyncGF(cctkGH, firstvarindex+var);
+              ManualSyncGF(cctkGH, 0, firstvarindex+var);
             }
             arrdata.AT(group).AT(m).data.AT(var)->uncycle_all(reflevel,
                                                               mglevel);
