@@ -298,7 +298,6 @@ extern "C" void TraverseWrites(const char *func_name,void(*trace_func)(int,int,i
 
 void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sync_groups) {
   bool use_psync = (CCTK_ParameterValInt("use_psync","Cactus") != 0);
-  bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
   if(!use_psync) return;
 
 /*  static std::map<int,std::string> watch_vars;
@@ -439,10 +438,11 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
       }
   }
   if(sync_groups.size()>0) {
+#if 0
     for (size_t sgi=0;sgi<sync_groups.size();sgi++) {
       int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
       int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
-/*      if(verbose) {
+      if(verbose) {
         for (int vi=i0;vi<iN;vi++) {
           std::ostringstream msg;
           msg << "  Presync: syncing for ";
@@ -452,7 +452,8 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
           CCTK_INFO(msg.str().c_str());
         }
       }
-*/    }
+    }
+#endif
     if(use_psync) {
       SyncProlongateGroups(cctkGH, sync_groups, attribute);
       for (size_t sgi=0;sgi<sync_groups.size();sgi++) {
@@ -976,7 +977,8 @@ CCTK_INT Carpet_SelectVarForBCI(
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
                "Requested BC '%s' not found.", bc_name);
   }
-  Func& f = boundary_functions.at(bc_name);
+  std::string name{bc_name};
+  tolower(name);
   CCTK_ASSERT(var_index != 0);
   auto i = boundary_conditions.find(var_index);
   for(; i != boundary_conditions.end();++i) {
@@ -1045,7 +1047,6 @@ CCTK_INT Carpet_SelectedGVs() {
 extern "C"
 void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
   bool use_psync = (CCTK_ParameterValInt("use_psync","Cactus") != 0);
-  bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
   if(!use_psync) return;
   auto bc = boundary_conditions;
   if(bc.find(var_index) == bc.end()) {
