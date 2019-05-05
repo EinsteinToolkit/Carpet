@@ -980,7 +980,7 @@ CCTK_INT Carpet_SelectVarForBCI(
   auto i = boundary_conditions.find(var_index);
   for(; i != boundary_conditions.end();++i) {
     for(auto b = i->second.begin(); b != i->second.end(); ++b) {
-      if(b->bc_name == bname) {
+      if(b->bc_name == name) {
         std::cout << "Variable " << CCTK_FullVarName(var_index) << " has been selected twice for '" << bc_name << "'" << std::endl;
         return 0;
       }
@@ -991,7 +991,7 @@ CCTK_INT Carpet_SelectVarForBCI(
   b.faces = faces;
   b.width = width;
   b.table_handle = table_handle;
-  b.bc_name = bname;
+  b.bc_name = name;
   bv.push_back(b);
   return 0;
 }
