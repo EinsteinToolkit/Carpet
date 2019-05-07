@@ -63,5 +63,14 @@ USES FUNCTION GetSymmetryBoundaries
 
 
 
-CCTK_INT this_iteration TYPE=scalar
-CCTK_INT next_output_iteration TYPE=scalar
+# # The iteration we are currently outputting
+# CCTK_INT this_iteration TYPE=scalar
+# 
+# # The next iteration at which we should output
+# CCTK_INT next_output_iteration TYPE=scalar
+
+# The iteration at which we previously output, or -1 if we never output before
+CCTK_INT last_out0D_iteration TYPE=scalar
+CCTK_INT last_out1D_iteration TYPE=scalar
+CCTK_INT last_out2D_iteration TYPE=scalar
+CCTK_INT last_out3D_iteration TYPE=scalar

@@ -32,9 +32,17 @@ using namespace std;
 
 // Checkpointing state
 int last_checkpoint_iteration = -1;
+int last_checkpoint_walltime_seconds = -1;
 
 // Active output threads
 vector<unique_ptr<pthread_wrapper_t> > output_pthreads;
+
+// Align upwards to the next multiple
+template <typename T> T align_up(T i, T j) {
+  assert(i >= 0);
+  assert(j > 0);
+  return (i + j - 1) / j * j;
+}
 
 void *SetupGH(tFleshConfig *fleshconfig, int convLevel, cGH *cctkGH);
 
@@ -77,10 +85,15 @@ void *SetupGH(tFleshConfig *fleshconfig, int convLevel, cGH *cctkGH) {
 extern "C" void CarpetSimulationIO_Init(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
 
-  *this_iteration = -1;
-  *next_output_iteration = 0;
+  // *this_iteration = -1;
+  // *next_output_iteration = 0;
+  *last_out0D_iteration = -1;
+  *last_out1D_iteration = -1;
+  *last_out2D_iteration = -1;
+  *last_out3D_iteration = -1;
 
   last_checkpoint_iteration = cctk_iteration;
+  last_checkpoint_walltime_seconds = CCTK_RunTime();
 
   init_comm();
 }
@@ -255,10 +268,9 @@ int OutputGH(const cGH *cctkGH) {
       async_output ? data_handling::attach : data_handling::write;
 
   int numvars = CCTK_NumVars();
-  for (int vindex = 0; vindex < numvars; ++vindex) {
+  for (int vindex = 0; vindex < numvars; ++vindex)
     if (TimeToOutput(cctkGH, vindex))
       TriggerVar(cctkGH, vindex, -1, handle_data);
-  }
 
   if (output_state_ptr) {
     // output_state_ptr->write();
@@ -318,16 +330,52 @@ int TimeToOutput(const cGH *cctkGH, int vindex) {
   int my_out1D_every = out1D_every == -2 ? my_out_every : out1D_every;
   int my_out2D_every = out2D_every == -2 ? my_out_every : out2D_every;
   int my_out3D_every = out3D_every == -2 ? my_out_every : out3D_every;
-  if (my_out0D_every > 0 or my_out1D_every > 0 or my_out2D_every > 0 or
-      my_out3D_every > 0) {
-    if (*this_iteration == cctk_iteration) {
+  if (my_out0D_every > 0) {
+    if (cctk_iteration == *last_out0D_iteration) {
       // we already decided to output this iteration
       output_this_iteration = true;
-    } else if (cctk_iteration >= *next_output_iteration) {
+    } else if (*last_out0D_iteration < 0 or
+               cctk_iteration >=
+                   align_up(*last_out0D_iteration + 1, my_out0D_every)) {
       // it is time for the next output
       output_this_iteration = true;
-      *this_iteration = cctk_iteration;
-      *next_output_iteration = cctk_iteration + my_out_every;
+      *last_out0D_iteration = cctk_iteration;
+    }
+  }
+  if (my_out1D_every > 0) {
+    if (cctk_iteration == *last_out1D_iteration) {
+      // we already decided to output this iteration
+      output_this_iteration = true;
+    } else if (*last_out1D_iteration < 0 or
+               cctk_iteration >=
+                   align_up(*last_out1D_iteration + 1, my_out1D_every)) {
+      // it is time for the next output
+      output_this_iteration = true;
+      *last_out1D_iteration = cctk_iteration;
+    }
+  }
+  if (my_out2D_every > 0) {
+    if (cctk_iteration == *last_out2D_iteration) {
+      // we already decided to output this iteration
+      output_this_iteration = true;
+    } else if (*last_out2D_iteration < 0 or
+               cctk_iteration >=
+                   align_up(*last_out2D_iteration + 1, my_out2D_every)) {
+      // it is time for the next output
+      output_this_iteration = true;
+      *last_out2D_iteration = cctk_iteration;
+    }
+  }
+  if (my_out3D_every > 0) {
+    if (cctk_iteration == *last_out3D_iteration) {
+      // we already decided to output this iteration
+      output_this_iteration = true;
+    } else if (*last_out3D_iteration < 0 or
+               cctk_iteration >=
+                   align_up(*last_out3D_iteration + 1, my_out3D_every)) {
+      // it is time for the next output
+      output_this_iteration = true;
+      *last_out3D_iteration = cctk_iteration;
     }
   }
 
@@ -437,8 +485,13 @@ extern "C" void CarpetSimulationIO_EvolutionCheckpoint(CCTK_ARGUMENTS) {
   bool checkpoint_by_iteration =
       checkpoint_every > 0 and
       cctk_iteration >= last_checkpoint_iteration + checkpoint_every;
+  bool checkpoint_by_walltime =
+      checkpoint_every_walltime_hours > 0 and
+      CCTK_RunTime() >= last_checkpoint_walltime_seconds +
+                            checkpoint_every_walltime_hours * 3600;
   bool do_checkpoint =
-      checkpoint and (checkpoint_by_iteration or checkpoint_next);
+      checkpoint and
+      (checkpoint_by_iteration or checkpoint_by_walltime or checkpoint_next);
 
   if (do_checkpoint)
     Checkpoint(cctkGH, CP_EVOLUTION_DATA);
@@ -558,6 +611,7 @@ void Checkpoint(const cGH *cctkGH, int called_from) {
   }
 
   last_checkpoint_iteration = cctkGH->cctk_iteration;
+  last_checkpoint_walltime_seconds = CCTK_RunTime();
 
   // Delete old checkpoint files
   if (called_from == CP_EVOLUTION_DATA) {
@@ -620,13 +674,38 @@ int Input(cGH *cctkGH, const char *basefilename, int called_from) {
   static HighResTimer::HighResTimer timer("SimulationIO::input");
   auto timer_clock = timer.start();
 
+  if (do_recover and not read_parameters) {
+    // Initialise these in case they should be recovered, but are
+    // missing in the checkpoint file. This can happen only if the
+    // checkpoint file was written with an older version of this thorn
+    // where these variables did not yet exist. Usually, these
+    // variables would either be recovered or be initialised, and both
+    // happen later, so that the settings here will be overwritten.
+    CCTK_INT *restrict const last_out0D_iteration = static_cast<CCTK_INT *>(
+        CCTK_VarDataPtr(cctkGH, 0, CCTK_THORNSTRING "::last_out0D_iteration"));
+    CCTK_INT *restrict const last_out1D_iteration = static_cast<CCTK_INT *>(
+        CCTK_VarDataPtr(cctkGH, 0, CCTK_THORNSTRING "::last_out1D_iteration"));
+    CCTK_INT *restrict const last_out2D_iteration = static_cast<CCTK_INT *>(
+        CCTK_VarDataPtr(cctkGH, 0, CCTK_THORNSTRING "::last_out2D_iteration"));
+    CCTK_INT *restrict const last_out3D_iteration = static_cast<CCTK_INT *>(
+        CCTK_VarDataPtr(cctkGH, 0, CCTK_THORNSTRING "::last_out3D_iteration"));
+    assert(last_out0D_iteration);
+    assert(last_out1D_iteration);
+    assert(last_out2D_iteration);
+    assert(last_out3D_iteration);
+    *last_out0D_iteration = -1;
+    *last_out1D_iteration = -1;
+    *last_out2D_iteration = -1;
+    *last_out3D_iteration = -1;
+  }
+
   string projectname;
   int iteration;
   if (do_recover) {
     // basename is only passed for CP_RECOVER_PARAMETERS, and needs to
     // be remembered
     static string saved_basefilename;
-    if (called_from == CP_RECOVER_PARAMETERS)
+    if (read_parameters)
       // Split basename into the actual basename and the iteration number
       saved_basefilename = basefilename;
     assert(not saved_basefilename.empty());

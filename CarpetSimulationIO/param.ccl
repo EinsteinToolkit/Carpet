@@ -14,6 +14,7 @@ USES CCTK_INT out_timesteps_per_file
 
 USES BOOLEAN checkpoint_ID
 USES CCTK_INT checkpoint_every
+USES CCTK_REAL checkpoint_every_walltime_hours
 USES BOOLEAN checkpoint_on_terminate
 
 USES STRING checkpoint_dir AS IO_checkpoint_dir

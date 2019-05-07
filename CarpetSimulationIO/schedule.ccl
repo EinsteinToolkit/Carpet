@@ -1,6 +1,10 @@
 # Schedule definitions for thorn CarpetSimulationIO
 
-STORAGE: this_iteration next_output_iteration
+# STORAGE: this_iteration next_output_iteration
+STORAGE: last_out0D_iteration
+STORAGE: last_out1D_iteration
+STORAGE: last_out2D_iteration
+STORAGE: last_out3D_iteration
 
 
 
