@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "output.hpp"
 #include "util.hpp"
 
@@ -308,7 +310,7 @@ void output_file_t::insert_vars(const vector<int> &varindices,
               "Group \"%s\" has tensor type alias \"%s\" which requires "
               "%d variables, but group has %d variables",
               groupname.c_str(), tensortypealias.c_str(), 3, groupdata.numvars);
-        tensorindices = {varindex - varindex0};
+        tensorindices = {groupvarindex};
         tensortypename = tensortypes_vectors.at(3);
       } else if (CCTK_EQUALS(tensortypealias.c_str(), "4u") ||
                  CCTK_EQUALS(tensortypealias.c_str(), "4d")) {
@@ -317,7 +319,7 @@ void output_file_t::insert_vars(const vector<int> &varindices,
               "Group \"%s\" has tensor type alias \"%s\" which requires "
               "%d variables, but group has %d variables",
               groupname.c_str(), tensortypealias.c_str(), 4, groupdata.numvars);
-        tensorindices = {varindex - varindex0};
+        tensorindices = {groupvarindex};
         tensortypename = tensortypes_vectors.at(4);
       } else if (CCTK_EQUALS(tensortypealias.c_str(), "uu_sym") ||
                  CCTK_EQUALS(tensortypealias.c_str(), "dd_sym")) {
@@ -338,13 +340,53 @@ void output_file_t::insert_vars(const vector<int> &varindices,
               groupdata.numvars);
         tensorindices = syminds.at(4).at(groupvarindex);
         tensortypename = tensortypes_symmetric_tensors.at(4);
+      } else if (CCTK_EQUALS(tensortypealias.c_str(), "uu") ||
+                 CCTK_EQUALS(tensortypealias.c_str(), "ud") ||
+                 CCTK_EQUALS(tensortypealias.c_str(), "du") ||
+                 CCTK_EQUALS(tensortypealias.c_str(), "dd")) {
+        if (groupdata.numvars != 9)
+          CCTK_VERROR(
+              "Group \"%s\" has tensor type alias \"%s\" which requires "
+              "%d variables, but group has %d variables",
+              groupname.c_str(), tensortypealias.c_str(), 6, groupdata.numvars);
+        tensorindices = {groupvarindex / 3, groupvarindex % 3};
+        tensortypename = tensortypes_tensors.at(3);
+      } else if (CCTK_EQUALS(tensortypealias.c_str(), "dd_sym_d")) {
+        if (groupdata.numvars != 18)
+          CCTK_VERROR(
+              "Group \"%s\" has tensor type alias \"%s\" which requires "
+              "%d variables, but group has %d variables",
+              groupname.c_str(), tensortypealias.c_str(), 18,
+              groupdata.numvars);
+        tensorindices = syminds_rank3_symmetric12.at(3).at(groupvarindex);
+        tensortypename = tensortypes_tensors_rank3_symmetric12.at(3);
+        if (not project->tensortypes().count(tensortypename)) {
+          // Create tensor type
+          assert(dimension == 3);
+          int rank = 3;
+          const auto &tensortype =
+              project->createTensorType(tensortypename, dimension, rank);
+          const auto &tensor_indexvalues =
+              syminds_rank3_symmetric12.at(dimension);
+          for (int storage_index = 0;
+               storage_index < int(tensor_indexvalues.size());
+               ++storage_index) {
+            const auto &indexvalues = tensor_indexvalues.at(storage_index);
+            assert(int(indexvalues.size()) == rank);
+            ostringstream buf;
+            for (int r = 0; r < rank; ++r)
+              buf << indexvalues.at(r);
+            auto name = buf.str();
+            tensortype->createTensorComponent(name, storage_index, indexvalues);
+          }
+        }
       } else if (tensortypealias == "") {
         // Use number of variables in group as fallback
         if (groupdata.numvars == 1) {
           tensorindices = {};
           tensortypename = tensortypes_scalars.at(dimension);
         } else if (groupdata.numvars == dimension) {
-          tensorindices = {varindex - varindex0};
+          tensorindices = {groupvarindex};
           tensortypename = tensortypes_vectors.at(dimension);
         } else if (groupdata.numvars == dimension * (dimension + 1) / 2) {
           tensorindices = syminds.at(dimension).at(groupvarindex);
@@ -367,7 +409,6 @@ void output_file_t::insert_vars(const vector<int> &varindices,
     const int tensorrank = tensorindices.size();
 
     // Get tensor type
-    // TODO: look at "tensortypealias" tag
     auto tensortype = project->tensortypes().at(tensortypename);
     assert(tensortype->rank() == tensorrank);
     shared_ptr<TensorComponent> tensorcomponent;

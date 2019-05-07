@@ -197,8 +197,10 @@ extern const vector<string> tensortypes_scalars;
 extern const vector<string> tensortypes_vectors;
 extern const vector<string> tensortypes_symmetric_tensors;
 extern const vector<string> tensortypes_tensors;
+extern const vector<string> tensortypes_tensors_rank3_symmetric12;
 
 extern const vector<vector<vector<int> > > syminds;
+extern const vector<vector<vector<int> > > syminds_rank3_symmetric12;
 
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <utility>
 
 namespace CarpetSimulationIO {
 using namespace std;
@@ -298,7 +299,11 @@ const vector<string> tensortypes_symmetric_tensors{
     "SymmetricTensor4D"};
 const vector<string> tensortypes_tensors{"n/a", "Tensor1D", "Tensor2D",
                                          "Tensor3D", "Tensor4D"};
+const vector<string> tensortypes_tensors_rank3_symmetric12{
+    "n/a", "n/a", "Tensor2D_Rank3Symmetric12", "Tensor3D_Rank3Symmetric12",
+    "Tensor4D_Rank3Symmetric12"};
 
+#if 0
 const vector<vector<vector<int> > > syminds{
     {{0, 0}},
     {{0, 0}},
@@ -314,6 +319,64 @@ const vector<vector<vector<int> > > syminds{
      {2, 2},
      {2, 3},
      {3, 3}}};
+
+const vector<vector<vector<int> > > syminds_rank3_symmetric12{
+    {{0, 0, 0}},
+    {{0, 0, 0}},
+    {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 1}, {1, 1, 0}, {1, 1, 1}},
+    {{0, 0, 0},
+     {0, 0, 1},
+     {0, 0, 2},
+     {0, 1, 0},
+     {0, 1, 1},
+     {0, 1, 2},
+     {0, 2, 0},
+     {0, 2, 1},
+     {0, 2, 2},
+     {1, 1, 0},
+     {1, 1, 1},
+     {1, 1, 2},
+     {1, 2, 0},
+     {1, 2, 1},
+     {1, 2, 2},
+     {2, 2, 0},
+     {2, 2, 1},
+     {2, 2, 2}},
+    {{0, 0, 0}, {0, 0, 1}, {0, 0, 2}, {0, 0, 3}, {0, 1, 0}, {0, 1, 1},
+     {0, 1, 2}, {0, 1, 3}, {0, 2, 0}, {0, 2, 1}, {0, 2, 2}, {0, 2, 3},
+     {0, 3, 0}, {0, 3, 1}, {0, 3, 2}, {0, 3, 3}, {1, 1, 0}, {1, 1, 1},
+     {1, 1, 2}, {1, 1, 3}, {1, 2, 0}, {1, 2, 1}, {1, 2, 2}, {1, 2, 3},
+     {1, 3, 0}, {1, 3, 1}, {1, 3, 2}, {1, 3, 3}, {2, 2, 0}, {2, 2, 1},
+     {2, 2, 2}, {2, 2, 3}, {2, 3, 0}, {2, 3, 1}, {2, 3, 2}, {2, 3, 3},
+     {3, 3, 0}, {3, 3, 1}, {3, 3, 2}, {3, 3, 3}}};
+#endif
+
+const vector<vector<vector<int> > > syminds = []() {
+  vector<vector<vector<int> > > inds3;
+  for (int dim = 0; dim <= 4; ++dim) {
+    vector<vector<int> > inds2;
+    for (int i = 0; i < dim; ++i)
+      for (int j = i; j < dim; ++j)
+        inds2.push_back({i, j});
+    assert(int(inds2.size()) == dim * (dim + 1) / 2);
+    inds3.push_back(std::move(inds2));
+  }
+  return inds3;
+}();
+
+const vector<vector<vector<int> > > syminds_rank3_symmetric12 = []() {
+  vector<vector<vector<int> > > inds3;
+  for (int dim = 0; dim <= 4; ++dim) {
+    vector<vector<int> > inds2;
+    for (int i = 0; i < dim; ++i)
+      for (int j = i; j < dim; ++j)
+        for (int k = 0; k < dim; ++k)
+          inds2.push_back({i, j, k});
+    assert(int(inds2.size()) == dim * dim * (dim + 1) / 2);
+    inds3.push_back(std::move(inds2));
+  }
+  return inds3;
+}();
 
 ////////////////////////////////////////////////////////////////////////////////
 
