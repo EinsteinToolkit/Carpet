@@ -28,6 +28,11 @@ vector<string> alltoallv_string(MPI_Comm comm, vector<string> const &data);
 
 string broadcast_string(MPI_Comm comm, int root, string const &data);
 
+void send_string(MPI_Comm const comm, int const destination,
+                   string const &data);
+
+string recv_string(MPI_Comm const comm, int const source);
+
 // Arbitrary datatypes
 
 template <typename T>

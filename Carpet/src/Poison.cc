@@ -204,10 +204,14 @@ void PoisonCheck(cGH const *const cctkGH, checktimes const where) {
                     int const idx = i + asize[0] * (j + asize[1] * k);
                     bool poisoned = false;
                     switch (specific_cactus_type(tp)) {
+// cast to (void *) below to avoid warning about CCTK_COMPLEX being a
+// non-trivial type. C++11 guarantees that std::complex<double> has the same
+// memory layout as C99's complex type, which is (likely) a trivial type in
+// memory.
 #define TYPECASE(N, T)                                                         \
   case N: {                                                                    \
     T worm;                                                                    \
-    memset(&worm, poison_value, sizeof worm);                                  \
+    memset(static_cast<void *>(&worm), poison_value, sizeof worm);             \
     const T &val = ((const T *)data)[idx];                                     \
     poisoned = memcmp(&worm, &val, sizeof worm) == 0;                          \
     break;                                                                     \

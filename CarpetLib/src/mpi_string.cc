@@ -205,6 +205,34 @@ string broadcast_string(MPI_Comm const comm, int const root,
   }
 }
 
+void send_string(MPI_Comm const comm, int const destination,
+                   string const &data) {
+    // Send data string
+    int const length = static_cast<int>(data.size());
+    MPI_Send(const_cast<char*>(data.data()), length, MPI_CHAR, destination, 0,
+             comm);
+}
+
+string recv_string(MPI_Comm const comm, int const source) {
+    MPI_Status status;
+
+    // Receive the length of the data string
+    MPI_Probe(source, 0, comm, &status);
+    int length;
+    MPI_Get_count(&status, MPI_CHAR, &length);
+
+    // Allocate space for data string
+    std::vector<char> data_buffer(static_cast<size_t>(length));
+
+    // Receive data string
+    MPI_Recv(&data_buffer.front(), length, MPI_CHAR, source, 0, comm, MPI_STATUS_IGNORE);
+
+    // Convert data buffer with C strings to C++ strings
+    string const result = string(&data_buffer.front(), length);
+
+    return result;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 
 template vector<vector<dh::light_dboxes> >
