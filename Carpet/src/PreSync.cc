@@ -83,25 +83,6 @@ inline std::string wstr(int wh) {
   return s;
 }
 
-/*
- * A read/write clause.
- */
-struct RWClause {
-  int where; 
-  int tl; // time-level
-  std::string name;
-  RWClause() : where(0), tl(0), name() {}
-  ~RWClause() {}
-  void parse_tl() {
-    int s = name.size();
-    while(s > 2 && name[s-1]=='p' && name[s-2] == '_') {
-      tl++;
-      s -= 2;
-      name.resize(s);
-    }
-  }
-};
-
 inline void tolower(std::string& s) {
   for(auto si=s.begin();si != s.end();++si) {
     if(*si >= 'A' && *si <= 'Z') {
@@ -122,132 +103,7 @@ inline bool iswhite(char c) {
   return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\b' || c == '\f';
 }
 
-inline std::ostream& operator<<(std::ostream& o,const RWClause& rwc) {
-  return o << "RWC(" << rwc.name << ",tl=" << rwc.tl << ",wh=" << wstr(rwc.where) << ")";
-}
-
-/**
- * Parse a single input clause, e.g. READS: foo::bar(Everywhere)
- * and store the result in a vector of RWClause objects. Note
- * that this method supports "All" as a shorthand for "Everywhere"
- * and "In" as a shorthand for "Interior."
- */
-void parse_rwclauses(const char *input,std::vector<RWClause>& vec,int default_where) {
-  std::string current;
-  RWClause rwc;
-  bool parsing_where = false;
-  const char *input_sav = input;
-  bool parsed = false;
-  while(true) {
-    char c = *input++;
-    if(c >= 'A' && c <= 'Z')
-      c = c - 'A' + 'a';
-    if(c == 0) {
-      rwc.name = current;
-      if(rwc.name != "") {
-        rwc.where = default_where;
-        vec.push_back(rwc);
-        parsed = true;
-      }
-      break;
-    } else if(iswhite(c)) {
-      CCTK_ASSERT(false);
-    } else if(c == '(' && !parsing_where) {
-      rwc.name = current;
-      rwc.parse_tl();
-      current = "";
-      parsing_where = true;
-      CCTK_ASSERT(rwc.name != "");
-    } else if(c == ')' && parsing_where) {
-      CCTK_ASSERT(rwc.name != "");
-      if(current == "everywhere" || current == "all") {
-        rwc.where = WH_EVERYWHERE;
-      } else if(current == "interior" || current == "in") {
-        rwc.where = WH_INTERIOR;
-      } else if(current == "interiorwithboundary") {
-        rwc.where = WH_BOUNDARY | WH_INTERIOR;
-      } else if(current == "boundary") {
-        rwc.where = WH_BOUNDARY;
-      } else {
-        abort();
-      }
-      vec.push_back(rwc);
-      parsed = true;
-      break;
-      parsing_where = 0;
-    } else {
-      current += c;
-    }
-  }
-  if(!parsed) std::cout << "PARSE FAIL: (" << input_sav << ") (" << input << ") " << rwc<< std::endl;
-  CCTK_ASSERT(parsed);
-}
-
 std::string current_routine;
-
-/**
- * This method is convert an array of textual descriptions of read/write clauses to
- * a map that takes a var tuple (var index, time level) and produces a where spec.
- */
-void compute_clauses(const int num_strings,const char **strings,std::map<var_tuple,int>& routine_m,int default_where) {
-  std::vector<RWClause> rwvec;
-  for(int i=0;i< num_strings; ++i) {
-
-    // Parse the where clause (if any)
-    parse_rwclauses(strings[i],rwvec,default_where);
-  }
-  for(auto i=rwvec.begin();i != rwvec.end();++i) {
-    RWClause& rwc = *i;
-    int vi = CCTK_VarIndex(rwc.name.c_str());
-    int where_val = rwc.where;
-    if(where_val == 0) {
-      int type = CCTK_GroupTypeFromVarI(vi);
-      if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
-        std::ostringstream msg;
-        msg << "Missing Where Spec: Var: " << rwc.name << " Routine: " << current_routine;
-        CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
-      }
-    }
-
-    if(vi >= 0) {
-      var_tuple vt{vi, -1, rwc.tl};
-      routine_m[vt] = where_val;
-    } else {
-      // If looking up a specific variable failed, then
-      // we lookup everything on the group.
-      int gi = CCTK_GroupIndex(rwc.name.c_str());
-      if(gi >= 0) {
-        if(!CCTK_NumVarsInGroupI(gi)) {
-          // Some groups have array length set at runtime, and
-          // they can be set to 0 (inactive), in which case
-          // the rd/wr should be ignored.
-          continue;
-        }
-        int i0 = CCTK_FirstVarIndexI(gi);
-        int iN = i0+CCTK_NumVarsInGroupI(gi);
-        for(vi=i0;vi<iN;vi++) {
-          var_tuple vt{vi,-1,0};
-          routine_m[vt] = where_val;
-        }
-        assert(i0 < iN);
-      } else {
-        std::string vname = rwc.name.c_str();
-        vname += "[0]";
-        vi = CCTK_VarIndex(vname.c_str());
-        gi = CCTK_GroupIndexFromVarI(vi);
-        if(gi >= 0) {
-          int i0 = CCTK_FirstVarIndexI(gi);
-          int iN = i0+CCTK_NumVarsInGroupI(gi);
-          for(vi=i0;vi<iN;vi++) {
-            var_tuple vt{vi,-1,0};
-            routine_m[vt] = where_val;
-          }
-          assert(i0 < iN);
-        }
-      }
-    }
-  }
-}
 
 std::map<std::string,std::map<var_tuple,int>> reads,writes;
 std::map<var_tuple,int> valid_k;
@@ -601,14 +457,16 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
     std::map<var_tuple,int>& writes_m  = writes[r];
     std::map<var_tuple,int>& reads_m  = reads [r];
 
-    compute_clauses(
-        attribute->n_WritesClauses,
-        attribute->WritesClauses,
-        writes_m,WH_INTERIOR);
-    compute_clauses(
-        attribute->n_ReadsClauses,
-        attribute->ReadsClauses,
-        reads_m,WH_EVERYWHERE);
+    for(int i=0;i < attribute->n_RDWR;i++) {
+      RDWR_entry *rdwr = &attribute->RDWR[i];
+      var_tuple vt{rdwr->var_id, -1, rdwr->time_level};
+      if(rdwr->where_wr != 0) {
+        writes_m[vt] = rdwr->where_wr;
+      }
+      if(rdwr->where_rd != 0) {
+        reads_m[vt] = rdwr->where_rd;
+      }
+    }
   }
 
   std::map<var_tuple,int>& reads_m  = reads [r];
