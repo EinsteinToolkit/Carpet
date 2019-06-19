@@ -126,7 +126,7 @@ subroutine prolongate_3d_real8_eno ( &
          .or. regbbox(d,3).eq.0) then
       call CCTK_WARN (0, "Internal error: stride is zero")
     end if
-    if (srcbbox(d,3).le.regbbox(d,3) &
+    if (srcbbox(d,3).lt.regbbox(d,3) &
          .or. dstbbox(d,3).ne.regbbox(d,3)) then
       call CCTK_WARN (0, "Internal error: strides disagree")
     end if

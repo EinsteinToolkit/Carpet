@@ -35,12 +35,13 @@ void restrict_3d_rf2(T const *restrict const src,
 
   assert(not extraargs);
 
-  if (any(srcbbox.stride() >= regbbox.stride() or
+  if (any(srcbbox.stride() > regbbox.stride() or
           dstbbox.stride() != regbbox.stride())) {
     CCTK_WARN(0, "Internal error: strides disagree");
   }
 
-  if (any(reffact2 * srcbbox.stride() != dstbbox.stride())) {
+  const ivect reffact122(1,2,2);
+  if (any(reffact122 * srcbbox.stride() != dstbbox.stride())) {
     CCTK_WARN(
         0,
         "Internal error: destination strides are not twice the source strides");
@@ -103,7 +104,7 @@ void restrict_3d_rf2(T const *restrict const src,
       for (int j = 0; j < regjext; ++j) {
 #pragma omp simd
         for (int i = 0; i < regiext; ++i) {
-          dst[DSTIND3(i, j, k)] = src[SRCIND3(2 * i, 2 * j, 2 * k)];
+          dst[DSTIND3(i, j, k)] = src[SRCIND3(i, 2 * j, 2 * k)];
         }
       }
     }
@@ -114,7 +115,7 @@ void restrict_3d_rf2(T const *restrict const src,
 #pragma omp parallel
     CCTK_LOOP3(restrict_3d_rf2, i, j, k, 0, 0, 0, regiext, regjext, regkext,
                dstipadext, dstjpadext, dstkpadext) {
-      dst[DSTIND3(i, j, k)] = src[SRCIND3(2 * i, 2 * j, 2 * k)];
+      dst[DSTIND3(i, j, k)] = src[SRCIND3(i, 2 * j, 2 * k)];
     }
     CCTK_ENDLOOP3(restrict_3d_rf2);
   }

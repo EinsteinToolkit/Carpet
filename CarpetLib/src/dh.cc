@@ -1596,7 +1596,7 @@ void dh::regrid(bool const do_init) {
         ivect const reffact = h.reffacts.AT(rl) / h.reffacts.AT(orl);
 
         // This works only when the refinement factor is 2
-        assert(all(reffact == 2));
+        assert(all(reffact == 2 or reffact == 1));
 
         ibbox const &base = domain_exterior;
         ibbox const &obase = h.baseextent(ml, orl);
@@ -1688,7 +1688,7 @@ void dh::regrid(bool const do_init) {
 
         // This works only when the refinement factor is 2
         ivect const reffact = h.reffacts.AT(rl) / h.reffacts.AT(orl);
-        if (all(reffact == 2)) {
+        if (all(reffact == 2 or reffact == 1)) {
           // use the already computed 'all_refined' to get region from where
           // no information will be used later (overwritten)
           // First: get the region which will get restricted, on the coarse

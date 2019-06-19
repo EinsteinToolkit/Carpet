@@ -370,11 +370,13 @@ void prolongate_3d_rf2(T const *restrict const src,
   typedef typename typeprops<T>::real RT;
   coeffs1d<RT, ORDER>::test();
 
-  if (any(srcbbox.stride() <= regbbox.stride() or
+  #pragma omp critical
+  if (any(srcbbox.stride() < regbbox.stride() or
           dstbbox.stride() != regbbox.stride()))
     CCTK_ERROR("Internal error: strides disagree");
 
-  if (any(srcbbox.stride() != reffact2 * dstbbox.stride()))
+  const ivect reffact122(1,2,2);
+  if (any(srcbbox.stride() != reffact122 * dstbbox.stride()))
     CCTK_ERROR(
         "Internal error: source strides are not twice the destination strides");
 
@@ -396,8 +398,8 @@ void prolongate_3d_rf2(T const *restrict const src,
   assert(all((regbbox.lower() - dstbbox.lower()) % regbbox.stride() == 0));
   ivect3 const dstoff = (regbbox.lower() - dstbbox.lower()) / regbbox.stride();
 
-  bvect3 const needoffsetlo = srcoff % reffact2 != 0;
-  bvect3 const needoffsethi = (srcoff + regext - 1) % reffact2 != 0;
+  bvect3 const needoffsetlo = srcoff % reffact122 != 0;
+  bvect3 const needoffsethi = (srcoff + regext - 1) % reffact122 != 0;
   ivect3 const offsetlo =
       either(needoffsetlo, ORDER / 2 + 1, either(regext > 1, ORDER / 2, 0));
   ivect3 const offsethi =
@@ -487,9 +489,7 @@ l800:
   i = 0;
   is = i0;
   id = dstioff;
-  if (fi == 0)
-    goto l8000;
-  goto l8001;
+  goto l8000;
 
 // kernel
 l8000:
@@ -498,18 +498,6 @@ l8000:
       &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
   i = i + 1;
   id = id + 1;
-  if (i < regiext)
-    goto l8001;
-  goto l900;
-
-// kernel
-l8001:
-  check_indices3<T, ORDER, 1, 0, 0>(is, js, ks, srciext, srcjext, srckext);
-  dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 0, 0>(
-      &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-  i = i + 1;
-  id = id + 1;
-  is = is + 1;
   if (i < regiext)
     goto l8000;
   goto l900;

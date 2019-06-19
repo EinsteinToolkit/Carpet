@@ -541,12 +541,12 @@ void data<T>::transfer_p_r(data const *const src, ibbox const &dstbox,
   if (all(src->extent().stride() == this->extent().stride())) {
     // Copy
     copy_from_innerloop(src, dstbox, srcbox, slabinfo);
-  } else if (all(src->extent().stride() > this->extent().stride())) {
+  } else if (all(src->extent().stride() >= this->extent().stride())) {
     // Prolongate
     assert(transport_operator != op_sync and transport_operator != op_restrict);
     assert(not slabinfo);
     transfer_p_vc_cc(src, dstbox, srcbox, order_space);
-  } else if (all(src->extent().stride() < this->extent().stride())) {
+  } else if (all(src->extent().stride() <= this->extent().stride())) {
     // Restrict
     assert(transport_operator != op_sync);
     transfer_restrict(src, dstbox, srcbox, slabinfo, order_space);
