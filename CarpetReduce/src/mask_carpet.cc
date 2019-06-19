@@ -43,7 +43,7 @@ void CarpetMaskSetup(CCTK_ARGUMENTS) {
   if (reflevel > 0) {
     ivect const reffact =
         spacereffacts.AT(reflevel) / spacereffacts.AT(reflevel - 1);
-    assert(all(reffact == 2));
+    assert(all(reffact == 2 or reffact == 1));
   }
 
   // Set prolongation boundaries and restricted region of this level
