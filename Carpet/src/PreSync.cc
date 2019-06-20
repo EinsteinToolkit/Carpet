@@ -679,6 +679,10 @@ extern "C" int GetValidRegion(int vi,int tl) {
  * the routine finishes, it will be valid everywhere.
  */
 extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int tl,int vi) {
+  // Do nothing if this is not a GF
+  if(CCTK_GroupTypeFromVarI(vi) != CCTK_GF) {
+    return;
+  }
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
   var_tuple vt{vi,reflevel,tl};
   auto f = valid_k.find(vt);
@@ -691,9 +695,6 @@ extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int tl,int vi) {
   if(f->second == WH_EVERYWHERE) {
     return;
   }
-  //Only grid functions should reach this point. If not,
-  //something has gone awry.
-  CCTK_ASSERT(CCTK_GroupTypeFromVarI(vi) == CCTK_GF);
   if((f->second & WH_INTERIOR) != WH_INTERIOR) {
     dumpValid(std::cerr, vi) << std::endl;
     CCTK_VERROR("SYNC requires valid data in interior %s rl=%d tl=%d", CCTK_FullVarName(vi), reflevel, tl);
