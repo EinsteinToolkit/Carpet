@@ -2166,6 +2166,9 @@ void dh::regrid_free(bool const do_init) {
       }
     }
   }
+  // comm_state uses shared, static procbufs which should be resized after a
+  // regrid
+  comm_state::free_buffers();
 }
 
 void dh::recompose(int const rl, bool const do_prolongate) {

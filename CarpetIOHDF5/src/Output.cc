@@ -619,8 +619,9 @@ int WriteVarChunkedParallel(const cGH *const cctkGH, hid_t outfile,
         continue;
 
       // get active region
+      bool is_gf = CCTK_GroupTypeFromVarI(request->vindex) == CCTK_GF;
       string active;
-      {
+      if (is_gf) {
         ostringstream buf;
         buf << (vdd.at(Carpet::map)
                     ->local_boxes.at(mglevel)

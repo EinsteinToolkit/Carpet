@@ -669,4 +669,11 @@ void comm_state::commit_recv_space(unsigned const type, int const proc,
   assert(procbuf.recvbuf <= &procbuf.recvbufbase.front() +
                                 procbuf.recvbufsize * typebuf.datatypesize);
 }
+
+void comm_state::free_buffers() {
+  assert(not typebufs_busy);
+
+  // destroy all procbufs thereby freeing their memory
+  typebufs.clear();
+}
 }
