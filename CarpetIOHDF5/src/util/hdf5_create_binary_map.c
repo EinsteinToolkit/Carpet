@@ -32,7 +32,7 @@ static const char *rcsid = "$Header$";
 #define CHECK_ERROR(hdf5_call)                                                \
           do                                                                  \
           {                                                                   \
-            hid_t _error_code = hdf5_call;                                      \
+            hid_t _error_code = (hdf5_call);                                  \
                                                                               \
                                                                               \
             if (_error_code < 0)                                              \
