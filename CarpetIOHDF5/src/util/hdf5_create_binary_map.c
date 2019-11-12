@@ -297,27 +297,51 @@ static herr_t CopyObject (hid_t from,
     CHECK_ERROR (attr = H5Aopen_name (from, "iorigin"));
     CHECK_ERROR (H5Aread (attr, H5T_NATIVE_INT, iorigin));
     CHECK_ERROR (H5Aclose (attr));
-    CHECK_ERROR (attr = H5Aopen_name (from, "ioffset"));
-    CHECK_ERROR (H5Aread (attr, H5T_NATIVE_INT, ioffset));
-    CHECK_ERROR (H5Aclose (attr));
-    CHECK_ERROR (attr = H5Aopen_name (from, "ioffsetdenom"));
-    CHECK_ERROR (H5Aread (attr, H5T_NATIVE_INT, ioffsetdenom));
-    CHECK_ERROR (H5Aclose (attr));
-    CHECK_ERROR (attr = H5Aopen_name (from, "origin"));
-    CHECK_ERROR (H5Aread (attr, H5T_NATIVE_DOUBLE, origin));
-    CHECK_ERROR (H5Aclose (attr));
-    CHECK_ERROR (attr = H5Aopen_name (from, "delta"));
-    CHECK_ERROR (H5Aread (attr, H5T_NATIVE_DOUBLE, delta));
-    CHECK_ERROR (H5Aclose (attr));
+    // only grid functions have ioffset
+    if (strstr(objectname, " rl=") == NULL) {
+      H5E_BEGIN_TRY {
+        attr = H5Aopen_name (from, "ioffset");
+      } H5E_END_TRY
+    } else {
+      CHECK_ERROR (attr = H5Aopen_name (from, "ioffset"));
+    }
+    if (attr >= 0) {
+      CHECK_ERROR (H5Aread (attr, H5T_NATIVE_INT, ioffset));
+      CHECK_ERROR (H5Aclose (attr));
+      CHECK_ERROR (attr = H5Aopen_name (from, "ioffsetdenom"));
+      CHECK_ERROR (H5Aread (attr, H5T_NATIVE_INT, ioffsetdenom));
+      CHECK_ERROR (H5Aclose (attr));
+    }
+
+    // if a coordinate system is not present then origin and delta are missing
+    H5E_BEGIN_TRY {
+      attr = H5Aopen_name (from, "origin");
+    } H5E_END_TRY
+    if (attr >= 0) {
+      CHECK_ERROR (H5Aread (attr, H5T_NATIVE_DOUBLE, origin));
+      CHECK_ERROR (H5Aclose (attr));
+      CHECK_ERROR (attr = H5Aopen_name (from, "delta"));
+      CHECK_ERROR (H5Aread (attr, H5T_NATIVE_DOUBLE, delta));
+      CHECK_ERROR (H5Aclose (attr));
+    }
     CHECK_ERROR (attr = H5Aopen_name (from, "time"));
     CHECK_ERROR (H5Aread (attr, H5T_NATIVE_DOUBLE, &time));
     CHECK_ERROR (H5Aclose (attr));
-    CHECK_ERROR (attr = H5Aopen_name (from, "cctk_nghostzones"));
-    CHECK_ERROR (H5Aread (attr, H5T_NATIVE_INT, nghosts));
-    CHECK_ERROR (H5Aclose (attr));
-    CHECK_ERROR (attr = H5Aopen_name (from, "cctk_bbox"));
-    CHECK_ERROR (H5Aread (attr, H5T_NATIVE_INT, bbox));
-    CHECK_ERROR (H5Aclose (attr));
+    // grid scalars have not cctk_nghostzones zone or cctk_bbox information
+    if (strstr(objectname, " rl=") == NULL) {
+      H5E_BEGIN_TRY {
+        attr = H5Aopen_name (from, "cctk_nghostzones");
+      } H5E_END_TRY
+    } else {
+      CHECK_ERROR (attr = H5Aopen_name (from, "cctk_nghostzones"));
+    }
+    if (attr >= 0) {
+      CHECK_ERROR (H5Aread (attr, H5T_NATIVE_INT, nghosts));
+      CHECK_ERROR (H5Aclose (attr));
+      CHECK_ERROR (attr = H5Aopen_name (from, "cctk_bbox"));
+      CHECK_ERROR (H5Aread (attr, H5T_NATIVE_INT, bbox));
+      CHECK_ERROR (H5Aclose (attr));
+    }
 
     #define DOUBLE_TO_INT(d) ((int*)&(d))[0],((int*)&(d))[1]
     assert(2*sizeof(int) == sizeof(double));
