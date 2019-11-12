@@ -32,14 +32,14 @@ static const char *rcsid = "$Header$";
 #define CHECK_ERROR(hdf5_call)                                                \
           do                                                                  \
           {                                                                   \
-            int _error_code = hdf5_call;                                      \
+            hid_t _error_code = hdf5_call;                                      \
                                                                               \
                                                                               \
             if (_error_code < 0)                                              \
             {                                                                 \
               fprintf (stderr, "WARNING: line %d: HDF5 call '%s' returned "   \
-                               "error code %d\n",                             \
-                                __LINE__, #hdf5_call, _error_code);           \
+                               "error code %ld\n",                            \
+                                __LINE__, #hdf5_call, (long int)_error_code); \
               nerrors++;                                                      \
             }                                                                 \
           } while (0)
