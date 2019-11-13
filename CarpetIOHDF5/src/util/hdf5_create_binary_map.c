@@ -254,7 +254,7 @@ static herr_t CopyObject (hid_t from,
     int timelevel;
     int component;
     int rank;
-    int iorigin[3];
+    int iorigin[3] = {0,0,0};
     int ioffset[3] = {0,0,0};
     int ioffsetdenom[3] = {1,1,1};
     double origin[3] = {0.,0.,0.};
