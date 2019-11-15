@@ -66,7 +66,7 @@ void fulloutput(ostream &os, region_t const &reg);
 struct pseudoregion_t {
   ibbox extent;
   int component;
-  pseudoregion_t() {}
+  pseudoregion_t() : component(-1) {}
   pseudoregion_t(pseudoregion_t const &p)
       : extent(p.extent), component(p.component) {}
   pseudoregion_t(ibbox const &extent_, int const component_)

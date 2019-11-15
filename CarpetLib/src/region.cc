@@ -11,7 +11,7 @@
 namespace CarpetLib {
 using namespace std;
 
-region_t::region_t() : processor(-1), processors(NULL) { assert(invariant()); }
+region_t::region_t() : map(-1), processor(-1), processors(NULL) { assert(invariant()); }
 
 region_t::region_t(region_t const &a) {
   assert(a.invariant());
