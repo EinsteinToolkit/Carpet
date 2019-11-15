@@ -1055,11 +1055,13 @@ void SplitRegions_AlongDir(cGH const *const cctkGH, vector<region_t> &superregs,
     region_t &reg = regs.AT(c);
     ibbox &ext = reg.extent;
     b2vect &obnd = reg.outer_boundaries;
+    int &map = reg.map;
     int &proc = reg.processor;
     ext = ibbox(clb, cub - cstr, cstr);
     obnd = obnd0;
     obnd[0][dir] &= clb[dir] == rlb0[dir];
     obnd[1][dir] &= cub[dir] == rub0[dir];
+    map = reg0.map;
     proc = c;
     pseudoregion_t const preg(reg.extent, c);
     bounds.AT(c) = reg.extent.lower()[dir];
@@ -1164,11 +1166,13 @@ static void SplitRegions_AsSpecified(cGH const *const cctkGH,
         region_t &reg = regs.AT(c);
         ibbox &ext = reg.extent;
         b2vect &obnd = reg.outer_boundaries;
+        int &map = reg.map;
         int &proc = reg.processor;
         ext = ibbox(clb, cub - cstr, cstr);
         obnd = obnd0;
         obnd[0] &= clb == rlb0;
         obnd[1] &= cub == rub0;
+        map = reg0.map;
         proc = c;
 
         pseudoregion_t preg(reg.extent, c);
