@@ -2,6 +2,8 @@
 // <https://stackoverflow.com/questions/77005/how-to-generate-a-stacktrace-when-my-gcc-c-app-crashes>,
 // and see whether we can improve the code below
 
+#pragma GCC optimize("O0")
+
 // needed for dladdr, best at the top to avoid inconsistent includes
 #define _GNU_SOURCE 1
 
