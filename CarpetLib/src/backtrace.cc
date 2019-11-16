@@ -54,15 +54,14 @@ void generate_backtrace(ostream &stacktrace) {
     stacktrace.setf(ios::hex);
 #ifdef HAVE_BACKTRACE_SYMBOLS
     char **names = backtrace_symbols(addresses, n);
-    for (int i = 2; i < n; i++) {
-#ifdef HAVE_DLADDR
-      Dl_info info;
 #endif
+    for (int i = 2; i < n; i++) {
       char *demangled = NULL;
-
 // Attempt to demangle this if possible
 // Get the nearest symbol to feed to demangler
 #ifdef HAVE_DLADDR
+      Dl_info info;
+
       if (dladdr(addresses[i], &info) != 0) {
         int stat;
 // __cxa_demangle is a naughty obscure backend and no
@@ -82,13 +81,25 @@ void generate_backtrace(ostream &stacktrace) {
           if (loc != NULL) *loc = '\0';
 #endif
 
-        stacktrace << i - 1 << ". " << demangled << "   [" << names[i] << "]"
-                   << '\n';
+        stacktrace << i - 1 << ". " << demangled << "   ["
+#ifdef HAVE_BACKTRACE_SYMBOLS
+                   << names[i]
+#else
+		   << addresses[i]
+#endif
+                   << "]" << '\n';
         free(demangled);
       } else { // Just output the raw symbol
-        stacktrace << i - 1 << ". " << names[i] << '\n';
+        stacktrace << i - 1 << ". "
+#ifdef HAVE_BACKTRACE_SYMBOLS
+                   << names[i]
+#else
+		   << addresses[i]
+#endif
+                   << '\n';
       }
     }
+#ifdef HAVE_BACKTRACE_SYMBOLS
     free(names);
 #endif
     stacktrace.flags(oldflags);
