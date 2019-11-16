@@ -64,6 +64,13 @@ int GroupStorageCrease(const cGH *cctkGH, int n_groups, const int *groups,
     if (ntls == -1) {
       ntls = declared_tls;
     }
+    if (enable_no_storage) {
+      cGroup group;
+      int const ierr = CCTK_GroupData(groups[n], &group);
+      assert(not ierr);
+      if (group.grouptype == CCTK_GF)
+        ntls = 0;
+    }
     tls.at(n) = ntls;
   }
 
