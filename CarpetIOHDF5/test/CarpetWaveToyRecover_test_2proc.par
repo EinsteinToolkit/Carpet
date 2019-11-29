@@ -10,6 +10,6 @@ IO::out_fileinfo = "none"
 # Recovery
 IO::recover_dir  = "../../../arrangements/Carpet/CarpetIOHDF5/test"
 IO::recover      = "manual"
-IO::recover_file = "CarpetWaveToyCheckpoint_test_newcp.it_64"
+IO::recover_file = "CarpetWaveToyCheckpoint_test.it_64"
 
 IOHDF5::checkpoint = "no"
