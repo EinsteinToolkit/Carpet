@@ -2,6 +2,6 @@
 
 IMPLEMENTS: TestBBoxSet2
 
-USES INCLUDES HEADER: cycleclock.h
+USES INCLUDE HEADER: cycleclock.h
 
 USES INCLUDE HEADER: bboxset.hh

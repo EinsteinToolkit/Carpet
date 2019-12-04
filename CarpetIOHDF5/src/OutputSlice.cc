@@ -539,9 +539,8 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
     const gh *const hh = arrdata.at(group).at(m).hh;
     const dh *const dd = arrdata.at(group).at(m).dd;
 
-    // re-compute the active (non-buffered) region
-    ibset allactive;
-    GetAllActive(dd, hh, ml, rl, allactive);
+    // get the active (non-buffered) region stored during regrid
+    const ibset &allactive = dd->level_boxes.AT(ml).AT(rl).active;
 
     // Traverse all components on this multigrid level, refinement
     // level, and map

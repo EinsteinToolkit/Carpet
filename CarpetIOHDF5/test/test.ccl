@@ -3,12 +3,17 @@ TEST CarpetWaveToyRecover_test_1proc
   NPROCS 1
 }
 
-TEST CarpetWaveToyNewRecover_test_1proc
-{
-  NPROCS 1
-}
-
 TEST CarpetWaveToyRecover_test_4proc
 {
   NPROCS 4
+}
+
+TEST CarpetWaveToyRecover_test_2proc
+{
+  NPROCS 2
+}
+
+TEST CarpetWaveToyNewRecover_test_1proc
+{
+  NPROCS 1
 }
