@@ -92,7 +92,7 @@ void Automatic_OneLevel(const cGH *const cctkGH, const gh &hh, const int rl,
     const region_t region = hh.regions.at(ml).at(rl).at(c);
     assert(!region.extent.empty());
 
-    const data<CCTK_REAL> &errordata =
+    const CarpetLib::data<CCTK_REAL> &errordata =
         *errorgf.typed_data_pointer(tl, rl, c, ml);
 
     Automatic_Recursive(cctkGH, hh, errordata, regl, region, reffact);
@@ -135,8 +135,9 @@ void Automatic_OneLevel(const cGH *const cctkGH, const gh &hh, const int rl,
 }
 
 void Automatic_Recursive(const cGH *const cctkGH, const gh &hh,
-                         const data<CCTK_REAL> &errordata, list<region_t> &regl,
-                         const region_t &region, const ivect &reffact) {
+                         const CarpetLib::data<CCTK_REAL> &errordata,
+                         list<region_t> &regl, const region_t &region,
+                         const ivect &reffact) {
   DECLARE_CCTK_PARAMETERS;
 
   // Just to be sure
