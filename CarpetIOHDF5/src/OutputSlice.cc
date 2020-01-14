@@ -1524,7 +1524,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
   case N: {                                                                    \
     T *typed_buffer = (T *)&buffer.front();                                    \
     typed_buffer[offset + n * npoints] =                                       \
-        (*(const data<T> *)gfdatas.at(n))[pos];                                \
+        (*(const CarpetLib::data<T> *)gfdatas.at(n))[pos];                     \
     break;                                                                     \
   }
 #include "typecase.hh"
