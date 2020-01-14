@@ -1349,7 +1349,7 @@ void WriteASCII(ostream &os, vector<gdata *> const &gfdatas,
             } else {
               // Use coordinate grid functions
               const gdata *gfcoord = gfcoords.at(d);
-              os << (*(const data<CCTK_REAL> *)gfcoord)[index];
+              os << (*(const CarpetLib::data<CCTK_REAL> *)gfcoord)[index];
             }
           }
         }
@@ -1360,7 +1360,7 @@ void WriteASCII(ostream &os, vector<gdata *> const &gfdatas,
 #define CARPET_NO_COMPLEX
 #define TYPECASE(N, T)                                                         \
   case N:                                                                      \
-    os << (*(const data<T> *)gfdata)[index];                                   \
+    os << (*(const CarpetLib::data<T> *)gfdata)[index];                        \
     break;
 #include "typecase.hh"
 #undef TYPECASE
@@ -1368,8 +1368,8 @@ void WriteASCII(ostream &os, vector<gdata *> const &gfdatas,
 #define CARPET_COMPLEX
 #define TYPECASE(N, T)                                                         \
   case N:                                                                      \
-    os << real((*(const data<T> *)gfdata)[index]) << " "                       \
-       << imag((*(const data<T> *)gfdata)[index]);                             \
+    os << real((*(const CarpetLib::data<T> *)gfdata)[index]) << " "            \
+       << imag((*(const CarpetLib::data<T> *)gfdata)[index]);                  \
     break;
 #include "typecase.hh"
 #undef TYPECASE
@@ -1454,7 +1454,7 @@ void WriteASCII(ostream &os, vector<gdata *> const &gfdatas,
           switch (specific_cactus_type(vartype)) {
 #define TYPECASE(N, T)                                                         \
   case N:                                                                      \
-    os << (*(const data<T> *)gfdata)[pos];                                     \
+    os << (*(const CarpetLib::data<T> *)gfdata)[pos];                          \
     break;
 #include "typecase.hh"
 #undef TYPECASE
