@@ -72,8 +72,9 @@ void Automatic_OneLevel(const cGH *const cctkGH, const gh &hh, const int rl,
                         vector<region_t> &regs);
 
 void Automatic_Recursive(const cGH *const cctkGH, const gh &hh,
-                         const data<CCTK_REAL> &errorvar, list<region_t> &regl,
-                         const region_t &region, const ivect &reffact);
+                         const CarpetLib::data<CCTK_REAL> &errorvar,
+                         list<region_t> &regl, const region_t &region,
+                         const ivect &reffact);
 
 void Automatic_Recombine(list<region_t> &regl1, list<region_t> &regl2,
                          list<region_t> &regl, const ibbox &iface,
