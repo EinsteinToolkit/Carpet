@@ -28,6 +28,9 @@ void Poison(cGH const *const cctkGH, checktimes const where, int const what) {
 
   assert(what == 0 or what == CCTK_GF or what == CCTK_ARRAY);
 
+  if (not poison_new_timelevels)
+    return;
+
   Timers::Timer timer("Poison");
   timer.start();
 
@@ -121,8 +124,7 @@ void PoisonGroup(cGH const *const cctkGH, int const group,
           int const n = n0 + var;
           for (int tl = min_tl; tl <= max_tl; ++tl) {
             invalidate_rdwr(cctkGH, n, tl);
-            if (poison_new_timelevels)
-              memset(cctkGH->data[n][tl], poison_value, size_t(np) * sz);
+            memset(cctkGH->data[n][tl], poison_value, size_t(np) * sz);
           } // for tl
         }   // for var
       }
