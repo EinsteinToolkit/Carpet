@@ -1,5 +1,6 @@
 #include "cctk.h"
 #include "cctk_Arguments.h"
+#include "cctk_Arguments_Checked.h"
 #include "cctk_Functions.h"
 #include "cctk_Parameters.h"
 
@@ -101,7 +102,7 @@ end subroutine CarpetProlongateTest_Diff
 
 subroutine CarpetProlongateTest_InterpInit (CCTK_ARGUMENTS)
   implicit none
-  DECLARE_CCTK_ARGUMENTS
+  DECLARE_CCTK_ARGUMENTS_CarpetProlongateTest_InterpInit
   DECLARE_CCTK_PARAMETERS
   
   CCTK_REAL :: dx, dy, dz
@@ -137,7 +138,7 @@ end subroutine CarpetProlongateTest_InterpInit
 subroutine CarpetProlongateTest_Interp (CCTK_ARGUMENTS)
   use cctk
   implicit none
-  DECLARE_CCTK_ARGUMENTS
+  DECLARE_CCTK_ARGUMENTS_CarpetProlongateTest_Interp
   DECLARE_CCTK_FUNCTIONS
   DECLARE_CCTK_PARAMETERS
   
@@ -223,7 +224,7 @@ end subroutine CarpetProlongateTest_Interp
 subroutine CarpetProlongateTest_InterpDiff (CCTK_ARGUMENTS)
   use CarpetProlongateTest
   implicit none
-  DECLARE_CCTK_ARGUMENTS
+  DECLARE_CCTK_ARGUMENTS_CarpetProlongateTest_InterpDiff
   
 !!$  print '("CarpetProlongateTest_InterpDiff it=",i0," t=",g0.6, " rl=",i0)', &
 !!$       cctk_iteration, cctk_time, nint(log(dble(cctk_levfac(1)))/log(2.0d0))
@@ -238,7 +239,7 @@ end subroutine CarpetProlongateTest_InterpDiff
 
 subroutine CarpetProlongateTest_NormInit (CCTK_ARGUMENTS)
   implicit none
-  DECLARE_CCTK_ARGUMENTS
+  DECLARE_CCTK_ARGUMENTS_CarpetProlongateTest_NormInit
   
   errornorm = 0
   interp_errornorm = 0
