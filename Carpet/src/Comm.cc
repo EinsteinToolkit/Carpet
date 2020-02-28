@@ -224,10 +224,10 @@ static void ProlongateGroupBoundaries(const cGH *cctkGH,
       const int alloc_num_tl = CCTK_ActiveTimeLevelsGI(cctkGH, g);
       const int num_tl = prolongation_order_time + 1;
       if(num_tl > alloc_num_tl) {
-        std::cerr << "Cannot prolongate " << CCTK_GroupName(g)
-          << " because only " << alloc_num_tl << " time levels"
-          << " have been allocated and " << num_tl << " are needed." << std::endl;
-        abort();
+        char *groupname = CCTK_GroupName(g);
+        CCTK_VERROR("Cannot prolongate %s because only %d time levels have been allocated and %d are needed.",
+                    groupname, alloc_num_tl, num_tl);
+        free(groupname);
       }
       const int var0 = CCTK_FirstVarIndexI(g);
       const int varn = CCTK_NumVarsInGroupI(g);
