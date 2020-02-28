@@ -412,7 +412,6 @@ void CallInitial(cGH *const cctkGH) {
             ScheduleTraverse(where, "CCTK_POSTINITIAL", cctkGH);
           }
           END_TIMELEVEL_LOOP;
-          std::cerr << "dbg: ScheduleTraverse initial each tl" << std::endl;
 
         } else { // not init_each_timelevel
 
@@ -423,17 +422,12 @@ void CallInitial(cGH *const cctkGH) {
           // Set up the initial data
           ScheduleTraverse(where, "CCTK_INITIAL", cctkGH);
           ScheduleTraverse(where, "CCTK_POSTINITIAL", cctkGH);
-          std::cerr << "dbg: ScheduleTraverse initial" << std::endl;
 
           do_allow_past_timelevels = true;
 
         } // not init_each_timelevel
 
         if (init_fill_timelevels) {
-          // This seems to only be there for the accelerator
-          // thorn. Does ScheduleTraverse above not do the
-          // notify data modified?
-          std::cerr << "dbg: fill tl's" << std::endl;
           FillTimeLevels(cctkGH);
         }
 
