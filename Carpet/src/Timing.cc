@@ -176,6 +176,8 @@ void InitTimingStats(cGH const *const cctkGH) {
 
   *current_walltime = get_walltime();
 
+  *syncs_count = 0;
+
   *grid_points_per_second = 0.0;
   *grid_point_updates_count = 0.0;
 

@@ -49,15 +49,6 @@ if (use_unusedpoints_mask)
   } "Set mask of unused points"
 }
 
-if(sync_count)
-{
-  schedule SynchronizationCounterOutput at CCTK_TERMINATE
-  {
-    LANG: C
-    OPTIONS: meta
-  } "Print the number of synchronizations which occurred during the run"
-}
-
 if(use_psync)
 {
   # Scheduling bins for boundary condition registration and selection with PreSync
