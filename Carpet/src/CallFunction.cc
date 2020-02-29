@@ -41,14 +41,6 @@ static void SyncGroupsInScheduleBlock(cFunctionData *attribute, cGH *cctkGH,
 // allocated memory
 static void CheckFence(cGH const *const cctkGH, cFunctionData *attribute);
 
-inline void tolower(std::string& s) {
-  for(auto si=s.begin();si != s.end();++si) {
-    if(*si >= 'A' && *si <= 'Z') {
-      *si = *si + 'a' - 'A';
-    }
-  }
-}
-
 void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pregroups);
 void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups);
 void PostCheckValid(cFunctionData *attribute,cGH *cctkGH,const std::vector<int>& sync_groups);
