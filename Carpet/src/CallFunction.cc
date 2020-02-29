@@ -105,14 +105,14 @@ int CallFunction(void *function,           ///< the function to call
               BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
                 BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
                   CallScheduledFunction("Meta time local mode", function,
-                      attribute, data, user_timer);
+                                        attribute, data, user_timer);
                 }
                 END_LOCAL_COMPONENT_LOOP;
               }
               END_LOCAL_MAP_LOOP;
               if (not sync_groups.empty()) {
                 SyncGroupsInScheduleBlock(attribute, cctkGH, sync_groups,
-                    sync_timer);
+                                          sync_timer);
               }
             }
             END_REFLEVEL_LOOP;
@@ -392,8 +392,7 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
   Checkpoint("%s call at %s to %s::%s", time_and_mode, attribute->where,
              attribute->thorn, attribute->routine);
   int const skip = CallBeforeRoutines(cctkGH, function, attribute, data);
-  if (not skip)
-  {
+  if (not skip) {
     Timers::Timer timer(attribute->routine);
 
     // Save the time step size
@@ -405,7 +404,6 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
                                 map, timelevel, timelevel_offset);
 #endif
     timer.start();
-
     if (CCTK_IsFunctionAliased("Accelerator_PreCallFunction")) {
       Timers::Timer pre_timer("PreCall");
       pre_timer.start();
