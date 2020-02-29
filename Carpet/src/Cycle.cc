@@ -269,9 +269,8 @@ void FillTimeLevels(const cGH *const cctkGH) {
               CCTK_IsFunctionAliased("Accelerator_NotifyDataModified");
           vector<CCTK_INT> vis, rls, tls;
           const int varn = CCTK_NumVarsInGroupI(group);
-          for (int var = 0; var < varn; ++var) {
-            arrdata.AT(group).AT(m).data.AT(var)->fill_all(reflevel, mglevel);
-            if (have_accel) {
+          if (have_accel) {
+            for (int var = 0; var < varn; ++var) {
               const int var0 = CCTK_FirstVarIndexI(group);
               const int num_tl =
                   arrdata.AT(group).AT(m).data.AT(var)->timelevels(mglevel,
@@ -282,9 +281,7 @@ void FillTimeLevels(const cGH *const cctkGH) {
                 tls.push_back(tl);
               }
             }
-          }
 
-          if (have_accel) {
             const CCTK_INT on_device = 0;
             Accelerator_RequireInvalidData(cctkGH, &vis.front(), &rls.front(),
                                            &tls.front(), vis.size(), on_device);
