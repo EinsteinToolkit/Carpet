@@ -153,8 +153,10 @@ extern "C" void TraverseWrites(const char *func_name,void(*trace_func)(int,int,i
 }
 
 void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sync_groups) {
-  bool use_psync = (CCTK_ParameterValInt("use_psync","Cactus") != 0);
-  if(!use_psync) return;
+  DECLARE_CCTK_PARAMETERS;
+
+  if (not use_psync)
+    return;
 
 /*  static std::map<int,std::string> watch_vars;
   static bool init = false;
@@ -226,8 +228,6 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
 void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pregroups) {
   DECLARE_CCTK_PARAMETERS;
   std::vector<int> sync_groups;
-  bool use_psync = (CCTK_ParameterValInt("use_psync","Cactus") != 0);
-  bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
 
   if(use_psync and reflevel > 0) {
     // recurse to check that all coarsers levels are properly SYNCed
@@ -349,7 +349,6 @@ bool hasAccess(const std::map<var_tuple,int>& m, const var_tuple& vt) {
 extern "C"
 int Carpet_hasAccess(const cGH *cctkGH,int var_index) {
   DECLARE_CCTK_PARAMETERS;
-  bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
   if(!psync_error)
     return true;
   int type = CCTK_GroupTypeFromVarI(var_index);
@@ -440,8 +439,6 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
   DECLARE_CCTK_PARAMETERS;
   if(cctkGH == 0) return;
   if(attribute == 0) return;
-  bool use_psync = (CCTK_ParameterValInt("use_psync","Cactus") != 0);
-  bool psync_error = (CCTK_ParameterValInt("psync_error","Cactus") != 0);
   if(!use_psync) return;
   tmp_read.erase(tmp_read.begin(),tmp_read.end());
   tmp_write.erase(tmp_write.begin(),tmp_write.end());
@@ -902,7 +899,7 @@ CCTK_INT Carpet_SelectedGVs() {
  */
 extern "C"
 void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
-  bool use_psync = (CCTK_ParameterValInt("use_psync","Cactus") != 0);
+  DECLARE_CCTK_PARAMETERS;
   if(!use_psync) return;
   auto bc = boundary_conditions;
   if(bc.find(var_index) == bc.end()) {

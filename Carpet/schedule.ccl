@@ -49,7 +49,7 @@ if (use_unusedpoints_mask)
   } "Set mask of unused points"
 }
 
-if(CCTK_ParameterValInt("sync_count","Cactus") == 1)
+if(sync_count)
 {
   schedule SynchronizationCounterOutput at CCTK_TERMINATE
   {
@@ -58,7 +58,7 @@ if(CCTK_ParameterValInt("sync_count","Cactus") == 1)
   } "Print the number of synchronizations which occurred during the run"
 }
 
-if(CCTK_ParameterValInt("use_psync","Cactus") == 1)
+if(use_psync)
 {
   # Scheduling bins for boundary condition registration and selection with PreSync
   schedule GROUP PreSync_Registration at CCTK_WRAGH
