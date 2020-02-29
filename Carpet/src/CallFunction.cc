@@ -413,11 +413,6 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
                                 map, timelevel, timelevel_offset);
 #endif
     timer.start();
-    #if 0
-    std::cout << ">> pre  : " << attribute->routine << std::endl;
-    ShowValid();
-    CCTK_REAL *var = (CCTK_REAL*)CCTK_VarDataPtr(cctkGH,0,"PRESYNCWAVE::psi");
-    #endif
 
     if (CCTK_IsFunctionAliased("Accelerator_PreCallFunction")) {
       Timers::Timer pre_timer("PreCall");
@@ -436,13 +431,6 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
       Accelerator_PostCallFunction(cctkGH, attribute);
       post_timer.stop();
     }
-    #if 0
-    if(var != 0) {
-      int zero = CCTK_GFINDEX3D(cctkGH,0,0,0);
-      std::cout << " -->zero=" << var[zero] << std::endl;
-    }
-    std::cout << ">> post : " << attribute->routine << std::endl;
-    #endif
     timer.stop();
     CheckFence(cctkGH, attribute);
 #ifdef REQUIREMENTS_HH
