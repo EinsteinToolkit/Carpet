@@ -25,9 +25,6 @@ extern "C" void check_readwrites();
 
 extern "C" void ShowValid();
 
-extern std::string func_name;
-std::string func_name;
-
 namespace Carpet {
 
 using namespace std;
@@ -421,10 +418,6 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
     ShowValid();
     CCTK_REAL *var = (CCTK_REAL*)CCTK_VarDataPtr(cctkGH,0,"PRESYNCWAVE::psi");
     #endif
-    func_name = "";
-    func_name += attribute->thorn;
-    func_name += "::";
-    func_name += attribute->routine;
 
     if (CCTK_IsFunctionAliased("Accelerator_PreCallFunction")) {
       Timers::Timer pre_timer("PreCall");
