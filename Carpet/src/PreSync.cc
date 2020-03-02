@@ -1,19 +1,21 @@
-#include <set>
-#include <cassert>
-#include <cstring>
-#include <map>
-#include <vector>
 #include <cctk.h>
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
+
+#include <cmath>
+#include <cassert>
+#include <cstring>
+
 #include <iostream>
 #include <locale>
+#include <map>
+#include <set>
+#include <vector>
 #include <sstream>
-#include <carpet.hh>
-#include <math.h>
-#include <array>
+
 #include "variables.hh"
 #include "modes.hh"
+#include "carpet.hh"
 #include "PreSync.h"
 
 #undef PRESYNC_DEBUG
