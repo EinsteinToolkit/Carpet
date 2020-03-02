@@ -151,21 +151,6 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
   if (not use_psync)
     return;
 
-/*  static std::map<int,std::string> watch_vars;
-  static bool init = false;
-  if(!init) {
-    init = true;
-    const char *dbv = getenv("DEBUG_VARS");
-    if(dbv != nullptr) {
-      std::istringstream istr{dbv};
-      while(istr.good()) {
-        std::string vname;
-        istr >> vname;
-        int vi = CCTK_VarIndex(vname.c_str());
-        watch_vars[vi] = vname;
-      }
-    }
-  }*/
   std::string r;
   r += attribute->thorn;
   r += "::";
@@ -179,10 +164,6 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
       valid_k[vt] = WH_INTERIOR;
     else
       valid_k[vt] |= i->second;
-//    auto res = watch_vars.find(vi.vi);
-//    if(res != watch_vars.end()) {
-//      std::cout << "setting " << watch_vars[vi.vi] << " to " << wstr(valid_k[vi]) << std::endl;
-//    }
   }
 
 
@@ -201,20 +182,6 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
       }
     }
   }
-  #if 0
-  const char *vname = "CARPETREDUCE::iweight";
-  static int vi_ = CCTK_VarIndex(vname);
-  assert(vi_ >= 0);
-  static var_tuple vt_{vi_,-1,0};
-  int cc = CCTK_GFINDEX3D(cctkGH,0,0,0);
-  //std::cout << "   " << vname << " := " << wstr(valid_k[vt_]) << std::endl;
-  // yyy
-  CCTK_REAL *ptr = (CCTK_REAL*)CCTK_VarDataPtrI(cctkGH,vi_,0);
-  if(ptr == 0)
-    std::cout << "   " << vname << " := " << wstr(valid_k[vt_]) << std::endl;
-  else
-    std::cout << "   " << vname << " := " << wstr(valid_k[vt_]) << " ptr=" << ptr[cc] << std::endl;
-    #endif
 }
 
 /**
@@ -289,22 +256,6 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
       }
   }
   if(sync_groups.size()>0) {
-#if 0
-    for (size_t sgi=0;sgi<sync_groups.size();sgi++) {
-      int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
-      int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
-      if(verbose) {
-        for (int vi=i0;vi<iN;vi++) {
-          std::ostringstream msg;
-          msg << "  Presync: syncing for ";
-          msg << attribute->thorn << "::" << attribute->routine
-            << " in/at " << attribute->where
-            << " variable " << CCTK_FullVarName(vi);
-          CCTK_INFO(msg.str().c_str());
-        }
-      }
-    }
-#endif
     if(use_psync) {
       SyncProlongateGroups(cctkGH, sync_groups, attribute);
       for (size_t sgi=0;sgi<sync_groups.size();sgi++) {
@@ -484,7 +435,6 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
     // high level warning. A thorn that actually tries to read from the
     // variable will encounter a SEGFAULT.
     if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) == 0) {
-      //std::cout << "-->|Skip!\n";
       CCTK_VWARN(CCTK_WARN_DEBUG,
                  "Declared access to '%s' which has no storage",
                  CCTK_FullVarName(vi));
@@ -529,7 +479,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 
         int g = CCTK_GroupIndexFromVarI(vt.vi);
         pregroups.insert(g);
-      } else if(!on(valid_k[vt],WH_INTERIOR)) // and !silent_psync) 
+      } else if(!on(valid_k[vt],WH_INTERIOR))
       {
         std::ostringstream msg; 
         msg << "Cannot sync " << CCTK_FullVarName(vt.vi)
@@ -661,9 +611,6 @@ void Sync1(const cGH *cctkGH,int tl,int gi) {
 // TODO: expand to take a reflevel argument?
 extern "C" void SetValidRegion(int vi,int tl,int wh) {
   var_tuple vt(vi,reflevel,tl);
-  //if(wh == (WH_INTERIOR|WH_BOUNDARY))
-    //wh = WH_INTERIOR;
-//  std::cout << "SetValid(" << CCTK_FullVarName(vi) << ": " << wstr(valid_k[vt]) << " -> " << wstr(wh) << ")" << std::endl;
   valid_k[vt] = wh;
 }
 
@@ -926,7 +873,6 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
       for(auto j=bv.begin(); j != bv.end(); ++j) {
         Bound& b = *j;
         Func& f = boundary_functions.at(b.bc_name);
-//        std::cout << "ApplyBC: Apply " << b.bc_name << " to " << CCTK_FullVarName(var_index) << std::endl;
 
         if(use_psync) {
           int ierr = (*f.func)(cctkGH,1,&var_index,&b.faces,&b.width,&b.table_handle);
@@ -934,12 +880,10 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
           for (auto iter = symmetry_functions.begin(); iter != symmetry_functions.end(); iter++) {
             std::string name = iter->first;
             SymFunc& fsym = symmetry_functions.at(name);
-//            std::cout << "SymBC: " << name << " BC applied to " << CCTK_FullVarName(var_index) << std::endl;
             ierr = (*fsym.func)(cctkGH);
           }
           var_tuple vt{var_index,reflevel,0};
           valid_k[vt] |= WH_BOUNDARY;
-//          std::cout << " update boundary: " << CCTK_FullVarName(vt.vi) << " -> " << wstr(valid_k[vt]) << std::endl;
         }
       }
     }
@@ -974,14 +918,6 @@ void Carpet_ApplyPhysicalBCs(const cGH *cctkGH) {
       std::cout << "n=" << n << " vi=" << i->first << std::endl;
     }
   }
-//  std::cout << " before:" << std::endl;
-//  for(auto i=boundary_conditions[1].begin(); i != boundary_conditions[1].end(); ++i) {
-//    Carpet_ApplyPhysicalBCsForVarI(cctkGH,i->first,1); // before
-//  }
-//  std::cout << " after:" << std::endl;
-//  for(auto i=boundary_conditions[0].begin(); i != boundary_conditions[0].end(); ++i) {
-//    Carpet_ApplyPhysicalBCsForVarI(cctkGH,i->first,0); // after
-//  }
   std::cout << " done" << std::endl;
 #endif
 }
