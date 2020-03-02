@@ -14,6 +14,8 @@
 #include "modes.hh"
 #include "PreSync.h"
 
+#undef PRESYNC_DEBUG
+
 extern "C" void ShowValid();
 
 namespace Carpet {
@@ -129,9 +131,13 @@ void diagnosticChanged() {
   for(auto entry = valid_k.begin(); valid_k.end() != entry; ++entry) {
     auto f = old_valid_k.find(entry->first);
     if(f == old_valid_k.end()) {
+#ifdef PRESYNC_DEBUG
       std::cout << " NEW: " << entry->first << " = " << wstr(entry->second) << std::endl;
+#endif
     } else if(entry->second != f->second) {
+#ifdef PRESYNC_DEBUG
       std::cout << " CHANGED: " << entry->first << " = " << wstr(f->second) << " -> " << wstr(entry->second) << std::endl;
+#endif
     }
   }
 }
@@ -202,7 +208,9 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
       if(w == WH_INTERIOR) {
         var_tuple vt{vi,reflevel,0};
         valid_k[vt] |= WH_GHOSTS;
+#ifdef PRESYNC_DEBUG
         std::cout << "SYNC: " << CCTK_FullVarName(vt.vi) << " " << wstr(valid_k[vt]) << std::endl;
+#endif
       }
     }
   }
@@ -359,11 +367,15 @@ int Carpet_hasAccess(const cGH *cctkGH,int var_index) {
     if(hasAccess(writes[current_routine],vi))
       return true;
     if(hasAccess(tmp_read,vi)) {
+#ifdef PRESYNC_DEBUG
       std::cout << "tmp acccess for " << CCTK_FullVarName(var_index) << std::endl;
+#endif
       return true;
     }
     if(hasAccess(tmp_write,vi)) {
+#ifdef PRESYNC_DEBUG
       std::cout << "tmp acccess for " << CCTK_FullVarName(var_index) << std::endl;
+#endif
       return true;
     }
     return false;
@@ -574,7 +586,9 @@ void invalidate_rdwr(const cGH *cctkGH, int vi, int tl) {
  * then mark the current level as valid nowhere.
  */
 void uncycle_rdwr(const cGH *cctkGH) {
+#ifdef PRESYNC_DEBUG
   std::cout << "CYCLE" << std::endl;
+#endif
   int num = CCTK_NumVars();
   for(int vi=0;vi<num;vi++) {
     int const cactus_tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
@@ -593,7 +607,9 @@ void uncycle_rdwr(const cGH *cctkGH) {
       }
     }
   }
+#ifdef PRESYNC_DEBUG
   std::cout << "::UNROTATE::" << std::endl;
+#endif
 }
 
 /**
@@ -602,7 +618,9 @@ void uncycle_rdwr(const cGH *cctkGH) {
  * wrapping around at the end.
  */
 void cycle_rdwr(const cGH *cctkGH) {
+#ifdef PRESYNC_DEBUG
   std::cout << "CYCLE" << std::endl;
+#endif
   int num = CCTK_NumVars();
   for(int vi=0;vi<num;vi++) {
     int const cactus_tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
@@ -621,7 +639,9 @@ void cycle_rdwr(const cGH *cctkGH) {
       }
     }
   }
+#ifdef PRESYNC_DEBUG
   std::cout << "::ROTATE::" << std::endl;
+#endif
 }
 
 /**
@@ -837,7 +857,9 @@ CCTK_INT Carpet_SelectVarForBCI(
   for(; i != boundary_conditions.end();++i) {
     for(auto b = i->second.begin(); b != i->second.end(); ++b) {
       if(b->bc_name == name) {
+#ifdef PRESYNC_DEBUG
         std::cout << "Variable " << CCTK_FullVarName(var_index) << " has been selected twice for '" << bc_name << "'" << std::endl;
+#endif
         return 0;
       }
     }
@@ -888,7 +910,9 @@ extern "C"
 //                            CCTK_INT *widths, CCTK_INT *table_handles) {
 CCTK_INT Carpet_SelectedGVs() {
   if(bnd_vi == -1) {
+#ifdef PRESYNC_DEBUG
     std::cout << "No variable is currently having boundary conditions applied, but a boundary condition is attempting to run." << std::endl;
+#endif
     return -1;
   }
   return bnd_vi;
@@ -903,7 +927,9 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
   if(!use_psync) return;
   auto bc = boundary_conditions;
   if(bc.find(var_index) == bc.end()) {
+#ifdef PRESYNC_DEBUG
     std::cout << "ApplyBC: No bc's for " << CCTK_FullVarName(var_index) << std::endl;
+#endif
     return;
   }
   bnd_vi = var_index;
@@ -954,6 +980,7 @@ void Carpet_ApplyPhysicalBCsForGroupI(const cGH *cctkGH, int group_index) {
  */
 extern "C"
 void Carpet_ApplyPhysicalBCs(const cGH *cctkGH) {
+#ifdef PRESYNC_DEBUG
   std::cout << "Carpet_ApplyPhysicalBCs()" << std::endl;
   for(int n=0;n <= 1;n++) {
     for(auto i=boundary_conditions.begin(); i != boundary_conditions.end(); ++i) {
@@ -969,6 +996,7 @@ void Carpet_ApplyPhysicalBCs(const cGH *cctkGH) {
 //    Carpet_ApplyPhysicalBCsForVarI(cctkGH,i->first,0); // after
 //  }
   std::cout << " done" << std::endl;
+#endif
 }
 
 }
