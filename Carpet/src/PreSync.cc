@@ -1,4 +1,5 @@
 #include <set>
+#include <cassert>
 #include <cstring>
 #include <map>
 #include <vector>
@@ -50,14 +51,6 @@ bool operator<(const var_tuple& v1,const var_tuple& v2) {
 inline bool on(int flags,int flag) {
   return (flags & flag) == flag;
 }
-
-inline void cctk_assert_(int line,const char *file,const char *thorn,const char *str) {
-  std::ostringstream msg; 
-  msg << "Assertion Failed: " << str;
-  CCTK_Error(line,file,thorn,msg.str().c_str());
-}
-
-#define CCTK_ASSERT(X) if(!(X)) cctk_assert_(__LINE__,__FILE__,CCTK_THORNSTRING,#X);
 
 /**
  * Provide a string representation
@@ -641,7 +634,7 @@ extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int tl,int vi) {
     dumpValid(std::cerr, vi) << std::endl;
     CCTK_VERROR("Could not find validity information for %s rl=%d tl=%d", CCTK_FullVarName(vi), reflevel, tl);
   }
-  CCTK_ASSERT(f != valid_k.end());
+  assert(f != valid_k.end());
   // Check if anything needs to be done
   if(f->second == WH_EVERYWHERE) {
     return;
@@ -650,7 +643,7 @@ extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int tl,int vi) {
     dumpValid(std::cerr, vi) << std::endl;
     CCTK_VERROR("SYNC requires valid data in interior %s rl=%d tl=%d", CCTK_FullVarName(vi), reflevel, tl);
   }
-  CCTK_ASSERT((f->second & WH_INTERIOR) == WH_INTERIOR);
+  assert((f->second & WH_INTERIOR) == WH_INTERIOR);
 
   // Update valid region info
   int gi = CCTK_GroupIndexFromVarI(vi);
@@ -786,7 +779,7 @@ CCTK_INT Carpet_SelectVarForBCI(
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
                "Requested BC '%s' not found.", bc_name);
   }
-  CCTK_ASSERT(var_index != 0);
+  assert(var_index != 0);
   auto i = boundary_conditions.find(var_index);
   for(; i != boundary_conditions.end();++i) {
     for(auto b = i->second.begin(); b != i->second.end(); ++b) {
