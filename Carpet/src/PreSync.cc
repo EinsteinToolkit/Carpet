@@ -93,18 +93,6 @@ inline void tolower(std::string& s) {
   }
 }
 
-inline void toupper(std::string& s) {
-  for(auto si=s.begin();si != s.end();++si) {
-    if(*si >= 'a' && *si <= 'z') {
-      *si = *si + 'A' - 'a';
-    }
-  }
-}
-
-inline bool iswhite(char c) {
-  return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\b' || c == '\f';
-}
-
 std::string current_routine;
 
 std::map<std::string,std::map<var_tuple,int>> reads,writes;
