@@ -23,8 +23,6 @@ extern "C" void ShowValid();
 namespace Carpet {
 int bnd_vi = -1;
 
-bool msg1 = true, msg2 = true, msg3 = true;
-
 struct var_tuple {
   const int vi; // var index
   const int rl; // refinement level
@@ -235,9 +233,10 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
           msg << "SYNC of variable with invalid interior. Name: "
             << CCTK_FullVarName(vi) << " before: " << current_routine;
           int level = psync_error ? 0 : 1;
-          if(msg1) {
-            msg1 = false;
+          static bool have_warned = false;
+          if(not have_warned) {
             CCTK_WARN(level,msg.str().c_str());
+            have_warned = true;
           }
         }
         if(push) {
@@ -443,9 +442,10 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
           << " at the start of routine " << r;
       dumpValid(msg, vt.vi);
       int level = psync_error ? 0 : 1;
-      if(msg2) {
+      static bool have_warned = false;
+      if(not have_warned) {
         CCTK_WARN(level,msg.str().c_str()); 
-        msg2 = false;
+        have_warned = true;
       }
     } else if(vt.tl > 0) {
       if(!on(valid_k[vt],i->second)) {
@@ -479,9 +479,10 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
             << " because it is not valid in the interior.";
         dumpValid(msg, vt.vi);
         int level = psync_error ? 0 : 1;
-        if(msg3) {
+        static bool have_warned = false;
+        if(not have_warned) {
           CCTK_WARN(level,msg.str().c_str()); 
-          msg3 = false;
+          have_warned = true;
         }
       }
     }
