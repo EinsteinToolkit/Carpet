@@ -6,6 +6,7 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 #include <iostream>
+#include <locale>
 #include <sstream>
 #include <carpet.hh>
 #include <math.h>
@@ -87,9 +88,7 @@ inline std::string wstr(int wh) {
 
 inline void tolower(std::string& s) {
   for(auto si=s.begin();si != s.end();++si) {
-    if(*si >= 'A' && *si <= 'Z') {
-      *si = *si + 'a' - 'A';
-    }
+    *si = std::tolower(*si);
   }
 }
 
