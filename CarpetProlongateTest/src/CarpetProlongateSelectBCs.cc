@@ -3,7 +3,8 @@
 #include <cctk_Parameters.h>
 #include <assert.h>
 
-void CarpetProlongateSelectBCs(CCTK_ARGUMENTS) {
+extern "C"
+void CarpetProlongateTest_SelectBCs(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
   char const *const varnames[] = {"CARPETPROLONGATETEST::u",
                                   "CARPETPROLONGATETEST::u0",
