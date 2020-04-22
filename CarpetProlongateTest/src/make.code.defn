@@ -1,7 +1,7 @@
 # Main make.code.defn file for thorn CarpetProlongateTest
 
 # Source files in this directory
-SRCS = init.F90 CarpetProlongateSelectBCs.cc
+SRCS = init.F90 selectbcs.cc
 
 # Subdirectories containing source files
 SUBDIRS = 
