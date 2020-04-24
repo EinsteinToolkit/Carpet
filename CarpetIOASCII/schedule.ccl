@@ -12,5 +12,5 @@ SCHEDULE CarpetIOASCIIInit AT initial
 {
   LANG: C
   OPTIONS: global
-  WRITES: CarpetIOASCII::last_output_iteration, last_output_time, this_iteration #scalar
+  WRITES: CarpetIOASCII::last_output_iteration, last_output_time, this_iteration
 } "Initialisation routine"

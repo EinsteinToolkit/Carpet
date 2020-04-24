@@ -565,7 +565,7 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
           vector<const gdata *> datas(n_max - n_min);
           for (size_t n = 0; n < datas.size(); ++n) {
             if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
-              Carpet_ManualSyncGF(cctkGH,tl,vindex0+n);
+              Driver_ManualSyncGF(cctkGH,tl,vindex0+n);
             }
             if (dist::rank() == proc) {
               const ggf *const ff = arrdata.at(group).at(m).data.at(n + n_min);

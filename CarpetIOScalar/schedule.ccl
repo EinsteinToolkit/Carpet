@@ -12,7 +12,7 @@ schedule CarpetIOScalarInit at INITIAL
 {
   LANG: C
   OPTIONS: global
-  WRITES: CarpetIOScalar::last_output_iteration #scalar
-  WRITES: CarpetIOScalar::last_output_time #scalar
-  WRITES: CarpetIOScalar::this_iteration #scalar
+  WRITES: CarpetIOScalar::last_output_iteration
+  WRITES: CarpetIOScalar::last_output_time
+  WRITES: CarpetIOScalar::this_iteration
 } "Initialisation routine"

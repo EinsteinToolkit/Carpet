@@ -76,8 +76,8 @@ SCHEDULE GROUP SetupMask IN MaskBase_SetupMaskAll AFTER MaskBase_SetMask
 SCHEDULE MaskBase_TestMask IN MaskBase_SetupMaskAll AFTER SetupMask
 {
   LANG: C
-  READS: CARPETREDUCE::excised_cells(everywhere) #scalar
-  WRITES: CARPETREDUCE::excised_cells(everywhere) #scalar
+  READS: CARPETREDUCE::excised_cells(everywhere)
+  WRITES: CARPETREDUCE::excised_cells(everywhere)
   OPTIONS: global
 } "Test the weight function"
 

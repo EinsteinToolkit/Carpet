@@ -16,11 +16,9 @@
 #include "variables.hh"
 #include "modes.hh"
 #include "carpet.hh"
-#include "PreSync.h"
+#include "PreSyncCarpet.hh"
 
 #undef PRESYNC_DEBUG
-
-extern "C" void ShowValid();
 
 namespace Carpet {
 int bnd_vi = -1;
@@ -91,7 +89,6 @@ std::map<std::string,std::map<var_tuple,int>> reads,writes;
 std::map<var_tuple,int> valid_k;
 std::map<var_tuple,int> old_valid_k;
 
-extern "C" void diagnosticPreValid();
 void diagnosticPreValid() {
   old_valid_k = valid_k;
 }
@@ -106,7 +103,6 @@ ostream& dumpValid(ostream& os, const int vi) {
   return os;
 }
 
-extern "C" void diagnosticChanged();
 void diagnosticChanged() {
   for(auto entry = valid_k.begin(); valid_k.end() != entry; ++entry) {
     auto f = old_valid_k.find(entry->first);
@@ -122,7 +118,7 @@ void diagnosticChanged() {
   }
 }
 
-extern "C" void TraverseReads(const char *func_name,void(*trace_func)(int,int,int)) {
+void TraverseReads(const char *func_name,void(*trace_func)(int,int,int)) {
     std::string f{func_name};
     auto r = reads[f];
     for(auto i = r.begin();i != r.end(); ++i) {
@@ -130,7 +126,7 @@ extern "C" void TraverseReads(const char *func_name,void(*trace_func)(int,int,in
     }
 }
 
-extern "C" void TraverseWrites(const char *func_name,void(*trace_func)(int,int,int)) {
+void TraverseWrites(const char *func_name,void(*trace_func)(int,int,int)) {
     std::string f{func_name};
     auto r = writes[f];
     for(auto i = r.begin();i != r.end(); ++i) {
@@ -286,7 +282,6 @@ bool hasAccess(const std::map<var_tuple,int>& m, const var_tuple& vt) {
  * by causing CCTKi_VarDataPtrI() to return null.
  * Note that only REAL grid functions are affected.
  */
-extern "C"
 int Carpet_hasAccess(const cGH *cctkGH,int var_index) {
   DECLARE_CCTK_PARAMETERS;
   if(!psync_error)
@@ -318,12 +313,9 @@ int Carpet_hasAccess(const cGH *cctkGH,int var_index) {
 
 std::map<int,int> attempted_readwrites;
 
-extern "C" void attempt_readwrite(const char *thorn,const char *var, int spec);
 void attempt_readwrite(int gf,int spec);
-extern "C" void clear_readwrites();
-extern "C" void check_readwrites();
 
-extern "C" void attempt_readwrite(const char *thorn,const char *var, int spec) {
+void attempt_readwrite(const char *thorn,const char *var, int spec) {
   std::string v;
   v += thorn;
   v += "::";
@@ -336,10 +328,10 @@ void attempt_readwrite(int gf,int spec) {
   if(gf >= 0)
     attempted_readwrites[gf] |= spec;
 }
-extern "C" void clear_readwrites() {
+void clear_readwrites() {
   attempted_readwrites.clear();
 }
-extern "C" void check_readwrites() {
+void check_readwrites() {
   for(auto i=attempted_readwrites.begin(); i != attempted_readwrites.end(); ++i) {
     if((i->second & 0x01)==0x01 && !hasAccess(reads[current_routine],var_tuple(i->first,-1,0))) {
         std::cerr << "Undeclared access: " << current_routine << " read name='" << CCTK_FullVarName(i->first) << "'" << std::endl;
@@ -354,10 +346,9 @@ extern "C" void check_readwrites() {
  * Request temporary read access to a variable,
  * thus allowing Carpet_hasAccess() to return true.
  * This needs to be called <i>before</i> the 
- * CCTK_DECLARE_VARIABLES macro in order to have
+ * CCTK_DECLARE_ARGUMENTS macro in order to have
  * the desired effect.
  */
-extern "C"
 void Carpet_requestAccess(int var_index,int read_spec,int write_spec) {
   assert(var_index >= 0);
   var_tuple vi{var_index,-1,0};
@@ -605,7 +596,7 @@ void Sync1(const cGH *cctkGH,int tl,int gi) {
  * of the grid where that variable is valid (i.e. the where_spec).
  */
 // TODO: expand to take a reflevel argument?
-extern "C" void SetValidRegion(int vi,int tl,int wh) {
+void SetValidRegion(int vi,int tl,int wh) {
   var_tuple vt(vi,reflevel,tl);
   valid_k[vt] = wh;
 }
@@ -615,7 +606,7 @@ extern "C" void SetValidRegion(int vi,int tl,int wh) {
  * of the grid where that variable is valid (i.e. the where_spec).
  */
 // TODO: expand to take a reflevel argument?
-extern "C" int GetValidRegion(int vi,int tl) {
+int GetValidRegion(int vi,int tl) {
   var_tuple vt(vi,reflevel,tl);
   return valid_k[vt];
 }

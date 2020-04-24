@@ -397,27 +397,27 @@ PROVIDES FUNCTION Driver_SelectVarForBC WITH
 
 # Functions for accessing and changing valid region
 void FUNCTION
-      Carpet_SetValidRegion
+      Driver_SetValidRegion
       (CCTK_INT IN vi,
       CCTK_INT IN tl,
       CCTK_INT IN wh)
-PROVIDES FUNCTION Carpet_SetValidRegion WITH
+PROVIDES FUNCTION Driver_SetValidRegion WITH
    SetValidRegion LANGUAGE C
 
 CCTK_INT FUNCTION
-      Carpet_GetValidRegion
+      Driver_GetValidRegion
       (CCTK_INT IN vi,
       CCTK_INT IN tl)
-PROVIDES FUNCTION Carpet_GetValidRegion WITH
+PROVIDES FUNCTION Driver_GetValidRegion WITH
    GetValidRegion LANGUAGE C
 
 # Manually call synchronization; should be paired with SetValidRegion call
 void FUNCTION
-      Carpet_ManualSyncGF
+      Driver_ManualSyncGF
       (CCTK_POINTER_TO_CONST IN cctkGH,
       CCTK_INT IN tl,
       CCTK_INT IN vi)
-PROVIDES FUNCTION Carpet_ManualSyncGF WITH
+PROVIDES FUNCTION Driver_ManualSyncGF WITH
    ManualSyncGF LANGUAGE C
 
 CCTK_INT FUNCTION
@@ -548,3 +548,8 @@ CCTK_INT FUNCTION Driver_RegisterSymmetryBC(CCTK_POINTER_TO_CONST IN GH,
   CCTK_STRING IN bc_name)
 PROVIDES FUNCTION Driver_RegisterSymmetryBC WITH
   Carpet_RegisterSymmetryBC LANGUAGE C
+
+CCTK_INT FUNCTION Driver_requestAccess(CCTK_POINTER_TO_CONST IN GH,
+  CCTK_INT IN VAR,CCTK_INT IN WHERE)
+PROVIDES FUNCTION Driver_requestAccess WITH
+  Carpet_requestAccess LANGUAGE C

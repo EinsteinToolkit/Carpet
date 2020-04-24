@@ -17,13 +17,9 @@
 #include <gh.hh>
 
 #include <carpet.hh>
+#include <PreSyncCarpet.hh>
 
 #include "adler32.hh"
-
-extern "C" void clear_readwrites();
-extern "C" void check_readwrites();
-
-extern "C" void ShowValid();
 
 namespace Carpet {
 
