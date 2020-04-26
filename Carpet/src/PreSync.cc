@@ -282,7 +282,7 @@ bool hasAccess(const std::map<var_tuple,int>& m, const var_tuple& vt) {
  * by causing CCTKi_VarDataPtrI() to return null.
  * Note that only REAL grid functions are affected.
  */
-int Carpet_hasAccess(const cGH *cctkGH,int var_index) {
+int HasAccess(const cGH *cctkGH, int var_index) {
   DECLARE_CCTK_PARAMETERS;
   if(!psync_error)
     return true;

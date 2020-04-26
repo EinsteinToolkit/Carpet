@@ -121,12 +121,8 @@ static void ensure_ReflectionSymmetry_avoid_origin(centering refcentering);
 static void ensure_ghostzones(int m, vector<i2vect> const &ghosts);
 static void ensure_group_options(int group, cGroup const &gdata);
 
-extern "C" int Carpet_hasAccess(int);
-extern "C" int (*CCTK_hasAccess)(int var_index);
-
 void *SetupGH(tFleshConfig *const fc, int const convLevel, cGH *const cctkGH) {
   DECLARE_CCTK_PARAMETERS;
-  CCTK_hasAccess = Carpet_hasAccess;
 
   // Some statistics
   {
