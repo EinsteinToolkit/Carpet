@@ -17,6 +17,7 @@
 #include "modes.hh"
 #include "carpet.hh"
 #include "PreSyncCarpet.hh"
+#include "Carpet_Prototypes.h"
 
 #undef PRESYNC_DEBUG
 
@@ -226,7 +227,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
         if(on(wh,WH_EXTERIOR)) {
           continue;
         }
-        if(!on(wh,WH_INTERIOR)) {// and !silent_psync) {
+        if(!on(wh,WH_INTERIOR)) {
           std::ostringstream msg;
           msg << "SYNC of variable with invalid interior. Name: "
             << CCTK_FullVarName(vi) << " before: " << current_routine;
@@ -340,20 +341,6 @@ void check_readwrites() {
         std::cerr << "Undeclared access: " << current_routine << " write name='" << CCTK_FullVarName(i->first) << "'" << std::endl;
     }
   }
-}
-
-/**
- * Request temporary read access to a variable,
- * thus allowing Carpet_hasAccess() to return true.
- * This needs to be called <i>before</i> the 
- * CCTK_DECLARE_ARGUMENTS macro in order to have
- * the desired effect.
- */
-void Carpet_requestAccess(int var_index,int read_spec,int write_spec) {
-  assert(var_index >= 0);
-  var_tuple vi{var_index,-1,0};
-  tmp_read[vi]  |= read_spec;
-  tmp_write[vi] |= write_spec;
 }
 
 void dump_clauses(std::map<var_tuple,int>& reads_m,std::map<var_tuple,int>& writes_m) {
@@ -827,8 +814,6 @@ CCTK_INT SelectGroupForBC(
 }
 
 extern "C"
-//CCTK_INT Carpet_SelectedGVs(CCTK_POINTER_TO_CONST _GH, CCTK_INT array_size, CCTK_INT *var_indices, CCTK_INT *faces,
-//                            CCTK_INT *widths, CCTK_INT *table_handles) {
 CCTK_INT Carpet_SelectedGVs() {
   if(bnd_vi == -1) {
 #ifdef PRESYNC_DEBUG
@@ -909,6 +894,21 @@ void Carpet_ApplyPhysicalBCs(const cGH *cctkGH) {
 #endif
 }
 
+}
+
+/**
+ * Request temporary read access to a variable,
+ * thus allowing Carpet_hasAccess() to return true.
+ * This needs to be called <i>before</i> the 
+ * CCTK_DECLARE_ARGUMENTS macro in order to have
+ * the desired effect.
+ */
+CCTK_INT Carpet_requestAccess(const CCTK_INT var_index, const CCTK_INT read_spec, const CCTK_INT write_spec) {
+  assert(var_index >= 0);
+  Carpet::var_tuple vi{var_index,-1,0};
+  Carpet::tmp_read[vi]  |= read_spec;
+  Carpet::tmp_write[vi] |= write_spec;
+  return 0;
 }
 
 void ShowValid() {

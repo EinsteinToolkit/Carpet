@@ -37,10 +37,6 @@ static void SyncGroupsInScheduleBlock(cFunctionData *attribute, cGH *cctkGH,
 // allocated memory
 static void CheckFence(cGH const *const cctkGH, cFunctionData *attribute);
 
-void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pregroups);
-void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups);
-void PostCheckValid(cFunctionData *attribute,cGH *cctkGH,const std::vector<int>& sync_groups);
-
 /// Traverse one function on all components of one refinement level
 /// of one multigrid level.
 int CallFunction(void *function,           ///< the function to call

@@ -25,8 +25,8 @@ SRCS =	CallFunction.cc				\
 	adler32.cc				\
 	helpers.cc				\
 	modes.cc				\
-	variables.cc    \
-  PreSync.cc
+	variables.cc				\
+	PreSync.cc
 
 # Subdirectories containing source files
 SUBDIRS = LoadBalanceReal

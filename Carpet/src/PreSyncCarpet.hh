@@ -1,5 +1,10 @@
 #ifndef PRESYNC_HH
 #define PRESYNC_HH
+#include <cctk.h>
+#include <cctk_Arguments.h>
+#include <carpet.hh>
+#include <set>
+#include <vector>
 
 
 extern "C" void ShowValid();
@@ -14,9 +19,17 @@ extern "C" void TraverseWrites(const char *func_name,void(*trace_func)(int,int,i
 namespace Carpet {
 extern "C" void clear_readwrites();
 extern "C" void check_readwrites();
-extern "C" void Carpet_requestAccess(int var_index,int read_spec,int write_spec);
 extern "C" void SetValidRegion(int vi,int tl,int wh);
 extern "C" int GetValidRegion(int vi,int tl);
+
+extern void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pregroups);
+extern void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups);
+extern void PostCheckValid(cFunctionData *attribute,cGH *cctkGH,const std::vector<int>& sync_groups);
+
+extern void cycle_rdwr(const cGH *cctkGH);
+extern void uncycle_rdwr(const cGH *cctkGH);
+extern void flip_rdwr(const cGH *cctkGH, int vi);
+extern void invalidate_rdwr(const cGH *cctkGH, int vi, int tl);
 }
 
 #endif

@@ -10,14 +10,11 @@
 
 #include <ggf.hh>
 #include <gh.hh>
+#include <PreSyncCarpet.hh>
 
 #include <carpet.hh>
 
 namespace Carpet {
-
-void cycle_rdwr(const cGH *cctkGH);
-void uncycle_rdwr(const cGH *cctkGH);
-void flip_rdwr(const cGH *cctkGH, int vi);
 
 using namespace std;
 

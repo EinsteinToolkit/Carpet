@@ -11,12 +11,11 @@
 
 #include <defs.hh>
 #include <typeprops.hh>
+#include <PreSyncCarpet.hh>
 
 #include <carpet.hh>
 
 namespace Carpet {
-
-void invalidate_rdwr(const cGH *cctkGH, int vi, int tl);
 
 using namespace std;
 
