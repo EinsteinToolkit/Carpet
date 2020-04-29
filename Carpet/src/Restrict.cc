@@ -13,7 +13,7 @@
 #include <gh.hh>
 
 #include <carpet.hh>
-#include "PreSync.h"
+#include "cctk_PreSync.h"
 
 namespace Carpet {
 

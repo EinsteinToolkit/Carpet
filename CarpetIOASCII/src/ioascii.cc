@@ -25,7 +25,7 @@
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
-#include "PreSync.h"
+#include "cctk_PreSync.h"
 
 #include "carpet.hh"
 
@@ -564,7 +564,7 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
               one_file_per_group ? CCTK_NumVarsInGroupI(group) : var + 1;
           vector<const gdata *> datas(n_max - n_min);
           for (size_t n = 0; n < datas.size(); ++n) {
-            if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
+            if(use_psync) {
               Driver_ManualSyncGF(cctkGH,tl,vindex0+n);
             }
             if (dist::rank() == proc) {

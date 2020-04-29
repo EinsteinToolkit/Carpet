@@ -1019,7 +1019,7 @@ static int OutputVarAs(const cGH *const cctkGH, const char *const fullname,
   for (int var = firstvar; var < firstvar + numvars; var++) {
 
     // Synchronize and apply BCs if needed
-    if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
+    if(use_psync) {
       Driver_ManualSyncGF(cctkGH,0,var); // TODO: support part timelevels
     }
 

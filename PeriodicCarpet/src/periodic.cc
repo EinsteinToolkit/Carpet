@@ -527,7 +527,7 @@ extern "C" void PeriodicCarpet_RegisterBC(CCTK_ARGUMENTS) {
   if (ierr < 0)
     CCTK_ERROR("Could not register the symmetry interpolator");
 
-  if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
+  if(use_psync) {
     int err = 0;
     err = Driver_RegisterSymmetryBC(cctkGH, New_PeriodicCarpet_ApplyBC, "PeriodicCarpet");
     if (err) {
@@ -551,7 +551,7 @@ extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
   do_periodic[1] = periodic or periodic_y;
   do_periodic[2] = periodic or periodic_z;
 
-  if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
+  if(use_psync) {
     int const vi = Driver_SelectedGV();
     if(vi < 0)
       CCTK_VERROR("boundary condition application error in PreSync");
