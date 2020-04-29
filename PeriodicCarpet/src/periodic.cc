@@ -445,7 +445,7 @@ extern "C" CCTK_INT BndPeriodicCarpetGN(CCTK_POINTER_TO_CONST const cctkGH_,
   return 0;
 }
 
-extern "C" CCTK_INT New_PeriodicCarpet_ApplyBC(CCTK_POINTER_TO_CONST const cctkGH_) {
+static CCTK_INT New_PeriodicCarpet_ApplyBC(CCTK_POINTER_TO_CONST const cctkGH_) {
   cGH const *restrict const cctkGH = static_cast<cGH const *>(cctkGH_);
   DECLARE_CCTK_PARAMETERS;
   DECLARE_CCTK_ARGUMENTS;
@@ -458,10 +458,9 @@ extern "C" CCTK_INT New_PeriodicCarpet_ApplyBC(CCTK_POINTER_TO_CONST const cctkG
   do_periodic[1] = periodic or periodic_y;
   do_periodic[2] = periodic or periodic_z;
 
-  int const vi = Driver_SelectedGVs();
+  int const vi = Driver_SelectedGV();
   if(vi < 0)
-    CCTK_VWarn(0, __LINE__, __FILE__, "CartGrid3D",
-               "boundary condition application error in PreSync");
+    CCTK_VERROR("Boundary condition application error in PreSync: vi=%d", vi);
 
   CCTK_INT width[2 * dim];
   CCTK_INT is_internal[2 * dim];
@@ -470,7 +469,7 @@ extern "C" CCTK_INT New_PeriodicCarpet_ApplyBC(CCTK_POINTER_TO_CONST const cctkG
   int ierr = GetBoundarySpecification(2 * dim, width, is_internal, is_staggered,
                                       shiftout);
   if (ierr < 0)
-    CCTK_ERROR("Could not get the boundary specification");
+    CCTK_VERROR("Could not get the boundary specification, ierr=%d", ierr);
 
   CCTK_INT stencil[dim];
   for (int d = 0; d < dim; ++d) {
@@ -553,10 +552,9 @@ extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
   do_periodic[2] = periodic or periodic_z;
 
   if(CCTK_ParameterValInt("use_psync","Cactus") == 1) {
-    int const vi = Driver_SelectedGVs();
+    int const vi = Driver_SelectedGV();
     if(vi < 0)
-      CCTK_VWarn(0, __LINE__, __FILE__, "CartGrid3D",
-                 "boundary condition application error in PreSync");
+      CCTK_VERROR("boundary condition application error in PreSync");
   
     CCTK_INT width[2 * dim];
     CCTK_INT is_internal[2 * dim];
@@ -565,7 +563,7 @@ extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
     int ierr = GetBoundarySpecification(2 * dim, width, is_internal, is_staggered,
                                         shiftout);
     if (ierr < 0)
-      CCTK_ERROR("Could not get the boundary specification");
+      CCTK_VERROR("Could not get the boundary specification. ierr=%d", ierr);
   
     CCTK_INT stencil[dim];
     for (int d = 0; d < dim; ++d) {
@@ -585,6 +583,8 @@ extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
       free(fullname);
     }
   
+    // Note with PreSync, the variables will only ever be updated
+    // one at a time.
     periodic_carpet(cctkGH, dim, stencil, do_periodic, &vi, 1);
   } else {
     CCTK_INT const nvars = Boundary_SelectedGVs(cctkGH, 0, 0, 0, 0, 0, 0);

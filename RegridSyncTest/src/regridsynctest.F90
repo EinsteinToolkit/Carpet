@@ -20,11 +20,7 @@ subroutine RegridSyncTest_sync(CCTK_ARGUMENTS)
 
   implicit none
   DECLARE_CCTK_PARAMETERS
-! Before Args+
   DECLARE_CCTK_ARGUMENTS_RegridSyncTest_sync
-! After Args
-
-!  :-)
 
 end subroutine RegridSyncTest_sync
 

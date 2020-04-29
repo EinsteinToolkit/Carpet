@@ -135,5 +135,5 @@ CCTK_INT FUNCTION Driver_RegisterSymmetryBC(CCTK_POINTER_TO_CONST IN GH,
   CCTK_STRING IN bc_name)
 Uses FUNCTION Driver_RegisterSymmetryBC
 
-CCTK_INT FUNCTION Driver_SelectedGVs()
-USES FUNCTION Driver_SelectedGVs
+CCTK_INT FUNCTION Driver_SelectedGV()
+USES FUNCTION Driver_SelectedGV

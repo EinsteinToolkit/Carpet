@@ -814,7 +814,7 @@ CCTK_INT SelectGroupForBC(
 }
 
 extern "C"
-CCTK_INT Carpet_SelectedGVs() {
+CCTK_INT Carpet_SelectedGV() {
   if(bnd_vi == -1) {
 #ifdef PRESYNC_DEBUG
     std::cout << "No variable is currently having boundary conditions applied, but a boundary condition is attempting to run." << std::endl;

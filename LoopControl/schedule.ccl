@@ -1,6 +1,4 @@
 # Schedule definitions for thorn LoopControl
-# Functions *_analysis and *_terminate both use internal function *.
-# They should have identical rd/wr.
 
 SCHEDULE lc_setup AT startup BEFORE Driver_Startup
 {
