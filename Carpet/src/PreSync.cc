@@ -354,6 +354,9 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 
   for(int i=0;i<attribute->n_RDWR;i++) {
     const RDWR_entry& entry = attribute->RDWR[i];
+    if(entry.where_rd == WH_NOWHERE) { // only READS cn trigger sync or errors
+      continue;
+    }
     // clauses to not refer to reflevel but the valid states have them so
     // inject them here
     const var_tuple vt{entry.var_id,reflevel,entry.time_level};
@@ -372,6 +375,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
                  CCTK_FullVarName(vi));
       continue;
     }
+    // TODO: only need to check that what is READ is valid
     if(!on(valid_k[vt],WH_INTERIOR)) // and !silent_psync) 
     {
       // If the read spec is everywhere and we only have
