@@ -582,11 +582,11 @@ extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int tl,int vi) {
   if(f->second == WH_EVERYWHERE) {
     return;
   }
-  if((f->second & WH_INTERIOR) != WH_INTERIOR) {
+  if(on(f->second,WH_INTERIOR)) {
     dumpValid(std::cerr, vi) << std::endl;
     CCTK_VERROR("SYNC requires valid data in interior %s rl=%d tl=%d", CCTK_FullVarName(vi), reflevel, tl);
   }
-  assert((f->second & WH_INTERIOR) == WH_INTERIOR);
+  assert(on(f->second,WH_INTERIOR));
 
   // Update valid region info
   int gi = CCTK_GroupIndexFromVarI(vi);
