@@ -84,9 +84,6 @@ inline void tolower(std::string& s) {
   }
 }
 
-std::string current_routine;
-
-std::map<std::string,std::map<var_tuple,int>> reads,writes;
 std::map<var_tuple,int> valid_k;
 std::map<var_tuple,int> old_valid_k;
 
@@ -125,37 +122,37 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
   if (not use_psync)
     return;
 
-  std::string r;
-  r += attribute->thorn;
-  r += "::";
-  r += attribute->routine;
-  current_routine = "";
-  std::map<var_tuple,int>& writes_m = writes[r];
-  for(auto i = writes_m.begin();i != writes_m.end(); ++i) {
-    var_tuple vi = i->first;
-    var_tuple vt{vi.vi,reflevel,vi.tl};
-    if(i->second == WH_INTERIOR)
+  for (int i=0;i<attribute->n_RDWR;i++) {
+    const RDWR_entry& entry = attribute->RDWR[i];
+    var_tuple vt{entry.var_id,reflevel,entry.time_level};
+    if(entry.where_wr == WH_INTERIOR)
       valid_k[vt] = WH_INTERIOR;
     else
-      valid_k[vt] |= i->second;
+      valid_k[vt] |= entry.where_wr;
   }
 
 
-  for(auto g = sync_groups.begin();g != sync_groups.end();++g) {
-    int gi = *g;
-    int i0 = CCTK_FirstVarIndexI(gi);
-    int iN = i0+CCTK_NumVarsInGroupI(gi);
-    for(int vi=i0;vi<iN;vi++) {
-      int& w = writes[r][var_tuple(vi,-1,0)];
-      if(w == WH_INTERIOR) {
-        var_tuple vt{vi,reflevel,0};
-        valid_k[vt] |= WH_GHOSTS;
+  // TODO: set this in Carpet's SYNC function
+  for (auto gi: sync_groups) {
+    const int var0 = CCTK_FirstVarIndexI(gi);
+    const int varn = CCTK_NumVarsInGroupI(gi);
+    for (int vi = var0; vi < var0 + varn; ++vi) {
+      // TODO: sort RDWR and replace by binary search
+      for (int i=0;i<attribute->n_RDWR;i++) {
+        const RDWR_entry& entry = attribute->RDWR[i];
+        // we ignore refinement levels here since RDWR does not record them
+        if(entry.var_id == vi && entry.time_level == 0) {
+          if(on(entry.where_wr,WH_INTERIOR)) {
+            var_tuple vt{vi,reflevel,0};
+            valid_k[vt] |= WH_GHOSTS;
 #ifdef PRESYNC_DEBUG
-        std::cout << "SYNC: " << CCTK_FullVarName(vt.vi) << " " << wstr(valid_k[vt]) << std::endl;
+            std::cout << "SYNC: " << CCTK_FullVarName(vt.vi) << " " << wstr(valid_k[vt]) << std::endl;
 #endif
-      }
-    }
-  }
+          }
+        }
+      } // for RDWR
+    } // for vi
+  } // for gi
 }
 
 /**
@@ -214,7 +211,8 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
         if(!on(wh,WH_INTERIOR)) {
           std::ostringstream msg;
           msg << "SYNC of variable with invalid interior. Name: "
-            << CCTK_FullVarName(vi) << " before: " << current_routine;
+            << CCTK_FullVarName(vi) << " in routine "
+            << attribute->thorn << "::" << attribute->routine;
           int level = psync_error ? 0 : 1;
           static bool have_warned = false;
           if(not have_warned) {
@@ -260,6 +258,18 @@ bool hasAccess(const std::map<var_tuple,int>& m, const var_tuple& vt) {
   return i2->second != WH_NOWHERE;
 }
 
+bool hasAccess(cFunctionData const * const current_function,
+               int const RDWR_entry::* const access, const var_tuple vt) {
+  // TODO: srt rdwr and turn into binary search
+  for (int i= 0;i<current_function->n_RDWR;i++) {
+    const RDWR_entry& entry = current_function->RDWR[i];
+    // we ignore refinement levels here since RDWR does not record them
+    if(entry.var_id == vt.vi && entry.time_level == vt.tl)
+      return entry.*access != WH_NOWHERE;
+  }
+  return false;
+}
+
 /**
  * Determine whether the currently executed function
  * has either read or write access to the variable
@@ -271,12 +281,14 @@ int HasAccess(const cGH *cctkGH, int var_index) {
   DECLARE_CCTK_PARAMETERS;
   if(!psync_error)
     return true;
+
+  cFunctionData const * const current_function = CCTK_ScheduleQueryCurrentFunction(cctkGH);
   int type = CCTK_GroupTypeFromVarI(var_index);
   if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(var_index)) == sizeof(CCTK_REAL)) {
     var_tuple vi{var_index,-1,0};
-    if(hasAccess(reads[current_routine],vi))
+    if(hasAccess(current_function,&RDWR_entry::where_rd,vi))
       return true;
-    if(hasAccess(writes[current_routine],vi))
+    if(hasAccess(current_function,&RDWR_entry::where_wr,vi))
       return true;
     if(hasAccess(tmp_read,vi)) {
 #ifdef PRESYNC_DEBUG
@@ -316,12 +328,14 @@ void attempt_readwrite(int gf,int spec) {
 void clear_readwrites() {
   attempted_readwrites.clear();
 }
-void check_readwrites() {
+void check_readwrites(cFunctionData const * const current_routine) {
   for(auto i=attempted_readwrites.begin(); i != attempted_readwrites.end(); ++i) {
-    if((i->second & 0x01)==0x01 && !hasAccess(reads[current_routine],var_tuple(i->first,-1,0))) {
+    // TODO: these magic numbers should be remove.
+    // RH: in cctk_PreSync.h 0x1 is WH_GHOSTS but 0x10 is not defined
+    if((i->second & 0x01)==0x01 && !hasAccess(current_routine,&RDWR_entry::where_rd,var_tuple(i->first,-1,0))) {
         std::cerr << "Undeclared access: " << current_routine << " read name='" << CCTK_FullVarName(i->first) << "'" << std::endl;
     }
-    if((i->second & 0x10)==0x10 && !hasAccess(writes[current_routine],var_tuple(i->first,-1,0))) {
+    if((i->second & 0x10)==0x10 && !hasAccess(current_routine,&RDWR_entry::where_wr,var_tuple(i->first,-1,0))) {
         std::cerr << "Undeclared access: " << current_routine << " write name='" << CCTK_FullVarName(i->first) << "'" << std::endl;
     }
   }
@@ -338,40 +352,13 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
   tmp_read.erase(tmp_read.begin(),tmp_read.end());
   tmp_write.erase(tmp_write.begin(),tmp_write.end());
 
-  std::string r;
-  r += attribute->thorn;
-  r += "::";
-  r += attribute->routine;
-  current_routine = r;
-
-  if(writes.find(r) == writes.end()) {
-
-    std::map<var_tuple,int>& writes_m  = writes[r];
-    std::map<var_tuple,int>& reads_m  = reads [r];
-
-    for(int i=0;i < attribute->n_RDWR;i++) {
-      RDWR_entry *rdwr = &attribute->RDWR[i];
-      var_tuple vt{rdwr->var_id, -1, rdwr->time_level};
-      if(rdwr->where_wr != 0) {
-        writes_m[vt] = rdwr->where_wr;
-      }
-      if(rdwr->where_rd != 0) {
-        reads_m[vt] = rdwr->where_rd;
-      }
-    }
-  }
-
-  std::map<var_tuple,int>& reads_m  = reads [r];
-
-  for(auto i = reads_m.begin();i != reads_m.end(); ++i) {
-    var_tuple vtemp = i->first;
-    var_tuple vt{vtemp.vi,reflevel,vtemp.tl}; // clauses to not refer to reflevel but the valid states
-                                              // have them so inject them here
-    int vi = vt.vi;
-    int type = CCTK_GroupTypeFromVarI(vi);
-    //std::cout << "-->|Type " << type << " " << CCTK_FullVarName(vi) << "\n";
-    if(type != CCTK_GF) {
-      //std::cout << "-->|Skip!\n";
+  for(int i=0;i<attribute->n_RDWR;i++) {
+    const RDWR_entry& entry = attribute->RDWR[i];
+    // clauses to not refer to reflevel but the valid states have them so
+    // inject them here
+    const var_tuple vt{entry.var_id,reflevel,entry.time_level};
+    const int vi = entry.var_id;
+    if(CCTK_GroupTypeFromVarI(vi) != CCTK_GF) {
       continue;
     }
     // some thorns only read from variables based on extra parameters, eg
@@ -392,7 +379,8 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
       std::ostringstream msg; 
       msg << "Required read for " << vt 
           << " not satisfied. Invalid interior"
-          << " at the start of routine " << r;
+          << " at the start of routine "
+          << attribute->thorn << "::" << attribute->routine;
       dumpValid(msg, vt.vi);
       int level = psync_error ? 0 : 1;
       static bool have_warned = false;
@@ -401,19 +389,20 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
         have_warned = true;
       }
     } else if(vt.tl > 0) {
-      if(!on(valid_k[vt],i->second)) {
+      if(!on(valid_k[vt],entry.where_rd)) {
         // If the read spec is everywhere, that's not
         // okay for previous time levels as they won't sync.
         std::ostringstream msg; 
         msg << "Required read for " << vt 
-          << " not satisfied. Wanted '" << wstr(i->second)
+          << " not satisfied. Wanted '" << wstr(entry.where_rd)
           << "' found '" << wstr(valid_k[vt])
-          << "' at the start of routine " << r;
+          << "' at the start of routine "
+          << attribute->thorn << "::" << attribute->routine;
         dumpValid(msg, vt.vi);
         CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
       }
     }
-    if(i->second == WH_EVERYWHERE) {
+    if(entry.where_rd == WH_EVERYWHERE) {
       if(on(valid_k[vt],WH_INTERIOR) && valid_k[vt] != WH_EVERYWHERE)
       {
         if(vt.tl != 0) {

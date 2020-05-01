@@ -1,8 +1,8 @@
 #ifndef PRESYNC_HH
 #define PRESYNC_HH
-#include <cctk.h>
-#include <cctk_Arguments.h>
-#include <carpet.hh>
+#include "cctk.h"
+#include "cctk_Schedule.h"
+#include "carpet.hh"
 #include <set>
 #include <vector>
 
@@ -15,7 +15,7 @@ extern "C" void diagnosticChanged();
 
 namespace Carpet {
 extern "C" void clear_readwrites();
-extern "C" void check_readwrites();
+extern "C" void check_readwrites(cFunctionData const * const attribute);
 extern "C" void SetValidRegion(int vi,int tl,int wh);
 extern "C" int GetValidRegion(int vi,int tl);
 
