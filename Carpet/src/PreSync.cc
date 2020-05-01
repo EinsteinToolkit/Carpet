@@ -119,22 +119,6 @@ void diagnosticChanged() {
   }
 }
 
-void TraverseReads(const char *func_name,void(*trace_func)(int,int,int)) {
-    std::string f{func_name};
-    auto r = reads[f];
-    for(auto i = r.begin();i != r.end(); ++i) {
-        trace_func(i->first.vi,i->first.tl,i->second);
-    }
-}
-
-void TraverseWrites(const char *func_name,void(*trace_func)(int,int,int)) {
-    std::string f{func_name};
-    auto r = writes[f];
-    for(auto i = r.begin();i != r.end(); ++i) {
-        trace_func(i->first.vi,i->first.tl,i->second);
-    }
-}
-
 void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sync_groups) {
   DECLARE_CCTK_PARAMETERS;
 
@@ -341,17 +325,6 @@ void check_readwrites() {
         std::cerr << "Undeclared access: " << current_routine << " write name='" << CCTK_FullVarName(i->first) << "'" << std::endl;
     }
   }
-}
-
-void dump_clauses(std::map<var_tuple,int>& reads_m,std::map<var_tuple,int>& writes_m) {
-  std::cout << "ROUTINE: " << current_routine << " {" << std::endl;
-  for(auto i = reads_m.begin(); i != reads_m.end(); ++i) {
-    std::cout << "  >>READ:  " << CCTK_FullVarName(i->first.vi) << "," << wstr(i->second) << std::endl;
-  }
-  for(auto i = writes_m.begin(); i != writes_m.end(); ++i) {
-    std::cout << "  >>WRITE: " << CCTK_FullVarName(i->first.vi) << "," << wstr(i->second) << std::endl;
-  }
-  std::cout << "}" << std::endl;
 }
 
 /**

@@ -12,9 +12,6 @@ extern "C" void diagnosticPreValid();
 
 extern "C" void attempt_readwrite(const char *thorn,const char *var, int spec);
 extern "C" void diagnosticChanged();
-extern "C" void TraverseReads(const char *func_name,void(*trace_func)(int,int,int));
-extern "C" void TraverseReads(const char *func_name,void(*trace_func)(int,int,int));
-extern "C" void TraverseWrites(const char *func_name,void(*trace_func)(int,int,int));
 
 namespace Carpet {
 extern "C" void clear_readwrites();
