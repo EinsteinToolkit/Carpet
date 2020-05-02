@@ -8,7 +8,7 @@ SCHEDULE CoM3_Local AT CCTK_INITIAL AFTER Whisky_Initial
   
   LANG: C
   SYNC: center_of_mass_helpers
-  READS: grid::x, y, z
+  READS: grid::x, grid::y, grid::z
   READS: ReductionTest3::myredvar
   WRITES: ReductionTest3::center_of_mass_helpers(everywhere)
 } "Setup integrands for CoM calculation"
@@ -18,7 +18,7 @@ SCHEDULE CoM3_Local AT CCTK_EVOL AFTER MoL_Evolution
   
   LANG: C
   SYNC: center_of_mass_helpers
-  READS: grid::x, y, z
+  READS: grid::x, grid::y, grid::z
   READS: ReductionTest3::myredvar
   WRITES: ReductionTest3::center_of_mass_helpers(everywhere)
 } "Setup integrands for CoM calculation"
@@ -28,7 +28,7 @@ SCHEDULE CoM3_Local AT Postregridinitial
   
   LANG: C
   SYNC: center_of_mass_helpers
-  READS: grid::x, y, z
+  READS: grid::x, grid::y, grid::z
   READS: ReductionTest3::myredvar
   WRITES: ReductionTest3::center_of_mass_helpers(everywhere)
 } "Setup integrands for CoM calculation"
@@ -38,7 +38,7 @@ SCHEDULE CoM3_Local AT Postregrid
   
   LANG: C
   SYNC: center_of_mass_helpers
-  READS: grid::x, y, z
+  READS: grid::x, grid::y, grid::z
   READS: ReductionTest3::myredvar
   WRITES: ReductionTest3::center_of_mass_helpers(everywhere)
 } "Setup integrands for CoM calculation"
