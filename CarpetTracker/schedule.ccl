@@ -6,7 +6,8 @@ SCHEDULE CarpetTracker_SetPositions AT preregrid
 {
   LANG: C
   OPTIONS: global
-  READS: SphericalSurface::sf_centroid_x, sf_centroid_y, sf_centroid_z
-  READS: SphericalSurface::sf_active, sf_valid
-  WRITES: CarpetRegrid2::active(everywhere), positions
+  READS: SphericalSurface::sf_centroid_x, SphericalSurface::sf_centroid_y,
+         SphericalSurface::sf_centroid_z
+  READS: SphericalSurface::sf_active, SphericalSurface::sf_valid
+  WRITES: CarpetRegrid2::active(everywhere), CarpetRegrid2::positions(everywhere)
 } "Set positions of refined regions"
