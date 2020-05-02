@@ -285,22 +285,45 @@ int HasAccess(const cGH *cctkGH, int var_index) {
   cFunctionData const * const current_function = CCTK_ScheduleQueryCurrentFunction(cctkGH);
   int type = CCTK_GroupTypeFromVarI(var_index);
   if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(var_index)) == sizeof(CCTK_REAL)) {
-    var_tuple vi{var_index,-1,0};
-    if(hasAccess(current_function,&RDWR_entry::where_rd,vi))
-      return true;
-    if(hasAccess(current_function,&RDWR_entry::where_wr,vi))
-      return true;
-    if(hasAccess(tmp_read,vi)) {
-#ifdef PRESYNC_DEBUG
-      std::cout << "tmp acccess for " << CCTK_FullVarName(var_index) << std::endl;
-#endif
-      return true;
+    // vectors of grid functions are all accessed via a single pointer to the
+    // vector's 0th member. Thus access to the whole vector must be granted if
+    // any member has a READ / WRITE clause
+    const int gi = CCTK_GroupIndexFromVarI(var_index);
+    assert(gi >= 0);
+    cGroup group;
+    const int ierr = CCTK_GroupData(gi,&group);
+    assert(ierr == 0);
+    int var0,varn,varstep;
+    if(group.vectorgroup) {
+      // for groups of vectors the variable index steps first by group member
+      // then by vector index
+      var0 = CCTK_FirstVarIndexI(gi);
+      var0 += (var_index - var0) % group.vectorlength;
+      varn = group.numvars;
+      varstep = group.numvars / group.vectorlength;
+    } else {
+      var0 = var_index;
+      varn = 1;
+      varstep = 1;
     }
-    if(hasAccess(tmp_write,vi)) {
+    for (int vi = var0; vi < var0 + varn; vi += varstep) {
+      var_tuple vt{vi,-1,0};
+      if(hasAccess(current_function,&RDWR_entry::where_rd,vt))
+        return true;
+      if(hasAccess(current_function,&RDWR_entry::where_wr,vt))
+        return true;
+      if(hasAccess(tmp_read,vt)) {
 #ifdef PRESYNC_DEBUG
-      std::cout << "tmp acccess for " << CCTK_FullVarName(var_index) << std::endl;
+        std::cout << "tmp acccess for " << CCTK_FullVarName(vi) << std::endl;
 #endif
-      return true;
+        return true;
+      }
+      if(hasAccess(tmp_write,vt)) {
+#ifdef PRESYNC_DEBUG
+        std::cout << "tmp acccess for " << CCTK_FullVarName(vi) << std::endl;
+#endif
+        return true;
+      }
     }
     return false;
   } else {
