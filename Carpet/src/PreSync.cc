@@ -455,7 +455,7 @@ int GetValidRegion(int vi,int tl) {
  * is already valid everywhere, this routine does nothing. When
  * the routine finishes, it will be valid everywhere.
  */
-extern "C" void ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,int tl,int vi) {
+extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT tl,const CCTK_INT vi) {
   // Do nothing if this is not a GF
   if(CCTK_GroupTypeFromVarI(vi) != CCTK_GF) {
     return;
