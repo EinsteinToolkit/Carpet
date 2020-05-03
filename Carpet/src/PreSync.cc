@@ -603,9 +603,9 @@ CCTK_INT Carpet_SelectVarForBCI(
     const cGH *cctkGH,
     const CCTK_INT faces,
     const CCTK_INT width,
-    CCTK_INT table_handle,
-    CCTK_INT var_index,
-    const char *bc_name) {
+    const CCTK_INT table_handle,
+    const CCTK_INT var_index,
+    const CCTK_STRING bc_name) {
   std::string name{bc_name};
   tolower(name);
   if(!boundary_functions.count(name.c_str())) {
@@ -637,32 +637,36 @@ CCTK_INT Carpet_SelectVarForBCI(
 extern "C"
 CCTK_INT SelectVarForBC(
     const CCTK_POINTER_TO_CONST cctkGH_,
-    CCTK_INT faces,
-    CCTK_INT width,
-    CCTK_INT table_handle,
-    const char *var_name,
-    const char *bc_name) {
+    const CCTK_INT faces,
+    const CCTK_INT width,
+    const CCTK_INT table_handle,
+    const CCTK_STRING var_name,
+    const CCTK_STRING bc_name) {
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
-  CCTK_INT i = CCTK_VarIndex(var_name);
-  return Carpet_SelectVarForBCI(cctkGH,faces,width,table_handle,i,bc_name);
+  const CCTK_INT vi = CCTK_VarIndex(var_name);
+  return Carpet_SelectVarForBCI(cctkGH,faces,width,table_handle,vi,bc_name);
 }
 
 extern "C"
 CCTK_INT SelectGroupForBC(
     const CCTK_POINTER_TO_CONST cctkGH_,
-    CCTK_INT faces,
-    CCTK_INT width,
-    CCTK_INT table_handle,
-    const char *group_name,
-    const char *bc_name) {
+    const CCTK_INT faces,
+    const CCTK_INT width,
+    const CCTK_INT table_handle,
+    const CCTK_STRING group_name,
+    const CCTK_STRING bc_name) {
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
-  int group = CCTK_GroupIndex(group_name);
-  int vstart = CCTK_FirstVarIndexI(group);
-  int vnum   = CCTK_NumVarsInGroupI(group);
-  for(int i=vstart;i<vstart+vnum;i++) {
-    Carpet_SelectVarForBCI(cctkGH,faces,width,table_handle,i,bc_name);
+  const CCTK_INT group = CCTK_GroupIndex(group_name);
+  const CCTK_INT vstart = CCTK_FirstVarIndexI(group);
+  const CCTK_INT vnum   = CCTK_NumVarsInGroupI(group);
+  CCTK_INT ierr = 0;
+  for(CCTK_INT vi=vstart;vi<vstart+vnum;vi++) {
+    const CCTK_INT myierr =
+      Carpet_SelectVarForBCI(cctkGH,faces,width,table_handle,vi,bc_name);
+    if(ierr and not myierr)
+      ierr = myierr;
   }
-  return 0;
+  return ierr;
 }
 
 /**
