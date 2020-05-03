@@ -23,6 +23,9 @@
 
 namespace Carpet {
 
+// local functions and types
+namespace {
+
 struct var_tuple {
   const int vi; // var index
   const int rl; // refinement level
@@ -30,6 +33,58 @@ struct var_tuple {
   var_tuple() : vi(-1), rl(-1), tl(-1) {}
   var_tuple(int vi_,int rl_,int tl_) : vi(vi_), rl(CCTK_GroupTypeFromVarI(vi_) == CCTK_GF ? rl_ : -1), tl(tl_) {}
 };
+
+// there keep track of which variable on which refinement level and time level
+// is valid where
+std::map<var_tuple,int> valid_k;
+std::map<var_tuple,int> old_valid_k;
+
+// boundary and symmstry condition handling
+typedef CCTK_INT (*boundary_function)(
+  const cGH *cctkGH,
+  int num_vars,
+  const int *var_indices,
+  const int *faces,
+  const int *widths,
+  const int *table_handles);
+
+typedef CCTK_INT (*iface_boundary_function)(
+  CCTK_POINTER_TO_CONST cctkGH,
+  CCTK_INT num_vars,
+  const CCTK_INT *var_indices,
+  const CCTK_INT *faces,
+  const CCTK_INT *boundary_widths,
+  const CCTK_INT *table_handles);
+
+typedef CCTK_INT (*sym_boundary_function)(
+  const cGH *cctkGH, const CCTK_INT var_index);
+
+typedef CCTK_INT (*sym_iface_boundary_function)(
+  CCTK_POINTER_TO_CONST cctkGH, const CCTK_INT var_index);
+
+struct Bound {
+  std::string bc_name;
+  CCTK_INT faces;
+  CCTK_INT width;
+  CCTK_INT table_handle;
+};
+
+struct Func {
+  boundary_function func;
+};
+
+struct SymFunc {
+  sym_boundary_function func;
+  SymFunc() {
+    func = nullptr;
+  }
+};
+
+// these keep track of registered boundary and symmetry routines as well as
+// selected boundary condistions
+std::map<std::string,Func> boundary_functions;
+std::map<std::string,SymFunc> symmetry_functions;
+std::map<int,std::vector<Bound>> boundary_conditions;
 
 std::ostream& operator<<(std::ostream& o,const var_tuple& vt) {
   o << CCTK_FullVarName(vt.vi);
@@ -83,9 +138,6 @@ inline void tolower(std::string& s) {
   }
 }
 
-std::map<var_tuple,int> valid_k;
-std::map<var_tuple,int> old_valid_k;
-
 ostream& dumpValid(ostream& os, const int vi) {
   os << "\nValid entries:";
   for(auto it : valid_k) {
@@ -95,6 +147,31 @@ ostream& dumpValid(ostream& os, const int vi) {
   }
   return os;
 }
+
+/**
+ * Called by ManualSyncGF.
+ */
+void Sync1(const cGH *cctkGH,int tl,int gi) {
+  std::vector<int> sync_groups;
+  sync_groups.push_back(gi);
+  cFunctionData *attribute = 0;
+  // copied out of modes.hh
+  int const old_timelevel_offset = timelevel_offset;
+  int const old_timelevel = timelevel;
+  CCTK_REAL old_cctk_time = cctkGH->cctk_time;
+  auto const old_do_allow_past_timelevels = do_allow_past_timelevels;
+  do_allow_past_timelevels = tl == 0;
+  timelevel_offset = timelevel = tl;
+  const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
+  int ierr = SyncProlongateGroups(cctkGH, sync_groups, attribute);
+  assert(!ierr);
+  const_cast<cGH*>(cctkGH)->cctk_time = old_cctk_time;
+  timelevel_offset = old_timelevel_offset;
+  timelevel = old_timelevel;
+  do_allow_past_timelevels = old_do_allow_past_timelevels;
+}
+
+} // namespace
 
 void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sync_groups) {
   DECLARE_CCTK_PARAMETERS;
@@ -408,29 +485,6 @@ void cycle_rdwr(const cGH *cctkGH) {
 }
 
 /**
- * Called by ManualSyncGF.
- */
-void Sync1(const cGH *cctkGH,int tl,int gi) {
-  std::vector<int> sync_groups;
-  sync_groups.push_back(gi);
-  cFunctionData *attribute = 0;
-  // copied out of modes.hh
-  int const old_timelevel_offset = timelevel_offset;
-  int const old_timelevel = timelevel;
-  CCTK_REAL old_cctk_time = cctkGH->cctk_time;
-  auto const old_do_allow_past_timelevels = do_allow_past_timelevels; 
-  do_allow_past_timelevels = tl == 0;
-  timelevel_offset = timelevel = tl;
-  const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
-  int ierr = SyncProlongateGroups(cctkGH, sync_groups, attribute);
-  assert(!ierr);
-  const_cast<cGH*>(cctkGH)->cctk_time = old_cctk_time;
-  timelevel_offset = old_timelevel_offset;
-  timelevel = old_timelevel;
-  do_allow_past_timelevels = old_do_allow_past_timelevels;
-}
-
-/**
  * Given a variable and a timelevel, set the region
  * of the grid where that variable is valid (i.e. the where_spec).
  */
@@ -522,50 +576,6 @@ void Carpet_SynchronizationRecovery(CCTK_ARGUMENTS) {
   }
 }
 
-typedef CCTK_INT (*boundary_function)(
-  const cGH *cctkGH,
-  int num_vars,
-  const int *var_indices,
-  const int *faces,
-  const int *widths,
-  const int *table_handles);
-
-typedef CCTK_INT (*iface_boundary_function)(
-  CCTK_POINTER_TO_CONST cctkGH,
-  CCTK_INT num_vars,
-  const CCTK_INT *var_indices,
-  const CCTK_INT *faces,
-  const CCTK_INT *boundary_widths,
-  const CCTK_INT *table_handles);
-
-typedef CCTK_INT (*sym_boundary_function)(
-  const cGH *cctkGH, const CCTK_INT var_index);
-
-typedef CCTK_INT (*sym_iface_boundary_function)(
-  CCTK_POINTER_TO_CONST cctkGH, const CCTK_INT var_index);
-
-struct Bound {
-  std::string bc_name;
-  CCTK_INT faces;
-  CCTK_INT width;
-  CCTK_INT table_handle;
-};
-
-struct Func {
-  boundary_function func;
-};
-
-struct SymFunc {
-  sym_boundary_function func;
-  SymFunc() {
-    func = nullptr;
-  }
-};
-
-std::map<std::string,Func> boundary_functions;
-std::map<std::string,SymFunc> symmetry_functions;
-std::map<int,std::vector<Bound>> boundary_conditions;
-
 extern "C"
 CCTK_INT Carpet_RegisterPhysicalBC(
     CCTK_POINTER_TO_CONST /*cctkGH_*/,
@@ -599,6 +609,7 @@ CCTK_INT Carpet_RegisterSymmetryBC(
   return 0;
 }
 
+namespace {
 CCTK_INT SelectVarForBCI(
     const cGH *cctkGH,
     const CCTK_INT faces,
@@ -632,6 +643,7 @@ CCTK_INT SelectVarForBCI(
   b.bc_name = name;
   bv.push_back(b);
   return 0;
+}
 }
 
 extern "C"
