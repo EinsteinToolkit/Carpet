@@ -26,19 +26,6 @@ namespace Carpet {
 // local functions and types
 namespace {
 
-struct var_tuple {
-  const int vi; // var index
-  const int rl; // refinement level
-  const int tl; // time level;
-  var_tuple() : vi(-1), rl(-1), tl(-1) {}
-  var_tuple(int vi_,int rl_,int tl_) : vi(vi_), rl(CCTK_GroupTypeFromVarI(vi_) == CCTK_GF ? rl_ : -1), tl(tl_) {}
-};
-
-// there keep track of which variable on which refinement level and time level
-// is valid where
-std::map<var_tuple,int> valid_k;
-std::map<var_tuple,int> old_valid_k;
-
 // boundary and symmstry condition handling
 typedef CCTK_INT (*boundary_function)(
   const cGH *cctkGH,
@@ -86,19 +73,13 @@ std::map<std::string,Func> boundary_functions;
 std::map<std::string,SymFunc> symmetry_functions;
 std::map<int,std::vector<Bound>> boundary_conditions;
 
-std::ostream& operator<<(std::ostream& o,const var_tuple& vt) {
-  o << CCTK_FullVarName(vt.vi);
-  for(int i=0;i<vt.tl;i++)
+std::string format_var_tuple(const int vi, const int rl, const int tl) {
+  std::ostringstream o;
+  o << CCTK_FullVarName(vi);
+  for(int i=0;i<tl;i++)
     o << "_p";
-  if(vt.rl != -1) o << " (rl=" << vt.rl << ")";
-  return o;
-}
-
-bool operator<(const var_tuple& v1,const var_tuple& v2) {
-  int diff = v1.vi - v2.vi;
-  if(diff == 0) diff = v1.rl - v2.rl;
-  if(diff == 0) diff = v1.tl - v2.tl;
-  return diff < 0;
+  if(rl != -1) o << " (rl=" << rl << ")";
+  return o.str();
 }
 
 inline bool on(int flags,int flag) {
@@ -139,12 +120,24 @@ inline void tolower(std::string& s) {
 }
 
 ostream& dumpValid(ostream& os, const int vi) {
+  assert(vi < CCTK_NumVars());
+  int const gi = CCTK_GroupIndexFromVarI(vi);
+  assert(gi >= 0);
+  int const var = vi - CCTK_FirstVarIndexI(gi);
+
+  int const m = 0; // FIXME: this assumes that validity is the same on all maps
+
+  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
+  assert(ff);
+
   os << "\nValid entries:";
-  for(auto it : valid_k) {
-    if(vi == -1 || it.first.vi == vi) {
-      os << " " << it.first << " " << wstr(valid_k[it.first]);
-    }
-  }
+  for (int rl=0; rl<ff->h.reflevels(); ++rl) {
+    for (int tl=0; tl<ff->timelevels(mglevel, rl); ++tl) {
+      os << " " << format_var_tuple(vi, rl, tl);
+      os << " " << wstr(ff->valid(mglevel, rl, tl));
+    } // tl
+  } // rl
+
   return os;
 }
 
@@ -181,11 +174,20 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
 
   for (int i=0;i<attribute->n_RDWR;i++) {
     const RDWR_entry& entry = attribute->RDWR[i];
-    var_tuple vt{entry.var_id,reflevel,entry.time_level};
-    if(entry.where_wr == WH_INTERIOR)
-      valid_k[vt] = WH_INTERIOR;
-    else
-      valid_k[vt] |= entry.where_wr;
+
+    assert(entry.var_id < CCTK_NumVars());
+    int const gi = CCTK_GroupIndexFromVarI(entry.var_id);
+    assert(gi >= 0);
+    int const var = entry.var_id - CCTK_FirstVarIndexI(gi);
+    ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+    assert(ff);
+
+    if(entry.where_wr == WH_INTERIOR) {
+      ff->set_valid(mglevel, reflevel, entry.time_level, WH_INTERIOR);
+    } else {
+      int const old_valid = ff->valid(mglevel, reflevel, entry.time_level);
+      ff->set_valid(mglevel, reflevel, entry.time_level, old_valid | entry.where_wr);
+    }
   }
 
 
@@ -200,10 +202,12 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
         // we ignore refinement levels here since RDWR does not record them
         if(entry.var_id == vi && entry.time_level == 0) {
           if(on(entry.where_wr,WH_INTERIOR)) {
-            var_tuple vt{vi,reflevel,0};
-            valid_k[vt] |= WH_GHOSTS;
+	    ggf *const ff = arrdata.AT(gi).AT(map).data.AT(vi - var0);
+            assert(ff);
+	    int const old_valid = ff->valid(mglevel, reflevel, 0);
+	    ff->set_valid(mglevel, reflevel, 0, old_valid | WH_GHOSTS);
 #ifdef PRESYNC_DEBUG
-            std::cout << "SYNC: " << CCTK_FullVarName(vt.vi) << " " << wstr(valid_k[vt]) << std::endl;
+            std::cout << "SYNC: " << CCTK_FullVarName(vi) << " " << ff->valid(mglevel, reflevel, 0) << std::endl;
 #endif
           }
         }
@@ -239,8 +243,9 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     bool push = true;
     if(!use_psync && psync_error) {
       for(int vi=i0;vi<iN;vi++) {
-        var_tuple vt{vi,reflevel,0};
-        int wh = valid_k[vt];
+        ggf *const ff = arrdata.AT(gi).AT(map).data.AT(vi - i0);
+        assert(ff);
+        int const wh = ff->valid(mglevel, reflevel, 0);
         if(!on(wh,WH_GHOSTS)) {
           std::ostringstream msg;
           msg << "  Presync: missing sync for ";
@@ -260,30 +265,31 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     for(int vi=i0;vi<iN;vi++) {
       int type = CCTK_GroupTypeFromVarI(vi);
       if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
-        var_tuple vt{vi,reflevel,0};
-        int wh = valid_k[vt];
-        if(on(wh,WH_EXTERIOR)) {
-          continue;
-        }
-        if(!on(wh,WH_INTERIOR)) {
-          std::ostringstream msg;
-          msg << "SYNC of variable with invalid interior. Name: "
-            << CCTK_FullVarName(vi) << " in routine "
-            << attribute->thorn << "::" << attribute->routine;
-          int level = psync_error ? 0 : 1;
-          static bool have_warned = false;
-          if(not have_warned) {
-            CCTK_WARN(level,msg.str().c_str());
-            have_warned = true;
-          }
-        }
-        if(push) {
-          sync_groups.push_back(gi);
-          push = false;
-        }
-        valid_k[vt] |= WH_GHOSTS;
-        }
+	ggf *const ff = arrdata.AT(gi).AT(map).data.AT(vi - i0);
+        assert(ff);
+	int const wh = ff->valid(mglevel, reflevel, 0);
+	if(on(wh,WH_EXTERIOR)) {
+	  continue;
+	}
+	if(!on(wh,WH_INTERIOR)) {
+	  std::ostringstream msg;
+	  msg << "SYNC of variable with invalid interior. Name: "
+	    << CCTK_FullVarName(vi) << " in routine "
+	    << attribute->thorn << "::" << attribute->routine;
+	  int level = psync_error ? 0 : 1;
+	  static bool have_warned = false;
+	  if(not have_warned) {
+	    CCTK_WARN(level,msg.str().c_str());
+	    have_warned = true;
+	  }
+	}
+	if(push) {
+	  sync_groups.push_back(gi);
+	  push = false;
+	}
+	ff->set_valid(mglevel, reflevel, 0, wh | WH_GHOSTS);
       }
+    }
   }
   if(sync_groups.size()>0) {
     if(use_psync) {
@@ -292,9 +298,11 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
         int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
         int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
         for (int vi=i0;vi<iN;vi++) {
-          if(valid_k[var_tuple(vi,reflevel,0)] != WH_EVERYWHERE) {
+          ggf *const ff = arrdata.AT(sync_groups[sgi]).AT(map).data.AT(vi - i0);
+          assert(ff);
+          if(ff->valid(mglevel, reflevel, 0) != WH_EVERYWHERE) {
             std::ostringstream msg;
-            msg << "Required: Valid Everywhere, Observed: Valid " << wstr(valid_k[var_tuple(vi,reflevel,0)]) << " " << CCTK_FullVarName(vi);
+            msg << "Required: Valid Everywhere, Observed: Valid " << wstr(ff->valid(mglevel, reflevel, 0)) << " " << CCTK_FullVarName(vi);
             msg << " Routine: " << attribute->thorn << "::" << attribute->routine;
             dumpValid(msg,vi);
             msg << std::endl;
@@ -322,7 +330,6 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
     }
     // clauses to not refer to reflevel but the valid states have them so
     // inject them here
-    const var_tuple vt{entry.var_id,reflevel,entry.time_level};
     const int vi = entry.var_id;
     if(CCTK_GroupTypeFromVarI(vi) != CCTK_GF) {
       continue;
@@ -338,55 +345,65 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
                  CCTK_FullVarName(vi));
       continue;
     }
+
+    assert(entry.var_id < CCTK_NumVars());
+    int const gi = CCTK_GroupIndexFromVarI(entry.var_id);
+    assert(gi >= 0);
+    int const var = entry.var_id - CCTK_FirstVarIndexI(gi);
+    ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+    assert(ff);
+
+    int const valid = ff->valid(mglevel, reflevel, entry.time_level);
+
     // TODO: only need to check that what is READ is valid
-    if(!on(valid_k[vt],WH_INTERIOR)) // and !silent_psync) 
+    if(!on(valid,WH_INTERIOR)) // and !silent_psync)
     {
       // If the read spec is everywhere and we only have
       // interior, that's ok. The system will sync.
       std::ostringstream msg; 
-      msg << "Required read for " << vt 
+      msg << "Required read for " << format_var_tuple(vi, reflevel, entry.time_level)
           << " not satisfied. Invalid interior"
           << " at the start of routine "
           << attribute->thorn << "::" << attribute->routine;
-      dumpValid(msg, vt.vi);
+      dumpValid(msg, vi);
       int level = psync_error ? 0 : 1;
       static bool have_warned = false;
       if(not have_warned) {
         CCTK_WARN(level,msg.str().c_str()); 
         have_warned = true;
       }
-    } else if(vt.tl > 0) {
-      if(!on(valid_k[vt],entry.where_rd)) {
+    } else if(entry.time_level > 0) {
+      if(!on(valid,entry.where_rd)) {
         // If the read spec is everywhere, that's not
         // okay for previous time levels as they won't sync.
         std::ostringstream msg; 
-        msg << "Required read for " << vt 
+        msg << "Required read for " << format_var_tuple(vi, reflevel, entry.time_level)
           << " not satisfied. Wanted '" << wstr(entry.where_rd)
-          << "' found '" << wstr(valid_k[vt])
+          << "' found '" << wstr(valid)
           << "' at the start of routine "
           << attribute->thorn << "::" << attribute->routine;
-        dumpValid(msg, vt.vi);
+        dumpValid(msg, vi);
         CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
       }
     }
     if(entry.where_rd == WH_EVERYWHERE) {
-      if(on(valid_k[vt],WH_INTERIOR) && valid_k[vt] != WH_EVERYWHERE)
+      if(on(valid,WH_INTERIOR) && valid != WH_EVERYWHERE)
       {
-        if(vt.tl != 0) {
+        if(entry.time_level != 0) {
           std::ostringstream msg;
-          msg << "Attempt to sync previous time level (tl=" << vt.tl << ")"
-              << " for " << CCTK_FullVarName(vt.vi);
+          msg << "Attempt to sync previous time level (tl=" << entry.time_level << ")"
+              << " for " << CCTK_FullVarName(vi);
           CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
         }
 
-        int g = CCTK_GroupIndexFromVarI(vt.vi);
+        int g = CCTK_GroupIndexFromVarI(vi);
         pregroups.insert(g);
-      } else if(!on(valid_k[vt],WH_INTERIOR))
+      } else if(!on(valid,WH_INTERIOR))
       {
         std::ostringstream msg; 
-        msg << "Cannot sync " << CCTK_FullVarName(vt.vi)
+        msg << "Cannot sync " << CCTK_FullVarName(vi)
             << " because it is not valid in the interior.";
-        dumpValid(msg, vt.vi);
+        dumpValid(msg, vi);
         int level = psync_error ? 0 : 1;
         static bool have_warned = false;
         if(not have_warned) {
@@ -402,13 +419,18 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
  * reverse the order of timelevel information
  */
 void flip_rdwr(const cGH *cctkGH, int vi) {
+  assert(vi < CCTK_NumVars());
+  int const gi = CCTK_GroupIndexFromVarI(vi);
+  assert(gi >= 0);
+  int const var = vi - CCTK_FirstVarIndexI(gi);
+  ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+  assert(ff);
+
   int const cactus_tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
-  for(int t = 0; t < cactus_tl-1; t++) {
-    var_tuple vt{vi,reflevel,t};
-    var_tuple vt_flip{vi,reflevel,cactus_tl-t};
-    int tmpdata = valid_k[vt];
-    valid_k[vt] = valid_k[vt_flip];
-    valid_k[vt_flip] = tmpdata;
+  for(int tl = 0; tl < cactus_tl-1; tl++) {
+    int tmpdata = ff->valid(mglevel, reflevel, tl);
+    ff->set_valid(mglevel, reflevel, tl, ff->valid(mglevel, reflevel, cactus_tl-tl));
+    ff->set_valid(mglevel, reflevel, cactus_tl-tl, tmpdata);
   }
 }
 
@@ -416,8 +438,14 @@ void flip_rdwr(const cGH *cctkGH, int vi) {
  * mark a timelvel as invalid
  */
 void invalidate_rdwr(const cGH *cctkGH, int vi, int tl) {
-  var_tuple vt{vi,reflevel,tl};
-  valid_k[vt] = WH_NOWHERE;
+  assert(vi < CCTK_NumVars());
+  int const gi = CCTK_GroupIndexFromVarI(vi);
+  assert(gi >= 0);
+  int const var = vi - CCTK_FirstVarIndexI(gi);
+  ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+  assert(ff);
+
+  ff->set_valid(mglevel, reflevel, tl, WH_NOWHERE);
 }
 
 /**
@@ -435,15 +463,18 @@ void uncycle_rdwr(const cGH *cctkGH) {
     if(cactus_tl > 1) {
       int type = CCTK_GroupTypeFromVarI(vi);
       if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
-        var_tuple first{vi,reflevel,0};
-        int first_valid = valid_k[first]; 
-        for(int t = 0; t < cactus_tl-1; t++) {
-          var_tuple vold{vi,reflevel,t};
-          var_tuple vnew{vi,reflevel,t+1};
-          valid_k[vold] = valid_k[vnew];
-        }
-        var_tuple vt{vi,reflevel,cactus_tl-1};
-        valid_k[vt] = first_valid;
+
+	int const gi = CCTK_GroupIndexFromVarI(vi);
+	assert(gi >= 0);
+	int const var = vi - CCTK_FirstVarIndexI(gi);
+	ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+        assert(ff);
+
+	int first_valid = ff->valid(mglevel, reflevel, 0);
+	for(int tl = 0; tl < cactus_tl-1; tl++) {
+	  ff->set_valid(mglevel, reflevel, tl, ff->valid(mglevel, reflevel, tl+1));
+	}
+	ff->set_valid(mglevel, reflevel, cactus_tl-1, first_valid);
       }
     }
   }
@@ -467,15 +498,18 @@ void cycle_rdwr(const cGH *cctkGH) {
     if(cactus_tl > 1) {
       int type = CCTK_GroupTypeFromVarI(vi);
       if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
-        var_tuple last{vi,reflevel,cactus_tl-1};
-        int last_valid = valid_k[last];
-        for(int t = cactus_tl - 1; t > 0; t--) {
-          var_tuple vold{vi,reflevel,t};
-          var_tuple vnew{vi,reflevel,t-1};
-          valid_k[vold] = valid_k[vnew];
+
+        int const gi = CCTK_GroupIndexFromVarI(vi);
+        assert(gi >= 0);
+        int const var = vi - CCTK_FirstVarIndexI(gi);
+        ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+        assert(ff);
+
+        int last_valid = ff->valid(mglevel, reflevel, cactus_tl-1);
+        for(int tl = cactus_tl - 1; tl > 0; tl--) {
+	  ff->set_valid(mglevel, reflevel, tl, ff->valid(mglevel, reflevel, tl-1));
         }
-        var_tuple vt{vi,reflevel,0};
-        valid_k[vt] = last_valid;
+	ff->set_valid(mglevel, reflevel, 0, last_valid);
       }
     }
   }
@@ -490,8 +524,14 @@ void cycle_rdwr(const cGH *cctkGH) {
  */
 // TODO: expand to take a reflevel argument?
 void SetValidRegion(int vi,int tl,int wh) {
-  var_tuple vt(vi,reflevel,tl);
-  valid_k[vt] = wh;
+  assert(vi < CCTK_NumVars());
+  int const gi = CCTK_GroupIndexFromVarI(vi);
+  assert(gi >= 0);
+  int const var = vi - CCTK_FirstVarIndexI(gi);
+  ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+  assert(ff);
+
+  ff->set_valid(mglevel, reflevel, tl, wh);
 }
 
 /**
@@ -500,8 +540,14 @@ void SetValidRegion(int vi,int tl,int wh) {
  */
 // TODO: expand to take a reflevel argument?
 int GetValidRegion(int vi,int tl) {
-  var_tuple vt(vi,reflevel,tl);
-  return valid_k[vt];
+  assert(vi < CCTK_NumVars());
+  int const gi = CCTK_GroupIndexFromVarI(vi);
+  assert(gi >= 0);
+  int const var = vi - CCTK_FirstVarIndexI(gi);
+  ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+  assert(ff);
+
+  return ff->valid(mglevel, reflevel, tl);
 }
 
 /**
@@ -515,31 +561,31 @@ extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT
     return;
   }
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
-  var_tuple vt{vi,reflevel,tl};
-  auto f = valid_k.find(vt);
-  if(f == valid_k.end()) {
-    dumpValid(std::cerr, vi) << std::endl;
-    CCTK_VERROR("Could not find validity information for %s rl=%d tl=%d", CCTK_FullVarName(vi), reflevel, tl);
-  }
-  assert(f != valid_k.end());
+  assert(vi < CCTK_NumVars());
+  int const gi = CCTK_GroupIndexFromVarI(vi);
+  assert(gi >= 0);
+  int const var = vi - CCTK_FirstVarIndexI(gi);
+  ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+  assert(ff);
+  int const valid = ff->valid(mglevel, reflevel, tl);
   // Check if anything needs to be done
-  if(f->second == WH_EVERYWHERE) {
+  if(valid == WH_EVERYWHERE) {
     return;
   }
-  if(on(f->second,WH_INTERIOR)) {
+  if(on(valid,WH_INTERIOR)) {
     dumpValid(std::cerr, vi) << std::endl;
     CCTK_VERROR("SYNC requires valid data in interior %s rl=%d tl=%d", CCTK_FullVarName(vi), reflevel, tl);
   }
-  assert(on(f->second,WH_INTERIOR));
+  assert(on(valid,WH_INTERIOR));
 
   // Update valid region info
-  int gi = CCTK_GroupIndexFromVarI(vi);
   int i0 = CCTK_FirstVarIndexI(gi);
   int iN = i0+CCTK_NumVarsInGroupI(gi);
   for(int vi2=i0;vi2<iN;vi2++) {
-    var_tuple vt{vi2,reflevel,tl};
-    if(on(valid_k[vt],WH_INTERIOR)) {
-      valid_k[vt] = WH_EVERYWHERE;
+    ggf *const ff = arrdata.AT(gi).AT(map).data.AT(vi2 - i0);
+    assert(ff);
+    if(on(ff->valid(mglevel, reflevel, tl),WH_INTERIOR)) {
+      ff->set_valid(mglevel, reflevel, tl, WH_EVERYWHERE);
     }
   }
 
@@ -562,7 +608,7 @@ extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT
   } else {
     abort();
   }
-  valid_k[vt] = WH_EVERYWHERE;
+  ff->set_valid(mglevel, reflevel, tl, WH_EVERYWHERE);
 }
 
 extern "C"
@@ -694,6 +740,14 @@ void ApplyPhysicalBCsForVarI(const cGH *cctkGH, const int var_index) {
 #endif
     return;
   }
+
+  assert(var_index < CCTK_NumVars());
+  int const gi = CCTK_GroupIndexFromVarI(var_index);
+  assert(gi >= 0);
+  int const var = var_index - CCTK_FirstVarIndexI(gi);
+  ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+  assert(ff);
+
   std::vector<Bound>& bv = bc[var_index];
   BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
     BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
@@ -709,8 +763,8 @@ void ApplyPhysicalBCsForVarI(const cGH *cctkGH, const int var_index) {
             SymFunc& fsym = symmetry_functions.at(name);
             ierr = (*fsym.func)(cctkGH, var_index);
           }
-          var_tuple vt{var_index,reflevel,0};
-          valid_k[vt] |= WH_BOUNDARY;
+	  int const valid = ff->valid(mglevel, reflevel, 0);
+	  ff->set_valid(mglevel, reflevel, 0, valid | WH_BOUNDARY);
         }
       }
     }
