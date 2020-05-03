@@ -46,7 +46,6 @@ const int *ArrayGroupSizeB(const cGH *cgh, int dir, int group,
 int QueryGroupStorageB(const cGH *cgh, int group,
                        const char *groupname) CCTK_ATTRIBUTE_PURE;
 int GroupDynamicData(const cGH *cgh, int group, cGroupDynamicData *data);
-int HasAccess(const cGH *cgh, int varindex);
 
 void Restrict(const cGH *cgh);
 

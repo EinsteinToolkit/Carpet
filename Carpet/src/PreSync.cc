@@ -249,67 +249,6 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
   }
 }
 
-bool hasAccess(cFunctionData const * const current_function,
-               int const RDWR_entry::* const access, const var_tuple vt) {
-  // TODO: srt rdwr and turn into binary search
-  for (int i= 0;i<current_function->n_RDWR;i++) {
-    const RDWR_entry& entry = current_function->RDWR[i];
-    // we ignore refinement levels here since RDWR does not record them
-    if(entry.var_id == vt.vi && entry.time_level == vt.tl)
-      return entry.*access != WH_NOWHERE;
-  }
-  return false;
-}
-
-/**
- * Determine whether the currently executed function
- * has either read or write access to the variable
- * in question. If it does not, access is blocked
- * by causing CCTKi_VarDataPtrI() to return null.
- * Note that only REAL grid functions are affected.
- */
-int HasAccess(const cGH *cctkGH, int var_index) {
-  DECLARE_CCTK_PARAMETERS;
-  if(!psync_error)
-    return true;
-
-  cFunctionData const * const current_function = CCTK_ScheduleQueryCurrentFunction(cctkGH);
-  if(current_function == nullptr) // called directly by the driver or flesh
-    return true;
-
-  // vectors of grid functions are all accessed via a single pointer to the
-  // vector's 0th member. Thus access to the whole vector must be granted if
-  // any member has a READ / WRITE clause
-  const int gi = CCTK_GroupIndexFromVarI(var_index);
-  assert(gi >= 0);
-  cGroup group;
-  const int ierr = CCTK_GroupData(gi,&group);
-  assert(ierr == 0);
-  int var0,varn,varstep;
-  if(group.vectorgroup) {
-    // for groups of vectors the variable index steps first by group member
-    // then by vector index
-    var0 = CCTK_FirstVarIndexI(gi);
-    var0 += (var_index - var0) % group.vectorlength;
-    varn = group.numvars;
-    varstep = group.numvars / group.vectorlength;
-  } else {
-    var0 = var_index;
-    varn = 1;
-    varstep = 1;
-  }
-
-  for (int vi = var0; vi < var0 + varn; vi += varstep) {
-    var_tuple vt{vi,-1,0};
-    if(hasAccess(current_function,&RDWR_entry::where_rd,vt))
-      return true;
-    if(hasAccess(current_function,&RDWR_entry::where_wr,vt))
-      return true;
-  }
-
-  return false;
-}
-
 std::map<int,int> attempted_readwrites;
 
 void attempt_readwrite(int gf,int spec);

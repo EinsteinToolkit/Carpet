@@ -41,8 +41,6 @@ int CarpetStartup() {
   CCTK_OverloadEvolve(Evolve);
   CCTK_OverloadShutdown(Shutdown);
 
-  CCTK_OverloadHasAccess(HasAccess);
-
   CCTK_OverloadOutputGH(OutputGH);
 
   CCTK_OverloadSyncGroupsByDirI(SyncGroupsByDirI);
