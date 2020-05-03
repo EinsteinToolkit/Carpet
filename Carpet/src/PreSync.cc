@@ -249,39 +249,6 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
   }
 }
 
-std::map<int,int> attempted_readwrites;
-
-void attempt_readwrite(int gf,int spec);
-
-void attempt_readwrite(const char *thorn,const char *var, int spec) {
-  std::string v;
-  v += thorn;
-  v += "::";
-  v += var;
-  int vi = CCTK_VarIndex(v.c_str());
-  if(vi < 0) abort();
-  attempt_readwrite(vi,spec);
-}
-void attempt_readwrite(int gf,int spec) {
-  if(gf >= 0)
-    attempted_readwrites[gf] |= spec;
-}
-void clear_readwrites() {
-  attempted_readwrites.clear();
-}
-void check_readwrites(cFunctionData const * const current_routine) {
-  for(auto i=attempted_readwrites.begin(); i != attempted_readwrites.end(); ++i) {
-    // TODO: these magic numbers should be remove.
-    // RH: in cctk_PreSync.h 0x1 is WH_GHOSTS but 0x10 is not defined
-    if((i->second & 0x01)==0x01 && !hasAccess(current_routine,&RDWR_entry::where_rd,var_tuple(i->first,-1,0))) {
-        std::cerr << "Undeclared access: " << current_routine << " read name='" << CCTK_FullVarName(i->first) << "'" << std::endl;
-    }
-    if((i->second & 0x10)==0x10 && !hasAccess(current_routine,&RDWR_entry::where_wr,var_tuple(i->first,-1,0))) {
-        std::cerr << "Undeclared access: " << current_routine << " write name='" << CCTK_FullVarName(i->first) << "'" << std::endl;
-    }
-  }
-}
-
 /**
  * Computes which groups need to be presync'd.
  */

@@ -402,9 +402,7 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
       Accelerator_PreCallFunction(cctkGH, attribute);
       pre_timer.stop();
     }
-    clear_readwrites();
     int const res = CCTK_CallFunction(function, attribute, data);
-    check_readwrites(attribute);
     CCTK_Checked_reset();
     assert(res == 0);
     if (CCTK_IsFunctionAliased("Accelerator_PostCallFunction")) {
