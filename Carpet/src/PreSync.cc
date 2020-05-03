@@ -249,15 +249,6 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
   }
 }
 
-std::map<var_tuple,int> tmp_read, tmp_write;
-
-bool hasAccess(const std::map<var_tuple,int>& m, const var_tuple& vt) {
-  auto i2 = m.find(vt);
-  if(i2 == m.end())
-    return false;
-  return i2->second != WH_NOWHERE;
-}
-
 bool hasAccess(cFunctionData const * const current_function,
                int const RDWR_entry::* const access, const var_tuple vt) {
   // TODO: srt rdwr and turn into binary search
@@ -314,18 +305,6 @@ int HasAccess(const cGH *cctkGH, int var_index) {
       return true;
     if(hasAccess(current_function,&RDWR_entry::where_wr,vt))
       return true;
-    if(hasAccess(tmp_read,vt)) {
-#ifdef PRESYNC_DEBUG
-      std::cout << "tmp acccess for " << CCTK_FullVarName(vi) << std::endl;
-#endif
-      return true;
-    }
-    if(hasAccess(tmp_write,vt)) {
-#ifdef PRESYNC_DEBUG
-      std::cout << "tmp acccess for " << CCTK_FullVarName(vi) << std::endl;
-#endif
-      return true;
-    }
   }
 
   return false;
@@ -372,8 +351,6 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
   if(cctkGH == 0) return;
   if(attribute == 0) return;
   if(!use_psync) return;
-  tmp_read.erase(tmp_read.begin(),tmp_read.end());
-  tmp_write.erase(tmp_write.begin(),tmp_write.end());
 
   for(int i=0;i<attribute->n_RDWR;i++) {
     const RDWR_entry& entry = attribute->RDWR[i];
@@ -883,21 +860,6 @@ void Carpet_ApplyPhysicalBCs(const cGH *cctkGH) {
 #endif
 }
 
-}
-
-/**
- * Request temporary read access to a variable,
- * thus allowing Carpet_hasAccess() to return true.
- * This needs to be called <i>before</i> the 
- * CCTK_DECLARE_ARGUMENTS macro in order to have
- * the desired effect.
- */
-CCTK_INT Carpet_requestAccess(const CCTK_INT var_index, const CCTK_INT read_spec, const CCTK_INT write_spec) {
-  assert(var_index >= 0);
-  Carpet::var_tuple vi{var_index,-1,0};
-  Carpet::tmp_read[vi]  |= read_spec;
-  Carpet::tmp_write[vi] |= write_spec;
-  return 0;
 }
 
 void ShowValid() {

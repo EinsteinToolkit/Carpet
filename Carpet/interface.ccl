@@ -548,8 +548,3 @@ CCTK_INT FUNCTION Driver_RegisterSymmetryBC(CCTK_POINTER_TO_CONST IN GH,
   CCTK_STRING IN bc_name)
 PROVIDES FUNCTION Driver_RegisterSymmetryBC WITH
   Carpet_RegisterSymmetryBC LANGUAGE C
-
-CCTK_INT FUNCTION Driver_requestAccess(
-  CCTK_INT IN VAR,CCTK_INT IN READ_WHERE,CCTK_INT IN WRITE_WHERE)
-PROVIDES FUNCTION Driver_requestAccess WITH
-  Carpet_requestAccess LANGUAGE C
