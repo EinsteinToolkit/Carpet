@@ -7,12 +7,6 @@
 #include <vector>
 
 
-extern "C" void ShowValid();
-extern "C" void diagnosticPreValid();
-
-extern "C" void attempt_readwrite(const char *thorn,const char *var, int spec);
-extern "C" void diagnosticChanged();
-
 namespace Carpet {
 extern "C" void clear_readwrites();
 extern "C" void check_readwrites(cFunctionData const * const attribute);

@@ -86,10 +86,6 @@ inline void tolower(std::string& s) {
 std::map<var_tuple,int> valid_k;
 std::map<var_tuple,int> old_valid_k;
 
-void diagnosticPreValid() {
-  old_valid_k = valid_k;
-}
-
 ostream& dumpValid(ostream& os, const int vi) {
   os << "\nValid entries:";
   for(auto it : valid_k) {
@@ -98,21 +94,6 @@ ostream& dumpValid(ostream& os, const int vi) {
     }
   }
   return os;
-}
-
-void diagnosticChanged() {
-  for(auto entry = valid_k.begin(); valid_k.end() != entry; ++entry) {
-    auto f = old_valid_k.find(entry->first);
-    if(f == old_valid_k.end()) {
-#ifdef PRESYNC_DEBUG
-      std::cout << " NEW: " << entry->first << " = " << wstr(entry->second) << std::endl;
-#endif
-    } else if(entry->second != f->second) {
-#ifdef PRESYNC_DEBUG
-      std::cout << " CHANGED: " << entry->first << " = " << wstr(f->second) << " -> " << wstr(entry->second) << std::endl;
-#endif
-    }
-  }
 }
 
 void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sync_groups) {
@@ -733,12 +714,4 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
   }
 }
 
-}
-
-void ShowValid() {
-  for(auto i = Carpet::valid_k.begin();i != Carpet::valid_k.end(); ++i) {
-    const Carpet::var_tuple& vt = i->first;
-    int wh = i->second;
-    std::cout << "  valid: " << CCTK_FullVarName(vt.vi) << " tl=" << vt.tl << " wh=" << Carpet::wstr(wh) << std::endl;
-  }
-}
+} // namespace Carpet
