@@ -548,30 +548,43 @@ extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
   do_periodic[1] = periodic or periodic_y;
   do_periodic[2] = periodic or periodic_z;
 
-  if(use_psync) {
-    int const vi = Driver_SelectedGV();
-    if(vi < 0)
-      CCTK_VERROR("boundary condition application error in PreSync");
-  
-    CCTK_INT width[2 * dim];
-    CCTK_INT is_internal[2 * dim];
-    CCTK_INT is_staggered[2 * dim];
-    CCTK_INT shiftout[2 * dim];
-    int ierr = GetBoundarySpecification(2 * dim, width, is_internal, is_staggered,
-                                        shiftout);
-    if (ierr < 0)
-      CCTK_VERROR("Could not get the boundary specification. ierr=%d", ierr);
-  
-    CCTK_INT stencil[dim];
-    for (int d = 0; d < dim; ++d) {
-      if (do_periodic[d]) {
-        assert(width[2 * d] == width[2 * d + 1]);
-        stencil[d] = width[2 * d];
-      } else {
-        stencil[d] = 0;
-      }
+  CCTK_INT const nvars = Boundary_SelectedGVs(cctkGH, 0, 0, 0, 0, 0, 0);
+  assert(nvars >= 0);
+  if (nvars == 0)
+    return;
+
+  vector<CCTK_INT> indices(nvars);
+  vector<CCTK_INT> faces(nvars);
+  vector<CCTK_INT> widths(nvars);
+  vector<CCTK_INT> tables(nvars);
+  int const iret =
+      Boundary_SelectedGVs(cctkGH, nvars, &indices.front(), &faces.front(),
+                           &widths.front(), &tables.front(), 0);
+  assert(iret == nvars);
+
+  CCTK_INT width[2 * dim];
+  CCTK_INT is_internal[2 * dim];
+  CCTK_INT is_staggered[2 * dim];
+  CCTK_INT shiftout[2 * dim];
+  int ierr = GetBoundarySpecification(2 * dim, width, is_internal, is_staggered,
+                                      shiftout);
+  if (ierr < 0)
+    CCTK_ERROR("Could not get the boundary specification");
+
+  CCTK_INT stencil[dim];
+  for (int d = 0; d < dim; ++d) {
+    if (do_periodic[d]) {
+      assert(width[2 * d] == width[2 * d + 1]);
+      stencil[d] = width[2 * d];
+    } else {
+      stencil[d] = 0;
     }
-  
+  }
+
+  for (int n = 0; n < nvars; ++n) {
+    int const vi = indices.at(n);
+    assert(vi >= 0 and vi < CCTK_NumVars());
+
     if (verbose) {
       char *const fullname = CCTK_FullName(vi);
       assert(fullname);
@@ -579,59 +592,9 @@ extern "C" void PeriodicCarpet_ApplyBC(CCTK_ARGUMENTS) {
                  fullname);
       free(fullname);
     }
-  
-    // Note with PreSync, the variables will only ever be updated
-    // one at a time.
-    periodic_carpet(cctkGH, dim, stencil, do_periodic, &vi, 1);
-  } else {
-    CCTK_INT const nvars = Boundary_SelectedGVs(cctkGH, 0, 0, 0, 0, 0, 0);
-    assert(nvars >= 0);
-    if (nvars == 0)
-      return;
-  
-    vector<CCTK_INT> indices(nvars);
-    vector<CCTK_INT> faces(nvars);
-    vector<CCTK_INT> widths(nvars);
-    vector<CCTK_INT> tables(nvars);
-    int const iret =
-        Boundary_SelectedGVs(cctkGH, nvars, &indices.front(), &faces.front(),
-                             &widths.front(), &tables.front(), 0);
-    assert(iret == nvars);
-  
-    CCTK_INT width[2 * dim];
-    CCTK_INT is_internal[2 * dim];
-    CCTK_INT is_staggered[2 * dim];
-    CCTK_INT shiftout[2 * dim];
-    int ierr = GetBoundarySpecification(2 * dim, width, is_internal, is_staggered,
-                                        shiftout);
-    if (ierr < 0)
-      CCTK_ERROR("Could not get the boundary specification");
-  
-    CCTK_INT stencil[dim];
-    for (int d = 0; d < dim; ++d) {
-      if (do_periodic[d]) {
-        assert(width[2 * d] == width[2 * d + 1]);
-        stencil[d] = width[2 * d];
-      } else {
-        stencil[d] = 0;
-      }
-    }
-  
-    for (int n = 0; n < nvars; ++n) {
-      int const vi = indices.at(n);
-      assert(vi >= 0 and vi < CCTK_NumVars());
-  
-      if (verbose) {
-        char *const fullname = CCTK_FullName(vi);
-        assert(fullname);
-        CCTK_VINFO("Applying periodicity boundary conditions to \"%s\"",
-                   fullname);
-        free(fullname);
-      }
-    } // for n
-  
-    periodic_carpet(cctkGH, dim, stencil, do_periodic, &indices.front(), nvars);
-  }
+  } // for n
+
+  periodic_carpet(cctkGH, dim, stencil, do_periodic, &indices.front(), nvars);
 }
 
 namespace CarpetLib {
