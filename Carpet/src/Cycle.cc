@@ -76,7 +76,7 @@ void CycleTimeLevels(cGH *const cctkGH) {
           for (int m = 0; m < (int)arrdata.AT(group).size(); ++m) {
             for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
               if (use_psync) {
-                ManualSyncGF(cctkGH, 0, firstvarindex+var);
+                Carpet_ManualSyncGF(cctkGH, 0, firstvarindex+var);
               }
               arrdata.AT(group).AT(m).data.AT(var)->cycle_all(reflevel,
                                                               mglevel);
@@ -149,7 +149,7 @@ void UncycleTimeLevels(cGH *const cctkGH) {
           int const firstvarindex = CCTK_FirstVarIndexI(group);
           for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
             if (use_psync) {
-              ManualSyncGF(cctkGH, 0, firstvarindex+var);
+              Carpet_ManualSyncGF(cctkGH, 0, firstvarindex+var);
             }
             arrdata.AT(group).AT(m).data.AT(var)->uncycle_all(reflevel,
                                                               mglevel);
@@ -212,7 +212,7 @@ void FlipTimeLevels(cGH *const cctkGH) {
         for (int m = 0; m < (int)arrdata.AT(group).size(); ++m) {
           for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
             if (use_psync) {
-              ManualSyncGF(cctkGH, 0, firstvarindex+var);
+              Carpet_ManualSyncGF(cctkGH, 0, firstvarindex+var);
             }
             flip_rdwr(cctkGH, firstvarindex+var);
             arrdata.AT(group).AT(m).data.AT(var)->flip_all(reflevel, mglevel);
