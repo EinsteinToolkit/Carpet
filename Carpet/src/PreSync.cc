@@ -155,7 +155,9 @@ void Sync1(const cGH *cctkGH,int tl,int gi) {
   auto const old_do_allow_past_timelevels = do_allow_past_timelevels;
   do_allow_past_timelevels = tl == 0;
   timelevel_offset = timelevel = tl;
-  const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
+  int type = CCTK_GroupTypeI(gi);
+  int const rl = type == CCTK_GF ? reflevel : 0;
+  const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, rl, timelevel);
   int ierr = SyncProlongateGroups(cctkGH, sync_groups, attribute);
   assert(!ierr);
   const_cast<cGH*>(cctkGH)->cctk_time = old_cctk_time;
@@ -179,14 +181,22 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
     int const gi = CCTK_GroupIndexFromVarI(entry.var_id);
     assert(gi >= 0);
     int const var = entry.var_id - CCTK_FirstVarIndexI(gi);
-    ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+    int const m = 0; // FIXME: this assumes that validity is the same on all maps
+    ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
     assert(ff);
 
+    int type = CCTK_GroupTypeFromVarI(entry.var_id);
+    int const rl = type == CCTK_GF ? reflevel : 0;
+
+    // skip checking variables without storage
+    if(not(entry.time_level < ff->timelevels(mglevel, rl)))
+      continue;
+
     if(entry.where_wr == WH_INTERIOR) {
-      ff->set_valid(mglevel, reflevel, entry.time_level, WH_INTERIOR);
+      ff->set_valid(mglevel, rl, entry.time_level, WH_INTERIOR);
     } else {
-      int const old_valid = ff->valid(mglevel, reflevel, entry.time_level);
-      ff->set_valid(mglevel, reflevel, entry.time_level, old_valid | entry.where_wr);
+      int const old_valid = ff->valid(mglevel, rl, entry.time_level);
+      ff->set_valid(mglevel, rl, entry.time_level, old_valid | entry.where_wr);
     }
   }
 
@@ -202,12 +212,15 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
         // we ignore refinement levels here since RDWR does not record them
         if(entry.var_id == vi && entry.time_level == 0) {
           if(on(entry.where_wr,WH_INTERIOR)) {
-	    ggf *const ff = arrdata.AT(gi).AT(map).data.AT(vi - var0);
+            int const m = 0; // FIXME: this assumes that validity is the same on all maps
+	    ggf *const ff = arrdata.AT(gi).AT(m).data.AT(vi - var0);
             assert(ff);
-	    int const old_valid = ff->valid(mglevel, reflevel, 0);
+            int type = CCTK_GroupTypeFromVarI(vi);
+            int const rl = type == CCTK_GF ? reflevel : 0;
+	    int const old_valid = ff->valid(mglevel, rl, 0);
 	    ff->set_valid(mglevel, reflevel, 0, old_valid | WH_GHOSTS);
 #ifdef PRESYNC_DEBUG
-            std::cout << "SYNC: " << CCTK_FullVarName(vi) << " " << ff->valid(mglevel, reflevel, 0) << std::endl;
+            std::cout << "SYNC: " << CCTK_FullVarName(vi) << " " << ff->valid(mglevel, rl, 0) << std::endl;
 #endif
           }
         }
@@ -243,9 +256,12 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     bool push = true;
     if(!use_psync && psync_error) {
       for(int vi=i0;vi<iN;vi++) {
-        ggf *const ff = arrdata.AT(gi).AT(map).data.AT(vi - i0);
+        int const m = 0; // FIXME: this assumes that validity is the same on all maps
+        ggf *const ff = arrdata.AT(gi).AT(m).data.AT(vi - i0);
         assert(ff);
-        int const wh = ff->valid(mglevel, reflevel, 0);
+        int type = CCTK_GroupTypeFromVarI(vi);
+        int const rl = type == CCTK_GF ? reflevel : 0;
+        int const wh = ff->valid(mglevel, rl, 0);
         if(!on(wh,WH_GHOSTS)) {
           std::ostringstream msg;
           msg << "  Presync: missing sync for ";
@@ -265,9 +281,12 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     for(int vi=i0;vi<iN;vi++) {
       int type = CCTK_GroupTypeFromVarI(vi);
       if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
-	ggf *const ff = arrdata.AT(gi).AT(map).data.AT(vi - i0);
+        int const m = 0; // FIXME: this assumes that validity is the same on all maps
+	ggf *const ff = arrdata.AT(gi).AT(m).data.AT(vi - i0);
         assert(ff);
-	int const wh = ff->valid(mglevel, reflevel, 0);
+        int type = CCTK_GroupTypeFromVarI(vi);
+        int const rl = type == CCTK_GF ? reflevel : 0;
+	int const wh = ff->valid(mglevel, rl, 0);
 	if(on(wh,WH_EXTERIOR)) {
 	  continue;
 	}
@@ -287,7 +306,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
 	  sync_groups.push_back(gi);
 	  push = false;
 	}
-	ff->set_valid(mglevel, reflevel, 0, wh | WH_GHOSTS);
+	ff->set_valid(mglevel, rl, 0, wh | WH_GHOSTS);
       }
     }
   }
@@ -298,7 +317,8 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
         int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
         int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
         for (int vi=i0;vi<iN;vi++) {
-          ggf *const ff = arrdata.AT(sync_groups[sgi]).AT(map).data.AT(vi - i0);
+          int const m = 0; // FIXME: this assumes that validity is the same on all maps
+          ggf *const ff = arrdata.AT(sync_groups[sgi]).AT(m).data.AT(vi - i0);
           assert(ff);
           if(ff->valid(mglevel, reflevel, 0) != WH_EVERYWHERE) {
             std::ostringstream msg;
@@ -350,10 +370,18 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
     int const gi = CCTK_GroupIndexFromVarI(entry.var_id);
     assert(gi >= 0);
     int const var = entry.var_id - CCTK_FirstVarIndexI(gi);
-    ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+    int const m = 0; // FIXME: this assumes that validity is the same on all maps
+    ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
     assert(ff);
 
-    int const valid = ff->valid(mglevel, reflevel, entry.time_level);
+    int type = CCTK_GroupTypeFromVarI(vi);
+    int const rl = type == CCTK_GF ? reflevel : 0;
+
+    // skip checking variables without storage
+    if(not(entry.time_level < ff->timelevels(mglevel, rl)))
+      continue;
+
+    int const valid = ff->valid(mglevel, rl, entry.time_level);
 
     // TODO: only need to check that what is READ is valid
     if(!on(valid,WH_INTERIOR)) // and !silent_psync)
@@ -361,7 +389,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
       // If the read spec is everywhere and we only have
       // interior, that's ok. The system will sync.
       std::ostringstream msg; 
-      msg << "Required read for " << format_var_tuple(vi, reflevel, entry.time_level)
+      msg << "Required read for " << format_var_tuple(vi, rl, entry.time_level)
           << " not satisfied. Invalid interior"
           << " at the start of routine "
           << attribute->thorn << "::" << attribute->routine;
@@ -377,7 +405,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
         // If the read spec is everywhere, that's not
         // okay for previous time levels as they won't sync.
         std::ostringstream msg; 
-        msg << "Required read for " << format_var_tuple(vi, reflevel, entry.time_level)
+        msg << "Required read for " << format_var_tuple(vi, rl, entry.time_level)
           << " not satisfied. Wanted '" << wstr(entry.where_rd)
           << "' found '" << wstr(valid)
           << "' at the start of routine "
@@ -423,14 +451,17 @@ void flip_rdwr(const cGH *cctkGH, int vi) {
   int const gi = CCTK_GroupIndexFromVarI(vi);
   assert(gi >= 0);
   int const var = vi - CCTK_FirstVarIndexI(gi);
-  ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+  int const m = 0; // FIXME: this assumes that validity is the same on all maps
+  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
   assert(ff);
+  int type = CCTK_GroupTypeFromVarI(vi);
+  int const rl = type == CCTK_GF ? reflevel : 0;
 
   int const cactus_tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
   for(int tl = 0; tl < cactus_tl-1; tl++) {
-    int tmpdata = ff->valid(mglevel, reflevel, tl);
-    ff->set_valid(mglevel, reflevel, tl, ff->valid(mglevel, reflevel, cactus_tl-tl));
-    ff->set_valid(mglevel, reflevel, cactus_tl-tl, tmpdata);
+    int tmpdata = ff->valid(mglevel, rl, tl);
+    ff->set_valid(mglevel, rl, tl, ff->valid(mglevel, rl, cactus_tl-tl));
+    ff->set_valid(mglevel, rl, cactus_tl-tl, tmpdata);
   }
 }
 
@@ -442,10 +473,13 @@ void invalidate_rdwr(const cGH *cctkGH, int vi, int tl) {
   int const gi = CCTK_GroupIndexFromVarI(vi);
   assert(gi >= 0);
   int const var = vi - CCTK_FirstVarIndexI(gi);
-  ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+  int const m = 0; // FIXME: this assumes that validity is the same on all maps
+  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
   assert(ff);
+  int type = CCTK_GroupTypeFromVarI(vi);
+  int const rl = type == CCTK_GF ? reflevel : 0;
 
-  ff->set_valid(mglevel, reflevel, tl, WH_NOWHERE);
+  ff->set_valid(mglevel, rl, tl, WH_NOWHERE);
 }
 
 /**
@@ -467,14 +501,17 @@ void uncycle_rdwr(const cGH *cctkGH) {
 	int const gi = CCTK_GroupIndexFromVarI(vi);
 	assert(gi >= 0);
 	int const var = vi - CCTK_FirstVarIndexI(gi);
-	ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+        int const m = 0; // FIXME: this assumes that validity is the same on all maps
+	ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
         assert(ff);
+        int type = CCTK_GroupTypeFromVarI(vi);
+        int const rl = type == CCTK_GF ? reflevel : 0;
 
-	int first_valid = ff->valid(mglevel, reflevel, 0);
+	int first_valid = ff->valid(mglevel, rl, 0);
 	for(int tl = 0; tl < cactus_tl-1; tl++) {
-	  ff->set_valid(mglevel, reflevel, tl, ff->valid(mglevel, reflevel, tl+1));
+	  ff->set_valid(mglevel, rl, tl, ff->valid(mglevel, rl, tl+1));
 	}
-	ff->set_valid(mglevel, reflevel, cactus_tl-1, first_valid);
+	ff->set_valid(mglevel, rl, cactus_tl-1, first_valid);
       }
     }
   }
@@ -502,14 +539,17 @@ void cycle_rdwr(const cGH *cctkGH) {
         int const gi = CCTK_GroupIndexFromVarI(vi);
         assert(gi >= 0);
         int const var = vi - CCTK_FirstVarIndexI(gi);
-        ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+        int const m = 0; // FIXME: this assumes that validity is the same on all maps
+        ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
         assert(ff);
+        int type = CCTK_GroupTypeFromVarI(vi);
+        int const rl = type == CCTK_GF ? reflevel : 0;
 
-        int last_valid = ff->valid(mglevel, reflevel, cactus_tl-1);
+        int last_valid = ff->valid(mglevel, rl, cactus_tl-1);
         for(int tl = cactus_tl - 1; tl > 0; tl--) {
-	  ff->set_valid(mglevel, reflevel, tl, ff->valid(mglevel, reflevel, tl-1));
+	  ff->set_valid(mglevel, rl, tl, ff->valid(mglevel, rl, tl-1));
         }
-	ff->set_valid(mglevel, reflevel, 0, last_valid);
+	ff->set_valid(mglevel, rl, 0, last_valid);
       }
     }
   }
@@ -528,10 +568,13 @@ void SetValidRegion(int vi,int tl,int wh) {
   int const gi = CCTK_GroupIndexFromVarI(vi);
   assert(gi >= 0);
   int const var = vi - CCTK_FirstVarIndexI(gi);
-  ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+  int const m = 0; // FIXME: this assumes that validity is the same on all maps
+  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
   assert(ff);
+  int type = CCTK_GroupTypeFromVarI(vi);
+  int const rl = type == CCTK_GF ? reflevel : 0;
 
-  ff->set_valid(mglevel, reflevel, tl, wh);
+  ff->set_valid(mglevel, rl, tl, wh);
 }
 
 /**
@@ -544,10 +587,13 @@ int GetValidRegion(int vi,int tl) {
   int const gi = CCTK_GroupIndexFromVarI(vi);
   assert(gi >= 0);
   int const var = vi - CCTK_FirstVarIndexI(gi);
-  ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+  int const m = 0; // FIXME: this assumes that validity is the same on all maps
+  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
   assert(ff);
+  int type = CCTK_GroupTypeFromVarI(vi);
+  int const rl = type == CCTK_GF ? reflevel : 0;
 
-  return ff->valid(mglevel, reflevel, tl);
+  return ff->valid(mglevel, rl, tl);
 }
 
 /**
@@ -565,16 +611,19 @@ extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT
   int const gi = CCTK_GroupIndexFromVarI(vi);
   assert(gi >= 0);
   int const var = vi - CCTK_FirstVarIndexI(gi);
-  ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+  int const m = 0; // FIXME: this assumes that validity is the same on all maps
+  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
   assert(ff);
-  int const valid = ff->valid(mglevel, reflevel, tl);
+  int type = CCTK_GroupTypeFromVarI(vi);
+  int const rl = type == CCTK_GF ? reflevel : 0;
+  int const valid = ff->valid(mglevel, rl, tl);
   // Check if anything needs to be done
   if(valid == WH_EVERYWHERE) {
     return;
   }
   if(on(valid,WH_INTERIOR)) {
     dumpValid(std::cerr, vi) << std::endl;
-    CCTK_VERROR("SYNC requires valid data in interior %s rl=%d tl=%d", CCTK_FullVarName(vi), reflevel, tl);
+    CCTK_VERROR("SYNC requires valid data in interior %s rl=%d tl=%d", CCTK_FullVarName(vi), rl, tl);
   }
   assert(on(valid,WH_INTERIOR));
 
@@ -582,10 +631,11 @@ extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT
   int i0 = CCTK_FirstVarIndexI(gi);
   int iN = i0+CCTK_NumVarsInGroupI(gi);
   for(int vi2=i0;vi2<iN;vi2++) {
-    ggf *const ff = arrdata.AT(gi).AT(map).data.AT(vi2 - i0);
+    int const m = 0; // FIXME: this assumes that validity is the same on all maps
+    ggf *const ff = arrdata.AT(gi).AT(m).data.AT(vi2 - i0);
     assert(ff);
-    if(on(ff->valid(mglevel, reflevel, tl),WH_INTERIOR)) {
-      ff->set_valid(mglevel, reflevel, tl, WH_EVERYWHERE);
+    if(on(ff->valid(mglevel, rl, tl),WH_INTERIOR)) {
+      ff->set_valid(mglevel, rl, tl, WH_EVERYWHERE);
     }
   }
 
@@ -608,7 +658,7 @@ extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT
   } else {
     abort();
   }
-  ff->set_valid(mglevel, reflevel, tl, WH_EVERYWHERE);
+  ff->set_valid(mglevel, rl, tl, WH_EVERYWHERE);
 }
 
 extern "C"
@@ -745,8 +795,11 @@ void ApplyPhysicalBCsForVarI(const cGH *cctkGH, const int var_index) {
   int const gi = CCTK_GroupIndexFromVarI(var_index);
   assert(gi >= 0);
   int const var = var_index - CCTK_FirstVarIndexI(gi);
-  ggf *const ff = arrdata.AT(gi).AT(map).data.AT(var);
+  int const m = 0; // FIXME: this assumes that validity is the same on all maps
+  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
   assert(ff);
+  int type = CCTK_GroupTypeFromVarI(var_index);
+  int const rl = type == CCTK_GF ? reflevel : 0;
 
   std::vector<Bound>& bv = bc[var_index];
   BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
@@ -763,8 +816,8 @@ void ApplyPhysicalBCsForVarI(const cGH *cctkGH, const int var_index) {
             SymFunc& fsym = symmetry_functions.at(name);
             ierr = (*fsym.func)(cctkGH, var_index);
           }
-	  int const valid = ff->valid(mglevel, reflevel, 0);
-	  ff->set_valid(mglevel, reflevel, 0, valid | WH_BOUNDARY);
+	  int const valid = ff->valid(mglevel, rl, 0);
+	  ff->set_valid(mglevel, rl, 0, valid | WH_BOUNDARY);
         }
       }
     }
