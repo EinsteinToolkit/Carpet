@@ -749,23 +749,6 @@ void Carpet_ApplyPhysicalBCsForGroupI(const cGH *cctkGH, int group_index) {
   }
 }
 
-/**
- * Deprecated: This routine only exists to compare with the old version
- * provided by the Boundary thorn.
- */
-extern "C"
-void Carpet_ApplyPhysicalBCs(const cGH *cctkGH) {
-#ifdef PRESYNC_DEBUG
-  std::cout << "Carpet_ApplyPhysicalBCs()" << std::endl;
-  for(int n=0;n <= 1;n++) {
-    for(auto i=boundary_conditions.begin(); i != boundary_conditions.end(); ++i) {
-      std::cout << "n=" << n << " vi=" << i->first << std::endl;
-    }
-  }
-  std::cout << " done" << std::endl;
-#endif
-}
-
 }
 
 void ShowValid() {
