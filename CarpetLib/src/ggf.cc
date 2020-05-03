@@ -42,6 +42,15 @@ ggf::ggf(const int varindex_, const operator_type transport_operator_, th &t_,
     timelevels_.AT(ml).resize(d.h.reflevels(), 0);
   }
 
+  valid_.resize(d.h.mglevels());
+  for (int ml = 0; ml < d.h.mglevels(); ++ml) {
+    valid_.AT(ml).resize(d.h.reflevels());
+    for (int rl = 0; rl < d.h.reflevels(); ++rl) {
+      // this does not do anything right now since all timelevels are 0
+      valid_.AT(ml).AT(rl).resize(timelevels_.AT(ml).AT(rl), WH_NOWHERE);
+    }
+  }
+
   allggf.insert(this);
   d.insert(this);
 
@@ -82,6 +91,8 @@ void ggf::set_timelevels(const int ml, const int rl, const int new_timelevels) {
       storage.AT(ml).AT(rl).AT(lc).resize(new_timelevels);
     } // for lc
 
+    valid_.AT(ml).AT(rl).resize(new_timelevels);
+
   } else if (new_timelevels > timelevels(ml, rl)) {
 
     for (int lc = 0; lc < h.local_components(rl); ++lc) {
@@ -96,6 +107,8 @@ void ggf::set_timelevels(const int ml, const int rl, const int new_timelevels) {
             shp.padding_offset, dist::rank());
       } // for tl
     }   // for lc
+
+    valid_.AT(ml).AT(rl).resize(new_timelevels, WH_NOWHERE);
   }
 
   timelevels_.AT(ml).AT(rl) = new_timelevels;
@@ -112,6 +125,7 @@ void ggf::recompose_crop() {
         for (int tl = 0; tl < (int)storage.AT(ml).AT(rl).AT(lc).size(); ++tl)
           delete storage.AT(ml).AT(rl).AT(lc).AT(tl);
     storage.AT(ml).resize(h.reflevels());
+    valid_.AT(ml).resize(h.reflevels());
   } // for ml
 
   timer.stop();
@@ -149,6 +163,9 @@ void ggf::recompose_allocate(const int rl) {
             shp.padding_offset, dist::rank());
       } // for tl
     }   // for lc
+
+    valid_.AT(ml).resize(h.reflevels());
+    valid_.AT(ml).AT(rl).resize(timelevels_.AT(ml).AT(rl), WH_NOWHERE);
   }     // for ml
 
   timer.stop();

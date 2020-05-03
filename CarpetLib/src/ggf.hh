@@ -52,6 +52,7 @@ public: // should be readonly
 
 protected:
   vector<vector<int> > timelevels_; // time levels [ml][rl]
+  vector<vector<vector<int> > > valid_; // validity information [ml][rl][tl]
 
   mdata storage; // storage
 
@@ -79,9 +80,15 @@ public:
   int timelevels(int const ml, int const rl) const {
     return timelevels_.AT(ml).AT(rl);
   }
+  int valid(int const ml, int const rl, int const tl) const {
+    return valid_.AT(ml).AT(rl).AT(tl);
+  }
 
   // Modifiers
   void set_timelevels(int ml, int rl, int new_timelevels);
+  void set_valid(int ml, int rl, int tl, int new_valid) {
+    valid_.AT(ml).AT(rl).AT(tl) = new_valid;
+  }
 
   void recompose_crop();
   void recompose_allocate(int rl);
