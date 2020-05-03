@@ -25,7 +25,6 @@
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
-#include "cctk_PreSync.h"
 
 #include "carpet.hh"
 
