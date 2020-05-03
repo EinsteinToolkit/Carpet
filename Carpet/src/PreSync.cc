@@ -687,8 +687,7 @@ CCTK_INT SelectGroupForBC(
 /**
  * Apply boundary conditions for a single variable.
  */
-extern "C"
-void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
+void ApplyPhysicalBCsForVarI(const cGH *cctkGH, const int var_index) {
   DECLARE_CCTK_PARAMETERS;
   if(!use_psync) return;
   auto bc = boundary_conditions;
@@ -726,12 +725,11 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
 /**
  * Apply boundary conditions for a group. Called from inside SyncProlongateGroups.
  */
-extern "C"
-void Carpet_ApplyPhysicalBCsForGroupI(const cGH *cctkGH, int group_index) {
+void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
   int vstart = CCTK_FirstVarIndexI(group_index);
   int vnum   = CCTK_NumVarsInGroupI(group_index);
   for(int var_index=vstart;var_index<vstart+vnum;var_index++) {
-    Carpet_ApplyPhysicalBCsForVarI(cctkGH,var_index);
+    ApplyPhysicalBCsForVarI(cctkGH,var_index);
   }
 }
 

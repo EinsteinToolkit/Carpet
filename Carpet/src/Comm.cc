@@ -16,8 +16,7 @@
 #include <gh.hh>
 
 #include <carpet.hh>
-
-extern "C" void Carpet_ApplyPhysicalBCsForGroupI(const cGH *cctkGH,int group);
+#include <PreSyncCarpet.hh>
 
 namespace Carpet {
 
@@ -190,7 +189,7 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
       }
     }
     for(auto group : goodgroups) {
-      Carpet_ApplyPhysicalBCsForGroupI(cctkGH,group);
+      ApplyPhysicalBCsForGroupI(cctkGH,group);
     }
   }
 
