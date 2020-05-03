@@ -445,7 +445,8 @@ extern "C" CCTK_INT BndPeriodicCarpetGN(CCTK_POINTER_TO_CONST const cctkGH_,
   return 0;
 }
 
-static CCTK_INT New_PeriodicCarpet_ApplyBC(CCTK_POINTER_TO_CONST const cctkGH_) {
+static CCTK_INT New_PeriodicCarpet_ApplyBC(CCTK_POINTER_TO_CONST const cctkGH_,
+                                           const CCTK_INT vi) {
   cGH const *restrict const cctkGH = static_cast<cGH const *>(cctkGH_);
   DECLARE_CCTK_PARAMETERS;
   DECLARE_CCTK_ARGUMENTS;
@@ -457,10 +458,6 @@ static CCTK_INT New_PeriodicCarpet_ApplyBC(CCTK_POINTER_TO_CONST const cctkGH_) 
   do_periodic[0] = periodic or periodic_x;
   do_periodic[1] = periodic or periodic_y;
   do_periodic[2] = periodic or periodic_z;
-
-  int const vi = Driver_SelectedGV();
-  if(vi < 0)
-    CCTK_VERROR("Boundary condition application error in PreSync: vi=%d", vi);
 
   CCTK_INT width[2 * dim];
   CCTK_INT is_internal[2 * dim];
