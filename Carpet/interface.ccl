@@ -382,7 +382,7 @@ CCTK_INT FUNCTION
       CCTK_STRING IN group_name,
       CCTK_STRING IN bc_name)
 PROVIDES FUNCTION Driver_SelectGroupForBC WITH
-   SelectGroupForBC LANGUAGE C
+   Carpet_SelectGroupForBC LANGUAGE C
 
 CCTK_INT FUNCTION
    Driver_SelectVarForBC
@@ -393,7 +393,7 @@ CCTK_INT FUNCTION
       CCTK_STRING IN var_name,
       CCTK_STRING IN bc_name)
 PROVIDES FUNCTION Driver_SelectVarForBC WITH
-   SelectVarForBC LANGUAGE C
+   Carpet_SelectVarForBC LANGUAGE C
 
 # Functions for accessing and changing valid region
 void FUNCTION

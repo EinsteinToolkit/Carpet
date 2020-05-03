@@ -599,7 +599,7 @@ CCTK_INT Carpet_RegisterSymmetryBC(
   return 0;
 }
 
-CCTK_INT Carpet_SelectVarForBCI(
+CCTK_INT SelectVarForBCI(
     const cGH *cctkGH,
     const CCTK_INT faces,
     const CCTK_INT width,
@@ -635,7 +635,7 @@ CCTK_INT Carpet_SelectVarForBCI(
 }
 
 extern "C"
-CCTK_INT SelectVarForBC(
+CCTK_INT Carpet_SelectVarForBC(
     const CCTK_POINTER_TO_CONST cctkGH_,
     const CCTK_INT faces,
     const CCTK_INT width,
@@ -644,11 +644,11 @@ CCTK_INT SelectVarForBC(
     const CCTK_STRING bc_name) {
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
   const CCTK_INT vi = CCTK_VarIndex(var_name);
-  return Carpet_SelectVarForBCI(cctkGH,faces,width,table_handle,vi,bc_name);
+  return SelectVarForBCI(cctkGH,faces,width,table_handle,vi,bc_name);
 }
 
 extern "C"
-CCTK_INT SelectGroupForBC(
+CCTK_INT Carpet_SelectGroupForBC(
     const CCTK_POINTER_TO_CONST cctkGH_,
     const CCTK_INT faces,
     const CCTK_INT width,
@@ -662,7 +662,7 @@ CCTK_INT SelectGroupForBC(
   CCTK_INT ierr = 0;
   for(CCTK_INT vi=vstart;vi<vstart+vnum;vi++) {
     const CCTK_INT myierr =
-      Carpet_SelectVarForBCI(cctkGH,faces,width,table_handle,vi,bc_name);
+      SelectVarForBCI(cctkGH,faces,width,table_handle,vi,bc_name);
     if(ierr and not myierr)
       ierr = myierr;
   }
