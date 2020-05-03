@@ -445,7 +445,7 @@ extern "C" CCTK_INT BndPeriodicCarpetGN(CCTK_POINTER_TO_CONST const cctkGH_,
   return 0;
 }
 
-static CCTK_INT New_PeriodicCarpet_ApplyBC(CCTK_POINTER_TO_CONST const cctkGH_,
+static CCTK_INT PeriodicCarpet_New_ApplyBC(CCTK_POINTER_TO_CONST const cctkGH_,
                                            const CCTK_INT vi) {
   cGH const *restrict const cctkGH = static_cast<cGH const *>(cctkGH_);
   DECLARE_CCTK_PARAMETERS;
@@ -526,7 +526,7 @@ extern "C" void PeriodicCarpet_RegisterBC(CCTK_ARGUMENTS) {
 
   if(use_psync) {
     int err = 0;
-    err = Driver_RegisterSymmetryBC(cctkGH, New_PeriodicCarpet_ApplyBC, "PeriodicCarpet");
+    err = Driver_RegisterSymmetryBC(cctkGH, PeriodicCarpet_New_ApplyBC, "PeriodicCarpet");
     if (err) {
       CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
                  "Error %d when registering routine to handle \"Reflection Symmetry\" "
