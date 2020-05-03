@@ -22,7 +22,6 @@
 #undef PRESYNC_DEBUG
 
 namespace Carpet {
-int bnd_vi = -1;
 
 struct var_tuple {
   const int vi; // var index
@@ -559,10 +558,10 @@ typedef CCTK_INT (*iface_boundary_function)(
   const CCTK_INT *table_handles);
 
 typedef CCTK_INT (*sym_boundary_function)(
-  const cGH *cctkGH);
+  const cGH *cctkGH, const CCTK_INT var_index);
 
 typedef CCTK_INT (*sym_iface_boundary_function)(
-  CCTK_POINTER_TO_CONST cctkGH);
+  CCTK_POINTER_TO_CONST cctkGH, const CCTK_INT var_index);
 
 struct Bound {
   std::string bc_name;
@@ -685,17 +684,6 @@ CCTK_INT SelectGroupForBC(
   return 0;
 }
 
-extern "C"
-CCTK_INT Carpet_SelectedGV() {
-  if(bnd_vi == -1) {
-#ifdef PRESYNC_DEBUG
-    std::cout << "No variable is currently having boundary conditions applied, but a boundary condition is attempting to run." << std::endl;
-#endif
-    return -1;
-  }
-  return bnd_vi;
-}
-
 /**
  * Apply boundary conditions for a single variable.
  */
@@ -710,7 +698,6 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
 #endif
     return;
   }
-  bnd_vi = var_index;
   std::vector<Bound>& bv = bc[var_index];
   BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
     BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
@@ -724,7 +711,7 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
           for (auto iter = symmetry_functions.begin(); iter != symmetry_functions.end(); iter++) {
             std::string name = iter->first;
             SymFunc& fsym = symmetry_functions.at(name);
-            ierr = (*fsym.func)(cctkGH);
+            ierr = (*fsym.func)(cctkGH, var_index);
           }
           var_tuple vt{var_index,reflevel,0};
           valid_k[vt] |= WH_BOUNDARY;
@@ -734,7 +721,6 @@ void Carpet_ApplyPhysicalBCsForVarI(const cGH *cctkGH, int var_index) {
     END_LOCAL_COMPONENT_LOOP;
   }
   END_LOCAL_MAP_LOOP;
-  bnd_vi = -1;
 }
 
 /**
