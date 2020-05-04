@@ -433,9 +433,9 @@ extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT
     return;
   }
 
-  if(is_set(valid,WH_INTERIOR)) {
-    CCTK_VERROR("SYNC requires valid data in interior %s rl=%d tl=%d",
-                CCTK_FullVarName(vi), rl, tl);
+  if(not is_set(valid,WH_INTERIOR)) {
+    CCTK_VERROR("SYNC requires valid data in interior %s rl=%d tl=%d but have only %s",
+                CCTK_FullVarName(vi), rl, tl, wstr(valid).c_str());
   }
   assert(is_set(valid,WH_INTERIOR));
 
