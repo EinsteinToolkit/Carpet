@@ -1,6 +1,7 @@
 #include <cctk.h>
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
+#include <cctk_Functions.h>
 
 #include <cmath>
 #include <cassert>
@@ -369,8 +370,8 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
  * Given a variable and a timelevel, set the region
  * of the grid where that variable is valid (i.e. the where_spec).
  */
-// TODO: expand to take a reflevel argument?
-void SetValidRegion(int vi,int tl,int wh) {
+extern "C"
+void Carpet_SetValidRegion(CCTK_INT vi,CCTK_INT tl,CCTK_INT wh) {
   assert(vi < CCTK_NumVars());
   int const gi = CCTK_GroupIndexFromVarI(vi);
   assert(gi >= 0);
@@ -388,8 +389,8 @@ void SetValidRegion(int vi,int tl,int wh) {
  * Given a variable and a timelevel, return the region
  * of the grid where that variable is valid (i.e. the where_spec).
  */
-// TODO: expand to take a reflevel argument?
-int GetValidRegion(int vi,int tl) {
+extern "C"
+CCTK_INT Carpet_GetValidRegion(CCTK_INT vi,CCTK_INT tl) {
   assert(vi < CCTK_NumVars());
   int const gi = CCTK_GroupIndexFromVarI(vi);
   assert(gi >= 0);
@@ -465,10 +466,10 @@ extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT
 extern "C"
 void Carpet_SynchronizationRecovery(CCTK_ARGUMENTS) {
   for(int vi = 0; vi < CCTK_NumVars(); vi++) {
-    SetValidRegion(vi,0,WH_INTERIOR);
+    Carpet_SetValidRegion(vi,0,WH_INTERIOR);
     int tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
     for(int time = 1; time < tl; time++) {
-      SetValidRegion(vi,time,WH_EVERYWHERE);
+      Carpet_SetValidRegion(vi,time,WH_EVERYWHERE);
     }
   }
 }

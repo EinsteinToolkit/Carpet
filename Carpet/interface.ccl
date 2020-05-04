@@ -402,14 +402,14 @@ void FUNCTION
       CCTK_INT IN tl,
       CCTK_INT IN wh)
 PROVIDES FUNCTION Driver_SetValidRegion WITH
-   SetValidRegion LANGUAGE C
+   Carpet_SetValidRegion LANGUAGE C
 
 CCTK_INT FUNCTION
       Driver_GetValidRegion
       (CCTK_INT IN vi,
       CCTK_INT IN tl)
 PROVIDES FUNCTION Driver_GetValidRegion WITH
-   GetValidRegion LANGUAGE C
+   Carpet_GetValidRegion LANGUAGE C
 
 # Manually call synchronization; should be paired with SetValidRegion call
 void FUNCTION
