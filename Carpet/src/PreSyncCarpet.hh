@@ -20,9 +20,6 @@ extern void PostCheckValid(cFunctionData *attribute,cGH *cctkGH,const std::vecto
 void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index);
 void ApplyPhysicalBCsForVarI(const cGH *cctkGH, const int var_index);
 
-extern void cycle_rdwr(const cGH *cctkGH);
-extern void uncycle_rdwr(const cGH *cctkGH);
-extern void flip_rdwr(const cGH *cctkGH, int vi);
 extern void invalidate_rdwr(const cGH *cctkGH, int vi, int tl);
 }
 

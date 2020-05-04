@@ -118,7 +118,6 @@ void CycleTimeLevels(cGH *const cctkGH) {
   if (CCTK_IsFunctionAliased("Accelerator_Cycle")) {
     Accelerator_Cycle(cctkGH);
   }
-  cycle_rdwr(cctkGH);
 
   if (errors > 0) {
     CCTK_VWarn(CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -185,8 +184,6 @@ void UncycleTimeLevels(cGH *const cctkGH) {
       } // switch grouptype
     }   // if storage
   }     // for group
-
-  uncycle_rdwr(cctkGH);
 }
 
 void FlipTimeLevels(cGH *const cctkGH) {
@@ -214,7 +211,6 @@ void FlipTimeLevels(cGH *const cctkGH) {
             if (use_psync) {
               Carpet_ManualSyncGF(cctkGH, 0, firstvarindex+var);
             }
-            flip_rdwr(cctkGH, firstvarindex+var);
             arrdata.AT(group).AT(m).data.AT(var)->flip_all(reflevel, mglevel);
           }
         }
@@ -227,7 +223,6 @@ void FlipTimeLevels(cGH *const cctkGH) {
           int const firstvarindex = CCTK_FirstVarIndexI(group);
           for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
             arrdata.AT(group).AT(0).data.AT(var)->flip_all(0, mglevel);
-            flip_rdwr(cctkGH, firstvarindex+var);
             {
               int const varindex = firstvarindex + var;
               for (int tl = 0; tl < numtimelevels; ++tl) {

@@ -385,28 +385,6 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 }
 
 /**
- * reverse the order of timelevel information
- */
-void flip_rdwr(const cGH *cctkGH, int vi) {
-  assert(vi < CCTK_NumVars());
-  int const gi = CCTK_GroupIndexFromVarI(vi);
-  assert(gi >= 0);
-  int const var = vi - CCTK_FirstVarIndexI(gi);
-  int const m = 0; // FIXME: this assumes that validity is the same on all maps
-  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
-  assert(ff);
-  int type = CCTK_GroupTypeFromVarI(vi);
-  int const rl = type == CCTK_GF ? reflevel : 0;
-
-  int const cactus_tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
-  for(int tl = 0; tl < cactus_tl-1; tl++) {
-    int tmpdata = ff->valid(mglevel, rl, tl);
-    ff->set_valid(mglevel, rl, tl, ff->valid(mglevel, rl, cactus_tl-tl));
-    ff->set_valid(mglevel, rl, cactus_tl-tl, tmpdata);
-  }
-}
-
-/**
  * mark a timelvel as invalid
  */
 void invalidate_rdwr(const cGH *cctkGH, int vi, int tl) {
@@ -421,82 +399,6 @@ void invalidate_rdwr(const cGH *cctkGH, int vi, int tl) {
   int const rl = type == CCTK_GF ? reflevel : 0;
 
   ff->set_valid(mglevel, rl, tl, WH_NOWHERE);
-}
-
-/**
- * Inverse rotate timelevels:
- * Copy all knowledge about read/write levels up one level,
- * then mark the current level as valid nowhere.
- */
-void uncycle_rdwr(const cGH *cctkGH) {
-#ifdef PRESYNC_DEBUG
-  std::cout << "CYCLE" << std::endl;
-#endif
-  int num = CCTK_NumVars();
-  for(int vi=0;vi<num;vi++) {
-    int const cactus_tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
-    if(cactus_tl > 1) {
-      int type = CCTK_GroupTypeFromVarI(vi);
-      if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
-
-	int const gi = CCTK_GroupIndexFromVarI(vi);
-	assert(gi >= 0);
-	int const var = vi - CCTK_FirstVarIndexI(gi);
-        int const m = 0; // FIXME: this assumes that validity is the same on all maps
-	ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
-        assert(ff);
-        int type = CCTK_GroupTypeFromVarI(vi);
-        int const rl = type == CCTK_GF ? reflevel : 0;
-
-	int first_valid = ff->valid(mglevel, rl, 0);
-	for(int tl = 0; tl < cactus_tl-1; tl++) {
-	  ff->set_valid(mglevel, rl, tl, ff->valid(mglevel, rl, tl+1));
-	}
-	ff->set_valid(mglevel, rl, cactus_tl-1, first_valid);
-      }
-    }
-  }
-#ifdef PRESYNC_DEBUG
-  std::cout << "::UNROTATE::" << std::endl;
-#endif
-}
-
-/**
- * Rotate timelevels:
- * Copy all knowledge about read/write levels down one level,
- * wrapping around at the end.
- */
-void cycle_rdwr(const cGH *cctkGH) {
-#ifdef PRESYNC_DEBUG
-  std::cout << "CYCLE" << std::endl;
-#endif
-  int num = CCTK_NumVars();
-  for(int vi=0;vi<num;vi++) {
-    int const cactus_tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
-    if(cactus_tl > 1) {
-      int type = CCTK_GroupTypeFromVarI(vi);
-      if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
-
-        int const gi = CCTK_GroupIndexFromVarI(vi);
-        assert(gi >= 0);
-        int const var = vi - CCTK_FirstVarIndexI(gi);
-        int const m = 0; // FIXME: this assumes that validity is the same on all maps
-        ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
-        assert(ff);
-        int type = CCTK_GroupTypeFromVarI(vi);
-        int const rl = type == CCTK_GF ? reflevel : 0;
-
-        int last_valid = ff->valid(mglevel, rl, cactus_tl-1);
-        for(int tl = cactus_tl - 1; tl > 0; tl--) {
-	  ff->set_valid(mglevel, rl, tl, ff->valid(mglevel, rl, tl-1));
-        }
-	ff->set_valid(mglevel, rl, 0, last_valid);
-      }
-    }
-  }
-#ifdef PRESYNC_DEBUG
-  std::cout << "::ROTATE::" << std::endl;
-#endif
 }
 
 /**
