@@ -8,8 +8,6 @@
 
 
 namespace Carpet {
-extern "C" void clear_readwrites();
-extern "C" void check_readwrites(cFunctionData const * const attribute);
 extern "C" void SetValidRegion(int vi,int tl,int wh);
 extern "C" int GetValidRegion(int vi,int tl);
 
