@@ -240,9 +240,12 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
           int const m = 0; // FIXME: this assumes that validity is the same on all maps
           ggf *const ff = arrdata.AT(sync_groups[sgi]).AT(m).data.AT(vi - i0);
           assert(ff);
-          if(not is_set(ff->valid(mglevel, reflevel, 0), WH_EVERYWHERE)) {
+          int type = CCTK_GroupTypeFromVarI(vi);
+          int const rl = type == CCTK_GF ? reflevel : 0;
+          assert(rl >= 0);
+          if(not is_set(ff->valid(mglevel, rl, 0), WH_EVERYWHERE)) {
             std::ostringstream msg;
-            msg << "Required: Valid Everywhere, Observed: Valid " << wstr(ff->valid(mglevel, reflevel, 0)) << " " << CCTK_FullVarName(vi);
+            msg << "Required: Valid Everywhere, Observed: Valid " << wstr(ff->valid(mglevel, rl, 0)) << " " << CCTK_FullVarName(vi);
             msg << " Routine: " << attribute->thorn << "::" << attribute->routine;
             dumpValid(msg,vi);
             msg << std::endl;
