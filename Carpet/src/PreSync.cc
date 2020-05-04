@@ -385,23 +385,6 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
 }
 
 /**
- * mark a timelvel as invalid
- */
-void invalidate_rdwr(const cGH *cctkGH, int vi, int tl) {
-  assert(vi < CCTK_NumVars());
-  int const gi = CCTK_GroupIndexFromVarI(vi);
-  assert(gi >= 0);
-  int const var = vi - CCTK_FirstVarIndexI(gi);
-  int const m = 0; // FIXME: this assumes that validity is the same on all maps
-  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
-  assert(ff);
-  int type = CCTK_GroupTypeFromVarI(vi);
-  int const rl = type == CCTK_GF ? reflevel : 0;
-
-  ff->set_valid(mglevel, rl, tl, WH_NOWHERE);
-}
-
-/**
  * Given a variable and a timelevel, set the region
  * of the grid where that variable is valid (i.e. the where_spec).
  */
