@@ -199,34 +199,6 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sy
       ff->set_valid(mglevel, rl, entry.time_level, old_valid | entry.where_wr);
     }
   }
-
-
-  // TODO: set this in Carpet's SYNC function
-  for (auto gi: sync_groups) {
-    const int var0 = CCTK_FirstVarIndexI(gi);
-    const int varn = CCTK_NumVarsInGroupI(gi);
-    for (int vi = var0; vi < var0 + varn; ++vi) {
-      // TODO: sort RDWR and replace by binary search
-      for (int i=0;i<attribute->n_RDWR;i++) {
-        const RDWR_entry& entry = attribute->RDWR[i];
-        // we ignore refinement levels here since RDWR does not record them
-        if(entry.var_id == vi && entry.time_level == 0) {
-          if(on(entry.where_wr,WH_INTERIOR)) {
-            int const m = 0; // FIXME: this assumes that validity is the same on all maps
-	    ggf *const ff = arrdata.AT(gi).AT(m).data.AT(vi - var0);
-            assert(ff);
-            int type = CCTK_GroupTypeFromVarI(vi);
-            int const rl = type == CCTK_GF ? reflevel : 0;
-	    int const old_valid = ff->valid(mglevel, rl, 0);
-	    ff->set_valid(mglevel, reflevel, 0, old_valid | WH_GHOSTS);
-#ifdef PRESYNC_DEBUG
-            std::cout << "SYNC: " << CCTK_FullVarName(vi) << " " << ff->valid(mglevel, rl, 0) << std::endl;
-#endif
-          }
-        }
-      } // for RDWR
-    } // for vi
-  } // for gi
 }
 
 /**
@@ -276,37 +248,6 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
           msg << " in/at " << attribute->where << " variable " << CCTK_FullVarName(vi);
           CCTK_WARN(0,msg.str().c_str());
         }
-      }
-    }
-    for(int vi=i0;vi<iN;vi++) {
-      int type = CCTK_GroupTypeFromVarI(vi);
-      if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
-        int const m = 0; // FIXME: this assumes that validity is the same on all maps
-	ggf *const ff = arrdata.AT(gi).AT(m).data.AT(vi - i0);
-        assert(ff);
-        int type = CCTK_GroupTypeFromVarI(vi);
-        int const rl = type == CCTK_GF ? reflevel : 0;
-	int const wh = ff->valid(mglevel, rl, 0);
-	if(on(wh,WH_EXTERIOR)) {
-	  continue;
-	}
-	if(!on(wh,WH_INTERIOR)) {
-	  std::ostringstream msg;
-	  msg << "SYNC of variable with invalid interior. Name: "
-	    << CCTK_FullVarName(vi) << " in routine "
-	    << attribute->thorn << "::" << attribute->routine;
-	  int level = psync_error ? 0 : 1;
-	  static bool have_warned = false;
-	  if(not have_warned) {
-	    CCTK_WARN(level,msg.str().c_str());
-	    have_warned = true;
-	  }
-	}
-	if(push) {
-	  sync_groups.push_back(gi);
-	  push = false;
-	}
-	ff->set_valid(mglevel, rl, 0, wh | WH_GHOSTS);
       }
     }
   }
@@ -627,18 +568,6 @@ extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT
   }
   assert(on(valid,WH_INTERIOR));
 
-  // Update valid region info
-  int i0 = CCTK_FirstVarIndexI(gi);
-  int iN = i0+CCTK_NumVarsInGroupI(gi);
-  for(int vi2=i0;vi2<iN;vi2++) {
-    int const m = 0; // FIXME: this assumes that validity is the same on all maps
-    ggf *const ff = arrdata.AT(gi).AT(m).data.AT(vi2 - i0);
-    assert(ff);
-    if(on(ff->valid(mglevel, rl, tl),WH_INTERIOR)) {
-      ff->set_valid(mglevel, rl, tl, WH_EVERYWHERE);
-    }
-  }
-
   // Take action by mode
   if(is_level_mode()) {
     Sync1(cctkGH,tl,gi);
@@ -658,7 +587,6 @@ extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT
   } else {
     abort();
   }
-  ff->set_valid(mglevel, rl, tl, WH_EVERYWHERE);
 }
 
 extern "C"
