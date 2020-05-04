@@ -361,6 +361,7 @@ template size_t memoryof(vector<fulltree<int, dim, pseudoregion_t> *> const &f);
 // template size_t memoryof (vector<region_t> const & v);
 template size_t memoryof(vector<sendrecv_pseudoregion_t> const &v);
 template size_t memoryof(vector<vector<int> > const &v);
+template size_t memoryof(vector<vector<vector<int> > > const &v);
 template size_t memoryof(vector<vector<CCTK_REAL> > const &v);
 template size_t memoryof(vector<vector<ibbox> > const &v);
 template size_t memoryof(vector<vector<rvect> > const &v);

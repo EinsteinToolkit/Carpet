@@ -571,7 +571,7 @@ size_t ggf::memory() const {
   return memoryof(varindex) + memoryof(transport_operator) +
          memoryof(prolongation_order_time) + memoryof(timelevels_) +
          memoryof(storage) + memoryof(vectorlength) + memoryof(vectorindex) +
-         memoryof(vectorleader) + memoryof(oldstorage);
+         memoryof(vectorleader) + memoryof(oldstorage) + memoryof(valid_);
 }
 
 size_t ggf::allmemory() {
