@@ -320,6 +320,12 @@ void ggf::sync_all(comm_state &state, int const tl, int const rl,
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_sync_sendrecv, tl,
                     rl, ml);
   timer.stop(0);
+
+  // Update state
+  int const old_valid = valid(ml, rl, tl);
+  if ((old_valid & WH_INTERIOR) == WH_INTERIOR) {
+    set_valid(ml, rl, tl, old_valid | WH_GHOSTS);
+  }
 }
 
 // Prolongate the boundaries of all components
