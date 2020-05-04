@@ -255,7 +255,7 @@ void ggf::cycle_all(int const rl, int const ml) {
     int const tmpvalid = valid(ml, rl, ntl - 1);
     for (int tl = ntl - 1; tl > 0; --tl) {
       fdatas.AT(tl) = fdatas.AT(tl - 1);
-      set_valid(ml, rl, tl, valid(ml, rl, rl - 1));
+      set_valid(ml, rl, tl, valid(ml, rl, tl - 1));
     }
     fdatas.AT(0) = tmpdata;
     set_valid(ml, rl, 0, tmpvalid);
@@ -316,7 +316,7 @@ void ggf::fill_all(int const rl, int const ml) {
     for (int tl = 1; tl < ntl; ++tl) {
       void *const dstptr = fdatas.AT(tl)->storage();
       memcpy(dstptr, srcptr, size);
-      set_valid(ml, rl, tl, valid(ml, tl, 0));
+      set_valid(ml, rl, tl, valid(ml, rl, 0));
     }
   }
 }
