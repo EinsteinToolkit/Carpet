@@ -316,6 +316,7 @@ void ggf::fill_all(int const rl, int const ml) {
     for (int tl = 1; tl < ntl; ++tl) {
       void *const dstptr = fdatas.AT(tl)->storage();
       memcpy(dstptr, srcptr, size);
+      set_valid(ml, rl, tl, valid(ml, tl, 0));
     }
   }
 }
