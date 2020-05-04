@@ -410,6 +410,8 @@ CCTK_INT Carpet_GetValidRegion(CCTK_INT vi,CCTK_INT tl) {
  * the routine finishes, it will be valid everywhere.
  */
 extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT tl,const CCTK_INT vi) {
+  DECLARE_CCTK_PARAMETERS;
+
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
 
   // Do nothing if this is not a grid function
@@ -434,10 +436,15 @@ extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT
   }
 
   if(not is_set(valid,WH_INTERIOR)) {
-    CCTK_VERROR("SYNC requires valid data in interior %s rl=%d tl=%d but have only %s",
-                CCTK_FullVarName(vi), rl, tl, wstr(valid).c_str());
+    static std::set<int> have_warned_about;
+    if(not have_warned_about.count(vi)) {
+      CCTK_VWARN(psync_error ? CCTK_WARN_ABORT : CCTK_WARN_ALERT,
+                 "SYNC requires valid data in interior %s rl=%d tl=%d but have only %s",
+                 CCTK_FullVarName(vi), rl, tl, wstr(valid).c_str());
+      have_warned_about.insert(vi);
+    }
+    return; // cannot SYNC, do not update valid state
   }
-  assert(is_set(valid,WH_INTERIOR));
 
   if(not is_level_mode() and not is_global_mode() and not is_meta_mode())
     CCTK_VERROR("%s must be called in level, global, or meta mode", __func__);
