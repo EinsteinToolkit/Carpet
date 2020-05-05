@@ -71,6 +71,24 @@ int CallFunction(void *function,           ///< the function to call
     sync_groups.reserve(attribute->n_SyncGroups);
     for (int g = 0; g < attribute->n_SyncGroups; g++) {
       const int group = attribute->SyncGroups[g];
+      // to support mixed PreSync / NonPreSync runs, skip all SYNC request for
+      // groups that have Driver BC associated with them and are thus SYNCed
+      // automatically
+      if (use_psync) {
+        int const nvar = CCTK_NumVarsInGroupI(group);
+        int const n0 = CCTK_FirstVarIndexI(group);
+        assert(n0 >= 0);
+        bool any_driver_bc = false;
+        for (int var = 0; var < nvar; ++var) {
+          assert(n0 + var < CCTK_NumVars());
+          if (Carpet_IsVarSelectedForBCI(cctkGH, n0 + var)) {
+            any_driver_bc = true;
+            break;
+          }
+        }
+        if (any_driver_bc)
+          continue;
+      }
       if (CCTK_NumVarsInGroupI(group) > 0) {
         // don't add empty groups from the list
         sync_groups.push_back(group);
