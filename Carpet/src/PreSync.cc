@@ -39,18 +39,24 @@ typedef CCTK_INT (*phys_boundary_function)(
 typedef CCTK_INT (*sym_boundary_function)(
   CCTK_POINTER_TO_CONST cctkGH, const CCTK_INT var_index);
 
-struct Bound {
-  std::string bc_name;
-  CCTK_INT faces;
-  CCTK_INT width;
-  CCTK_INT table_handle;
+struct Bounds {
+  CCTK_INT selected_faces;
+  struct Bound {
+    std::string bc_name;
+    CCTK_INT faces;
+    CCTK_INT width;
+    CCTK_INT table_handle;
+    Bound() : faces(0), width(-1), table_handle(-1) {}
+  };
+  std::vector<Bound> bounds;
+  Bounds() : selected_faces(0), bounds() {}
 };
 
 // these keep track of registered boundary and symmetry routines as well as
 // selected boundary condistions
 std::map<std::string,phys_boundary_function> phys_boundary_functions;
 std::map<std::string,sym_boundary_function> sym_boundary_functions;
-std::map<int,std::vector<Bound>> boundary_conditions;
+std::map<int,Bounds> boundary_conditions;
 
 std::string format_var_tuple(const int vi, const int rl, const int tl) {
   std::ostringstream o;
@@ -518,24 +524,21 @@ CCTK_INT SelectVarForBCI(
                "Requested BC '%s' not found.", bc_name);
   }
   assert(var_index >= 0);
-  auto i = boundary_conditions.find(var_index);
-  for(; i != boundary_conditions.end();++i) {
-    for(auto b = i->second.begin(); b != i->second.end(); ++b) {
-      if(b->bc_name == name) {
-#ifdef PRESYNC_DEBUG
-        std::cout << "Variable " << CCTK_FullVarName(var_index) << " has been selected twice for '" << bc_name << "'" << std::endl;
-#endif
-        return 0;
-      }
-    }
+  Bounds& bounds = boundary_conditions[var_index];
+  if(bounds.selected_faces & faces) {
+    CCTK_VWARN(1, "%s has already been selected for a bc",
+               CCTK_FullVarName(var_index));
+    return -3;
   }
-  std::vector<Bound>& bv = boundary_conditions[var_index];
-  Bound b;
+
+  Bounds::Bound b;
   b.faces = faces;
   b.width = width;
   b.table_handle = table_handle;
   b.bc_name = name;
-  bv.push_back(b);
+
+  bounds.selected_faces |= faces;
+  bounds.bounds.push_back(b);
   return 0;
 }
 }
@@ -575,6 +578,14 @@ CCTK_INT Carpet_SelectGroupForBC(
   return ierr;
 }
 
+extern "C"
+CCTK_INT Carpet_IsVarSelectedForBCI(
+    const CCTK_POINTER_TO_CONST cctkGH_,
+    const CCTK_INT var_index) {
+  auto it = boundary_conditions.find(var_index);
+  return it != boundary_conditions.end();
+}
+
 /**
  * Apply boundary conditions for a single variable.
  */
@@ -601,10 +612,10 @@ void ApplyPhysicalBCsForVarI(const cGH *cctkGH, const int var_index) {
   int type = CCTK_GroupTypeFromVarI(var_index);
   int const rl = type == CCTK_GF ? reflevel : 0;
 
-  std::vector<Bound>& bv = boundary_conditions[var_index];
+  const Bounds& bounds = boundary_conditions[var_index];
   BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
     BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
-      for(auto b: bv) {
+      for(auto b: bounds.bounds) {
         phys_boundary_function& fphys = phys_boundary_functions.at(b.bc_name);
         int ierr = fphys(cctkGH,1,&var_index,&b.faces,&b.width,&b.table_handle);
         assert(not ierr);

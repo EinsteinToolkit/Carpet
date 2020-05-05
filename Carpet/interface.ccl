@@ -395,6 +395,13 @@ CCTK_INT FUNCTION
 PROVIDES FUNCTION Driver_SelectVarForBC WITH
    Carpet_SelectVarForBC LANGUAGE C
 
+CCTK_INT FUNCTION
+   Driver_IsVarSelectedForBCI
+      (CCTK_POINTER_TO_CONST IN cctkGH,
+      CCTK_INT IN var_index)
+PROVIDES FUNCTION Driver_IsVarSelectedForBCI WITH
+   Carpet_IsVarSelectedForBCI LANGUAGE C
+
 # Functions for accessing and changing valid region
 void FUNCTION
       Driver_SetValidRegion
