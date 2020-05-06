@@ -22,3 +22,8 @@ TEST overlap
 {
   NPROCS 2
 }
+
+TEST presync
+{
+  NPROCS 2
+}

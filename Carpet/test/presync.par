@@ -1,0 +1,44 @@
+############################################################
+#
+# A simple example parameter file using for WaveMoL to test
+# Carpet's PreSync code
+#
+############################################################
+
+ActiveThorns = "CoordBase SymBase NaNChecker CarpetReduce CartGrid3D Carpet CarpetLib Boundary CarpetIOBasic IOUtil CarpetIOASCII IDWaveMoL WaveMoL Time MoL LocalReduce"
+
+# results must be identical whether useing psync or not
+Cactus::use_psync = "yes"
+
+idwavemol::initial_data = "gaussian"
+
+wavemol::bound = "radiation"
+
+grid::domain = "full"
+grid::type = "byspacing"
+grid::avoid_origin = "no"
+driver::global_nx = 11
+driver::global_ny = 11
+driver::global_nz = 11
+grid::dxyz = 0.02
+driver::ghost_size = 1
+time::dtfac = 0.5
+
+cactus::cctk_itlast = 3
+
+ioBasic::outInfo_every = 1
+ioBasic::outInfo_vars = "wavemol::phi"
+
+ioascii::out1D_every = 3
+ioascii::out1D_d    = "no"
+ioascii::out1D_x    = "no"
+ioascii::out1D_vars = "wavemol::phi"
+
+IO::out_dir = "$parfile"
+IO::out_fileinfo = "none"
+IO::parfile_write = no
+ioascii::compact_format = "yes"
+
+# Method of Lines (MoL)
+methodoflines::ode_method = "icn"
+methodoflines::set_ID_boundaries = "no"
