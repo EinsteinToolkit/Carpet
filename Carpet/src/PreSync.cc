@@ -20,6 +20,8 @@
 #include "PreSyncCarpet.hh"
 #include "Carpet_Prototypes.h"
 
+#include <Timer.hh>
+
 #undef PRESYNC_DEBUG
 
 namespace Carpet {
@@ -57,6 +59,10 @@ struct Bounds {
 std::map<std::string,phys_boundary_function> phys_boundary_functions;
 std::map<std::string,sym_boundary_function> sym_boundary_functions;
 std::map<int,Bounds> boundary_conditions;
+
+// set to true while inside of Carpet's own BC function, used to report / no
+// report to thorn Boundary which BC it should ignore
+bool do_applyphysicalbcs = false;
 
 std::string format_var_tuple(const int vi, const int rl, const int tl) {
   std::ostringstream o;
@@ -151,6 +157,19 @@ void Sync1(const cGH *cctkGH,int tl,int gi) {
   timelevel_offset = old_timelevel_offset;
   timelevel = old_timelevel;
   do_allow_past_timelevels = old_do_allow_past_timelevels;
+}
+
+int ScheduleTraverse(char const *const where, char const *const name,
+                     cGH *const cctkGH) {
+  Timers::Timer timer(name);
+  timer.start();
+  ostringstream infobuf;
+  infobuf << "Scheduling " << name;
+  string const info = infobuf.str();
+  Checkpoint(info.c_str());
+  int const ierr = CCTK_ScheduleTraverse(name, cctkGH, CallFunction);
+  timer.stop();
+  return ierr;
 }
 
 } // namespace
@@ -624,6 +643,10 @@ extern "C"
 CCTK_INT Carpet_IsVarSelectedForBCI(
     const CCTK_POINTER_TO_CONST cctkGH_,
     const CCTK_INT var_index) {
+  // do apply physical BC if we are being called from Carpet's own Driver BC
+  // routine
+  if(do_applyphysicalbcs)
+    return false;
   auto it = boundary_conditions.find(var_index);
   return it != boundary_conditions.end();
 }
@@ -644,6 +667,10 @@ void ApplyPhysicalBCsForVarI(const cGH *cctkGH, const int var_index) {
     return;
   }
 
+  char const *const where = "ApplyPhysicalBCsForVarI";
+  static Timers::Timer timer(where);
+  timer.start();
+
   assert(var_index < CCTK_NumVars());
   int const gi = CCTK_GroupIndexFromVarI(var_index);
   assert(gi >= 0);
@@ -654,24 +681,33 @@ void ApplyPhysicalBCsForVarI(const cGH *cctkGH, const int var_index) {
   int type = CCTK_GroupTypeFromVarI(var_index);
   int const rl = type == CCTK_GF ? reflevel : 0;
 
-  const Bounds& bounds = boundary_conditions[var_index];
-  BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
-    BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
-      for(auto b: bounds.bounds) {
-        phys_boundary_function& fphys = phys_boundary_functions.at(b.bc_name);
-        int ierr = fphys(cctkGH,1,&var_index,&b.faces,&b.width,&b.table_handle);
-        assert(not ierr);
-        for (auto fsym: sym_boundary_functions) {
-          ierr = fsym.second(cctkGH, var_index);
-          assert(not ierr);
-        }
-        int const valid = ff->valid(mglevel, rl, 0);
-        ff->set_valid(mglevel, rl, 0, valid | WH_BOUNDARY);
+  if(boundary_conditions.count(var_index)) {
+    // TODO: keep track of which faces are valid?
+    assert(is_set(ff->valid(mglevel, rl, 0), WH_INTERIOR | WH_GHOSTS));
+
+    const Bounds& bounds = boundary_conditions[var_index];
+    for(auto b: bounds.bounds) {
+      int const ierr = Boundary_SelectVarForBCI(cctkGH, b.faces, b.width,
+        b.table_handle, var_index, b.bc_name.c_str());
+      if(ierr < 0) {
+        CCTK_VWARN(CCTK_WARN_ALERT, "Failed to selecte boundary condition '%s' for variable '%s': %d",
+        b.bc_name.c_str(), CCTK_FullVarName(var_index), ierr);
       }
     }
-    END_LOCAL_COMPONENT_LOOP;
+    do_applyphysicalbcs = true;
+    int const ierr = ScheduleTraverse(where, "Driver_ApplyBCs",
+                                      const_cast<cGH*>(cctkGH));
+    if(ierr)
+      CCTK_VWARN(CCTK_WARN_ALERT, "Failed ot traverse group Driver_ApplyBCs: %d\n", ierr);
+    do_applyphysicalbcs = false;
+
+    if(not is_set(ff->valid(mglevel, rl, 0), WH_EVERYWHERE)) {
+      CCTK_VERROR("Internal error: thorn Boundary did not mark boundary of '%s' as valid when applying boundary conditions",
+                  CCTK_FullVarName(var_index));
+    }
   }
-  END_LOCAL_MAP_LOOP;
+
+  timer.stop();
 }
 
 /**

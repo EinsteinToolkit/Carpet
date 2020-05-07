@@ -220,6 +220,16 @@ CCTK_INT FUNCTION MultiPatch_ConvertFromPhysicalBoundary \
    CCTK_REAL IN  ARRAY spacing)
 USES FUNCTION MultiPatch_ConvertFromPhysicalBoundary
 
+# Physical boundary condtitions
+CCTK_INT FUNCTION
+   Boundary_SelectVarForBCI
+      (CCTK_POINTER_TO_CONST IN cctkGH,
+      CCTK_INT IN faces,
+      CCTK_INT IN width,
+      CCTK_INT IN table_handle,
+      CCTK_INT IN var_index,
+      CCTK_STRING IN bc_name)
+USES FUNCTION Boundary_SelectVarForBCI
 
 
 CCTK_INT FUNCTION Accelerator_Cycle             \
