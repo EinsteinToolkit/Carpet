@@ -212,6 +212,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     int gi = *i;
     int i0 = CCTK_FirstVarIndexI(gi);
     int iN = i0+CCTK_NumVarsInGroupI(gi);
+    bool push = true;
     if(not use_psync && psync_error) {
       for(int vi=i0;vi<iN;vi++) {
         int const m = 0; // FIXME: this assumes that validity is the same on all maps
@@ -233,6 +234,34 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
           msg << attribute->thorn << "::" << attribute->routine;
           msg << " in/at " << attribute->where << " variable " << CCTK_FullVarName(vi);
           CCTK_WARN(0,msg.str().c_str());
+        }
+      }
+    }
+    for(int vi=i0;vi<iN;vi++) {
+      int type = CCTK_GroupTypeFromVarI(vi);
+      if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
+        int const m = 0; // FIXME: this assumes that validity is the same on all maps
+        ggf *const ff = arrdata.AT(gi).AT(m).data.AT(vi - i0);
+        assert(ff);
+        int wh = ff->valid(mglevel, reflevel, 0);
+        if(is_set(wh,WH_EXTERIOR)) {
+          continue;
+        }
+        if(!is_set(wh,WH_INTERIOR)) {
+          std::ostringstream msg;
+          msg << "SYNC of variable with invalid interior. Name: "
+            << CCTK_FullVarName(vi) << " in routine "
+            << attribute->thorn << "::" << attribute->routine;
+          int level = psync_error ? 0 : 1;
+          static bool have_warned = false;
+          if(not have_warned) {
+            CCTK_WARN(level,msg.str().c_str());
+            have_warned = true;
+          }
+        }
+        if(push) {
+          sync_groups.push_back(gi);
+          push = false;
         }
       }
     }
