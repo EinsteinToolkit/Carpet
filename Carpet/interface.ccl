@@ -52,18 +52,6 @@ CCTK_POINTER_TO_CONST \
 FUNCTION GetMPICommWorld (CCTK_POINTER_TO_CONST IN cctkGH)
 PROVIDES FUNCTION GetMPICommWorld WITH Carpet_GetMPICommWorld LANGUAGE C
 
-CCTK_INT
-FUNCTION Driver_RegisterPhysicalBC(
-  CCTK_POINTER_TO_CONST IN cctkGH,
-  CCTK_INT IN CCTK_FPOINTER function_pointer(CCTK_POINTER_TO_CONST IN GH,
-                                             CCTK_INT IN num_vars,
-                                             CCTK_INT ARRAY IN var_indices,
-                                             CCTK_INT ARRAY IN faces,
-                                             CCTK_INT ARRAY IN boundary_widths,
-                                             CCTK_INT ARRAY IN table_handles),
-  CCTK_STRING IN bc_name)
-PROVIDES FUNCTION Driver_RegisterPhysicalBC WITH Carpet_RegisterPhysicalBC LANGUAGE C
-
 
 # Get access to process->host mapping
 CCTK_INT FUNCTION CCTK_MyHost(CCTK_POINTER_TO_CONST IN cctkGH)
@@ -230,6 +218,12 @@ CCTK_INT FUNCTION
       CCTK_INT IN var_index,
       CCTK_STRING IN bc_name)
 USES FUNCTION Boundary_SelectVarForBCI
+
+CCTK_POINTER_TO_CONST FUNCTION
+   Boundary_QueryRegisteredPhysicalBC
+      (CCTK_POINTER_TO_CONST IN cctkGH,
+      CCTK_STRING IN bc_name)
+USES FUNCTION Boundary_QueryRegisteredPhysicalBC
 
 
 CCTK_INT FUNCTION Accelerator_Cycle             \
@@ -554,9 +548,3 @@ CCTK_REAL memory_procs TYPE=array DIM=1 SIZE=1 DISTRIB=CONSTANT TAGS='checkpoint
   grid_arrays
   grid_functions
 } "Memory usage information"
-
-CCTK_INT FUNCTION Driver_RegisterSymmetryBC(CCTK_POINTER_TO_CONST IN GH,
-  CCTK_INT IN CCTK_FPOINTER function_pointer(CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN var_index),
-  CCTK_STRING IN bc_name)
-PROVIDES FUNCTION Driver_RegisterSymmetryBC WITH
-  Carpet_RegisterSymmetryBC LANGUAGE C

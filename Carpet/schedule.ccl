@@ -51,14 +51,7 @@ if (use_unusedpoints_mask)
 
 if(use_psync)
 {
-  # Scheduling bins for boundary condition registration and selection with PreSync
-  schedule GROUP Driver_BoundaryRegister at CCTK_WRAGH
-  {
-    LANG: C
-    OPTIONS: global
-  } "Group for functions which register boundary conditions."
-  
-  schedule GROUP Driver_BoundarySelect at CCTK_WRAGH AFTER Driver_BoundaryRegister
+  schedule GROUP Driver_BoundarySelect at CCTK_WRAGH
   {
     LANG: C
     OPTIONS: global

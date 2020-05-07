@@ -29,18 +29,7 @@ namespace Carpet {
 // local functions and types
 namespace {
 
-// boundary and symmstry condition handling
-typedef CCTK_INT (*phys_boundary_function)(
-  CCTK_POINTER_TO_CONST cctkGH,
-  CCTK_INT num_vars,
-  const CCTK_INT *var_indices,
-  const CCTK_INT *faces,
-  const CCTK_INT *boundary_widths,
-  const CCTK_INT *table_handles);
-
-typedef CCTK_INT (*sym_boundary_function)(
-  CCTK_POINTER_TO_CONST cctkGH, const CCTK_INT var_index);
-
+// boundary condition handling
 struct Bounds {
   CCTK_INT selected_faces;
   struct Bound {
@@ -54,10 +43,7 @@ struct Bounds {
   Bounds() : selected_faces(0), bounds() {}
 };
 
-// these keep track of registered boundary and symmetry routines as well as
-// selected boundary condistions
-std::map<std::string,phys_boundary_function> phys_boundary_functions;
-std::map<std::string,sym_boundary_function> sym_boundary_functions;
+// these keep track of selected boundary condistions
 std::map<int,Bounds> boundary_conditions;
 
 // set to true while inside of Carpet's own BC function, used to report / no
@@ -100,14 +86,6 @@ inline std::string wstr(int wh) {
   if(is_set(wh,WH_GHOSTS)) {
     if(s.size() > 0) s+= "With";
     s += "Ghosts";
-  }
-  return s;
-}
-
-inline std::string tolower(const std::string& t) {
-  std::string s(t);
-  for(auto si=s.begin();si != s.end();++si) {
-    *si = std::tolower(*si);
   }
   return s;
 }
@@ -535,29 +513,8 @@ void Carpet_SynchronizationRecovery(CCTK_ARGUMENTS) {
   }
 }
 
-extern "C"
-CCTK_INT Carpet_RegisterPhysicalBC(
-    CCTK_POINTER_TO_CONST /*cctkGH_*/,
-    phys_boundary_function func,
-    CCTK_STRING bc_name) {
-  assert(func);
-  assert(bc_name);
-  phys_boundary_functions[tolower(bc_name)] = func;
-  return 0;
-}
-
-extern "C"
-CCTK_INT Carpet_RegisterSymmetryBC(
-    CCTK_POINTER_TO_CONST /*cctkGH_*/,
-    sym_boundary_function func,
-    CCTK_STRING bc_name) {
-  assert(func);
-  assert(bc_name);
-  sym_boundary_functions[tolower(bc_name)] = func;
-  return 0;
-}
-
 namespace {
+// return codes are those of Boundary_SelectVarForBCI
 CCTK_INT SelectVarForBCI(
     const cGH *cctkGH,
     const CCTK_INT faces,
@@ -565,20 +522,25 @@ CCTK_INT SelectVarForBCI(
     const CCTK_INT table_handle,
     const CCTK_INT var_index,
     const CCTK_STRING bc_name) {
-  std::string name{bc_name};
-  tolower(name);
-  if(not phys_boundary_functions.count(name.c_str())) {
-    CCTK_VERROR("Requested BC '%s' not found when selecting boundary conditions for '%s'.",
-                bc_name, CCTK_FullVarName(var_index));
+  if(not Boundary_QueryRegisteredPhysicalBC(cctkGH, bc_name)) {
+    CCTK_VWARN(CCTK_WARN_ALERT,
+               "There is no function implementing the physical boundary condition %s",
+               bc_name);
+    return -2;
   }
-  assert(var_index >= 0);
+  if(var_index < 0 or var_index >= CCTK_NumVars()) {
+    CCTK_VWARN(CCTK_WARN_ALERT, "Invalid variable index");
+    return -7;
+  }
+
   Bounds& bounds = boundary_conditions[var_index];
   if(bounds.selected_faces & faces) {
     // in order to support DriverSelectVarForBC inside of an old-style SelectBC
     // scheduled function, accept multiple identical registrations
     for(auto bound: bounds.bounds) {
       if(bound.faces == faces and bound.width == width and
-         bound.table_handle == table_handle and bound.bc_name == name) {
+         bound.table_handle == table_handle and
+         CCTK_EQUALS(bound.bc_name.c_str(), bc_name)) {
         return 0;
       }
     }
@@ -588,7 +550,7 @@ CCTK_INT SelectVarForBCI(
     for(auto bound: bounds.bounds) {
       msg << " " << bound.bc_name;
     }
-    CCTK_VWARN(1, msg.str().c_str());
+    CCTK_VWARN(CCTK_WARN_ALERT, msg.str().c_str());
     return -3;
   }
 
@@ -596,7 +558,7 @@ CCTK_INT SelectVarForBCI(
   b.faces = faces;
   b.width = width;
   b.table_handle = table_handle;
-  b.bc_name = name;
+  b.bc_name = bc_name;
 
   bounds.selected_faces |= faces;
   bounds.bounds.push_back(b);
