@@ -549,14 +549,27 @@ CCTK_INT SelectVarForBCI(
   std::string name{bc_name};
   tolower(name);
   if(not phys_boundary_functions.count(name.c_str())) {
-    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,  
-               "Requested BC '%s' not found.", bc_name);
+    CCTK_VERROR("Requested BC '%s' not found when selecting boundary conditions for '%s'.",
+                bc_name, CCTK_FullVarName(var_index));
   }
   assert(var_index >= 0);
   Bounds& bounds = boundary_conditions[var_index];
   if(bounds.selected_faces & faces) {
-    CCTK_VWARN(1, "%s has already been selected for a bc",
-               CCTK_FullVarName(var_index));
+    // in order to support DriverSelectVarForBC inside of an old-style SelectBC
+    // scheduled function, accept multiple identical registrations
+    for(auto bound: bounds.bounds) {
+      if(bound.faces == faces and bound.width == width and
+         bound.table_handle == table_handle and bound.bc_name == name) {
+        return 0;
+      }
+    }
+    std::ostringstream msg;
+    msg << "'" << CCTK_FullVarName(var_index) << "'"
+        << " has already been selected for a bc. Selected BCs:";
+    for(auto bound: bounds.bounds) {
+      msg << " " << bound.bc_name;
+    }
+    CCTK_VWARN(1, msg.str().c_str());
     return -3;
   }
 
