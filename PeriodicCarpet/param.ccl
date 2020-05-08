@@ -1,9 +1,5 @@
 # Parameter definitions for thorn PeriodicCarpet
 
-SHARES: cactus
-
-USES BOOLEAN use_psync
-
 BOOLEAN verbose "Produce screen output while applying boundary conditions"
 {
 } "no"
