@@ -64,6 +64,10 @@ if(use_psync)
     OPTIONS: global
   } "Group for functions which select BCs for variables and groups."
 
+  schedule GROUP Driver_ApplyBCs
+  {
+  } "Apply boundary conditions"
+
   # PreSync Recovery
   schedule Carpet_SynchronizationRecovery at RECOVER_VARIABLES after IOUtil_RecoverGH
   {
