@@ -652,36 +652,37 @@ CCTK_INT Carpet_IsVarSelectedForBCI(
 }
 
 /**
- * Apply boundary conditions for a single variable.
+ * Apply boundary conditions for a group. Called from inside SyncProlongateGroups.
  */
-void ApplyPhysicalBCsForVarI(const cGH *cctkGH, const int var_index) {
+void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
   DECLARE_CCTK_PARAMETERS;
 
   if(not use_psync)
     return;
 
-  if(boundary_conditions.find(var_index) == boundary_conditions.end()) {
-#ifdef PRESYNC_DEBUG
-    std::cout << "ApplyBC: No boundary_conditions for " << CCTK_FullVarName(var_index) << std::endl;
-#endif
-    return;
-  }
-
   char const *const where = "ApplyPhysicalBCsForVarI";
   static Timers::Timer timer(where);
   timer.start();
 
-  assert(var_index < CCTK_NumVars());
-  int const gi = CCTK_GroupIndexFromVarI(var_index);
-  assert(gi >= 0);
-  int const var = var_index - CCTK_FirstVarIndexI(gi);
-  int const m = 0; // FIXME: this assumes that validity is the same on all maps
-  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
-  assert(ff);
-  int type = CCTK_GroupTypeFromVarI(var_index);
-  int const rl = type == CCTK_GF ? reflevel : 0;
+  bool any_driver_bc = false;
+  int const vstart = CCTK_FirstVarIndexI(group_index);
+  int const vnum   = CCTK_NumVarsInGroupI(group_index);
+  for(int var = 0; var < vnum; var++) {
+    int const var_index = vstart + var;
 
-  if(boundary_conditions.count(var_index)) {
+    if(not boundary_conditions.count(var_index)) {
+#ifdef PRESYNC_DEBUG
+      std::cout << "ApplyBC: No boundary_conditions for " << CCTK_GroupName(var_index) << std::endl;
+#endif
+      continue;
+    }
+
+    int const m = 0; // FIXME: this assumes that validity is the same on all maps
+    ggf *const ff = arrdata.AT(group_index).AT(m).data.AT(var);
+    assert(ff);
+    int const type = CCTK_GroupTypeI(group_index);
+    int const rl = type == CCTK_GF ? reflevel : 0;
+
     // TODO: keep track of which faces are valid?
     assert(is_set(ff->valid(mglevel, rl, 0), WH_INTERIOR | WH_GHOSTS));
 
@@ -693,7 +694,10 @@ void ApplyPhysicalBCsForVarI(const cGH *cctkGH, const int var_index) {
         CCTK_VWARN(CCTK_WARN_ALERT, "Failed to selecte boundary condition '%s' for variable '%s': %d",
         b.bc_name.c_str(), CCTK_FullVarName(var_index), ierr);
       }
+      any_driver_bc = true;
     }
+  }
+  if(any_driver_bc) {
     do_applyphysicalbcs = true;
     int const ierr = ScheduleTraverse(where, "Driver_ApplyBCs",
                                       const_cast<cGH*>(cctkGH));
@@ -701,24 +705,33 @@ void ApplyPhysicalBCsForVarI(const cGH *cctkGH, const int var_index) {
       CCTK_VWARN(CCTK_WARN_ALERT, "Failed ot traverse group Driver_ApplyBCs: %d\n", ierr);
     do_applyphysicalbcs = false;
 
-    if(not is_set(ff->valid(mglevel, rl, 0), WH_EVERYWHERE)) {
-      CCTK_VERROR("Internal error: thorn Boundary did not mark boundary of '%s' as valid when applying boundary conditions",
-                  CCTK_FullVarName(var_index));
+
+    // sanity check on thorn Boundary
+    bool any_driver_bc_failed = false;
+    for(int var = 0; var < vnum; var++) {
+      int const var_index = vstart + var;
+
+      int const m = 0; // FIXME: this assumes that validity is the same on all maps
+      ggf *const ff = arrdata.AT(group_index).AT(m).data.AT(var);
+      assert(ff);
+      int const type = CCTK_GroupTypeI(group_index);
+      int const rl = type == CCTK_GF ? reflevel : 0;
+
+      if(boundary_conditions.count(var_index) and
+         not is_set(ff->valid(mglevel, rl, 0), WH_EVERYWHERE)) {
+        CCTK_VWARN(CCTK_WARN_ALERT,
+                   "Internal error: thorn Boundary did not mark boundary of '%s' as valid when applying boundary conditions",
+                   CCTK_FullVarName(var_index));
+        any_driver_bc_failed = true;
+      }
+    }
+    if(any_driver_bc_failed) {
+        CCTK_VERROR("Internal error: thorn Boundary did not mark boundary of '%s' as valid when applying boundary conditions",
+                   CCTK_GroupName(group_index));
     }
   }
 
   timer.stop();
-}
-
-/**
- * Apply boundary conditions for a group. Called from inside SyncProlongateGroups.
- */
-void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
-  int vstart = CCTK_FirstVarIndexI(group_index);
-  int vnum   = CCTK_NumVarsInGroupI(group_index);
-  for(int var_index=vstart;var_index<vstart+vnum;var_index++) {
-    ApplyPhysicalBCsForVarI(cctkGH,var_index);
-  }
 }
 
 } // namespace Carpet
