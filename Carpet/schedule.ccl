@@ -53,8 +53,6 @@ if(use_psync)
 {
   schedule GROUP Driver_BoundarySelect at CCTK_WRAGH
   {
-    LANG: C
-    OPTIONS: global
   } "Group for functions which select BCs for variables and groups."
 
   schedule GROUP Driver_ApplyBCs
