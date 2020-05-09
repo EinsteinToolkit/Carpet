@@ -602,7 +602,7 @@ CCTK_INT Carpet_SelectGroupForBC(
 }
 
 extern "C"
-CCTK_INT Carpet_IsVarSelectedForBCI(
+CCTK_INT Carpet_FilterOutVarForBCI(
     const CCTK_POINTER_TO_CONST cctkGH_,
     const CCTK_INT var_index) {
   // do apply physical BC if we are being called from Carpet's own Driver BC

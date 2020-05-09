@@ -81,7 +81,7 @@ int CallFunction(void *function,           ///< the function to call
         bool any_driver_bc = false;
         for (int var = 0; var < nvar; ++var) {
           assert(n0 + var < CCTK_NumVars());
-          if (Carpet_IsVarSelectedForBCI(cctkGH, n0 + var)) {
+          if (Carpet_FilterOutVarForBCI(cctkGH, n0 + var)) {
             any_driver_bc = true;
             break;
           }
