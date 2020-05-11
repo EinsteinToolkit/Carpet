@@ -37,6 +37,10 @@ FUNCTION UniqueRunID (CCTK_POINTER_TO_CONST IN  cctkGH)
 USES FUNCTION UniqueRunID
 
 # Presync functions to interface with read/write data
-void FUNCTION Driver_ManualSyncGF
-      (CCTK_POINTER_TO_CONST IN cctkGH, CCTK_INT IN tl, CCTK_INT IN vi)
-USES FUNCTION Driver_ManualSyncGF
+CCTK_INT FUNCTION Driver_RequireValidData
+  (CCTK_POINTER_TO_CONST IN cctkGH,
+   CCTK_INT ARRAY        IN variables,
+   CCTK_INT ARRAY        IN tls,
+   CCTK_INT              IN nvariables,
+   CCTK_INT ARRAY        IN where)
+USES FUNCTION Driver_RequireValidData

@@ -247,14 +247,16 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
       }
     }
 
-    // Synchronize and apply BCs if needed
-    if(use_psync) {
-      Driver_ManualSyncGF(cctkGH,0,n); // TODO: fix for other timelevels
-    }
-
 
     // Output in global mode
     BEGIN_GLOBAL_MODE(cctkGH) {
+
+      // Synchronize and apply BCs if needed
+      if(use_psync) {
+        int const tl = 0;
+        int const where = WH_EVERYWHERE;
+        Driver_RequireValidData(cctkGH, &n, &tl, 1, &where);
+      }
 
       // single fstreams object used for all output files.
       // This violates resource-allocation-is-initialization but is required
