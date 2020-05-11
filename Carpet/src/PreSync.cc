@@ -113,29 +113,6 @@ ostream& dumpValid(ostream& os, const int vi) {
   return os;
 }
 
-/**
- * Called by ManualSyncGF.
- */
-void Sync1(const cGH *cctkGH,int gi,int tl) {
-  std::vector<int> sync_groups;
-  sync_groups.push_back(gi);
-  const cFunctionData *attribute = CCTK_ScheduleQueryCurrentFunction(cctkGH);
-  // copied out of modes.hh
-  int const old_timelevel_offset = timelevel_offset;
-  int const old_timelevel = timelevel;
-  CCTK_REAL old_cctk_time = cctkGH->cctk_time;
-  auto const old_do_allow_past_timelevels = do_allow_past_timelevels;
-  do_allow_past_timelevels = tl == 0;
-  timelevel_offset = timelevel = tl;
-  const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
-  int ierr = SyncProlongateGroups(cctkGH, sync_groups, attribute);
-  assert(not ierr);
-  const_cast<cGH*>(cctkGH)->cctk_time = old_cctk_time;
-  timelevel_offset = old_timelevel_offset;
-  timelevel = old_timelevel;
-  do_allow_past_timelevels = old_do_allow_past_timelevels;
-}
-
 int ScheduleTraverse(char const *const where, char const *const name,
                      cGH *const cctkGH) {
   Timers::Timer timer(name);
@@ -436,23 +413,20 @@ CCTK_INT Carpet_GetValidRegion(CCTK_INT vi,CCTK_INT tl) {
 }
 
 /**
- * Apply manual synchronization to variable vi. If this variable
- * is already valid everywhere, this routine does nothing. When
- * the routine finishes, it will be valid everywhere.
+ * Apply manual synchronization to some variables. If these variables is
+ * already valid in the requested regions , this routine does nothing. When the
+ * routine finishes, it will be valid in the requested regions.
  */
-extern "C"
-CCTK_INT Carpet_RequireValidData(CCTK_POINTER_TO_CONST cctkGH_,
+namespace {
+CCTK_INT RequireValidData(const cGH* cctkGH,
    CCTK_INT const * const variables, CCTK_INT const * const tls,
    CCTK_INT const nvariables, CCTK_INT const * wheres) {
   DECLARE_CCTK_PARAMETERS;
 
-  const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
-
   assert(variables or nvariables == 0);
   assert(tls or nvariables == 0);
 
-  if(not is_level_mode() and not is_global_mode() and not is_meta_mode())
-    CCTK_VERROR("%s must be called in level, global, or meta mode", __func__);
+  assert(is_level_mode());
 
   std::set<std::tuple<int,int>> processed_groups; // [gi] [tl]
   for(int i = 0; i < nvariables; i++) {
@@ -496,25 +470,58 @@ CCTK_INT Carpet_RequireValidData(CCTK_POINTER_TO_CONST cctkGH_,
     auto res = processed_groups.insert(std::tuple<int,int>(gi,tl));
     assert(not res.second); // tuple was not marked processed before
 
-    // Take action by mode
-    if(is_level_mode()) {
-      Sync1(cctkGH,gi,tl);
-    } else if(is_global_mode()) {
+    // actually apply SYNC
+    std::vector<int> sync_groups;
+    sync_groups.push_back(gi);
+    const cFunctionData *attribute = CCTK_ScheduleQueryCurrentFunction(cctkGH);
+    // copied out of modes.hh
+    int const old_timelevel_offset = timelevel_offset;
+    int const old_timelevel = timelevel;
+    CCTK_REAL old_cctk_time = cctkGH->cctk_time;
+    auto const old_do_allow_past_timelevels = do_allow_past_timelevels;
+    do_allow_past_timelevels = tl == 0;
+    timelevel_offset = timelevel = tl;
+    const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
+    int ierr = SyncProlongateGroups(cctkGH, sync_groups, attribute);
+    assert(not ierr);
+    const_cast<cGH*>(cctkGH)->cctk_time = old_cctk_time;
+    timelevel_offset = old_timelevel_offset;
+    timelevel = old_timelevel;
+    do_allow_past_timelevels = old_do_allow_past_timelevels;
+  }
+
+  return 0;
+}
+}
+
+extern "C"
+CCTK_INT Carpet_RequireValidData(CCTK_POINTER_TO_CONST cctkGH_,
+   CCTK_INT const * const variables, CCTK_INT const * const tls,
+   CCTK_INT const nvariables, CCTK_INT const * wheres) {
+
+  const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
+
+  if(not is_level_mode() and not is_global_mode() and not is_meta_mode())
+    CCTK_VERROR("%s must be called in level, global, or meta mode", __func__);
+
+  // Take action by mode
+  if(is_level_mode()) {
+    RequireValidData(cctkGH, variables, tls, nvariables, wheres);
+  } else if(is_global_mode()) {
+    BEGIN_REFLEVEL_LOOP(cctkGH) {
+      RequireValidData(cctkGH, variables, tls, nvariables, wheres);
+    }
+    END_REFLEVEL_LOOP;
+  } else if(is_meta_mode()) {
+    BEGIN_MGLEVEL_LOOP(cctkGH) {
       BEGIN_REFLEVEL_LOOP(cctkGH) {
-        Sync1(cctkGH,gi,tl);
+        RequireValidData(cctkGH, variables, tls, nvariables, wheres);
       }
       END_REFLEVEL_LOOP;
-    } else if(is_meta_mode()) {
-      BEGIN_MGLEVEL_LOOP(cctkGH) {
-        BEGIN_REFLEVEL_LOOP(cctkGH) {
-          Sync1(cctkGH,gi,tl);
-        }
-        END_REFLEVEL_LOOP;
-      }
-      END_MGLEVEL_LOOP;
-    } else {
-      CCTK_BUILTIN_UNREACHABLE();
     }
+    END_MGLEVEL_LOOP;
+  } else {
+    CCTK_BUILTIN_UNREACHABLE();
   }
 
   return 0;
