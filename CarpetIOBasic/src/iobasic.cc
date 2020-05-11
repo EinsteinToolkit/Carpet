@@ -372,6 +372,13 @@ void OutputVar(const cGH *const cctkGH, int n, const char *out_reductions) {
   // Output in global mode
   BEGIN_GLOBAL_MODE(cctkGH) {
 
+    // Synchronize and apply BCs if needed
+    if(use_psync) {
+      int const tl = 0;
+      int const where = WH_EVERYWHERE;
+      Driver_RequireValidData(cctkGH, &n, &tl, 1, &where);
+    }
+
     // Remember cout state
     int const oldprec = cout.precision();
     ios_base::fmtflags const oldflags = cout.flags();

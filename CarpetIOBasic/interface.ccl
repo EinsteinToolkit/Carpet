@@ -13,3 +13,11 @@ USES INCLUDE HEADER: Timer.hh
 USES INCLUDE HEADER: carpet.hh
 USES INCLUDE HEADER: typecase.hh
 USES INCLUDE HEADER: typeprops.hh
+
+CCTK_INT FUNCTION Driver_RequireValidData
+  (CCTK_POINTER_TO_CONST IN cctkGH,
+   CCTK_INT ARRAY        IN variables,
+   CCTK_INT ARRAY        IN tls,
+   CCTK_INT              IN nvariables,
+   CCTK_INT ARRAY        IN where)
+USES FUNCTION Driver_RequireValidData
