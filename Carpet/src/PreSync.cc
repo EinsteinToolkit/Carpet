@@ -11,6 +11,7 @@
 #include <locale>
 #include <map>
 #include <set>
+#include <tuple>
 #include <vector>
 #include <sstream>
 
@@ -115,10 +116,10 @@ ostream& dumpValid(ostream& os, const int vi) {
 /**
  * Called by ManualSyncGF.
  */
-void Sync1(const cGH *cctkGH,int tl,int gi) {
+void Sync1(const cGH *cctkGH,int gi,int tl) {
   std::vector<int> sync_groups;
   sync_groups.push_back(gi);
-  cFunctionData *attribute = 0;
+  const cFunctionData *attribute = CCTK_ScheduleQueryCurrentFunction(cctkGH);
   // copied out of modes.hh
   int const old_timelevel_offset = timelevel_offset;
   int const old_timelevel = timelevel;
@@ -126,9 +127,7 @@ void Sync1(const cGH *cctkGH,int tl,int gi) {
   auto const old_do_allow_past_timelevels = do_allow_past_timelevels;
   do_allow_past_timelevels = tl == 0;
   timelevel_offset = timelevel = tl;
-  int type = CCTK_GroupTypeI(gi);
-  int const rl = type == CCTK_GF ? reflevel : 0;
-  const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, rl, timelevel);
+  const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
   int ierr = SyncProlongateGroups(cctkGH, sync_groups, attribute);
   assert(not ierr);
   const_cast<cGH*>(cctkGH)->cctk_time = old_cctk_time;
@@ -441,65 +440,84 @@ CCTK_INT Carpet_GetValidRegion(CCTK_INT vi,CCTK_INT tl) {
  * is already valid everywhere, this routine does nothing. When
  * the routine finishes, it will be valid everywhere.
  */
-extern "C" void Carpet_ManualSyncGF(CCTK_POINTER_TO_CONST cctkGH_,const CCTK_INT tl,const CCTK_INT vi) {
+extern "C"
+CCTK_INT Carpet_RequireValidData(CCTK_POINTER_TO_CONST cctkGH_,
+   CCTK_INT const * const variables, CCTK_INT const * const tls,
+   CCTK_INT const nvariables, CCTK_INT const * wheres) {
   DECLARE_CCTK_PARAMETERS;
 
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
 
-  // Do nothing if this is not a grid function
-  if(CCTK_GroupTypeFromVarI(vi) != CCTK_GF) {
-    return;
-  }
-
-  assert(vi < CCTK_NumVars());
-  int const gi = CCTK_GroupIndexFromVarI(vi);
-  assert(gi >= 0);
-  int const var = vi - CCTK_FirstVarIndexI(gi);
-  int const m = 0; // FIXME: this assumes that validity is the same on all maps
-  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
-  assert(ff);
-  int type = CCTK_GroupTypeFromVarI(vi);
-  int const rl = type == CCTK_GF ? reflevel : 0;
-  int const valid = ff->valid(mglevel, rl, tl);
-
-  // Check if anything needs to be done
-  if(is_set(valid, WH_EVERYWHERE)) {
-    return;
-  }
-
-  if(not is_set(valid,WH_INTERIOR)) {
-    static std::set<int> have_warned_about;
-    if(not have_warned_about.count(vi)) {
-      CCTK_VWARN(psync_error ? CCTK_WARN_ABORT : CCTK_WARN_ALERT,
-                 "SYNC requires valid data in interior %s rl=%d tl=%d but have only %s",
-                 CCTK_FullVarName(vi), rl, tl, wstr(valid).c_str());
-      have_warned_about.insert(vi);
-    }
-    return; // cannot SYNC, do not update valid state
-  }
+  assert(variables or nvariables == 0);
+  assert(tls or nvariables == 0);
 
   if(not is_level_mode() and not is_global_mode() and not is_meta_mode())
     CCTK_VERROR("%s must be called in level, global, or meta mode", __func__);
 
-  // Take action by mode
-  if(is_level_mode()) {
-    Sync1(cctkGH,tl,gi);
-  } else if(is_global_mode()) {
-    BEGIN_REFLEVEL_LOOP(cctkGH) {
-      Sync1(cctkGH,tl,gi);
+  std::set<std::tuple<int,int>> processed_groups; // [gi] [tl]
+  for(int i = 0; i < nvariables; i++) {
+    int const vi = variables[i];
+    int const tl = tls[i];
+    int const where = wheres[i];
+    assert(maps == 1); // no implemented for anything else yet
+
+    // Do nothing if this is not a grid function
+    if(CCTK_GroupTypeFromVarI(vi) != CCTK_GF) {
+      continue;
     }
-    END_REFLEVEL_LOOP;
-  } else if(is_meta_mode()) {
-    BEGIN_MGLEVEL_LOOP(cctkGH) {
+
+    assert(vi < CCTK_NumVars());
+    int const gi = CCTK_GroupIndexFromVarI(vi);
+    assert(gi >= 0);
+    int const var = vi - CCTK_FirstVarIndexI(gi);
+    int const m = 0; // FIXME: this assumes that validity is the same on all maps
+    ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
+    assert(ff);
+    int const valid = ff->valid(mglevel, reflevel, tl);
+
+    // Check if anything needs to be done
+    if(is_set(valid, where)) {
+      continue;
+    }
+
+    if(not is_set(valid, WH_INTERIOR)) {
+      static std::set<int> have_warned_about;
+      if(not have_warned_about.count(vi)) {
+        CCTK_VWARN(psync_error ? CCTK_WARN_ABORT : CCTK_WARN_ALERT,
+                   "SYNC requires valid data in interior %s rl=%d tl=%d but have only %s",
+                   CCTK_FullVarName(vi), reflevel, tl, wstr(valid).c_str());
+        have_warned_about.insert(vi);
+      }
+      continue; // cannot SYNC, do not update valid state
+    }
+
+    // since SYNC processes whole groups, if any variable is unset then we must
+    // not have encountered any other variable from that group either
+    auto res = processed_groups.insert(std::tuple<int,int>(gi,tl));
+    assert(not res.second); // tuple was not marked processed before
+
+    // Take action by mode
+    if(is_level_mode()) {
+      Sync1(cctkGH,gi,tl);
+    } else if(is_global_mode()) {
       BEGIN_REFLEVEL_LOOP(cctkGH) {
-        Sync1(cctkGH,tl,gi);
+        Sync1(cctkGH,gi,tl);
       }
       END_REFLEVEL_LOOP;
+    } else if(is_meta_mode()) {
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        BEGIN_REFLEVEL_LOOP(cctkGH) {
+          Sync1(cctkGH,gi,tl);
+        }
+        END_REFLEVEL_LOOP;
+      }
+      END_MGLEVEL_LOOP;
+    } else {
+      CCTK_BUILTIN_UNREACHABLE();
     }
-    END_MGLEVEL_LOOP;
-  } else {
-    CCTK_BUILTIN_UNREACHABLE();
   }
+
+  return 0;
 }
 
 extern "C"
