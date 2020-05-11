@@ -380,7 +380,10 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
  */
 extern "C"
 void Carpet_SetValidRegion(CCTK_INT vi,CCTK_INT tl,CCTK_INT wh) {
-  assert(vi < CCTK_NumVars());
+  if(vi < 0 or vi >= CCTK_NumVars()) {
+    CCTK_VERROR("Invalid variable index %d", vi);
+  }
+
   int const gi = CCTK_GroupIndexFromVarI(vi);
   assert(gi >= 0);
   int const var = vi - CCTK_FirstVarIndexI(gi);
@@ -389,6 +392,11 @@ void Carpet_SetValidRegion(CCTK_INT vi,CCTK_INT tl,CCTK_INT wh) {
   assert(ff);
   int type = CCTK_GroupTypeFromVarI(vi);
   int const rl = type == CCTK_GF ? reflevel : 0;
+
+  if(tl >= ff->timelevels(mglevel, rl)) {
+    CCTK_VERROR("Invalid time level %d for variable %s.", tl,
+                CCTK_FullVarName(vi));
+  }
 
   ff->set_valid(mglevel, rl, tl, wh);
 }
@@ -399,7 +407,9 @@ void Carpet_SetValidRegion(CCTK_INT vi,CCTK_INT tl,CCTK_INT wh) {
  */
 extern "C"
 CCTK_INT Carpet_GetValidRegion(CCTK_INT vi,CCTK_INT tl) {
-  assert(vi < CCTK_NumVars());
+  if(vi < 0 or vi >= CCTK_NumVars()) {
+    CCTK_VERROR("Invalid variable index %d", vi);
+  }
   int const gi = CCTK_GroupIndexFromVarI(vi);
   assert(gi >= 0);
   int const var = vi - CCTK_FirstVarIndexI(gi);
@@ -408,6 +418,11 @@ CCTK_INT Carpet_GetValidRegion(CCTK_INT vi,CCTK_INT tl) {
   assert(ff);
   int type = CCTK_GroupTypeFromVarI(vi);
   int const rl = type == CCTK_GF ? reflevel : 0;
+
+  if(tl >= ff->timelevels(mglevel, rl)) {
+    CCTK_VERROR("Invalid time level %d for variable %s.", tl,
+                CCTK_FullVarName(vi));
+  }
 
   return ff->valid(mglevel, rl, tl);
 }
@@ -440,13 +455,19 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
       continue;
     }
 
-    assert(vi < CCTK_NumVars());
+    if(vi < 0 or vi >= CCTK_NumVars()) {
+      CCTK_VERROR("Invalid variable index %d", vi);
+    }
     int const gi = CCTK_GroupIndexFromVarI(vi);
     assert(gi >= 0);
     int const var = vi - CCTK_FirstVarIndexI(gi);
     int const m = 0; // FIXME: this assumes that validity is the same on all maps
     ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
     assert(ff);
+    if(tl >= ff->timelevels(mglevel, reflevel)) {
+      CCTK_VERROR("Invalid time level %d for variable %s.", tl,
+                  CCTK_FullVarName(vi));
+    }
     int const valid = ff->valid(mglevel, reflevel, tl);
 
     // Check if anything needs to be done
