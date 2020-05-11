@@ -421,7 +421,6 @@ void CallScheduledFunction(char const *restrict const time_and_mode,
       pre_timer.stop();
     }
     int const res = CCTK_CallFunction(function, attribute, data);
-    CCTK_Checked_reset();
     assert(res == 0);
     if (CCTK_IsFunctionAliased("Accelerator_PostCallFunction")) {
       Timers::Timer post_timer("PostCall");
