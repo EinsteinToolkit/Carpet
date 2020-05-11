@@ -784,6 +784,14 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
           num_incomplete++;
         }
         free(fullname);
+      } else {
+        const int gindex = CCTK_GroupIndexFromVarI(vindex);
+        int const var = vindex - CCTK_FirstVarIndexI(gindex);
+        for (size_t m = 0; m < arrdata.at(gindex).size(); ++m) {
+          ggf *const gf = arrdata.AT(gindex).AT(m).data.AT(var);
+          assert(gf);
+          gf->set_valid(mglevel, reflevel, tl, WH_EVERYWHERE);
+        }
       }
     }
   }
