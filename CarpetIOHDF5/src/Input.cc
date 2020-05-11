@@ -9,7 +9,6 @@
 #include <vector>
 #include <map>
 #include <algorithm>
-#include <cctk_Arguments_Checked.h>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
