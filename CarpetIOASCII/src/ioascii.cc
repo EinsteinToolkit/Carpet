@@ -564,7 +564,9 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
           vector<const gdata *> datas(n_max - n_min);
           for (size_t n = 0; n < datas.size(); ++n) {
             if(use_psync) {
-              Driver_ManualSyncGF(cctkGH,tl,vindex0+n);
+              int const vi = vindex0+n;
+              int const where = WH_EVERYWHERE;
+              Driver_RequireValidData(cctkGH, &vi, &tl, 1, &where);
             }
             if (dist::rank() == proc) {
               const ggf *const ff = arrdata.at(group).at(m).data.at(n + n_min);
