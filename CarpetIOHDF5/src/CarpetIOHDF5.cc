@@ -1020,7 +1020,9 @@ static int OutputVarAs(const cGH *const cctkGH, const char *const fullname,
 
     // Synchronize and apply BCs if needed
     if(use_psync) {
-      Driver_ManualSyncGF(cctkGH,0,var); // TODO: support part timelevels
+      int const tl = 0;
+      int const where = WH_EVERYWHERE;
+      Driver_RequireValidData(cctkGH, &var, &tl, 1, &where);
     }
 
     ioRequest *r = myGH->requests[var];
