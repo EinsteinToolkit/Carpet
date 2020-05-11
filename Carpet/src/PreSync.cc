@@ -528,6 +528,53 @@ CCTK_INT Carpet_RequireValidData(CCTK_POINTER_TO_CONST cctkGH_,
 }
 
 extern "C"
+CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST /*cctkGH_*/,
+   CCTK_INT const * const variables, CCTK_INT const * const tls,
+   CCTK_INT const nvariables, CCTK_INT const * wheres) {
+  DECLARE_CCTK_PARAMETERS;
+
+  // technically LEVEL mode is the only allowed one since I keep track of
+  // validity on a level granularity. However that makes the routine awkward to
+  // use in locally scheduled routines.
+  if(not is_level_mode() and not is_local_mode())
+    CCTK_VERROR("%s must be called in level, of local mode", __func__);
+
+  assert(variables or nvariables == 0);
+  assert(tls or nvariables == 0);
+
+  for(int i = 0; i < nvariables; i++) {
+    int const vi = variables[i];
+    int const tl = tls[i];
+    int const where = wheres[i];
+    assert(maps == 1); // no implemented for anything else yet
+
+    // Do nothing if this is not a grid function
+    if(CCTK_GroupTypeFromVarI(vi) != CCTK_GF) {
+      continue;
+    }
+
+    if(vi < 0 or vi >= CCTK_NumVars()) {
+      CCTK_VERROR("Invalid variable index %d", vi);
+    }
+
+    int const gi = CCTK_GroupIndexFromVarI(vi);
+    assert(gi >= 0);
+    int const var = vi - CCTK_FirstVarIndexI(gi);
+    int const m = 0; // FIXME: this assumes that validity is the same on all maps
+    ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
+    assert(ff);
+    if(tl >= ff->timelevels(mglevel, reflevel)) {
+      CCTK_VERROR("Invalid time level %d for variable %s.", tl,
+                  CCTK_FullVarName(vi));
+    }
+    int const valid = ff->valid(mglevel, reflevel, tl);
+    ff->set_valid(mglevel, reflevel, tl, valid | where);
+  }
+
+  return 0;
+}
+
+extern "C"
 void Carpet_SynchronizationRecovery(CCTK_ARGUMENTS) {
   for(int vi = 0; vi < CCTK_NumVars(); vi++) {
     Carpet_SetValidRegion(vi,0,WH_INTERIOR);

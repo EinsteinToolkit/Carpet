@@ -431,6 +431,15 @@ CCTK_INT FUNCTION Driver_RequireValidData
 PROVIDES FUNCTION Driver_RequireValidData WITH
    Carpet_RequireValidData LANGUAGE C
 
+CCTK_INT FUNCTION Driver_NotifyDataModified
+  (CCTK_POINTER_TO_CONST IN cctkGH,
+   CCTK_INT ARRAY        IN variables,
+   CCTK_INT ARRAY        IN tls,
+   CCTK_INT              IN nvariables,
+   CCTK_INT ARRAY        IN where)
+PROVIDES FUNCTION Driver_NotifyDataModified WITH
+   Carpet_NotifyDataModified LANGUAGE C
+
 # Get pointer to grid variable for a specific map and refinement level
 CCTK_POINTER FUNCTION                     \
     VarDataPtrI                           \
