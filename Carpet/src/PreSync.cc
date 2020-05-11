@@ -379,7 +379,8 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
  * of the grid where that variable is valid (i.e. the where_spec).
  */
 extern "C"
-void Carpet_SetValidRegion(CCTK_INT vi,CCTK_INT tl,CCTK_INT wh) {
+void Carpet_SetValidRegion(CCTK_POINTER_TO_CONST /*cctkGH_*/, CCTK_INT vi,
+                           CCTK_INT tl, CCTK_INT wh) {
   if(vi < 0 or vi >= CCTK_NumVars()) {
     CCTK_VERROR("Invalid variable index %d", vi);
   }
@@ -406,7 +407,8 @@ void Carpet_SetValidRegion(CCTK_INT vi,CCTK_INT tl,CCTK_INT wh) {
  * of the grid where that variable is valid (i.e. the where_spec).
  */
 extern "C"
-CCTK_INT Carpet_GetValidRegion(CCTK_INT vi,CCTK_INT tl) {
+CCTK_INT Carpet_GetValidRegion(CCTK_POINTER_TO_CONST /*cctkGH_*/, CCTK_INT vi,
+                               CCTK_INT tl) {
   if(vi < 0 or vi >= CCTK_NumVars()) {
     CCTK_VERROR("Invalid variable index %d", vi);
   }
@@ -597,11 +599,13 @@ CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST /*cctkGH_*/,
 
 extern "C"
 void Carpet_SynchronizationRecovery(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_ARGUMENTS;
+
   for(int vi = 0; vi < CCTK_NumVars(); vi++) {
-    Carpet_SetValidRegion(vi,0,WH_INTERIOR);
+    Carpet_SetValidRegion(cctkGH, vi,0,WH_INTERIOR);
     int tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
     for(int time = 1; time < tl; time++) {
-      Carpet_SetValidRegion(vi,time,WH_EVERYWHERE);
+      Carpet_SetValidRegion(cctkGH, vi,time,WH_EVERYWHERE);
     }
   }
 }

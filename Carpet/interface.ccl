@@ -409,16 +409,18 @@ PROVIDES FUNCTION Driver_FilterOutVarForBCI WITH
 # Functions for accessing and changing valid region
 void FUNCTION
       Driver_SetValidRegion
-      (CCTK_INT IN vi,
-      CCTK_INT IN tl,
-      CCTK_INT IN wh)
+      (CCTK_POINTER_TO_CONST IN cctkGH,
+       CCTK_INT IN vi,
+       CCTK_INT IN tl,
+       CCTK_INT IN wh)
 PROVIDES FUNCTION Driver_SetValidRegion WITH
    Carpet_SetValidRegion LANGUAGE C
 
 CCTK_INT FUNCTION
       Driver_GetValidRegion
-      (CCTK_INT IN vi,
-      CCTK_INT IN tl)
+      (CCTK_POINTER_TO_CONST IN cctkGH,
+       CCTK_INT IN vi,
+       CCTK_INT IN tl)
 PROVIDES FUNCTION Driver_GetValidRegion WITH
    Carpet_GetValidRegion LANGUAGE C
 

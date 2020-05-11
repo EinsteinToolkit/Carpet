@@ -67,7 +67,6 @@ void Restrict(const cGH *cctkGH) {
 
   // when a reflevel is restricted to PostRestrict needs to run on both this
   // level and on the finer level data was pulled from
-  // TODO: make Driver_SetValidRegion accept a reflevel argument
   assert(reflevel < reflevels-1);
   for (int rl = reflevel; rl <= reflevel+1; ++rl) {
     BEGIN_GLOBAL_MODE(cctkGH) {
@@ -76,7 +75,7 @@ void Restrict(const cGH *cctkGH) {
           const int firstvar = CCTK_FirstVarIndexI(g);
           const int nvars = CCTK_NumVarsInGroupI(g);
           for(int i = 0; i < nvars ; i++) {
-            Driver_SetValidRegion(firstvar + i, 0, WH_INTERIOR);
+            Carpet_SetValidRegion(cctkGH, firstvar + i, 0, WH_INTERIOR);
           }
         }
       } LEAVE_LEVEL_MODE;
