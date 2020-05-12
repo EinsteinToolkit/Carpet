@@ -450,7 +450,6 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
     int const vi = variables[i];
     int const tl = tls[i];
     int const where = wheres[i];
-    assert(maps == 1); // no implemented for anything else yet
 
     // Do nothing if this is not a grid function
     if(CCTK_GroupTypeFromVarI(vi) != CCTK_GF) {
@@ -569,7 +568,6 @@ CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST /*cctkGH_*/,
     int const vi = variables[i];
     int const tl = tls[i];
     int const where = wheres[i];
-    assert(maps == 1); // no implemented for anything else yet
 
     // Do nothing if this is not a grid function
     if(CCTK_GroupTypeFromVarI(vi) != CCTK_GF) {
