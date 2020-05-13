@@ -372,7 +372,8 @@ void OutputVar(const cGH *const cctkGH, int n, const char *out_reductions) {
   BEGIN_GLOBAL_MODE(cctkGH) {
 
     // Synchronize and apply BCs if needed
-    if(use_psync) {
+    if (not CCTK_EQUALS(presync_mode, "off") and
+        QueryDriverBCForVarI(cctkGH, n)) {
       int const tl = 0;
       int const where = WH_EVERYWHERE;
       Driver_RequireValidData(cctkGH, &n, &tl, 1, &where);
