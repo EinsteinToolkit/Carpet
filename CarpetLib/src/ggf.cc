@@ -416,6 +416,14 @@ void ggf::ref_restrict_all(comm_state &state, int const tl, int const rl,
   transfer_from_all(state, tl, rl, ml, &dh::fast_dboxes::fast_ref_rest_sendrecv,
                     tl, rl + 1, ml);
   timer.stop(0);
+
+  // Update state, both fine and coarse bcome invalid in the boundaries
+  // coarse b/c fine was restricted to it, fine b/c prologation from coarse
+  // will change values
+  int const coarse_old_valid = valid(ml, rl, tl);
+  set_valid(ml, rl, tl, coarse_old_valid & ~(WH_GHOSTS|WH_BOUNDARY));
+  int const fine_old_valid = valid(ml, rl, tl);
+  set_valid(ml, rl + 1, tl, fine_old_valid & ~(WH_GHOSTS|WH_BOUNDARY));
 }
 
 // Prolongate a refinement level
