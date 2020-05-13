@@ -839,12 +839,11 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
           for (size_t m = 0; m < arrdata.at(group).size(); ++m) {
             arrdesc &ad = arrdata.at(group).at(m);
             for (int ml = 0; ml < ad.hh->mglevels(); ++ml) {
-              for (int rl = 0; rl < ad.hh->reflevels(); ++rl) {
-                for (size_t v = 0; v < ad.data.size(); ++v) {
-                  ggf *const gf = ad.data.at(v);
-                  for (int tl = 0; tl < gf->timelevels(ml, rl); ++tl) {
-                    gf->sync_all(state, tl, rl, ml);
-                  }
+              assert(reflevel < ad.hh->reflevels());
+              for (size_t v = 0; v < ad.data.size(); ++v) {
+                ggf *const gf = ad.data.at(v);
+                for (int tl = 0; tl < gf->timelevels(ml, reflevel); ++tl) {
+                  gf->sync_all(state, tl, reflevel, ml);
                 }
               }
             }
