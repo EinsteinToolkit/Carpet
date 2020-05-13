@@ -65,23 +65,6 @@ void Restrict(const cGH *cctkGH) {
     timer.stop();
   }
 
-  // when a reflevel is restricted to PostRestrict needs to run on both this
-  // level and on the finer level data was pulled from
-  assert(reflevel < reflevels-1);
-  for (int rl = reflevel; rl <= reflevel+1; ++rl) {
-    BEGIN_GLOBAL_MODE(cctkGH) {
-      ENTER_LEVEL_MODE(cctkGH, rl) {
-        for(auto g: groups) {
-          const int firstvar = CCTK_FirstVarIndexI(g);
-          const int nvars = CCTK_NumVarsInGroupI(g);
-          for(int i = 0; i < nvars ; i++) {
-            Carpet_SetValidRegion(cctkGH, firstvar + i, 0, WH_INTERIOR);
-          }
-        }
-      } LEAVE_LEVEL_MODE;
-    } END_GLOBAL_MODE;
-  } // for rl
-
   // Note: Carpet used to call SyncGroups here. This is now done in
   // Evolve.cc.
 }
