@@ -562,8 +562,9 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
               one_file_per_group ? CCTK_NumVarsInGroupI(group) : var + 1;
           vector<const gdata *> datas(n_max - n_min);
           for (size_t n = 0; n < datas.size(); ++n) {
-            if(use_psync) {
-              int const vi = vindex0+n;
+            int const vi = vindex0 + n;
+            if (not CCTK_EQUALS(presync_mode, "off") and
+                QueryDriverBCForVarI(cctkGH, vi)) {
               int const where = WH_EVERYWHERE;
               Driver_RequireValidData(cctkGH, &vi, &tl, 1, &where);
             }

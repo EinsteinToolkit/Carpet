@@ -2,7 +2,7 @@
 
 shares: cactus
 
-USES BOOLEAN use_psync
+USES KEYWORD presync_mode
 
 shares: IO
 
