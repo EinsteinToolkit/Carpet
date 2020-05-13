@@ -748,7 +748,7 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
       int const ierr = Boundary_SelectVarForBCI(cctkGH, b.faces, b.width,
         b.table_handle, var_index, b.bc_name.c_str());
       if(ierr < 0) {
-        CCTK_VWARN(CCTK_WARN_ALERT, "Failed to selecte boundary condition '%s' for variable '%s': %d",
+        CCTK_VWARN(CCTK_WARN_ALERT, "Failed to select boundary condition '%s' for variable '%s': %d",
         b.bc_name.c_str(), CCTK_FullVarName(var_index), ierr);
       }
       any_driver_bc = true;
