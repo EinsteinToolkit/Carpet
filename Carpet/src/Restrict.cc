@@ -100,6 +100,34 @@ static void RestrictGroups(const cGH *cctkGH, const vector<int> &groups) {
                                  &tls.front(), vis.size(), on_device);
   }
 
+  if (use_psync) {
+    int fine_level = reflevel + 1;
+    BEGIN_GLOBAL_MODE(cctkGH) {
+      ENTER_LEVEL_MODE(cctkGH, fine_level) {
+        vector<CCTK_INT> vis,tls, whs;
+        for (int group = 0; group < (int)groups.size(); ++group) {
+          const int g = groups.AT(group);
+          const int active_tl = CCTK_ActiveTimeLevelsGI(cctkGH, g);
+          assert(active_tl >= 0);
+          const int tl = active_tl > 1 ? timelevel : 0;
+          for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
+            const int var0 = CCTK_FirstVarIndexI(g);
+            const int varn = CCTK_NumVarsInGroupI(g);
+            for (int vi = var0; vi < var0 + varn; ++vi) {
+              vis.push_back(vi);
+              tls.push_back(tl);
+              whs.push_back(WH_EVERYWHERE);
+            }
+          }
+        }
+        Carpet_RequireValidData(cctkGH, &vis.front(), &tls.front(), vis.size(),
+                                &whs.front());
+      }
+      LEAVE_LEVEL_MODE;
+    }
+    END_GLOBAL_MODE;
+  }
+
   static vector<Timers::Timer *> timers;
   if (timers.empty()) {
     timers.push_back(new Timers::Timer("comm_state[0].create"));
