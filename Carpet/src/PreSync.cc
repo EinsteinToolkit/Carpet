@@ -705,7 +705,13 @@ CCTK_INT Carpet_FilterOutVarForBCI(
   // routine
   if(do_applyphysicalbcs)
     return false;
-  auto it = boundary_conditions.find(var_index);
+  return QueryDriverBCForVarI(static_cast<const cGH*>(cctkGH_), var_index);
+}
+
+/* return true or false depending on whether a driver boundary condtion is
+ * registered for this variable */
+int QueryDriverBCForVarI(const cGH *cgh, const int varindex) {
+  auto it = boundary_conditions.find(varindex);
   return it != boundary_conditions.end();
 }
 
