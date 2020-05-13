@@ -217,7 +217,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
         ggf *const ff = arrdata.AT(gi).AT(m).data.AT(vi - i0);
         assert(ff);
         int wh = ff->valid(mglevel, reflevel, 0);
-        if(is_set(wh,WH_EXTERIOR)) {
+        if(is_set(wh,WH_BOUNDARY|WH_GHOSTS)) {
           continue;
         }
         if(!is_set(wh,WH_INTERIOR)) {
