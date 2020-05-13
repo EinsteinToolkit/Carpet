@@ -445,6 +445,20 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
 
   assert(is_level_mode());
 
+  if(use_psync and reflevel > 0) {
+    cGH* nonconstGH = const_cast<cGH*>(cctkGH);
+    // recurse to check that all coarsers levels are properly SYNCed
+    CCTK_REAL previous_time = nonconstGH->cctk_time;
+    const int parent_reflevel = reflevel - 1;
+    BEGIN_GLOBAL_MODE(nonconstGH) {
+      ENTER_LEVEL_MODE(nonconstGH, parent_reflevel) {
+        nonconstGH->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
+        RequireValidData(nonconstGH, variables, tls, nvariables, wheres);
+      } LEAVE_LEVEL_MODE;
+    } END_GLOBAL_MODE;
+    nonconstGH->cctk_time = previous_time;
+  }
+
   std::set<std::tuple<int,int>> processed_groups; // [gi] [tl]
   for(int i = 0; i < nvariables; i++) {
     int const vi = variables[i];
