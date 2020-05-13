@@ -62,10 +62,4 @@ if(use_psync)
   schedule GROUP ApplyBCs in Driver_ApplyBCs AS Carpet_ApplyBCs
   {
   } "Apply boundary conditions under driver control"
-
-  # PreSync Recovery
-  schedule Carpet_SynchronizationRecovery at RECOVER_VARIABLES after IOUtil_RecoverGH
-  {
-    LANG: C
-  } "Sets region validity at recovery"
 }

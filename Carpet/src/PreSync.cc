@@ -595,19 +595,6 @@ CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST /*cctkGH_*/,
   return 0;
 }
 
-extern "C"
-void Carpet_SynchronizationRecovery(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS;
-
-  for(int vi = 0; vi < CCTK_NumVars(); vi++) {
-    Carpet_SetValidRegion(cctkGH, vi,0,WH_INTERIOR);
-    int tl = CCTK_ActiveTimeLevelsVI(cctkGH, vi);
-    for(int time = 1; time < tl; time++) {
-      Carpet_SetValidRegion(cctkGH, vi,time,WH_EVERYWHERE);
-    }
-  }
-}
-
 namespace {
 // return codes are those of Boundary_SelectVarForBCI
 CCTK_INT SelectVarForBCI(
