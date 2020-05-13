@@ -193,7 +193,7 @@ public:
 protected:
   void find_source_timelevel(vector<CCTK_REAL> const &times, CCTK_REAL time,
                              int order_time, operator_type transport_operator,
-                             int &timelevel0, int &ntimelevels);
+                             int &timelevel0, int &ntimelevels) const;
 
 private:
   virtual void copy_from_innerloop(gdata const *gsrc, ibbox const &dstbox,

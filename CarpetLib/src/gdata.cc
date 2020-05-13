@@ -283,7 +283,7 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
 void gdata::find_source_timelevel(vector<CCTK_REAL> const &times,
                                   CCTK_REAL const time, int const order_time,
                                   operator_type const op, int &timelevel0,
-                                  int &ntimelevels) {
+                                  int &ntimelevels) const {
   // Ensure that the times are consistent
   assert(times.size() > 0);
   assert(order_time >= 0);
