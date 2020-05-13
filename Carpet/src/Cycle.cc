@@ -76,7 +76,6 @@ void CycleTimeLevels(cGH *const cctkGH) {
           for (int m = 0; m < (int)arrdata.AT(group).size(); ++m) {
             for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
               if (use_psync) {
-                assert(m == 0); // assumption in Carpet_RequireValidData
                 int const vi = firstvarindex + var;
                 int const where = WH_EVERYWHERE;
                 Carpet_RequireValidData(cctkGH, &vi, &timelevel, 1, &where);
@@ -151,7 +150,6 @@ void UncycleTimeLevels(cGH *const cctkGH) {
           int const firstvarindex = CCTK_FirstVarIndexI(group);
           for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
             if (use_psync) {
-              assert(m == 0); // assumption in Carpet_RequireValidData
               int const vi = firstvarindex + var;
               int const where = WH_EVERYWHERE;
               Carpet_RequireValidData(cctkGH, &vi, &timelevel, 1, &where);
@@ -215,7 +213,6 @@ void FlipTimeLevels(cGH *const cctkGH) {
         for (int m = 0; m < (int)arrdata.AT(group).size(); ++m) {
           for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
             if (use_psync) {
-              assert(m == 0); // assumption in Carpet_RequireValidData
               int const vi = firstvarindex + var;
               int const where = WH_EVERYWHERE;
               Carpet_RequireValidData(cctkGH, &vi, &timelevel, 1, &where);
