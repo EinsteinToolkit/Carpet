@@ -1220,6 +1220,12 @@ static void Checkpoint(const cGH *const cctkGH, int called_from) {
                          request->timelevel);
             }
 
+            // Synchronize and apply BCs if needed
+            if(use_psync) {
+              int const where = WH_EVERYWHERE;
+              Driver_RequireValidData(cctkGH, &request->vindex, &request->timelevel, 1, &where);
+            }
+
             // write the var
             error_count +=
                 parallel_io
