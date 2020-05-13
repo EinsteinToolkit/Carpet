@@ -490,7 +490,7 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
     // since SYNC processes whole groups, if any variable is unset then we must
     // not have encountered any other variable from that group either
     auto res = processed_groups.insert(std::tuple<int,int>(gi,tl));
-    assert(not res.second); // tuple was not marked processed before
+    assert(res.second); // tuple was not marked processed before
 
     // actually apply SYNC
     std::vector<int> sync_groups;
