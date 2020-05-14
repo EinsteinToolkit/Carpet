@@ -246,12 +246,12 @@ int OutputVarAs(const cGH *const cctkGH, const char *const varname,
       }
     }
 
-
     // Output in global mode
     BEGIN_GLOBAL_MODE(cctkGH) {
 
       // Synchronize and apply BCs if needed
-      if(use_psync) {
+      if (not CCTK_EQUALS(presync_mode, "off") and
+          QueryDriverBCForVarI(cctkGH, n)) {
         int const tl = 0;
         int const where = WH_EVERYWHERE;
         Driver_RequireValidData(cctkGH, &n, &tl, 1, &where);
