@@ -704,13 +704,15 @@ CCTK_INT Carpet_SelectGroupForBC(
     const CCTK_STRING bc_name) {
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
   const CCTK_INT group = CCTK_GroupIndex(group_name);
+  if(group < 0)
+    return -6; // see documenation from Boundary
   const CCTK_INT vstart = CCTK_FirstVarIndexI(group);
   const CCTK_INT vnum   = CCTK_NumVarsInGroupI(group);
   CCTK_INT ierr = 0;
   for(CCTK_INT vi=vstart;vi<vstart+vnum;vi++) {
     const CCTK_INT myierr =
       SelectVarForBCI(cctkGH,faces,width,table_handle,vi,bc_name);
-    if(ierr and not myierr)
+    if(ierr == 0 and myierr != 0)
       ierr = myierr;
   }
   return ierr;
