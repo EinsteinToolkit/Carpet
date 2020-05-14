@@ -49,7 +49,7 @@ if (use_unusedpoints_mask)
   } "Set mask of unused points"
 }
 
-if(use_psync)
+if (! CCTK_EQUALS(presync_mode, "off"))
 {
   schedule GROUP Driver_BoundarySelect at CCTK_WRAGH
   {

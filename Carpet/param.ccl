@@ -8,9 +8,7 @@ USES CCTK_INT cctk_itlast
 USES CCTK_REAL cctk_initial_time
 USES CCTK_REAL cctk_final_time
 USES CCTK_REAL max_runtime 
-USES BOOLEAN use_psync
-USES BOOLEAN psync_only
-USES BOOLEAN psync_error
+USES KEYWORD presync_mode
 
 
 shares: InitBase

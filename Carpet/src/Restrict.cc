@@ -100,7 +100,7 @@ static void RestrictGroups(const cGH *cctkGH, const vector<int> &groups) {
                                  &tls.front(), vis.size(), on_device);
   }
 
-  if (use_psync) {
+  if (not CCTK_EQUALS(presync_mode, "off")) {
     int fine_level = reflevel + 1;
     BEGIN_GLOBAL_MODE(cctkGH) {
       ENTER_LEVEL_MODE(cctkGH, fine_level) {

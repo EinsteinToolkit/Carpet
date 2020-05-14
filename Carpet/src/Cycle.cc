@@ -72,6 +72,7 @@ void CycleTimeLevels(cGH *const cctkGH) {
 
         case CCTK_GF: {
           assert(reflevel >= 0 and reflevel < reflevels);
+          bool const use_psync = not CCTK_EQUALS(presync_mode, "off");
           int const firstvarindex = CCTK_FirstVarIndexI(group);
           for (int m = 0; m < (int)arrdata.AT(group).size(); ++m) {
             for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
@@ -144,8 +145,9 @@ void UncycleTimeLevels(cGH *const cctkGH) {
 
       switch (CCTK_GroupTypeI(group)) {
 
-      case CCTK_GF:
+      case CCTK_GF: {
         assert(reflevel >= 0 and reflevel < reflevels);
+        bool const use_psync = not CCTK_EQUALS(presync_mode, "off");
         for (int m = 0; m < (int)arrdata.AT(group).size(); ++m) {
           int const firstvarindex = CCTK_FirstVarIndexI(group);
           for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
@@ -157,6 +159,7 @@ void UncycleTimeLevels(cGH *const cctkGH) {
             arrdata.AT(group).AT(m).data.AT(var)->uncycle_all(reflevel,
                                                               mglevel);
           }
+        }
         }
         break;
 
@@ -208,8 +211,9 @@ void FlipTimeLevels(cGH *const cctkGH) {
 
       switch (CCTK_GroupTypeI(group)) {
 
-      case CCTK_GF:
+      case CCTK_GF: {
         assert(reflevel >= 0 and reflevel < reflevels);
+        bool const use_psync = not CCTK_EQUALS(presync_mode, "off");
         for (int m = 0; m < (int)arrdata.AT(group).size(); ++m) {
           for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
             if (use_psync) {
@@ -219,6 +223,7 @@ void FlipTimeLevels(cGH *const cctkGH) {
             }
             arrdata.AT(group).AT(m).data.AT(var)->flip_all(reflevel, mglevel);
           }
+        }
         }
         break;
 

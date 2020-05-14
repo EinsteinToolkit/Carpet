@@ -8,7 +8,7 @@
 ActiveThorns = "CoordBase SymBase NaNChecker CarpetReduce CartGrid3D Carpet CarpetLib Boundary CarpetIOBasic IOUtil CarpetIOASCII IDWaveMoL WaveMoL Time MoL LocalReduce"
 
 # results must be identical whether useing psync or not
-Cactus::use_psync = "yes"
+Cactus::presync_mode = "mixed-error"
 
 idwavemol::initial_data = "gaussian"
 

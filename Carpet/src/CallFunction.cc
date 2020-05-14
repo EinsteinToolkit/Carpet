@@ -67,7 +67,8 @@ int CallFunction(void *function,           ///< the function to call
          1);
   // Create list of all groups that need to be synchronised via SYNC
   vector<int> sync_groups;
-  if(not psync_only) {
+  if(not CCTK_EQUALS(presync_mode, "presync-only")) {
+    bool const use_psync = not CCTK_EQUALS(presync_mode, "off");
     sync_groups.reserve(attribute->n_SyncGroups);
     for (int g = 0; g < attribute->n_SyncGroups; g++) {
       const int group = attribute->SyncGroups[g];

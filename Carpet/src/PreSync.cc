@@ -131,7 +131,7 @@ int ScheduleTraverse(char const *const where, char const *const name,
 void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sync_groups) {
   DECLARE_CCTK_PARAMETERS;
 
-  if (not use_psync)
+  if(CCTK_EQUALS(presync_mode, "off"))
     return;
 
   for (int i=0;i<attribute->n_RDWR;i++) {
@@ -168,7 +168,10 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
   DECLARE_CCTK_PARAMETERS;
   std::vector<int> sync_groups;
 
-  if(use_psync and reflevel > 0) {
+  if(CCTK_EQUALS(presync_mode, "off"))
+    return;
+
+  if(reflevel > 0) {
     // recurse to check that all coarsers levels are properly SYNCed
     CCTK_REAL previous_time = cctkGH->cctk_time;
     const int parent_reflevel = reflevel - 1;
@@ -186,7 +189,7 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     int i0 = CCTK_FirstVarIndexI(gi);
     int iN = i0+CCTK_NumVarsInGroupI(gi);
     bool push = true;
-    if(not use_psync && psync_error) {
+    if(CCTK_EQUALS(presync_mode, "presync-only")) {
       for(int vi=i0;vi<iN;vi++) {
         int const m = 0; // FIXME: this assumes that validity is the same on all maps
         ggf *const ff = arrdata.AT(gi).AT(m).data.AT(vi - i0);
@@ -225,7 +228,13 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
           msg << "SYNC of variable with invalid interior. Name: "
             << CCTK_FullVarName(vi) << " in routine "
             << attribute->thorn << "::" << attribute->routine;
-          int level = psync_error ? 0 : 1;
+          int level;
+          if(CCTK_EQUALS(presync_mode, "warn-only") or
+            CCTK_EQUALS(presync_mode, "mixed-warn")) {
+            level = CCTK_WARN_ALERT;
+          } else {
+            level = CCTK_WARN_ABORT;
+          }
           static bool have_warned = false;
           if(not have_warned) {
             CCTK_WARN(level,msg.str().c_str());
@@ -240,26 +249,24 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     }
   }
   if(sync_groups.size()>0) {
-    if(use_psync) {
-      SyncProlongateGroups(cctkGH, sync_groups, attribute);
-      for (size_t sgi=0;sgi<sync_groups.size();sgi++) {
-        int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
-        int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
-        for (int vi=i0;vi<iN;vi++) {
-          int const m = 0; // FIXME: this assumes that validity is the same on all maps
-          ggf *const ff = arrdata.AT(sync_groups[sgi]).AT(m).data.AT(vi - i0);
-          assert(ff);
-          int type = CCTK_GroupTypeFromVarI(vi);
-          int const rl = type == CCTK_GF ? reflevel : 0;
-          assert(rl >= 0);
-          if(not is_set(ff->valid(mglevel, rl, 0), WH_EVERYWHERE)) {
-            std::ostringstream msg;
-            msg << "Required: Valid Everywhere, Observed: Valid " << wstr(ff->valid(mglevel, rl, 0)) << " " << CCTK_FullVarName(vi);
-            msg << " Routine: " << attribute->thorn << "::" << attribute->routine;
-            dumpValid(msg,vi);
-            msg << std::endl;
-            CCTK_WARN(0,msg.str().c_str());
-          }
+    SyncProlongateGroups(cctkGH, sync_groups, attribute);
+    for (size_t sgi=0;sgi<sync_groups.size();sgi++) {
+      int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
+      int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
+      for (int vi=i0;vi<iN;vi++) {
+        int const m = 0; // FIXME: this assumes that validity is the same on all maps
+        ggf *const ff = arrdata.AT(sync_groups[sgi]).AT(m).data.AT(vi - i0);
+        assert(ff);
+        int type = CCTK_GroupTypeFromVarI(vi);
+        int const rl = type == CCTK_GF ? reflevel : 0;
+        assert(rl >= 0);
+        if(not is_set(ff->valid(mglevel, rl, 0), WH_EVERYWHERE)) {
+          std::ostringstream msg;
+          msg << "Required: Valid Everywhere, Observed: Valid " << wstr(ff->valid(mglevel, rl, 0)) << " " << CCTK_FullVarName(vi);
+          msg << " Routine: " << attribute->thorn << "::" << attribute->routine;
+          dumpValid(msg,vi);
+          msg << std::endl;
+          CCTK_WARN(0,msg.str().c_str());
         }
       }
     }
@@ -273,7 +280,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
   DECLARE_CCTK_PARAMETERS;
   if(cctkGH == 0) return;
   if(attribute == 0) return;
-  if(not use_psync) return;
+  if(CCTK_EQUALS(presync_mode, "off")) return;
 
   for(int i=0;i<attribute->n_RDWR;i++) {
     const RDWR_entry& entry = attribute->RDWR[i];
@@ -326,7 +333,13 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
           << " at the start of routine "
           << attribute->thorn << "::" << attribute->routine;
       dumpValid(msg, vi);
-      int level = psync_error ? 0 : 1;
+      int level;
+      if(CCTK_EQUALS(presync_mode, "warn-only") or
+        CCTK_EQUALS(presync_mode, "mixed-warn")) {
+        level = CCTK_WARN_ALERT;
+      } else {
+        level = CCTK_WARN_ABORT;
+      }
       static bool have_warned = false;
       if(not have_warned) {
         CCTK_WARN(level,msg.str().c_str()); 
@@ -363,7 +376,13 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups
         msg << "Cannot sync " << CCTK_FullVarName(vi)
             << " because it is not valid in the interior.";
         dumpValid(msg, vi);
-        int level = psync_error ? CCTK_WARN_ABORT : CCTK_WARN_ALERT;
+        int level;
+        if(CCTK_EQUALS(presync_mode, "warn-only") or
+          CCTK_EQUALS(presync_mode, "mixed-warn")) {
+          level = CCTK_WARN_ALERT;
+        } else {
+          level = CCTK_WARN_ABORT;
+        }
         static bool have_warned = false;
         if(not have_warned) {
           CCTK_WARN(level,msg.str().c_str()); 
@@ -440,12 +459,15 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
    CCTK_INT const nvariables, CCTK_INT const * wheres) {
   DECLARE_CCTK_PARAMETERS;
 
+  if(CCTK_EQUALS(presync_mode, "off"))
+    return 0;
+
   assert(variables or nvariables == 0);
   assert(tls or nvariables == 0);
 
   assert(is_level_mode());
 
-  if(use_psync and reflevel > 0) {
+  if(reflevel > 0) {
     cGH* nonconstGH = const_cast<cGH*>(cctkGH);
     // recurse to check that all coarsers levels are properly SYNCed
     CCTK_REAL previous_time = nonconstGH->cctk_time;
@@ -493,6 +515,8 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
     if(not is_set(valid, WH_INTERIOR)) {
       static std::set<int> have_warned_about;
       if(not have_warned_about.count(vi)) {
+        bool const psync_error = CCTK_EQUALS(presync_mode, "mixed-error") or
+                                 CCTK_EQUALS(presync_mode, "presync-only");
         CCTK_VWARN(psync_error ? CCTK_WARN_ABORT : CCTK_WARN_ALERT,
                    "SYNC requires valid data in interior %s rl=%d tl=%d but have only %s",
                    CCTK_FullVarName(vi), reflevel, tl, wstr(valid).c_str());
@@ -721,7 +745,7 @@ int QueryDriverBCForVarI(const cGH *cgh, const int varindex) {
 void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
   DECLARE_CCTK_PARAMETERS;
 
-  if(not use_psync)
+  if(CCTK_EQUALS(presync_mode, "off"))
     return;
 
   char const *const where = "ApplyPhysicalBCsForVarI";
