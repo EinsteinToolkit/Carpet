@@ -16,7 +16,7 @@
 #include <gh.hh>
 
 #include <carpet.hh>
-#include <PreSyncCarpet.hh>
+#include "PreSync.hh"
 
 namespace Carpet {
 

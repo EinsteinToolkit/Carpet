@@ -11,7 +11,7 @@
 
 #include <defs.hh>
 #include <typeprops.hh>
-#include <PreSyncCarpet.hh>
+#include "PreSync.hh"
 
 #include <carpet.hh>
 

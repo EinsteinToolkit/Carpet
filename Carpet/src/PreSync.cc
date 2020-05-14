@@ -18,7 +18,7 @@
 #include "variables.hh"
 #include "modes.hh"
 #include "carpet.hh"
-#include "PreSyncCarpet.hh"
+#include "PreSync.hh"
 #include "Carpet_Prototypes.h"
 
 #include <Timer.hh>
@@ -51,33 +51,40 @@ std::map<int,Bounds> boundary_conditions;
 // report to thorn Boundary which BC it should ignore
 bool do_applyphysicalbcs = false;
 
-std::string format_var_tuple(const int vi, const int rl, const int tl) {
-  std::ostringstream o;
-  o << CCTK_FullVarName(vi);
-  for(int i=0;i<tl;i++)
-    o << "_p";
-  o << " (rl=" << rl << ")";
-  return o.str();
-}
+/**
+ *  helpers to handle valid states
+ */
 
+/**
+ * check flags
+ */
 inline bool is_set(int flags,int flag) {
   return (flags & flag) == flag;
 }
 
 /**
- * Provide a string representation
- * of the code for the boundary.
+ * Provide a string representation of a variable's name
  */
-inline std::string wstr(int wh) {
-  std::string s;
+std::string format_var_tuple(const int vi, const int rl, const int tl) {
+  std::ostringstream os;
+  os << CCTK_FullVarName(vi);
+  for(int i=0;i<tl;i++)
+    os << "_p";
+  os << " (rl=" << rl << ")";
+  return os.str();
+}
+
+/**
+ * Provide a string representation of the code for the boundary.
+ */
+std::string format_where(const int wh) {
   if(wh == WH_EVERYWHERE) {
-    s = "Everywhere";
-    return s;
+    return "Everywhere";
   }
-  if(wh == 0) {
-    s = "Nowhere";
-    return s;
+  if(wh == WH_NOWHERE) {
+    return "Nowhere";
   }
+  std::string s;
   if(is_set(wh,WH_INTERIOR))
     s += "Interior";
   if(is_set(wh,WH_BOUNDARY)) {
@@ -91,28 +98,35 @@ inline std::string wstr(int wh) {
   return s;
 }
 
-ostream& dumpValid(ostream& os, const int vi) {
-  assert(vi < CCTK_NumVars());
+/**
+ * Provide a string representation of the curent information I have about a
+ * variable
+ */
+std::string format_valid(const int vi) {
+  std::ostringstream os;
   int const gi = CCTK_GroupIndexFromVarI(vi);
   assert(gi >= 0);
   int const var = vi - CCTK_FirstVarIndexI(gi);
+  assert(var >= 0);
 
-  int const m = 0; // FIXME: this assumes that validity is the same on all maps
-
-  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
+  int const map0 = 0;
+  ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
   assert(ff);
 
   os << "\nValid entries:";
   for (int rl=0; rl<ff->h.reflevels(); ++rl) {
     for (int tl=0; tl<ff->timelevels(mglevel, rl); ++tl) {
       os << " " << format_var_tuple(vi, rl, tl);
-      os << " " << wstr(ff->valid(mglevel, rl, tl));
+      os << " " << format_where(ff->valid(mglevel, rl, tl));
     } // tl
   } // rl
 
-  return os;
+  return os.str();
 }
 
+/**
+ * Schedule helper
+ */
 int ScheduleTraverse(char const *const where, char const *const name,
                      cGH *const cctkGH) {
   Timers::Timer timer(name);
@@ -128,47 +142,105 @@ int ScheduleTraverse(char const *const where, char const *const name,
 
 } // namespace
 
-void PostCheckValid(cFunctionData *attribute, cGH *cctkGH, vector<int> const &sync_groups) {
+/**********************************************************************
+ ***********SCHEDULE READS / WRITES ***********************************
+ **********************************************************************/
+
+/**
+ * Computes which groups need to be presync'd.
+ */
+void PreCheckValid(cFunctionData *attribute,cGH *cctkGH, std::vector<int>& pre_groups) {
   DECLARE_CCTK_PARAMETERS;
 
-  if(CCTK_EQUALS(presync_mode, "off"))
-    return;
+  assert(attribute);
+  std::set<int> tmpgroups;
 
-  for (int i=0;i<attribute->n_RDWR;i++) {
+  assert(not CCTK_EQUALS(presync_mode, "off"));
+
+  bool const warn = CCTK_EQUALS(presync_mode, "warn-only") or
+                    CCTK_EQUALS(presync_mode, "mixed-warn");
+  bool const error = CCTK_EQUALS(presync_mode, "mixed-error") or
+                     CCTK_EQUALS(presync_mode, "presync-only");
+  assert(warn + error == 1);
+  bool const may_sync = not CCTK_EQUALS(presync_mode, "warn-only");
+
+  for(int i=0;i<attribute->n_RDWR;i++) {
     const RDWR_entry& entry = attribute->RDWR[i];
+    if(entry.where_rd == WH_NOWHERE) { // only READS cn trigger sync or errors
+      continue;
+    }
 
-    assert(entry.var_id < CCTK_NumVars());
-    int const gi = CCTK_GroupIndexFromVarI(entry.var_id);
-    assert(gi >= 0);
-    int const var = entry.var_id - CCTK_FirstVarIndexI(gi);
-    int const m = 0; // FIXME: this assumes that validity is the same on all maps
-    ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
+    const int type = CCTK_GroupTypeFromVarI(entry.var_id);
+    if(not(type == CCTK_GF or reflevel == 0)) {
+      continue;
+    }
+
+    // some thorns only read from variables based on extra parameters, eg
+    // TmunuBase's stress_energy_state grid scalar. This check mimics the
+    // behaviour of calling SYNC on a variable without storage by outputting a
+    // high level warning. A thorn that actually tries to read from the
+    // variable will encounter a SEGFAULT.
+    if(CCTK_ActiveTimeLevelsVI(cctkGH, entry.var_id) <= entry.time_level) {
+      CCTK_VWARN(CCTK_WARN_DEBUG,
+                 "Declared access to '%s' on time level %d which has no storage",
+                 CCTK_FullVarName(entry.var_id), entry.time_level);
+      continue;
+    }
+
+    assert(0 <= entry.var_id and entry.var_id < CCTK_NumVars());
+    int const group_index = CCTK_GroupIndexFromVarI(entry.var_id);
+    assert(group_index >= 0);
+    int const var = entry.var_id - CCTK_FirstVarIndexI(group_index);
+    int const map0 = 0;
+    ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
     assert(ff);
 
-    int type = CCTK_GroupTypeFromVarI(entry.var_id);
-    int const rl = type == CCTK_GF ? reflevel : 0;
+    int const valid = ff->valid(mglevel, reflevel, entry.time_level);
 
-    // skip checking variables without storage
-    if(not(entry.time_level < ff->timelevels(mglevel, rl)))
-      continue;
+    if(not is_set(valid, entry.where_rd)) {
+      // we have: interior required-for ghosts required-for boundary
 
-    if(entry.where_wr == WH_INTERIOR) {
-      ff->set_valid(mglevel, rl, entry.time_level, WH_INTERIOR);
-    } else {
-      int const old_valid = ff->valid(mglevel, rl, entry.time_level);
-      ff->set_valid(mglevel, rl, entry.time_level, old_valid | entry.where_wr);
-    }
-  }
+      if((is_set(entry.where_rd, WH_GHOSTS) and not is_set(valid, WH_GHOSTS)) or
+         (is_set(entry.where_rd, WH_BOUNDARY) and not is_set(valid, WH_BOUNDARY))) {
+
+        // give warning / error if we cannot make things ok by SYNCing
+        if(entry.time_level > 0 or not is_set(valid, WH_INTERIOR) or not may_sync) {
+          std::ostringstream msg;
+          msg << "Required read for "
+              << format_var_tuple(entry.var_id, reflevel, entry.time_level)
+              << " not satisfied. Have " << format_where(valid)
+              << " and require " << format_where(entry.where_rd) << " missing "
+              << format_where(~valid & entry.where_rd)
+              << " at the start of routine "
+              << attribute->thorn << "::" << attribute->routine << ".";
+          if(entry.time_level > 0) {
+            msg << " Cannot SYNC past timelevels.";
+          }
+          if(error) {
+            msg << " Current valid state: " << format_valid(entry.var_id) << ".";
+          }
+          CCTK_WARN(warn ? CCTK_WARN_ALERT : CCTK_WARN_ABORT, msg.str().c_str());
+        } else {
+          assert(is_set(valid, WH_INTERIOR));
+          assert(not is_set(valid, WH_GHOSTS) or not is_set(valid, WH_BOUNDARY));
+          tmpgroups.insert(group_index);
+        }
+      } // invalid needed GHOSTS or BOUNDARY
+    } // no everything valie
+  } // for RDWR
+
+  pre_groups.assign(tmpgroups.begin(), tmpgroups.end());
 }
 
 /**
  * Do the actual presync of the groups.
  **/
-void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pregroups) {
+void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::vector<int>& pre_groups) {
   DECLARE_CCTK_PARAMETERS;
-  std::vector<int> sync_groups;
 
-  if(CCTK_EQUALS(presync_mode, "off"))
+  assert(not CCTK_EQUALS(presync_mode, "off"));
+
+  if(pre_groups.empty())
     return;
 
   if(reflevel > 0) {
@@ -178,275 +250,63 @@ void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::set<int>& pre
     BEGIN_GLOBAL_MODE(cctkGH) {
       ENTER_LEVEL_MODE(cctkGH, parent_reflevel) {
         cctkGH->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
-        PreSyncGroups(attribute, cctkGH, pregroups);
+        PreSyncGroups(attribute, cctkGH, pre_groups);
       } LEAVE_LEVEL_MODE;
     } END_GLOBAL_MODE;
     cctkGH->cctk_time = previous_time;
   }
 
-  for(auto i=pregroups.begin();i != pregroups.end();++i) {
-    int gi = *i;
-    int i0 = CCTK_FirstVarIndexI(gi);
-    int iN = i0+CCTK_NumVarsInGroupI(gi);
-    bool push = true;
-    if(CCTK_EQUALS(presync_mode, "presync-only")) {
-      for(int vi=i0;vi<iN;vi++) {
-        int const m = 0; // FIXME: this assumes that validity is the same on all maps
-        ggf *const ff = arrdata.AT(gi).AT(m).data.AT(vi - i0);
-        assert(ff);
-        int type = CCTK_GroupTypeFromVarI(vi);
-        int const rl = type == CCTK_GF ? reflevel : 0;
-        int const wh = ff->valid(mglevel, rl, 0);
-        if(not is_set(wh,WH_GHOSTS)) {
-          std::ostringstream msg;
-          msg << "  Presync: missing sync for ";
-          msg << attribute->thorn << "::" << attribute->routine;
-          msg << " in/at " << attribute->where << " variable " << CCTK_FullVarName(vi);
-          CCTK_WARN(0,msg.str().c_str());
-        }
-        if(not is_set(wh,WH_BOUNDARY)) {
-          std::ostringstream msg;
-          msg << "  Presync: BC not valid for ";
-          msg << attribute->thorn << "::" << attribute->routine;
-          msg << " in/at " << attribute->where << " variable " << CCTK_FullVarName(vi);
-          CCTK_WARN(0,msg.str().c_str());
-        }
-      }
-    }
-    for(int vi=i0;vi<iN;vi++) {
-      int type = CCTK_GroupTypeFromVarI(vi);
-      if(type == CCTK_GF && CCTK_VarTypeSize(CCTK_VarTypeI(vi)) == sizeof(CCTK_REAL)) {
-        int const m = 0; // FIXME: this assumes that validity is the same on all maps
-        ggf *const ff = arrdata.AT(gi).AT(m).data.AT(vi - i0);
-        assert(ff);
-        int wh = ff->valid(mglevel, reflevel, 0);
-        if(is_set(wh,WH_BOUNDARY|WH_GHOSTS)) {
-          continue;
-        }
-        if(!is_set(wh,WH_INTERIOR)) {
-          std::ostringstream msg;
-          msg << "SYNC of variable with invalid interior. Name: "
-            << CCTK_FullVarName(vi) << " in routine "
-            << attribute->thorn << "::" << attribute->routine;
-          int level;
-          if(CCTK_EQUALS(presync_mode, "warn-only") or
-            CCTK_EQUALS(presync_mode, "mixed-warn")) {
-            level = CCTK_WARN_ALERT;
-          } else {
-            level = CCTK_WARN_ABORT;
-          }
-          static bool have_warned = false;
-          if(not have_warned) {
-            CCTK_WARN(level,msg.str().c_str());
-            have_warned = true;
-          }
-        }
-        if(push) {
-          sync_groups.push_back(gi);
-          push = false;
-        }
-      }
-    }
-  }
-  if(sync_groups.size()>0) {
-    SyncProlongateGroups(cctkGH, sync_groups, attribute);
-    for (size_t sgi=0;sgi<sync_groups.size();sgi++) {
-      int i0 = CCTK_FirstVarIndexI(sync_groups[sgi]);
-      int iN = i0+CCTK_NumVarsInGroupI(sync_groups[sgi]);
-      for (int vi=i0;vi<iN;vi++) {
-        int const m = 0; // FIXME: this assumes that validity is the same on all maps
-        ggf *const ff = arrdata.AT(sync_groups[sgi]).AT(m).data.AT(vi - i0);
-        assert(ff);
-        int type = CCTK_GroupTypeFromVarI(vi);
-        int const rl = type == CCTK_GF ? reflevel : 0;
-        assert(rl >= 0);
-        if(not is_set(ff->valid(mglevel, rl, 0), WH_EVERYWHERE)) {
-          std::ostringstream msg;
-          msg << "Required: Valid Everywhere, Observed: Valid " << wstr(ff->valid(mglevel, rl, 0)) << " " << CCTK_FullVarName(vi);
-          msg << " Routine: " << attribute->thorn << "::" << attribute->routine;
-          dumpValid(msg,vi);
-          msg << std::endl;
-          CCTK_WARN(0,msg.str().c_str());
-        }
-      }
-    }
-  }
+  // ask Carpet to do the SYNC, this will apply BC as well
+  SyncProlongateGroups(cctkGH, pre_groups, attribute);
 }
 
 /**
- * Computes which groups need to be presync'd.
+ * after a scheduled routined finished, update the valid states
  */
-void PreCheckValid(cFunctionData *attribute,cGH *cctkGH,std::set<int>& pregroups) {
+void PostCheckValid(cFunctionData *attribute, cGH *cctkGH) {
   DECLARE_CCTK_PARAMETERS;
-  if(cctkGH == 0) return;
-  if(attribute == 0) return;
-  if(CCTK_EQUALS(presync_mode, "off")) return;
 
-  for(int i=0;i<attribute->n_RDWR;i++) {
+  assert(not CCTK_EQUALS(presync_mode, "off"));
+
+  for (int i=0;i<attribute->n_RDWR;i++) {
     const RDWR_entry& entry = attribute->RDWR[i];
-    if(entry.where_rd == WH_NOWHERE) { // only READS cn trigger sync or errors
-      continue;
-    }
-    // clauses to not refer to reflevel but the valid states have them so
-    // inject them here
-    const int vi = entry.var_id;
-    if(CCTK_GroupTypeFromVarI(vi) != CCTK_GF) {
-      continue;
-    }
-    // some thorns only read from variables based on extra parameters, eg
-    // TmunuBase's stress_energy_state grid scalar. This check mimics the
-    // behaviour of calling SYNC on a variable without storage by outputting a
-    // high level warning. A thorn that actually tries to read from the
-    // variable will encounter a SEGFAULT.
-    if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) == 0) {
-      CCTK_VWARN(CCTK_WARN_DEBUG,
-                 "Declared access to '%s' which has no storage",
-                 CCTK_FullVarName(vi));
+
+    if(entry.where_wr == WH_NOWHERE) { // nothing to do
       continue;
     }
 
-    assert(entry.var_id < CCTK_NumVars());
+    const int type = CCTK_GroupTypeFromVarI(entry.var_id);
+    if(not(type == CCTK_GF or reflevel == 0)) {
+      continue;
+    }
+
+    if(CCTK_ActiveTimeLevelsVI(cctkGH, entry.var_id) <= entry.time_level) {
+      CCTK_VWARN(CCTK_WARN_DEBUG,
+                 "Declared access to '%s' on time level %d which has no storage",
+                 CCTK_FullVarName(entry.var_id), entry.time_level);
+      continue;
+    }
+
+    assert(0 <= entry.var_id and entry.var_id < CCTK_NumVars());
     int const gi = CCTK_GroupIndexFromVarI(entry.var_id);
     assert(gi >= 0);
     int const var = entry.var_id - CCTK_FirstVarIndexI(gi);
-    int const m = 0; // FIXME: this assumes that validity is the same on all maps
-    ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
+    int const map0 = 0;
+    ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
     assert(ff);
 
-    int type = CCTK_GroupTypeFromVarI(vi);
-    int const rl = type == CCTK_GF ? reflevel : 0;
-
-    // skip checking variables without storage
-    if(not(entry.time_level < ff->timelevels(mglevel, rl)))
-      continue;
-
-    int const valid = ff->valid(mglevel, rl, entry.time_level);
-
-    // TODO: only need to check that what is READ is valid
-    if(not is_set(valid,WH_INTERIOR))
-    {
-      // If the read spec is everywhere and we only have
-      // interior, that's ok. The system will sync.
-      std::ostringstream msg; 
-      msg << "Required read for " << format_var_tuple(vi, rl, entry.time_level)
-          << " not satisfied. Invalid interior"
-          << " at the start of routine "
-          << attribute->thorn << "::" << attribute->routine;
-      dumpValid(msg, vi);
-      int level;
-      if(CCTK_EQUALS(presync_mode, "warn-only") or
-        CCTK_EQUALS(presync_mode, "mixed-warn")) {
-        level = CCTK_WARN_ALERT;
-      } else {
-        level = CCTK_WARN_ABORT;
-      }
-      static bool have_warned = false;
-      if(not have_warned) {
-        CCTK_WARN(level,msg.str().c_str()); 
-        have_warned = true;
-      }
-    } else if(entry.time_level > 0) {
-      if(not is_set(valid,entry.where_rd)) {
-        // If the read spec is everywhere, that's not
-        // okay for previous time levels as they won't sync.
-        std::ostringstream msg; 
-        msg << "Required read for " << format_var_tuple(vi, rl, entry.time_level)
-          << " not satisfied. Wanted '" << wstr(entry.where_rd)
-          << "' found '" << wstr(valid)
-          << "' at the start of routine "
-          << attribute->thorn << "::" << attribute->routine;
-        dumpValid(msg, vi);
-        CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
-      }
-    }
-    if(entry.where_rd == WH_EVERYWHERE) {
-      if(is_set(valid,WH_INTERIOR) && not is_set(valid, WH_EVERYWHERE))
-      {
-        if(entry.time_level != 0) {
-          std::ostringstream msg;
-          msg << "Attempt to sync previous time level (tl=" << entry.time_level << ")"
-              << " for " << CCTK_FullVarName(vi);
-          CCTK_Error(__LINE__,__FILE__,CCTK_THORNSTRING,msg.str().c_str());
-        }
-
-        int g = CCTK_GroupIndexFromVarI(vi);
-        pregroups.insert(g);
-      } else if(not is_set(valid,WH_INTERIOR)) {
-        std::ostringstream msg; 
-        msg << "Cannot sync " << CCTK_FullVarName(vi)
-            << " because it is not valid in the interior.";
-        dumpValid(msg, vi);
-        int level;
-        if(CCTK_EQUALS(presync_mode, "warn-only") or
-          CCTK_EQUALS(presync_mode, "mixed-warn")) {
-          level = CCTK_WARN_ALERT;
-        } else {
-          level = CCTK_WARN_ABORT;
-        }
-        static bool have_warned = false;
-        if(not have_warned) {
-          CCTK_WARN(level,msg.str().c_str()); 
-          have_warned = true;
-        }
-      }
+    if(entry.where_wr == WH_INTERIOR) {
+      ff->set_valid(mglevel, reflevel, entry.time_level, WH_INTERIOR);
+    } else {
+      int const old_valid = ff->valid(mglevel, reflevel, entry.time_level);
+      ff->set_valid(mglevel, reflevel, entry.time_level, old_valid | entry.where_wr);
     }
   }
 }
 
-/**
- * Given a variable and a timelevel, set the region
- * of the grid where that variable is valid (i.e. the where_spec).
- */
-extern "C"
-void Carpet_SetValidRegion(CCTK_POINTER_TO_CONST /*cctkGH_*/, CCTK_INT vi,
-                           CCTK_INT tl, CCTK_INT wh) {
-  if(vi < 0 or vi >= CCTK_NumVars()) {
-    CCTK_VERROR("Invalid variable index %d", vi);
-  }
-
-  int const gi = CCTK_GroupIndexFromVarI(vi);
-  assert(gi >= 0);
-  int const var = vi - CCTK_FirstVarIndexI(gi);
-  int const m = 0; // FIXME: this assumes that validity is the same on all maps
-  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
-  assert(ff);
-  int type = CCTK_GroupTypeFromVarI(vi);
-  int const rl = type == CCTK_GF ? reflevel : 0;
-
-  if(tl >= ff->timelevels(mglevel, rl)) {
-    CCTK_VERROR("Invalid time level %d for variable %s.", tl,
-                CCTK_FullVarName(vi));
-  }
-
-  ff->set_valid(mglevel, rl, tl, wh);
-}
-
-/**
- * Given a variable and a timelevel, return the region
- * of the grid where that variable is valid (i.e. the where_spec).
- */
-extern "C"
-CCTK_INT Carpet_GetValidRegion(CCTK_POINTER_TO_CONST /*cctkGH_*/, CCTK_INT vi,
-                               CCTK_INT tl) {
-  if(vi < 0 or vi >= CCTK_NumVars()) {
-    CCTK_VERROR("Invalid variable index %d", vi);
-  }
-  int const gi = CCTK_GroupIndexFromVarI(vi);
-  assert(gi >= 0);
-  int const var = vi - CCTK_FirstVarIndexI(gi);
-  int const m = 0; // FIXME: this assumes that validity is the same on all maps
-  ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
-  assert(ff);
-  int type = CCTK_GroupTypeFromVarI(vi);
-  int const rl = type == CCTK_GF ? reflevel : 0;
-
-  if(tl >= ff->timelevels(mglevel, rl)) {
-    CCTK_VERROR("Invalid time level %d for variable %s.", tl,
-                CCTK_FullVarName(vi));
-  }
-
-  return ff->valid(mglevel, rl, tl);
-}
+/**********************************************************************
+ **************Programmatic READS / WRITES ****************************
+ **********************************************************************/
 
 /**
  * Apply manual synchronization to some variables. If these variables is
@@ -459,11 +319,15 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
    CCTK_INT const nvariables, CCTK_INT const * wheres) {
   DECLARE_CCTK_PARAMETERS;
 
+  // TODO: this is almost the same as the READS checks only, consider factoring
+  // out common code in particular the warning logic.
+
   if(CCTK_EQUALS(presync_mode, "off"))
     return 0;
 
   assert(variables or nvariables == 0);
   assert(tls or nvariables == 0);
+  assert(wheres or nvariables == 0);
 
   assert(is_level_mode());
 
@@ -481,74 +345,109 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
     nonconstGH->cctk_time = previous_time;
   }
 
+  bool const warn = CCTK_EQUALS(presync_mode, "warn-only") or
+                    CCTK_EQUALS(presync_mode, "mixed-warn");
+  bool const error = CCTK_EQUALS(presync_mode, "mixed-error") or
+                     CCTK_EQUALS(presync_mode, "presync-only");
+  assert(warn + error == 1);
+  bool const presync_only = CCTK_EQUALS(presync_mode, "presync-only");
+  bool const may_sync = not CCTK_EQUALS(presync_mode, "warn-only");
+
   std::set<std::tuple<int,int>> processed_groups; // [gi] [tl]
   for(int i = 0; i < nvariables; i++) {
     int const vi = variables[i];
     int const tl = tls[i];
     int const where = wheres[i];
 
-    // Do nothing if this is not a grid function
-    if(CCTK_GroupTypeFromVarI(vi) != CCTK_GF) {
-      continue;
-    }
-
     if(vi < 0 or vi >= CCTK_NumVars()) {
       CCTK_VERROR("Invalid variable index %d", vi);
     }
-    int const gi = CCTK_GroupIndexFromVarI(vi);
-    assert(gi >= 0);
-    int const var = vi - CCTK_FirstVarIndexI(gi);
-    int const m = 0; // FIXME: this assumes that validity is the same on all maps
-    ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
-    assert(ff);
-    if(tl >= ff->timelevels(mglevel, reflevel)) {
-      CCTK_VERROR("Invalid time level %d for variable %s.", tl,
-                  CCTK_FullVarName(vi));
-    }
-    int const valid = ff->valid(mglevel, reflevel, tl);
 
-    // Check if anything needs to be done
-    if(is_set(valid, where)) {
+    // Do nothing if this is not a grid function
+    int const type = CCTK_GroupTypeFromVarI(vi);
+    if(not(type == CCTK_GF or reflevel == 0)) {
       continue;
     }
 
-    if(not is_set(valid, WH_INTERIOR)) {
-      static std::set<int> have_warned_about;
-      if(not have_warned_about.count(vi)) {
-        bool const psync_error = CCTK_EQUALS(presync_mode, "mixed-error") or
-                                 CCTK_EQUALS(presync_mode, "presync-only");
-        CCTK_VWARN(psync_error ? CCTK_WARN_ABORT : CCTK_WARN_ALERT,
-                   "SYNC requires valid data in interior %s rl=%d tl=%d but have only %s",
-                   CCTK_FullVarName(vi), reflevel, tl, wstr(valid).c_str());
-        have_warned_about.insert(vi);
-      }
-      continue; // cannot SYNC, do not update valid state
+    if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) <= tl) {
+      CCTK_VWARN(CCTK_WARN_DEBUG,
+                 "Declared access to '%s' on time level %d which has no storage",
+                 CCTK_FullVarName(vi), tl);
+      continue;
     }
 
-    // since SYNC processes whole groups, if any variable is unset then we must
-    // not have encountered any other variable from that group either
-    auto res = processed_groups.insert(std::tuple<int,int>(gi,tl));
-    assert(res.second); // tuple was not marked processed before
+    int const gi = CCTK_GroupIndexFromVarI(vi);
+    assert(gi >= 0);
+    int const var = vi - CCTK_FirstVarIndexI(gi);
+    int const map0 = 0;
+    ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
+    assert(ff);
+    int const valid = ff->valid(mglevel, reflevel, tl);
 
-    // actually apply SYNC
-    std::vector<int> sync_groups;
-    sync_groups.push_back(gi);
-    const cFunctionData *attribute = CCTK_ScheduleQueryCurrentFunction(cctkGH);
-    // copied out of modes.hh
-    int const old_timelevel_offset = timelevel_offset;
-    int const old_timelevel = timelevel;
-    CCTK_REAL old_cctk_time = cctkGH->cctk_time;
-    auto const old_do_allow_past_timelevels = do_allow_past_timelevels;
-    do_allow_past_timelevels = tl == 0;
-    timelevel_offset = timelevel = tl;
-    const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
-    int ierr = SyncProlongateGroups(cctkGH, sync_groups, attribute);
-    assert(not ierr);
-    const_cast<cGH*>(cctkGH)->cctk_time = old_cctk_time;
-    timelevel_offset = old_timelevel_offset;
-    timelevel = old_timelevel;
-    do_allow_past_timelevels = old_do_allow_past_timelevels;
-  }
+    if(not is_set(valid, where)) {
+      // we have: interior required-for ghosts required-for boundary
+
+      bool const bc_selected = QueryDriverBCForVarI(cctkGH, vi);
+
+      if((is_set(where, WH_GHOSTS) and not is_set(valid, WH_GHOSTS)) or
+         (is_set(where, WH_BOUNDARY) and not is_set(valid, WH_BOUNDARY))) {
+
+        // give warning / error if we cannot make things ok by SYNCing
+        if(tl > 0 or not is_set(valid, WH_INTERIOR) or not may_sync) {
+          /* only warn / error about functions that the client thorn told me
+           * about one way or the other */
+          if(not presync_only and not bc_selected)
+            continue;
+
+          std::ostringstream msg;
+          msg << "Required read for "
+              << format_var_tuple(vi, reflevel, tl)
+              << " not satisfied. Have " << format_where(valid) << " and require "
+              << format_where(where) << " missing "
+              << format_where(~valid & where) << ".";
+          if(tl > 0) {
+            msg << " Cannot SYNC past timelevels.";
+          }
+          if(error) {
+            msg << " Current valid state: " << format_valid(vi) << ".";
+          }
+          CCTK_WARN(warn ? CCTK_WARN_ALERT : CCTK_WARN_ABORT, msg.str().c_str());
+        } else if(bc_selected) {
+          // we need to ad can SYNC
+
+          assert(is_set(valid, WH_INTERIOR));
+          assert(not is_set(valid, WH_GHOSTS) or not is_set(valid, WH_BOUNDARY));
+
+          // since SYNC processes whole groups, if any variable is unset then we must
+          // not have encountered any other variable from that group either
+          auto res = processed_groups.insert(std::tuple<int,int>(gi,tl));
+          assert(res.second); // tuple was not marked processed before
+
+          // actually apply SYNC
+          std::vector<int> sync_groups;
+          sync_groups.push_back(gi);
+          const cFunctionData *attribute = CCTK_ScheduleQueryCurrentFunction(cctkGH);
+          // copied out of modes.hh
+          int const old_timelevel_offset = timelevel_offset;
+          int const old_timelevel = timelevel;
+          CCTK_REAL old_cctk_time = cctkGH->cctk_time;
+          auto const old_do_allow_past_timelevels = do_allow_past_timelevels;
+          do_allow_past_timelevels = tl == 0;
+          timelevel_offset = timelevel = tl;
+          const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
+          int ierr = SyncProlongateGroups(cctkGH, sync_groups, attribute);
+          assert(not ierr);
+          const_cast<cGH*>(cctkGH)->cctk_time = old_cctk_time;
+          timelevel_offset = old_timelevel_offset;
+          timelevel = old_timelevel;
+          do_allow_past_timelevels = old_do_allow_past_timelevels;
+
+          int const new_valid = ff->valid(mglevel, reflevel, tl);
+          assert(is_set(new_valid, where));
+        }
+      } // invalid needed GHOSTS or BOUNDARY
+    } // no already valid
+  } // for nvariables
 
   return 0;
 }
@@ -588,10 +487,13 @@ CCTK_INT Carpet_RequireValidData(CCTK_POINTER_TO_CONST cctkGH_,
 }
 
 extern "C"
-CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST /*cctkGH_*/,
+CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST cctkGH_,
    CCTK_INT const * const variables, CCTK_INT const * const tls,
    CCTK_INT const nvariables, CCTK_INT const * wheres) {
-  DECLARE_CCTK_PARAMETERS;
+  const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
+
+  // TODO: pretty much the same as the WRITE handling. Consder factoring out
+  // common code in particular the warnings.
 
   // technically LEVEL mode is the only allowed one since I keep track of
   // validity on a level granularity. However that makes the routine awkward to
@@ -607,31 +509,120 @@ CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST /*cctkGH_*/,
     int const tl = tls[i];
     int const where = wheres[i];
 
+    if(vi < 0 or vi >= CCTK_NumVars()) {
+      CCTK_VERROR("Invalid variable index %d", vi);
+    }
+
     // Do nothing if this is not a grid function
-    if(CCTK_GroupTypeFromVarI(vi) != CCTK_GF) {
+    int const type = CCTK_GroupTypeFromVarI(vi);
+    if(not(type == CCTK_GF or reflevel == 0)) {
       continue;
     }
 
-    if(vi < 0 or vi >= CCTK_NumVars()) {
-      CCTK_VERROR("Invalid variable index %d", vi);
+    if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) <= tl) {
+      CCTK_VWARN(CCTK_WARN_DEBUG,
+                 "Declared access to '%s' on time level %d which has no storage",
+                 CCTK_FullVarName(vi), tl);
+      continue;
     }
 
     int const gi = CCTK_GroupIndexFromVarI(vi);
     assert(gi >= 0);
     int const var = vi - CCTK_FirstVarIndexI(gi);
-    int const m = 0; // FIXME: this assumes that validity is the same on all maps
-    ggf *const ff = arrdata.AT(gi).AT(m).data.AT(var);
+    int const map0 = 0;
+    ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
     assert(ff);
-    if(tl >= ff->timelevels(mglevel, reflevel)) {
-      CCTK_VERROR("Invalid time level %d for variable %s.", tl,
-                  CCTK_FullVarName(vi));
+
+    if(where == WH_INTERIOR) {
+      ff->set_valid(mglevel, reflevel, tl, WH_INTERIOR);
+    } else {
+      int const old_valid = ff->valid(mglevel, reflevel, tl);
+      ff->set_valid(mglevel, reflevel, tl, old_valid | where);
     }
-    int const valid = ff->valid(mglevel, reflevel, tl);
-    ff->set_valid(mglevel, reflevel, tl, valid | where);
   }
 
   return 0;
 }
+
+/**********************************************************************
+ ************** Low level access to valid state ************************
+ **********************************************************************/
+
+/**
+ * Given a variable and a timelevel, set the region
+ * of the grid where that variable is valid (i.e. the where_spec).
+ */
+extern "C"
+void Carpet_SetValidRegion(CCTK_POINTER_TO_CONST cctkGH_, CCTK_INT vi,
+                           CCTK_INT tl, CCTK_INT wh) {
+  const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
+
+  if(vi < 0 or vi >= CCTK_NumVars()) {
+    CCTK_VERROR("Invalid variable index %d", vi);
+  }
+
+  int const type = CCTK_GroupTypeFromVarI(vi);
+  if(not(type == CCTK_GF or reflevel == 0)) {
+    CCTK_VERROR("Only grid functions are tracked right now. '%s' is not a grid function",
+                CCTK_FullVarName(vi));
+  }
+
+  if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) <= tl) {
+    CCTK_VWARN(CCTK_WARN_DEBUG,
+               "Declared access to '%s' on time level %d which has no storage",
+               CCTK_FullVarName(vi), tl);
+    return;
+  }
+
+  int const gi = CCTK_GroupIndexFromVarI(vi);
+  assert(gi >= 0);
+  int const var = vi - CCTK_FirstVarIndexI(gi);
+  int const map0 = 0;
+  ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
+  assert(ff);
+
+  ff->set_valid(mglevel, reflevel, tl, wh);
+}
+
+/**
+ * Given a variable and a timelevel, return the region
+ * of the grid where that variable is valid (i.e. the where_spec).
+ */
+extern "C"
+CCTK_INT Carpet_GetValidRegion(CCTK_POINTER_TO_CONST cctkGH_, CCTK_INT vi,
+                               CCTK_INT tl) {
+  const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
+
+  if(vi < 0 or vi >= CCTK_NumVars()) {
+    CCTK_VERROR("Invalid variable index %d", vi);
+  }
+
+  int const type = CCTK_GroupTypeFromVarI(vi);
+  if(not(type == CCTK_GF or reflevel == 0)) {
+    CCTK_VERROR("Only grid functions are tracked right now. '%s' is not a grid function",
+                CCTK_FullVarName(vi));
+  }
+
+  if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) <= tl) {
+    CCTK_VWARN(CCTK_WARN_DEBUG,
+               "Declared access to '%s' on time level %d which has no storage",
+               CCTK_FullVarName(vi), tl);
+    return WH_NOWHERE;
+  }
+
+  int const gi = CCTK_GroupIndexFromVarI(vi);
+  assert(gi >= 0);
+  int const var = vi - CCTK_FirstVarIndexI(gi);
+  int const map0 = 0;
+  ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
+  assert(ff);
+
+  return ff->valid(mglevel, reflevel, tl);
+}
+
+/**********************************************************************
+ ************** Boundary condtions controlled by driver ****************
+ **********************************************************************/
 
 namespace {
 // return codes are those of Boundary_SelectVarForBCI
@@ -686,6 +677,10 @@ CCTK_INT SelectVarForBCI(
 }
 }
 
+/**
+ * Choose which boundary condtion to apply when needed. These mimic Boundary's
+ * functions.
+ */
 extern "C"
 CCTK_INT Carpet_SelectVarForBC(
     const CCTK_POINTER_TO_CONST cctkGH_,
@@ -721,6 +716,12 @@ CCTK_INT Carpet_SelectGroupForBC(
   return ierr;
 }
 
+/**
+ * A hook for Boundary to call. Carpet reports whether it would like Boundary
+ * to now apply the selected boundary conditons. Usually false for grid
+ * functions with a driver boundary conditions selected but true when Carpet
+ * itself wants the boundary condtiosn applied.
+ */
 extern "C"
 CCTK_INT Carpet_FilterOutVarForBCI(
     const CCTK_POINTER_TO_CONST cctkGH_,
@@ -732,8 +733,10 @@ CCTK_INT Carpet_FilterOutVarForBCI(
   return QueryDriverBCForVarI(static_cast<const cGH*>(cctkGH_), var_index);
 }
 
-/* return true or false depending on whether a driver boundary condtion is
- * registered for this variable */
+/**
+ * return true or false depending on whether a driver boundary condtion is
+ * registered for this variable
+ */
 int QueryDriverBCForVarI(const cGH *cgh, const int varindex) {
   auto it = boundary_conditions.find(varindex);
   return it != boundary_conditions.end();
@@ -745,8 +748,18 @@ int QueryDriverBCForVarI(const cGH *cgh, const int varindex) {
 void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
   DECLARE_CCTK_PARAMETERS;
 
-  if(CCTK_EQUALS(presync_mode, "off"))
+  assert(not CCTK_EQUALS(presync_mode, "off"));
+
+  assert(0 <= group_index and group_index < CCTK_NumGroups());
+
+  assert(CCTK_GroupTypeI(group_index) == CCTK_GF or reflevel == 0);
+
+  if(CCTK_ActiveTimeLevelsGI(cctkGH, group_index) == 0) {
+    CCTK_VWARN(CCTK_WARN_DEBUG,
+               "Tied to apply b/c to '%s' on time level %d which has no storage",
+               CCTK_GroupName(group_index), 0);
     return;
+  }
 
   char const *const where = "ApplyPhysicalBCsForVarI";
   static Timers::Timer timer(where);
@@ -765,14 +778,12 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
       continue;
     }
 
-    int const m = 0; // FIXME: this assumes that validity is the same on all maps
-    ggf *const ff = arrdata.AT(group_index).AT(m).data.AT(var);
+    int const map0 = 0;
+    ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
     assert(ff);
-    int const type = CCTK_GroupTypeI(group_index);
-    int const rl = type == CCTK_GF ? reflevel : 0;
 
     // TODO: keep track of which faces are valid?
-    assert(is_set(ff->valid(mglevel, rl, 0), WH_INTERIOR | WH_GHOSTS));
+    assert(is_set(ff->valid(mglevel, reflevel, 0), WH_INTERIOR | WH_GHOSTS));
 
     const Bounds& bounds = boundary_conditions[var_index];
     for(auto b: bounds.bounds) {
@@ -793,7 +804,6 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
       CCTK_VWARN(CCTK_WARN_ALERT, "Failed ot traverse group Driver_ApplyBCs: %d\n", ierr);
     do_applyphysicalbcs = false;
 
-
     // sanity check on thorn Boundary
     bool any_driver_bc_failed = false;
     for(int var = 0; var < vnum; var++) {
@@ -802,11 +812,9 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
       int const m = 0; // FIXME: this assumes that validity is the same on all maps
       ggf *const ff = arrdata.AT(group_index).AT(m).data.AT(var);
       assert(ff);
-      int const type = CCTK_GroupTypeI(group_index);
-      int const rl = type == CCTK_GF ? reflevel : 0;
 
       if(boundary_conditions.count(var_index) and
-         not is_set(ff->valid(mglevel, rl, 0), WH_EVERYWHERE)) {
+         not is_set(ff->valid(mglevel, reflevel, 0), WH_EVERYWHERE)) {
         CCTK_VWARN(CCTK_WARN_ALERT,
                    "Internal error: thorn Boundary did not mark boundary of '%s' as valid when applying boundary conditions",
                    CCTK_FullVarName(var_index));
