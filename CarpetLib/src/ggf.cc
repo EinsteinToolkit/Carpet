@@ -47,7 +47,8 @@ ggf::ggf(const int varindex_, const operator_type transport_operator_, th &t_,
     valid_.AT(ml).resize(d.h.reflevels());
     for (int rl = 0; rl < d.h.reflevels(); ++rl) {
       // this does not do anything right now since all timelevels are 0
-      valid_.AT(ml).AT(rl).resize(timelevels_.AT(ml).AT(rl), WH_NOWHERE);
+      valid_.AT(ml).AT(rl).resize(timelevels_.AT(ml).AT(rl),
+                                  CCTK_VALID_NOWHERE);
     }
   }
 
@@ -108,7 +109,7 @@ void ggf::set_timelevels(const int ml, const int rl, const int new_timelevels) {
       } // for tl
     }   // for lc
 
-    valid_.AT(ml).AT(rl).resize(new_timelevels, WH_NOWHERE);
+    valid_.AT(ml).AT(rl).resize(new_timelevels, CCTK_VALID_NOWHERE);
   }
 
   timelevels_.AT(ml).AT(rl) = new_timelevels;
@@ -165,7 +166,7 @@ void ggf::recompose_allocate(const int rl) {
     }   // for lc
 
     valid_.AT(ml).resize(h.reflevels());
-    valid_.AT(ml).AT(rl).resize(timelevels_.AT(ml).AT(rl), WH_NOWHERE);
+    valid_.AT(ml).AT(rl).resize(timelevels_.AT(ml).AT(rl), CCTK_VALID_NOWHERE);
   }     // for ml
 
   timer.stop();
@@ -335,8 +336,8 @@ void ggf::sync_all(comm_state &state, int const tl, int const rl,
 
   // Update state
   int const old_valid = valid(ml, rl, tl);
-  if ((old_valid & WH_INTERIOR) == WH_INTERIOR) {
-    set_valid(ml, rl, tl, old_valid | WH_GHOSTS);
+  if ((old_valid & CCTK_VALID_INTERIOR) == CCTK_VALID_INTERIOR) {
+    set_valid(ml, rl, tl, old_valid | CCTK_VALID_GHOSTS);
   }
 }
 
@@ -421,9 +422,11 @@ void ggf::ref_restrict_all(comm_state &state, int const tl, int const rl,
   // coarse b/c fine was restricted to it, fine b/c prologation from coarse
   // will change values
   int const coarse_old_valid = valid(ml, rl, tl);
-  set_valid(ml, rl, tl, coarse_old_valid & ~(WH_GHOSTS|WH_BOUNDARY));
+  set_valid(ml, rl, tl,
+            coarse_old_valid & ~(CCTK_VALID_GHOSTS|CCTK_VALID_BOUNDARY));
   int const fine_old_valid = valid(ml, rl, tl);
-  set_valid(ml, rl + 1, tl, fine_old_valid & ~(WH_GHOSTS|WH_BOUNDARY));
+  set_valid(ml, rl + 1, tl,
+            fine_old_valid & ~(CCTK_VALID_GHOSTS|CCTK_VALID_BOUNDARY));
 }
 
 // Prolongate a refinement level
