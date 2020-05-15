@@ -790,7 +790,7 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
         for (size_t m = 0; m < arrdata.at(gindex).size(); ++m) {
           ggf *const gf = arrdata.AT(gindex).AT(m).data.AT(var);
           assert(gf);
-          gf->set_valid(mglevel, reflevel, tl, WH_EVERYWHERE);
+          gf->set_valid(mglevel, reflevel, tl, CCTK_VALID_EVERYWHERE);
         }
       }
     }

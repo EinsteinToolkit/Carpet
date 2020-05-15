@@ -1021,7 +1021,7 @@ static int OutputVarAs(const cGH *const cctkGH, const char *const fullname,
     if (not CCTK_EQUALS(presync_mode, "off") and
         QueryDriverBCForVarI(cctkGH, var)) {
       int const tl = 0;
-      int const where = WH_EVERYWHERE;
+      int const where = CCTK_VALID_EVERYWHERE;
       Driver_RequireValidData(cctkGH, &var, &tl, 1, &where);
     }
 
@@ -1224,7 +1224,7 @@ static void Checkpoint(const cGH *const cctkGH, int called_from) {
             // Synchronize and apply BCs if needed
             if (not CCTK_EQUALS(presync_mode, "off") and
                 QueryDriverBCForVarI(cctkGH, request->vindex)) {
-              int const where = WH_EVERYWHERE;
+              int const where = CCTK_VALID_EVERYWHERE;
               Driver_RequireValidData(cctkGH, &request->vindex,
                                       &request->timelevel, 1, &where);
             }
