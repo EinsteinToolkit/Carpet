@@ -565,7 +565,7 @@ void IOASCII<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
             int const vi = vindex0 + n;
             if (not CCTK_EQUALS(presync_mode, "off") and
                 QueryDriverBCForVarI(cctkGH, vi)) {
-              int const where = WH_EVERYWHERE;
+              int const where = CCTK_VALID_EVERYWHERE;
               Driver_RequireValidData(cctkGH, &vi, &tl, 1, &where);
             }
             if (dist::rank() == proc) {
