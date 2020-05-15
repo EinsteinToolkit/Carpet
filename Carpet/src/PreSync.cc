@@ -78,20 +78,20 @@ std::string format_var_tuple(const int vi, const int rl, const int tl) {
  * Provide a string representation of the code for the boundary.
  */
 std::string format_where(const int wh) {
-  if(wh == WH_EVERYWHERE) {
+  if(wh == CCTK_VALID_EVERYWHERE) {
     return "Everywhere";
   }
-  if(wh == WH_NOWHERE) {
+  if(wh == CCTK_VALID_NOWHERE) {
     return "Nowhere";
   }
   std::string s;
-  if(is_set(wh,WH_INTERIOR))
+  if(is_set(wh,CCTK_VALID_INTERIOR))
     s += "Interior";
-  if(is_set(wh,WH_BOUNDARY)) {
+  if(is_set(wh,CCTK_VALID_BOUNDARY)) {
     if(s.size() > 0) s+= "With";
     s += "Boundary";
   }
-  if(is_set(wh,WH_GHOSTS)) {
+  if(is_set(wh,CCTK_VALID_GHOSTS)) {
     if(s.size() > 0) s+= "With";
     s += "Ghosts";
   }
@@ -166,7 +166,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH, std::vector<int>& pre_g
 
   for(int i=0;i<attribute->n_RDWR;i++) {
     const RDWR_entry& entry = attribute->RDWR[i];
-    if(entry.where_rd == WH_NOWHERE) { // only READS cn trigger sync or errors
+    if(entry.where_rd == CCTK_VALID_NOWHERE) { // only READS cn trigger sync or errors
       continue;
     }
 
@@ -200,11 +200,14 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH, std::vector<int>& pre_g
     if(not is_set(valid, entry.where_rd)) {
       // we have: interior required-for ghosts required-for boundary
 
-      if((is_set(entry.where_rd, WH_GHOSTS) and not is_set(valid, WH_GHOSTS)) or
-         (is_set(entry.where_rd, WH_BOUNDARY) and not is_set(valid, WH_BOUNDARY))) {
+      if((is_set(entry.where_rd, CCTK_VALID_GHOSTS) and
+          not is_set(valid, CCTK_VALID_GHOSTS)) or
+         (is_set(entry.where_rd, CCTK_VALID_BOUNDARY) and
+          not is_set(valid, CCTK_VALID_BOUNDARY))) {
 
         // give warning / error if we cannot make things ok by SYNCing
-        if(entry.time_level > 0 or not is_set(valid, WH_INTERIOR) or not may_sync) {
+        if(entry.time_level > 0 or not is_set(valid, CCTK_VALID_INTERIOR) or
+           not may_sync) {
           std::ostringstream msg;
           msg << "Required read for "
               << format_var_tuple(entry.var_id, reflevel, entry.time_level)
@@ -221,8 +224,9 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH, std::vector<int>& pre_g
           }
           CCTK_WARN(warn ? CCTK_WARN_ALERT : CCTK_WARN_ABORT, msg.str().c_str());
         } else {
-          assert(is_set(valid, WH_INTERIOR));
-          assert(not is_set(valid, WH_GHOSTS) or not is_set(valid, WH_BOUNDARY));
+          assert(is_set(valid, CCTK_VALID_INTERIOR));
+          assert(not is_set(valid, CCTK_VALID_GHOSTS) or
+                 not is_set(valid, CCTK_VALID_BOUNDARY));
           tmpgroups.insert(group_index);
         }
       } // invalid needed GHOSTS or BOUNDARY
@@ -271,7 +275,7 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH) {
   for (int i=0;i<attribute->n_RDWR;i++) {
     const RDWR_entry& entry = attribute->RDWR[i];
 
-    if(entry.where_wr == WH_NOWHERE) { // nothing to do
+    if(entry.where_wr == CCTK_VALID_NOWHERE) { // nothing to do
       continue;
     }
 
@@ -295,8 +299,8 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH) {
     ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
     assert(ff);
 
-    if(entry.where_wr == WH_INTERIOR) {
-      ff->set_valid(mglevel, reflevel, entry.time_level, WH_INTERIOR);
+    if(entry.where_wr == CCTK_VALID_INTERIOR) {
+      ff->set_valid(mglevel, reflevel, entry.time_level, CCTK_VALID_INTERIOR);
     } else {
       int const old_valid = ff->valid(mglevel, reflevel, entry.time_level);
       ff->set_valid(mglevel, reflevel, entry.time_level, old_valid | entry.where_wr);
@@ -389,11 +393,13 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
 
       bool const bc_selected = QueryDriverBCForVarI(cctkGH, vi);
 
-      if((is_set(where, WH_GHOSTS) and not is_set(valid, WH_GHOSTS)) or
-         (is_set(where, WH_BOUNDARY) and not is_set(valid, WH_BOUNDARY))) {
+      if((is_set(where, CCTK_VALID_GHOSTS) and
+          not is_set(valid, CCTK_VALID_GHOSTS)) or
+         (is_set(where, CCTK_VALID_BOUNDARY) and
+          not is_set(valid, CCTK_VALID_BOUNDARY))) {
 
         // give warning / error if we cannot make things ok by SYNCing
-        if(tl > 0 or not is_set(valid, WH_INTERIOR) or not may_sync) {
+        if(tl > 0 or not is_set(valid, CCTK_VALID_INTERIOR) or not may_sync) {
           /* only warn / error about functions that the client thorn told me
            * about one way or the other */
           if(not presync_only and not bc_selected)
@@ -415,8 +421,9 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
         } else if(bc_selected) {
           // we need to ad can SYNC
 
-          assert(is_set(valid, WH_INTERIOR));
-          assert(not is_set(valid, WH_GHOSTS) or not is_set(valid, WH_BOUNDARY));
+          assert(is_set(valid, CCTK_VALID_INTERIOR));
+          assert(not is_set(valid, CCTK_VALID_GHOSTS) or
+                 not is_set(valid, CCTK_VALID_BOUNDARY));
 
           // since SYNC processes whole groups, if any variable is unset then we must
           // not have encountered any other variable from that group either
@@ -533,8 +540,8 @@ CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST cctkGH_,
     ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
     assert(ff);
 
-    if(where == WH_INTERIOR) {
-      ff->set_valid(mglevel, reflevel, tl, WH_INTERIOR);
+    if(where == CCTK_VALID_INTERIOR) {
+      ff->set_valid(mglevel, reflevel, tl, CCTK_VALID_INTERIOR);
     } else {
       int const old_valid = ff->valid(mglevel, reflevel, tl);
       ff->set_valid(mglevel, reflevel, tl, old_valid | where);
@@ -607,7 +614,7 @@ CCTK_INT Carpet_GetValidRegion(CCTK_POINTER_TO_CONST cctkGH_, CCTK_INT vi,
     CCTK_VWARN(CCTK_WARN_DEBUG,
                "Declared access to '%s' on time level %d which has no storage",
                CCTK_FullVarName(vi), tl);
-    return WH_NOWHERE;
+    return CCTK_VALID_NOWHERE;
   }
 
   int const gi = CCTK_GroupIndexFromVarI(vi);
@@ -785,7 +792,8 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
     assert(ff);
 
     // TODO: keep track of which faces are valid?
-    assert(is_set(ff->valid(mglevel, reflevel, 0), WH_INTERIOR | WH_GHOSTS));
+    assert(is_set(ff->valid(mglevel, reflevel, 0),
+                  CCTK_VALID_INTERIOR | CCTK_VALID_GHOSTS));
 
     const Bounds& bounds = boundary_conditions[var_index];
     for(auto b: bounds.bounds) {
@@ -816,7 +824,7 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
       assert(ff);
 
       if(boundary_conditions.count(var_index) and
-         not is_set(ff->valid(mglevel, reflevel, 0), WH_EVERYWHERE)) {
+         not is_set(ff->valid(mglevel, reflevel, 0), CCTK_VALID_EVERYWHERE)) {
         CCTK_VWARN(CCTK_WARN_ALERT,
                    "Internal error: thorn Boundary did not mark boundary of '%s' as valid when applying boundary conditions",
                    CCTK_FullVarName(var_index));

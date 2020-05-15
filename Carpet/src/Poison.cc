@@ -124,7 +124,7 @@ void PoisonGroup(cGH const *const cctkGH, int const group,
           ggf *const ff = arrdata.AT(group).AT(map).data.AT(var);
           assert(ff);
           for (int tl = min_tl; tl <= max_tl; ++tl) {
-            ff->set_valid(mglevel, reflevel, tl, WH_NOWHERE);
+            ff->set_valid(mglevel, reflevel, tl, CCTK_VALID_NOWHERE);
             memset(cctkGH->data[n][tl], poison_value, size_t(np) * sz);
           } // for tl
         }   // for var

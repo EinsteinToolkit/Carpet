@@ -116,7 +116,7 @@ static void RestrictGroups(const cGH *cctkGH, const vector<int> &groups) {
             for (int vi = var0; vi < var0 + varn; ++vi) {
               vis.push_back(vi);
               tls.push_back(tl);
-              whs.push_back(WH_EVERYWHERE);
+              whs.push_back(CCTK_VALID_EVERYWHERE);
             }
           }
         }
