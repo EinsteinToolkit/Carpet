@@ -461,11 +461,13 @@ CCTK_INT Carpet_RequireValidData(CCTK_POINTER_TO_CONST cctkGH_,
 
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
 
-  if(not is_level_mode() and not is_global_mode() and not is_meta_mode())
-    CCTK_VERROR("%s must be called in level, global, or meta mode", __func__);
-
   // Take action by mode
-  if(is_level_mode()) {
+  if(is_singlemap_mode() or is_local_mode()) {
+    BEGIN_LEVEL_MODE(cctkGH) {
+      RequireValidData(cctkGH, variables, tls, nvariables, wheres);
+    }
+    END_LEVEL_MODE;
+  } else if(is_level_mode()) {
     RequireValidData(cctkGH, variables, tls, nvariables, wheres);
   } else if(is_global_mode()) {
     BEGIN_REFLEVEL_LOOP(cctkGH) {
@@ -481,29 +483,28 @@ CCTK_INT Carpet_RequireValidData(CCTK_POINTER_TO_CONST cctkGH_,
     }
     END_MGLEVEL_LOOP;
   } else {
-    CCTK_BUILTIN_UNREACHABLE();
+    CCTK_VERROR("%s must be called in local, singlemap, level, global, or meta mode", __func__);
   }
 
   return 0;
 }
 
-extern "C"
-CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST cctkGH_,
+namespace {
+CCTK_INT NotifyDataModified(const cGH * cctkGH,
    CCTK_INT const * const variables, CCTK_INT const * const tls,
    CCTK_INT const nvariables, CCTK_INT const * wheres) {
-  const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
+  DECLARE_CCTK_PARAMETERS;
 
   // TODO: pretty much the same as the WRITE handling. Consder factoring out
   // common code in particular the warnings.
 
-  // technically LEVEL mode is the only allowed one since I keep track of
-  // validity on a level granularity. However that makes the routine awkward to
-  // use in locally scheduled routines.
-  if(not is_level_mode() and not is_local_mode())
-    CCTK_VERROR("%s must be called in level, of local mode", __func__);
+  if(CCTK_EQUALS(presync_mode, "off"))
+    return 0;
 
   assert(variables or nvariables == 0);
   assert(tls or nvariables == 0);
+
+  assert(is_level_mode());
 
   for(int i = 0; i < nvariables; i++) {
     int const vi = variables[i];
@@ -537,6 +538,42 @@ CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST cctkGH_,
       int const old_valid = ff->valid(mglevel, rl, tl);
       ff->set_valid(mglevel, rl, tl, old_valid | where);
     }
+  }
+
+  return 0;
+}
+}
+
+extern "C"
+CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST cctkGH_,
+   CCTK_INT const * const variables, CCTK_INT const * const tls,
+   CCTK_INT const nvariables, CCTK_INT const * wheres) {
+
+  const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
+
+  // Take action by mode
+  if(is_singlemap_mode() or is_local_mode()) {
+    BEGIN_LEVEL_MODE(cctkGH) {
+      NotifyDataModified(cctkGH, variables, tls, nvariables, wheres);
+    }
+    END_LEVEL_MODE;
+  } else if(is_level_mode()) {
+    NotifyDataModified(cctkGH, variables, tls, nvariables, wheres);
+  } else if(is_global_mode()) {
+    BEGIN_REFLEVEL_LOOP(cctkGH) {
+      NotifyDataModified(cctkGH, variables, tls, nvariables, wheres);
+    }
+    END_REFLEVEL_LOOP;
+  } else if(is_meta_mode()) {
+    BEGIN_MGLEVEL_LOOP(cctkGH) {
+      BEGIN_REFLEVEL_LOOP(cctkGH) {
+        NotifyDataModified(cctkGH, variables, tls, nvariables, wheres);
+      }
+      END_REFLEVEL_LOOP;
+    }
+    END_MGLEVEL_LOOP;
+  } else {
+    CCTK_VERROR("%s must be called in local, singlemap, level, global, or meta mode", __func__);
   }
 
   return 0;
