@@ -170,11 +170,6 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH, std::vector<int>& pre_g
       continue;
     }
 
-    const int type = CCTK_GroupTypeFromVarI(entry.var_id);
-    if(not(type == CCTK_GF or reflevel == 0)) {
-      continue;
-    }
-
     // some thorns only read from variables based on extra parameters, eg
     // TmunuBase's stress_energy_state grid scalar. This check mimics the
     // behaviour of calling SYNC on a variable without storage by outputting a
@@ -195,7 +190,10 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH, std::vector<int>& pre_g
     ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
     assert(ff);
 
-    int const valid = ff->valid(mglevel, reflevel, entry.time_level);
+    const int type = CCTK_GroupTypeFromVarI(entry.var_id);
+    const int rl = type == CCTK_GF ? reflevel : 0;
+
+    int const valid = ff->valid(mglevel, rl, entry.time_level);
 
     if(not is_set(valid, entry.where_rd)) {
       // we have: interior required-for ghosts required-for boundary
@@ -210,7 +208,7 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH, std::vector<int>& pre_g
            not may_sync) {
           std::ostringstream msg;
           msg << "Required read for "
-              << format_var_tuple(entry.var_id, reflevel, entry.time_level)
+              << format_var_tuple(entry.var_id, rl, entry.time_level)
               << " not satisfied. Have " << format_where(valid)
               << " and require " << format_where(entry.where_rd) << " missing "
               << format_where(~valid & entry.where_rd)
@@ -279,11 +277,6 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH) {
       continue;
     }
 
-    const int type = CCTK_GroupTypeFromVarI(entry.var_id);
-    if(not(type == CCTK_GF or reflevel == 0)) {
-      continue;
-    }
-
     if(CCTK_ActiveTimeLevelsVI(cctkGH, entry.var_id) <= entry.time_level) {
       CCTK_VWARN(CCTK_WARN_DEBUG,
                  "Declared access to '%s' on time level %d which has no storage",
@@ -299,11 +292,14 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH) {
     ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
     assert(ff);
 
+    const int type = CCTK_GroupTypeFromVarI(entry.var_id);
+    const int rl = type == CCTK_GF ? reflevel : 0;
+
     if(entry.where_wr == CCTK_VALID_INTERIOR) {
-      ff->set_valid(mglevel, reflevel, entry.time_level, CCTK_VALID_INTERIOR);
+      ff->set_valid(mglevel, rl, entry.time_level, CCTK_VALID_INTERIOR);
     } else {
-      int const old_valid = ff->valid(mglevel, reflevel, entry.time_level);
-      ff->set_valid(mglevel, reflevel, entry.time_level, old_valid | entry.where_wr);
+      int const old_valid = ff->valid(mglevel, rl, entry.time_level);
+      ff->set_valid(mglevel, rl, entry.time_level, old_valid | entry.where_wr);
     }
   }
 }
@@ -367,12 +363,6 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
       CCTK_VERROR("Invalid variable index %d", vi);
     }
 
-    // Do nothing if this is not a grid function
-    int const type = CCTK_GroupTypeFromVarI(vi);
-    if(not(type == CCTK_GF or reflevel == 0)) {
-      continue;
-    }
-
     if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) <= tl) {
       CCTK_VWARN(CCTK_WARN_DEBUG,
                  "Declared access to '%s' on time level %d which has no storage",
@@ -386,7 +376,11 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
     int const map0 = 0;
     ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
     assert(ff);
-    int const valid = ff->valid(mglevel, reflevel, tl);
+
+    const int type = CCTK_GroupTypeFromVarI(vi);
+    const int rl = type == CCTK_GF ? reflevel : 0;
+
+    int const valid = ff->valid(mglevel, rl, tl);
 
     if(not is_set(valid, where)) {
       // we have: interior required-for ghosts required-for boundary
@@ -407,7 +401,7 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
 
           std::ostringstream msg;
           msg << "Required read for "
-              << format_var_tuple(vi, reflevel, tl)
+              << format_var_tuple(vi, rl, tl)
               << " not satisfied. Have " << format_where(valid) << " and require "
               << format_where(where) << " missing "
               << format_where(~valid & where) << ".";
@@ -441,7 +435,7 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
           auto const old_do_allow_past_timelevels = do_allow_past_timelevels;
           do_allow_past_timelevels = tl == 0;
           timelevel_offset = timelevel = tl;
-          const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
+          const_cast<cGH*>(cctkGH)->cctk_time = tt->get_time(mglevel, rl, timelevel);
           int ierr = SyncProlongateGroups(cctkGH, sync_groups, attribute);
           assert(not ierr);
           const_cast<cGH*>(cctkGH)->cctk_time = old_cctk_time;
@@ -449,7 +443,7 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
           timelevel = old_timelevel;
           do_allow_past_timelevels = old_do_allow_past_timelevels;
 
-          int const new_valid = ff->valid(mglevel, reflevel, tl);
+          int const new_valid = ff->valid(mglevel, rl, tl);
           assert(is_set(new_valid, where));
         }
       } // invalid needed GHOSTS or BOUNDARY
@@ -520,12 +514,6 @@ CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST cctkGH_,
       CCTK_VERROR("Invalid variable index %d", vi);
     }
 
-    // Do nothing if this is not a grid function
-    int const type = CCTK_GroupTypeFromVarI(vi);
-    if(not(type == CCTK_GF or reflevel == 0)) {
-      continue;
-    }
-
     if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) <= tl) {
       CCTK_VWARN(CCTK_WARN_DEBUG,
                  "Declared access to '%s' on time level %d which has no storage",
@@ -540,11 +528,14 @@ CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST cctkGH_,
     ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
     assert(ff);
 
+    const int type = CCTK_GroupTypeFromVarI(vi);
+    const int rl = type == CCTK_GF ? reflevel : 0;
+
     if(where == CCTK_VALID_INTERIOR) {
-      ff->set_valid(mglevel, reflevel, tl, CCTK_VALID_INTERIOR);
+      ff->set_valid(mglevel, rl, tl, CCTK_VALID_INTERIOR);
     } else {
-      int const old_valid = ff->valid(mglevel, reflevel, tl);
-      ff->set_valid(mglevel, reflevel, tl, old_valid | where);
+      int const old_valid = ff->valid(mglevel, rl, tl);
+      ff->set_valid(mglevel, rl, tl, old_valid | where);
     }
   }
 
@@ -568,12 +559,6 @@ void Carpet_SetValidRegion(CCTK_POINTER_TO_CONST cctkGH_, CCTK_INT vi,
     CCTK_VERROR("Invalid variable index %d", vi);
   }
 
-  int const type = CCTK_GroupTypeFromVarI(vi);
-  if(not(type == CCTK_GF or reflevel == 0)) {
-    CCTK_VERROR("Only grid functions are tracked right now. '%s' is not a grid function",
-                CCTK_FullVarName(vi));
-  }
-
   if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) <= tl) {
     CCTK_VWARN(CCTK_WARN_DEBUG,
                "Declared access to '%s' on time level %d which has no storage",
@@ -588,7 +573,10 @@ void Carpet_SetValidRegion(CCTK_POINTER_TO_CONST cctkGH_, CCTK_INT vi,
   ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
   assert(ff);
 
-  ff->set_valid(mglevel, reflevel, tl, wh);
+  const int type = CCTK_GroupTypeFromVarI(vi);
+  const int rl = type == CCTK_GF ? reflevel : 0;
+
+  ff->set_valid(mglevel, rl, tl, wh);
 }
 
 /**
@@ -602,12 +590,6 @@ CCTK_INT Carpet_GetValidRegion(CCTK_POINTER_TO_CONST cctkGH_, CCTK_INT vi,
 
   if(vi < 0 or vi >= CCTK_NumVars()) {
     CCTK_VERROR("Invalid variable index %d", vi);
-  }
-
-  int const type = CCTK_GroupTypeFromVarI(vi);
-  if(not(type == CCTK_GF or reflevel == 0)) {
-    CCTK_VERROR("Only grid functions are tracked right now. '%s' is not a grid function",
-                CCTK_FullVarName(vi));
   }
 
   if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) <= tl) {
@@ -624,7 +606,10 @@ CCTK_INT Carpet_GetValidRegion(CCTK_POINTER_TO_CONST cctkGH_, CCTK_INT vi,
   ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
   assert(ff);
 
-  return ff->valid(mglevel, reflevel, tl);
+  const int type = CCTK_GroupTypeFromVarI(vi);
+  const int rl = type == CCTK_GF ? reflevel : 0;
+
+  return ff->valid(mglevel, rl, tl);
 }
 
 /**********************************************************************
@@ -761,8 +746,6 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
 
   assert(0 <= group_index and group_index < CCTK_NumGroups());
 
-  assert(CCTK_GroupTypeI(group_index) == CCTK_GF or reflevel == 0);
-
   if(CCTK_ActiveTimeLevelsGI(cctkGH, group_index) == 0) {
     CCTK_VWARN(CCTK_WARN_DEBUG,
                "Tied to apply b/c to '%s' on time level %d which has no storage",
@@ -791,8 +774,11 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
     ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
     assert(ff);
 
+    const int type = CCTK_GroupTypeFromVarI(var_index);
+    const int rl = type == CCTK_GF ? reflevel : 0;
+
     // TODO: keep track of which faces are valid?
-    assert(is_set(ff->valid(mglevel, reflevel, 0),
+    assert(is_set(ff->valid(mglevel, rl, 0),
                   CCTK_VALID_INTERIOR | CCTK_VALID_GHOSTS));
 
     const Bounds& bounds = boundary_conditions[var_index];
@@ -823,8 +809,11 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
       ggf *const ff = arrdata.AT(group_index).AT(m).data.AT(var);
       assert(ff);
 
+      const int type = CCTK_GroupTypeFromVarI(var_index);
+      const int rl = type == CCTK_GF ? reflevel : 0;
+
       if(boundary_conditions.count(var_index) and
-         not is_set(ff->valid(mglevel, reflevel, 0), CCTK_VALID_EVERYWHERE)) {
+         not is_set(ff->valid(mglevel, rl, 0), CCTK_VALID_EVERYWHERE)) {
         CCTK_VWARN(CCTK_WARN_ALERT,
                    "Internal error: thorn Boundary did not mark boundary of '%s' as valid when applying boundary conditions",
                    CCTK_FullVarName(var_index));
