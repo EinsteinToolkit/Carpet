@@ -842,8 +842,8 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
     for(int var = 0; var < vnum; var++) {
       int const var_index = vstart + var;
 
-      int const m = 0; // FIXME: this assumes that validity is the same on all maps
-      ggf *const ff = arrdata.AT(group_index).AT(m).data.AT(var);
+      int const map0 = 0;
+      ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
       assert(ff);
 
       const int type = CCTK_GroupTypeFromVarI(var_index);
