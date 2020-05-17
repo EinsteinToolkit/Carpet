@@ -757,10 +757,17 @@ extern "C"
 CCTK_INT Carpet_FilterOutVarForBCI(
     const CCTK_POINTER_TO_CONST cctkGH_,
     const CCTK_INT var_index) {
+  DECLARE_CCTK_PARAMETERS;
+
   // do apply physical BC if we are being called from Carpet's own Driver BC
   // routine
+  static bool const presync_only = CCTK_EQUALS(presync_mode, "off");
+
   if(do_applyphysicalbcs)
     return false;
+  else if(presync_only)
+    return true;
+
   return QueryDriverBCForVarI(static_cast<const cGH*>(cctkGH_), var_index);
 }
 
