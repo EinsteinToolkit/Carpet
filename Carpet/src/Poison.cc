@@ -121,11 +121,7 @@ void PoisonGroup(cGH const *const cctkGH, int const group,
 
         for (int var = 0; var < nvar; ++var) {
           int const n = n0 + var;
-          int const map0 = 0;
-          ggf *const ff = arrdata.AT(group).AT(map0).data.AT(var);
-          assert(ff);
           for (int tl = min_tl; tl <= max_tl; ++tl) {
-            ff->set_valid(mglevel, reflevel, tl, CCTK_VALID_NOWHERE);
             memset(cctkGH->data[n][tl], poison_value, size_t(np) * sz);
           } // for tl
         }   // for var
@@ -133,6 +129,16 @@ void PoisonGroup(cGH const *const cctkGH, int const group,
       END_LOCAL_COMPONENT_LOOP;
     }
     END_LOCAL_MAP_LOOP;
+
+    // mark as invalid
+    for (int var = 0; var < nvar; ++var) {
+      int const map0 = 0;
+      ggf *const ff = arrdata.AT(group).AT(map0).data.AT(var);
+      assert(ff);
+      for (int tl = min_tl; tl <= max_tl; ++tl) {
+        ff->set_valid(mglevel, reflevel, tl, CCTK_VALID_NOWHERE);
+      }
+    }
 
   } // if tl
 }

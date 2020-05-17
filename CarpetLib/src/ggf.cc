@@ -253,14 +253,17 @@ void ggf::cycle_all(int const rl, int const ml) {
   for (int lc = 0; lc < (int)storage.AT(ml).AT(rl).size(); ++lc) {
     fdata &fdatas = storage.AT(ml).AT(rl).AT(lc);
     gdata *const tmpdata = fdatas.AT(ntl - 1);
-    int const tmpvalid = valid(ml, rl, ntl - 1);
     for (int tl = ntl - 1; tl > 0; --tl) {
       fdatas.AT(tl) = fdatas.AT(tl - 1);
-      set_valid(ml, rl, tl, valid(ml, rl, tl - 1));
     }
     fdatas.AT(0) = tmpdata;
-    set_valid(ml, rl, 0, tmpvalid);
   }
+
+  int const tmpvalid = valid(ml, rl, ntl - 1);
+  for (int tl = ntl - 1; tl > 0; --tl) {
+    set_valid(ml, rl, tl, valid(ml, rl, tl - 1));
+  }
+  set_valid(ml, rl, 0, tmpvalid);
 }
 
 // Uncycle the time levels by rotating the data sets
@@ -272,14 +275,17 @@ void ggf::uncycle_all(int const rl, int const ml) {
   for (int lc = 0; lc < (int)storage.AT(ml).AT(rl).size(); ++lc) {
     fdata &fdatas = storage.AT(ml).AT(rl).AT(lc);
     gdata *const tmpdata = fdatas.AT(0);
-    int const tmpvalid = valid(ml, rl, 0);
     for (int tl = 0; tl < ntl - 1; ++tl) {
       fdatas.AT(tl) = fdatas.AT(tl + 1);
-      set_valid(ml, rl, tl, valid(ml, rl, tl + 1));
     }
     fdatas.AT(ntl - 1) = tmpdata;
-    set_valid(ml, rl, ntl - 1, tmpvalid);
   }
+
+  int const tmpvalid = valid(ml, rl, 0);
+  for (int tl = 0; tl < ntl - 1; ++tl) {
+    set_valid(ml, rl, tl, valid(ml, rl, tl + 1));
+  }
+  set_valid(ml, rl, ntl - 1, tmpvalid);
 }
 
 // Flip the time levels by exchanging the data sets
@@ -297,10 +303,15 @@ void ggf::flip_all(int const rl, int const ml) {
       gdata *const tmpdata = fdatas.AT(tl1);
       fdatas.AT(tl1) = fdatas.AT(tl2);
       fdatas.AT(tl2) = tmpdata;
-      int const tmpvalid = valid(ml, rl, tl1);
-      set_valid(ml, rl, tl1, valid(ml, rl, tl2));
-      set_valid(ml, rl, tl2, tmpvalid);
     }
+  }
+
+  for (int tl = 1; tl < (ntl + 1) / 2; ++tl) {
+    const int tl1 = tl;
+    const int tl2 = ntl - tl;
+    int const tmpvalid = valid(ml, rl, tl1);
+    set_valid(ml, rl, tl1, valid(ml, rl, tl2));
+    set_valid(ml, rl, tl2, tmpvalid);
   }
 }
 
@@ -317,8 +328,11 @@ void ggf::fill_all(int const rl, int const ml) {
     for (int tl = 1; tl < ntl; ++tl) {
       void *const dstptr = fdatas.AT(tl)->storage();
       memcpy(dstptr, srcptr, size);
-      set_valid(ml, rl, tl, valid(ml, rl, 0));
     }
+  }
+
+  for (int tl = 1; tl < ntl; ++tl) {
+    set_valid(ml, rl, tl, valid(ml, rl, 0));
   }
 }
 
