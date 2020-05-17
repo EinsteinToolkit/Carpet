@@ -17,3 +17,8 @@ TEST CarpetWaveToyNewRecover_test_1proc
 {
   NPROCS 1
 }
+
+TEST presyncRecover
+{
+  NPROCS 2
+}
