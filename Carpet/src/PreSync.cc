@@ -140,6 +140,31 @@ int ScheduleTraverse(char const *const where, char const *const name,
   return ierr;
 }
 
+/**
+ * translate a relative timelevel from a READS statement to and absolute timelevel of a ggf
+ */
+int get_timelevel(int const active_tl, int const tl) {
+  assert(active_tl >= 0);
+  int tl_offset;
+  if (active_tl == 0) {
+    // group has no storage
+    tl_offset = 0;
+  } else if (do_allow_past_timelevels) {
+    // regular case; all timelevels are accessible
+    tl_offset = 0;
+  } else {
+    // only one timelevel is accessible
+    if (timelevel < active_tl) {
+      // timelevel "timelevel" exists
+      tl_offset = timelevel;
+    } else {
+      // timelevel "timelevel" does not exist
+      tl_offset = active_tl - 1;
+    }
+  }
+  return tl_offset + tl;
+}
+
 } // namespace
 
 /**********************************************************************
@@ -166,34 +191,46 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH, std::vector<int>& pre_g
 
   for(int i=0;i<attribute->n_RDWR;i++) {
     const RDWR_entry& entry = attribute->RDWR[i];
+
+    assert(0 <= entry.var_id and entry.var_id < CCTK_NumVars());
+
     if(entry.where_rd == CCTK_VALID_NOWHERE) { // only READS cn trigger sync or errors
       continue;
     }
+
+    if(not do_allow_past_timelevels and entry.time_level > 0) {
+      /* must not abort or do anything since Carpet passed NULL pointers to
+       * thorns who can detect invalid past level */
+      continue;
+    }
+
+    int const group_index = CCTK_GroupIndexFromVarI(entry.var_id);
+    assert(group_index >= 0);
+    const int type = CCTK_GroupTypeI(group_index);
+    const int rl = type == CCTK_GF ? reflevel : 0;
 
     // some thorns only read from variables based on extra parameters, eg
     // TmunuBase's stress_energy_state grid scalar. This check mimics the
     // behaviour of calling SYNC on a variable without storage by outputting a
     // high level warning. A thorn that actually tries to read from the
     // variable will encounter a SEGFAULT.
-    if(CCTK_ActiveTimeLevelsVI(cctkGH, entry.var_id) <= entry.time_level) {
+    int const active_tl =
+      groupdata.AT(group_index).activetimelevels.AT(mglevel).AT(rl);
+    int const tl = get_timelevel(active_tl, entry.time_level);
+
+    if(tl >= active_tl) {
       CCTK_VWARN(CCTK_WARN_DEBUG,
                  "Declared access to '%s' on time level %d which has no storage",
-                 CCTK_FullVarName(entry.var_id), entry.time_level);
+                 CCTK_FullVarName(entry.var_id), tl);
       continue;
     }
 
-    assert(0 <= entry.var_id and entry.var_id < CCTK_NumVars());
-    int const group_index = CCTK_GroupIndexFromVarI(entry.var_id);
-    assert(group_index >= 0);
     int const var = entry.var_id - CCTK_FirstVarIndexI(group_index);
     int const map0 = 0;
     ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
     assert(ff);
 
-    const int type = CCTK_GroupTypeFromVarI(entry.var_id);
-    const int rl = type == CCTK_GF ? reflevel : 0;
-
-    int const valid = ff->valid(mglevel, rl, entry.time_level);
+    int const valid = ff->valid(mglevel, rl, tl);
 
     if(not is_set(valid, entry.where_rd)) {
       // we have: interior required-for ghosts required-for boundary
@@ -274,33 +311,49 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH) {
   for (int i=0;i<attribute->n_RDWR;i++) {
     const RDWR_entry& entry = attribute->RDWR[i];
 
+    assert(0 <= entry.var_id and entry.var_id < CCTK_NumVars());
+
     if(entry.where_wr == CCTK_VALID_NOWHERE) { // nothing to do
       continue;
     }
 
-    if(CCTK_ActiveTimeLevelsVI(cctkGH, entry.var_id) <= entry.time_level) {
-      CCTK_VWARN(CCTK_WARN_DEBUG,
-                 "Declared access to '%s' on time level %d which has no storage",
-                 CCTK_FullVarName(entry.var_id), entry.time_level);
+    if(not do_allow_past_timelevels and entry.time_level > 0) {
+      /* must not abort or do anything since Carpet passed NULL pointers to
+       * thorns who can detect invalid past level */
       continue;
     }
 
-    assert(0 <= entry.var_id and entry.var_id < CCTK_NumVars());
-    int const gi = CCTK_GroupIndexFromVarI(entry.var_id);
-    assert(gi >= 0);
-    int const var = entry.var_id - CCTK_FirstVarIndexI(gi);
-    int const map0 = 0;
-    ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
-    assert(ff);
-
-    const int type = CCTK_GroupTypeFromVarI(entry.var_id);
+    int const group_index = CCTK_GroupIndexFromVarI(entry.var_id);
+    assert(group_index >= 0);
+    const int type = CCTK_GroupTypeI(group_index);
     const int rl = type == CCTK_GF ? reflevel : 0;
 
+    // some thorns only read from variables based on extra parameters, eg
+    // TmunuBase's stress_energy_state grid scalar. This check mimics the
+    // behaviour of calling SYNC on a variable without storage by outputting a
+    // high level warning. A thorn that actually tries to read from the
+    // variable will encounter a SEGFAULT.
+    int const active_tl =
+      groupdata.AT(group_index).activetimelevels.AT(mglevel).AT(rl);
+    int const tl = get_timelevel(active_tl, entry.time_level);
+
+    if(tl >= active_tl) {
+      CCTK_VWARN(CCTK_WARN_DEBUG,
+                 "Declared access to '%s' on time level %d which has no storage",
+                 CCTK_FullVarName(entry.var_id), tl);
+      continue;
+    }
+
+    int const var = entry.var_id - CCTK_FirstVarIndexI(group_index);
+    int const map0 = 0;
+    ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
+    assert(ff);
+
     if(entry.where_wr == CCTK_VALID_INTERIOR) {
-      ff->set_valid(mglevel, rl, entry.time_level, CCTK_VALID_INTERIOR);
+      ff->set_valid(mglevel, rl, tl, CCTK_VALID_INTERIOR);
     } else {
-      int const old_valid = ff->valid(mglevel, rl, entry.time_level);
-      ff->set_valid(mglevel, rl, entry.time_level, old_valid | entry.where_wr);
+      int const old_valid = ff->valid(mglevel, rl, tl);
+      ff->set_valid(mglevel, rl, tl, old_valid | entry.where_wr);
     }
   }
 }
@@ -356,29 +409,45 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
   std::set<std::tuple<int,int>> processed_groups; // [gi] [tl]
   for(int i = 0; i < nvariables; i++) {
     int const vi = variables[i];
-    int const tl = tls[i];
     int const where = wheres[i];
+
+    assert(0 <= vi and vi < CCTK_NumVars());
 
     if(vi < 0 or vi >= CCTK_NumVars()) {
       CCTK_VERROR("Invalid variable index %d", vi);
     }
 
-    if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) <= tl) {
+    if(not do_allow_past_timelevels and tls[i] > 0) {
+      /* must not abort or do anything since Carpet passed NULL pointers to
+       * thorns who can detect invalid past level */
+      continue;
+    }
+
+    int const group_index = CCTK_GroupIndexFromVarI(vi);
+    assert(group_index >= 0);
+    const int type = CCTK_GroupTypeI(group_index);
+    const int rl = type == CCTK_GF ? reflevel : 0;
+
+    // some thorns only read from variables based on extra parameters, eg
+    // TmunuBase's stress_energy_state grid scalar. This check mimics the
+    // behaviour of calling SYNC on a variable without storage by outputting a
+    // high level warning. A thorn that actually tries to read from the
+    // variable will encounter a SEGFAULT.
+    int const active_tl =
+      groupdata.AT(group_index).activetimelevels.AT(mglevel).AT(rl);
+    int const tl = get_timelevel(active_tl, tls[i]);
+
+    if(tl >= active_tl) {
       CCTK_VWARN(CCTK_WARN_DEBUG,
                  "Declared access to '%s' on time level %d which has no storage",
                  CCTK_FullVarName(vi), tl);
       continue;
     }
 
-    int const gi = CCTK_GroupIndexFromVarI(vi);
-    assert(gi >= 0);
-    int const var = vi - CCTK_FirstVarIndexI(gi);
+    int const var = vi - CCTK_FirstVarIndexI(group_index);
     int const map0 = 0;
-    ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
+    ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
     assert(ff);
-
-    const int type = CCTK_GroupTypeFromVarI(vi);
-    const int rl = type == CCTK_GF ? reflevel : 0;
 
     int const valid = ff->valid(mglevel, rl, tl);
 
@@ -393,7 +462,7 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
           not is_set(valid, CCTK_VALID_BOUNDARY))) {
 
         // give warning / error if we cannot make things ok by SYNCing
-        if(tl > 0 or not is_set(valid, CCTK_VALID_INTERIOR) or not may_sync) {
+        if(tls[i] > 0 or not is_set(valid, CCTK_VALID_INTERIOR) or not may_sync) {
           /* only warn / error about functions that the client thorn told me
            * about one way or the other */
           if(not presync_only and not bc_selected)
@@ -401,7 +470,7 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
 
           std::ostringstream msg;
           msg << "Required read for "
-              << format_var_tuple(vi, rl, tl)
+              << format_var_tuple(vi, rl, tls[i])
               << " not satisfied. Have " << format_where(valid) << " and require "
               << format_where(where) << " missing "
               << format_where(~valid & where) << ".";
@@ -418,6 +487,8 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
           assert(is_set(valid, CCTK_VALID_INTERIOR));
           assert(not is_set(valid, CCTK_VALID_GHOSTS) or
                  not is_set(valid, CCTK_VALID_BOUNDARY));
+
+          int const gi = CCTK_GroupIndexFromVarI(vi);
 
           // since SYNC processes whole groups, if any variable is unset then we must
           // not have encountered any other variable from that group either
@@ -511,29 +582,43 @@ CCTK_INT NotifyDataModified(const cGH * cctkGH,
 
   for(int i = 0; i < nvariables; i++) {
     int const vi = variables[i];
-    int const tl = tls[i];
     int const where = wheres[i];
 
     if(vi < 0 or vi >= CCTK_NumVars()) {
       CCTK_VERROR("Invalid variable index %d", vi);
     }
 
-    if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) <= tl) {
+    if(not do_allow_past_timelevels and tls[i] > 0) {
+      /* must not abort or do anything since Carpet passed NULL pointers to
+       * thorns who can detect invalid past level */
+      continue;
+    }
+
+    int const group_index = CCTK_GroupIndexFromVarI(vi);
+    assert(group_index >= 0);
+    const int type = CCTK_GroupTypeI(group_index);
+    const int rl = type == CCTK_GF ? reflevel : 0;
+
+    // some thorns only read from variables based on extra parameters, eg
+    // TmunuBase's stress_energy_state grid scalar. This check mimics the
+    // behaviour of calling SYNC on a variable without storage by outputting a
+    // high level warning. A thorn that actually tries to read from the
+    // variable will encounter a SEGFAULT.
+    int const active_tl =
+      groupdata.AT(group_index).activetimelevels.AT(mglevel).AT(rl);
+    int const tl = get_timelevel(active_tl, tls[i]);
+
+    if(tl >= active_tl) {
       CCTK_VWARN(CCTK_WARN_DEBUG,
                  "Declared access to '%s' on time level %d which has no storage",
                  CCTK_FullVarName(vi), tl);
       continue;
     }
 
-    int const gi = CCTK_GroupIndexFromVarI(vi);
-    assert(gi >= 0);
-    int const var = vi - CCTK_FirstVarIndexI(gi);
+    int const var = vi - CCTK_FirstVarIndexI(group_index);
     int const map0 = 0;
-    ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
+    ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
     assert(ff);
-
-    const int type = CCTK_GroupTypeFromVarI(vi);
-    const int rl = type == CCTK_GF ? reflevel : 0;
 
     if(where == CCTK_VALID_INTERIOR) {
       ff->set_valid(mglevel, rl, tl, CCTK_VALID_INTERIOR);
@@ -595,30 +680,45 @@ CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST cctkGH_,
  * of the grid where that variable is valid (i.e. the where_spec).
  */
 extern "C"
-void Carpet_SetValidRegion(CCTK_POINTER_TO_CONST cctkGH_, CCTK_INT vi,
-                           CCTK_INT tl, CCTK_INT wh) {
-  const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
+void Carpet_SetValidRegion(CCTK_POINTER_TO_CONST /*cctkGH_*/, CCTK_INT vi,
+                           CCTK_INT tl_in, CCTK_INT wh) {
+  DECLARE_CCTK_PARAMETERS;
 
   if(vi < 0 or vi >= CCTK_NumVars()) {
     CCTK_VERROR("Invalid variable index %d", vi);
   }
 
-  if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) <= tl) {
+  if(not do_allow_past_timelevels and tl_in > 0) {
+      /* must not abort or do anything since Carpet passed NULL pointers to
+       * thorns who can detect invalid past level */
+    return;
+  }
+
+  int const group_index = CCTK_GroupIndexFromVarI(vi);
+  assert(group_index >= 0);
+  const int type = CCTK_GroupTypeI(group_index);
+  const int rl = type == CCTK_GF ? reflevel : 0;
+
+  // some thorns only read from variables based on extra parameters, eg
+  // TmunuBase's stress_energy_state grid scalar. This check mimics the
+  // behaviour of calling SYNC on a variable without storage by outputting a
+  // high level warning. A thorn that actually tries to read from the
+  // variable will encounter a SEGFAULT.
+  int const active_tl =
+    groupdata.AT(group_index).activetimelevels.AT(mglevel).AT(rl);
+  int const tl = get_timelevel(active_tl, tl_in);
+
+  if(tl >= active_tl) {
     CCTK_VWARN(CCTK_WARN_DEBUG,
                "Declared access to '%s' on time level %d which has no storage",
                CCTK_FullVarName(vi), tl);
     return;
   }
 
-  int const gi = CCTK_GroupIndexFromVarI(vi);
-  assert(gi >= 0);
-  int const var = vi - CCTK_FirstVarIndexI(gi);
+  int const var = vi - CCTK_FirstVarIndexI(group_index);
   int const map0 = 0;
-  ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
+  ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
   assert(ff);
-
-  const int type = CCTK_GroupTypeFromVarI(vi);
-  const int rl = type == CCTK_GF ? reflevel : 0;
 
   ff->set_valid(mglevel, rl, tl, wh);
 }
@@ -628,30 +728,45 @@ void Carpet_SetValidRegion(CCTK_POINTER_TO_CONST cctkGH_, CCTK_INT vi,
  * of the grid where that variable is valid (i.e. the where_spec).
  */
 extern "C"
-CCTK_INT Carpet_GetValidRegion(CCTK_POINTER_TO_CONST cctkGH_, CCTK_INT vi,
-                               CCTK_INT tl) {
-  const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
+CCTK_INT Carpet_GetValidRegion(CCTK_POINTER_TO_CONST /*cctkGH_*/, CCTK_INT vi,
+                               CCTK_INT tl_in) {
+  DECLARE_CCTK_PARAMETERS;
 
   if(vi < 0 or vi >= CCTK_NumVars()) {
     CCTK_VERROR("Invalid variable index %d", vi);
   }
 
-  if(CCTK_ActiveTimeLevelsVI(cctkGH, vi) <= tl) {
+  if(not do_allow_past_timelevels and tl_in > 0) {
+      /* must not abort or do anything since Carpet passed NULL pointers to
+       * thorns who can detect invalid past level */
+    return CCTK_VALID_NOWHERE;
+  }
+
+  int const group_index = CCTK_GroupIndexFromVarI(vi);
+  assert(group_index >= 0);
+  const int type = CCTK_GroupTypeI(group_index);
+  const int rl = type == CCTK_GF ? reflevel : 0;
+
+  // some thorns only read from variables based on extra parameters, eg
+  // TmunuBase's stress_energy_state grid scalar. This check mimics the
+  // behaviour of calling SYNC on a variable without storage by outputting a
+  // high level warning. A thorn that actually tries to read from the
+  // variable will encounter a SEGFAULT.
+  int const active_tl =
+    groupdata.AT(group_index).activetimelevels.AT(mglevel).AT(rl);
+  int const tl = get_timelevel(active_tl, tl_in);
+
+  if(tl >= active_tl) {
     CCTK_VWARN(CCTK_WARN_DEBUG,
                "Declared access to '%s' on time level %d which has no storage",
                CCTK_FullVarName(vi), tl);
     return CCTK_VALID_NOWHERE;
   }
 
-  int const gi = CCTK_GroupIndexFromVarI(vi);
-  assert(gi >= 0);
-  int const var = vi - CCTK_FirstVarIndexI(gi);
+  int const var = vi - CCTK_FirstVarIndexI(group_index);
   int const map0 = 0;
-  ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(var);
+  ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
   assert(ff);
-
-  const int type = CCTK_GroupTypeFromVarI(vi);
-  const int rl = type == CCTK_GF ? reflevel : 0;
 
   return ff->valid(mglevel, rl, tl);
 }
@@ -802,12 +917,17 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
 
   assert(0 <= group_index and group_index < CCTK_NumGroups());
 
-  if(CCTK_ActiveTimeLevelsGI(cctkGH, group_index) == 0) {
-    CCTK_VWARN(CCTK_WARN_DEBUG,
-               "Tied to apply b/c to '%s' on time level %d which has no storage",
-               CCTK_GroupName(group_index), 0);
-    return;
-  }
+  // some thorns only read from variables based on extra parameters, eg
+  // TmunuBase's stress_energy_state grid scalar. This check mimics the
+  // behaviour of calling SYNC on a variable without storage by outputting a
+  // high level warning. A thorn that actually tries to read from the
+  // variable will encounter a SEGFAULT.
+  const int type = CCTK_GroupTypeI(group_index);
+  const int rl = type == CCTK_GF ? reflevel : 0;
+
+  int const active_tl =
+    groupdata.AT(group_index).activetimelevels.AT(mglevel).AT(rl);
+  const int tl = active_tl > 1 ? timelevel : 0;
 
   char const *const where = "ApplyPhysicalBCsForVarI";
   static Timers::Timer timer(where);
@@ -830,11 +950,8 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
     ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
     assert(ff);
 
-    const int type = CCTK_GroupTypeFromVarI(var_index);
-    const int rl = type == CCTK_GF ? reflevel : 0;
-
     // TODO: keep track of which faces are valid?
-    assert(is_set(ff->valid(mglevel, rl, 0),
+    assert(is_set(ff->valid(mglevel, rl, tl),
                   CCTK_VALID_INTERIOR | CCTK_VALID_GHOSTS));
 
     const Bounds& bounds = boundary_conditions[var_index];
@@ -857,6 +974,9 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
     do_applyphysicalbcs = false;
 
     // sanity check on thorn Boundary
+    const int type = CCTK_GroupTypeI(group_index);
+    const int rl = type == CCTK_GF ? reflevel : 0;
+
     bool any_driver_bc_failed = false;
     for(int var = 0; var < vnum; var++) {
       int const var_index = vstart + var;
@@ -865,11 +985,8 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
       ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
       assert(ff);
 
-      const int type = CCTK_GroupTypeFromVarI(var_index);
-      const int rl = type == CCTK_GF ? reflevel : 0;
-
       if(boundary_conditions.count(var_index) and
-         not is_set(ff->valid(mglevel, rl, 0), CCTK_VALID_EVERYWHERE)) {
+         not is_set(ff->valid(mglevel, rl, tl), CCTK_VALID_EVERYWHERE)) {
         CCTK_VWARN(CCTK_WARN_ALERT,
                    "Internal error: thorn Boundary did not mark boundary of '%s' as valid when applying boundary conditions",
                    CCTK_FullVarName(var_index));
