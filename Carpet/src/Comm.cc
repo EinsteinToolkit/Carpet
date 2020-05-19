@@ -188,7 +188,8 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
         barrier_timer.stop();
       }
     }
-    if(not CCTK_EQUALS(presync_mode, "off")) {
+    if(not CCTK_EQUALS(presync_mode, "off") and
+       not CCTK_EQUALS(presync_mode, "warn-only")) {
       for(auto group : goodgroups) {
         ApplyPhysicalBCsForGroupI(cctkGH,group);
       }

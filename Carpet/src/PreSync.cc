@@ -240,7 +240,8 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH, std::vector<int>& pre_g
 void PreSyncGroups(cFunctionData *attribute,cGH *cctkGH,const std::vector<int>& pre_groups) {
   DECLARE_CCTK_PARAMETERS;
 
-  assert(not CCTK_EQUALS(presync_mode, "off"));
+  assert(not CCTK_EQUALS(presync_mode, "off") and
+         not CCTK_EQUALS(presync_mode, "warn-only"));
 
   if(pre_groups.empty())
     return;
@@ -322,8 +323,7 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
   // TODO: this is almost the same as the READS checks only, consider factoring
   // out common code in particular the warning logic.
 
-  if(CCTK_EQUALS(presync_mode, "off"))
-    return 0;
+  assert(not CCTK_EQUALS(presync_mode, "off"));
 
   assert(variables or nvariables == 0);
   assert(tls or nvariables == 0);
@@ -412,7 +412,7 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
             msg << " Current valid state: " << format_valid(vi) << ".";
           }
           CCTK_WARN(warn ? CCTK_WARN_ALERT : CCTK_WARN_ABORT, msg.str().c_str());
-        } else if(bc_selected) {
+        } else if(bc_selected and may_sync) {
           // we need to ad can SYNC
 
           assert(is_set(valid, CCTK_VALID_INTERIOR));
@@ -445,7 +445,7 @@ CCTK_INT RequireValidData(const cGH* cctkGH,
 
           int const new_valid = ff->valid(mglevel, rl, tl);
           assert(is_set(new_valid, where));
-        }
+        } // bs_selected and may_sync
       } // invalid needed GHOSTS or BOUNDARY
     } // no already valid
   } // for nvariables
@@ -458,8 +458,12 @@ extern "C"
 CCTK_INT Carpet_RequireValidData(CCTK_POINTER_TO_CONST cctkGH_,
    CCTK_INT const * const variables, CCTK_INT const * const tls,
    CCTK_INT const nvariables, CCTK_INT const * wheres) {
+  DECLARE_CCTK_PARAMETERS;
 
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
+
+  if(CCTK_EQUALS(presync_mode, "off") or CCTK_EQUALS(presync_mode, "warn-only"))
+    return 0;
 
   // Take action by mode
   if(is_singlemap_mode() or is_local_mode()) {
@@ -498,8 +502,7 @@ CCTK_INT NotifyDataModified(const cGH * cctkGH,
   // TODO: pretty much the same as the WRITE handling. Consder factoring out
   // common code in particular the warnings.
 
-  if(CCTK_EQUALS(presync_mode, "off"))
-    return 0;
+  assert(not CCTK_EQUALS(presync_mode, "off"));
 
   assert(variables or nvariables == 0);
   assert(tls or nvariables == 0);
@@ -548,8 +551,12 @@ extern "C"
 CCTK_INT Carpet_NotifyDataModified(CCTK_POINTER_TO_CONST cctkGH_,
    CCTK_INT const * const variables, CCTK_INT const * const tls,
    CCTK_INT const nvariables, CCTK_INT const * wheres) {
+  DECLARE_CCTK_PARAMETERS;
 
   const cGH *cctkGH = static_cast<const cGH*>(cctkGH_);
+
+  if(CCTK_EQUALS(presync_mode, "off"))
+    return 0;
 
   // Take action by mode
   if(is_singlemap_mode() or is_local_mode()) {
@@ -762,7 +769,7 @@ CCTK_INT Carpet_FilterOutVarForBCI(
   // do apply physical BC if we are being called from Carpet's own Driver BC
   // routine
   static bool const presync_only = CCTK_EQUALS(presync_mode, "presync-only");
-  static bool const no_psync = CCTK_EQUALS(presync_mode, "off") and
+  static bool const no_psync = CCTK_EQUALS(presync_mode, "off") or
                                CCTK_EQUALS(presync_mode, "warn-only");
 
   if(do_applyphysicalbcs)
@@ -790,7 +797,8 @@ int QueryDriverBCForVarI(const cGH *cgh, const int varindex) {
 void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
   DECLARE_CCTK_PARAMETERS;
 
-  assert(not CCTK_EQUALS(presync_mode, "off"));
+  assert(not CCTK_EQUALS(presync_mode, "off") and
+         not CCTK_EQUALS(presync_mode, "warn-only"));
 
   assert(0 <= group_index and group_index < CCTK_NumGroups());
 

@@ -201,7 +201,7 @@ int CallFunction(void *function,           ///< the function to call
         END_META_MODE;
       } else {
         BEGIN_META_MODE(cctkGH) {
-          if(use_psync and not pre_groups.empty()) {
+          if(do_psync and not pre_groups.empty()) {
             BEGIN_MGLEVEL_LOOP(cctkGH) {
               BEGIN_REFLEVEL_LOOP(cctkGH) {
                 PreSyncGroups(attribute, cctkGH, pre_groups);
@@ -290,7 +290,7 @@ int CallFunction(void *function,           ///< the function to call
         END_GLOBAL_MODE;
       } else {
         BEGIN_GLOBAL_MODE(cctkGH) {
-          if (use_psync and not pre_groups.empty()) {
+          if (do_psync and not pre_groups.empty()) {
             BEGIN_REFLEVEL_LOOP(cctkGH) {
               PreSyncGroups(attribute, cctkGH, pre_groups);
             }

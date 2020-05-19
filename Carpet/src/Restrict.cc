@@ -121,7 +121,7 @@ static void RestrictGroups(const cGH *cctkGH, const vector<int> &groups) {
           }
         }
         Carpet_RequireValidData(cctkGH, &vis.front(), &tls.front(), vis.size(),
-                                &whs.front());
+                         &whs.front());
       }
       LEAVE_LEVEL_MODE;
     }
