@@ -26,9 +26,9 @@ SCHEDULE CarpetSurfaceSetup IN SetupIMask
   OPTIONS: global loop-local
   READS: grid::x, grid::y, grid::z
   READS: SphericalSurface::sf_coordinate_descriptors,
-         SphericalSurface::sf_ntheta, SphericalSurface::sf_nphi
-  READS: SphericalSurface::sf_radius, SphericalSurface::sf_active,
-         SphericalSurface::sf_origin, SphericalSurface::sf_mean_radius
+         SphericalSurface::sf_shape_descriptors
+  READS: SphericalSurface::sf_info, SphericalSurface::sf_active,
+         SphericalSurface::sf_origin, SphericalSurface::sf_radius
 } "Set up the weight function for the excluded spherical surfaces"
 
 
