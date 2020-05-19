@@ -761,9 +761,13 @@ CCTK_INT Carpet_FilterOutVarForBCI(
 
   // do apply physical BC if we are being called from Carpet's own Driver BC
   // routine
-  static bool const presync_only = CCTK_EQUALS(presync_mode, "off");
+  static bool const presync_only = CCTK_EQUALS(presync_mode, "presync-only");
+  static bool const no_psync = CCTK_EQUALS(presync_mode, "off") and
+                               CCTK_EQUALS(presync_mode, "warn-only");
 
   if(do_applyphysicalbcs)
+    return false;
+  else if(no_psync)
     return false;
   else if(presync_only)
     return true;
