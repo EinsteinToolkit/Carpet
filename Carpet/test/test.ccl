@@ -27,3 +27,8 @@ TEST presync
 {
   NPROCS 2
 }
+
+TEST presyncC
+{
+  NPROCS 2
+}
