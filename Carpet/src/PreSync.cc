@@ -192,19 +192,19 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH, std::vector<int>& pre_g
   for(int i=0;i<attribute->n_RDWR;i++) {
     const RDWR_entry& entry = attribute->RDWR[i];
 
-    assert(0 <= entry.var_id and entry.var_id < CCTK_NumVars());
+    assert(0 <= entry.varindex and entry.varindex < CCTK_NumVars());
 
     if(entry.where_rd == CCTK_VALID_NOWHERE) { // only READS cn trigger sync or errors
       continue;
     }
 
-    if(not do_allow_past_timelevels and entry.time_level > 0) {
+    if(not do_allow_past_timelevels and entry.timelevel > 0) {
       /* must not abort or do anything since Carpet passed NULL pointers to
        * thorns who can detect invalid past level */
       continue;
     }
 
-    int const group_index = CCTK_GroupIndexFromVarI(entry.var_id);
+    int const group_index = CCTK_GroupIndexFromVarI(entry.varindex);
     assert(group_index >= 0);
     const int type = CCTK_GroupTypeI(group_index);
     const int rl = type == CCTK_GF ? reflevel : 0;
@@ -216,16 +216,16 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH, std::vector<int>& pre_g
     // variable will encounter a SEGFAULT.
     int const active_tl =
       groupdata.AT(group_index).activetimelevels.AT(mglevel).AT(rl);
-    int const tl = get_timelevel(active_tl, entry.time_level);
+    int const tl = get_timelevel(active_tl, entry.timelevel);
 
     if(tl >= active_tl) {
       CCTK_VWARN(CCTK_WARN_DEBUG,
                  "Declared access to '%s' on time level %d which has no storage",
-                 CCTK_FullVarName(entry.var_id), tl);
+                 CCTK_FullVarName(entry.varindex), tl);
       continue;
     }
 
-    int const var = entry.var_id - CCTK_FirstVarIndexI(group_index);
+    int const var = entry.varindex - CCTK_FirstVarIndexI(group_index);
     int const map0 = 0;
     ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
     assert(ff);
@@ -241,21 +241,21 @@ void PreCheckValid(cFunctionData *attribute,cGH *cctkGH, std::vector<int>& pre_g
           not is_set(valid, CCTK_VALID_BOUNDARY))) {
 
         // give warning / error if we cannot make things ok by SYNCing
-        if(entry.time_level > 0 or not is_set(valid, CCTK_VALID_INTERIOR) or
+        if(entry.timelevel > 0 or not is_set(valid, CCTK_VALID_INTERIOR) or
            not may_sync) {
           std::ostringstream msg;
           msg << "Required read for "
-              << format_var_tuple(entry.var_id, rl, entry.time_level)
+              << format_var_tuple(entry.varindex, rl, entry.timelevel)
               << " not satisfied. Have " << format_where(valid)
               << " and require " << format_where(entry.where_rd) << " missing "
               << format_where(~valid & entry.where_rd)
               << " at the start of routine "
               << attribute->thorn << "::" << attribute->routine << ".";
-          if(entry.time_level > 0) {
+          if(entry.timelevel > 0) {
             msg << " Cannot SYNC past timelevels.";
           }
           if(error) {
-            msg << " Current valid state: " << format_valid(entry.var_id) << ".";
+            msg << " Current valid state: " << format_valid(entry.varindex) << ".";
           }
           CCTK_WARN(warn ? CCTK_WARN_ALERT : CCTK_WARN_ABORT, msg.str().c_str());
         } else {
@@ -311,19 +311,19 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH) {
   for (int i=0;i<attribute->n_RDWR;i++) {
     const RDWR_entry& entry = attribute->RDWR[i];
 
-    assert(0 <= entry.var_id and entry.var_id < CCTK_NumVars());
+    assert(0 <= entry.varindex and entry.varindex < CCTK_NumVars());
 
     if(entry.where_wr == CCTK_VALID_NOWHERE) { // nothing to do
       continue;
     }
 
-    if(not do_allow_past_timelevels and entry.time_level > 0) {
+    if(not do_allow_past_timelevels and entry.timelevel > 0) {
       /* must not abort or do anything since Carpet passed NULL pointers to
        * thorns who can detect invalid past level */
       continue;
     }
 
-    int const group_index = CCTK_GroupIndexFromVarI(entry.var_id);
+    int const group_index = CCTK_GroupIndexFromVarI(entry.varindex);
     assert(group_index >= 0);
     const int type = CCTK_GroupTypeI(group_index);
     const int rl = type == CCTK_GF ? reflevel : 0;
@@ -335,16 +335,16 @@ void PostCheckValid(cFunctionData *attribute, cGH *cctkGH) {
     // variable will encounter a SEGFAULT.
     int const active_tl =
       groupdata.AT(group_index).activetimelevels.AT(mglevel).AT(rl);
-    int const tl = get_timelevel(active_tl, entry.time_level);
+    int const tl = get_timelevel(active_tl, entry.timelevel);
 
     if(tl >= active_tl) {
       CCTK_VWARN(CCTK_WARN_DEBUG,
                  "Declared access to '%s' on time level %d which has no storage",
-                 CCTK_FullVarName(entry.var_id), tl);
+                 CCTK_FullVarName(entry.varindex), tl);
       continue;
     }
 
-    int const var = entry.var_id - CCTK_FirstVarIndexI(group_index);
+    int const var = entry.varindex - CCTK_FirstVarIndexI(group_index);
     int const map0 = 0;
     ggf *const ff = arrdata.AT(group_index).AT(map0).data.AT(var);
     assert(ff);
