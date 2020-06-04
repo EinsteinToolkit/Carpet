@@ -372,21 +372,13 @@ DECLARE_FUNCTION_1(sqrt, std::sqrt)
 DECLARE_FUNCTION_1(trunc, std::trunc)
 
 DECLARE_FUNCTION_1_RET(lrint, std::lrint, int)
-}
 
-namespace std {
-namespace Cactus {
-using namespace CarpetLib;
+DECLARE_FUNCTION_1_RET(fpclassify, std::fpclassify, int)
+DECLARE_FUNCTION_1_RET(isfinite, std::isfinite, int)
+DECLARE_FUNCTION_1_RET(isinf, std::isinf, int)
+DECLARE_FUNCTION_1_RET(isnan, std::isnan, int)
+DECLARE_FUNCTION_1_RET(isnormal, std::isnormal, int)
 
-DECLARE_FUNCTION_1_RET(good_fpclassify, good_fpclassify, int)
-DECLARE_FUNCTION_1_RET(good_isfinite, good_isfinite, int)
-DECLARE_FUNCTION_1_RET(good_isinf, good_isinf, int)
-DECLARE_FUNCTION_1_RET(good_isnan, good_isnan, int)
-DECLARE_FUNCTION_1_RET(good_isnormal, good_isnormal, int)
-}
-}
-
-namespace CarpetLib {
 DECLARE_OPERATOR_1_RET(operator!, !, bool)
 
 DECLARE_FUNCTION_2(max, std::max)
