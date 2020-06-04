@@ -246,25 +246,20 @@ inline const char *typestring(const CCTK_COMPLEX32 &) {
 }
 
 namespace std {
-namespace Cactus {
 
 // Provide implementations for some functions for complex numbers
 
 #define IMPLEMENT_FUNCTIONS(T)                                                 \
                                                                                \
-  inline int good_isfinite(T const &x) {                                       \
+  inline int isfinite(T const &x) {                                            \
     return isfinite(x.real()) and isfinite(x.imag());                          \
   }                                                                            \
                                                                                \
-  inline int good_isinf(T const &x) {                                          \
-    return isinf(x.real()) or isinf(x.imag());                                 \
-  }                                                                            \
+  inline int isinf(T const &x) { return isinf(x.real()) or isinf(x.imag()); }  \
                                                                                \
-  inline int good_isnan(T const &x) {                                          \
-    return isnan(x.real()) or isnan(x.imag());                                 \
-  }                                                                            \
+  inline int isnan(T const &x) { return isnan(x.real()) or isnan(x.imag()); }  \
                                                                                \
-  inline int good_isnormal(T const &x) {                                       \
+  inline int isnormal(T const &x) {                                            \
     return isnormal(x.real()) and isnormal(x.imag());                          \
   }
 
@@ -279,8 +274,7 @@ IMPLEMENT_FUNCTIONS(CCTK_COMPLEX32)
 #endif
 
 #undef IMPLEMENT_FUNCTIONS
-}
-}
+} // namespace std
 
 namespace CarpetLib {
 
