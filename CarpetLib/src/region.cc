@@ -11,7 +11,9 @@
 namespace CarpetLib {
 using namespace std;
 
-region_t::region_t() : map(-1), processor(-1), processors(NULL) { assert(invariant()); }
+region_t::region_t() : map(-1), processor(-1), processors(NULL) {
+  assert(invariant());
+}
 
 region_t::region_t(region_t const &a) {
   assert(a.invariant());
@@ -155,8 +157,7 @@ void combine_regions(vector<region_t> const &oldregs,
   }
 
   // Insert the regions
-  for (ibset::const_iterator ci = comps.begin(); ci != comps.end(); ++ci) {
-    ibbox const &c = *ci;
+  for (ibbox const &c : comps.iterator()) {
     b2vect obnds;
     for (int f = 0; f < 2; ++f) {
       for (int d = 0; d < dim; ++d) {
@@ -399,7 +400,7 @@ MPI_Datatype mpi_datatype(sendrecv_pseudoregion_t const &) {
   }
   return newtype;
 }
-}
+} // namespace dist
 
 // Compare two pseudoregions for equality.
 bool operator==(pseudoregion_t const &a, pseudoregion_t const &b) {
@@ -448,4 +449,4 @@ ostream &operator<<(ostream &os, sendrecv_pseudoregion_t const &srp) {
 
 template vector<sendrecv_pseudoregion_t>
 alltoallv1(MPI_Comm comm, vector<vector<sendrecv_pseudoregion_t> > const &data);
-}
+} // namespace CarpetLib

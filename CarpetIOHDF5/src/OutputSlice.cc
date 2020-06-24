@@ -569,18 +569,17 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
         // Apply offset
         vector<ivect> offsets1;
         offsets1.reserve(exts.setsize());
-        for (ibset::const_iterator ext = exts.begin(); ext != exts.end();
-             ++ext) {
+        for (ibbox const &ext : exts.iterator()) {
           ivect offset1;
           if (groupdata.grouptype == CCTK_GF) {
             const ibbox &baseext = hh->baseextents.at(ml).at(rl);
-            offset1 = baseext.lower() + offset * ext->stride();
+            offset1 = baseext.lower() + offset * ext.stride();
           } else {
-            offset1 = offset * ext->stride();
+            offset1 = offset * ext.stride();
           }
           for (int d = 0; d < outdim; ++d) {
             if (dirs[d] < 3) {
-              offset1[dirs[d]] = ext->lower()[dirs[d]];
+              offset1[dirs[d]] = ext.lower()[dirs[d]];
             }
           }
           offsets1.push_back(offset1);
@@ -623,7 +622,7 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
             for (comm_state state; not state.done(); state.step()) {
               for (size_t n = 0; n < datas.size(); ++n) {
                 gdata::copy_data(tmpdatas.at(n), state, datas.at(n), data_ext,
-                                          data_ext, NULL, ioproc, proc);
+                                 data_ext, NULL, ioproc, proc);
               }
             }
 
@@ -636,12 +635,12 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
 
           if (dist::rank() == IOProcForProc(proc)) {
             int c_offset = 0;
-            for (ibset::const_iterator ext = exts.begin(); ext != exts.end();
-                 ++ext, ++c_offset) {
+            for (ibbox const &ext : exts.iterator()) {
               error_count += WriteHDF5(
-                  cctkGH, file, index_file, tmpdatas, *ext, vindex,
+                  cctkGH, file, index_file, tmpdatas, ext, vindex,
                   offsets1[c_offset], dirs, rl, ml, m, c, c_base + c_offset, tl,
                   coord_time, coord_lower[c_offset], coord_upper[c_offset]);
+              ++c_offset;
             }
           }
 
@@ -1091,9 +1090,9 @@ void GetCoordinates(const cGH *const cctkGH, const int m,
   coord_lower.reserve(exts.setsize());
   coord_upper.reserve(exts.setsize());
 
-  for (ibset::const_iterator ext = exts.begin(); ext != exts.end(); ++ext) {
-    coord_lower.push_back(global_lower + coord_delta * rvect(ext->lower()));
-    coord_upper.push_back(global_lower + coord_delta * rvect(ext->upper()));
+  for (ibbox const &ext : exts.iterator()) {
+    coord_lower.push_back(global_lower + coord_delta * rvect(ext.lower()));
+    coord_upper.push_back(global_lower + coord_delta * rvect(ext.upper()));
   }
 }
 
@@ -1396,9 +1395,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
       const ibset active1 = active0 & outputslab;
       // Reduce dimensionality of active region
       bboxset<int, outdim> active2;
-      for (ibset::const_iterator bi = active1.begin(), be = active1.end();
-           bi != be; ++bi) {
-        const ibbox &box0 = *bi;
+      for (const ibbox &box0 : active1.iterator()) {
         const vect<int, outdim> lo = box0.lower()[dirs];
         const vect<int, outdim> up = box0.upper()[dirs];
         const vect<int, outdim> str = box0.stride()[dirs];
