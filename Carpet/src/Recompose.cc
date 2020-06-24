@@ -754,10 +754,8 @@ void OutputGridCoordinates(cGH const *const cctkGH, int const m,
       file << m << " " << ml << " " << rl << " regions " << extents.setsize()
            << eol;
       int c = 0;
-      for (ibset::const_iterator bi = extents.begin(); bi != extents.end();
-           ++bi) {
+      for (ibbox const &ext : extents.iterator()) {
 #if 0
-          ibbox const & ext       = * bi;
           ibbox const & baseext   = vhh.AT(m)->baseextents.AT(ml).AT(rl);
           ibbox const & coarseext = vhh.AT(m)->baseextents.AT(ml).AT(0 );
           
@@ -791,8 +789,6 @@ void OutputGridCoordinates(cGH const *const cctkGH, int const m,
           rvect const rdelta =
             CCTK_DELTA_SPACE;
 #endif
-
-        ibbox const &ext = *bi;
 
         rvect const rlower = origin + rvect(ext.lower()) / scale;
         rvect const rupper = origin + rvect(ext.upper()) / scale;
@@ -943,8 +939,9 @@ void OutputGridStatistics(cGH const *const cctkGH) {
   // Output
   CCTK_VInfo(CCTK_THORNSTRING, "Global grid structure statistics:");
   CCTK_VInfo(
-      CCTK_THORNSTRING, "GF: rhs: %.0fk active, %.0fk owned (+%.0f%%), %.0fk "
-                        "total (+%.0f%%), %.3g steps/time",
+      CCTK_THORNSTRING,
+      "GF: rhs: %.0fk active, %.0fk owned (+%.0f%%), %.0fk "
+      "total (+%.0f%%), %.3g steps/time",
       double(num_active_cpu_points / 1e+3), double(num_owned_cpu_points / 1e+3),
       double(num_active_cpu_points == 0
                  ? 0
@@ -955,8 +952,9 @@ void OutputGridStatistics(cGH const *const cctkGH) {
                  : num_total_cpu_points / num_owned_cpu_points * 100 - 100),
       double(num_steps / delta_time));
   CCTK_VInfo(
-      CCTK_THORNSTRING, "GF: vars: %d, pts: %.0fM active, %.0fM owned "
-                        "(+%.0f%%), %.0fM total (+%.0f%%), %.1f comp/proc",
+      CCTK_THORNSTRING,
+      "GF: vars: %d, pts: %.0fM active, %.0fM owned "
+      "(+%.0f%%), %.0fM total (+%.0f%%), %.1f comp/proc",
       num_gfs, double(num_active_mem_points / 1e+6),
       double(num_owned_mem_points / 1e+6),
       double(num_active_mem_points == 0

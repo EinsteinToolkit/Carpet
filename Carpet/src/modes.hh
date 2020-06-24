@@ -505,8 +505,8 @@ void ibbox2iminimax(ibbox const &ext, // component extent
   do {                                                                         \
     bool bset_loop_ = true;                                                    \
     ibset const &set1_(set_);                                                  \
-    for (ibset::const_iterator bi = set1_.begin(); bi != set1_.end(); ++bi) {  \
-      LOOP_OVER_BBOX(cctkGH, *bi, box, imin, imax) {
+    for (ibbox const &b_ : set1_.iterator()) {                                 \
+      LOOP_OVER_BBOX(cctkGH, b_, box, imin, imax) {
 #define END_LOOP_OVER_BSET                                                     \
   }                                                                            \
   END_LOOP_OVER_BBOX;                                                          \

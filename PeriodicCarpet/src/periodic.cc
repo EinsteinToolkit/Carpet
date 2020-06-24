@@ -259,7 +259,7 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
     while (not dst_bset.empty()) {
 
       // Pick one (arbitrary) dst_bbox
-      ibbox const &dst_bbox1 = *dst_bset.begin();
+      ibbox const dst_bbox1 = *dst_bset.iterator().begin();
 
       // Find the slabbing offset (a multiple of the domain size)
       // that moves dst_bbox1 into the domain
@@ -304,10 +304,7 @@ static void periodic_carpet(cGH const *restrict const cctkGH, int const size,
 
           // Loop over the intersection and insert respective
           // xferinfos
-          ibset::const_iterator const ib = intersection.begin();
-          ibset::const_iterator const ie = intersection.end();
-          for (ibset::const_iterator ireg = ib; ireg != ie; ++ireg) {
-            ibbox const src_reg = *ireg;
+          for (ibbox const src_reg : intersection.iterator()) {
             ibbox const dst_reg = src_reg.shift(-slab.offset);
             xferinfo_t xferinfo;
             xferinfo.m = Carpet::map;

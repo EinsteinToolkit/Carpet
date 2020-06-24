@@ -23,8 +23,8 @@ using namespace Carpet;
 static int AddAttributes(const cGH *const cctkGH, const char *fullname,
                          int vdim, int refinementlevel,
                          const ioRequest *const request, const ibbox &bbox,
-                         const char *active,
-                         hid_t dataset, bool is_index = false);
+                         const char *active, hid_t dataset,
+                         bool is_index = false);
 
 int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
                       CCTK_REAL &io_bytes, const ioRequest *const request,
@@ -91,14 +91,13 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
 
     // Loop over all components in the bbox set
     int bbox_id = 0;
-    for (ibset::const_iterator bbox = bboxes.begin(); bbox != bboxes.end();
-         bbox++, bbox_id++) {
+    for (ibbox const &bbox : bboxes.iterator()) {
       // Get the shape of the HDF5 dataset (in Fortran index order)
       hsize_t shape[dim];
       hsize_t num_elems = 1;
       for (int d = 0; d < group.dim; ++d) {
         assert(group.dim - 1 - d >= 0 and group.dim - 1 - d < dim);
-        shape[group.dim - 1 - d] = (bbox->shape() / bbox->stride())[d];
+        shape[group.dim - 1 - d] = (bbox.shape() / bbox.stride())[d];
         num_elems *= shape[group.dim - 1 - d];
       }
 
@@ -179,11 +178,10 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
         // (use either the interior or exterior here, as we did above)
         gh const *const hh = arrdata.at(gindex).at(Carpet::map).hh;
         dh const *const dd = arrdata.at(gindex).at(Carpet::map).dd;
-        ibbox const overlap = *bbox &
-                              dd->light_boxes.at(mglevel)
-                                  .at(refinementlevel)
-                                  .at(component)
-                                  .exterior;
+        ibbox const overlap = bbox & dd->light_boxes.at(mglevel)
+                                         .at(refinementlevel)
+                                         .at(component)
+                                         .exterior;
 
         // Continue if this component is not part of this combination
         if (overlap.empty())
@@ -201,8 +199,8 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
         processor_component->allocate(overlap, overlap.sizes(), ivect(0), 0);
         for (comm_state state; not state.done(); state.step()) {
           int const p = hh->processor(refinementlevel, component);
-          gdata::copy_data(processor_component, state, data, overlap, overlap, NULL, 0,
-                                         p);
+          gdata::copy_data(processor_component, state, data, overlap, overlap,
+                           NULL, 0, p);
         }
 
         // get active region and send to io rank
@@ -257,7 +255,7 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
             for (int d = 0; d < group.dim; ++d) {
               assert(group.dim - 1 - d >= 0 and group.dim - 1 - d < dim);
               overlaporigin[group.dim - 1 - d] =
-                  ((overlap.lower() - bbox->lower()) / overlap.stride())[d];
+                  ((overlap.lower() - bbox.lower()) / overlap.stride())[d];
               overlapshape[group.dim - 1 - d] = processor_component->shape()[d];
               assert(all(processor_component->shape() ==
                          overlap.shape() / overlap.stride()));
@@ -289,7 +287,7 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
             if (first_time) {
               error_count +=
                   AddAttributes(cctkGH, fullname, group.dim, refinementlevel,
-                                request, *bbox, active.c_str(), dataset);
+                                request, bbox, active.c_str(), dataset);
               first_time = false;
             }
           }
@@ -316,6 +314,7 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
         HDF5_ERROR(H5Dclose(dataset));
       }
 
+      ++bbox_id;
     } // for bboxes
   }
   END_MAP_LOOP;
@@ -403,7 +402,8 @@ int WriteVarChunkedSequential(const cGH *const cctkGH, hid_t outfile,
       processor_component->allocate(bbox, bbox.sizes(), ivect(0), 0);
       for (comm_state state; not state.done(); state.step()) {
         int const p = hh->processor(refinementlevel, component);
-        gdata::copy_data(processor_component, state, data, bbox, bbox, NULL, 0, p);
+        gdata::copy_data(processor_component, state, data, bbox, bbox, NULL, 0,
+                         p);
       }
 
       // get active region and send to io rank
@@ -531,16 +531,15 @@ int WriteVarChunkedSequential(const cGH *const cctkGH, hid_t outfile,
           HDF5_ERROR(H5Sclose(dataspace));
           HDF5_ERROR(H5Dwrite(dataset, memdatatype, H5S_ALL, H5S_ALL,
                               H5P_DEFAULT, data));
-          error_count += AddAttributes(cctkGH, fullname, group.dim,
-                                       refinementlevel, request, bbox,
-                                       active.c_str(), dataset);
+          error_count +=
+              AddAttributes(cctkGH, fullname, group.dim, refinementlevel,
+                            request, bbox, active.c_str(), dataset);
           HDF5_ERROR(H5Dclose(dataset));
 
           if (indexfile != -1) {
-            error_count +=
-                AddAttributes(cctkGH, fullname, group.dim, refinementlevel,
-                              request, bbox, active.c_str(), index_dataset,
-                              true);
+            error_count += AddAttributes(cctkGH, fullname, group.dim,
+                                         refinementlevel, request, bbox,
+                                         active.c_str(), index_dataset, true);
             HDF5_ERROR(H5Dclose(index_dataset));
           }
         }
@@ -782,8 +781,7 @@ int WriteVarChunkedParallel(const cGH *const cctkGH, hid_t outfile,
 static int AddAttributes(const cGH *const cctkGH, const char *fullname,
                          int vdim, int refinementlevel,
                          const ioRequest *request, const ibbox &bbox,
-                         const char *active,
-                         hid_t dataset, bool is_index) {
+                         const char *active, hid_t dataset, bool is_index) {
   assert(vdim >= 0 and vdim <= dim);
   int error_count = 0;
 

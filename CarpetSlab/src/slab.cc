@@ -217,13 +217,12 @@ void FillSlab(const cGH *const cgh, const int dest_proc, const int n,
           mydd->light_boxes.at(mglevel).at(rl).at(component).interior & hextent;
 
       // Loop over overlapping extents
-      for (bboxset<int, dim>::const_iterator ext_iter = myextents.begin();
-           ext_iter != myextents.end(); ++ext_iter) {
+      for (bbox<int, dim> const &ext : myextents.iterator()) {
 
         // Copy data
         int const proc = myhh->processor(reflevel, component);
-        gdata::copy_data(alldata, state, mydata, *ext_iter, *ext_iter, NULL,
-                           collect_proc, proc);
+        gdata::copy_data(alldata, state, mydata, ext, ext, NULL, collect_proc,
+                         proc);
       }
     }
     END_COMPONENT_LOOP;
@@ -247,8 +246,7 @@ void FillSlab(const cGH *const cgh, const int dest_proc, const int n,
       for (int proc = 0; proc < CCTK_nProcs(cgh); ++proc) {
         if (proc != collect_proc) {
           gdata::copy_data(tmpdata.at(proc), state, alldata, alldata->extent(),
-                                      alldata->extent(), NULL, proc,
-                                      collect_proc);
+                           alldata->extent(), NULL, proc, collect_proc);
         }
       }
     }

@@ -523,28 +523,17 @@ public:
   /** Serialise the set */
   template <typename C> void serialise(C &out) const;
 
-  /** Iterate over a serialised set */
-private:
-  typedef vector<bbox> iter_memo_t;
-
-public:
-  typedef typename iter_memo_t::const_iterator const_iterator;
-
-private:
-  mutable iter_memo_t iter_memo;
-
-public:
   int setsize() const {
-    iter_memo_t im;
+    vector<bbox> im;
     serialise(im);
     return im.size();
   }
-  const_iterator begin() const {
-    iter_memo.clear();
-    serialise(iter_memo);
-    return iter_memo.begin();
+  /** Create an iterator over a serialised set */
+  vector<bbox> iterator() const {
+    vector<bbox> im;
+    serialise(im);
+    return im;
   }
-  const_iterator end() const { return iter_memo.end(); }
 
   /** Memory usage */
   size_t memory() const;
@@ -1026,8 +1015,9 @@ bboxset<T, D> bboxset<T, D>::operator^(const bboxset &other) const {
       other);
 #else
   bboxset _0;
-  BINARY_OPERATOR(const bboxset1 &set0(_1); const bboxset1 &set1(_2);
-                  { _0 = set0 ^ set1; }, other);
+  BINARY_OPERATOR(
+      const bboxset1 &set0(_1); const bboxset1 &set1(_2);
+      { _0 = set0 ^ set1; }, other);
   return _0;
 #endif
 }
@@ -1048,8 +1038,9 @@ bboxset<T, D> bboxset<T, D>::operator&(const bboxset &other) const {
       other);
 #else
   bboxset _0;
-  BINARY_OPERATOR(const bboxset1 &set0(_1); const bboxset1 &set1(_2);
-                  { _0 = set0 & set1; }, other);
+  BINARY_OPERATOR(
+      const bboxset1 &set0(_1); const bboxset1 &set1(_2);
+      { _0 = set0 & set1; }, other);
   return _0;
 #endif
 }
@@ -1069,8 +1060,9 @@ bboxset<T, D> bboxset<T, D>::operator|(const bboxset &other) const {
       other);
 #else
   bboxset _0;
-  BINARY_OPERATOR(const bboxset1 &set0(_1); const bboxset1 &set1(_2);
-                  { _0 = set0 | set1; }, other);
+  BINARY_OPERATOR(
+      const bboxset1 &set0(_1); const bboxset1 &set1(_2);
+      { _0 = set0 | set1; }, other);
   return _0;
 #endif
 }
@@ -1110,8 +1102,9 @@ bboxset<T, D> bboxset<T, D>::operator-(const bboxset &other) const {
       other);
 #else
   bboxset _0;
-  BINARY_OPERATOR(const bboxset1 &set0(_1); const bboxset1 &set1(_2);
-                  { _0 = set0 - set1; }, other);
+  BINARY_OPERATOR(
+      const bboxset1 &set0(_1); const bboxset1 &set1(_2);
+      { _0 = set0 - set1; }, other);
   return _0;
 #endif
 }
