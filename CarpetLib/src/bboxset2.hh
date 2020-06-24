@@ -523,28 +523,52 @@ public:
   /** Serialise the set */
   template <typename C> void serialise(C &out) const;
 
-  /** Iterate over a serialised set */
-private:
-  typedef vector<bbox> iter_memo_t;
-
 public:
-  typedef typename iter_memo_t::const_iterator const_iterator;
+  /** not really a full iterator but enough for what I do */
+  class const_iterator {
+    public:
+      const_iterator(const bboxset& b) {
+        b.serialise(iter_memo);
+        iter = iter_memo.begin();
+      }
+      const_iterator(const_iterator&& other) {
+        swap(other.iter_memo, iter_memo);
+        swap(other.iter, iter);
+      }
+      /** a hack: this iterator compares equal to end() */
+      const_iterator() {}
+      ~const_iterator() = default;
+      /* copies are expensive so forbid them */
+      const_iterator(const const_iterator&) = delete;
+      const_iterator& operator=(const const_iterator&) = delete;
 
-private:
-  mutable iter_memo_t iter_memo;
+      bool operator!=(const const_iterator& other) const {
+        if(other.iter == iter) {
+          return false;
+        } else if(other.iter_memo.empty() && iter == iter_memo.end()) {
+          return false;
+        } else {
+          return other.iter != iter;
+        }
+      }
+
+      const bbox& operator*() const { return *iter; }
+      const_iterator& operator++() { iter++; return *this; }
+      // I am not providing a post-increment operator since it would require a
+      // copy
+    private:
+      vector<bbox> iter_memo;
+      typename vector<bbox>::const_iterator iter;
+  };
 
 public:
   int setsize() const {
-    iter_memo_t im;
+    vector<bbox> im;
     serialise(im);
     return im.size();
   }
-  const_iterator begin() const {
-    iter_memo.clear();
-    serialise(iter_memo);
-    return iter_memo.begin();
-  }
-  const_iterator end() const { return iter_memo.end(); }
+  const_iterator begin() const { return const_iterator(*this); }
+  const_iterator end() const { return const_iterator(); }
 
   /** Memory usage */
   size_t memory() const;
