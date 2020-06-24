@@ -703,9 +703,7 @@ void dh::regrid(bool const do_init) {
               obox.active.contracted_for(box.interior));
           ibset const ovlp = needrecv & contracted_oactive;
 
-          for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end();
-               ++ri) {
-            ibbox const &recv = *ri;
+          for (ibbox const &recv : ovlp.iterator()) {
             ibbox const send = recv.expanded_for(obox.interior);
             ASSERT_c(send <= obox.exterior, "Multigrid restriction: Send "
                                             "region must be contained in "
@@ -744,9 +742,7 @@ void dh::regrid(bool const do_init) {
           ibset const expanded_active(box.active.expanded_for(obox.interior));
           ibset const ovlp = oneedrecv & expanded_active;
 
-          for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end();
-               ++ri) {
-            ibbox const &recv = *ri;
+          for (ibbox const &recv : ovlp.iterator()) {
             ibbox const send =
                 recv.expanded_for(box.interior).expand(stencil_size);
             ASSERT_c(send <= box.exterior, "Multigrid prolongation: Send "
@@ -805,9 +801,7 @@ void dh::regrid(bool const do_init) {
 #endif
             ibset const ovlp = needrecv & expanded_oactive;
 
-            for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end();
-                 ++ri) {
-              ibbox const &recv = *ri;
+            for (ibbox const &recv : ovlp.iterator()) {
               ibbox const send =
                   recv.expanded_for(obox.interior).expand(stencil_size);
               ASSERT_c(send <= obox.exterior, "Refinement prolongation: Send "
@@ -846,8 +840,8 @@ void dh::regrid(bool const do_init) {
 
         {
 
-// Synchronisation should fill as many boundary points as
-// possible
+          // Synchronisation should fill as many boundary points as
+          // possible
 
 #if 0
           // Outer boundaries are not synchronised, since they cannot
@@ -879,9 +873,7 @@ void dh::regrid(bool const do_init) {
                         "A region may not synchronise from itself");
             }
 
-            for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end();
-                 ++ri) {
-              ibbox const &recv = *ri;
+            for (ibbox const &recv : ovlp.iterator()) {
               ibbox const &send = recv;
               fast_level.fast_sync_sendrecv.push_back(
                   sendrecv_pseudoregion_t(send, cc, recv, c));
@@ -953,9 +945,7 @@ void dh::regrid(bool const do_init) {
                                                          : reffact - 1));
             ibset const ovlp = needrecv & expanded_oactive;
 
-            for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end();
-                 ++ri) {
-              ibbox const &recv = *ri;
+            for (ibbox const &recv : ovlp.iterator()) {
               ibbox const send =
                   recv.expanded_for(obox.interior).expand(stencil_size);
               ASSERT_c(send <= obox.exterior, "Boundary prolongation: Send "
@@ -1066,9 +1056,7 @@ void dh::regrid(bool const do_init) {
                     .contracted_for(odomext);
             ibset const ovlp = needrecv & contracted_exterior;
 
-            for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end();
-                 ++ri) {
-              ibbox const &recv = *ri;
+            for (ibbox const &recv : ovlp.iterator()) {
               ibbox const send =
                   recv.expanded_for(box.exterior).expand(shrink_by, shrink_by);
               ASSERT_c(send <= box.exterior, "Refinement restriction: Send "
@@ -1345,9 +1333,7 @@ void dh::regrid(bool const do_init) {
                     cout << "   ovlp=" << ovlp << "\n";
                   }
 
-                  for (ibset::const_iterator ri = ovlp.begin();
-                       ri != ovlp.end(); ++ri) {
-                    ibbox const &recv = *ri;
+                  for (ibbox const &recv : ovlp.iterator()) {
                     ibbox const send =
                         recv.expanded_for(box.exterior.shift(-idir, 2));
                     ASSERT_c(send <= box.exterior.shift(-idir, 2),
@@ -1762,9 +1748,7 @@ void dh::regrid(bool const do_init) {
 
               ibset const ovlp = needrecv & obox.owned;
 
-              for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end();
-                   ++ri) {
-                ibbox const &recv = *ri;
+              for (ibbox const &recv : ovlp.iterator()) {
                 ibbox const &send = recv;
                 fast_level.fast_old2new_sync_sendrecv.push_back(
                     sendrecv_pseudoregion_t(send, cc, recv, c));
@@ -1817,9 +1801,7 @@ void dh::regrid(bool const do_init) {
                                                            : reffact - 1));
               ibset const ovlp = needrecv & expanded_oactive;
 
-              for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end();
-                   ++ri) {
-                ibbox const &recv = *ri;
+              for (ibbox const &recv : ovlp.iterator()) {
                 ibbox const send =
                     recv.expanded_for(obox.interior).expand(stencil_size);
                 if (not(send <= obox.exterior)) {
@@ -2339,7 +2321,7 @@ MPI_Datatype mpi_datatype(dh::fast_dboxes const &) {
   }
   return newtype;
 }
-}
+} // namespace dist
 
 // Memory usage
 
@@ -2717,4 +2699,4 @@ ostream &dh::fast_dboxes::output(ostream &os) const {
      << eol << "}" << eol;
   return os;
 }
-}
+} // namespace CarpetLib

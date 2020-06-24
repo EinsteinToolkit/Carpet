@@ -57,9 +57,7 @@ ibset proper_nesting::enlarged_fine_grid(gh const &hh, dh const &dd,
   ibset enlarged;
 
   // Loop over all bboxes that make up the next finer level
-  for (ibset::const_iterator ibb = regions.at(rl + 1).begin();
-       ibb != regions.at(rl + 1).end(); ++ibb) {
-    ibbox const &fbb = *ibb;
+  for (ibbox const &fbb : regions.at(rl + 1).iterator()) {
 
     // Find out which faces are on a boundary
     bvect const lower_is_outer = fbb.lower() <= bnd.level_physical_ilower;
@@ -213,9 +211,7 @@ ibset granulated::granulated_regions(gh const &hh, dh const &dd,
 
   ibset granned;
 
-  for (ibset::const_iterator ibb = regions.at(rl).begin();
-       ibb != regions.at(rl).end(); ++ibb) {
-    ibbox const &bb = *ibb;
+  for (ibbox const &bb : regions.at(rl).iterator()) {
     assert(not bb.empty());
 
     // We want to align the current level (including its buffer zones) with the
@@ -307,9 +303,7 @@ ibset snap_coarse::snapped_regions(gh const &hh, dh const &dd,
 
   ibset snapped;
 
-  for (ibset::const_iterator ibb = regions.at(rl).begin();
-       ibb != regions.at(rl).end(); ++ibb) {
-    ibbox const &bb = *ibb;
+  for (ibbox const &bb : regions.at(rl).iterator()) {
 
     // We want to align the current level (without its buffer zones)
     // with the next coarser level. Conceptually, we therefore
@@ -410,9 +404,7 @@ ibset rotsym90::symmetrised_regions(gh const &hh, dh const &dd,
   // ibbox const& baseextent = hh.baseextent(0,rl);
 
   ibset symmetrised = regions.at(rl);
-  for (ibset::const_iterator ibb = regions.at(rl).begin();
-       ibb != regions.at(rl).end(); ++ibb) {
-    ibbox const &bb = *ibb;
+  for (ibbox const &bb : regions.at(rl).iterator()) {
 
     bvect const lower_is_outside_lower =
         bb.lower() - bnd.min_bnd_dist_away[0] * bb.stride() <=
@@ -521,9 +513,7 @@ ibset rotsym180::symmetrised_regions(gh const &hh, dh const &dd,
   ibbox const &baseextent = hh.baseextent(0, rl);
 
   ibset symmetrised = regions.at(rl);
-  for (ibset::const_iterator ibb = regions.at(rl).begin();
-       ibb != regions.at(rl).end(); ++ibb) {
-    ibbox const &bb = *ibb;
+  for (ibbox const &bb : regions.at(rl).iterator()) {
 
     bvect const lower_is_outside_lower =
         bb.lower() - bnd.min_bnd_dist_away[0] * bb.stride() <=
@@ -630,9 +620,7 @@ ibset parsym::symmetrised_regions(gh const &hh, dh const &dd,
   ibbox const &baseextent = hh.baseextent(0, rl);
 
   ibset symmetrised = regions.at(rl);
-  for (ibset::const_iterator ibb = regions.at(rl).begin();
-       ibb != regions.at(rl).end(); ++ibb) {
-    ibbox const &bb = *ibb;
+  for (ibbox const &bb : regions.at(rl).iterator()) {
 
     bvect const lower_is_outside_lower =
         bb.lower() - bnd.min_bnd_dist_away[0] * bb.stride() <=
@@ -751,9 +739,7 @@ ibset periodic<dir>::symmetrised_regions(gh const &hh, dh const &dd,
   assert(all(ioffset % baseextent.stride() == 0));
 
   ibset symmetrised = regions.at(rl);
-  for (ibset::const_iterator ibb = regions.at(rl).begin();
-       ibb != regions.at(rl).end(); ++ibb) {
-    ibbox const &bb = *ibb;
+  for (ibbox const &bb : regions.at(rl).iterator()) {
 
     // Shift boxes upwards and downwards by one period
     symmetrised |= bb.shift(+ioffset / bb.stride());
@@ -825,9 +811,7 @@ ibset boundary_clip::clipped_regions(gh const &hh, dh const &dd,
   ibbox const &baseextent = hh.baseextent(0, rl);
 
   ibset clipped;
-  for (ibset::const_iterator ibb = regions.at(rl).begin();
-       ibb != regions.at(rl).end(); ++ibb) {
-    ibbox const &bb = *ibb;
+  for (ibbox const &bb : regions.at(rl).iterator()) {
 
     // Clip boxes that extend outside the boundary. Enlarge boxes
     // that are inside but too close to the outer boundary.
@@ -867,8 +851,9 @@ ibset boundary_clip::clipped_regions(gh const &hh, dh const &dd,
     if (any((lower_is_outside_lower and bnd.boundary_staggering_mismatch[0]) or
             (upper_is_outside_upper and bnd.boundary_staggering_mismatch[1]))) {
       ostringstream msg;
-      msg << "Level " << rl << " of the refinement hierarchy has inconsistent "
-                               "bountary staggering."
+      msg << "Level " << rl
+          << " of the refinement hierarchy has inconsistent "
+             "bountary staggering."
           << "  The refined region extends up to the boundary, but the "
              "staggering of the boundary is different from the staggering of "
              "the mesh refinement."
@@ -896,8 +881,9 @@ ibset boundary_clip::clipped_regions(gh const &hh, dh const &dd,
         bb.stride());
     if (not clipped_bb.is_contained_in(baseextent)) {
       ostringstream msg;
-      msg << "Level " << rl << " of the refinement hierarchy is not contained "
-                               "in the simulation domain."
+      msg << "Level " << rl
+          << " of the refinement hierarchy is not contained "
+             "in the simulation domain."
           << "  (There may be too many ghost or buffer zones.)"
           << "  One bbox is " << clipped_bb << "."
           << "  lower_is_outside_lower=" << lower_is_outside_lower
@@ -975,9 +961,7 @@ ibset is_symmetric::symmetrised_regions(gh const &hh, dh const &dd,
                                         vector<ibset> const &regions,
                                         int const rl) {
   ibset symmetrised = regions.at(rl);
-  for (ibset::const_iterator ibb = regions.at(rl).begin();
-       ibb != regions.at(rl).end(); ++ibb) {
-    ibbox const &bb = *ibb;
+  for (ibbox const &bb : regions.at(rl).iterator()) {
 
     ivect const ilo = bb.lower();
     ivect const iup = bb.upper();

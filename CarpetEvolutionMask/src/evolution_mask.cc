@@ -162,10 +162,9 @@ void CarpetEvolutionMaskSetup(CCTK_ARGUMENTS) {
         ibbox const &ext =
             dd.light_boxes.at(mglevel).at(reflevel).at(component).exterior;
 
-        for (ibset::const_iterator bi = notevolveon.begin();
-             bi != notevolveon.end(); ++bi) {
+        for (ibbox const &b : notevolveon.iterator()) {
 
-          ibbox const &box = (*bi) & ext;
+          ibbox const &box = b & ext;
           if (!box.empty()) {
 
             assert(all((box.lower() - ext.lower()) >= 0));
@@ -220,10 +219,9 @@ void CarpetEvolutionMaskSetup(CCTK_ARGUMENTS) {
         ibbox const &ext =
             dd.light_boxes.at(mglevel).at(reflevel).at(component).exterior;
 
-        for (ibset::const_iterator bi = buffers.begin(); bi != buffers.end();
-             ++bi) {
+        for (ibbox const &b : buffers.iterator()) {
 
-          ibbox const &box = (*bi) & ext;
+          ibbox const &box = b & ext;
           if (!box.empty()) {
 
             assert(all((box.lower() - ext.lower()) >= 0));

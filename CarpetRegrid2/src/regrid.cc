@@ -399,9 +399,7 @@ void Regrid(cGH const *const cctkGH, gh::rregs &regss) {
 
     // Create a vector of bboxes for this level
     gh::cregs regs;
-    for (ibset::const_iterator ibb = regions.AT(rl).begin();
-         ibb != regions.AT(rl).end(); ++ibb) {
-      ibbox const &bb = *ibb;
+    for (ibbox const &bb : regions.AT(rl).iterator()) {
       assert(bb.is_contained_in(hh.baseextent(0, rl)));
 
       bvect const lower_is_outer = bb.lower() <= bnd.level_physical_ilower;
