@@ -81,7 +81,7 @@ Time::dtfac = 0.4
 
 
 
-ActiveThorns = "ADMBase ADMCoupling ADMMacros CoordGauge StaticConformal"
+ActiveThorns = "ADMBase ADMMacros CoordGauge StaticConformal"
 
 ADMBase::initial_data    = "Cartesian Minkowski"
 ADMBase::initial_lapse   = "one"
