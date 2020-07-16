@@ -9,7 +9,7 @@ ActiveThorns = "
         SymBase
 
         ADMBase
-        ADMCoupling
+       
         ADMMacros
         CoordGauge
         SpaceMask

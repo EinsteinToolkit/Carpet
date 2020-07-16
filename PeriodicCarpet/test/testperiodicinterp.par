@@ -105,7 +105,7 @@ Time::dtfac   = 0.6
 
 
 ###################################################################################################
-ActiveThorns = "CoordGauge StaticConformal ADMCoupling ADMMacros ADMBase"
+ActiveThorns = "CoordGauge StaticConformal ADMMacros ADMBase"
 ###################################################################################################
 
 ADMBase::metric_timelevels = 3
