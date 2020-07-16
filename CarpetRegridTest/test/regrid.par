@@ -18,7 +18,7 @@
 # Thorn activation
 #==============================================================================
 
-ActiveThorns = "time carpet carpetlib carpetregrid GSL LoopControl carpetreduce carpetslab carpetinterp cartgrid3d coordbase symbase mol boundary admbase staticconformal spacemask admcoupling coordgauge admmacros whisky whisky_init_data eos_base eos_polytrope iobasic carpetioascii ioutil admconstraints bssn_mol whisky_rnsid carpetiohdf5 nanchecker"
+ActiveThorns = "time carpet carpetlib carpetregrid GSL LoopControl carpetreduce carpetslab carpetinterp cartgrid3d coordbase symbase mol boundary admbase staticconformal spacemask coordgauge admmacros whisky whisky_init_data eos_base eos_polytrope iobasic carpetioascii ioutil admconstraints bssn_mol whisky_rnsid carpetiohdf5 nanchecker"
 
 #==============================================================================
 # Test parameters
