@@ -106,7 +106,7 @@ MoL::MoL_Num_Scratch_Levels = 1
 Time::dtfac = 0.1
 
 ###################################################################################################
-ActiveThorns = "ADMCoupling ADMMacros CoordGauge SpaceMask StaticConformal TmunuBase"
+ActiveThorns = "ADMMacros CoordGauge SpaceMask StaticConformal TmunuBase"
 ###################################################################################################
 
 ADMMacros::spatial_order = 4
