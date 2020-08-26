@@ -348,8 +348,10 @@ int AddSliceAttributes(const cGH *const cctkGH, const char *const fullname,
       WriteAttribute(dataset, "ioffset", &ioffset[0], ioffset.size());
   error_count += WriteAttribute(dataset, "ioffsetdenom", &ioffsetdenom[0],
                                 ioffsetdenom.size());
-  // TODO: Add "active" only for grid functions since it's trivial otherwise
-  error_count += WriteAttribute(dataset, "active", active.c_str());
+  // active is only used for grid functions
+  if (not active.empty()) {
+    error_count += WriteAttribute(dataset, "active", active.c_str());
+  }
   // bbox and nghostzones are only used for grid functions and grid arrays
   if (bbox.size() > 0) {
     error_count += WriteAttribute(dataset, "cctk_bbox", &bbox[0], bbox.size());

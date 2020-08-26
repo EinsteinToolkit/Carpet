@@ -1375,7 +1375,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
       }
     }
     string active;
-    {
+    if (groupdata.grouptype == CCTK_GF) {
       // Determine extent of hyperslab that is output
       ivect lo = gfext.lower();
       ivect up = gfext.upper();
