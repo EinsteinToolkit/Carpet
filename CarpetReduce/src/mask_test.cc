@@ -17,6 +17,9 @@ extern "C" void MaskBase_TestMask(CCTK_ARGUMENTS) {
   int const sum = CCTK_ReductionHandle("sum");
   assert(sum >= 0);
 
+  int const array_sum = CCTK_ReductionArrayHandle("sum");
+  assert(array_sum >= 0);
+
   int const proc = 0;
 
   int const weight_var = CCTK_VarIndex("CarpetReduce::weight");
@@ -33,7 +36,7 @@ extern "C" void MaskBase_TestMask(CCTK_ARGUMENTS) {
   }
   {
     int const ierr =
-        CCTK_ReduceLocalScalar(cctkGH, proc, sum, excised_cells,
+        CCTK_ReduceLocalScalar(cctkGH, proc, array_sum, excised_cells,
                                &all_excised_cells, CCTK_VARIABLE_REAL);
     assert(ierr >= 0);
     *excised_cells = all_excised_cells;
