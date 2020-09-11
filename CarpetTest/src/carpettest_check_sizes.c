@@ -29,6 +29,10 @@ void carpettest_check_sizes(CCTK_ARGUMENTS) {
   print_array("cctk_lsh", dim, cctk_lsh);
   print_array("cctk_lbnd", dim, cctk_lbnd);
   print_array("cctk_ubnd", dim, cctk_ubnd);
+#ifdef CCTK_HAVE_CGH_TILE
+  print_array("cctk_tile_min", dim, cctk_tile_min);
+  print_array("cctk_tile_max", dim, cctk_tile_max);
+#endif
   print_array("cctk_bbox", 2 * dim, cctk_bbox);
   print_array("cctk_nghostzones", dim, cctk_nghostzones);
   printf("\n");

@@ -769,7 +769,11 @@ void OutputGridCoordinates(cGH const *const cctkGH, int const m,
             (ext.lower() - baseext.lower()) / ext.stride();
           ivect const cctk_ubnd =
             (ext.upper() - baseext.lower()) / ext.stride();
-          
+
+#ifdef CCTK_HAVE_CGH_TILE
+#error "unimplemented"
+#endif
+
           rvect const cctk_origin_space =
             origin_space.AT(m).AT(ml);
           rvect const cctk_delta_space  =

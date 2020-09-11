@@ -1219,6 +1219,10 @@ void initialise_group_info(cGH const *const cctkGH, int const group,
   groupdata.AT(group).info.ash = new int[dim];
   groupdata.AT(group).info.lbnd = new int[dim];
   groupdata.AT(group).info.ubnd = new int[dim];
+#ifdef CCTK_HAVE_CGH_TILE
+  groupdata.AT(group).info.tile_min = new int[dim];
+  groupdata.AT(group).info.tile_max = new int[dim];
+#endif
   groupdata.AT(group).info.bbox = new int[2 * dim];
   groupdata.AT(group).info.nghostzones = new int[dim];
 

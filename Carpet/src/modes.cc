@@ -593,7 +593,12 @@ void enter_local_mode(cGH *const cctkGH, int const c, int const lc,
         (ext.lower() - baseext.lower()) / ext.stride();
     ivect_ref(cctkGH->cctk_ubnd) =
         (ext.upper() - baseext.lower()) / ext.stride();
+        (ext.upper() - baseext.lower()) / ext.stride();
     ivect_ref(cctkGH->cctk_lsh) = ext.sizes();
+#ifdef CCTK_HAVE_CGH_TILE
+    ivect_ref(cctkGH->cctk_tile_min) = ivect(0);
+    ivect_ref(cctkGH->cctk_tile_max) = ivect_ref(cctkGH->cctk_lsh);
+#endif
     const auto shp = pad_shape(ext, own);
     ivect_ref(cctkGH->cctk_ash) = shp.padded_shape;
     cctkGH->cctk_alignment = shp.padding_alignment[0];
@@ -619,6 +624,10 @@ void enter_local_mode(cGH *const cctkGH, int const c, int const lc,
              cctkGH->cctk_ubnd[d]);
       assert(cctkGH->cctk_lbnd[d] <= cctkGH->cctk_ubnd[d] + 1);
       assert(cctkGH->cctk_lsh[d] <= cctkGH->cctk_ash[d]);
+#ifdef CCTK_HAVE_CGH_TILE
+      assert(cctkGH->cctk_tile_min[d] == 0);
+      assert(cctkGH->cctk_tile_max[d] = cctkGH->cctk_lsh[d]);
+#endif
       assert(cctkGH->cctk_from[d] >= 0);
       assert(cctkGH->cctk_from[d] <= cctkGH->cctk_to[d]);
       assert(cctkGH->cctk_to[d] <= cctkGH->cctk_lsh[d]);
@@ -632,6 +641,10 @@ void enter_local_mode(cGH *const cctkGH, int const c, int const lc,
         ivect_ref(info.lbnd) = ivect_ref(cctkGH->cctk_lbnd);
         ivect_ref(info.ubnd) = ivect_ref(cctkGH->cctk_ubnd);
         ivect_ref(info.lsh) = ivect_ref(cctkGH->cctk_lsh);
+#ifdef CCTK_HAVE_CGH_TILE
+        ivect_ref(info.tile_min) = ivect_ref(cctkGH->cctk_tile_min);
+        ivect_ref(info.tile_max) = ivect_ref(cctkGH->cctk_tile_max);
+#endif
         ivect_ref(info.ash) = ivect_ref(cctkGH->cctk_ash);
         info.alignment = cctkGH->cctk_alignment;
         info.alignment_offset = cctkGH->cctk_alignment_offset;
@@ -736,6 +749,10 @@ void leave_local_mode(cGH *const cctkGH) {
     ivect_ref(cctkGH->cctk_from) = ivect(-deadbeef);
     ivect_ref(cctkGH->cctk_to) = ivect(deadbeef);
     ivect_ref(cctkGH->cctk_lsh) = ivect(deadbeef);
+#ifdef CCTK_HAVE_CGH_TILE
+    ivect_ref(cctkGH->cctk_tile_min) = ivect(-deadbeef);
+    ivect_ref(cctkGH->cctk_tile_max) = ivect(-deadbeef);
+#endif
     ivect_ref(cctkGH->cctk_ash) = ivect(deadbeef);
     cctkGH->cctk_alignment = deadbeef;
     cctkGH->cctk_alignment_offset = deadbeef;
@@ -753,6 +770,10 @@ void leave_local_mode(cGH *const cctkGH) {
         ivect_ref(info.lbnd) = ivect_ref(cctkGH->cctk_lbnd);
         ivect_ref(info.ubnd) = ivect_ref(cctkGH->cctk_ubnd);
         ivect_ref(info.lsh) = ivect_ref(cctkGH->cctk_lsh);
+#ifdef CCTK_HAVE_CGH_TILE
+        ivect_ref(info.tile_min) = ivect_ref(cctkGH->cctk_tile_min);
+        ivect_ref(info.tile_max) = ivect_ref(cctkGH->cctk_tile_max);
+#endif
         ivect_ref(info.ash) = ivect_ref(cctkGH->cctk_ash);
         info.alignment = cctkGH->cctk_alignment;
         info.alignment_offset = cctkGH->cctk_alignment_offset;
