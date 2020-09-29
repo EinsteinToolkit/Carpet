@@ -64,13 +64,13 @@
       LC_FINE_DECLARE(name,2)                                           \
       LC_FINE_DECLARE(name,3)
 
-#define LC_LOOP3STR_NORMAL_OMP_PRIVATE(name, i,j,k)     \
-   && !$omp private (name/**/_control)                  \
-      LC_COARSE_OMP_PRIVATE(name,1)                     \
-      LC_COARSE_OMP_PRIVATE(name,2)                     \
-      LC_COARSE_OMP_PRIVATE(name,3)                     \
-      LC_FINE_OMP_PRIVATE(name, i, ni,1)                \
-      LC_FINE_OMP_PRIVATE(name, j, nj,2)                \
+#define LC_LOOP3STR_NORMAL_OMP_PRIVATE(name, i,j,k, ni,nj,nk)           \
+   && !$omp private (name/**/_control)                                  \
+      LC_COARSE_OMP_PRIVATE(name,1)                                     \
+      LC_COARSE_OMP_PRIVATE(name,2)                                     \
+      LC_COARSE_OMP_PRIVATE(name,3)                                     \
+      LC_FINE_OMP_PRIVATE(name, i, ni,1)                                \
+      LC_FINE_OMP_PRIVATE(name, j, nj,2)                                \
       LC_FINE_OMP_PRIVATE(name, k, nk,3)
 
 
