@@ -11,8 +11,9 @@
    && integer :: name/**/_cmin/**/D, name/**/_cmax/**/D,        \
                  name/**/_cstep/**/D, name/**/_cpos/**/D
 #define LC_COARSE_OMP_PRIVATE(name, D)                          \
-   && !$omp private (name/**/_cmin/**/D, name/**/_cmax/**/D,    \
-                     name/**/_cstep/**/D, name/**/_cpos/**/D)
+   & && !$omp private (name/**/_cmin/**/D, name/**/_cmax/**/D)  \
+   & && !$omp private (name/**/_cstep/**/D, name/**/_cpos/**/D) \
+
 #define LC_COARSE_SETUP(name, D)                                        \
    && name/**/_control%coarse_loop%min%v(D) =                           \
          name/**/_control%coarse_thread%pos%v(D)                        \
@@ -31,8 +32,9 @@
    && integer :: name/**/_fmin/**/D, name/**/_fmax/**/D,        \
                  name/**/_fstep/**/D
 #define LC_FINE_OMP_PRIVATE(name, I, NI, D)                     \
-   && !$omp private (name/**/_fmin/**/D, name/**/_fmax/**/D,    \
-                     name/**/_fstep/**/D, I, NI)
+   & && !$omp private (name/**/_fmin/**/D, name/**/_fmax/**/D)  \
+   & && !$omp private (name/**/_fstep/**/D, I, NI)              \
+
 #define LC_FINE_SETUP(name, D)                                          \
    && name/**/_control%fine_loop%min%v(D) = name/**/_cpos/**/D          \
    && name/**/_control%fine_loop%max%v(D) =                             \
@@ -65,13 +67,17 @@
       LC_FINE_DECLARE(name,3)
 
 #define LC_LOOP3STR_NORMAL_OMP_PRIVATE(name, i,j,k, ni,nj,nk)           \
-   && !$omp private (name/**/_control)                                  \
-      LC_COARSE_OMP_PRIVATE(name,1)                                     \
-      LC_COARSE_OMP_PRIVATE(name,2)                                     \
-      LC_COARSE_OMP_PRIVATE(name,3)                                     \
-      LC_FINE_OMP_PRIVATE(name, i, ni,1)                                \
-      LC_FINE_OMP_PRIVATE(name, j, nj,2)                                \
-      LC_FINE_OMP_PRIVATE(name, k, nk,3)
+   private (name/**/_control)                                           \
+   & && !$omp shared (name/**/_descr)                                   \
+   & && !$omp private (name/**/_dir1, name/**/_dir2, name/**/_dir3)     \
+   & && !$omp private (name/**/_ash1, name/**/_ash2, name/**/_ash3)     \
+   & && !$omp private (name/**/_str1)                                   \
+   LC_COARSE_OMP_PRIVATE(name,1)                                        \
+   LC_COARSE_OMP_PRIVATE(name,2)                                        \
+   LC_COARSE_OMP_PRIVATE(name,3)                                        \
+   LC_FINE_OMP_PRIVATE(name, i, ni,1)                                   \
+   LC_FINE_OMP_PRIVATE(name, j, nj,2)                                   \
+   LC_FINE_OMP_PRIVATE(name, k, nk,3)                                   \
 
 
 
