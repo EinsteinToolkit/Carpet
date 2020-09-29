@@ -1,0 +1,4 @@
+TEST testloop
+{
+  NPROCS 1
+}
