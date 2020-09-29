@@ -43,7 +43,7 @@
    && name/**/_fmax/**/D = name/**/_control%fine_loop%max%v(D)          \
    && name/**/_fstep/**/D = name/**/_control%fine_loop%step%v(D)
 #define LC_FINE_LOOP(name, I, NI, D)                                    \
-   && do I = name/**/_fmin/**/D, name/**/_fmax/**/D,                    \
+   && do I = name/**/_fmin/**/D+1, name/**/_fmax/**/D,                  \
              name/**/_fstep/**/D                                        \
    &&    NI = 0                                                         \
    &&    if (name/**/_dir/**/D<0) NI = I                                \
@@ -91,7 +91,7 @@
                                                                         \
    && call lc_descr_init(name/**/_descr, __LINE__, __FILE__, "name")    \
    && call lc_control_init(name/**/_control, name/**/_descr,            \
-                           (imin_), (jmin_), (kmin_),                   \
+                           ((imin_)-1), ((jmin_)-1), ((kmin_)-1),       \
                            (imax_), (jmax_), (kmax_),                   \
                            name/**/_ash1, name/**/_ash2, name/**/_ash3, \
                            name/**/_str1, 0, name/**/_str1)             \
