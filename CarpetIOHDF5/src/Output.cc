@@ -207,11 +207,10 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
         string active;
         if (local_component != -1) {
           ostringstream buf;
-          buf << (vdd.at(Carpet::map)
-                      ->local_boxes.at(mglevel)
-                      .at(refinementlevel)
-                      .at(local_component)
-                      .active);
+          buf << (dd->local_boxes.at(mglevel)
+                    .at(refinementlevel)
+                    .at(local_component)
+                    .active);
           active = buf.str();
         }
         if (local_component == -1 or dist::rank() != 0) {
@@ -410,11 +409,10 @@ int WriteVarChunkedSequential(const cGH *const cctkGH, hid_t outfile,
       string active;
       if (local_component != -1) {
         ostringstream buf;
-        buf << (vdd.at(Carpet::map)
-                    ->local_boxes.at(mglevel)
-                    .at(refinementlevel)
-                    .at(local_component)
-                    .active);
+        buf << (dd->local_boxes.at(mglevel)
+                  .at(refinementlevel)
+                  .at(local_component)
+                  .active);
         active = buf.str();
       }
       if (local_component == -1 or dist::rank() != 0) {
@@ -618,17 +616,17 @@ int WriteVarChunkedParallel(const cGH *const cctkGH, hid_t outfile,
         continue;
 
       // get active region
-      bool is_gf = CCTK_GroupTypeFromVarI(request->vindex) == CCTK_GF;
       string active;
-      if (is_gf) {
+      {
         ostringstream buf;
-        buf << (vdd.at(Carpet::map)
-                    ->local_boxes.at(mglevel)
-                    .at(refinementlevel)
-                    .at(local_component)
-                    .active);
+        buf << (dd->local_boxes.at(mglevel)
+                  .at(refinementlevel)
+                  .at(local_component)
+                  .active);
+
         active = buf.str();
       }
+
 
       // As per Cactus convention, DISTRIB=CONSTANT arrays
       // (including grid scalars) are assumed to be the same on
