@@ -6,7 +6,7 @@
    \author Erik Schnetter
    \date August, 2010
 
-   http://www.carpetcode.org
+   http://bitbucket.org/eschnett/carpet.git
 
    %Carpet is a parallel AMR (adaptive mesh refinement) driver with MPI
    for Cactus.  This documentation is for developers of %Carpet (users
