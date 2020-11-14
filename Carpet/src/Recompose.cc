@@ -1030,13 +1030,14 @@ void SplitRegions_AlongDir(cGH const *const cctkGH, vector<region_t> &superregs,
 
   assert(dir >= 0 and dir < dim);
 
+  regs.resize(nprocs); // resize before storng address to regs[0]
+
   region_t const &reg0 = regs.AT(0);
   const ivect rstr0 = reg0.extent.stride();
   const ivect rlb0 = reg0.extent.lower();
   const ivect rub0 = reg0.extent.upper() + rstr0;
   const b2vect obnd0 = reg0.outer_boundaries;
 
-  regs.resize(nprocs);
   vector<int> bounds(nprocs + 1);
   vector<ipfulltree *> subtrees(nprocs);
   for (int c = 0; c < nprocs; ++c) {
