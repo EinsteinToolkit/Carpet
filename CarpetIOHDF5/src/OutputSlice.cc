@@ -882,6 +882,8 @@ template <int outdim>
 bool IOHDF5<outdim>::DirectionIsRequested(const vect<int, outdim> &dirs) {
   DECLARE_CCTK_PARAMETERS;
 
+  static_assert(outdim == 0 or outdim == 1 or outdim == 2 or outdim == 3);
+
   switch (outdim) {
 
   case 0:
@@ -899,7 +901,9 @@ bool IOHDF5<outdim>::DirectionIsRequested(const vect<int, outdim> &dirs) {
     case 3:
       return out1D_d;
     default:
-      assert(0);
+      CCTK_VERROR("Internal error, unexpected dirs: %d", dirs[0]);
+      // Prevent compiler warning about missing return statement
+      return false;
     }
 
   case 2:
@@ -909,14 +913,16 @@ bool IOHDF5<outdim>::DirectionIsRequested(const vect<int, outdim> &dirs) {
       return out2D_xz;
     if (dirs[0] == 1 and dirs[1] == 2)
       return out2D_yz;
-    assert(0);
+    CCTK_VERROR("Internal error, unexpected dirs: %d %d", dirs[0], dirs[1]);
+    // Prevent compiler warning about missing return statement
+    return false;
 
   case 3:
     // Output is always requested (if switched on)
     return true;
 
   default:
-    assert(0);
+    CCTK_VERROR("Internal error, unexpected outdim: %d", outdim);
     // Prevent compiler warning about missing return statement
     return false;
   }
@@ -928,6 +934,8 @@ template <int outdim>
 ivect IOHDF5<outdim>::GetOutputOffset(const cGH *const cctkGH, const int m,
                                       const vect<int, outdim> &dirs) {
   DECLARE_CCTK_PARAMETERS;
+
+  static_assert(outdim == 0 or outdim == 1 or outdim == 2 or outdim == 3);
 
   // Default is zero
   ivect offset(0);
@@ -975,7 +983,8 @@ ivect IOHDF5<outdim>::GetOutputOffset(const cGH *const cctkGH, const int m,
       // the diagonal: we don't care about the offset
       break;
     default:
-      assert(0);
+      CCTK_VERROR("Internal error, unexpected dirs: %d", dirs[0]);
+      break;
     }
     break;
 
@@ -994,7 +1003,7 @@ ivect IOHDF5<outdim>::GetOutputOffset(const cGH *const cctkGH, const int m,
           GetGridOffset(cctkGH, m, 1, "out2D_yzplane_xi", "out_yzplane_xi",
                         "out2D_yzplane_x", "out_yzplane_x", out_yzplane_x);
     } else {
-      assert(0);
+      CCTK_VERROR("Internal error, unexpected dirs: %d %d", dirs[0], dirs[1]);
     }
     break;
 
@@ -1003,7 +1012,8 @@ ivect IOHDF5<outdim>::GetOutputOffset(const cGH *const cctkGH, const int m,
     break;
 
   default:
-    assert(0);
+    CCTK_VERROR("Internal error, unexpected outdim: %d", outdim);
+    break;
   }
 
   return offset;
@@ -1288,11 +1298,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
       output_bbox_overlaps_data_extent |= gfext.contains(pos);
     }
   }
-  // Shortcut if there is nothing to output
-  if (not output_bbox_overlaps_data_extent) {
-    assert(0);
-    return 0;
-  }
+  assert(output_bbox_overlaps_data_extent);
 
   int error_count = 0;
 
