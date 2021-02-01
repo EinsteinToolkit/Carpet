@@ -250,7 +250,7 @@
   template <typename T> inline void fn(T &r, const T &a) {                     \
     using namespace std;                                                       \
     using namespace CarpetLib;                                                 \
-    op(r, a);                                                                  \
+    r = op(r, a);                                                              \
   }                                                                            \
   }                                                                            \
   namespace CarpetLib {                                                        \
