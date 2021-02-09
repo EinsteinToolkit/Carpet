@@ -157,8 +157,8 @@ void TimerNode::print(ostream &out, double total, int level, double threshold,
   if (level != 0)
     space += "|_";
 
-  const int pcw = 6;
-  const int tw = 8;
+  const int pcw = 5 + precision;
+  const int tw = 7 + precision;
   const int tnw = 50; // timer name
   const int vw = 9;   // clock values
   const streamsize oldprecision = out.precision();
@@ -265,10 +265,10 @@ void TimerNode::print(ostream &out, double total, int level, double threshold,
 
     if (100.0 * untimed / total > threshold) {
       // Print the untimed portion
-      out << fixed << setw(pcw) << setprecision(1) << 100.0 * untimed / total
+      out << fixed << setw(pcw) << setprecision(precision) << 100.0 * untimed / total
           << "%"
-          << " " << fixed << setw(tw) << setprecision(1) << untimed
-          << "        "
+          << " " << fixed << setw(tw) << setprecision(precision) << untimed
+          << "        " << spaces
           << "  | " << space << "untimed"
           << "\n";
     }
