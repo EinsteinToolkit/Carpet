@@ -383,6 +383,7 @@ static herr_t ProcessDataset(hid_t group, const char *datasetname,
   int iorigin[3], cctk_nghostzones[3];
   double origin[3], delta[3];
   int itimestep = 0, level = 0;
+  int MapIsCartesian = -1;
 
   bool is_okay = false;
   if (typeclass != H5T_FLOAT and typeclass != H5T_INTEGER) {
@@ -425,6 +426,13 @@ static herr_t ProcessDataset(hid_t group, const char *datasetname,
     CHECK_HDF5(attr = H5Aopen_name(dataset, "cctk_nghostzones"));
     CHECK_HDF5(H5Aread(attr, H5T_NATIVE_INT, cctk_nghostzones));
     CHECK_HDF5(H5Aclose(attr));
+    H5E_BEGIN_TRY {
+      attr = H5Aopen_name(dataset, "MapIsCartesian");
+    } H5E_END_TRY;
+    if (attr >= 0) {
+      CHECK_HDF5(H5Aread(attr, H5T_NATIVE_INT, &MapIsCartesian));
+      CHECK_HDF5(H5Aclose(attr));
+    }
     CHECK_HDF5(H5Sget_simple_extent_dims(dataspace, dims, NULL));
 
     int i;
@@ -529,7 +537,9 @@ static herr_t ProcessDataset(hid_t group, const char *datasetname,
   }
 
   // write basic dataset attributes
+  // array attributes
   CHECK_HDF5(dataspace = H5Screate_simple(1, &outrank, NULL));
+
   CHECK_HDF5(attr = H5Acreate(dataset, "origin", H5T_NATIVE_DOUBLE, dataspace,
                               H5P_DEFAULT));
   CHECK_HDF5(H5Awrite(attr, H5T_NATIVE_DOUBLE, slice_origin));
@@ -546,7 +556,10 @@ static herr_t ProcessDataset(hid_t group, const char *datasetname,
                               dataspace, H5P_DEFAULT));
   CHECK_HDF5(H5Awrite(attr, H5T_NATIVE_INT, slice_cctk_nghostzones));
   CHECK_HDF5(H5Aclose(attr));
+
+  // scalar attributes
   CHECK_HDF5(H5Sclose(dataspace));
+
   CHECK_HDF5(dataspace = H5Screate(H5S_SCALAR));
   CHECK_HDF5(attr = H5Acreate(dataset, "time", H5T_NATIVE_DOUBLE, dataspace,
                               H5P_DEFAULT));
@@ -563,6 +576,13 @@ static herr_t ProcessDataset(hid_t group, const char *datasetname,
   CHECK_HDF5(attr = H5Acreate(dataset, "name", stringdatatype, dataspace,
                               H5P_DEFAULT));
   CHECK_HDF5(H5Awrite(attr, stringdatatype, &varname[0]));
+  if (MapIsCartesian != -1) {
+    CHECK_HDF5(attr = H5Acreate(dataset, "MapIsCartesian", H5T_NATIVE_INT, dataspace,
+                                H5P_DEFAULT));
+    CHECK_HDF5(H5Awrite(attr, H5T_NATIVE_INT, &MapIsCartesian));
+    CHECK_HDF5(H5Aclose(attr));
+  }
+
   CHECK_HDF5(H5Tclose(stringdatatype));
   CHECK_HDF5(H5Sclose(dataspace));
   CHECK_HDF5(H5Dclose(dataset));
