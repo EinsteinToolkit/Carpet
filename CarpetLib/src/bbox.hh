@@ -40,7 +40,7 @@ template <typename T, int D> class bbox {
 
   // Consistency checks
 
-  void assert_bbox_limits() const CCTK_MEMBER_ATTRIBUTE_PURE;
+  void assert_bbox_limits() const;
 
 public:
   // Constructors
