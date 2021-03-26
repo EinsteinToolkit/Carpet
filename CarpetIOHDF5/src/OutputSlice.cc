@@ -882,7 +882,8 @@ template <int outdim>
 bool IOHDF5<outdim>::DirectionIsRequested(const vect<int, outdim> &dirs) {
   DECLARE_CCTK_PARAMETERS;
 
-  static_assert(outdim == 0 or outdim == 1 or outdim == 2 or outdim == 3);
+  static_assert(outdim == 0 or outdim == 1 or outdim == 2 or outdim == 3,
+                "outdim must be one of 0,1,2,3");
 
   switch (outdim) {
 
@@ -935,7 +936,8 @@ ivect IOHDF5<outdim>::GetOutputOffset(const cGH *const cctkGH, const int m,
                                       const vect<int, outdim> &dirs) {
   DECLARE_CCTK_PARAMETERS;
 
-  static_assert(outdim == 0 or outdim == 1 or outdim == 2 or outdim == 3);
+  static_assert(outdim == 0 or outdim == 1 or outdim == 2 or outdim == 3,
+                "outdim must be one of 0,1,2,3");
 
   // Default is zero
   ivect offset(0);
