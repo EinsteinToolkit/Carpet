@@ -14,6 +14,7 @@
 #include <limits>
 #include <map>
 #include <ostream>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -281,12 +282,12 @@ template <typename T> T aligndown(const T i, const T j, const T k) {
 
 // random uniform integer
 template <typename T> T randomui(const T imin, const T imax, const T istr = 1) {
+  minstd_rand rnd;
+  minstd_rand::result_type const constexpr rnd_range = rnd.max() - rnd.min() + 1;
   assert(imin < imax);
-  // const T res =
-  //   imin + istr * floor(rand() / (RAND_MAX + 1.0) * (imax - imin) / istr);
   const T res =
-      imin +
-      istr * llrint(floor(random() / (RAND_MAX + 1.0) * (imax - imin) / istr));
+      imin + istr * llrint(floor((rnd() - rnd.min()) / (rnd_range + 1.0) *
+                                 (imax - imin) / istr));
   assert(res >= imin and res < imax and (res - imin) % istr == 0);
   return res;
 }
@@ -636,9 +637,12 @@ void lc_control_init(lc_control_t *restrict const control,
     }
     if (choice == choice_use_best) {
       // Make a random jump every so often
+      minstd_rand rnd;
+      minstd_rand::result_type const constexpr rnd_range = rnd.max() - rnd.min() + 1;
       if (not lc_do_settle and
           (lc_do_explore_eagerly or
-           random() / (RAND_MAX + 1.0) < random_jump_probability)) {
+           (rnd() - minstd_rand::min()) / (rnd_range + 1.0) <
+               random_jump_probability)) {
         choice = choice_random_jump;
       }
     }
