@@ -14,6 +14,7 @@
 #include <limits>
 #include <map>
 #include <ostream>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -64,6 +65,9 @@ using namespace std;
 
 static bool lc_do_explore_eagerly = false;
 static bool lc_do_settle = false;
+static minstd_rand lc_random;
+minstd_rand::result_type const constexpr lc_random_range =
+    lc_random.max() - lc_random.min() + 1;
 
 struct lc_thread_info_t {
   volatile int idx;            // linear index of next coarse thread block
@@ -282,11 +286,9 @@ template <typename T> T aligndown(const T i, const T j, const T k) {
 // random uniform integer
 template <typename T> T randomui(const T imin, const T imax, const T istr = 1) {
   assert(imin < imax);
-  // const T res =
-  //   imin + istr * floor(rand() / (RAND_MAX + 1.0) * (imax - imin) / istr);
-  const T res =
-      imin +
-      istr * llrint(floor(random() / (RAND_MAX + 1.0) * (imax - imin) / istr));
+  const T res = imin + istr * llrint(floor((lc_random() - lc_random.min()) /
+                                           (lc_random_range + 1.0) *
+                                           (imax - imin) / istr));
   assert(res >= imin and res < imax and (res - imin) % istr == 0);
   return res;
 }
@@ -638,7 +640,8 @@ void lc_control_init(lc_control_t *restrict const control,
       // Make a random jump every so often
       if (not lc_do_settle and
           (lc_do_explore_eagerly or
-           random() / (RAND_MAX + 1.0) < random_jump_probability)) {
+           (lc_random() - lc_random.min()) / (lc_random_range + 1.0) <
+               random_jump_probability)) {
         choice = choice_random_jump;
       }
     }
