@@ -18,6 +18,7 @@
 #include <cstring>
 #include <fstream>
 #include <ostream>
+#include <csignal>
 
 // These are used for backtraces. HAVE_XXX requires cctk.h
 #include <sys/types.h>
@@ -89,7 +90,7 @@ void generate_backtrace(ostream &stacktrace) {
 #ifdef HAVE_BACKTRACE_SYMBOLS
                    << names[i]
 #else
-		   << addresses[i]
+                   << addresses[i]
 #endif
                    << "]" << '\n';
         free(demangled);
@@ -98,7 +99,7 @@ void generate_backtrace(ostream &stacktrace) {
 #ifdef HAVE_BACKTRACE_SYMBOLS
                    << names[i]
 #else
-		   << addresses[i]
+                   << addresses[i]
 #endif
                    << '\n';
       }
@@ -136,14 +137,6 @@ void write_backtrace_file(void) {
   myfile.close();
 }
 
-} // namespace CarpetLib
-
-//////////////////////////////////////////////////////////////////////////////
-
-#include <signal.h>
-
-namespace CarpetLib {
-
 void signal_handler(int const signum) {
   pid_t const pid = getpid();
 
@@ -167,18 +160,10 @@ void request_backtraces() {
   signal(SIGSEGV, signal_handler);
 }
 
-} // namespace CarpetLib
-
-////////////////////////////////////////////////////////////////////////////////
-
-#include <cctk.h>
-#include <cctk_Arguments.h>
-
-namespace CarpetLib {
-
 extern "C" void CarpetLib_BacktraceTest(CCTK_ARGUMENTS) {
   CCTK_INFO("Generating backtrace...");
   raise(SIGABRT);
   CCTK_WARN(CCTK_WARN_ABORT, "Backtrace test failed");
 }
-}
+
+} // namespace CarpetLib
