@@ -4,7 +4,9 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#ifdef HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
+#endif
 
 #include "defs.hh"
 
@@ -12,6 +14,8 @@
 
 namespace CarpetLib {
 using namespace std;
+
+#ifdef HAVE_SYS_RESOURCE_H
 
 static void set_limit(int resource, char const *name, CCTK_INT value);
 
@@ -74,5 +78,16 @@ static void output(ostream &s, rlim_t const &value) {
     s << (value / CCTK_REAL(1024 * 1024)) << " MB";
   }
 }
+
+#else
+
+void set_system_limits() { return; }
+
+void set_limit(int const /*resource*/, char const *const /*name*/,
+               CCTK_INT const /*value*/) {
+  return;
+}
+
+#endif
 
 } // namespace CarpetLib

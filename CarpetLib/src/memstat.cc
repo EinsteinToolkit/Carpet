@@ -16,9 +16,6 @@
 #include <malloc.h>
 #endif
 
-#include <sys/resource.h>
-#include <sys/time.h>
-
 #include "mem.hh"
 
 #include "dh.hh"
