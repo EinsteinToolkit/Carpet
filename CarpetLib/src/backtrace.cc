@@ -6,6 +6,8 @@
 
 // needed for dladdr, best at the top to avoid inconsistent includes
 #define _GNU_SOURCE 1
+// needed on MSYS2 for signal names
+#define _POSIX
 
 #include "backtrace.hh"
 #include "dist.hh"
