@@ -153,7 +153,7 @@ void signal_handler(int const signum) {
   write_backtrace_file();
 
   // Re-raise the signal to be caught by the default handler
-  kill(pid, signum);
+  raise(signum);
 }
 
 void request_backtraces() {
@@ -176,7 +176,7 @@ namespace CarpetLib {
 
 extern "C" void CarpetLib_BacktraceTest(CCTK_ARGUMENTS) {
   CCTK_INFO("Generating backtrace...");
-  kill(0, SIGABRT);
+  raise(SIGABRT);
   CCTK_WARN(CCTK_WARN_ABORT, "Backtrace test failed");
 }
 }
