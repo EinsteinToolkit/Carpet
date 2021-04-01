@@ -1,7 +1,8 @@
 #ifndef LOOPCONTROL_H
 #define LOOPCONTROL_H
 
-/* This file uses the namespace LC_* for macros and lc_* for C identifiers. */
+/* This file uses the namespace LC_* for macros and externally visible
+ * functions and lc_* for types and local C identifiers. */
 
 #define LC_DIM 3
 
@@ -17,6 +18,20 @@
 
 #define lc_assert(x) ((void)0)
 /* #define lc_assert(x) assert(x) */
+
+// must not use defines in actual C++ file implementing Fortran wrappers
+#ifndef THORN_IS_LoopControl
+// FNAME and all extern identifiers must be mixed case in case of Fortran
+// compilers not adding trailing _ to Fortran names but historically
+// LoopControl used all lowercase C identifiers which conflict
+#define lc_descr_init LC_descr_init
+#define lc_control_init LC_control_init
+#define lc_control_finish LC_control_finish
+#define lc_thread_init LC_thread_init
+#define lc_thread_done LC_thread_done
+#define lc_thread_step LC_thread_step
+#define lc_selftest_set LC_selftest_set
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,21 +85,21 @@ typedef struct {
   unsigned char *selftest_array;
 } lc_control_t;
 
-void lc_descr_init(struct lc_descr_t **descr, const char *name,
+void LC_descr_init(struct lc_descr_t **descr, const char *name,
                    const char *file, int line);
-void lc_control_init(lc_control_t *restrict control, struct lc_descr_t *descr,
+void LC_control_init(lc_control_t *restrict control, struct lc_descr_t *descr,
                      ptrdiff_t imin, ptrdiff_t jmin, ptrdiff_t kmin,
                      ptrdiff_t imax, ptrdiff_t jmax, ptrdiff_t kmax,
                      ptrdiff_t iash, ptrdiff_t jash, ptrdiff_t kash,
                      ptrdiff_t ialn, ptrdiff_t ioff, ptrdiff_t istr);
-void lc_control_finish(lc_control_t *restrict control,
+void LC_control_finish(lc_control_t *restrict control,
                        struct lc_descr_t *descr);
 
-void lc_thread_init(lc_control_t *restrict control);
-int lc_thread_done(const lc_control_t *restrict control);
-void lc_thread_step(lc_control_t *restrict control);
+void LC_thread_init(lc_control_t *restrict control);
+int LC_thread_done(const lc_control_t *restrict control);
+void LC_thread_step(lc_control_t *restrict control);
 
-void lc_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
+void LC_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
                      ptrdiff_t imax, ptrdiff_t ialn, ptrdiff_t ioff,
                      ptrdiff_t istr, ptrdiff_t i, ptrdiff_t j, ptrdiff_t k);
 
@@ -203,7 +218,7 @@ void lc_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
 
 #define LC_SELFTEST(i, j, k, vec_imin, vec_imax)                               \
   if (CCTK_BUILTIN_EXPECT(lc_control.selftest_array != NULL, 0)) {             \
-    lc_selftest_set(&lc_control, vec_imin, vec_imax, lc_aln0, lc_off0,         \
+    LC_selftest_set(&lc_control, vec_imin, vec_imax, lc_aln0, lc_off0,         \
                     lc_str0, i, j, k);                                         \
   }
 

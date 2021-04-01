@@ -1,8 +1,8 @@
-#include "loopcontrol.h"
-
 #include <cctk.h>
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
+
+#include "loopcontrol.h"
 
 #include <algorithm>
 #include <cassert>
@@ -223,7 +223,7 @@ mempool<lc_setup_t> setup_mempool;
 }
 
 extern "C" CCTK_FCALL void
-    CCTK_FNAME(lc_get_fortran_type_sizes)(ptrdiff_t *type_sizes);
+    CCTK_FNAME(LC_get_fortran_type_sizes)(ptrdiff_t *type_sizes);
 
 namespace {
 
@@ -244,7 +244,7 @@ struct params_comp_time {
 
 void check_fortran_type_sizes() {
   ptrdiff_t type_sizes[3];
-  CCTK_FNAME(lc_get_fortran_type_sizes)(type_sizes);
+  CCTK_FNAME(LC_get_fortran_type_sizes)(type_sizes);
   assert(type_sizes[0] == sizeof(lc_vec_t));
   assert(type_sizes[1] == sizeof(lc_space_t));
   assert(type_sizes[2] == sizeof(lc_control_t));
@@ -493,7 +493,7 @@ int fine_thread_broadcast(lc_fine_thread_comm_t *const comm, int value) {
 
 } // namespace
 
-void lc_descr_init(lc_descr_t **const descr_ptr, const char *const name,
+void LC_descr_init(lc_descr_t **const descr_ptr, const char *const name,
                    const char *const file, const int line) {
   if (CCTK_BUILTIN_EXPECT(*descr_ptr != 0, true))
     return;
@@ -522,7 +522,7 @@ void lc_descr_init(lc_descr_t **const descr_ptr, const char *const name,
 #pragma omp barrier
 }
 
-void lc_control_init(lc_control_t *restrict const control,
+void LC_control_init(lc_control_t *restrict const control,
                      lc_descr_t *const descr, ptrdiff_t imin, ptrdiff_t jmin,
                      ptrdiff_t kmin, ptrdiff_t imax, ptrdiff_t jmax,
                      ptrdiff_t kmax, ptrdiff_t iash, ptrdiff_t jash,
@@ -902,7 +902,7 @@ void lc_control_init(lc_control_t *restrict const control,
   }
 }
 
-void lc_control_finish(lc_control_t *restrict const control,
+void LC_control_finish(lc_control_t *restrict const control,
                        lc_descr_t *const descr) {
   DECLARE_CCTK_PARAMETERS;
 
@@ -1003,7 +1003,7 @@ void lc_control_finish(lc_control_t *restrict const control,
 #pragma omp barrier
 }
 
-void lc_thread_init(lc_control_t *restrict const control) {
+void LC_thread_init(lc_control_t *restrict const control) {
   space_set_count(control->coarse_thread);
 #pragma omp single
   { control->coarse_thread_info_ptr->idx = get_num_coarse_threads(); }
@@ -1012,11 +1012,11 @@ void lc_thread_init(lc_control_t *restrict const control) {
   space_idx2pos(control->coarse_thread);
 }
 
-int lc_thread_done(const lc_control_t *restrict const control) {
+int LC_thread_done(const lc_control_t *restrict const control) {
   return control->coarse_thread_done;
 }
 
-void lc_thread_step(lc_control_t *restrict const control) {
+void LC_thread_step(lc_control_t *restrict const control) {
   // Get next thread block
   int new_global_idx = -1;
   if (get_fine_thread_num() == 0) {
@@ -1030,7 +1030,7 @@ void lc_thread_step(lc_control_t *restrict const control) {
   space_idx2pos(control->coarse_thread);
 }
 
-void lc_selftest_set(const lc_control_t *restrict control, const ptrdiff_t imin,
+void LC_selftest_set(const lc_control_t *restrict control, const ptrdiff_t imin,
                      const ptrdiff_t imax, const ptrdiff_t ialn,
                      const ptrdiff_t ioff, const ptrdiff_t istr,
                      const ptrdiff_t i0, const ptrdiff_t j, const ptrdiff_t k) {
@@ -1084,13 +1084,13 @@ void lc_selftest_set(const lc_control_t *restrict control, const ptrdiff_t imin,
   }
 }
 
-int lc_setup(void) {
+int LC_setup(void) {
   check_fortran_type_sizes();
   return 0;
 }
 
-void lc_steer(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS_lc_steer;
+void LC_steer(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_ARGUMENTS_LC_steer;
   DECLARE_CCTK_PARAMETERS;
 
   lc_do_settle = settle_after_iteration >= 0 and
@@ -1101,8 +1101,8 @@ void lc_steer(CCTK_ARGUMENTS) {
       cctkGH->cctk_iteration < explore_eagerly_before_iteration;
 }
 
-void lc_statistics(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS_lc_statistics_analysis;
+void LC_statistics(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_ARGUMENTS_LC_statistics_analysis;
   DECLARE_CCTK_PARAMETERS;
 
   {
@@ -1229,8 +1229,8 @@ void lc_statistics(CCTK_ARGUMENTS) {
   fclose(descrfile);
 }
 
-void lc_statistics_analysis(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS_lc_statistics_analysis;
+void LC_statistics_analysis(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_ARGUMENTS_LC_statistics_analysis;
   DECLARE_CCTK_PARAMETERS;
 
   static double last_output = 0.0;
@@ -1238,54 +1238,54 @@ void lc_statistics_analysis(CCTK_ARGUMENTS) {
 
   if (veryverbose || (statistics_every_seconds >= 0.0 &&
                       run_time >= last_output + statistics_every_seconds)) {
-    lc_statistics(CCTK_PASS_CTOC);
+    LC_statistics(CCTK_PASS_CTOC);
     last_output = run_time;
   }
 }
 
-void lc_statistics_terminate(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_ARGUMENTS_lc_statistics_terminate;
+void LC_statistics_terminate(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_ARGUMENTS_LC_statistics_terminate;
   DECLARE_CCTK_PARAMETERS;
 
   if (verbose or veryverbose or statistics_every_seconds >= 0.0) {
-    lc_statistics(CCTK_PASS_CTOC);
+    LC_statistics(CCTK_PASS_CTOC);
   }
 }
 
-extern "C" CCTK_FCALL void CCTK_FNAME(lc_descr_init)(CCTK_POINTER &descr,
+extern "C" CCTK_FCALL void CCTK_FNAME(LC_descr_init)(CCTK_POINTER &descr,
                                                      int &line,
                                                      TWO_FORTSTRINGS_ARGS) {
   TWO_FORTSTRINGS_CREATE(file, name);
-  lc_descr_init((lc_descr_t **)&descr, name, file, line);
+  LC_descr_init((lc_descr_t **)&descr, name, file, line);
   free(name);
   free(file);
 }
 
 extern "C" CCTK_FCALL void
-CCTK_FNAME(lc_control_init)(lc_control_t &restrict control, CCTK_POINTER &descr,
+CCTK_FNAME(LC_control_init)(lc_control_t &restrict control, CCTK_POINTER &descr,
                             const int &imin, const int &jmin, const int &kmin,
                             const int &imax, const int &jmax, const int &kmax,
                             const int &iash, const int &jash, const int &kash,
                             const int &ialn, const int &ioff, const int &istr) {
-  lc_control_init(&control, (lc_descr_t *)descr, imin, jmin, kmin, imax, jmax,
+  LC_control_init(&control, (lc_descr_t *)descr, imin, jmin, kmin, imax, jmax,
                   kmax, iash, jash, kash, ialn, ioff, istr);
 }
 
 extern "C" CCTK_FCALL void
-CCTK_FNAME(lc_control_finish)(lc_control_t &restrict control,
+CCTK_FNAME(LC_control_finish)(lc_control_t &restrict control,
                               CCTK_POINTER &descr) {
-  lc_control_finish(&control, (lc_descr_t *)descr);
+  LC_control_finish(&control, (lc_descr_t *)descr);
 }
 
-extern "C" CCTK_FCALL void CCTK_FNAME(lc_thread_init)(lc_control_t &control) {
-  lc_thread_init(&control);
+extern "C" CCTK_FCALL void CCTK_FNAME(LC_thread_init)(lc_control_t &control) {
+  LC_thread_init(&control);
 }
 
 extern "C" CCTK_FCALL int
-CCTK_FNAME(lc_thread_done)(const lc_control_t &control) {
-  return lc_thread_done(&control);
+CCTK_FNAME(LC_thread_done)(const lc_control_t &control) {
+  return LC_thread_done(&control);
 }
 
-extern "C" CCTK_FCALL void CCTK_FNAME(lc_thread_step)(lc_control_t &control) {
-  lc_thread_step(&control);
+extern "C" CCTK_FCALL void CCTK_FNAME(LC_thread_step)(lc_control_t &control) {
+  LC_thread_step(&control);
 }

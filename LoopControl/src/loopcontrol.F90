@@ -10,16 +10,16 @@ module loopcontrol
   
   interface
      
-     subroutine lc_descr_init(descr, line, file, name)
+     subroutine LC_descr_init(descr, line, file, name)
        use loopcontrol_types
        implicit none
        CCTK_POINTER :: descr
        integer      :: line
        character(*) :: file
        character(*) :: name
-     end subroutine lc_descr_init
+     end subroutine LC_descr_init
      
-     subroutine lc_control_init( &
+     subroutine LC_control_init( &
           control, descr, &
           imin, jmin, kmin, &
           imax, jmax, kmax, &
@@ -35,38 +35,38 @@ module loopcontrol
        integer            :: iash, jash, kash
        integer            :: ialn, ioff
        integer            :: istr
-     end subroutine lc_control_init
+     end subroutine LC_control_init
 
-     subroutine lc_control_finish(control, descr)
+     subroutine LC_control_finish(control, descr)
        use loopcontrol_types
        implicit none
        type(lc_control_t) :: control
        CCTK_POINTER       :: descr
-     end subroutine lc_control_finish
+     end subroutine LC_control_finish
      
-     subroutine lc_thread_init(control)
+     subroutine LC_thread_init(control)
        use loopcontrol_types
        implicit none
        type(lc_control_t) :: control
-     end subroutine lc_thread_init
+     end subroutine LC_thread_init
      
-     integer function lc_thread_done(control)
+     integer function LC_thread_done(control)
        use loopcontrol_types
        implicit none
        type(lc_control_t) :: control
-     end function lc_thread_done
+     end function LC_thread_done
      
-     subroutine lc_thread_step(control)
+     subroutine LC_thread_step(control)
        use loopcontrol_types
        implicit none
        type(lc_control_t) :: control
-     end subroutine lc_thread_step
+     end subroutine LC_thread_step
      
-     subroutine lc_get_fortran_type_sizes(type_sizes)
+     subroutine LC_get_fortran_type_sizes(type_sizes)
        use loopcontrol_types
        implicit none
        CCTK_POINTER :: type_sizes(4)
-     end subroutine lc_get_fortran_type_sizes
+     end subroutine LC_get_fortran_type_sizes
      
   end interface
   
