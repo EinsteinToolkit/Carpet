@@ -28,7 +28,9 @@ void set_system_limits() {
   set_limit(RLIMIT_CORE, "core file size", max_core_size_MB);
   set_limit(RLIMIT_AS, "addres space size", max_memory_size_MB);
   set_limit(RLIMIT_DATA, "data segment size", max_memory_size_MB);
+#ifdef RLIMIT_RSS
   set_limit(RLIMIT_RSS, "resident set size", max_memory_size_MB);
+#endif
 }
 
 void set_limit(int const resource, char const *const name,
