@@ -66,7 +66,7 @@ using namespace std;
 static bool lc_do_explore_eagerly = false;
 static bool lc_do_settle = false;
 static minstd_rand lc_random;
-minstd_rand::result_type const constexpr lc_random_range =
+static minstd_rand::result_type const constexpr lc_random_range =
     lc_random.max() - lc_random.min() + 1;
 
 struct lc_thread_info_t {
