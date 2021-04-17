@@ -206,7 +206,8 @@ template <int outdim> struct IOHDF5 {
                        const int output_component, const int tl,
                        const CCTK_REAL coord_time,
                        const vect<CCTK_REAL, dim> &coord_lower,
-                       const vect<CCTK_REAL, dim> &coord_upper);
+                       const vect<CCTK_REAL, dim> &coord_upper,
+                       const vect<CCTK_REAL, dim> &coord_delta);
 
   static int CloseFile(const cGH *cctkGH, hid_t &file, hid_t &index_file);
 
