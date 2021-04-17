@@ -148,11 +148,11 @@ public:
 
   void locate_position(rvect const &rpos, int const ml, int const minrl,
                        int const maxrl, int &rl, int &c,
-                       ivect &aligned_ipos) const CCTK_MEMBER_ATTRIBUTE_PURE;
+                       ivect &aligned_ipos) const;
 
   void locate_position(ivect const &ipos, int const ml, int const minrl,
                        int const maxrl, int &rl, int &c,
-                       ivect &aligned_ipos) const CCTK_MEMBER_ATTRIBUTE_PURE;
+                       ivect &aligned_ipos) const;
 
   // Time hierarchy management
   void insert(th *t);
