@@ -131,12 +131,13 @@ void PoisonGroup(cGH const *const cctkGH, int const group,
     END_LOCAL_MAP_LOOP;
 
     // mark as invalid
+    int const rl = grouptype == CCTK_GF ? reflevel : 0;
     for (int var = 0; var < nvar; ++var) {
       int const map0 = 0;
       ggf *const ff = arrdata.AT(group).AT(map0).data.AT(var);
       assert(ff);
       for (int tl = min_tl; tl <= max_tl; ++tl) {
-        ff->set_valid(mglevel, reflevel, tl, CCTK_VALID_NOWHERE);
+        ff->set_valid(mglevel, rl, tl, CCTK_VALID_NOWHERE);
       }
     }
 
