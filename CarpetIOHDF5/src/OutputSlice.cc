@@ -42,7 +42,8 @@ static ibset GetOutputBBoxes(const cGH *cctkGH, int group, int rl, int m, int c,
 static void GetCoordinates(const cGH *cctkGH, int m, const cGroup &groupdata,
                            const ibset &exts, CCTK_REAL &coord_time,
                            vector<rvect> &coord_lower,
-                           vector<rvect> &coord_upper);
+                           vector<rvect> &coord_upper,
+                           vector<rvect> &coord_delta);
 
 static int GetGridOffset(const cGH *cctkGH, int m, int dir, const char *itempl,
                          const char *iglobal, const char *ctempl,
@@ -566,9 +567,9 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
       if (dist::rank() == proc or dist::rank() == IOProcForProc(proc)) {
 
         CCTK_REAL coord_time;
-        vector<rvect> coord_lower, coord_upper;
+        vector<rvect> coord_lower, coord_upper, coord_delta;
         GetCoordinates(cctkGH, m, groupdata, exts, coord_time, coord_lower,
-                       coord_upper);
+                       coord_upper, coord_delta);
 
         // Apply offset
         vector<ivect> offsets1;
@@ -679,7 +680,8 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
                     WriteHDF5(cctkGH, file, index_file, tmpdatas, ext, vindex,
                               offsets1[c_offset], dirs, rl, ml, m, c,
                               c_base + c_offset, tl, coord_time,
-                              coord_lower[c_offset], coord_upper[c_offset]);
+                              coord_lower[c_offset], coord_upper[c_offset],
+                              coord_delta[c_offset]);
               }
               ++c_offset;
             }
@@ -1118,11 +1120,11 @@ ibset GetOutputBBoxes(const cGH *const cctkGH, const int group, const int rl,
 void GetCoordinates(const cGH *const cctkGH, const int m,
                     const cGroup &groupdata, const ibset &exts,
                     CCTK_REAL &coord_time, vector<rvect> &coord_lower,
-                    vector<rvect> &coord_upper) {
+                    vector<rvect> &coord_upper, vector<rvect> &coord_delta) {
   coord_time = cctkGH->cctk_time;
 
   rvect global_lower;
-  rvect coord_delta;
+  rvect global_delta;
   if (groupdata.grouptype == CCTK_GF) {
     rvect const cctk_origin_space = origin_space.at(m).at(mglevel);
     rvect const cctk_delta_space = delta_space.at(m) * rvect(mglevelfact);
@@ -1130,22 +1132,24 @@ void GetCoordinates(const cGH *const cctkGH, const int m,
       // lower boundary of Carpet's integer indexing
       global_lower[d] = cctk_origin_space[d];
       // grid spacing of Carpet's integer indexing
-      coord_delta[d] = (cctk_delta_space[d] /
+      global_delta[d] = (cctk_delta_space[d] /
                         vhh.at(m)->baseextents.at(0).at(0).stride()[d]);
     }
   } else {
     for (int d = 0; d < dim; ++d) {
       global_lower[d] = 0.0;
-      coord_delta[d] = 1.0;
+      global_delta[d] = 1.0;
     }
   }
 
   coord_lower.reserve(exts.setsize());
   coord_upper.reserve(exts.setsize());
+  coord_delta.reserve(exts.setsize());
 
   for (ibbox const &ext : exts.iterator()) {
-    coord_lower.push_back(global_lower + coord_delta * rvect(ext.lower()));
-    coord_upper.push_back(global_lower + coord_delta * rvect(ext.upper()));
+    coord_lower.push_back(global_lower + global_delta * rvect(ext.lower()));
+    coord_upper.push_back(global_lower + global_delta * rvect(ext.upper()));
+    coord_delta.push_back(global_delta * rvect(ext.stride()));
   }
 }
 
@@ -1251,7 +1255,8 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
                               const int output_component, const int tl,
                               const CCTK_REAL coord_time,
                               const vect<CCTK_REAL, dim> &coord_lower,
-                              const vect<CCTK_REAL, dim> &coord_upper) {
+                              const vect<CCTK_REAL, dim> &coord_upper,
+                              const vect<CCTK_REAL, dim> &coord_delta) {
   DECLARE_CCTK_PARAMETERS;
 
   assert(outdim <= dim);
@@ -1408,20 +1413,15 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
     for (int d = 0; d < outdim; d++) {
       assert(gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]] >= 0);
       iorigin[d] = ext.lower()[d];
-      delta[d] = 0;
+      ioffset[d] =
+          (iorigin[d] % gfext.stride()[dirs[d]] + gfext.stride()[dirs[d]]) %
+          gfext.stride()[dirs[d]];
+      ioffsetdenom[d] = gfext.stride()[dirs[d]];
+      assert((iorigin[d] - ioffset[d]) % gfext.stride()[dirs[d]] == 0);
+      iorigin[d] = (iorigin[d] - ioffset[d]) / gfext.stride()[dirs[d]];
       origin[d] = coord_lower[dirs[d]];
-      if (gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]] > 0) {
-        delta[d] = (coord_upper[dirs[d]] - coord_lower[dirs[d]]) /
-                   (gfext.upper()[dirs[d]] - gfext.lower()[dirs[d]]) *
-                   gfext.stride()[dirs[d]];
-        origin[d] += (org1[dirs[d]] - gfext.lower()[dirs[d]]) * delta[d];
-        ioffsetdenom[d] = gfext.stride()[dirs[d]];
-        ioffset[d] =
-            (iorigin[d] % gfext.stride()[dirs[d]] + gfext.stride()[dirs[d]]) %
-            gfext.stride()[dirs[d]];
-        assert((iorigin[d] - ioffset[d]) % gfext.stride()[dirs[d]] == 0);
-        iorigin[d] = (iorigin[d] - ioffset[d]) / gfext.stride()[dirs[d]];
-      }
+      delta[d] = coord_delta[dirs[d]];
+      origin[d] += (org1[dirs[d]] - gfext.lower()[dirs[d]]) * delta[d];
     }
     string active;
     if (groupdata.grouptype == CCTK_GF) {
