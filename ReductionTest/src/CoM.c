@@ -33,11 +33,9 @@ void CoM(CCTK_ARGUMENTS) {
 
   int varindex = -1;
   int ierr = 0;
-  int cf = 1.0;
   int reduction_handle;
-  int vartype;
 
-  CCTK_REAL d3x, tiny, denstotal;
+  CCTK_REAL denstotal;
 
   CCTK_REAL sym_factor1, sym_factor2, sym_factor3;
 
