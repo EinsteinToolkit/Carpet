@@ -593,7 +593,6 @@ void enter_local_mode(cGH *const cctkGH, int const c, int const lc,
         (ext.lower() - baseext.lower()) / ext.stride();
     ivect_ref(cctkGH->cctk_ubnd) =
         (ext.upper() - baseext.lower()) / ext.stride();
-        (ext.upper() - baseext.lower()) / ext.stride();
     ivect_ref(cctkGH->cctk_lsh) = ext.sizes();
 #ifdef CCTK_HAVE_CGH_TILE
     ivect_ref(cctkGH->cctk_tile_min) = ivect(0);
