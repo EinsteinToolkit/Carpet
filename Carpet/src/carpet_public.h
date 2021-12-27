@@ -83,16 +83,28 @@ CCTK_POINTER Carpet_VarDataPtrI(CCTK_POINTER_TO_CONST const cctkGH,
                                 CCTK_INT const c, CCTK_INT const tl,
                                 CCTK_INT const varindex);
 
+/* define backwards compatible names for the next couple of functions */
+#define CallScheduleGroup CarpetCallScheduleGroup
+#define CallLocalFunction CarpetCallLocalFunction
+#define CallSinglemapFunction CarpetCallSinglemapFunction
+#define CallLevelFunction CarpetCallLevelFunction
+#define CallGlobalFunction CarpetCallGlobalFunction
+#define CallMetaFunction CarpetCallMetaFunction
+
 /* Call a schedule group */
-int CallScheduleGroup(cGH *const cgh, const char *const group);
+int CarpetCallScheduleGroup(cGH *const cgh, const char *const group);
 
 /* Call a local function */
-int CallLocalFunction(cGH *const cgh, void (*const function)(cGH *const cgh));
-int CallSinglemapFunction(cGH *const cgh,
-                          void (*const function)(cGH *const cgh));
-int CallLevelFunction(cGH *const cgh, void (*const function)(cGH *const cgh));
-int CallGlobalFunction(cGH *const cgh, void (*const function)(cGH *const cgh));
-int CallMetaFunction(cGH *const cgh, void (*const function)(cGH *const cgh));
+int CarpetCallLocalFunction(cGH *const cgh,
+                            void (*const function)(cGH *const cgh));
+int CarpetCallSinglemapFunction(cGH *const cgh,
+                                void (*const function)(cGH *const cgh));
+int CarpetCallLevelFunction(cGH *const cgh,
+                            void (*const function)(cGH *const cgh));
+int CarpetCallGlobalFunction(cGH *const cgh,
+                             void (*const function)(cGH *const cgh));
+int CarpetCallMetaFunction(cGH *const cgh,
+                           void (*const function)(cGH *const cgh));
 
 /* Helper functions */
 MPI_Comm CarpetMPIComm(void) CCTK_ATTRIBUTE_PURE;
