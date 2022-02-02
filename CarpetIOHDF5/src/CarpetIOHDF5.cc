@@ -107,8 +107,9 @@ void CarpetIOHDF5_InitialDataCheckpoint(CCTK_ARGUMENTS) {
   if (checkpoint and checkpoint_ID) {
     if (not CCTK_Equals(verbose, "none")) {
       CCTK_INFO("---------------------------------------------------------");
-      CCTK_VInfo(CCTK_THORNSTRING, "Dumping initial checkpoint at "
-                                   "iteration %d, simulation time %g",
+      CCTK_VInfo(CCTK_THORNSTRING,
+                 "Dumping initial checkpoint at "
+                 "iteration %d, simulation time %g",
                  cctk_iteration, double(cctk_time));
       CCTK_INFO("---------------------------------------------------------");
     }
@@ -146,8 +147,9 @@ void CarpetIOHDF5_EvolutionCheckpoint(CCTK_ARGUMENTS) {
   if (do_checkpoint) {
     if (not CCTK_Equals(verbose, "none")) {
       CCTK_INFO("---------------------------------------------------------");
-      CCTK_VInfo(CCTK_THORNSTRING, "Dumping periodic checkpoint at "
-                                   "iteration %d, simulation time %g",
+      CCTK_VInfo(CCTK_THORNSTRING,
+                 "Dumping periodic checkpoint at "
+                 "iteration %d, simulation time %g",
                  cctk_iteration, double(cctk_time));
       CCTK_INFO("---------------------------------------------------------");
     }
@@ -166,8 +168,9 @@ void CarpetIOHDF5_TerminationCheckpoint(CCTK_ARGUMENTS) {
         (cctk_iteration == 0 and not checkpoint_ID)) {
       if (not CCTK_Equals(verbose, "none")) {
         CCTK_INFO("---------------------------------------------------------");
-        CCTK_VInfo(CCTK_THORNSTRING, "Dumping termination checkpoint at "
-                                     "iteration %d, simulation time %g",
+        CCTK_VInfo(CCTK_THORNSTRING,
+                   "Dumping termination checkpoint at "
+                   "iteration %d, simulation time %g",
                    cctk_iteration, double(cctk_time));
         CCTK_INFO("---------------------------------------------------------");
       }
@@ -290,7 +293,7 @@ hid_t CCTKtoHDF5_Datatype(const cGH *const cctkGH, int cctk_type,
   case CCTK_VARIABLE_INT8:
     retval = H5T_NATIVE_INT64;
     break;
-  // case CCTK_VARIABLE_INT16:     retval = H5T_NATIVE_INT128; break;
+    // case CCTK_VARIABLE_INT16:     retval = H5T_NATIVE_INT128; break;
 
   case CCTK_VARIABLE_REAL4:
     retval = H5T_NATIVE_FLOAT;

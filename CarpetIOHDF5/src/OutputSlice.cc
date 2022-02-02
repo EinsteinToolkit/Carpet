@@ -676,12 +676,11 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
               }
               const ibbox outext(lo, hi, ext.stride());
               if (outext.intersects(ext)) {
-                error_count +=
-                    WriteHDF5(cctkGH, file, index_file, tmpdatas, ext, vindex,
-                              offsets1[c_offset], dirs, rl, ml, m, c,
-                              c_base + c_offset, tl, coord_time,
-                              coord_lower[c_offset], coord_upper[c_offset],
-                              coord_delta[c_offset]);
+                error_count += WriteHDF5(
+                    cctkGH, file, index_file, tmpdatas, ext, vindex,
+                    offsets1[c_offset], dirs, rl, ml, m, c, c_base + c_offset,
+                    tl, coord_time, coord_lower[c_offset],
+                    coord_upper[c_offset], coord_delta[c_offset]);
               }
               ++c_offset;
             }
@@ -1133,7 +1132,7 @@ void GetCoordinates(const cGH *const cctkGH, const int m,
       global_lower[d] = cctk_origin_space[d];
       // grid spacing of Carpet's integer indexing
       global_delta[d] = (cctk_delta_space[d] /
-                        vhh.at(m)->baseextents.at(0).at(0).stride()[d]);
+                         vhh.at(m)->baseextents.at(0).at(0).stride()[d]);
     }
   } else {
     for (int d = 0; d < dim; ++d) {
