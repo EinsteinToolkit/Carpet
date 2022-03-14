@@ -1274,8 +1274,15 @@ void Initialise3tl(cGH *const cctkGH) {
 #endif
 
   initialise_3tl_flip_timelevels(cctkGH);
-  initialise_3tl_evolve(cctkGH);
-  initialise_3tl_evolve(cctkGH);
+  BEGIN_MGLEVEL_LOOP(cctkGH) {
+    BEGIN_REFLEVEL_LOOP(cctkGH) {
+      // need 2 steps on coarse level to be able to interpolate in time
+      initialise_3tl_evolve(cctkGH);
+      initialise_3tl_evolve(cctkGH);
+    }
+    END_REFLEVEL_LOOP;
+  }
+  END_MGLEVEL_LOOP;
   // TODO: May want to restrict where possible (i.e. if the time
   // refinement factor is one)
   initialise_3tl_recycle(cctkGH);
@@ -1304,37 +1311,32 @@ void initialise_3tl_evolve(cGH *const cctkGH) {
   static Timers::Timer timer(where);
   timer.start();
 
-  BEGIN_MGLEVEL_LOOP(cctkGH) {
-    BEGIN_REFLEVEL_LOOP(cctkGH) {
-      BeginTimingLevel(cctkGH);
+  BeginTimingLevel(cctkGH);
 
-      do_early_global_mode = reflevel == 0;
-      do_late_global_mode = reflevel == reflevels - 1;
-      do_early_meta_mode = do_early_global_mode and mglevel == mglevels - 1;
-      do_late_meta_mode = do_late_global_mode and mglevel == 0;
-      do_global_mode = do_early_global_mode;
-      do_meta_mode = do_early_meta_mode;
+  do_early_global_mode = reflevel == 0;
+  do_late_global_mode = reflevel == reflevels - 1;
+  do_early_meta_mode = do_early_global_mode and mglevel == mglevels - 1;
+  do_late_meta_mode = do_late_global_mode and mglevel == 0;
+  do_global_mode = do_early_global_mode;
+  do_meta_mode = do_early_meta_mode;
 
-      Waypoint("Initialisation 3TL evolution",
-               (do_global_mode ? " (global)" : ""),
-               (do_meta_mode ? " (meta)" : ""));
+  Waypoint("Initialisation 3TL evolution",
+           (do_global_mode ? " (global)" : ""),
+           (do_meta_mode ? " (meta)" : ""));
 
-      CycleTimeLevels(cctkGH);
+  CycleTimeLevels(cctkGH);
+  //cctkGH->cctk_time += cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
 
-      CalculateChecksums(cctkGH, allbutcurrenttime);
-      Poison(cctkGH, currenttimebutnotifonly);
+  CalculateChecksums(cctkGH, allbutcurrenttime);
+  Poison(cctkGH, currenttimebutnotifonly);
 
-      // Evolve
-      ScheduleTraverse(where, "CCTK_PRESTEP", cctkGH);
-      ScheduleTraverse(where, "CCTK_EVOL", cctkGH);
+  // Evolve
+  ScheduleTraverse(where, "CCTK_PRESTEP", cctkGH);
+  ScheduleTraverse(where, "CCTK_EVOL", cctkGH);
 
-      PoisonCheck(cctkGH, currenttime);
+  PoisonCheck(cctkGH, currenttime);
 
-      EndTimingLevel(cctkGH);
-    }
-    END_REFLEVEL_LOOP;
-  }
-  END_MGLEVEL_LOOP;
+  EndTimingLevel(cctkGH);
 
   timer.stop();
 }
