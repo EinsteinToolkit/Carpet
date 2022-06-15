@@ -48,7 +48,7 @@ static int TimeToOutput(const cGH *const cctkGH, const int vindex);
 static int TriggerOutput(const cGH *const cctkGH, const int vindex);
 
 // general checkpoint routine
-static void Checkpoint(const cGH *const cctkGH, int called_from);
+static void Checkpoint(cGH *const cctkGH, int called_from);
 
 // callback for I/O parameter parsing routine
 static void GetVarIndex(int vindex, const char *optstring, void *arg);
@@ -1085,9 +1085,12 @@ static int OutputVarAs(const cGH *const cctkGH, const char *const fullname,
   return (0);
 }
 
-static void Checkpoint(const cGH *const cctkGH, int called_from) {
+static void Checkpoint(cGH *const cctkGH, int called_from) {
   int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
+
+  if (CCTK_EQUALS(flush_to_disk, "checkpoint"))
+    CarpetIOHDF5_CloseOutputFiles(CCTK_PASS_CTOC);
 
   /* get the filenames for both the temporary and real checkpoint file */
   int ioproc = 0, nioprocs = 1;

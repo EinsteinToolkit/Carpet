@@ -223,15 +223,17 @@ template <int outdim> int IOHDF5<outdim>::OutputGH(const cGH *const cctkGH) {
   if (strcmp(my_out_slice_vars, "")) {
     for (int vi = 0; vi < CCTK_NumVars(); ++vi) {
       if (TimeToOutput(cctkGH, vi)) {
-        TriggerOutput(cctkGH, vi, false);
+        TriggerOutput(cctkGH, vi);
       }
     }
   }
   timer.stop();
 
-  const int error_count = CloseFiles(cctkGH);
-  if (error_count > 0 and abort_on_io_errors) {
-    CCTK_ERROR("Aborting simulation due to previous I/O errors");
+  if (CCTK_EQUALS(flush_to_disk, "reflevel")) {
+    const int error_count = CloseFiles(cctkGH);
+    if (error_count > 0 and abort_on_io_errors) {
+      CCTK_ERROR("Aborting simulation due to previous I/O errors");
+    }
   }
 
   return 0;
@@ -332,12 +334,6 @@ int IOHDF5<outdim>::TimeToOutput(const cGH *const cctkGH, const int vindex) {
 
 template <int outdim>
 int IOHDF5<outdim>::TriggerOutput(const cGH *const cctkGH, const int vindex) {
-  return TriggerOutput(cctkGH, vindex, false);
-}
-
-template <int outdim>
-int IOHDF5<outdim>::TriggerOutput(const cGH *const cctkGH, const int vindex,
-                                  bool keep_file_open) {
   DECLARE_CCTK_PARAMETERS;
 
   assert(vindex >= 0 and vindex < CCTK_NumVars());
@@ -372,10 +368,10 @@ int IOHDF5<outdim>::TriggerOutput(const cGH *const cctkGH, const int vindex,
     size_t const oldseppos = alias.find(oldsep);
     assert(oldseppos != string::npos);
     alias.replace(oldseppos, oldsep.size(), out_group_separator);
-    retval = OutputVarAs(cctkGH, fullname, alias.c_str(), keep_file_open);
+    retval = OutputVarAs(cctkGH, fullname, alias.c_str());
   } else {
     const char *const alias = CCTK_VarName(vindex);
-    retval = OutputVarAs(cctkGH, fullname, alias, keep_file_open);
+    retval = OutputVarAs(cctkGH, fullname, alias);
   }
 
   free(fullname);
@@ -401,13 +397,6 @@ template <int outdim>
 int IOHDF5<outdim>::OutputVarAs(const cGH *const cctkGH,
                                 const char *const varname,
                                 const char *const alias) {
-  return OutputVarAs(cctkGH, varname, alias, false);
-}
-
-template <int outdim>
-int IOHDF5<outdim>::OutputVarAs(const cGH *const cctkGH,
-                                const char *const varname,
-                                const char *const alias, bool keep_file_open) {
   DECLARE_CCTK_PARAMETERS;
 
   int vindex = -1;
@@ -496,7 +485,7 @@ int IOHDF5<outdim>::OutputVarAs(const cGH *const cctkGH,
         // Skip output if not requested
         if (DirectionIsRequested(dirs)) {
           OutputDirection(cctkGH, vindex, alias, basefilename, dirs,
-                          is_new_file, truncate_file, keep_file_open);
+                          is_new_file, truncate_file);
         }
 
       } // if ascending
@@ -527,8 +516,7 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
                                      const string basefilename,
                                      const vect<int, outdim> &dirs,
                                      const bool is_new_file,
-                                     const bool truncate_file,
-                                     const bool keep_file_open) {
+                                     const bool truncate_file) {
   DECLARE_CCTK_PARAMETERS;
 
   // Get information
@@ -560,10 +548,10 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
   const int m_max = groupdata.grouptype == CCTK_GF ? Carpet::maps : 1;
   for (int m = m_min; m < m_max; ++m) {
 
-    hid_t file = -1, index_file = -1;
+    hdf5_file_t file;
     int error_count = 0;
     error_count += OpenFile(cctkGH, m, vindex, numvars, alias, basefilename,
-                            dirs, is_new_file, truncate_file, file, index_file);
+                            dirs, is_new_file, truncate_file, file);
 
     // Find the output offset
     const ivect offset = groupdata.grouptype == CCTK_GF
@@ -706,7 +694,7 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
               const ibbox outext(lo, hi, ext.stride());
               if (outext.intersects(ext)) {
                 error_count += WriteHDF5(
-                    cctkGH, file, index_file, tmpdatas, ext, vindex,
+                    cctkGH, file, tmpdatas, ext, vindex,
                     offsets1[c_offset], dirs, rl, ml, m, c, c_base + c_offset,
                     tl, coord_time, coord_lower[c_offset],
                     coord_upper[c_offset], coord_delta[c_offset]);
@@ -727,8 +715,8 @@ void IOHDF5<outdim>::OutputDirection(const cGH *const cctkGH, const int vindex,
       c_base += exts.setsize();
     } // for c
 
-    if (not keep_file_open)
-      error_count += CloseFile(cctkGH, file, index_file);
+    if (CCTK_EQUALS(flush_to_disk, "immediate"))
+      error_count += CloseFile(cctkGH, file);
 
     if (nioprocs > 1) {
       CCTK_REAL local[2], global[2];
@@ -805,7 +793,7 @@ int IOHDF5<outdim>::OpenFile(const cGH *const cctkGH, const int m,
                              const string alias, const string basefilename,
                              const vect<int, outdim> &dirs,
                              const bool is_new_file, const bool truncate_file,
-                             hid_t &file, hid_t &index_file) {
+                             hdf5_file_t &file) {
   DECLARE_CCTK_PARAMETERS;
 
   int error_count = 0;
@@ -842,8 +830,7 @@ int IOHDF5<outdim>::OpenFile(const cGH *const cctkGH, const int m,
     const string filenamestr = filenamebuf.str();
     const char *const filename = filenamestr.c_str();
 
-    hdf5_file_t &files = hdf5_files[filenamestr];
-    if (files.file == -1) {
+    if (hdf5_files.count(filenamestr) == 0) {
       // Open the file
       bool file_exists = false;
       if (not truncate_file) {
@@ -855,36 +842,37 @@ int IOHDF5<outdim>::OpenFile(const cGH *const cctkGH, const int m,
         hid_t fapl_id;
         HDF5_ERROR(fapl_id = H5Pcreate(H5P_FILE_ACCESS));
         HDF5_ERROR(H5Pset_fclose_degree(fapl_id, H5F_CLOSE_STRONG));
-        HDF5_ERROR(files.file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT,
-                                          fapl_id));
+        HDF5_ERROR(file.file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT,
+                                         fapl_id));
         if (output_index) {
-          HDF5_ERROR(files.index_file =
+          HDF5_ERROR(file.index_file =
                          H5Fcreate(index_filename.c_str(), H5F_ACC_TRUNC,
                                    H5P_DEFAULT, fapl_id));
         }
         HDF5_ERROR(H5Pclose(fapl_id));
         // write metadata information
         error_count +=
-            WriteMetadata(cctkGH, nioprocs, vindex, numvars, false, files.file);
+            WriteMetadata(cctkGH, nioprocs, vindex, numvars, false, file.file);
 
         if (output_index) {
           error_count += WriteMetadata(cctkGH, nioprocs, vindex, numvars, false,
-                                       files.index_file);
+                                       file.index_file);
         }
       } else {
         hid_t fapl_id;
         HDF5_ERROR(fapl_id = H5Pcreate(H5P_FILE_ACCESS));
         HDF5_ERROR(H5Pset_fclose_degree(fapl_id, H5F_CLOSE_STRONG));
-        HDF5_ERROR(files.file = H5Fopen(filename, H5F_ACC_RDWR, fapl_id));
+        HDF5_ERROR(file.file = H5Fopen(filename, H5F_ACC_RDWR, fapl_id));
         if (output_index)
-          HDF5_ERROR(files.index_file = H5Fopen(index_filename.c_str(),
-                                                H5F_ACC_RDWR, fapl_id));
+          HDF5_ERROR(file.index_file = H5Fopen(index_filename.c_str(),
+                                               H5F_ACC_RDWR, fapl_id));
         HDF5_ERROR(H5Pclose(fapl_id));
       }
+      hdf5_files[filenamestr] = file;
       io_files += 1;
+    } else {
+      file = hdf5_files[filenamestr];
     }
-    file = files.file;
-    index_file = files.index_file;
 
   } // if on the I/O processor
 
@@ -892,34 +880,27 @@ int IOHDF5<outdim>::OpenFile(const cGH *const cctkGH, const int m,
 }
 
 template <int outdim>
-int IOHDF5<outdim>::CloseFile(const cGH *const cctkGH, hid_t &file,
-                              hid_t &index_file) {
+int IOHDF5<outdim>::CloseFile(const cGH *const cctkGH, hdf5_file_t &file) {
   DECLARE_CCTK_PARAMETERS;
 
   int error_count = 0;
 
   if (dist::rank() == ioproc) {
     // close and remove from cache
-    for (auto it = hdf5_files.begin(); it != hdf5_files.end(); ++it) {
-      hdf5_file_t &hdf5_file = it->second;
-      if (hdf5_file.file == file) {
-        assert(hdf5_file.index_file == index_file);
-
-        if (file >= 0) {
-          HDF5_ERROR(H5Fclose(file));
-          hdf5_file.file = file =
-              -1; // mark file as closed in caller's variable
-        }
-        if (output_index and index_file >= 0) {
-          HDF5_ERROR(H5Fclose(index_file));
-          hdf5_file.index_file = index_file =
-              -1; // mark file as closed in caller's variable
-        }
-
-        hdf5_files.erase(it);
-        break;
-      }
+    // TODO: check if file is actually open in cache and matches the hid_t ?
+    if (file.file >= 0) {
+      HDF5_ERROR(H5Fclose(file.file));
     }
+
+    assert(file.index_file == -1 or output_index);
+    if (output_index and file.index_file >= 0) {
+      HDF5_ERROR(H5Fclose(file.index_file));
+    }
+
+    hdf5_files.erase(file.filename);
+
+    file.file = file.index_file = -1;
+
     HDF5_ERROR(H5garbage_collect());
   }
 
@@ -1293,17 +1274,14 @@ int CoordToOffset(const cGH *cctkGH, const int m, const int dir,
 
 // Output
 template <int outdim>
-int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
-                              vector<gdata *> const gfdatas,
-                              const bbox<int, dim> &gfext, const int vi,
-                              const vect<int, dim> &org,
-                              const vect<int, outdim> &dirs, const int rl,
-                              const int ml, const int m, const int c,
-                              const int output_component, const int tl,
-                              const CCTK_REAL coord_time,
-                              const vect<CCTK_REAL, dim> &coord_lower,
-                              const vect<CCTK_REAL, dim> &coord_upper,
-                              const vect<CCTK_REAL, dim> &coord_delta) {
+int IOHDF5<outdim>::WriteHDF5(
+    const cGH *cctkGH, hdf5_file_t &file, vector<gdata *> const gfdatas,
+    const bbox<int, dim> &gfext, const int vi, const vect<int, dim> &org,
+    const vect<int, outdim> &dirs, const int rl, const int ml, const int m,
+    const int c, const int output_component, const int tl,
+    const CCTK_REAL coord_time, const vect<CCTK_REAL, dim> &coord_lower,
+    const vect<CCTK_REAL, dim> &coord_upper,
+    const vect<CCTK_REAL, dim> &coord_delta) {
   DECLARE_CCTK_PARAMETERS;
 
   assert(outdim <= dim);
@@ -1535,9 +1513,9 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
       }
       if (request->check_exist) {
         H5E_BEGIN_TRY {
-          H5Gunlink(file, datasetname.c_str());
-          if (indexfile != -1)
-            H5Gunlink(indexfile, datasetname.c_str());
+          H5Gunlink(file.file, datasetname.c_str());
+          if (file.index_file != -1)
+            H5Gunlink(file.index_file, datasetname.c_str());
         }
         H5E_END_TRY;
       }
@@ -1548,11 +1526,12 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
 
       // write the dataset
       hid_t dataset, index_dataset;
-      HDF5_ERROR(dataset = H5Dcreate(file, datasetname.c_str(), slice_type,
+      HDF5_ERROR(dataset = H5Dcreate(file.file, datasetname.c_str(), slice_type,
                                      slice_space, plist));
-      if (indexfile != -1) {
-        HDF5_ERROR(index_dataset = H5Dcreate(indexfile, datasetname.c_str(),
-                                             slice_type, slice_space, plist));
+      if (file.index_file != -1) {
+        HDF5_ERROR(index_dataset =
+                       H5Dcreate(file.index_file, datasetname.c_str(),
+                                 slice_type, slice_space, plist));
       }
 
       HDF5_ERROR(H5Dwrite(dataset, mem_type, mem_space, H5S_ALL, H5P_DEFAULT,
@@ -1562,7 +1541,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
           ioffsetdenom, bbox, nghostzones, active, dataset, slice_shape, false);
       HDF5_ERROR(H5Dclose(dataset));
 
-      if (indexfile != -1) {
+      if (file.index_file != -1) {
         error_count += AddSliceAttributes(
             cctkGH, fullname, rl, ml, m, tl, origin, delta, iorigin, ioffset,
             ioffsetdenom, bbox, nghostzones, active, index_dataset, slice_shape,
@@ -1658,7 +1637,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
 #endif
       }
       if (request->check_exist) {
-        H5E_BEGIN_TRY { H5Gunlink(file, datasetname.c_str()); }
+        H5E_BEGIN_TRY { H5Gunlink(file.file, datasetname.c_str()); }
         H5E_END_TRY;
       }
       // free I/O request structure
@@ -1668,7 +1647,7 @@ int IOHDF5<outdim>::WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &indexfile,
 
       // write the dataset
       hid_t dataset;
-      HDF5_ERROR(dataset = H5Dcreate(file, datasetname.c_str(), slice_type,
+      HDF5_ERROR(dataset = H5Dcreate(file.file, datasetname.c_str(), slice_type,
                                      slice_space, plist));
       HDF5_ERROR(H5Dwrite(dataset, mem_type, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                           &buffer.front() + n * npoints * gfdatas.size()));
@@ -1706,8 +1685,8 @@ template <int outdim> int IOHDF5<outdim>::CloseFiles(const cGH *const cctkGH) {
 
   for (auto it = hdf5_files.begin(); it != hdf5_files.end(); /* in loop */) {
     hdf5_file_t &hdf5_file =
-        (it++)->second; // must be before CloseFile which modifies fila_pairs
-    error_count += CloseFile(cctkGH, hdf5_file.file, hdf5_file.index_file);
+        (it++)->second; // must be before CloseFile which modifies container
+    error_count += CloseFile(cctkGH, hdf5_file);
   }
   assert(hdf5_files.empty());
   hdf5_files.clear();
@@ -1717,6 +1696,25 @@ template <int outdim> int IOHDF5<outdim>::CloseFiles(const cGH *const cctkGH) {
   EndTimingIO(cctkGH, io_files, io_bytes, true);
 
   return error_count;
+}
+
+// scheduled functions
+extern "C" void CarpetIOHDF5_CloseOutputFiles(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_PARAMETERS;
+  DECLARE_CCTK_ARGUMENTS;
+
+  if (CCTK_EQUALS(flush_to_disk, "iteration")) {
+    int error_count = 0;
+
+    error_count += IOHDF5<0>::CloseFiles(cctkGH);
+    error_count += IOHDF5<1>::CloseFiles(cctkGH);
+    error_count += IOHDF5<2>::CloseFiles(cctkGH);
+    error_count += IOHDF5<3>::CloseFiles(cctkGH);
+
+    if (error_count > 0 and abort_on_io_errors) {
+      CCTK_ERROR("Aborting simulation due to previous I/O errors");
+    }
+  }
 }
 
 // Explicit instantiation for all slice output dimensions

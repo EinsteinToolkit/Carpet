@@ -46,6 +46,12 @@ schedule CarpetIOHDF5_CloseFiles at POSTINITIAL
   OPTIONS: global
 } "Close all filereader input files"
 
+schedule CarpetIOHDF5_CloseOutputFiles at PRESTEP
+{
+  LANG: C
+  OPTIONS: global
+} "Close all output files opened during last output"
+
 if (! CCTK_Equals (recover, "no") && *recover_file)
 {
   schedule CarpetIOHDF5_RecoverParameters at RECOVER_PARAMETERS

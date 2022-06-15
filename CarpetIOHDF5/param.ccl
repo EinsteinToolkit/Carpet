@@ -422,12 +422,20 @@ BOOLEAN out3D_outer_ghosts "Output outer boundary zones (assuming that there are
 {
 } "yes"
 
-# These parameters are here for historic reasons only.
-# They might go away in the future.  Do not use them.
+# This parameter is here for historic reasons only.
+# It might go away in the future.  Do not use it.
 
 BOOLEAN out1D_d "Do output along the diagonal" STEERABLE = ALWAYS
 {
 } "yes"
+
+KEYWORD flush_to_disk "How frequently to flush outND_vars data to disk" STEERABLE = ALWAYS
+{
+  "immediately" :: "flush as soon as the write finishes"
+  "reflevel" :: "after each refinement level output"
+  "iteration" :: "once per iteration"
+  "checkpoint" :: "before each checkpoint"
+} "immediately"
 
 #######################################################################
 # checkpoint/recovery
