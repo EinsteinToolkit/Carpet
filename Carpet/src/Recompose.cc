@@ -1131,10 +1131,31 @@ static void SplitRegions_AsSpecified(cGH const *const cctkGH,
   const ivect cstr = rstr0;
   const ivect glonp = (rub0 - rlb0) / cstr;
   //     const ivect locnp = (glonp + nprocs_dir - 1) / nprocs_dir;
-  const ivect locnp = glonp / nprocs_dir;
-  const ivect rem = glonp % nprocs_dir;
+  const i2vect &ghost_width = vdd.AT(reg0.map)->ghost_widths.AT(0);
+  const ivect intnp = glonp - ghost_width[0] - ghost_width[1];
+
+  /* distribute the grids uniformly according to the num of global grid points,
+   * there are no ghost points at the global boundary */
+  const ivect default_locnp = glonp / nprocs_dir;
+  const ivect default_rem = glonp % nprocs_dir;
+
+  /* distribute the grids uniformly according to the num of internal grid
+   * points, there are ghost points at the global boundary which should be
+   * deducted */
+  const ivect split_interior_locnp = intnp / nprocs_dir;
+  const ivect split_interior_rem = intnp % nprocs_dir;
+
+  const bvect split_interior(split_interior_points_x, split_interior_points_y,
+                             split_interior_points_z);
+  const ivect locnp =
+      either(split_interior, split_interior_locnp, default_locnp);
+  const ivect rem = either(split_interior, split_interior_rem, default_rem);
+
   const ivect step = locnp * cstr;
   assert(dim == 3);
+
+  const ivect halfrem = rem / 2;
+  const ivect halfnprocs_dir = nprocs_dir / 2;
 
   vector<int> boundsz(nprocs_dir[2] + 1);
   vector<ipfulltree *> subtreesz(nprocs_dir[2]);
@@ -1152,13 +1173,69 @@ static void SplitRegions_AsSpecified(cGH const *const cctkGH,
         ivect cub = rlb0 + step * (ipos + 1);
         // 	  clb = min (clb, rub);
         // 	  cub = min (cub, rub);
+
+        /* modify component lower and upper boundary accordingly */
+        if (split_interior_points_x) {
+          if (i > 0)
+            clb[0] = clb[0] + ghost_width[0][0];
+          if (i < nprocs_dir[0] - 1)
+            cub[0] = cub[0] + ghost_width[1][0];
+          else
+            cub[0] = cub[0] + ghost_width[0][0] + ghost_width[1][0];
+        }
+        if (split_interior_points_y) {
+          if (j > 0)
+            clb[1] = clb[1] + ghost_width[0][1];
+          if (j < nprocs_dir[1] - 1)
+            cub[1] = cub[1] + ghost_width[1][1];
+          else
+            cub[1] = cub[1] + ghost_width[0][1] + ghost_width[1][1];
+        }
+        if (split_interior_points_z) {
+          if (k > 0)
+            clb[2] = clb[2] + ghost_width[0][2];
+          if (k < nprocs_dir[2] - 1)
+            cub[2] = cub[2] + ghost_width[1][2];
+          else
+            cub[2] = cub[2] + ghost_width[0][2] + ghost_width[1][2];
+        }
+
+        const bvect symmetrically_distribute_points(
+            symmetrically_distribute_points_x,
+            symmetrically_distribute_points_y,
+            symmetrically_distribute_points_z);
         for (int d = 0; d < dim; ++d) {
-          if (ipos[d] < rem[d]) {
-            clb[d] += cstr[d] * ipos[d];
-            cub[d] += cstr[d] * (ipos[d] + 1);
+          /* if symmetrically distributed in each dir */
+          if (symmetrically_distribute_points[d] && rem[d] != 0) {
+            if (rem[d] % 2 == 0) { // even num of points in phi required
+              if (ipos[d] < halfrem[d]) {
+                clb[d] += cstr[d] * ipos[d];
+                cub[d] += cstr[d] * (ipos[d] + 1);
+              } else if (ipos[d] < halfnprocs_dir[d]) {
+                clb[d] += cstr[d] * halfrem[d];
+                cub[d] += cstr[d] * halfrem[d];
+              } else if (ipos[d] < halfnprocs_dir[d] + halfrem[d]) {
+                clb[d] += cstr[d] * (ipos[d] - halfnprocs_dir[d] + halfrem[d]);
+                cub[d] +=
+                    cstr[d] * (ipos[d] - halfnprocs_dir[d] + halfrem[d] + 1);
+              } else {
+                clb[d] += cstr[d] * rem[d];
+                cub[d] += cstr[d] * rem[d];
+              }
+            } else {
+              CCTK_VERROR(
+                  "Could not symmetrically_distribute_points, since point num "
+                  "%d is not even in the dir being distributed",
+                  (int)rem[d]);
+            }
           } else {
-            clb[d] += cstr[d] * rem[d];
-            cub[d] += cstr[d] * rem[d];
+            if (ipos[d] < rem[d]) {
+              clb[d] += cstr[d] * ipos[d];
+              cub[d] += cstr[d] * (ipos[d] + 1);
+            } else {
+              clb[d] += cstr[d] * rem[d];
+              cub[d] += cstr[d] * rem[d];
+            }
           }
         }
         assert(all(clb >= 0));

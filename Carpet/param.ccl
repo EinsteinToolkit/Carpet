@@ -472,6 +472,28 @@ CCTK_INT processor_topology_3d_z "Number of processors in z-direction" STEERABLE
   1:* :: "must be positive"
 } 1
 
+BOOLEAN split_interior_points_x "Uniformly divide interior points across processors in x-direction" STEERABLE=recover
+{
+} "no"
+
+BOOLEAN split_interior_points_y "Uniformly divide interior points across processors in y-direction" STEERABLE=recover
+{
+} "no"
+
+BOOLEAN split_interior_points_z "Uniformly divide interior points across processors in z-direction" STEERABLE=recover
+{
+} "no"
+
+BOOLEAN symmetrically_distribute_points_x "Symmetrically distribute points in x-direction over domain center" STEERABLE=recover
+{
+} "no"
+BOOLEAN symmetrically_distribute_points_y "Symmetrically distribute points in y-direction over domain center" STEERABLE=recover
+{
+} "no"
+BOOLEAN symmetrically_distribute_points_z "Symmetrically distribute points in z-direction over domain center" STEERABLE=recover
+{
+} "no"
+
 CCTK_INT split_direction "Direction in which the domain should be split (for processor_topology=along-dir)" STEERABLE=recover
 {
   0:* :: "0 for x, 1 for y, 2 for z, etc."
