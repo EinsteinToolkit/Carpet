@@ -66,7 +66,7 @@ template <int outdim> vector<ioRequest *> IOHDF5<outdim>::slice_requests;
 
 // Caches for open file handles
 template <int outdim>
-typename IOHDF5<outdim>::hdf5_files_t IOHDF5<outdim>::hdf5_files;
+typename IOHDF5<outdim>::hdf5_files_t IOHDF5<outdim>::hdf5_files(0);
 
 // IO performance counters
 CCTK_REAL io_files;
@@ -830,7 +830,8 @@ int IOHDF5<outdim>::OpenFile(const cGH *const cctkGH, const int m,
     const string filenamestr = filenamebuf.str();
     const char *const filename = filenamestr.c_str();
 
-    if (hdf5_files.count(filenamestr) == 0) {
+    const auto it = hdf5_files.find(filenamestr);
+    if (it == hdf5_files.end()) {
       // Open the file
       bool file_exists = false;
       if (not truncate_file) {
@@ -868,10 +869,10 @@ int IOHDF5<outdim>::OpenFile(const cGH *const cctkGH, const int m,
                                                H5F_ACC_RDWR, fapl_id));
         HDF5_ERROR(H5Pclose(fapl_id));
       }
-      hdf5_files[filenamestr] = file;
+      hdf5_files.insert(file);
       io_files += 1;
     } else {
-      file = hdf5_files[filenamestr];
+      file = *it;
     }
 
   } // if on the I/O processor
@@ -880,7 +881,7 @@ int IOHDF5<outdim>::OpenFile(const cGH *const cctkGH, const int m,
 }
 
 template <int outdim>
-int IOHDF5<outdim>::CloseFile(const cGH *const cctkGH, hdf5_file_t &file) {
+int IOHDF5<outdim>::CloseFile(const cGH *const cctkGH, const hdf5_file_t &file) {
   DECLARE_CCTK_PARAMETERS;
 
   int error_count = 0;
@@ -898,8 +899,6 @@ int IOHDF5<outdim>::CloseFile(const cGH *const cctkGH, hdf5_file_t &file) {
     }
 
     hdf5_files.erase(file.filename);
-
-    file.file = file.index_file = -1;
 
     HDF5_ERROR(H5garbage_collect());
   }
@@ -1684,9 +1683,8 @@ template <int outdim> int IOHDF5<outdim>::CloseFiles(const cGH *const cctkGH) {
   io_bytes = 0;
 
   for (auto it = hdf5_files.begin(); it != hdf5_files.end(); /* in loop */) {
-    hdf5_file_t &hdf5_file =
-        (it++)->second; // must be before CloseFile which modifies container
-    error_count += CloseFile(cctkGH, hdf5_file);
+    // must increment it before CloseFile which modifies container
+    error_count += CloseFile(cctkGH, *it++);
   }
   assert(hdf5_files.empty());
   hdf5_files.clear();

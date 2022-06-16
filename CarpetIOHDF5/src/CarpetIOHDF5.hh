@@ -5,7 +5,7 @@
 #include <hdf5.h>
 
 #include <vector>
-#include <map>
+#include <unordered_set>
 
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 #include "carpet.hh"
@@ -176,8 +176,20 @@ template <int outdim> struct IOHDF5 {
     hid_t index_file;
 
     hdf5_file_t() : filename(""), file(-1), index_file(-1){};
+    hdf5_file_t(const std::string &filename_) : filename(filename), file(-1), index_file(-1){};
+
+    struct hash {
+      size_t operator()(const hdf5_file_t &a) const {
+        return std::hash<std::string>()(a.filename);
+      };
+    };
+    struct equals {
+      bool operator()(const hdf5_file_t &a, const hdf5_file_t &b) const {
+        return a.filename == b.filename;
+      };
+    };
   };
-  typedef std::map<std::string, hdf5_file_t> hdf5_files_t;
+  typedef std::unordered_set<hdf5_file_t, typename hdf5_file_t::hash, typename hdf5_file_t::equals> hdf5_files_t;
   static hdf5_files_t hdf5_files;
 
   // Scheduled functions
@@ -221,7 +233,7 @@ template <int outdim> struct IOHDF5 {
                        const vect<CCTK_REAL, dim> &coord_upper,
                        const vect<CCTK_REAL, dim> &coord_delta);
 
-  static int CloseFile(const cGH *cctkGH, hdf5_file_t &file);
+  static int CloseFile(const cGH *cctkGH, const hdf5_file_t &file);
 
   static int CloseFiles(const cGH *const cctkGH);
 
