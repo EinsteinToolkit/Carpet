@@ -1134,14 +1134,14 @@ static void SplitRegions_AsSpecified(cGH const *const cctkGH,
   const i2vect &ghost_width = vdd.AT(reg0.map)->ghost_widths.AT(0);
   const ivect intnp = glonp - ghost_width[0] - ghost_width[1];
 
-  /* distribute the grids uniformly according to the num of global grid points,
-   * there are no ghost points at the global boundary */
+  /* distribute the grids uniformly according to num of global grid points */
   const ivect default_locnp = glonp / nprocs_dir;
   const ivect default_rem = glonp % nprocs_dir;
 
-  /* distribute the grids uniformly according to the num of internal grid
-   * points, there are ghost points at the global boundary which should be
-   * deducted */
+  /* distribute the grids uniformly according to num of interior grid points,
+   * there are boundary points at the outer boundary which need to be deducted,
+   * here we assumed that the size of outer boundary is the same with the size
+   * of ghost points */
   const ivect split_interior_locnp = intnp / nprocs_dir;
   const ivect split_interior_rem = intnp % nprocs_dir;
 
@@ -1175,29 +1175,16 @@ static void SplitRegions_AsSpecified(cGH const *const cctkGH,
         // 	  cub = min (cub, rub);
 
         /* modify component lower and upper boundary accordingly */
-        if (split_interior_points_x) {
-          if (i > 0)
-            clb[0] = clb[0] + ghost_width[0][0];
-          if (i < nprocs_dir[0] - 1)
-            cub[0] = cub[0] + ghost_width[1][0];
-          else
-            cub[0] = cub[0] + ghost_width[0][0] + ghost_width[1][0];
-        }
-        if (split_interior_points_y) {
-          if (j > 0)
-            clb[1] = clb[1] + ghost_width[0][1];
-          if (j < nprocs_dir[1] - 1)
-            cub[1] = cub[1] + ghost_width[1][1];
-          else
-            cub[1] = cub[1] + ghost_width[0][1] + ghost_width[1][1];
-        }
-        if (split_interior_points_z) {
-          if (k > 0)
-            clb[2] = clb[2] + ghost_width[0][2];
-          if (k < nprocs_dir[2] - 1)
-            cub[2] = cub[2] + ghost_width[1][2];
-          else
-            cub[2] = cub[2] + ghost_width[0][2] + ghost_width[1][2];
+        const ivect ijk(i, j, k);
+        for (int d = 0; d < dim; ++d) {
+          if (split_interior[d]) {
+            if (ijk[d] > 0)
+              clb[d] = clb[d] + ghost_width[0][d];
+            if (ijk[d] < nprocs_dir[d] - 1)
+              cub[d] = cub[d] + ghost_width[1][d];
+            else
+              cub[d] = cub[d] + ghost_width[0][d] + ghost_width[1][d];
+          }
         }
 
         const bvect symmetrically_distribute_points(
@@ -1207,7 +1194,9 @@ static void SplitRegions_AsSpecified(cGH const *const cctkGH,
         for (int d = 0; d < dim; ++d) {
           /* if symmetrically distributed in each dir */
           if (symmetrically_distribute_points[d] && rem[d] != 0) {
-            if (rem[d] % 2 == 0) { // even num of points in phi required
+            if (rem[d] % 2 == 0) { // symmetric arround the center of
+                                   // computational domain in dir 'd' where
+                                   // symmetrically_distribute_points[d] = yes
               if (ipos[d] < halfrem[d]) {
                 clb[d] += cstr[d] * ipos[d];
                 cub[d] += cstr[d] * (ipos[d] + 1);

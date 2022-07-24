@@ -1,0 +1,69 @@
+ActiveThorns = "
+        Boundary
+        Carpet
+        CarpetIOASCII
+        CarpetLib
+        CartGrid3D
+        CoordBase
+        IOUtil
+        InitBase
+        MoL
+        SymBase
+"
+
+$ghost_size = 1
+$boundary_size = 1
+$num_levels = 1
+
+IOASCII::out1D_vars = "
+        grid::x
+"
+
+IO::out_dir       = $parfile
+IO::out_fileinfo  = "none"
+IO::parfile_write = no
+
+IOASCII::out1D_every = 1
+IOASCII::out1D_d     = no
+IOASCII::out1D_y     = no
+IOASCII::out1D_z     = no
+
+Carpet::max_refinement_levels    = 1
+Carpet::use_buffer_zones         = yes
+Carpet::prolongation_order_space =  1
+Carpet::prolongation_order_time  =  1
+
+Carpet::init_fill_timelevels = yes
+
+CartGrid3D::type         = "CoordBase"
+CartGrid3D::domain       = "full"
+CartGrid3D::avoid_origin = no
+
+CoordBase::xmin = -1.
+CoordBase::xmax = +1 - 0.125
+
+CoordBase::ymin = -0.125
+CoordBase::ymax = +0.125
+CoordBase::zmin = -0.125
+CoordBase::zmax = +0.125
+CoordBase::dx   =  0.125
+CoordBase::dy   =  0.125
+CoordBase::dz   =  0.125
+
+driver::ghost_size  = $ghost_size
+Cactus::cctk_itlast = 0
+
+Carpet::domain_from_CoordBase = yes
+Carpet::split_interior_points_x = yes
+Carpet::processor_topology = "manual"
+Carpet::processor_topology_3d_x = 4
+Carpet::processor_topology_3d_y = 1
+Carpet::processor_topology_3d_z = 1
+
+CoordBase::boundary_size_x_lower = $boundary_size
+CoordBase::boundary_size_y_lower = $boundary_size
+CoordBase::boundary_size_z_lower = $boundary_size
+CoordBase::boundary_size_x_upper = $boundary_size
+CoordBase::boundary_size_y_upper = $boundary_size
+CoordBase::boundary_size_z_upper = $boundary_size
+
