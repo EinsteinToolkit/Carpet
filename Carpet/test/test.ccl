@@ -27,3 +27,8 @@ TEST presync
 {
   NPROCS 2
 }
+
+TEST test_split_interior
+{
+  NPROCS 4
+}
