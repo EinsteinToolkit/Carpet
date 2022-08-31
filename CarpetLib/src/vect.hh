@@ -268,7 +268,7 @@ public:
   DECLARE_MEMBER_OPERATOR_0(operator+, +)
   DECLARE_MEMBER_OPERATOR_0(operator-, -)
   DECLARE_MEMBER_OPERATOR_0(operator~, ~)
-// DECLARE_MEMBER_OPERATOR_0_RET (operator!, !, bool)
+  // DECLARE_MEMBER_OPERATOR_0_RET (operator!, !, bool)
 
 #if 0
   /** This corresponds to the ?: operator.  Return a vector with the
@@ -619,7 +619,7 @@ inline ostream &operator<<(ostream &os, const vect<T, D> &a) {
   a.output(os);
   return os;
 }
-}
+} // namespace CarpetLib
 
 // Comparison
 
@@ -627,8 +627,7 @@ namespace std {
 using namespace CarpetLib;
 
 // ==
-template <typename T, int D>
-struct equal_to<vect<T, D> > : binary_function<vect<T, D>, vect<T, D>, bool> {
+template <typename T, int D> struct equal_to<vect<T, D> > {
   bool operator()(const vect<T, D> &x, const vect<T, D> &y) const {
     /*const*/ equal_to<T> T_equal_to;
     for (int d = 0; d < D; ++d) {
@@ -640,8 +639,7 @@ struct equal_to<vect<T, D> > : binary_function<vect<T, D>, vect<T, D>, bool> {
 };
 
 // <
-template <typename T, int D>
-struct less<vect<T, D> > : binary_function<vect<T, D>, vect<T, D>, bool> {
+template <typename T, int D> struct less<vect<T, D> > {
   bool operator()(const vect<T, D> &x, const vect<T, D> &y) const {
     /*const*/ less<T> T_less;
     for (int d = D - 1; d >= 0; --d) {
@@ -655,39 +653,33 @@ struct less<vect<T, D> > : binary_function<vect<T, D>, vect<T, D>, bool> {
 };
 
 // >
-template <typename T, int D>
-struct greater<vect<T, D> > : binary_function<vect<T, D>, vect<T, D>, bool> {
+template <typename T, int D> struct greater<vect<T, D> > {
   bool operator()(const vect<T, D> &x, const vect<T, D> &y) const {
     return less<vect<T, D> >()(y, x);
   }
 };
 
 // >=
-template <typename T, int D>
-struct greater_equal<vect<T, D> >
-    : binary_function<vect<T, D>, vect<T, D>, bool> {
+template <typename T, int D> struct greater_equal<vect<T, D> > {
   bool operator()(const vect<T, D> &x, const vect<T, D> &y) const {
     return not less<vect<T, D> >()(x, y);
   }
 };
 
 // <=
-template <typename T, int D>
-struct less_equal<vect<T, D> > : binary_function<vect<T, D>, vect<T, D>, bool> {
+template <typename T, int D> struct less_equal<vect<T, D> > {
   bool operator()(const vect<T, D> &x, const vect<T, D> &y) const {
     return not greater<vect<T, D> >()(x, y);
   }
 };
 
 // !=
-template <typename T, int D>
-struct not_equal_to<vect<T, D> >
-    : binary_function<vect<T, D>, vect<T, D>, bool> {
+template <typename T, int D> struct not_equal_to<vect<T, D> > {
   bool operator()(const vect<T, D> &x, const vect<T, D> &y) const {
     return not equal_to<vect<T, D> >()(x, y);
   }
 };
-}
+} // namespace std
 
 namespace CarpetLib {
 using namespace std;
@@ -703,7 +695,7 @@ template <> inline MPI_Datatype mpi_datatype<ivect>() {
   ivect dummy;
   return mpi_datatype(dummy);
 }
-}
+} // namespace dist
 
 #if 0  
 // Specialise explicit constructors
@@ -761,8 +753,8 @@ vect<int, 3>::vect(const int &x, const int &y, const int &z, const int &t);
 // Specialise for CCTK_REAL
 
 template <>
-inline vect<CCTK_REAL, dim> &vect<CCTK_REAL, dim>::
-operator%=(const vect<CCTK_REAL, dim> &a) {
+inline vect<CCTK_REAL, dim> &
+vect<CCTK_REAL, dim>::operator%=(const vect<CCTK_REAL, dim> &a) {
   for (int d = 0; d < dim; ++d) {
     elt[d] = fmod(elt[d], a[d]);
     if (elt[d] > a[d] * (CCTK_REAL)(1.0 - 1.0e-10))
@@ -815,6 +807,6 @@ inline vect<CCTK_REAL, dim> imod(const vect<CCTK_REAL, dim> &a,
   }
   return r;
 }
-}
+} // namespace CarpetLib
 
 #endif // VECT_HH

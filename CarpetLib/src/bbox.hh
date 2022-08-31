@@ -257,56 +257,48 @@ inline ostream &operator<<(ostream &os, const bbox<T, D> &b) {
   b.output(os);
   return os;
 }
-}
+} // namespace CarpetLib
 
 // Comparison
 
 namespace std {
 // ==
-template <typename T, int D>
-struct equal_to<bbox<T, D> > : binary_function<bbox<T, D>, bbox<T, D>, bool> {
+template <typename T, int D> struct equal_to<bbox<T, D> > {
   bool operator()(const bbox<T, D> &x, const bbox<T, D> &y) const;
 };
 
 // <
-template <typename T, int D>
-struct less<bbox<T, D> > : binary_function<bbox<T, D>, bbox<T, D>, bool> {
+template <typename T, int D> struct less<bbox<T, D> > {
   bool operator()(const bbox<T, D> &x, const bbox<T, D> &y) const;
 };
 
 // >
-template <typename T, int D>
-struct greater<bbox<T, D> > : binary_function<bbox<T, D>, bbox<T, D>, bool> {
+template <typename T, int D> struct greater<bbox<T, D> > {
   bool operator()(const bbox<T, D> &x, const bbox<T, D> &y) const {
     return less<bbox<T, D> >()(y, x);
   }
 };
 
 // >=
-template <typename T, int D>
-struct greater_equal<bbox<T, D> >
-    : binary_function<bbox<T, D>, bbox<T, D>, bool> {
+template <typename T, int D> struct greater_equal<bbox<T, D> > {
   bool operator()(const bbox<T, D> &x, const bbox<T, D> &y) const {
     return not less<bbox<T, D> >()(x, y);
   }
 };
 
 // <=
-template <typename T, int D>
-struct less_equal<bbox<T, D> > : binary_function<bbox<T, D>, bbox<T, D>, bool> {
+template <typename T, int D> struct less_equal<bbox<T, D> > {
   bool operator()(const bbox<T, D> &x, const bbox<T, D> &y) const {
     return not greater<bbox<T, D> >()(x, y);
   }
 };
 
 // !=
-template <typename T, int D>
-struct not_equal_to<bbox<T, D> >
-    : binary_function<bbox<T, D>, bbox<T, D>, bool> {
+template <typename T, int D> struct not_equal_to<bbox<T, D> > {
   bool operator()(const bbox<T, D> &x, const bbox<T, D> &y) const {
     return not equal_to<bbox<T, D> >()(x, y);
   }
 };
-}
+} // namespace std
 
 #endif // BBOX_HH
