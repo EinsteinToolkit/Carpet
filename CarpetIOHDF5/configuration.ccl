@@ -10,6 +10,10 @@ OPTIONAL rnpletal
 {
 }
 
+OPTIONAL SDF
+{
+}
+
 PROVIDES CarpetIOHDF5
 {
 }
