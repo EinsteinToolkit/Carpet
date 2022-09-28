@@ -49,16 +49,23 @@ th::~th() {
 
 // Modifiers
 void th::regrid() {
-  CCTK_REAL const basetime = 0.0;
-  CCTK_REAL const basedelta = 1.0;
-
   const int old_mglevels = times.size();
+  // need to provide time and delta for newly created time levels
+  // use known ones of possible and dummy ones for the initial regrid
+  // TODO: this is still wrong if a regrid happens when coarse and fine are not
+  // aligned in time due to assumptions made in
+  // time_interpolation_during_regridding and obvioulsy off when the flag is
+  // not set since then times(rl) = times(rl-1)
+  CCTK_REAL const basetime = old_mglevels == 0 ? 0. : times.AT(0).AT(0).AT(0);
+  CCTK_REAL const basedelta = old_mglevels == 0 ? 1. : deltas.AT(0).AT(0);
+
   times.resize(h.mglevels());
   deltas.resize(h.mglevels());
   for (int ml = 0; ml < h.mglevels(); ++ml) {
     const int old_reflevels = times.AT(ml).size();
     times.AT(ml).resize(h.reflevels());
     deltas.AT(ml).resize(h.reflevels());
+
     for (int rl = 0; rl < h.reflevels(); ++rl) {
       if (ml == 0) {
         deltas.AT(ml).AT(rl) = basedelta / reffacts.AT(rl);
