@@ -936,13 +936,17 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
   bool any_driver_bc = false;
   int const vstart = CCTK_FirstVarIndexI(group_index);
   int const vnum   = CCTK_NumVarsInGroupI(group_index);
+  std::ostringstream tmp;
+  bool first = true;
   for(int var = 0; var < vnum; var++) {
     int const var_index = vstart + var;
 
     if(not boundary_conditions.count(var_index)) {
-#ifdef PRESYNC_DEBUG
-      std::cout << "ApplyBC: No boundary_conditions for " << CCTK_GroupName(var_index) << std::endl;
-#endif
+      if(first) {
+        tmp << CCTK_FullVarName(var_index);
+        first = false;
+      }
+      tmp << ", " << CCTK_FullVarName(var_index);
       continue;
     }
 
@@ -965,12 +969,18 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
       any_driver_bc = true;
     }
   }
+  if(!first) {
+    std::ostringstream msg;
+    msg << "No boundary conditions registered for variables in group " << CCTK_FullGroupName(group_index)
+        << ".\n The unregistered variable(s) is(are) " << tmp.str().c_str();
+    CCTK_VWARN(CCTK_WARN_ALERT,msg.str().c_str());
+  }
   if(any_driver_bc) {
     do_applyphysicalbcs = true;
     int const ierr = ScheduleTraverse(where, "Driver_ApplyBCs",
                                       const_cast<cGH*>(cctkGH));
     if(ierr)
-      CCTK_VWARN(CCTK_WARN_ALERT, "Failed ot traverse group Driver_ApplyBCs: %d\n", ierr);
+      CCTK_VWARN(CCTK_WARN_ALERT, "Failed to traverse group Driver_ApplyBCs: %d\n", ierr);
     do_applyphysicalbcs = false;
 
     // sanity check on thorn Boundary
