@@ -936,17 +936,17 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
   bool any_driver_bc = false;
   int const vstart = CCTK_FirstVarIndexI(group_index);
   int const vnum   = CCTK_NumVarsInGroupI(group_index);
-  std::ostringstream no_bc_selected;
-  bool first = true;
+  std::ostringstream missing_bcs;
+  bool no_bc_selected = false;
   for(int var = 0; var < vnum; var++) {
     int const var_index = vstart + var;
 
     if(not boundary_conditions.count(var_index)) {
-      if(first) {
-        no_bc_selected << CCTK_FullVarName(var_index);
-        first = false;
+      if(!no_bc_selected) {
+        missing_bcs << CCTK_FullVarName(var_index);
+        no_bc_selected = true;
       } else {
-        no_bc_selected << ", " << CCTK_FullVarName(var_index);
+        missing_bcs << ", " << CCTK_FullVarName(var_index);
       }
       continue;
     }
@@ -970,9 +970,9 @@ void ApplyPhysicalBCsForGroupI(const cGH *cctkGH, const int group_index) {
       any_driver_bc = true;
     }
   }
-  if(!first) {
+  if(no_bc_selected) {
     CCTK_VWARN(CCTK_WARN_ALERT,"No boundary conditions registered for variables in group %s. The unregistered variable(s) is(are) %s.",
-                                CCTK_FullGroupName(group_index), no_bc_selected.str().c_str());
+                                CCTK_FullGroupName(group_index), missing_bcs.str().c_str());
   }
   if(any_driver_bc) {
     do_applyphysicalbcs = true;
