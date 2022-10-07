@@ -625,7 +625,7 @@ void enter_local_mode(cGH *const cctkGH, int const c, int const lc,
       assert(cctkGH->cctk_lsh[d] <= cctkGH->cctk_ash[d]);
 #ifdef CCTK_HAVE_CGH_TILE
       assert(cctkGH->cctk_tile_min[d] == 0);
-      assert(cctkGH->cctk_tile_max[d] = cctkGH->cctk_lsh[d]);
+      assert(cctkGH->cctk_tile_max[d] == cctkGH->cctk_lsh[d]);
 #endif
       assert(cctkGH->cctk_from[d] >= 0);
       assert(cctkGH->cctk_from[d] <= cctkGH->cctk_to[d]);
