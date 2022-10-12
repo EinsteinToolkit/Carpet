@@ -25,7 +25,7 @@ SCHEDULE EvolutionMaskBase_InitEvolutionMask IN EvolutionMaskBase_SetupEvolution
 {
   LANG: C
   OPTIONS: global loop-local
-  WRITES: CarpetEvolutionMask::evolution_mask(Everywhere), buffer_mask
+  WRITES: CarpetEvolutionMask::evolution_mask(Everywhere), buffer_mask(everywhere)
 } "Initialise the mask function"
 
 SCHEDULE GROUP SetupEvolutionMask IN EvolutionMaskBase_SetupEvolutionMask AFTER EvolutionMaskBase_InitEvolutionMask
