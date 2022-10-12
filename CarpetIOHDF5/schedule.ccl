@@ -12,8 +12,8 @@ schedule CarpetIOHDF5_Init at INITIAL
 {
   LANG: C
   OPTIONS: global
-  WRITES: CarpetIOHDF5::this_iteration_slice(everywhere), last_output_iteration_slice, last_output_time_slice
-  WRITES: CarpetIOHDF5::this_iteration(everywhere), next_output_iteration, next_output_time
+  WRITES: CarpetIOHDF5::this_iteration_slice, last_output_iteration_slice, last_output_time_slice
+  WRITES: CarpetIOHDF5::this_iteration, next_output_iteration, next_output_time
 } "Initialisation routine"
 
 schedule CarpetIOHDF5_InitCheckpointingIntervals at POST_RECOVER_VARIABLES
