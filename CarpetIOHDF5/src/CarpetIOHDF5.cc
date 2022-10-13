@@ -74,6 +74,15 @@ int CarpetIOHDF5_Startup(void) {
   return (0);
 }
 
+void CarpetIOHDF5_ParamCheck(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_PARAMETERS;
+
+#ifdef H5_HAVE_PARALLEL
+  if (use_MPIIO)
+    CCTK_VWARN(CCTK_WARN_COMPLAIN, "use_MPIIO set but HDF5 does not support it. Regular IO will be used");
+#endif
+}
+
 // Called at basegrid during regular startup
 void CarpetIOHDF5_Init(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS_CarpetIOHDF5_Init;
@@ -984,6 +993,10 @@ static int OutputVarAs(const cGH *const cctkGH, const char *const fullname,
       hid_t fapl_id;
       HDF5_ERROR(fapl_id = H5Pcreate(H5P_FILE_ACCESS));
       HDF5_ERROR(H5Pset_fclose_degree(fapl_id, H5F_CLOSE_STRONG));
+#ifdef H5_HAVE_PARALLEL
+      if(use_MPIIO)
+        HDF5_ERROR(H5Pset_fapl_mpio(fapl_id, MPI_COMM_SELF, MPI_INFO_NULL));
+#endif
       HDF5_ERROR(
           file = H5Fcreate(c_filename, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id));
       if (output_index) {
@@ -1003,6 +1016,10 @@ static int OutputVarAs(const cGH *const cctkGH, const char *const fullname,
       hid_t fapl_id;
       HDF5_ERROR(fapl_id = H5Pcreate(H5P_FILE_ACCESS));
       HDF5_ERROR(H5Pset_fclose_degree(fapl_id, H5F_CLOSE_STRONG));
+#ifdef H5_HAVE_PARALLEL
+      if(use_MPIIO)
+        HDF5_ERROR(H5Pset_fapl_mpio(fapl_id, MPI_COMM_SELF, MPI_INFO_NULL));
+#endif
       HDF5_ERROR(file = H5Fopen(c_filename, H5F_ACC_RDWR, fapl_id));
       if (output_index)
         HDF5_ERROR(index_file =

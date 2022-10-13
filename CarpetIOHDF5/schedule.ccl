@@ -8,6 +8,11 @@ schedule CarpetIOHDF5_Startup at STARTUP after IOUtil_Startup
   LANG: C
 } "Startup routine"
 
+schedule CarpetIOHDF5_ParamCheck at PARAMCHECK
+{
+  LANG: C
+} "Startup routine"
+
 schedule CarpetIOHDF5_Init at INITIAL
 {
   LANG: C

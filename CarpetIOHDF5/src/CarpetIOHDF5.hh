@@ -224,6 +224,7 @@ extern "C" {
 int CarpetIOHDF5_RecoverParameters(void);
 int CarpetIOHDF5_SetNumRefinementLevels(void);
 int CarpetIOHDF5_Startup(void);
+void CarpetIOHDF5_ParamCheck(CCTK_ARGUMENTS);
 void CarpetIOHDF5_Init(CCTK_ARGUMENTS);
 void CarpetIOHDF5_InitCheckpointingIntervals(CCTK_ARGUMENTS);
 void CarpetIOHDF5_RecoverGridStructure(CCTK_ARGUMENTS);

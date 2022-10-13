@@ -490,3 +490,7 @@ BOOLEAN use_checksums "Use checksums for the HDF5 data" STEERABLE = ALWAYS
 BOOLEAN output_index "Output an index file for each output file" STEERABLE = ALWAYS
 {
 } "no"
+
+BOOLEAN use_MPIIO "Use (non-parallel) MPI-IO output backend if possible" STEERABLE = ALWAYS
+{
+} "no"
