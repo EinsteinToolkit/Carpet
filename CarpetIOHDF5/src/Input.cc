@@ -341,6 +341,29 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
   const bool in_recovery =
       called_from == CP_RECOVER_PARAMETERS or called_from == CP_RECOVER_DATA;
 
+  // serialize code by stalling constructor / destructor by passing a token
+  // TODO: use dist::comm() and find out why this fails with MPI_COMM_WORLD
+  // being an invalid communicatr
+  class serialize_t {
+    public:
+    serialize_t(bool do_serialize_) : do_serialize(do_serialize_) {
+      if(do_serialize) {
+        for (int ioproc = 0; ioproc < CCTK_MyProc(NULL); ioproc++) {
+          MPI_Barrier(MPI_COMM_WORLD);
+        }
+      }
+    }
+    ~serialize_t() {
+      if(do_serialize) {
+        for (int ioproc = CCTK_MyProc(NULL); ioproc < CCTK_nProcs(NULL); ioproc++) {
+          MPI_Barrier(MPI_COMM_WORLD);
+        }
+      }
+    }
+    private:
+    bool do_serialize;
+  };
+
   const char *const dir = in_recovery ? recover_dir : filereader_ID_dir;
   string setname(dir);
   if (called_from == FILEREADER_DATA) {
@@ -358,6 +381,7 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
     assert(called_from == CP_RECOVER_PARAMETERS or
            called_from == FILEREADER_DATA);
 
+    serialize_t serializer(serialize_reading_files);
     fileset = OpenFileSet(cctkGH, setname, basefilename, called_from);
     if (fileset == filesets.end()) {
       return (-1);
@@ -554,6 +578,7 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
 
   // loop over all input files of this set
   for (unsigned int i = 0; i < fileset->files.size(); i++) {
+    serialize_t serializer(serialize_reading_files);
 
     const int file_idx = (i + fileset->first_ioproc) % fileset->nioprocs;
     file_t &file = fileset->files[file_idx];

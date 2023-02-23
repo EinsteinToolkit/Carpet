@@ -468,6 +468,12 @@ BOOLEAN open_one_input_file_at_a_time "Open only one HDF5 file at a time when re
   "yes" :: "Process input files one after another (reduces memory requirements)"
 } "no"
 
+BOOLEAN serialize_reading_files "Open only one HDF5 file at a time when reading data" STEERABLE = ALWAYS
+{
+  "yes"  :: "Open one file after the other, coordinating among ranks"
+  "no" :: "Open all files in parallel."
+} "no"
+
 STRING skip_recover_variables "Skip these variables while recovering" STEERABLE = RECOVER
 {
   "" :: ""
