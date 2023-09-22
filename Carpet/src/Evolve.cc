@@ -122,11 +122,12 @@ int Evolve(tFleshConfig *const fc) {
       // since the number of evolved cells changes every iteration. We
       // thus calculate some average, which is also wrong, but better
       // than nothing.
+      const CCTK_INT num_substeps = MoLNumIntegratorSubsteps();
       const CCTK_REAL grid_cells =
-          *total_interior_point_updates_count / *evolution_steps_count;
+          *total_interior_point_updates_count / *evolution_steps_count / num_substeps;
       CCTK_VINFO("Grid cells: %g   "
                  "Grid cell updates per second: %g",
-                 double(grid_cells), double(*total_interior_points_per_second));
+                 double(grid_cells), double(*total_interior_points_per_second / num_substeps));
 
       CCTK_VINFO("Performance:");
       CCTK_VINFO("  total evolution time:            %g sec",
@@ -138,11 +139,11 @@ int Evolve(tFleshConfig *const fc) {
       CCTK_VINFO("  total iterations:                %d",
                  int(*evolution_steps_count));
       CCTK_VINFO("  total cells updated:             %g",
-                 double(*total_interior_point_updates_count));
+                 double(*total_interior_point_updates_count / num_substeps));
       CCTK_VINFO("  average iterations per second: %g",
                  double(*evolution_steps_count / *time_evolution));
       CCTK_VINFO("  average cell updates per second: %g",
-                 double(*total_interior_point_updates_count / *time_evolution));
+                 double(*total_interior_point_updates_count / *time_evolution / num_substeps));
       // TODO: Output this in a proper I/O method
       if (out_performance && CCTK_MyProc(NULL) == 0) {
         const int every =
