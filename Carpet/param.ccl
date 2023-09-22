@@ -19,6 +19,7 @@ USES KEYWORD initial_data_setup_method
 shares: IO
 
 USES STRING out_dir
+USES CCTK_INT out_every
 
 
 shares: CarpetLib
@@ -440,6 +441,19 @@ BOOLEAN include_maps_in_mode_timer_tree  "Include a breakdown of time spent on d
 BOOLEAN include_local_mode_in_mode_timer_tree  "Include a node for the time spent in local mode in the mode timer tree" STEERABLE=always
 {
 } "no"
+
+
+
+BOOLEAN out_performance "Output performance data in YAML format?" STEERABLE=always
+{
+} yes
+
+INT out_performance_every "Output performance data every that many iterations" STEERABLE=always
+{
+  -1 :: "use value of IO::out_every"
+  0 :: "never output performance data"
+  1:* :: "every that many iterations"
+} -1
 
 
 

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <map>
@@ -53,6 +54,20 @@ int Evolve(tFleshConfig *const fc) {
   BeginTimingEvolution(cctkGH);
   static Timers::Timer timer("Evolve");
   timer.start();
+
+  std::ofstream performance_file;
+  if (out_performance && CCTK_MyProc(NULL) == 0) {
+    const int every =
+        out_performance_every == -1 ? out_every : out_performance_every;
+    if (every > 0) {
+      std::ostringstream buf;
+      buf << out_dir << "/performance.yaml";
+      const std::string filename = buf.str();
+      performance_file.open(filename);
+      performance_file << "performance:\n" << flush;
+    }
+  }
+
   while (not do_terminate(cctkGH)) {
 
     AdvanceTime(cctkGH);
@@ -89,6 +104,68 @@ int Evolve(tFleshConfig *const fc) {
       }
       timer.stop();
     }
+
+    ENTER_GLOBAL_MODE(cctkGH, 0) {
+      DECLARE_CCTK_ARGUMENTS;
+      assert(evolution_steps_count);
+      const CCTK_REAL iterations_per_second =
+          *evolution_steps_count / *time_total;
+      CCTK_VINFO("Simulation time: %g   "
+                 "Iterations per second: %g   "
+                 "Simulation time per second: %g",
+                 double(cctkGH->cctk_time), double(iterations_per_second),
+                 double(cctkGH->cctk_delta_time * iterations_per_second)
+
+      );
+      // This is the same as H-AMR's "cell updates per second":
+      // Note: The quantity `grid cell` is not relevant for subcycling
+      // since the number of evolved cells changes every iteration. We
+      // thus calculate some average, which is also wrong, but better
+      // than nothing.
+      const CCTK_REAL grid_cells =
+          *interior_point_updates_count / *evolution_steps_count;
+      CCTK_VINFO("Grid cells: %g   "
+                 "Grid cell updates per second: %g",
+                 double(grid_cells), double(*interior_points_per_second));
+
+      CCTK_VINFO("Performance:");
+      CCTK_VINFO("  total evolution time:            %g sec",
+                 double(*time_evolution));
+      CCTK_VINFO("  total evolution compute time:    %g sec",
+                 // double(*time_computing + *time_communicating)
+                 double(*time_evolution));
+      CCTK_VINFO("  total evolution output time:     %g sec", double(*time_io));
+      CCTK_VINFO("  total iterations:                %d",
+                 int(*evolution_steps_count));
+      CCTK_VINFO("  total cells updated:             %g",
+                 double(*interior_point_updates_count));
+      CCTK_VINFO("  average iterations per second: %g",
+                 double(*evolution_steps_count / *time_evolution));
+      CCTK_VINFO("  average cell updates per second: %g",
+                 double(*interior_point_updates_count / *time_evolution));
+      // TODO: Output this in a proper I/O method
+      if (out_performance && CCTK_MyProc(NULL) == 0) {
+        const int every =
+            out_performance_every == -1 ? out_every : out_performance_every;
+        if (every > 0 && cctkGH->cctk_iteration % every == 0)
+          // Note: The quantity `evolution-compute-seconds` is wrong; here
+          // we count all compute seconds, not just  evolution
+          performance_file << "  " << *evolution_steps_count << ":\n"
+                           << "    evolution-seconds: " << *time_evolution
+                           << "\n"
+                           << "    evolution-compute-seconds: "
+                           // << (*time_computing + *time_communicating)
+                           << *time_evolution << "\n"
+                           << "    evolution-output-seconds: " << *time_io
+                           << "\n"
+                           << "    evolution-cell-updates: "
+                           << *interior_point_updates_count << "\n"
+                           << "    evolution-iterations: "
+                           << *evolution_steps_count << "\n"
+                           << flush;
+      }
+    }
+    LEAVE_GLOBAL_MODE;
 
     // Ensure that all levels have consistent times
     {
