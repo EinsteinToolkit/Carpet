@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <type_traits>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -558,122 +559,271 @@ void data<T>::transfer_p_r(data const *const src, ibbox const &dstbox,
 template <typename T>
 void data<T>::transfer_p_vc_cc(data const *const src, ibbox const &dstbox,
                                ibbox const &srcbox, int const order_space) {
-  transfer_prolongate(src, dstbox, srcbox, order_space);
-}
-
-template <>
-void data<CCTK_INT>::transfer_p_vc_cc(data const *const /*src*/,
-                                      ibbox const & /*dstbox*/,
-                                      ibbox const & /*srcbox*/,
-                                      int const /*order_space*/) {
-  CCTK_ERROR("Data type not supported");
+  if constexpr (std::is_integral_v<T>) {
+    CCTK_ERROR("Integral data types are not supported");
+  } else {
+    transfer_prolongate(src, dstbox, srcbox, order_space);
+  }
 }
 
 template <typename T>
 void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
                                   ibbox const &srcbox, int const order_space) {
-  DECLARE_CCTK_PARAMETERS;
+  if constexpr (std::is_integral_v<T>) {
+    CCTK_ERROR("Integral data types are not supported");
+  } else {
 
-  static Timer total("prolongate");
-  total.start();
+    DECLARE_CCTK_PARAMETERS;
+
+    static Timer total("prolongate");
+    total.start();
 
 #if CARPET_DIM == 3
 
-  switch (transport_operator) {
+    switch (transport_operator) {
 
-  case op_copy:
-  case op_Lagrange: {
-    static Timer timer("prolongate_Lagrange");
-    timer.start();
-    // enum centering { vertex_centered, cell_centered };
-    switch (cent) {
-    case vertex_centered: {
-      static void (*the_operators[])(
-          T const *restrict const src, ivect3 const &restrict srcpadext,
-          ivect3 const &restrict srcext, T *restrict const dst,
-          ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
-          ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
-          ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
-          void *const extraargs) = {
-          NULL, &prolongate_3d_rf2<T, 1>, NULL, &prolongate_3d_rf2<T, 3>,
-          NULL, &prolongate_3d_rf2<T, 5>, NULL, &prolongate_3d_rf2<T, 7>,
-          NULL, &prolongate_3d_rf2<T, 9>, NULL, &prolongate_3d_rf2<T, 11>,
-      };
+    case op_copy:
+    case op_Lagrange: {
+      static Timer timer("prolongate_Lagrange");
+      timer.start();
+      // enum centering { vertex_centered, cell_centered };
+      switch (cent) {
+      case vertex_centered: {
+        static void (*the_operators[])(
+            T const *restrict const src, ivect3 const &restrict srcpadext,
+            ivect3 const &restrict srcext, T *restrict const dst,
+            ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
+            ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
+            ibbox3 const &restrict srcregbbox,
+            ibbox3 const &restrict dstregbbox, void *const extraargs) = {
+            NULL, &prolongate_3d_rf2<T, 1>, NULL, &prolongate_3d_rf2<T, 3>,
+            NULL, &prolongate_3d_rf2<T, 5>, NULL, &prolongate_3d_rf2<T, 7>,
+            NULL, &prolongate_3d_rf2<T, 9>, NULL, &prolongate_3d_rf2<T, 11>,
+        };
 #if defined(CCTK_REAL_PRECISION_4)
-      if (order_space == 11)
-        CCTK_ERROR("There is no single precision vertex-centred stencil for "
-                   "op=\"LAGRANGE\" or op=\"COPY\" with order_space=11");
+        if (order_space == 11)
+          CCTK_ERROR("There is no single precision vertex-centred stencil for "
+                     "op=\"LAGRANGE\" or op=\"COPY\" with order_space=11");
 #endif
-      if (order_space < 0 or order_space > 11 or not the_operators[order_space])
-        CCTK_ERROR("There is no vertex-centred stencil for op=\"LAGRANGE\" or "
-                   "op=\"COPY\" with order_space not in {1, 3, 5, 7, 9, 11}");
-      call_operator<T>(
-          "prolongate", the_operators[order_space],
-          static_cast<T const *>(src->storage()), src->padded_shape(),
-          src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
-          this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
-      break;
-    }
-    case cell_centered: {
-      if (use_dgfe) {
-        // Don't use call_operator, because we parallelise ourselves
-        prolongate_3d_dgfe_rf2<T, 5>(
-            static_cast<T const *>(src->storage()), src->padded_shape(),
-            src->shape(), static_cast<T *>(this->storage()),
-            this->padded_shape(), this->shape(), src->extent(), this->extent(),
-            srcbox, dstbox, NULL);
-        break;
-      }
-      static void (*the_operators[])(
-          T const *restrict const src, ivect3 const &restrict srcpadext,
-          ivect3 const &restrict srcext, T *restrict const dst,
-          ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
-          ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
-          ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
-          void *const extraargs) = {
-          &prolongate_3d_cc_rf2<T, 0>, &prolongate_3d_cc_rf2<T, 1>,
-          &prolongate_3d_cc_rf2<T, 2>, &prolongate_3d_cc_rf2<T, 3>,
-          &prolongate_3d_cc_rf2<T, 4>, &prolongate_3d_cc_rf2<T, 5>};
-      if (order_space < 0 or order_space > 5)
-        CCTK_ERROR("There is no cell-centred stencil for op=\"LAGRANGE\" or "
-                   "op=\"COPY\" with order_space not in {0, 1, 2, 3, 4, 5}");
-      call_operator<T>(
-          "prolongate", the_operators[order_space],
-          static_cast<T const *>(src->storage()), src->padded_shape(),
-          src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
-          this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
-      break;
-    }
-    default:
-      assert(0);
-    }
-    timer.stop(0);
-    break;
-  }
-
-  case op_ENO: {
-    static Timer timer("prolongate_ENO");
-    timer.start();
-    // enum centering { vertex_centered, cell_centered };
-    switch (cent) {
-    case vertex_centered: {
-      switch (order_space) {
-      case 1:
-        CCTK_ERROR("There is no stencil for op=\"ENO\" with order_space=1");
-        break;
-      case 3:
-        call_operator<T>("prolongate", &prolongate_3d_eno,
+        if (order_space < 0 or order_space > 11 or
+            not the_operators[order_space])
+          CCTK_ERROR(
+              "There is no vertex-centred stencil for op=\"LAGRANGE\" or "
+              "op=\"COPY\" with order_space not in {1, 3, 5, 7, 9, 11}");
+        call_operator<T>("prolongate", the_operators[order_space],
                          static_cast<T const *>(src->storage()),
                          src->padded_shape(), src->shape(),
                          static_cast<T *>(this->storage()),
                          this->padded_shape(), this->shape(), src->extent(),
                          this->extent(), srcbox, dstbox, NULL);
         break;
+      }
+      case cell_centered: {
+        if (use_dgfe) {
+          // Don't use call_operator, because we parallelise ourselves
+          prolongate_3d_dgfe_rf2<T, 5>(
+              static_cast<T const *>(src->storage()), src->padded_shape(),
+              src->shape(), static_cast<T *>(this->storage()),
+              this->padded_shape(), this->shape(), src->extent(),
+              this->extent(), srcbox, dstbox, NULL);
+          break;
+        }
+        static void (*the_operators[])(
+            T const *restrict const src, ivect3 const &restrict srcpadext,
+            ivect3 const &restrict srcext, T *restrict const dst,
+            ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
+            ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
+            ibbox3 const &restrict srcregbbox,
+            ibbox3 const &restrict dstregbbox, void *const extraargs) = {
+            &prolongate_3d_cc_rf2<T, 0>, &prolongate_3d_cc_rf2<T, 1>,
+            &prolongate_3d_cc_rf2<T, 2>, &prolongate_3d_cc_rf2<T, 3>,
+            &prolongate_3d_cc_rf2<T, 4>, &prolongate_3d_cc_rf2<T, 5>};
+        if (order_space < 0 or order_space > 5)
+          CCTK_ERROR("There is no cell-centred stencil for op=\"LAGRANGE\" or "
+                     "op=\"COPY\" with order_space not in {0, 1, 2, 3, 4, 5}");
+        call_operator<T>("prolongate", the_operators[order_space],
+                         static_cast<T const *>(src->storage()),
+                         src->padded_shape(), src->shape(),
+                         static_cast<T *>(this->storage()),
+                         this->padded_shape(), this->shape(), src->extent(),
+                         this->extent(), srcbox, dstbox, NULL);
+        break;
+      }
+      default:
+        assert(0);
+      }
+      timer.stop(0);
+      break;
+    }
+
+    case op_ENO: {
+      static Timer timer("prolongate_ENO");
+      timer.start();
+      // enum centering { vertex_centered, cell_centered };
+      switch (cent) {
+      case vertex_centered: {
+        switch (order_space) {
+        case 1:
+          CCTK_ERROR("There is no stencil for op=\"ENO\" with order_space=1");
+          break;
+        case 3:
+          call_operator<T>("prolongate", &prolongate_3d_eno,
+                           static_cast<T const *>(src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast<T *>(this->storage()),
+                           this->padded_shape(), this->shape(), src->extent(),
+                           this->extent(), srcbox, dstbox, NULL);
+          break;
+        case 5:
+          // There is only one parameter for the prolongation order, but
+          // Whisky may want 5th order for spacetime and 3rd order for
+          // hydro, so we cheat here.
+          call_operator<T>("prolongate", &prolongate_3d_eno,
+                           static_cast<T const *>(src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast<T *>(this->storage()),
+                           this->padded_shape(), this->shape(), src->extent(),
+                           this->extent(), srcbox, dstbox, NULL);
+          break;
+        default:
+          CCTK_ERROR("There is no stencil for op=\"ENO\" with order_space!=3");
+          break;
+        }
+        break;
+      }
+      case cell_centered: {
+        static void (*the_operators[])(
+            T const *restrict const src, ivect3 const &restrict srcpadext,
+            ivect3 const &restrict srcext, T *restrict const dst,
+            ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
+            ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
+            ibbox3 const &restrict srcregbbox,
+            ibbox3 const &restrict dstregbbox, void *const extraargs) = {
+            &prolongate_3d_cc_eno_rf2<T, 2>,
+            // note that we cheat here: order is still 2 even though 3 was
+            // requested!
+            &prolongate_3d_cc_eno_rf2<T, 2>,
+            // note that we cheat here: order is 2 even though 4 was requested!
+            &prolongate_3d_cc_eno_rf2<T, 2>,
+            // note that we cheat here: order is 3 even though 5 was requested!
+            &prolongate_3d_cc_eno_rf2<T, 3>
+            // have cheated here for two reasons: first, the ENO prolongation
+            // operator stencil radius is larger than Lagrange (and dh.cc
+            // assumes that the stencil goes as order_space/2!), and second, we
+            // want to allow spacetime interpolation to be of higher order while
+            // keeping the implemeneted ENO order!
+        };
+        if (order_space < 2 or order_space > 5)
+          CCTK_ERROR("There is no cell-centred stencil for op=\"ENO\" with "
+                     "order_space not in {2,3,4,5}");
+
+        call_operator<T>("prolongate", the_operators[order_space - 2],
+                         static_cast<T const *>(src->storage()),
+                         src->padded_shape(), src->shape(),
+                         static_cast<T *>(this->storage()),
+                         this->padded_shape(), this->shape(), src->extent(),
+                         this->extent(), srcbox, dstbox, NULL);
+      } break;
+      default:
+        assert(0);
+      }
+      timer.stop(0);
+    } break;
+
+    case op_WENO: {
+      static Timer timer("prolongate_WENO");
+      timer.start();
+      // enum centering { vertex_centered, cell_centered };
+      switch (cent) {
+      case vertex_centered: {
+        switch (order_space) {
+        case 1:
+          CCTK_ERROR("There is no stencil for op=\"WENO\" with order_space=1");
+          break;
+        case 3:
+          CCTK_ERROR("There is no stencil for op=\"WENO\" with order_space=3");
+          break;
+        case 5:
+          call_operator<T>("prolongate", &prolongate_3d_eno,
+                           static_cast<T const *>(src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast<T *>(this->storage()),
+                           this->padded_shape(), this->shape(), src->extent(),
+                           this->extent(), srcbox, dstbox, NULL);
+          break;
+        default:
+          CCTK_ERROR("There is no stencil for op=\"WENO\" with order_space!=5");
+          break;
+        }
+        break;
+      }
+      case cell_centered: {
+        CCTK_ERROR(
+            "There are currently no cell-centred stencils for op=\"WENO\"");
+        break;
+      }
+      default:
+        assert(0);
+      }
+      timer.stop(0);
+    } break;
+    case op_TVD: {
+      static Timer timer("prolongate_TVD");
+      timer.start();
+      // enum centering { vertex_centered, cell_centered };
+      switch (cent) {
+      case vertex_centered: {
+        switch (order_space) {
+        case 1:
+          call_operator<T>("prolongate", &prolongate_3d_tvd,
+                           static_cast<T const *>(src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast<T *>(this->storage()),
+                           this->padded_shape(), this->shape(), src->extent(),
+                           this->extent(), srcbox, dstbox, NULL);
+          break;
+        default:
+          CCTK_ERROR("There is no stencil for op=\"TVD\" with order_space!=1");
+          break;
+        }
+        break;
+      }
+      case cell_centered: {
+        switch (order_space) {
+        case 1:
+          call_operator<T>("prolongate", &prolongate_3d_cc_tvd,
+                           static_cast<T const *>(src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast<T *>(this->storage()),
+                           this->padded_shape(), this->shape(), src->extent(),
+                           this->extent(), srcbox, dstbox, NULL);
+          break;
+        default:
+          CCTK_ERROR("There is no stencil for op=\"TVD\" with order_space!=1");
+          break;
+        }
+        break;
+      }
+      default:
+        assert(0);
+      }
+      timer.stop(0);
+      break;
+    } break;
+    case op_Lagrange_monotone: {
+      static Timer timer("prolongate_Lagrange_monotone");
+      timer.start();
+      switch (order_space) {
+      case 1:
+        CCTK_ERROR("There is no stencil for op=\"Lagrange_monotone\" with "
+                   "order_space=1");
+        break;
+      case 3:
+        CCTK_ERROR("There is no stencil for op=\"Lagrange_monotone\" with "
+                   "order_space=3");
+        break;
       case 5:
-        // There is only one parameter for the prolongation order, but
-        // Whisky may want 5th order for spacetime and 3rd order for
-        // hydro, so we cheat here.
-        call_operator<T>("prolongate", &prolongate_3d_eno,
+        call_operator<T>("prolongate", &prolongate_3d_o5_monotone_rf2,
                          static_cast<T const *>(src->storage()),
                          src->padded_shape(), src->shape(),
                          static_cast<T *>(this->storage()),
@@ -681,12 +831,14 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
                          this->extent(), srcbox, dstbox, NULL);
         break;
       default:
-        CCTK_ERROR("There is no stencil for op=\"ENO\" with order_space!=3");
+        CCTK_ERROR("There is no stencil for op=\"Lagrange_monotone\" with "
+                   "order_space!=5");
         break;
       }
+      timer.stop(0);
       break;
     }
-    case cell_centered: {
+    case op_STAGGER011: {
       static void (*the_operators[])(
           T const *restrict const src, ivect3 const &restrict srcpadext,
           ivect3 const &restrict srcext, T *restrict const dst,
@@ -694,283 +846,132 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
           ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
           ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
           void *const extraargs) = {
-          &prolongate_3d_cc_eno_rf2<T, 2>,
-          // note that we cheat here: order is still 2 even though 3 was
-          // requested!
-          &prolongate_3d_cc_eno_rf2<T, 2>,
-          // note that we cheat here: order is 2 even though 4 was requested!
-          &prolongate_3d_cc_eno_rf2<T, 2>,
-          // note that we cheat here: order is 3 even though 5 was requested!
-          &prolongate_3d_cc_eno_rf2<T, 3>
-          // have cheated here for two reasons: first, the ENO prolongation
-          // operator stencil radius is larger than Lagrange (and dh.cc assumes
-          // that the stencil goes as order_space/2!),
-          // and second, we want to allow spacetime interpolation to be of
-          // higher order while keeping the implemeneted ENO order!
-      };
-      if (order_space < 2 or order_space > 5)
-        CCTK_ERROR("There is no cell-centred stencil for op=\"ENO\" with "
-                   "order_space not in {2,3,4,5}");
+          &prolongate_3d_stagger011<T, 2>, &prolongate_3d_stagger011<T, 3>,
+          &prolongate_3d_stagger011<T, 3>, &prolongate_3d_stagger011<T, 3>};
 
+      static Timer timer("prolongate_STAGGER011");
+      timer.start();
       call_operator<T>(
           "prolongate", the_operators[order_space - 2],
           static_cast<T const *>(src->storage()), src->padded_shape(),
           src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
           this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
-    } break;
-    default:
-      assert(0);
+      timer.stop(0);
+      break;
     }
-    timer.stop(0);
-  } break;
 
-  case op_WENO: {
-    static Timer timer("prolongate_WENO");
-    timer.start();
-    // enum centering { vertex_centered, cell_centered };
-    switch (cent) {
-    case vertex_centered: {
-      switch (order_space) {
-      case 1:
-        CCTK_ERROR("There is no stencil for op=\"WENO\" with order_space=1");
-        break;
-      case 3:
-        CCTK_ERROR("There is no stencil for op=\"WENO\" with order_space=3");
-        break;
-      case 5:
-        call_operator<T>("prolongate", &prolongate_3d_eno,
-                         static_cast<T const *>(src->storage()),
-                         src->padded_shape(), src->shape(),
-                         static_cast<T *>(this->storage()),
-                         this->padded_shape(), this->shape(), src->extent(),
-                         this->extent(), srcbox, dstbox, NULL);
-        break;
-      default:
-        CCTK_ERROR("There is no stencil for op=\"WENO\" with order_space!=5");
-        break;
-      }
-      break;
-    }
-    case cell_centered: {
-      CCTK_ERROR(
-          "There are currently no cell-centred stencils for op=\"WENO\"");
-      break;
-    }
-    default:
-      assert(0);
-    }
-    timer.stop(0);
-  } break;
-  case op_TVD: {
-    static Timer timer("prolongate_TVD");
-    timer.start();
-    // enum centering { vertex_centered, cell_centered };
-    switch (cent) {
-    case vertex_centered: {
-      switch (order_space) {
-      case 1:
-        call_operator<T>("prolongate", &prolongate_3d_tvd,
-                         static_cast<T const *>(src->storage()),
-                         src->padded_shape(), src->shape(),
-                         static_cast<T *>(this->storage()),
-                         this->padded_shape(), this->shape(), src->extent(),
-                         this->extent(), srcbox, dstbox, NULL);
-        break;
-      default:
-        CCTK_ERROR("There is no stencil for op=\"TVD\" with order_space!=1");
-        break;
-      }
-      break;
-    }
-    case cell_centered: {
-      switch (order_space) {
-      case 1:
-        call_operator<T>("prolongate", &prolongate_3d_cc_tvd,
-                         static_cast<T const *>(src->storage()),
-                         src->padded_shape(), src->shape(),
-                         static_cast<T *>(this->storage()),
-                         this->padded_shape(), this->shape(), src->extent(),
-                         this->extent(), srcbox, dstbox, NULL);
-        break;
-      default:
-        CCTK_ERROR("There is no stencil for op=\"TVD\" with order_space!=1");
-        break;
-      }
-      break;
-    }
-    default:
-      assert(0);
-    }
-    timer.stop(0);
-    break;
-  } break;
-  case op_Lagrange_monotone: {
-    static Timer timer("prolongate_Lagrange_monotone");
-    timer.start();
-    switch (order_space) {
-    case 1:
-      CCTK_ERROR("There is no stencil for op=\"Lagrange_monotone\" with "
-                 "order_space=1");
-      break;
-    case 3:
-      CCTK_ERROR("There is no stencil for op=\"Lagrange_monotone\" with "
-                 "order_space=3");
-      break;
-    case 5:
+    case op_STAGGER101: {
+      static void (*the_operators[])(
+          T const *restrict const src, ivect3 const &restrict srcpadext,
+          ivect3 const &restrict srcext, T *restrict const dst,
+          ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
+          ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
+          ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
+          void *const extraargs) = {
+          &prolongate_3d_stagger101<T, 2>, &prolongate_3d_stagger101<T, 3>,
+          &prolongate_3d_stagger101<T, 3>, &prolongate_3d_stagger101<T, 3>};
+
+      static Timer timer("prolongate_STAGGER101");
+      timer.start();
       call_operator<T>(
-          "prolongate", &prolongate_3d_o5_monotone_rf2,
+          "prolongate", the_operators[order_space - 2],
           static_cast<T const *>(src->storage()), src->padded_shape(),
           src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
           this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
-      break;
-    default:
-      CCTK_ERROR("There is no stencil for op=\"Lagrange_monotone\" with "
-                 "order_space!=5");
+      timer.stop(0);
       break;
     }
-    timer.stop(0);
-    break;
-  }
-  case op_STAGGER011: {
-    static void (*the_operators[])(
-        T const *restrict const src, ivect3 const &restrict srcpadext,
-        ivect3 const &restrict srcext, T *restrict const dst,
-        ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
-        ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
-        ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
-        void *const extraargs) = {
-        &prolongate_3d_stagger011<T, 2>, &prolongate_3d_stagger011<T, 3>,
-        &prolongate_3d_stagger011<T, 3>, &prolongate_3d_stagger011<T, 3>};
 
-    static Timer timer("prolongate_STAGGER011");
-    timer.start();
-    call_operator<T>(
-        "prolongate", the_operators[order_space - 2],
-        static_cast<T const *>(src->storage()), src->padded_shape(),
-        src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
-        this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
-    timer.stop(0);
-    break;
-  }
+    case op_STAGGER110: {
+      static void (*the_operators[])(
+          T const *restrict const src, ivect3 const &restrict srcpadext,
+          ivect3 const &restrict srcext, T *restrict const dst,
+          ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
+          ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
+          ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
+          void *const extraargs) = {
+          &prolongate_3d_stagger110<T, 2>, &prolongate_3d_stagger110<T, 3>,
+          &prolongate_3d_stagger110<T, 3>, &prolongate_3d_stagger110<T, 3>};
 
-  case op_STAGGER101: {
-    static void (*the_operators[])(
-        T const *restrict const src, ivect3 const &restrict srcpadext,
-        ivect3 const &restrict srcext, T *restrict const dst,
-        ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
-        ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
-        ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
-        void *const extraargs) = {
-        &prolongate_3d_stagger101<T, 2>, &prolongate_3d_stagger101<T, 3>,
-        &prolongate_3d_stagger101<T, 3>, &prolongate_3d_stagger101<T, 3>};
+      static Timer timer("prolongate_STAGGER110");
+      timer.start();
+      call_operator<T>(
+          "prolongate", the_operators[order_space - 2],
+          static_cast<T const *>(src->storage()), src->padded_shape(),
+          src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
+          this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
+      timer.stop(0);
+      break;
+    }
 
-    static Timer timer("prolongate_STAGGER101");
-    timer.start();
-    call_operator<T>(
-        "prolongate", the_operators[order_space - 2],
-        static_cast<T const *>(src->storage()), src->padded_shape(),
-        src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
-        this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
-    timer.stop(0);
-    break;
-  }
+    case op_STAGGER111: {
+      static void (*the_operators[])(
+          T const *restrict const src, ivect3 const &restrict srcpadext,
+          ivect3 const &restrict srcext, T *restrict const dst,
+          ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
+          ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
+          ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
+          void *const extraargs) = {
+          &prolongate_3d_stagger111<T, 2>, &prolongate_3d_stagger111<T, 3>,
+          &prolongate_3d_stagger111<T, 3>, &prolongate_3d_stagger111<T, 3>};
 
-  case op_STAGGER110: {
-    static void (*the_operators[])(
-        T const *restrict const src, ivect3 const &restrict srcpadext,
-        ivect3 const &restrict srcext, T *restrict const dst,
-        ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
-        ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
-        ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
-        void *const extraargs) = {
-        &prolongate_3d_stagger110<T, 2>, &prolongate_3d_stagger110<T, 3>,
-        &prolongate_3d_stagger110<T, 3>, &prolongate_3d_stagger110<T, 3>};
+      static Timer timer("prolongate_STAGGER111");
+      timer.start();
+      call_operator<T>(
+          "prolongate", the_operators[order_space - 2],
+          static_cast<T const *>(src->storage()), src->padded_shape(),
+          src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
+          this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
+      timer.stop(0);
+      break;
+    }
 
-    static Timer timer("prolongate_STAGGER110");
-    timer.start();
-    call_operator<T>(
-        "prolongate", the_operators[order_space - 2],
-        static_cast<T const *>(src->storage()), src->padded_shape(),
-        src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
-        this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
-    timer.stop(0);
-    break;
-  }
-
-  case op_STAGGER111: {
-    static void (*the_operators[])(
-        T const *restrict const src, ivect3 const &restrict srcpadext,
-        ivect3 const &restrict srcext, T *restrict const dst,
-        ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
-        ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
-        ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
-        void *const extraargs) = {
-        &prolongate_3d_stagger111<T, 2>, &prolongate_3d_stagger111<T, 3>,
-        &prolongate_3d_stagger111<T, 3>, &prolongate_3d_stagger111<T, 3>};
-
-    static Timer timer("prolongate_STAGGER111");
-    timer.start();
-    call_operator<T>(
-        "prolongate", the_operators[order_space - 2],
-        static_cast<T const *>(src->storage()), src->padded_shape(),
-        src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
-        this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
-    timer.stop(0);
-    break;
-  }
-
-  default:
-    assert(0);
-  } // switch (transport_operator)
+    default:
+      assert(0);
+    } // switch (transport_operator)
 
 #elif CARPET_DIM == 4
 
-  switch (transport_operator) {
+    switch (transport_operator) {
 
-  case op_copy:
-  case op_Lagrange: {
-    static Timer timer("prolongate_Lagrange");
-    timer.start();
-    // enum centering { vertex_centered, cell_centered };
-    switch (cent) {
-    case vertex_centered:
-      switch (order_space) {
-      case 1:
-        call_operator<T>(
-            &prolongate_4d_o1_rf2, static_cast<T const *>(src->storage()),
-            src->padded_shape(), src->shape(),
-            static_cast<T *>(this->storage()), this->padded_shape(),
-            this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
+    case op_copy:
+    case op_Lagrange: {
+      static Timer timer("prolongate_Lagrange");
+      timer.start();
+      // enum centering { vertex_centered, cell_centered };
+      switch (cent) {
+      case vertex_centered:
+        switch (order_space) {
+        case 1:
+          call_operator<T>(&prolongate_4d_o1_rf2,
+                           static_cast<T const *>(src->storage()),
+                           src->padded_shape(), src->shape(),
+                           static_cast<T *>(this->storage()),
+                           this->padded_shape(), this->shape(), src->extent(),
+                           this->extent(), srcbox, dstbox, NULL);
+          break;
+        default:
+          CCTK_ERROR("There is no vertex-centred stencil for op=\"LAGRANGE\" "
+                     "with order_space not in {1}");
+          break;
+        }
         break;
       default:
-        CCTK_ERROR("There is no vertex-centred stencil for op=\"LAGRANGE\" "
-                   "with order_space not in {1}");
-        break;
+        assert(0);
       }
+      timer.stop(0);
       break;
+    }
     default:
       assert(0);
-    }
-    timer.stop(0);
-    break;
-  }
-  default:
-    assert(0);
-  } // switch (transport_operator)
+    } // switch (transport_operator)
 
 #else
 #error "Value for CARPET_DIM not supported"
 #endif
 
-  total.stop(0);
-}
-
-template <>
-void data<CCTK_INT>::transfer_prolongate(data const *const /*src*/,
-                                         ibbox const & /*dstbox*/,
-                                         ibbox const & /*srcbox*/,
-                                         int const /*order_space*/) {
-  CCTK_ERROR("Data type not supported");
+    total.stop(0);
+  }
 }
 
 template <typename T>
@@ -978,205 +979,202 @@ void data<T>::transfer_restrict(data const *const src, ibbox const &dstregbox,
                                 ibbox const &srcregbox,
                                 islab const *restrict const slabinfo,
                                 int const /*order_space*/) {
-  DECLARE_CCTK_PARAMETERS;
+  if constexpr (std::is_integral_v<T>) {
+    CCTK_ERROR("Integral data types are not supported");
+  } else {
 
-  static Timer total("restrict");
-  total.start();
+    DECLARE_CCTK_PARAMETERS;
+
+    static Timer total("restrict");
+    total.start();
 
 #if CARPET_DIM == 3
 
-  switch (transport_operator) {
+    switch (transport_operator) {
 
-  case op_STAGGER011:
-    assert(not slabinfo);
-    call_operator<T>("restrict", &restrict_3d_stagger011,
-                     static_cast<T const *>(src->storage()),
-                     src->padded_shape(), src->shape(),
-                     static_cast<T *>(this->storage()), this->padded_shape(),
-                     this->shape(), src->extent(), this->extent(), srcregbox,
-                     dstregbox, NULL);
-    break;
-
-  case op_STAGGER101:
-    assert(not slabinfo);
-    call_operator<T>("restrict", &restrict_3d_stagger101,
-                     static_cast<T const *>(src->storage()),
-                     src->padded_shape(), src->shape(),
-                     static_cast<T *>(this->storage()), this->padded_shape(),
-                     this->shape(), src->extent(), this->extent(), srcregbox,
-                     dstregbox, NULL);
-    break;
-
-  case op_STAGGER110:
-    assert(not slabinfo);
-    call_operator<T>("restrict", &restrict_3d_stagger110,
-                     static_cast<T const *>(src->storage()),
-                     src->padded_shape(), src->shape(),
-                     static_cast<T *>(this->storage()), this->padded_shape(),
-                     this->shape(), src->extent(), this->extent(), srcregbox,
-                     dstregbox, NULL);
-    break;
-
-  case op_STAGGER111:
-    assert(not slabinfo);
-    call_operator<T>("restrict", &restrict_3d_stagger111,
-                     static_cast<T const *>(src->storage()),
-                     src->padded_shape(), src->shape(),
-                     static_cast<T *>(this->storage()), this->padded_shape(),
-                     this->shape(), src->extent(), this->extent(), srcregbox,
-                     dstregbox, NULL);
-    break;
-
-  case op_copy:
-  case op_Lagrange:
-  case op_ENO:
-  case op_WENO:
-  case op_TVD:
-  case op_Lagrange_monotone:
-  case op_restrict:
-    // enum centering { vertex_centered, cell_centered };
-    switch (cent) {
-    case vertex_centered:
+    case op_STAGGER011:
       assert(not slabinfo);
-      call_operator<T>(
-          "restrict", &restrict_3d_rf2, static_cast<T const *>(src->storage()),
-          src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
-          this->padded_shape(), this->shape(), src->extent(), this->extent(),
-          srcregbox, dstregbox, NULL);
+      call_operator<T>("restrict", &restrict_3d_stagger011,
+                       static_cast<T const *>(src->storage()),
+                       src->padded_shape(), src->shape(),
+                       static_cast<T *>(this->storage()), this->padded_shape(),
+                       this->shape(), src->extent(), this->extent(), srcregbox,
+                       dstregbox, NULL);
       break;
-    case cell_centered: {
-      assert(all(dstregbox.stride() == this->extent().stride()));
-      ivect const is_centered = slabinfo ? slabinfo->is_centered : ivect(1);
 
-      ibbox const &srcbox = src->extent();
-      ibbox const &dstbox = this->extent();
+    case op_STAGGER101:
+      assert(not slabinfo);
+      call_operator<T>("restrict", &restrict_3d_stagger101,
+                       static_cast<T const *>(src->storage()),
+                       src->padded_shape(), src->shape(),
+                       static_cast<T *>(this->storage()), this->padded_shape(),
+                       this->shape(), src->extent(), this->extent(), srcregbox,
+                       dstregbox, NULL);
+      break;
 
-      if (all(is_centered == ivect(1, 1, 1))) {
-        if (use_dgfe) {
+    case op_STAGGER110:
+      assert(not slabinfo);
+      call_operator<T>("restrict", &restrict_3d_stagger110,
+                       static_cast<T const *>(src->storage()),
+                       src->padded_shape(), src->shape(),
+                       static_cast<T *>(this->storage()), this->padded_shape(),
+                       this->shape(), src->extent(), this->extent(), srcregbox,
+                       dstregbox, NULL);
+      break;
+
+    case op_STAGGER111:
+      assert(not slabinfo);
+      call_operator<T>("restrict", &restrict_3d_stagger111,
+                       static_cast<T const *>(src->storage()),
+                       src->padded_shape(), src->shape(),
+                       static_cast<T *>(this->storage()), this->padded_shape(),
+                       this->shape(), src->extent(), this->extent(), srcregbox,
+                       dstregbox, NULL);
+      break;
+
+    case op_copy:
+    case op_Lagrange:
+    case op_ENO:
+    case op_WENO:
+    case op_TVD:
+    case op_Lagrange_monotone:
+    case op_restrict:
+      // enum centering { vertex_centered, cell_centered };
+      switch (cent) {
+      case vertex_centered:
+        assert(not slabinfo);
+        call_operator<T>("restrict", &restrict_3d_rf2,
+                         static_cast<T const *>(src->storage()),
+                         src->padded_shape(), src->shape(),
+                         static_cast<T *>(this->storage()),
+                         this->padded_shape(), this->shape(), src->extent(),
+                         this->extent(), srcregbox, dstregbox, NULL);
+        break;
+      case cell_centered: {
+        assert(all(dstregbox.stride() == this->extent().stride()));
+        ivect const is_centered = slabinfo ? slabinfo->is_centered : ivect(1);
+
+        ibbox const &srcbox = src->extent();
+        ibbox const &dstbox = this->extent();
+
+        if (all(is_centered == ivect(1, 1, 1))) {
+          if (use_dgfe) {
+            // Don't use call_operator, because we parallelise ourselves
+            restrict_3d_dgfe_rf2<T, 5>(
+                static_cast<T const *>(src->storage()), src->padded_shape(),
+                src->shape(), static_cast<T *>(this->storage()),
+                this->padded_shape(), this->shape(), srcbox, dstbox, srcregbox,
+                dstregbox, NULL);
+            break;
+          }
+          if (use_higher_order_restriction and transport_operator != op_WENO and
+              transport_operator != op_ENO) { // HACK
+            switch (restriction_order_space) {
+            case 1:
+              // Don't use call_operator, because we parallelise ourselves
+              restrict_3d_cc_rf2(static_cast<T const *>(src->storage()),
+                                 src->padded_shape(), src->shape(),
+                                 static_cast<T *>(this->storage()),
+                                 this->padded_shape(), this->shape(), srcbox,
+                                 dstbox, srcregbox, dstregbox, NULL);
+              break;
+            case 3:
+              // Don't use call_operator, because we parallelise ourselves
+              restrict_3d_cc_o3_rf2(static_cast<T const *>(src->storage()),
+                                    src->padded_shape(), src->shape(),
+                                    static_cast<T *>(this->storage()),
+                                    this->padded_shape(), this->shape(), srcbox,
+                                    dstbox, srcregbox, dstregbox, NULL);
+              break;
+            case 5:
+              // Don't use call_operator, because we parallelise ourselves
+              restrict_3d_cc_o5_rf2(static_cast<T const *>(src->storage()),
+                                    src->padded_shape(), src->shape(),
+                                    static_cast<T *>(this->storage()),
+                                    this->padded_shape(), this->shape(), srcbox,
+                                    dstbox, srcregbox, dstregbox, NULL);
+              break;
+            default:
+              CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                          "There is no restriction stencil with "
+                          "restriction_order_space==%d",
+                          int(restriction_order_space));
+              break;
+            }
+            break;
+          }
           // Don't use call_operator, because we parallelise ourselves
-          restrict_3d_dgfe_rf2<T, 5>(
+          restrict_3d_cc_rf2(static_cast<T const *>(src->storage()),
+                             src->padded_shape(), src->shape(),
+                             static_cast<T *>(this->storage()),
+                             this->padded_shape(), this->shape(), srcbox,
+                             dstbox, srcregbox, dstregbox, NULL);
+        } else if (all(is_centered == ivect(0, 1, 1))) {
+          // Don't use call_operator, because we parallelise ourselves
+          restrict_3d_vc_rf2<T, 0, 1, 1>(
               static_cast<T const *>(src->storage()), src->padded_shape(),
               src->shape(), static_cast<T *>(this->storage()),
               this->padded_shape(), this->shape(), srcbox, dstbox, srcregbox,
               dstregbox, NULL);
-          break;
+        } else if (all(is_centered == ivect(1, 0, 1))) {
+          // Don't use call_operator, because we parallelise ourselves
+          restrict_3d_vc_rf2<T, 1, 0, 1>(
+              static_cast<T const *>(src->storage()), src->padded_shape(),
+              src->shape(), static_cast<T *>(this->storage()),
+              this->padded_shape(), this->shape(), srcbox, dstbox, srcregbox,
+              dstregbox, NULL);
+        } else if (all(is_centered == ivect(1, 1, 0))) {
+          // Don't use call_operator, because we parallelise ourselves
+          restrict_3d_vc_rf2<T, 1, 1, 0>(
+              static_cast<T const *>(src->storage()), src->padded_shape(),
+              src->shape(), static_cast<T *>(this->storage()),
+              this->padded_shape(), this->shape(), srcbox, dstbox, srcregbox,
+              dstregbox, NULL);
+        } else {
+          assert(0);
         }
-        if (use_higher_order_restriction and transport_operator != op_WENO and
-            transport_operator != op_ENO) { // HACK
-          switch (restriction_order_space) {
-          case 1:
-            // Don't use call_operator, because we parallelise ourselves
-            restrict_3d_cc_rf2(static_cast<T const *>(src->storage()),
-                               src->padded_shape(), src->shape(),
-                               static_cast<T *>(this->storage()),
-                               this->padded_shape(), this->shape(), srcbox,
-                               dstbox, srcregbox, dstregbox, NULL);
-            break;
-          case 3:
-            // Don't use call_operator, because we parallelise ourselves
-            restrict_3d_cc_o3_rf2(static_cast<T const *>(src->storage()),
-                                  src->padded_shape(), src->shape(),
-                                  static_cast<T *>(this->storage()),
-                                  this->padded_shape(), this->shape(), srcbox,
-                                  dstbox, srcregbox, dstregbox, NULL);
-            break;
-          case 5:
-            // Don't use call_operator, because we parallelise ourselves
-            restrict_3d_cc_o5_rf2(static_cast<T const *>(src->storage()),
-                                  src->padded_shape(), src->shape(),
-                                  static_cast<T *>(this->storage()),
-                                  this->padded_shape(), this->shape(), srcbox,
-                                  dstbox, srcregbox, dstregbox, NULL);
-            break;
-          default:
-            CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                        "There is no restriction stencil with "
-                        "restriction_order_space==%d",
-                        int(restriction_order_space));
-            break;
-          }
-          break;
-        }
-        // Don't use call_operator, because we parallelise ourselves
-        restrict_3d_cc_rf2(static_cast<T const *>(src->storage()),
-                           src->padded_shape(), src->shape(),
-                           static_cast<T *>(this->storage()),
-                           this->padded_shape(), this->shape(), srcbox, dstbox,
-                           srcregbox, dstregbox, NULL);
-      } else if (all(is_centered == ivect(0, 1, 1))) {
-        // Don't use call_operator, because we parallelise ourselves
-        restrict_3d_vc_rf2<T, 0, 1, 1>(
-            static_cast<T const *>(src->storage()), src->padded_shape(),
-            src->shape(), static_cast<T *>(this->storage()),
-            this->padded_shape(), this->shape(), srcbox, dstbox, srcregbox,
-            dstregbox, NULL);
-      } else if (all(is_centered == ivect(1, 0, 1))) {
-        // Don't use call_operator, because we parallelise ourselves
-        restrict_3d_vc_rf2<T, 1, 0, 1>(
-            static_cast<T const *>(src->storage()), src->padded_shape(),
-            src->shape(), static_cast<T *>(this->storage()),
-            this->padded_shape(), this->shape(), srcbox, dstbox, srcregbox,
-            dstregbox, NULL);
-      } else if (all(is_centered == ivect(1, 1, 0))) {
-        // Don't use call_operator, because we parallelise ourselves
-        restrict_3d_vc_rf2<T, 1, 1, 0>(
-            static_cast<T const *>(src->storage()), src->padded_shape(),
-            src->shape(), static_cast<T *>(this->storage()),
-            this->padded_shape(), this->shape(), srcbox, dstbox, srcregbox,
-            dstregbox, NULL);
-      } else {
+        break;
+      }
+      default:
         assert(0);
       }
       break;
-    }
+
     default:
       assert(0);
     }
-    break;
-
-  default:
-    assert(0);
-  }
 
 #elif CARPET_DIM == 4
 
-  switch (transport_operator) {
+    switch (transport_operator) {
 
-  case op_copy:
-  case op_Lagrange:
-    // enum centering { vertex_centered, cell_centered };
-    switch (cent) {
-    case vertex_centered:
-      // Don't use call_operator, because we parallelise ourselves
-      restrict_4d_rf2(static_cast<T const *>(src->storage()),
-                      src->padded_shape(), src->shape(),
-                      static_cast<T *>(this->storage()), this->padded_shape(),
-                      this->shape(), src->extent(), this->extent(), srcregbox,
-                      dstregbox, NULL);
+    case op_copy:
+    case op_Lagrange:
+      // enum centering { vertex_centered, cell_centered };
+      switch (cent) {
+      case vertex_centered:
+        // Don't use call_operator, because we parallelise ourselves
+        restrict_4d_rf2(static_cast<T const *>(src->storage()),
+                        src->padded_shape(), src->shape(),
+                        static_cast<T *>(this->storage()), this->padded_shape(),
+                        this->shape(), src->extent(), this->extent(), srcregbox,
+                        dstregbox, NULL);
+        break;
+      default:
+        assert(0);
+      }
       break;
+
     default:
       assert(0);
     }
-    break;
-
-  default:
-    assert(0);
-  }
 
 #else
 #error "Value for CARPET_DIM not supported"
 #endif
 
-  total.stop(0);
-}
-
-template <>
-void data<CCTK_INT>::transfer_restrict(data const *const /*src*/,
-                                       ibbox const & /*dstbox*/,
-                                       ibbox const & /*srcbox*/,
-                                       islab const *restrict const /*slabinfo*/,
-                                       int const /*order_space*/) {
-  CCTK_ERROR("Data type not supported");
+    total.stop(0);
+  }
 }
 
 template <typename T>
@@ -1184,143 +1182,138 @@ void data<T>::time_interpolate(vector<data *> const &srcs, ibbox const &dstbox,
                                ibbox const &srcbox,
                                vector<CCTK_REAL> const &times,
                                CCTK_REAL const time, int const order_time) {
-  static Timer total("time_interpolate");
-  total.start();
+  if constexpr (std::is_integral_v<T>) {
+    CCTK_ERROR("Integral data types are not supported");
+  } else {
+
+    static Timer total("time_interpolate");
+    total.start();
 
 #if CARPET_DIM == 3
 
-  switch (transport_operator) {
+    switch (transport_operator) {
 
-  case op_copy:
-  case op_STAGGER011:
-  case op_STAGGER101:
-  case op_STAGGER110:
-  case op_STAGGER111:
-  case op_Lagrange: {
-    static Timer timer("time_interpolate_Lagrange");
-    timer.start();
-    switch (order_time) {
+    case op_copy:
+    case op_STAGGER011:
+    case op_STAGGER101:
+    case op_STAGGER110:
+    case op_STAGGER111:
+    case op_Lagrange: {
+      static Timer timer("time_interpolate_Lagrange");
+      timer.start();
+      switch (order_time) {
 
-    case 1:
-      assert(times.size() >= 2);
-      interpolate_3d_2tl(
-          static_cast<T const *>(srcs.AT(0)->storage()), times.AT(0),
-          static_cast<T const *>(srcs.AT(1)->storage()), times.AT(1),
-          srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
-          static_cast<T *>(this->storage()), time, this->padded_shape(),
-          this->shape(), srcs.AT(0)->extent(), this->extent(), srcbox, dstbox,
-          NULL);
+      case 1:
+        assert(times.size() >= 2);
+        interpolate_3d_2tl(
+            static_cast<T const *>(srcs.AT(0)->storage()), times.AT(0),
+            static_cast<T const *>(srcs.AT(1)->storage()), times.AT(1),
+            srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
+            static_cast<T *>(this->storage()), time, this->padded_shape(),
+            this->shape(), srcs.AT(0)->extent(), this->extent(), srcbox, dstbox,
+            NULL);
+        break;
+
+      case 2:
+        assert(times.size() >= 3);
+        interpolate_3d_3tl(
+            static_cast<T const *>(srcs.AT(0)->storage()), times.AT(0),
+            static_cast<T const *>(srcs.AT(1)->storage()), times.AT(1),
+            static_cast<T const *>(srcs.AT(2)->storage()), times.AT(2),
+            srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
+            static_cast<T *>(this->storage()), time, this->padded_shape(),
+            this->shape(), srcs.AT(0)->extent(), this->extent(), srcbox, dstbox,
+            NULL);
+        break;
+
+      case 3:
+        assert(times.size() >= 4);
+        interpolate_3d_4tl(
+            static_cast<T const *>(srcs.AT(0)->storage()), times.AT(0),
+            static_cast<T const *>(srcs.AT(1)->storage()), times.AT(1),
+            static_cast<T const *>(srcs.AT(2)->storage()), times.AT(2),
+            static_cast<T const *>(srcs.AT(3)->storage()), times.AT(3),
+            srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
+            static_cast<T *>(this->storage()), time, this->padded_shape(),
+            this->shape(), srcs.AT(0)->extent(), this->extent(), srcbox, dstbox,
+            NULL);
+        break;
+
+      case 4:
+        assert(times.size() >= 5);
+        interpolate_3d_5tl(
+            static_cast<T const *>(srcs.AT(0)->storage()), times.AT(0),
+            static_cast<T const *>(srcs.AT(1)->storage()), times.AT(1),
+            static_cast<T const *>(srcs.AT(2)->storage()), times.AT(2),
+            static_cast<T const *>(srcs.AT(3)->storage()), times.AT(3),
+            static_cast<T const *>(srcs.AT(4)->storage()), times.AT(4),
+            srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
+            static_cast<T *>(this->storage()), time, this->padded_shape(),
+            this->shape(), srcs.AT(0)->extent(), this->extent(), srcbox, dstbox,
+            NULL);
+        break;
+
+      default:
+        assert(0);
+      }
+      timer.stop(0);
       break;
+    }
 
-    case 2:
-      assert(times.size() >= 3);
-      interpolate_3d_3tl(
-          static_cast<T const *>(srcs.AT(0)->storage()), times.AT(0),
-          static_cast<T const *>(srcs.AT(1)->storage()), times.AT(1),
-          static_cast<T const *>(srcs.AT(2)->storage()), times.AT(2),
-          srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
-          static_cast<T *>(this->storage()), time, this->padded_shape(),
-          this->shape(), srcs.AT(0)->extent(), this->extent(), srcbox, dstbox,
-          NULL);
-      break;
+    case op_ENO:
+    case op_WENO:
+    case op_TVD:
+    case op_Lagrange_monotone: {
+      // ENO, WENO, TVD, and Lagrange_monotone time interpolation is the
+      // same for order_time <= 2
+      static Timer timer("time_interpolate_ENO");
+      timer.start();
+      switch (order_time) {
 
-    case 3:
-      assert(times.size() >= 4);
-      interpolate_3d_4tl(
-          static_cast<T const *>(srcs.AT(0)->storage()), times.AT(0),
-          static_cast<T const *>(srcs.AT(1)->storage()), times.AT(1),
-          static_cast<T const *>(srcs.AT(2)->storage()), times.AT(2),
-          static_cast<T const *>(srcs.AT(3)->storage()), times.AT(3),
-          srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
-          static_cast<T *>(this->storage()), time, this->padded_shape(),
-          this->shape(), srcs.AT(0)->extent(), this->extent(), srcbox, dstbox,
-          NULL);
-      break;
+      case 1:
+        assert(times.size() >= 2);
+        interpolate_3d_2tl(
+            static_cast<T const *>(srcs.AT(0)->storage()), times.AT(0),
+            static_cast<T const *>(srcs.AT(1)->storage()), times.AT(1),
+            srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
+            static_cast<T *>(this->storage()), time, this->padded_shape(),
+            this->shape(), srcs.AT(0)->extent(), this->extent(), srcbox, dstbox,
+            NULL);
+        break;
 
-    case 4:
-      assert(times.size() >= 5);
-      interpolate_3d_5tl(
-          static_cast<T const *>(srcs.AT(0)->storage()), times.AT(0),
-          static_cast<T const *>(srcs.AT(1)->storage()), times.AT(1),
-          static_cast<T const *>(srcs.AT(2)->storage()), times.AT(2),
-          static_cast<T const *>(srcs.AT(3)->storage()), times.AT(3),
-          static_cast<T const *>(srcs.AT(4)->storage()), times.AT(4),
-          srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
-          static_cast<T *>(this->storage()), time, this->padded_shape(),
-          this->shape(), srcs.AT(0)->extent(), this->extent(), srcbox, dstbox,
-          NULL);
+      case 2:
+        assert(times.size() >= 3);
+        interpolate_eno_3d_3tl(
+            static_cast<T const *>(srcs.AT(0)->storage()), times.AT(0),
+            static_cast<T const *>(srcs.AT(1)->storage()), times.AT(1),
+            static_cast<T const *>(srcs.AT(2)->storage()), times.AT(2),
+            srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
+            static_cast<T *>(this->storage()), time, this->padded_shape(),
+            this->shape(), srcs.AT(0)->extent(), this->extent(), srcbox, dstbox,
+            NULL);
+        break;
+
+      default:
+        assert(0);
+      }
+      timer.stop(0);
       break;
+    }
 
     default:
       assert(0);
-    }
-    timer.stop(0);
-    break;
-  }
-
-  case op_ENO:
-  case op_WENO:
-  case op_TVD:
-  case op_Lagrange_monotone: {
-    // ENO, WENO, TVD, and Lagrange_monotone time interpolation is the
-    // same for order_time <= 2
-    static Timer timer("time_interpolate_ENO");
-    timer.start();
-    switch (order_time) {
-
-    case 1:
-      assert(times.size() >= 2);
-      interpolate_3d_2tl(
-          static_cast<T const *>(srcs.AT(0)->storage()), times.AT(0),
-          static_cast<T const *>(srcs.AT(1)->storage()), times.AT(1),
-          srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
-          static_cast<T *>(this->storage()), time, this->padded_shape(),
-          this->shape(), srcs.AT(0)->extent(), this->extent(), srcbox, dstbox,
-          NULL);
-      break;
-
-    case 2:
-      assert(times.size() >= 3);
-      interpolate_eno_3d_3tl(
-          static_cast<T const *>(srcs.AT(0)->storage()), times.AT(0),
-          static_cast<T const *>(srcs.AT(1)->storage()), times.AT(1),
-          static_cast<T const *>(srcs.AT(2)->storage()), times.AT(2),
-          srcs.AT(0)->padded_shape(), srcs.AT(0)->shape(),
-          static_cast<T *>(this->storage()), time, this->padded_shape(),
-          this->shape(), srcs.AT(0)->extent(), this->extent(), srcbox, dstbox,
-          NULL);
-      break;
-
-    default:
-      assert(0);
-    }
-    timer.stop(0);
-    break;
-  }
-
-  default:
-    assert(0);
-  } // switch (transport_operator)
+    } // switch (transport_operator)
 
 #elif CARPET_DIM == 4
 
-  assert(0);
+    assert(0);
 
 #else
 #error "Value for CARPET_DIM not supported"
 #endif
 
-  total.stop(0);
-}
-
-template <>
-void data<CCTK_INT>::time_interpolate(vector<data *> const & /*srcs*/,
-                                      ibbox const & /*dstbox*/,
-                                      ibbox const & /*srcbox*/,
-                                      vector<CCTK_REAL> const & /*times*/,
-                                      CCTK_REAL const /*time*/,
-                                      int const /*order_time*/) {
-  CCTK_ERROR("Data type not supported");
+    total.stop(0);
+  }
 }
 
 // Memory usage
@@ -1344,4 +1337,4 @@ template <typename T> ostream &data<T>::output(ostream &os) const {
 #define TYPECASE(N, T) template class data<T>;
 #include "typecase.hh"
 #undef TYPECASE
-}
+} // namespace CarpetLib

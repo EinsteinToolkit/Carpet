@@ -323,12 +323,16 @@ template <class T> ostream &output(ostream &os, const vector<T> &v) {
 namespace CarpetLib {
 using namespace std;
 
-template int ipow(int x, int y);
-template CCTK_REAL ipow(CCTK_REAL x, int y);
-// template vect<int,dim> ipow (vect<int,dim> x, int y);
-template vect<CCTK_REAL, dim> ipow(vect<CCTK_REAL, dim> x, int y);
-template int ilog(int x, int y);
-template int ilog(CCTK_REAL x, CCTK_REAL y);
+#define TYPECASE(N, T)                                                         \
+  template T ipow(T x, int y);                                                 \
+  template vect<T, 3> ipow(vect<T, 3>, int);
+#include "typecase.hh"
+#undef TYPECASE
+
+#define TYPECASE(N, T) template int ilog(T x, T y);
+#define CARPET_NO_COMPLEX
+#include "typecase.hh"
+#undef TYPECASE
 
 template size_t memoryof(rvect const &v);
 // template size_t memoryof (list<ibbox> const & l);

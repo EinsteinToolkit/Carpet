@@ -60,10 +60,25 @@
     !defined(CARPET_REAL16) && !defined(CARPET_COMPLEX) &&                     \
     !defined(CARPET_COMPLEX8) && !defined(CARPET_COMPLEX16) &&                 \
     !defined(CARPET_COMPLEX32)
-// Assume the user just wants INT, REAL, and COMPLEX
-#define CARPET_INT
-#define CARPET_REAL
-#define CARPET_COMPLEX
+// // Assume the user just wants INT, REAL, and COMPLEX
+// #define CARPET_INT
+// #define CARPET_REAL
+// #define CARPET_COMPLEX
+
+// Assume the user wants almost all types
+
+#define CARPET_INT1
+#define CARPET_INT2
+#define CARPET_INT4
+#define CARPET_INT8
+// #define CARPET_INT16
+#define CARPET_REAL4
+#define CARPET_REAL8
+// #define CARPET_REAL16
+#define CARPET_COMPLEX8
+#define CARPET_COMPLEX16
+// #define CARPET_COMPLEX32
+
 #endif
 
 // Translate the default types to their specific counterparts

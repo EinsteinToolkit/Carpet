@@ -146,18 +146,7 @@ void restrict_3d_dgfe_rf2(
       void *extraargs);
 
 #define CARPET_NO_INT
-#define CARPET_NO_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
-
-template <>
-void restrict_3d_dgfe_rf2<CCTK_COMPLEX, 5>(
-    CCTK_COMPLEX const *restrict const src, ivect3 const &restrict srcpadext,
-    ivect3 const &restrict srcext, CCTK_COMPLEX *restrict const dst,
-    ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
-    ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
-    ibbox3 const &restrict, ibbox3 const &restrict regbbox, void *extraargs) {
-  assert(0);
-}
 
 } // namespace CarpetLib

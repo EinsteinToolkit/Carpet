@@ -38,23 +38,22 @@ void prolongate_3d_dgfe_rf2(
 
   if (any(srcbbox.stride() <= regbbox.stride() or
           dstbbox.stride() != regbbox.stride())) {
-    CCTK_WARN(0, "Internal error: strides disagree");
+    CCTK_ERROR("Internal error: strides disagree");
   }
 
   if (any(srcbbox.stride() != reffact2 * dstbbox.stride())) {
-    CCTK_WARN(
-        0,
+    CCTK_ERROR(
         "Internal error: source strides are not twice the destination strides");
   }
 
   if (any(dstbbox.stride() % 2 != 0)) {
-    CCTK_WARN(0, "Internal error: destination strides are not even");
+    CCTK_ERROR("Internal error: destination strides are not even");
   }
 
   // This could be handled, but is likely to point to an error
   // elsewhere
   if (regbbox.empty()) {
-    CCTK_WARN(0, "Internal error: region extent is empty");
+    CCTK_ERROR("Internal error: region extent is empty");
   }
 
   bvect3 const is_upper_face =
@@ -80,8 +79,8 @@ void prolongate_3d_dgfe_rf2(
          << "dstbbox=" << dstbbox << "\n"
          << "regbbox=" << regbbox << "\n"
          << "srcbbox=" << srcbbox << "\n";
-    CCTK_WARN(0,
-              "Internal error: region extent is not contained in array extent");
+    CCTK_ERROR(
+        "Internal error: region extent is not contained in array extent");
   }
 
   ptrdiff_t const srcipadext = srcpadext[0];
@@ -269,18 +268,7 @@ void prolongate_3d_dgfe_rf2(
       void *extraargs);
 
 #define CARPET_NO_INT
-#define CARPET_NO_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
-
-template <>
-void prolongate_3d_dgfe_rf2<CCTK_COMPLEX, 5>(
-    CCTK_COMPLEX const *restrict const src, ivect3 const &restrict srcpadext,
-    ivect3 const &restrict srcext, CCTK_COMPLEX *restrict const dst,
-    ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
-    ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
-    ibbox3 const &restrict, ibbox3 const &restrict regbbox, void *extraargs) {
-  assert(0);
-}
 
 } // namespace CarpetLib

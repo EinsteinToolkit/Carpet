@@ -52,7 +52,9 @@ template <typename RT, int ORDER, int OFFSET = 0> struct coeffs1dc {
   static const RT coeffs[];
 };
 
-template <typename RT, int ORDER> struct diffC1dc { static const RT coeffs[]; };
+template <typename RT, int ORDER> struct diffC1dc {
+  static const RT coeffs[];
+};
 
 template <typename RT, int ORDER, int di, int OFFSET = 0> struct coeffs1d {
   typedef coeffs1dc<RT, ORDER, di == 0 ? OFFSET : -OFFSET> coeffs_t;
@@ -152,7 +154,9 @@ template <typename RT, int ORDER, int di, int OFFSET = 0> struct coeffs1d {
                                                                                \
   template <>                                                                  \
   const RT coeffs1dc<RT, 2, -1>::coeffs[] = {                                  \
-      -0.09375, +0.4375, +0.65625,                                             \
+      -0.09375,                                                                \
+      +0.4375,                                                                 \
+      +0.65625,                                                                \
   };                                                                           \
                                                                                \
   template <> const RT coeffs1dc<RT, 2, 1>::coeffs[] = {0, 0, 0};              \
@@ -178,7 +182,7 @@ template <typename RT, int ORDER, int di, int OFFSET = 0> struct coeffs1d {
 #include "typecase.hh"
 #undef TYPECASE
 
-} // namespace coeffs_3d_cc_rf2_eno
+} // namespace coeffs_3d_cc_eno_rf2
 
 using namespace coeffs_3d_cc_eno_rf2;
 
@@ -741,18 +745,14 @@ static inline T interp3(T const *restrict const p, size_t const d1,
     if (std::fabs(lV) < std::fabs(rV)) {
       // use left-shifted stencil since it is smoother
       for (ptrdiff_t i = lcoeffs::imin; i < lcoeffs::imax; ++i) {
-        res +=
-            lcoeffs::get(i) *
-            f[i -
-              lcoeffs::minimin]; // interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+        res += lcoeffs::get(i) * f[i - lcoeffs::minimin]; // interp2<T,ORDER,di,dj>
+                                                          // (p + i*d3, d1, d2);
       }
     } else {
       // use right-shifted stencil since it is smoother
       for (ptrdiff_t i = rcoeffs::imin; i < rcoeffs::imax; ++i) {
-        res +=
-            rcoeffs::get(i) *
-            f[i -
-              lcoeffs::minimin]; // interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+        res += rcoeffs::get(i) * f[i - lcoeffs::minimin]; // interp2<T,ORDER,di,dj>
+                                                          // (p + i*d3, d1, d2);
       }
     }
   } break;
@@ -814,28 +814,22 @@ static inline T interp3(T const *restrict const p, size_t const d1,
     case 0:
       // use maximally left-shifted stencil since it is smoother
       for (ptrdiff_t i = lcoeffs::imin; i < lcoeffs::imax; ++i) {
-        res +=
-            lcoeffs::get(i) *
-            f[i -
-              lcoeffs::minimin]; // interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+        res += lcoeffs::get(i) * f[i - lcoeffs::minimin]; // interp2<T,ORDER,di,dj>
+                                                          // (p + i*d3, d1, d2);
       }
       break;
     case 1:
       // use centered stencil since it is smoother
       for (ptrdiff_t i = ccoeffs::imin; i < ccoeffs::imax; ++i) {
-        res +=
-            ccoeffs::get(i) *
-            f[i -
-              lcoeffs::minimin]; // interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+        res += ccoeffs::get(i) * f[i - lcoeffs::minimin]; // interp2<T,ORDER,di,dj>
+                                                          // (p + i*d3, d1, d2);
       }
       break;
     case 2:
       // use right-shifted stencil since it is smoother
       for (ptrdiff_t i = rcoeffs::imin; i < rcoeffs::imax; ++i) {
-        res +=
-            rcoeffs::get(i) *
-            f[i -
-              lcoeffs::minimin]; // interp2<T,ORDER,di,dj> (p + i*d3, d1, d2);
+        res += rcoeffs::get(i) * f[i - lcoeffs::minimin]; // interp2<T,ORDER,di,dj>
+                                                          // (p + i*d3, d1, d2);
       }
       break;
     }
@@ -947,452 +941,425 @@ void prolongate_3d_cc_eno_rf2(
     ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
     ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
     ibbox3 const &restrict, ibbox3 const &restrict regbbox, void *extraargs) {
-  DECLARE_CCTK_PARAMETERS;
+  if constexpr (is_cctk_complex_v<T>) {
+    CCTK_ERROR("ENO operators are not supported for complex types");
+  } else {
 
-  assert(not extraargs);
+    DECLARE_CCTK_PARAMETERS;
 
-  static_assert(ORDER >= 0, "ORDER must be non-negative");
+    assert(not extraargs);
 
-  typedef typename typeprops<T>::real RT;
-  coeffs1d<RT, ORDER, 0, 0>::test();
-  coeffs1d<RT, ORDER, 1, 0>::test();
-  coeffs1d<RT, ORDER, 0, -1>::test();
-  coeffs1d<RT, ORDER, 1, 1>::test();
+    static_assert(ORDER >= 0, "ORDER must be non-negative");
 
-  if (any(srcbbox.stride() <= regbbox.stride() or
-          dstbbox.stride() != regbbox.stride())) {
-    CCTK_WARN(0, "Internal error: strides disagree");
-  }
+    typedef typename typeprops<T>::real RT;
+    coeffs1d<RT, ORDER, 0, 0>::test();
+    coeffs1d<RT, ORDER, 1, 0>::test();
+    coeffs1d<RT, ORDER, 0, -1>::test();
+    coeffs1d<RT, ORDER, 1, 1>::test();
 
-  if (any(srcbbox.stride() != reffact2 * dstbbox.stride())) {
-    CCTK_WARN(
-        0,
-        "Internal error: source strides are not twice the destination strides");
-  }
+    if (any(srcbbox.stride() <= regbbox.stride() or
+            dstbbox.stride() != regbbox.stride())) {
+      CCTK_WARN(0, "Internal error: strides disagree");
+    }
 
-  if (any(dstbbox.stride() % 2 != 0)) {
-    CCTK_WARN(0, "Internal error: destination strides are not even");
-  }
+    if (any(srcbbox.stride() != reffact2 * dstbbox.stride())) {
+      CCTK_WARN(0, "Internal error: source strides are not twice the "
+                   "destination strides");
+    }
 
-  // This could be handled, but is likely to point to an error
-  // elsewhere
-  if (regbbox.empty()) {
-    CCTK_WARN(0, "Internal error: region extent is empty");
-  }
+    if (any(dstbbox.stride() % 2 != 0)) {
+      CCTK_WARN(0, "Internal error: destination strides are not even");
+    }
 
-  ivect3 const regext = regbbox.shape() / regbbox.stride();
-  assert(all((regbbox.lower() - srcbbox.lower() + regbbox.stride() / 2) %
-                 regbbox.stride() ==
-             0));
-  ivect3 const srcoff =
-      (regbbox.lower() - srcbbox.lower() + regbbox.stride() / 2) /
-      regbbox.stride();
-  assert(all((regbbox.lower() - dstbbox.lower()) % regbbox.stride() == 0));
-  ivect3 const dstoff = (regbbox.lower() - dstbbox.lower()) / regbbox.stride();
+    // This could be handled, but is likely to point to an error
+    // elsewhere
+    if (regbbox.empty()) {
+      CCTK_WARN(0, "Internal error: region extent is empty");
+    }
 
-  // Determine the stencil radius (see diagram at the top of this
-  // file)
-  ivect3 offsetlo, offsethi;
-  {
-    assert(all((regbbox.upper() - srcbbox.lower() + regbbox.stride() / 2) %
+    ivect3 const regext = regbbox.shape() / regbbox.stride();
+    assert(all((regbbox.lower() - srcbbox.lower() + regbbox.stride() / 2) %
                    regbbox.stride() ==
                0));
-    ivect3 const srcend =
-        (regbbox.upper() - srcbbox.lower() + regbbox.stride() / 2) /
+    ivect3 const srcoff =
+        (regbbox.lower() - srcbbox.lower() + regbbox.stride() / 2) /
         regbbox.stride();
-    ivect const needoffsetlo = srcoff % 2;
-    ivect const needoffsethi = srcend % 2;
-    for (int d = 0; d < 3; ++d) {
-      if (not needoffsetlo[d]) {
-        offsetlo[d] = -coeffs1d<RT, ORDER, 0>::minimin;
-      } else {
-        offsetlo[d] = -coeffs1d<RT, ORDER, 1>::minimin;
-      }
-      if (not needoffsethi[d]) {
-        offsethi[d] = coeffs1d<RT, ORDER, 0>::maximax - 1;
-      } else {
-        offsethi[d] = coeffs1d<RT, ORDER, 1>::maximax - 1;
+    assert(all((regbbox.lower() - dstbbox.lower()) % regbbox.stride() == 0));
+    ivect3 const dstoff =
+        (regbbox.lower() - dstbbox.lower()) / regbbox.stride();
+
+    // Determine the stencil radius (see diagram at the top of this
+    // file)
+    ivect3 offsetlo, offsethi;
+    {
+      assert(all((regbbox.upper() - srcbbox.lower() + regbbox.stride() / 2) %
+                     regbbox.stride() ==
+                 0));
+      ivect3 const srcend =
+          (regbbox.upper() - srcbbox.lower() + regbbox.stride() / 2) /
+          regbbox.stride();
+      ivect const needoffsetlo = srcoff % 2;
+      ivect const needoffsethi = srcend % 2;
+      for (int d = 0; d < 3; ++d) {
+        if (not needoffsetlo[d]) {
+          offsetlo[d] = -coeffs1d<RT, ORDER, 0>::minimin;
+        } else {
+          offsetlo[d] = -coeffs1d<RT, ORDER, 1>::minimin;
+        }
+        if (not needoffsethi[d]) {
+          offsethi[d] = coeffs1d<RT, ORDER, 0>::maximax - 1;
+        } else {
+          offsethi[d] = coeffs1d<RT, ORDER, 1>::maximax - 1;
+        }
       }
     }
-  }
 
-  if (not regbbox.expand(offsetlo, offsethi).is_contained_in(srcbbox) or
-      not regbbox.is_contained_in(dstbbox)) {
-    cerr << "ORDER=" << ORDER << "\n"
-         << "offsetlo=" << offsetlo << "\n"
-         << "offsethi=" << offsethi << "\n"
-         << "regbbox=" << regbbox << "\n"
-         << "dstbbox=" << dstbbox << "\n"
-         << "regbbox.expand=" << regbbox.expand(offsetlo, offsethi) << "\n"
-         << "srcbbox=" << srcbbox << "\n";
-    CCTK_WARN(0,
-              "Internal error: region extent is not contained in array extent");
-  }
+    if (not regbbox.expand(offsetlo, offsethi).is_contained_in(srcbbox) or
+        not regbbox.is_contained_in(dstbbox)) {
+      cerr << "ORDER=" << ORDER << "\n"
+           << "offsetlo=" << offsetlo << "\n"
+           << "offsethi=" << offsethi << "\n"
+           << "regbbox=" << regbbox << "\n"
+           << "dstbbox=" << dstbbox << "\n"
+           << "regbbox.expand=" << regbbox.expand(offsetlo, offsethi) << "\n"
+           << "srcbbox=" << srcbbox << "\n";
+      CCTK_WARN(
+          0, "Internal error: region extent is not contained in array extent");
+    }
 
-  size_t const srcipadext = srcpadext[0];
-  size_t const srcjpadext = srcpadext[1];
-  size_t const srckpadext = srcpadext[2];
+    size_t const srcipadext = srcpadext[0];
+    size_t const srcjpadext = srcpadext[1];
+    size_t const srckpadext = srcpadext[2];
 
-  size_t const dstipadext = dstpadext[0];
-  size_t const dstjpadext = dstpadext[1];
-  size_t const dstkpadext = dstpadext[2];
+    size_t const dstipadext = dstpadext[0];
+    size_t const dstjpadext = dstpadext[1];
+    size_t const dstkpadext = dstpadext[2];
 
-  size_t const srciext = srcext[0];
-  size_t const srcjext = srcext[1];
-  size_t const srckext = srcext[2];
+    size_t const srciext = srcext[0];
+    size_t const srcjext = srcext[1];
+    size_t const srckext = srcext[2];
 
-  size_t const dstiext = dstext[0];
-  size_t const dstjext = dstext[1];
-  size_t const dstkext = dstext[2];
+    size_t const dstiext = dstext[0];
+    size_t const dstjext = dstext[1];
+    size_t const dstkext = dstext[2];
 
-  size_t const regiext = regext[0];
-  size_t const regjext = regext[1];
-  size_t const regkext = regext[2];
+    size_t const regiext = regext[0];
+    size_t const regjext = regext[1];
+    size_t const regkext = regext[2];
 
-  size_t const srcioff = srcoff[0];
-  size_t const srcjoff = srcoff[1];
-  size_t const srckoff = srcoff[2];
+    size_t const srcioff = srcoff[0];
+    size_t const srcjoff = srcoff[1];
+    size_t const srckoff = srcoff[2];
 
-  size_t const dstioff = dstoff[0];
-  size_t const dstjoff = dstoff[1];
-  size_t const dstkoff = dstoff[2];
+    size_t const dstioff = dstoff[0];
+    size_t const dstjoff = dstoff[1];
+    size_t const dstkoff = dstoff[2];
 
-  size_t const fi = srcioff % 2;
-  size_t const fj = srcjoff % 2;
-  size_t const fk = srckoff % 2;
+    size_t const fi = srcioff % 2;
+    size_t const fj = srcjoff % 2;
+    size_t const fk = srckoff % 2;
 
-  size_t const i0 = srcioff / 2;
-  size_t const j0 = srcjoff / 2;
-  size_t const k0 = srckoff / 2;
+    size_t const i0 = srcioff / 2;
+    size_t const j0 = srcjoff / 2;
+    size_t const k0 = srckoff / 2;
 
-  // size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
-  size_t const srcdi = 1;
-  assert(srcdi == (srciext > 1 ? SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0) : 1));
-  size_t const srcdj = srcjext > 1 ? SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0) : 0;
-  size_t const srcdk = srckext > 1 ? SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0) : 0;
+    // size_t const srcdi = SRCIND3(1,0,0) - SRCIND3(0,0,0);
+    size_t const srcdi = 1;
+    assert(srcdi == (srciext > 1 ? SRCIND3(1, 0, 0) - SRCIND3(0, 0, 0) : 1));
+    size_t const srcdj = srcjext > 1 ? SRCIND3(0, 1, 0) - SRCIND3(0, 0, 0) : 0;
+    size_t const srcdk = srckext > 1 ? SRCIND3(0, 0, 1) - SRCIND3(0, 0, 0) : 0;
 
-  if (not use_loopcontrol_in_operators) {
+    if (not use_loopcontrol_in_operators) {
 
-    // Loop over fine region
-    // Label scheme: l 8 fk fj fi
+      // Loop over fine region
+      // Label scheme: l 8 fk fj fi
 
-    size_t is, js, ks;
-    size_t id, jd, kd;
-    size_t i, j, k;
+      size_t is, js, ks;
+      size_t id, jd, kd;
+      size_t i, j, k;
 
-    // begin k loop
-    k = 0;
-    ks = k0;
-    kd = dstkoff;
-    if (fk == 0)
-      goto l80;
-    goto l81;
-
-  // begin j loop
-  l80:
-    j = 0;
-    js = j0;
-    jd = dstjoff;
-    if (fj == 0)
-      goto l800;
-    goto l801;
-
-  // begin i loop
-  l800:
-    i = 0;
-    is = i0;
-    id = dstioff;
-    if (fi == 0)
-      goto l8000;
-    goto l8001;
-
-  // kernel
-  l8000:
-    check_indices3<T, ORDER, 0, 0, 0>(is, js, ks, srciext, srcjext, srckext);
-    dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 0, 0>(
-        &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-    i = i + 1;
-    id = id + 1;
-    if (i < regiext)
-      goto l8001;
-    goto l900;
-
-  // kernel
-  l8001:
-    check_indices3<T, ORDER, 1, 0, 0>(is, js, ks, srciext, srcjext, srckext);
-    dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 0, 0>(
-        &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-    i = i + 1;
-    id = id + 1;
-    is = is + 1;
-    if (i < regiext)
-      goto l8000;
-    goto l900;
-
-  // end i loop
-  l900:
-    j = j + 1;
-    jd = jd + 1;
-    if (j < regjext)
-      goto l801;
-    goto l90;
-
-  // begin i loop
-  l801:
-    i = 0;
-    is = i0;
-    id = dstioff;
-    if (fi == 0)
-      goto l8010;
-    goto l8011;
-
-  // kernel
-  l8010:
-    check_indices3<T, ORDER, 0, 1, 0>(is, js, ks, srciext, srcjext, srckext);
-    dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 1, 0>(
-        &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-    i = i + 1;
-    id = id + 1;
-    if (i < regiext)
-      goto l8011;
-    goto l901;
-
-  // kernel
-  l8011:
-    check_indices3<T, ORDER, 1, 1, 0>(is, js, ks, srciext, srcjext, srckext);
-    dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 1, 0>(
-        &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-    i = i + 1;
-    id = id + 1;
-    is = is + 1;
-    if (i < regiext)
-      goto l8010;
-    goto l901;
-
-  // end i loop
-  l901:
-    j = j + 1;
-    jd = jd + 1;
-    js = js + 1;
-    if (j < regjext)
-      goto l800;
-    goto l90;
-
-  // end j loop
-  l90:
-    k = k + 1;
-    kd = kd + 1;
-    if (k < regkext)
+      // begin k loop
+      k = 0;
+      ks = k0;
+      kd = dstkoff;
+      if (fk == 0)
+        goto l80;
       goto l81;
-    goto l9;
 
-  // begin j loop
-  l81:
-    j = 0;
-    js = j0;
-    jd = dstjoff;
-    if (fj == 0)
-      goto l810;
-    goto l811;
+    // begin j loop
+    l80:
+      j = 0;
+      js = j0;
+      jd = dstjoff;
+      if (fj == 0)
+        goto l800;
+      goto l801;
 
-  // begin i loop
-  l810:
-    i = 0;
-    is = i0;
-    id = dstioff;
-    if (fi == 0)
-      goto l8100;
-    goto l8101;
+    // begin i loop
+    l800:
+      i = 0;
+      is = i0;
+      id = dstioff;
+      if (fi == 0)
+        goto l8000;
+      goto l8001;
 
-  // kernel
-  l8100:
-    check_indices3<T, ORDER, 0, 0, 1>(is, js, ks, srciext, srcjext, srckext);
-    dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 0, 1>(
-        &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-    i = i + 1;
-    id = id + 1;
-    if (i < regiext)
-      goto l8101;
-    goto l910;
+    // kernel
+    l8000:
+      check_indices3<T, ORDER, 0, 0, 0>(is, js, ks, srciext, srcjext, srckext);
+      dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 0, 0>(
+          &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+      i = i + 1;
+      id = id + 1;
+      if (i < regiext)
+        goto l8001;
+      goto l900;
 
-  // kernel
-  l8101:
-    check_indices3<T, ORDER, 1, 0, 1>(is, js, ks, srciext, srcjext, srckext);
-    dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 0, 1>(
-        &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-    i = i + 1;
-    id = id + 1;
-    is = is + 1;
-    if (i < regiext)
-      goto l8100;
-    goto l910;
+    // kernel
+    l8001:
+      check_indices3<T, ORDER, 1, 0, 0>(is, js, ks, srciext, srcjext, srckext);
+      dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 0, 0>(
+          &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+      i = i + 1;
+      id = id + 1;
+      is = is + 1;
+      if (i < regiext)
+        goto l8000;
+      goto l900;
 
-  // end i loop
-  l910:
-    j = j + 1;
-    jd = jd + 1;
-    if (j < regjext)
+    // end i loop
+    l900:
+      j = j + 1;
+      jd = jd + 1;
+      if (j < regjext)
+        goto l801;
+      goto l90;
+
+    // begin i loop
+    l801:
+      i = 0;
+      is = i0;
+      id = dstioff;
+      if (fi == 0)
+        goto l8010;
+      goto l8011;
+
+    // kernel
+    l8010:
+      check_indices3<T, ORDER, 0, 1, 0>(is, js, ks, srciext, srcjext, srckext);
+      dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 1, 0>(
+          &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+      i = i + 1;
+      id = id + 1;
+      if (i < regiext)
+        goto l8011;
+      goto l901;
+
+    // kernel
+    l8011:
+      check_indices3<T, ORDER, 1, 1, 0>(is, js, ks, srciext, srcjext, srckext);
+      dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 1, 0>(
+          &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+      i = i + 1;
+      id = id + 1;
+      is = is + 1;
+      if (i < regiext)
+        goto l8010;
+      goto l901;
+
+    // end i loop
+    l901:
+      j = j + 1;
+      jd = jd + 1;
+      js = js + 1;
+      if (j < regjext)
+        goto l800;
+      goto l90;
+
+    // end j loop
+    l90:
+      k = k + 1;
+      kd = kd + 1;
+      if (k < regkext)
+        goto l81;
+      goto l9;
+
+    // begin j loop
+    l81:
+      j = 0;
+      js = j0;
+      jd = dstjoff;
+      if (fj == 0)
+        goto l810;
       goto l811;
-    goto l91;
 
-  // begin i loop
-  l811:
-    i = 0;
-    is = i0;
-    id = dstioff;
-    if (fi == 0)
-      goto l8110;
-    goto l8111;
+    // begin i loop
+    l810:
+      i = 0;
+      is = i0;
+      id = dstioff;
+      if (fi == 0)
+        goto l8100;
+      goto l8101;
 
-  // kernel
-  l8110:
-    check_indices3<T, ORDER, 0, 1, 1>(is, js, ks, srciext, srcjext, srckext);
-    dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 1, 1>(
-        &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-    i = i + 1;
-    id = id + 1;
-    if (i < regiext)
+    // kernel
+    l8100:
+      check_indices3<T, ORDER, 0, 0, 1>(is, js, ks, srciext, srcjext, srckext);
+      dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 0, 1>(
+          &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+      i = i + 1;
+      id = id + 1;
+      if (i < regiext)
+        goto l8101;
+      goto l910;
+
+    // kernel
+    l8101:
+      check_indices3<T, ORDER, 1, 0, 1>(is, js, ks, srciext, srcjext, srckext);
+      dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 0, 1>(
+          &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+      i = i + 1;
+      id = id + 1;
+      is = is + 1;
+      if (i < regiext)
+        goto l8100;
+      goto l910;
+
+    // end i loop
+    l910:
+      j = j + 1;
+      jd = jd + 1;
+      if (j < regjext)
+        goto l811;
+      goto l91;
+
+    // begin i loop
+    l811:
+      i = 0;
+      is = i0;
+      id = dstioff;
+      if (fi == 0)
+        goto l8110;
       goto l8111;
-    goto l911;
 
-  // kernel
-  l8111:
-    check_indices3<T, ORDER, 1, 1, 1>(is, js, ks, srciext, srcjext, srckext);
-    dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 1, 1>(
-        &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-    i = i + 1;
-    id = id + 1;
-    is = is + 1;
-    if (i < regiext)
-      goto l8110;
-    goto l911;
+    // kernel
+    l8110:
+      check_indices3<T, ORDER, 0, 1, 1>(is, js, ks, srciext, srcjext, srckext);
+      dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 1, 1>(
+          &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+      i = i + 1;
+      id = id + 1;
+      if (i < regiext)
+        goto l8111;
+      goto l911;
 
-  // end i loop
-  l911:
-    j = j + 1;
-    jd = jd + 1;
-    js = js + 1;
-    if (j < regjext)
-      goto l810;
-    goto l91;
+    // kernel
+    l8111:
+      check_indices3<T, ORDER, 1, 1, 1>(is, js, ks, srciext, srcjext, srckext);
+      dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 1, 1>(
+          &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+      i = i + 1;
+      id = id + 1;
+      is = is + 1;
+      if (i < regiext)
+        goto l8110;
+      goto l911;
 
-  // end j loop
-  l91:
-    k = k + 1;
-    kd = kd + 1;
-    ks = ks + 1;
-    if (k < regkext)
-      goto l80;
-    goto l9;
+    // end i loop
+    l911:
+      j = j + 1;
+      jd = jd + 1;
+      js = js + 1;
+      if (j < regjext)
+        goto l810;
+      goto l91;
 
-  // end k loop
-  l9:;
+    // end j loop
+    l91:
+      k = k + 1;
+      kd = kd + 1;
+      ks = ks + 1;
+      if (k < regkext)
+        goto l80;
+      goto l9;
 
-  } else { // use_loopcontrol_in_operators
+    // end k loop
+    l9:;
+
+    } else { // use_loopcontrol_in_operators
 
 // Loop over fine region
 #pragma omp parallel
-    CCTK_LOOP3(prolongate_3d_cc_eno_rf2, i, j, k, 0, 0, 0, regiext, regjext,
-               regkext, dstipadext, dstjpadext, dstkpadext) {
-      const ptrdiff_t is = (srcioff + i) / 2;
-      const ptrdiff_t js = (srcjoff + j) / 2;
-      const ptrdiff_t ks = (srckoff + k) / 2;
-      const ptrdiff_t im = (srcioff + i) % 2;
-      const ptrdiff_t jm = (srcjoff + j) % 2;
-      const ptrdiff_t km = (srckoff + k) % 2;
-      const ptrdiff_t id = dstioff + i;
-      const ptrdiff_t jd = dstjoff + j;
-      const ptrdiff_t kd = dstkoff + k;
-      if (km == 0) {
-        if (jm == 0) {
-          if (im == 0) {
-            check_indices3<T, ORDER, 0, 0, 0>(is, js, ks, srciext, srcjext,
-                                              srckext);
-            dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 0, 0>(
-                &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+      CCTK_LOOP3(prolongate_3d_cc_eno_rf2, i, j, k, 0, 0, 0, regiext, regjext,
+                 regkext, dstipadext, dstjpadext, dstkpadext) {
+        const ptrdiff_t is = (srcioff + i) / 2;
+        const ptrdiff_t js = (srcjoff + j) / 2;
+        const ptrdiff_t ks = (srckoff + k) / 2;
+        const ptrdiff_t im = (srcioff + i) % 2;
+        const ptrdiff_t jm = (srcjoff + j) % 2;
+        const ptrdiff_t km = (srckoff + k) % 2;
+        const ptrdiff_t id = dstioff + i;
+        const ptrdiff_t jd = dstjoff + j;
+        const ptrdiff_t kd = dstkoff + k;
+        if (km == 0) {
+          if (jm == 0) {
+            if (im == 0) {
+              check_indices3<T, ORDER, 0, 0, 0>(is, js, ks, srciext, srcjext,
+                                                srckext);
+              dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 0, 0>(
+                  &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+            } else {
+              check_indices3<T, ORDER, 1, 0, 0>(is, js, ks, srciext, srcjext,
+                                                srckext);
+              dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 0, 0>(
+                  &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+            }
           } else {
-            check_indices3<T, ORDER, 1, 0, 0>(is, js, ks, srciext, srcjext,
-                                              srckext);
-            dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 0, 0>(
-                &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+            if (im == 0) {
+              check_indices3<T, ORDER, 0, 1, 0>(is, js, ks, srciext, srcjext,
+                                                srckext);
+              dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 1, 0>(
+                  &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+            } else {
+              check_indices3<T, ORDER, 1, 1, 0>(is, js, ks, srciext, srcjext,
+                                                srckext);
+              dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 1, 0>(
+                  &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+            }
           }
         } else {
-          if (im == 0) {
-            check_indices3<T, ORDER, 0, 1, 0>(is, js, ks, srciext, srcjext,
-                                              srckext);
-            dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 1, 0>(
-                &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+          if (jm == 0) {
+            if (im == 0) {
+              check_indices3<T, ORDER, 0, 0, 1>(is, js, ks, srciext, srcjext,
+                                                srckext);
+              dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 0, 1>(
+                  &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+            } else {
+              check_indices3<T, ORDER, 1, 0, 1>(is, js, ks, srciext, srcjext,
+                                                srckext);
+              dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 0, 1>(
+                  &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+            }
           } else {
-            check_indices3<T, ORDER, 1, 1, 0>(is, js, ks, srciext, srcjext,
-                                              srckext);
-            dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 1, 0>(
-                &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-          }
-        }
-      } else {
-        if (jm == 0) {
-          if (im == 0) {
-            check_indices3<T, ORDER, 0, 0, 1>(is, js, ks, srciext, srcjext,
-                                              srckext);
-            dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 0, 1>(
-                &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-          } else {
-            check_indices3<T, ORDER, 1, 0, 1>(is, js, ks, srciext, srcjext,
-                                              srckext);
-            dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 0, 1>(
-                &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-          }
-        } else {
-          if (im == 0) {
-            check_indices3<T, ORDER, 0, 1, 1>(is, js, ks, srciext, srcjext,
-                                              srckext);
-            dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 1, 1>(
-                &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
-          } else {
-            check_indices3<T, ORDER, 1, 1, 1>(is, js, ks, srciext, srcjext,
-                                              srckext);
-            dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 1, 1>(
-                &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+            if (im == 0) {
+              check_indices3<T, ORDER, 0, 1, 1>(is, js, ks, srciext, srcjext,
+                                                srckext);
+              dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 0, 1, 1>(
+                  &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+            } else {
+              check_indices3<T, ORDER, 1, 1, 1>(is, js, ks, srciext, srcjext,
+                                                srckext);
+              dst[DSTIND3(id, jd, kd)] = interp3<T, ORDER, 1, 1, 1>(
+                  &src[SRCIND3(is, js, ks)], srcdi, srcdj, srcdk);
+            }
           }
         }
       }
-    }
-    CCTK_ENDLOOP3(prolongate_3d_cc_eno_rf2);
+      CCTK_ENDLOOP3(prolongate_3d_cc_eno_rf2);
 
-  } // if use_loopcontrol_in_operators
-}
-
-// Specialise for complex types
-
-#define TYPECASE(N, T)                                                         \
-                                                                               \
-  template <>                                                                  \
-  void prolongate_3d_cc_eno_rf2<T, 2>(                                         \
-      T const *restrict const src, ivect3 const &restrict srcpadext,           \
-      ivect3 const &restrict srcext, T *restrict const dst,                    \
-      ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,         \
-      ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,          \
-      ibbox3 const &restrict, ibbox3 const &restrict regbbox,                  \
-      void *extraargs) {                                                       \
-    CCTK_WARN(CCTK_WARN_ABORT,                                                 \
-              "ENO operators are not supported for CCTK_COMPLEX");             \
-  }                                                                            \
-                                                                               \
-  template <>                                                                  \
-  void prolongate_3d_cc_eno_rf2<T, 3>(                                         \
-      T const *restrict const src, ivect3 const &restrict srcpadext,           \
-      ivect3 const &restrict srcext, T *restrict const dst,                    \
-      ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,         \
-      ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,          \
-      ibbox3 const &restrict, ibbox3 const &restrict regbbox,                  \
-      void *extraargs) {                                                       \
-    CCTK_WARN(CCTK_WARN_ABORT,                                                 \
-              "ENO operators are not supported for CCTK_COMPLEX");             \
+    } // if use_loopcontrol_in_operators
   }
-
-#define CARPET_COMPLEX
-#include "typecase.hh"
-#undef TYPECASE
+}
 
 #define TYPECASE(N, T)                                                         \
                                                                                \
@@ -1413,7 +1380,6 @@ void prolongate_3d_cc_eno_rf2(
       void *extraargs);
 
 #define CARPET_NO_INT
-#define CARPET_NO_COMPLEX
 #include "typecase.hh"
 #undef TYPECASE
 

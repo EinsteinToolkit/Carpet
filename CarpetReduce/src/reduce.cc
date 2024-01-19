@@ -69,7 +69,7 @@ template <typename T> struct my_numeric_limits {
     // floating point numbers, it is min = - max.  The expression
     // below does the right thing in both cases.
     return CarpetReduce::mymin(numeric_limits<T>::min(),
-                               -numeric_limits<T>::max());
+                               T(-numeric_limits<T>::max()));
   }
 
   // The largest possible value
@@ -480,7 +480,7 @@ struct sum : reduction {
     static inline void reduce(T &accum, T &cnt, const T &val,
                               const CCTK_REAL weight) {
       if (weight != 0)
-        accum += weight * val;
+        accum += T(weight) * val;
       cnt += T(weight);
     }
     static inline void combine(T &accum, T &cnt, const T &accum2,
@@ -505,7 +505,7 @@ struct sum_abs : reduction {
     static inline void reduce(T &accum, T &cnt, const T &val,
                               const CCTK_REAL weight) {
       if (weight != 0)
-        accum += weight * abs(val);
+        accum += T(weight) * abs(val);
       cnt += T(weight);
     }
     static inline void combine(T &accum, T &cnt, const T &accum2,
@@ -530,7 +530,7 @@ struct sum_squared : reduction {
     static inline void reduce(T &accum, T &cnt, const T &val,
                               const CCTK_REAL weight) {
       if (weight != 0)
-        accum += weight * CarpetReduce::mysqr(val);
+        accum += T(weight) * CarpetReduce::mysqr(val);
       cnt += T(weight);
     }
     static inline void combine(T &accum, T &cnt, const T &accum2,
@@ -555,7 +555,7 @@ struct sum_abs_squared : reduction {
     static inline void reduce(T &accum, T &cnt, const T &val,
                               const CCTK_REAL weight) {
       if (weight != 0)
-        accum += weight * CarpetReduce::mysqrabs(val);
+        accum += T(weight) * CarpetReduce::mysqrabs(val);
       cnt += T(weight);
     }
     static inline void combine(T &accum, T &cnt, const T &accum2,
@@ -580,7 +580,7 @@ struct average : reduction {
     static inline void reduce(T &accum, T &cnt, const T &val,
                               const CCTK_REAL weight) {
       if (weight != 0)
-        accum += weight * val;
+        accum += T(weight) * val;
       cnt += T(weight);
     }
     static inline void combine(T &accum, T &cnt, const T &accum2,
@@ -608,7 +608,7 @@ struct norm1 : reduction {
     static inline void reduce(T &accum, T &cnt, const T &val,
                               const CCTK_REAL weight) {
       if (weight != 0)
-        accum += weight * abs(val);
+        accum += T(weight) * abs(val);
       cnt += T(weight);
     }
     static inline void combine(T &accum, T &cnt, const T &accum2,
@@ -636,7 +636,7 @@ struct norm2 : reduction {
     static inline void reduce(T &accum, T &cnt, const T &val,
                               const CCTK_REAL weight) {
       if (weight != 0)
-        accum += weight * CarpetReduce::mysqrabs(val);
+        accum += T(weight) * CarpetReduce::mysqrabs(val);
       cnt += T(weight);
     }
     static inline void combine(T &accum, T &cnt, const T &accum2,
@@ -716,8 +716,8 @@ void reduce(const int *const lsh, const int *const ash, const int *const bbox,
           CCTK_REAL const w = weight ? weight[index] * levfac : levfac;
           T myinval = T(0);
           for (size_t tl = 0; tl < inarrays.size(); ++tl) {
-            myinval +=
-                static_cast<const T *>(inarrays.AT(tl))[index] * tfacs.AT(tl);
+            myinval += static_cast<const T *>(inarrays.AT(tl))[index] *
+                       T(tfacs.AT(tl));
           }
           OP::reduce(myoutval_local, mycnt_local, myinval, w);
         }
@@ -732,8 +732,8 @@ void reduce(const int *const lsh, const int *const ash, const int *const bbox,
             CCTK_REAL const w = weight ? weight[index] * levfac : levfac;
             T myinval = T(0);
             for (size_t tl = 0; tl < inarrays.size(); ++tl) {
-              myinval +=
-                  static_cast<const T *>(inarrays.AT(tl))[index] * tfacs.AT(tl);
+              myinval += static_cast<const T *>(inarrays.AT(tl))[index] *
+                         T(tfacs.AT(tl));
             }
             OP::reduce(myoutval_local, mycnt_local, myinval, w);
           }
@@ -1403,15 +1403,15 @@ int ReduceGVs(const cGH *const cgh, const int proc, const int num_outvals,
     assert(vhh.AT(m)->reflevels() == vhh.AT(0)->reflevels());
   }
   int const minrl = reduce_arrays ? 0 : want_global_mode ? 0 : reflevel;
-  int const maxrl =
-      reduce_arrays ? 1
-                    : want_global_mode ? vhh.AT(0)->reflevels() : reflevel + 1;
-  int const minm =
-      reduce_arrays ? 0 : want_global_mode or want_level_mode ? 0 : Carpet::map;
-  int const maxm =
-      reduce_arrays
-          ? 1
-          : want_global_mode or want_level_mode ? maps : Carpet::map + 1;
+  int const maxrl = reduce_arrays      ? 1
+                    : want_global_mode ? vhh.AT(0)->reflevels()
+                                       : reflevel + 1;
+  int const minm = reduce_arrays                         ? 0
+                   : want_global_mode or want_level_mode ? 0
+                                                         : Carpet::map;
+  int const maxm = reduce_arrays                         ? 1
+                   : want_global_mode or want_level_mode ? maps
+                                                         : Carpet::map + 1;
 
   // Find the time interpolation order
   int partype;
@@ -1485,10 +1485,11 @@ int ReduceGVs(const cGH *const cgh, const int proc, const int num_outvals,
                 if (not have_warned.AT(vi)) {
                   char *const fullname = CCTK_FullName(vi);
                   CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__,
-                             CCTK_THORNSTRING, "Grid function \"%s\" has only "
-                                               "%d time levels on refinement "
-                                               "level %d; this is not enough "
-                                               "for time interpolation",
+                             CCTK_THORNSTRING,
+                             "Grid function \"%s\" has only "
+                             "%d time levels on refinement "
+                             "level %d; this is not enough "
+                             "for time interpolation",
                              fullname, max_tl, reflevel);
                   free(fullname);
                   have_warned.AT(vi) = true;
