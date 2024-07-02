@@ -72,8 +72,8 @@ Carpet::convergence_level = 0
 Carpet::poison_new_timelevels = yes
 CarpetLib::poison_new_memory  = yes
 
-Carpet::grid_structure_filename = "grid_structure.asc"
-Carpet::grid_coordinates_filename = "grid_coordinates.asc"
+Carpet::grid_structure_filename = "grid_structure.txt"
+Carpet::grid_coordinates_filename = "grid_coordinates.txt"
 
 #################################
 ActiveThorns = "AEILocalInterp"
