@@ -35,7 +35,7 @@ vector<string> gather_string(MPI_Comm const comm, int const root,
     int const length = data.length();
     vector<int> lengths(num_procs);
 
-    MPI_Gather(const_cast<int *>(&length), 1, MPI_INT, &lengths.front(), 1,
+    MPI_Gather(const_cast<int *>(&length), 1, MPI_INT, lengths.data(), 1,
                MPI_INT, root, comm);
 
     // Allocate space for all data strings
@@ -49,8 +49,8 @@ vector<string> gather_string(MPI_Comm const comm, int const root,
 
     // Gather all data strings
     MPI_Gatherv(const_cast<char *>(data.c_str()), length, MPI_CHAR,
-                &alldata_buffer.front(), const_cast<int *>(&lengths.front()),
-                const_cast<int *>(&offsets.front()), MPI_CHAR, root, comm);
+                alldata_buffer.data(), const_cast<int *>(lengths.data()),
+                const_cast<int *>(offsets.data()), MPI_CHAR, root, comm);
 
     // Convert data buffer with C strings to C++ strings
     vector<string> alldata(num_procs);
@@ -88,7 +88,7 @@ vector<string> allgather_string(MPI_Comm const comm, string const &data) {
   int const length = data.length();
   vector<int> lengths(num_procs);
 
-  MPI_Allgather(const_cast<int *>(&length), 1, MPI_INT, &lengths.front(), 1,
+  MPI_Allgather(const_cast<int *>(&length), 1, MPI_INT, lengths.data(), 1,
                 MPI_INT, comm);
 
   // Allocate space for all data strings
@@ -102,8 +102,8 @@ vector<string> allgather_string(MPI_Comm const comm, string const &data) {
 
   // Gather all data strings
   MPI_Allgatherv(const_cast<char *>(data.c_str()), length, MPI_CHAR,
-                 &alldata_buffer.front(), const_cast<int *>(&lengths.front()),
-                 const_cast<int *>(&offsets.front()), MPI_CHAR, comm);
+                 alldata_buffer.data(), const_cast<int *>(lengths.data()),
+                 const_cast<int *>(offsets.data()), MPI_CHAR, comm);
 
   // Convert data buffer with C strings to C++ strings
   vector<string> alldata(num_procs);
@@ -126,7 +126,7 @@ vector<string> alltoallv_string(MPI_Comm const comm,
     lengths_in.AT(n) = data.AT(n).length();
   }
   vector<int> lengths(num_procs);
-  MPI_Alltoall(&lengths_in.front(), 1, MPI_INT, &lengths.front(), 1, MPI_INT,
+  MPI_Alltoall(lengths_in.data(), 1, MPI_INT, lengths.data(), 1, MPI_INT,
                comm);
 
   // Allocate space for all data strings
@@ -153,9 +153,9 @@ vector<string> alltoallv_string(MPI_Comm const comm,
   }
 
   // Exchange all data strings
-  MPI_Alltoallv(&alldata_buffer_in.front(), &lengths_in.front(),
-                &offsets_in.front(), MPI_CHAR, &alldata_buffer.front(),
-                &lengths.front(), &offsets.front(), MPI_CHAR, comm);
+  MPI_Alltoallv(alldata_buffer_in.data(), lengths_in.data(),
+                offsets_in.data(), MPI_CHAR, alldata_buffer.data(),
+                lengths.data(), offsets.data(), MPI_CHAR, comm);
 
   // Convert data buffer with C strings to C++ strings
   vector<string> alldata(num_procs);
@@ -195,11 +195,11 @@ string broadcast_string(MPI_Comm const comm, int const root,
     vector<char> data_buffer(length);
 
     // Broadcast data string
-    char *const buf = &data_buffer.front();
+    char *const buf = data_buffer.data();
     MPI_Bcast(buf, length, MPI_CHAR, root, comm);
 
     // Convert data buffer with C strings to C++ strings
-    string const result = string(&data_buffer.front(), length);
+    string const result = string(data_buffer.data(), length);
 
     return result;
   }
@@ -225,10 +225,10 @@ string recv_string(MPI_Comm const comm, int const source) {
     std::vector<char> data_buffer(static_cast<size_t>(length));
 
     // Receive data string
-    MPI_Recv(&data_buffer.front(), length, MPI_CHAR, source, 0, comm, MPI_STATUS_IGNORE);
+    MPI_Recv(data_buffer.data(), length, MPI_CHAR, source, 0, comm, MPI_STATUS_IGNORE);
 
     // Convert data buffer with C strings to C++ strings
-    string const result = string(&data_buffer.front(), length);
+    string const result = string(data_buffer.data(), length);
 
     return result;
 }

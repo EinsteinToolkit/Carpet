@@ -138,8 +138,8 @@ void comm_state::step() {
       for (auto rc : recvcount)
         if (rc > numeric_limits<int>::max())
           CCTK_ERROR("Integer overflow in MPI_Alltoall");
-      MPI_Alltoall(&sendcount.front(), dist::c_ndatatypes(), MPI_INT,
-                   &recvcount.front(), dist::c_ndatatypes(), MPI_INT,
+      MPI_Alltoall(sendcount.data(), dist::c_ndatatypes(), MPI_INT,
+                   recvcount.data(), dist::c_ndatatypes(), MPI_INT,
                    dist::comm());
       if (commstate_verbose) {
         CCTK_INFO("after MPI_Alltoall");
@@ -180,15 +180,15 @@ void comm_state::step() {
           // TODO: this may be a bit extreme, and it is only for
           // internal consistency checking
           if (poison_new_memory) {
-            memset(&procbuf.sendbufbase.front(), poison_value,
+            memset(procbuf.sendbufbase.data(), poison_value,
                    procbuf.sendbufsize * datatypesize *
                        message_size_multiplier);
-            memset(&procbuf.recvbufbase.front(), poison_value,
+            memset(procbuf.recvbufbase.data(), poison_value,
                    procbuf.recvbufsize * datatypesize *
                        message_size_multiplier);
           }
-          procbuf.sendbuf = &procbuf.sendbufbase.front();
-          procbuf.recvbuf = &procbuf.recvbufbase.front();
+          procbuf.sendbuf = procbuf.sendbufbase.data();
+          procbuf.recvbuf = procbuf.recvbufbase.data();
 
           if (procbuf.recvbufsize > 0) {
             static Timer timer("commstate::sizes_irecv");
@@ -254,7 +254,7 @@ void comm_state::step() {
               int const datatypesize = typebufs.AT(type).datatypesize;
 
               ptrdiff_t const fillstate =
-                  procbuf.sendbuf - &procbuf.sendbufbase.front();
+                  procbuf.sendbuf - procbuf.sendbufbase.data();
               assert(fillstate == procbuf.sendbufsize * datatypesize);
 
               // Enlarge messages for performance testing
@@ -274,7 +274,7 @@ void comm_state::step() {
                              "About to MPI_Send to process %d for type %s",
                              proc, dist::c_datatype_name(type));
                 }
-                MPI_Send(const_cast<char *>(&procbuf.sendbufbase.front()),
+                MPI_Send(const_cast<char *>(procbuf.sendbufbase.data()),
                          procbuf.sendbufsize * message_size_multiplier,
                          typebufs.AT(type).mpi_datatype, proc, tag,
                          dist::comm());
@@ -293,7 +293,7 @@ void comm_state::step() {
                              "About to MPI_Ssend to process %d for type %s",
                              proc, dist::c_datatype_name(type));
                 }
-                MPI_Ssend(const_cast<char *>(&procbuf.sendbufbase.front()),
+                MPI_Ssend(const_cast<char *>(procbuf.sendbufbase.data()),
                           procbuf.sendbufsize * message_size_multiplier,
                           typebufs.AT(type).mpi_datatype, proc, tag,
                           dist::comm());
@@ -357,7 +357,7 @@ void comm_state::step() {
     if (commstate_verbose) {
       CCTK_INFO("About to MPI_Waitall");
     }
-    MPI_Waitall(rrequests.size(), &rrequests.front(), MPI_STATUSES_IGNORE);
+    MPI_Waitall(rrequests.size(), rrequests.data(), MPI_STATUSES_IGNORE);
     if (commstate_verbose) {
       CCTK_INFO("Finished MPI_Waitall");
     }
@@ -373,7 +373,7 @@ void comm_state::step() {
     if (commstate_verbose) {
       CCTK_INFO("About to MPI_Waitall");
     }
-    MPI_Waitall(srequests.size(), &srequests.front(), MPI_STATUSES_IGNORE);
+    MPI_Waitall(srequests.size(), srequests.data(), MPI_STATUSES_IGNORE);
     if (commstate_verbose) {
       CCTK_INFO("Finished MPI_Waitall");
     }
@@ -412,7 +412,7 @@ void comm_state::step() {
               while (count > 0) {
                 ptrdiff_t thiscount =
                     std::min(ptrdiff_t(numeric_limits<int>::max()), count);
-                MPI_Irecv(&procbuf.recvbufbase.front(), thiscount,
+                MPI_Irecv(procbuf.recvbufbase.data(), thiscount,
                           typebufs.AT(type).mpi_datatype, proc, tag,
                           dist::comm(), &push_back(rrequests));
                 offset += thiscount * typebufs.AT(type).datatypesize;
@@ -480,7 +480,7 @@ void comm_state::step() {
         if (commstate_verbose) {
           CCTK_INFO("About to MPI_Waitall");
         }
-        MPI_Waitall(rrequests.size(), &rrequests.front(), MPI_STATUSES_IGNORE);
+        MPI_Waitall(rrequests.size(), rrequests.data(), MPI_STATUSES_IGNORE);
         if (commstate_verbose) {
           CCTK_INFO("Finished MPI_Waitall");
         }
@@ -495,7 +495,7 @@ void comm_state::step() {
         if (commstate_verbose) {
           CCTK_INFO("About to MPI_Waitall");
         }
-        MPI_Waitall(srequests.size(), &srequests.front(), MPI_STATUSES_IGNORE);
+        MPI_Waitall(srequests.size(), srequests.data(), MPI_STATUSES_IGNORE);
         if (commstate_verbose) {
           CCTK_INFO("Finished MPI_Waitall");
         }
@@ -580,7 +580,7 @@ void *comm_state::send_buffer(unsigned const type, int const proc,
   procbufdesc const &procbuf = typebuf.procbufs.AT(proc);
 
   assert(procbuf.sendbuf + npoints * typebuf.datatypesize <=
-         &procbuf.sendbufbase.front() +
+         procbuf.sendbufbase.data() +
              procbuf.sendbufsize * typebuf.datatypesize);
 
   return procbuf.sendbuf;
@@ -595,7 +595,7 @@ void *comm_state::recv_buffer(unsigned const type, int const proc,
   procbufdesc const &procbuf = typebuf.procbufs.AT(proc);
 
   assert(procbuf.recvbuf + npoints * typebuf.datatypesize <=
-         &procbuf.recvbufbase.front() +
+         procbuf.recvbufbase.data() +
              procbuf.recvbufsize * typebuf.datatypesize);
 
   return procbuf.recvbuf;
@@ -612,13 +612,13 @@ void comm_state::commit_send_space(unsigned const type, int const proc,
   typebufdesc &typebuf = typebufs.AT(type);
   procbufdesc &procbuf = typebuf.procbufs.AT(proc);
   procbuf.sendbuf += npoints * typebuf.datatypesize;
-  assert(procbuf.sendbuf <= &procbuf.sendbufbase.front() +
+  assert(procbuf.sendbuf <= procbuf.sendbufbase.data() +
                                 procbuf.sendbufsize * typebuf.datatypesize);
 
   if (not combine_sends) {
     // post the send if the buffer is full
     if (procbuf.sendbuf ==
-        &procbuf.sendbufbase.front() +
+        procbuf.sendbufbase.data() +
             procbuf.sendbufsize * typebuf.datatypesize) {
       if (message_size_multiplier > 1) {
         ptrdiff_t const nbytes = procbuf.sendbufsize * typebuf.datatypesize *
@@ -666,7 +666,7 @@ void comm_state::commit_recv_space(unsigned const type, int const proc,
   typebufdesc &typebuf = typebufs.AT(type);
   procbufdesc &procbuf = typebuf.procbufs.AT(proc);
   procbuf.recvbuf += npoints * typebuf.datatypesize;
-  assert(procbuf.recvbuf <= &procbuf.recvbufbase.front() +
+  assert(procbuf.recvbuf <= procbuf.recvbufbase.data() +
                                 procbuf.recvbufsize * typebuf.datatypesize);
 }
 

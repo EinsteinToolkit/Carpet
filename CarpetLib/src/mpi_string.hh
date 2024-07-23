@@ -61,7 +61,7 @@ vector<vector<T> > allgatherv(MPI_Comm comm, vector<T> const &data) {
   int const size_in = data.size();
   assert(size_in >= 0);
   vector<int> sizes_out(num_procs);
-  MPI_Allgather(const_cast<int *>(&size_in), 1, MPI_INT, &sizes_out.front(), 1,
+  MPI_Allgather(const_cast<int *>(&size_in), 1, MPI_INT, sizes_out.data(), 1,
                 MPI_INT, comm);
 
   // Allocate space for all data vectors
@@ -82,20 +82,20 @@ vector<vector<T> > allgatherv(MPI_Comm comm, vector<T> const &data) {
   MPI_Type_size(type, &datatypesize);
 // datatypesize=" << datatypesize << endl;
 #if 0
-    MPI_Allgatherv (const_cast <T *> (& data.front()),
-                    size_in, type,
-                    & alldata_buffer_out.front(),
-                    & sizes_out.front(), & offsets_out.front(), type,
-                    comm);
+    MPI_Allgatherv(const_cast<T *>(data.data()),
+                   size_in, type,
+                   alldata_buffer_out.data(),
+                   sizes_out.data(), offsets_out.data(), type,
+                   comm);
 #else
   int const typesize = sizeof(T);
   for (int n = 0; n < num_procs; ++n) {
     sizes_out.AT(n) *= typesize;
     offsets_out.AT(n) *= typesize;
   }
-  MPI_Allgatherv(const_cast<T *>(&data.front()), size_in * typesize, MPI_CHAR,
-                 &alldata_buffer_out.front(), &sizes_out.front(),
-                 &offsets_out.front(), MPI_CHAR, comm);
+  MPI_Allgatherv(const_cast<T *>(data.data()), size_in * typesize, MPI_CHAR,
+                 alldata_buffer_out.data(), sizes_out.data(),
+                 offsets_out.data(), MPI_CHAR, comm);
   for (int n = 0; n < num_procs; ++n) {
     sizes_out.AT(n) /= typesize;
     offsets_out.AT(n) /= typesize;
@@ -127,7 +127,7 @@ vector<T> allgatherv1(MPI_Comm comm, vector<T> const &data) {
   int const size_in = data.size();
   assert(size_in >= 0);
   vector<int> sizes_out(num_procs);
-  MPI_Allgather(const_cast<int *>(&size_in), 1, MPI_INT, &sizes_out.front(), 1,
+  MPI_Allgather(const_cast<int *>(&size_in), 1, MPI_INT, sizes_out.data(), 1,
                 MPI_INT, comm);
 
   // Allocate space for all data vectors
@@ -147,20 +147,20 @@ vector<T> allgatherv1(MPI_Comm comm, vector<T> const &data) {
   int datatypesize;
   MPI_Type_size(type, &datatypesize);
 #if 0
-    MPI_Allgatherv (const_cast <T *> (& data.front()),
-                    size_in, type,
-                    & alldata_buffer_out.front(),
-                    & sizes_out.front(), & offsets_out.front(), type,
-                    comm);
+    MPI_Allgatherv(const_cast<T *>(data.data()),
+                   size_in, type,
+                   alldata_buffer_out.data(),
+                   sizes_out.data(), offsets_out.data(), type,
+                   comm);
 #else
   int const typesize = sizeof(T);
   for (int n = 0; n < num_procs; ++n) {
     sizes_out.AT(n) *= typesize;
     offsets_out.AT(n) *= typesize;
   }
-  MPI_Allgatherv(const_cast<T *>(&data.front()), size_in * typesize, MPI_CHAR,
-                 &alldata_buffer_out.front(), &sizes_out.front(),
-                 &offsets_out.front(), MPI_CHAR, comm);
+  MPI_Allgatherv(const_cast<T *>(data.data()), size_in * typesize, MPI_CHAR,
+                 alldata_buffer_out.data(), sizes_out.data(),
+                 offsets_out.data(), MPI_CHAR, comm);
   for (int n = 0; n < num_procs; ++n) {
     sizes_out.AT(n) /= typesize;
     offsets_out.AT(n) /= typesize;
@@ -182,7 +182,7 @@ vector<T> alltoall(MPI_Comm const comm, vector<T> const &data) {
   // Exchange all data vectors
   T const dummy;
   MPI_Datatype const type = mpi_datatype(dummy);
-  MPI_Alltoall(&data.front(), 1, type, &alldata.front(), 1, type, comm);
+  MPI_Alltoall(data.data(), 1, type, alldata.data(), 1, type, comm);
 
   return alldata;
 }
@@ -200,7 +200,7 @@ vector<vector<T> > alltoallv(MPI_Comm const comm,
     sizes_in.AT(n) = data.AT(n).size();
   }
   vector<int> sizes_out(num_procs);
-  MPI_Alltoall(&sizes_in.front(), 1, MPI_INT, &sizes_out.front(), 1, MPI_INT,
+  MPI_Alltoall(sizes_in.data(), 1, MPI_INT, sizes_out.data(), 1, MPI_INT,
                comm);
 
   // Copy vectors to data buffer
@@ -229,9 +229,9 @@ vector<vector<T> > alltoallv(MPI_Comm const comm,
   // Exchange all data vectors
   T const dummy;
   MPI_Datatype const type = mpi_datatype(dummy);
-  MPI_Alltoallv(&alldata_buffer_in.front(), &sizes_in.front(),
-                &offsets_in.front(), type, &alldata_buffer_out.front(),
-                &sizes_out.front(), &offsets_out.front(), type, comm);
+  MPI_Alltoallv(alldata_buffer_in.data(), sizes_in.data(),
+                offsets_in.data(), type, alldata_buffer_out.data(),
+                sizes_out.data(), offsets_out.data(), type, comm);
 
   // Convert data buffer to vectors
   vector<vector<T> > alldata_out(num_procs);
@@ -259,7 +259,7 @@ vector<T> alltoallv1(MPI_Comm const comm, vector<vector<T> > const &data) {
     sizes_in.AT(n) = data.AT(n).size();
   }
   vector<int> sizes_out(num_procs);
-  MPI_Alltoall(&sizes_in.front(), 1, MPI_INT, &sizes_out.front(), 1, MPI_INT,
+  MPI_Alltoall(sizes_in.data(), 1, MPI_INT, sizes_out.data(), 1, MPI_INT,
                comm);
 
 #if 0
@@ -292,11 +292,11 @@ vector<T> alltoallv1(MPI_Comm const comm, vector<vector<T> > const &data) {
     // Exchange all data vectors
     T const dummy;
     MPI_Datatype const type = mpi_datatype (dummy);
-    MPI_Alltoallv (& alldata_buffer_in.front(),
-                   & sizes_in.front(), & offsets_in.front(), type,
-                   & alldata_buffer_out.front(),
-                   & sizes_out.front(), & offsets_out.front(), type,
-                   comm);
+    MPI_Alltoallv(alldata_buffer_in.data(),
+                  sizes_in.data(), offsets_in.data(), type,
+                  alldata_buffer_out.data(),
+                  sizes_out.data(), offsets_out.data(), type,
+                  comm);
 #endif
 
   // Allocate space for all data vectors
@@ -323,12 +323,12 @@ vector<T> alltoallv1(MPI_Comm const comm, vector<vector<T> > const &data) {
   }
   for (int n = 0; n < num_procs; ++n) {
     if (sizes_in.AT(n) > 0) {
-      MPI_Isend(const_cast<T *>(&data.AT(n).front()), sizes_in.AT(n), type, n,
+      MPI_Isend(const_cast<T *>(data.AT(n).data()), sizes_in.AT(n), type, n,
                 tag, comm, &reqs.AT(nreqs));
       ++nreqs;
     }
   }
-  MPI_Waitall(nreqs, &reqs.front(), MPI_STATUSES_IGNORE);
+  MPI_Waitall(nreqs, reqs.data(), MPI_STATUSES_IGNORE);
 
   return alldata_buffer_out;
 }

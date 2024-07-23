@@ -100,7 +100,7 @@ void CarpetLib_printmemstats(CCTK_ARGUMENTS) {
 
     if (strcmp(memstat_file, "") != 0) {
       vector<mstat> allbuf(dist::size());
-      MPI_Gather(&mybuf, mstat_entries, MPI_DOUBLE, &allbuf.front(),
+      MPI_Gather(&mybuf, mstat_entries, MPI_DOUBLE, allbuf.data(),
                  mstat_entries, MPI_DOUBLE, ioproc, dist::comm());
 
       if (dist::rank() == ioproc) {
