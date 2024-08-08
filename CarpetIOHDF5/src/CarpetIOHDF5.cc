@@ -48,7 +48,7 @@ static int TimeToOutput(const cGH *const cctkGH, const int vindex);
 static int TriggerOutput(const cGH *const cctkGH, const int vindex);
 
 // general checkpoint routine
-static void Checkpoint(const cGH *const cctkGH, int called_from);
+static void Checkpoint(cGH *const cctkGH, int called_from);
 
 // callback for I/O parameter parsing routine
 static void GetVarIndex(int vindex, const char *optstring, void *arg);
@@ -107,8 +107,9 @@ void CarpetIOHDF5_InitialDataCheckpoint(CCTK_ARGUMENTS) {
   if (checkpoint and checkpoint_ID) {
     if (not CCTK_Equals(verbose, "none")) {
       CCTK_INFO("---------------------------------------------------------");
-      CCTK_VInfo(CCTK_THORNSTRING, "Dumping initial checkpoint at "
-                                   "iteration %d, simulation time %g",
+      CCTK_VInfo(CCTK_THORNSTRING,
+                 "Dumping initial checkpoint at "
+                 "iteration %d, simulation time %g",
                  cctk_iteration, double(cctk_time));
       CCTK_INFO("---------------------------------------------------------");
     }
@@ -146,8 +147,9 @@ void CarpetIOHDF5_EvolutionCheckpoint(CCTK_ARGUMENTS) {
   if (do_checkpoint) {
     if (not CCTK_Equals(verbose, "none")) {
       CCTK_INFO("---------------------------------------------------------");
-      CCTK_VInfo(CCTK_THORNSTRING, "Dumping periodic checkpoint at "
-                                   "iteration %d, simulation time %g",
+      CCTK_VInfo(CCTK_THORNSTRING,
+                 "Dumping periodic checkpoint at "
+                 "iteration %d, simulation time %g",
                  cctk_iteration, double(cctk_time));
       CCTK_INFO("---------------------------------------------------------");
     }
@@ -166,8 +168,9 @@ void CarpetIOHDF5_TerminationCheckpoint(CCTK_ARGUMENTS) {
         (cctk_iteration == 0 and not checkpoint_ID)) {
       if (not CCTK_Equals(verbose, "none")) {
         CCTK_INFO("---------------------------------------------------------");
-        CCTK_VInfo(CCTK_THORNSTRING, "Dumping termination checkpoint at "
-                                     "iteration %d, simulation time %g",
+        CCTK_VInfo(CCTK_THORNSTRING,
+                   "Dumping termination checkpoint at "
+                   "iteration %d, simulation time %g",
                    cctk_iteration, double(cctk_time));
         CCTK_INFO("---------------------------------------------------------");
       }
@@ -290,7 +293,7 @@ hid_t CCTKtoHDF5_Datatype(const cGH *const cctkGH, int cctk_type,
   case CCTK_VARIABLE_INT8:
     retval = H5T_NATIVE_INT64;
     break;
-  // case CCTK_VARIABLE_INT16:     retval = H5T_NATIVE_INT128; break;
+    // case CCTK_VARIABLE_INT16:     retval = H5T_NATIVE_INT128; break;
 
   case CCTK_VARIABLE_REAL4:
     retval = H5T_NATIVE_FLOAT;
@@ -1082,9 +1085,12 @@ static int OutputVarAs(const cGH *const cctkGH, const char *const fullname,
   return (0);
 }
 
-static void Checkpoint(const cGH *const cctkGH, int called_from) {
+static void Checkpoint(cGH *const cctkGH, int called_from) {
   int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
+
+  if (CCTK_EQUALS(flush_to_disk, "checkpoint"))
+    CarpetIOHDF5_CloseOutputFiles(CCTK_PASS_CTOC);
 
   /* get the filenames for both the temporary and real checkpoint file */
   int ioproc = 0, nioprocs = 1;
