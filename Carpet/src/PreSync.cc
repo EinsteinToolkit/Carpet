@@ -305,8 +305,26 @@ void PreSyncGroups(cFunctionData *attribute, cGH *cctkGH,
     cctkGH->cctk_time = previous_time;
   }
 
-  // ask Carpet to do the SYNC, this will apply BC as well
-  SyncProlongateGroups(cctkGH, pre_groups, attribute);
+  std::vector<int> check_groups;
+  std::set<int> tmpgroups;
+  for (int g = 0; g < pre_groups.size(); g++) {
+    int gi = pre_groups[g];
+    for (int vi = 0; vi < CCTK_NumVarsInGroupI(gi); vi++) {
+      int const map0 = 0;
+      ggf *const ff = arrdata.AT(gi).AT(map0).data.AT(vi);
+      assert(ff);
+      int const valid = ff->valid(mglevel, reflevel, timelevel);
+      if (not is_set(valid, CCTK_VALID_EVERYWHERE)) {
+        tmpgroups.insert(gi);
+        break;
+      }
+    }
+  }
+  check_groups.assign(tmpgroups.begin(), tmpgroups.end());
+  if(!check_groups.empty()) {
+    // ask Carpet to do the SYNC, this will apply BC as well
+    SyncProlongateGroups(cctkGH, pre_groups, attribute);
+  }
 }
 
 /**
