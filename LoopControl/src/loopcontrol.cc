@@ -102,12 +102,14 @@ template <typename T> struct alignedAllocator {
 };
 
 struct lc_thread_info_t : public aligned<128> {
+  lc_thread_info_t() : idx(0){};
   volatile int idx;            // linear index of next coarse thread block
   char pad[128 - sizeof(int)]; // align to prevent sharing cache lines
 } CCTK_ATTRIBUTE_ALIGNED(128);
 static_assert(sizeof(lc_thread_info_t) == 128, "Incorrect size for alignment");
 
 struct lc_fine_thread_comm_t : public aligned<128> {
+  lc_fine_thread_comm_t() : state(0), value(0){};
   volatile int state;              // waiting threads
   volatile int value;              // broadcast value
   char pad[128 - 2 * sizeof(int)]; // align to prevent sharing cache lines
