@@ -69,20 +69,55 @@ static minstd_rand lc_random;
 static minstd_rand::result_type const constexpr lc_random_range =
     lc_random.max() - lc_random.min() + 1;
 
-struct lc_thread_info_t {
-  volatile int idx;            // linear index of next coarse thread block
-} CCTK_ATTRIBUTE_ALIGNED(128); // align to prevent sharing cache lines
+template <size_t align_to> struct aligned {
+  static void operator delete(void *ptr, size_t) { free(ptr); }
+  static void operator delete[](void *ptr, size_t) { free(ptr); }
+  static void *operator new(size_t n) {
+    void *p;
+    if (posix_memalign(&p, align_to, n) == 0) {
+      return p;
+    } else {
+      throw bad_alloc();
+    }
+  }
+  static void *operator new[](size_t n) { return aligned::operator new(n); }
+};
+template <typename T> struct alignedAllocator {
+  typedef T value_type;
 
-struct lc_fine_thread_comm_t {
-  volatile int state;          // waiting threads
-  volatile int value;          // broadcast value
-} CCTK_ATTRIBUTE_ALIGNED(128); // align to prevent sharing cache lines
+  alignedAllocator() = default;
+  template <class U> alignedAllocator(const alignedAllocator<U> &) noexcept{};
+
+  T *allocate(size_t n) {
+    return static_cast<T *>(aligned<128>::operator new(n * sizeof(T)));
+  }
+  void deallocate(T *p, size_t n) noexcept {
+    aligned<128>::operator delete(static_cast<void *>(p), n * sizeof(T));
+  }
+
+  template <class U> bool operator==(const alignedAllocator<U>) { return true; }
+  template <class U> bool operator!=(const alignedAllocator<U>) {
+    return false;
+  }
+};
+
+struct lc_thread_info_t : public aligned<128> {
+  volatile int idx;            // linear index of next coarse thread block
+  char pad[128 - sizeof(int)]; // align to prevent sharing cache lines
+} CCTK_ATTRIBUTE_ALIGNED(128);
+static_assert(sizeof(lc_thread_info_t) == 128, "Incorrect size for alignment");
+
+struct lc_fine_thread_comm_t : public aligned<128> {
+  volatile int state;              // waiting threads
+  volatile int value;              // broadcast value
+  char pad[128 - 2 * sizeof(int)]; // align to prevent sharing cache lines
+} CCTK_ATTRIBUTE_ALIGNED(128);
+static_assert(sizeof(lc_fine_thread_comm_t) == 128,
+              "Incorrect size for alignment");
 
 // One object per coarse thread: shared between fine threads
-// Note: Since we use a vector, the individual elements may not
-// actually be aligned, but they will still be spaced apart and thus
-// be placed into different cache lines.
-static vector<lc_fine_thread_comm_t> lc_fine_thread_comm;
+static vector<lc_fine_thread_comm_t, alignedAllocator<lc_fine_thread_comm_t> >
+    lc_fine_thread_comm;
 
 // Statistics
 struct lc_stats_t {
