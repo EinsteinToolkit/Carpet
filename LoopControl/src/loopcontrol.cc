@@ -71,12 +71,17 @@ static minstd_rand::result_type const constexpr lc_random_range =
 
 struct lc_thread_info_t {
   volatile int idx;            // linear index of next coarse thread block
-} CCTK_ATTRIBUTE_ALIGNED(128); // align to prevent sharing cache lines
+  char pad[128 - sizeof(int)]; // align to prevent sharing cache lines
+};
+static_assert(sizeof(lc_thread_info_t) == 128, "Incorrect size for alignment");
 
 struct lc_fine_thread_comm_t {
-  volatile int state;          // waiting threads
-  volatile int value;          // broadcast value
-} CCTK_ATTRIBUTE_ALIGNED(128); // align to prevent sharing cache lines
+  volatile int state;              // waiting threads
+  volatile int value;              // broadcast value
+  char pad[128 - 2 * sizeof(int)]; // align to prevent sharing cache lines
+};
+static_assert(sizeof(lc_fine_thread_comm_t) == 128,
+              "Incorrect size for alignment");
 
 // One object per coarse thread: shared between fine threads
 // Note: Since we use a vector, the individual elements may not
