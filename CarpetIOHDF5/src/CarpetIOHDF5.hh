@@ -5,6 +5,7 @@
 #include <hdf5.h>
 
 #include <vector>
+#include <unordered_set>
 
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 #include "carpet.hh"
@@ -168,6 +169,29 @@ template <int outdim> struct IOHDF5 {
   static int ioproc;
   static int ioproc_every;
 
+  // files being kept open for this output
+  struct hdf5_file_t {
+    std::string filename;
+    hid_t file;
+    hid_t index_file;
+
+    hdf5_file_t() : filename(""), file(-1), index_file(-1){};
+    hdf5_file_t(const std::string &filename_) : filename(filename), file(-1), index_file(-1){};
+
+    struct hash {
+      size_t operator()(const hdf5_file_t &a) const {
+        return std::hash<std::string>()(a.filename);
+      };
+    };
+    struct equals {
+      bool operator()(const hdf5_file_t &a, const hdf5_file_t &b) const {
+        return a.filename == b.filename;
+      };
+    };
+  };
+  typedef std::unordered_set<hdf5_file_t, typename hdf5_file_t::hash, typename hdf5_file_t::equals> hdf5_files_t;
+  static hdf5_files_t hdf5_files;
+
   // Scheduled functions
   static int Startup();
 
@@ -190,15 +214,15 @@ template <int outdim> struct IOHDF5 {
 
   static void OutputDirection(const cGH *cctkGH, int vindex, string alias,
                               string basefilename,
-                              const vect<int, outdim> &dirs, bool is_new_file,
-                              bool truncate_file);
+                              const vect<int, outdim> &dirs,
+                              const bool is_new_file, const bool truncate_file);
 
   static int OpenFile(const cGH *cctkGH, int m, int vindex, int numvars,
                       string alias, string basefilename,
                       const vect<int, outdim> &dirs, bool is_new_file,
-                      bool truncate_file, hid_t &file, hid_t &index_file);
+                      bool truncate_file, hdf5_file_t &file);
 
-  static int WriteHDF5(const cGH *cctkGH, hid_t &file, hid_t &index_file,
+  static int WriteHDF5(const cGH *cctkGH, hdf5_file_t &file,
                        vector<gdata *> const gfdatas,
                        const bbox<int, dim> &gfext, const int vi,
                        const vect<int, dim> &org, const vect<int, outdim> &dirs,
@@ -209,7 +233,9 @@ template <int outdim> struct IOHDF5 {
                        const vect<CCTK_REAL, dim> &coord_upper,
                        const vect<CCTK_REAL, dim> &coord_delta);
 
-  static int CloseFile(const cGH *cctkGH, hid_t &file, hid_t &index_file);
+  static int CloseFile(const cGH *cctkGH, const hdf5_file_t &file);
+
+  static int CloseFiles(const cGH *const cctkGH);
 
   static ivect GetOutputOffset(const cGH *cctkGH, int m,
                                const vect<int, outdim> &dirs);
