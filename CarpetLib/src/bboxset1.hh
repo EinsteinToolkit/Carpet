@@ -190,10 +190,23 @@ public:
     return expand(lohi[0], lohi[1], denom);
   }
 
+  /** Expand the set (convolute with a bbox) */
+  bboxset expand(const T &lo, const T &hi) const {
+    return expand(vect<T, D>(lo), vect<T, D>(hi));
+  }
+
+  /** Expand the set (convolute with a bbox) */
+  bboxset expand(const T &lohi) const { return expand(lohi, lohi); }
+
   /** Shift the bboxset by multiples of a fraction of the stride.  */
   // cost: O(n)
   bboxset shift(const vect<T, D> &v, const vect<T, D> &denom) const {
     return expand(-v, v, denom);
+  }
+
+  /** Shift all points */
+  bboxset shift(const vect<T, D> &dist, const T &dist_denom) const {
+    return shift(dist, vect<T, D>(dist_denom));
   }
 
   /** Find the smallest b-compatible box around this bbox.

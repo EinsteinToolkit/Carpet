@@ -219,7 +219,7 @@ template <typename T, int D> class bboxset {
           iter0 != end0 ? iter0->first : numeric_limits<T>::max();             \
       const T next_pos1 =                                                      \
           iter1 != end1 ? iter1->first : numeric_limits<T>::max();             \
-      const T pos = min(next_pos0, next_pos1);                                 \
+      const T pos = std::min(next_pos0, next_pos1);                            \
       const bool active0 = next_pos0 == pos;                                   \
       const bool active1 = next_pos1 == pos;                                   \
       const bboxset1 *const subset0p = active0 ? iter0->second.get() : 0;      \
