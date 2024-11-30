@@ -47,6 +47,7 @@ void CycleTimeLevels(cGH *const cctkGH) {
       if (activetimelevels > 1) {
         switch (groupdata.AT(group).transport_operator) {
         case op_Lagrange:
+        case op_Lagrange_third_order_prolong:
         case op_ENO:
         case op_WENO:
         case op_Lagrange_monotone:
