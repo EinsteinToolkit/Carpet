@@ -166,8 +166,13 @@ void gdata::transfer_data(gdata * const dst, comm_state &state, vector<gdata con
   // Interpolate either on the source or on the destination process,
   // depending on whether this increases or reduces the amount of data
   int timelevel0, ntimelevels;
-  dst->find_source_timelevel(times, time, order_time, my_transport_operator,
-                             timelevel0, ntimelevels);
+  if (is_dst)
+    dst->find_source_timelevel(times, time, order_time, my_transport_operator,
+                               timelevel0, ntimelevels);
+  else
+    src->find_source_timelevel(times, time, order_time, my_transport_operator,
+                               timelevel0, ntimelevels);
+
   if (is_src)
     assert(int(srcs.size()) >= ntimelevels);
   // Communication buffers are neither padded nor aligned
