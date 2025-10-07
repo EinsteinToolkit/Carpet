@@ -299,6 +299,7 @@ void CallRegrid(cGH *const cctkGH) {
             ENTER_LEVEL_MODE(cctkGH, rl) {
               BeginTimingLevel(cctkGH);
 
+              // Regridding should invalidate ghost regions
               int num_groups = CCTK_NumGroups();
               for (int gi=0; gi<num_groups; gi++) {
                 int gtype = CCTK_GroupTypeI(gi);
@@ -310,8 +311,9 @@ void CallRegrid(cGH *const cctkGH) {
                     int varindex = vi + first_var;
                     for (int tl=0; tl<tls; tl++) {
                       int valid = Driver_GetValidRegion(cctkGH, varindex, tl);
-                      if (!(valid==CCTK_VALID_NOWHERE) ){ 
-                        Driver_SetValidRegion(cctkGH, varindex, tl, CCTK_VALID_INTERIOR);
+                      int new_valid = valid & ~CCTK_VALID_GHOSTS;
+                      if (valid != new_valid) {
+                        Driver_SetValidRegion(cctkGH, varindex, tl, new_valid);
                       }
                     }
                   }
