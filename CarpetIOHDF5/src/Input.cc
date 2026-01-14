@@ -274,8 +274,9 @@ int CarpetIOHDF5_SetNumRefinementLevels() {
       char *buffer =
           CCTK_ParameterValString("refinement_levels", "CarpetRegrid");
       assert(buffer);
-      CCTK_VInfo(CCTK_THORNSTRING, "Using %i reflevels from checkpoint file. "
-                                   "Ignoring value '%s' in parameter file.",
+      CCTK_VInfo(CCTK_THORNSTRING,
+                 "Using %i reflevels from checkpoint file. "
+                 "Ignoring value '%s' in parameter file.",
                  num_reflevels, buffer);
       free(buffer);
     }
@@ -858,10 +859,11 @@ int Recover(cGH *cctkGH, const char *basefilename, int called_from) {
   }
 
   if (in_recovery and not CCTK_Equals(verbose, "none")) {
-    CCTK_VInfo(
-        CCTK_THORNSTRING, "restarting simulation on mglevel %d reflevel %d "
-                          "at iteration %d (simulation time %g)",
-        mglevel, reflevel, cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
+    CCTK_VInfo(CCTK_THORNSTRING,
+               "restarting simulation on mglevel %d reflevel %d "
+               "at iteration %d (simulation time %g)",
+               mglevel, reflevel, cctkGH->cctk_iteration,
+               (double)cctkGH->cctk_time);
   }
 
   return (0);
@@ -982,8 +984,9 @@ static list<fileset_t>::iterator OpenFileSet(const cGH *const cctkGH,
   // recover parameters
   if (called_from == CP_RECOVER_PARAMETERS) {
     if (not CCTK_Equals(verbose, "none")) {
-      CCTK_VInfo(CCTK_THORNSTRING, "Recovering parameters from checkpoint "
-                                   "file '%s'",
+      CCTK_VInfo(CCTK_THORNSTRING,
+                 "Recovering parameters from checkpoint "
+                 "file '%s'",
                  file.filename);
     }
     hid_t dataset, datatype, memtype = -1;
@@ -1411,7 +1414,7 @@ static int ReadVar(const cGH *const cctkGH, file_t &file, CCTK_REAL &io_bytes,
         upper[dir] = newupper;
       }
       const ibbox filebox(lower, upper, stride);
-// cout << "Found in file: " << filebox << endl;
+      // cout << "Found in file: " << filebox << endl;
 
 #if 0
       const ibbox& interior_membox =

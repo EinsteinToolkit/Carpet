@@ -208,9 +208,9 @@ int WriteVarUnchunked(const cGH *const cctkGH, hid_t outfile,
         if (local_component != -1) {
           ostringstream buf;
           buf << (dd->local_boxes.at(mglevel)
-                    .at(refinementlevel)
-                    .at(local_component)
-                    .active);
+                      .at(refinementlevel)
+                      .at(local_component)
+                      .active);
           active = buf.str();
         }
         if (local_component == -1 or dist::rank() != 0) {
@@ -410,9 +410,9 @@ int WriteVarChunkedSequential(const cGH *const cctkGH, hid_t outfile,
       if (local_component != -1) {
         ostringstream buf;
         buf << (dd->local_boxes.at(mglevel)
-                  .at(refinementlevel)
-                  .at(local_component)
-                  .active);
+                    .at(refinementlevel)
+                    .at(local_component)
+                    .active);
         active = buf.str();
       }
       if (local_component == -1 or dist::rank() != 0) {
@@ -620,13 +620,12 @@ int WriteVarChunkedParallel(const cGH *const cctkGH, hid_t outfile,
       {
         ostringstream buf;
         buf << (dd->local_boxes.at(mglevel)
-                  .at(refinementlevel)
-                  .at(local_component)
-                  .active);
+                    .at(refinementlevel)
+                    .at(local_component)
+                    .active);
 
         active = buf.str();
       }
-
 
       // As per Cactus convention, DISTRIB=CONSTANT arrays
       // (including grid scalars) are assumed to be the same on
