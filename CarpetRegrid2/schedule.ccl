@@ -21,5 +21,5 @@ SCHEDULE CarpetRegrid2_Initialise AT wragh
   OPTIONS: global
   WRITES: CarpetRegrid2::radius, radiixyz
   WRITES: CarpetRegrid2::last_iteration, last_map, active, num_levels
-  WRITES: CarpetRegrid2::positions, old_positions
+  WRITES: CarpetRegrid2::positions, old_positions, old_radiixyz
 } "Initialise locations of refined regions"

@@ -42,6 +42,9 @@ void CarpetRegrid2_Initialise(CCTK_ARGUMENTS) {
         radius_x[ind] = radius_x_##N[rl];                                      \
         radius_y[ind] = radius_y_##N[rl];                                      \
         radius_z[ind] = radius_z_##N[rl];                                      \
+        old_radius_x[ind] = radius_x[ind] < 0 ? radius[ind] : radius_x[ind];   \
+        old_radius_y[ind] = radius_y[ind] < 0 ? radius[ind] : radius_y[ind];   \
+        old_radius_z[ind] = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];   \
       }                                                                        \
       old_position_x[N - 1] = position_x[N - 1];                               \
       old_position_y[N - 1] = position_y[N - 1];                               \
