@@ -30,6 +30,23 @@ using namespace std;
 
 static bool do_terminate(const cGH *cctkGH);
 
+// Skip boundary prolongation while this level is ahead of its parent.
+// The buffer allocated in allocate_data_hierarchy absorbs those steps.
+// Overwriting the buffer from the parent on those steps is time
+// interpolation, and the interpolated error is then restricted back out.
+static void SetTaperForSubcycling(cGH const *const cctkGH) {
+  DECLARE_CCTK_PARAMETERS;
+  do_taper = false;
+  if ((use_buffer_zones or use_tapered_grids) and reflevel > 0) {
+    int const parent_do_every =
+        ipow(mgfact, mglevel) *
+        (maxtimereflevelfact / timereffacts.AT(reflevel - 1));
+    bool const parent_is_active =
+        (cctkGH->cctk_iteration - 1) % parent_do_every == 0;
+    do_taper = not parent_is_active;
+  }
+}
+
 static void AdvanceTime(cGH *cctkGH);
 static void CallRegrid(cGH *cctkGH);
 static void CallEvol(cGH *cctkGH);
@@ -418,14 +435,7 @@ void CallEvol(cGH *const cctkGH) {
             have_done_global_mode |= do_global_mode;
             have_done_anything = true;
 
-            if (use_tapered_grids and reflevel > 0) {
-              int const parent_do_every =
-                  ipow(mgfact, mglevel) *
-                  (maxtimereflevelfact / timereffacts.AT(reflevel - 1));
-              bool const parent_is_active =
-                  (cctkGH->cctk_iteration - 1) % parent_do_every == 0;
-              do_taper = not parent_is_active;
-            }
+            SetTaperForSubcycling(cctkGH);
 
             // Advance times
             CycleTimeLevels(cctkGH);
@@ -507,14 +517,7 @@ void CallRestrict(cGH *const cctkGH) {
               do_global_mode = false;
               do_meta_mode = false;
 
-              if (use_tapered_grids and reflevel > 0) {
-                int const parent_do_every =
-                    ipow(mgfact, mglevel) *
-                    (maxtimereflevelfact / timereffacts.AT(reflevel - 1));
-                bool const parent_is_active =
-                    (cctkGH->cctk_iteration - 1) % parent_do_every == 0;
-                do_taper = not parent_is_active;
-              }
+              SetTaperForSubcycling(cctkGH);
 
               // TODO: disable prolongation (but not
               // synchronization)
@@ -565,14 +568,7 @@ void CallRestrict(cGH *const cctkGH) {
               have_done_late_global_mode |= do_late_global_mode;
               have_done_anything = true;
 
-              if (use_tapered_grids and reflevel > 0) {
-                int const parent_do_every =
-                    ipow(mgfact, mglevel) *
-                    (maxtimereflevelfact / timereffacts.AT(reflevel - 1));
-                bool const parent_is_active =
-                    (cctkGH->cctk_iteration - 1) % parent_do_every == 0;
-                do_taper = not parent_is_active;
-              }
+              SetTaperForSubcycling(cctkGH);
 
               Waypoint("Evolution/PostRestrict at iteration %d time %g",
                        cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
@@ -640,14 +636,7 @@ void CallAnalysis(cGH *const cctkGH) {
             have_done_late_global_mode |= do_late_global_mode;
             have_done_anything = true;
 
-            if (use_tapered_grids and reflevel > 0) {
-              int const parent_do_every =
-                  ipow(mgfact, mglevel) *
-                  (maxtimereflevelfact / timereffacts.AT(reflevel - 1));
-              bool const parent_is_active =
-                  (cctkGH->cctk_iteration - 1) % parent_do_every == 0;
-              do_taper = not parent_is_active;
-            }
+            SetTaperForSubcycling(cctkGH);
 
             Waypoint("Evolution II at iteration %d time %g%s%s%s",
                      cctkGH->cctk_iteration, (double)cctkGH->cctk_time,

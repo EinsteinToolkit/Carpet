@@ -41,6 +41,8 @@
 
 #include <carpet.hh>
 
+#include "buffer_zones.hh"
+
 namespace Carpet {
 
 using namespace std;
@@ -762,7 +764,10 @@ void allocate_data_hierarchy(cGH const *const cctkGH, int const m) {
   }
   assert(buffer_factor > 0);
 
-  int const taper_factor = use_tapered_grids ? refinement_factor : 1;
+  // use_tapered_grids used to widen every level by the spatial
+  // refinement factor. The width that contains the boundary error is the
+  // number of fine steps per parent step, which is 1 when this level does
+  // not subcycle.
   for (int rl = 0; rl < maxreflevels; ++rl) {
     assert(all(all(
         buffer_factor * ghosts.AT(rl) + int(additional_buffer_zones) >= 0)));
@@ -775,10 +780,26 @@ void allocate_data_hierarchy(cGH const *const cctkGH, int const m) {
   CCTK_INFO("Buffer zone counts (excluding ghosts):");
   vector<i2vect> buffers(maxreflevels);
   for (int rl = 0; rl < maxreflevels; ++rl) {
-    buffers.AT(rl) = rl == 0 ? i2vect(ivect(0))
-                             : taper_factor * (buffer_factor * ghosts.AT(rl) +
-                                               int(additional_buffer_zones)) -
-                                   ghosts.AT(rl);
+    int time_substeps = 1;
+    if (rl > 0 and (use_buffer_zones or use_tapered_grids)) {
+      assert(timereffacts.AT(rl - 1) > 0);
+      assert(timereffacts.AT(rl) % timereffacts.AT(rl - 1) == 0);
+      time_substeps = timereffacts.AT(rl) / timereffacts.AT(rl - 1);
+      if (use_tapered_grids)
+        time_substeps = max(time_substeps, int(refinement_factor));
+    }
+    i2vect const ghost = rl == 0 ? i2vect(ivect(0)) : ghosts.AT(rl);
+    i2vect buffer;
+    for (int face = 0; face < 2; ++face) {
+      for (int d = 0; d < dim; ++d) {
+        buffer[face][d] = rl == 0 ? 0
+                                  : buffer_zone_width(time_substeps,
+                                                      buffer_factor,
+                                                      ghost[face][d],
+                                                      int(additional_buffer_zones));
+      }
+    }
+    buffers.AT(rl) = buffer;
     cout << "   [" << rl << "]: " << buffers.AT(rl) << "\n";
     assert(all(all(buffers.AT(rl) >= 0)));
   }

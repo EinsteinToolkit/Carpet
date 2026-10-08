@@ -1,3 +1,24 @@
+# 2:1 subcycling, RK4, 3 ghosts. The fine level must have 21 buffer
+# zones. buffer_nosubcycling keeps the old 9. The 1D output records
+# the resulting grid size.
+TEST buffer_nosubcycling
+{
+  NPROCS 1
+}
+
+TEST buffer_subcycling
+{
+  NPROCS 1
+}
+
+# Two RK4 iterations on the 21-zone grid. Iteration 2 advances the
+# fine level while its parent is idle, so the buffer is evolved.
+# phi.x.asc changes if that prolongation is put back.
+TEST buffer_subcycling_evolve
+{
+  NPROCS 1
+}
+
 TEST kasner
 {
   NPROCS 2
