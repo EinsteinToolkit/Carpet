@@ -63,6 +63,9 @@ Carpet::max_refinement_levels = 2
 
 driver::ghost_size       = 3
 Carpet::use_buffer_zones = yes
+Carpet::use_tapered_grids = yes
+Carpet::use_time_interpolation = no
+Carpet::use_final_copy = yes
 
 Carpet::prolongation_order_space = 5
 Carpet::prolongation_order_time  = 2

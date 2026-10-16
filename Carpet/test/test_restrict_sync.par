@@ -73,6 +73,9 @@ CarpetRegrid2::radius_1             [1] = 16
 CarpetRegrid2::radius_1             [2] = 8
 
 Carpet::use_buffer_zones                = yes
+Carpet::use_tapered_grids = yes
+Carpet::use_time_interpolation = no
+Carpet::use_final_copy = yes
 CarpetRegrid2::ensure_proper_nesting    = yes
 
 Carpet::prolongation_order_space        = 5

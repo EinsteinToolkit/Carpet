@@ -764,10 +764,10 @@ void allocate_data_hierarchy(cGH const *const cctkGH, int const m) {
   }
   assert(buffer_factor > 0);
 
-  // use_tapered_grids used to widen every level by the spatial
-  // refinement factor. The width that contains the boundary error is the
-  // number of fine steps per parent step, which is 1 when this level does
-  // not subcycle.
+  // use_tapered_grids widens the buffer to one integrator step for every
+  // fine step in the parent interval. A level that takes the same timestep
+  // as its parent stays one step wide. The parameter does not choose the
+  // time-interpolation or final-copy refill.
   for (int rl = 0; rl < maxreflevels; ++rl) {
     assert(all(all(
         buffer_factor * ghosts.AT(rl) + int(additional_buffer_zones) >= 0)));
@@ -777,16 +777,20 @@ void allocate_data_hierarchy(cGH const *const cctkGH, int const m) {
   const ios_base::fmtflags oldflags = cout.flags();
   // TODO: Should we also set a different precision here?
   cout.setf(ios::fixed);
+  CCTK_VInfo(CCTK_THORNSTRING, "Tapered grids: %s",
+             use_tapered_grids ? "yes" : "no");
+  CCTK_VInfo(CCTK_THORNSTRING, "Time interpolation: %s",
+             use_time_interpolation ? "yes" : "no");
+  CCTK_VInfo(CCTK_THORNSTRING, "Final copy: %s",
+             use_final_copy ? "yes" : "no");
   CCTK_INFO("Buffer zone counts (excluding ghosts):");
   vector<i2vect> buffers(maxreflevels);
   for (int rl = 0; rl < maxreflevels; ++rl) {
     int time_substeps = 1;
-    if (rl > 0 and (use_buffer_zones or use_tapered_grids)) {
+    if (rl > 0 and use_tapered_grids) {
       assert(timereffacts.AT(rl - 1) > 0);
       assert(timereffacts.AT(rl) % timereffacts.AT(rl - 1) == 0);
       time_substeps = timereffacts.AT(rl) / timereffacts.AT(rl - 1);
-      if (use_tapered_grids)
-        time_substeps = max(time_substeps, int(refinement_factor));
     }
     i2vect const ghost = rl == 0 ? i2vect(ivect(0)) : ghosts.AT(rl);
     i2vect buffer;

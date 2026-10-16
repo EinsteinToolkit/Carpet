@@ -20,6 +20,11 @@ void CarpetParamCheck(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS_CarpetParamCheck;
   DECLARE_CCTK_PARAMETERS;
 
+  if (poison_taper and
+      not CCTK_IsThornActive("MoL")) {
+    CCTK_PARAMWARN("Carpet::poison_taper requires MoL");
+  }
+
   if ((CCTK_ParameterQueryTimesSet("periodic", "Carpet") and periodic) or
       (CCTK_ParameterQueryTimesSet("periodic_x", "Carpet") and periodic_x) or
       (CCTK_ParameterQueryTimesSet("periodic_y", "Carpet") and periodic_y) or

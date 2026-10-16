@@ -63,3 +63,11 @@ if (! CCTK_EQUALS(presync_mode, "off"))
   {
   } "Apply boundary conditions under driver control"
 }
+if (poison_taper)
+{
+  schedule CarpetPoisonTaper IN MoL_Step AFTER MoL_DecrementCounter BEFORE MoL_PostStep
+  {
+    LANG: C
+    OPTIONS: LEVEL
+  } "Set consumed taper shells to NaN"
+}

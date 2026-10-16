@@ -231,9 +231,17 @@ CCTK_INT additional_overlap_zones "Additional overlap zones"
   *:* :: ""
 } 0
 
-BOOLEAN use_tapered_grids "Use tapered grids, avoiding time interpolation during evolution"
+BOOLEAN use_tapered_grids "Widen the buffer to one integrator step for every fine step in the parent interval. This does not choose the time-interpolation or final-copy refill"
 {
 } "no"
+
+BOOLEAN use_time_interpolation "On a fine step that falls between parent times, refill the ghost and buffer zones by time interpolation"
+{
+} "yes"
+
+BOOLEAN use_final_copy "On the fine step that lands on the parent time, refill the ghost and buffer zones from the parent at that time"
+{
+} "yes"
 
 CCTK_INT num_integrator_substeps "Number of substeps of the time integrator"
 {
@@ -328,6 +336,10 @@ BOOLEAN enable_no_storage "Exit before beginning to enable storage for grid func
 } "no"
 
 
+
+BOOLEAN poison_taper "After each integrator substep that does not prolongate, set the outer halo shell that substep consumed to NaN. A parent prolongation clears those zones"
+{
+} "no"
 
 BOOLEAN poison_new_timelevels "Try to catch uninitialised grid elements by setting new timelevels to values that will catch your attention" STEERABLE=always
 {

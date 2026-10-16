@@ -1,8 +1,9 @@
-# Ticket 2920. Same 2:1 grid as buffer_subcycling.par, evolved with RK4.
-# Iteration 2 advances the fine level while the coarse level is idle.
-# The buffer is evolved on that step. phi.x.asc changes if prolongation
-# overwrites the buffer again, even when the 21-zone width stays.
-# buffer_subcycling.par locks the width. This file locks the skip.
+# Ticket 2920. Same 2:1 RK4 grid as buffer_subcycling.par.
+# use_tapered_grids = yes keeps the 21-zone width.
+# use_time_interpolation = no skips the halfway refill.
+# use_final_copy = yes copies the parent time on iteration 2.
+# phi.x.asc changes if that copy is removed.
+# buffer_subcycling.par locks the width. This file locks the copy.
 
 ActiveThorns = "
         Boundary
@@ -44,8 +45,10 @@ Carpet::domain_from_CoordBase    = yes
 Carpet::max_refinement_levels    = 2
 Carpet::max_timelevels           = 3
 Carpet::time_refinement_factors  = "[1, 2]"
-Carpet::use_buffer_zones         = yes
-Carpet::use_tapered_grids        = no
+Carpet::use_buffer_zones              = yes
+Carpet::use_tapered_grids = yes
+Carpet::use_time_interpolation = no
+Carpet::use_final_copy = yes
 Carpet::use_overlap_zones        = no
 Carpet::num_integrator_substeps  = 4
 Carpet::prolongation_order_space = 3

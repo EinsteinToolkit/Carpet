@@ -22,9 +22,11 @@ int CarpetStartup(void);
 int CarpetMultiModelStartup(void);
 void CarpetParamCheck(CCTK_ARGUMENTS);
 void CarpetRefineTimeStep(CCTK_ARGUMENTS);
+void CarpetPoisonTaper(CCTK_ARGUMENTS);
 void CarpetUnusedMask(CCTK_ARGUMENTS);
 }
 
+void NoteTaperHaloRefilled();
 // Registered functions
 void *SetupGH(tFleshConfig *fc, int convLevel, cGH *cgh);
 

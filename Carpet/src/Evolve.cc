@@ -24,27 +24,41 @@
 
 #include <carpet.hh>
 
+#include "buffer_zones.hh"
+
 namespace Carpet {
 
 using namespace std;
 
 static bool do_terminate(const cGH *cctkGH);
 
-// Skip boundary prolongation while this level is ahead of its parent.
-// The buffer allocated in allocate_data_hierarchy absorbs those steps.
-// Overwriting the buffer from the parent on those steps is time
-// interpolation, and the interpolated error is then restricted back out.
+// Choose which fine steps prolongate.
+// use_time_interpolation refills the ghost and buffer zones on fine steps
+// that fall between parent times. use_final_copy refills them on the fine
+// step that lands on the parent time. use_tapered_grids selects the buffer
+// width and does not choose either refill.
 static void SetTaperForSubcycling(cGH const *const cctkGH) {
   DECLARE_CCTK_PARAMETERS;
   do_taper = false;
-  if ((use_buffer_zones or use_tapered_grids) and reflevel > 0) {
-    int const parent_do_every =
-        ipow(mgfact, mglevel) *
-        (maxtimereflevelfact / timereffacts.AT(reflevel - 1));
-    bool const parent_is_active =
-        (cctkGH->cctk_iteration - 1) % parent_do_every == 0;
-    do_taper = not parent_is_active;
+  if (reflevel == 0)
+    return;
+  if (use_time_interpolation and use_final_copy)
+    return;
+  int const stride = ipow(mgfact, mglevel);
+  int const do_every =
+      stride * (maxtimereflevelfact / timereffacts.AT(reflevel));
+  int const parent_do_every =
+      stride * (maxtimereflevelfact / timereffacts.AT(reflevel - 1));
+  if (do_every < 1 or parent_do_every < do_every or
+      parent_do_every % do_every != 0) {
+    CCTK_VERROR("Refinement level %d has stride %d and its parent has "
+                "stride %d. Subcycling requires the parent stride to be "
+                "a multiple of this level's stride.",
+                reflevel, do_every, parent_do_every);
   }
+  do_taper = taper_subcycling_step(use_time_interpolation, use_final_copy,
+                                   cctkGH->cctk_iteration, do_every,
+                                   parent_do_every);
 }
 
 static void AdvanceTime(cGH *cctkGH);

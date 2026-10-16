@@ -11,9 +11,16 @@ TEST buffer_subcycling
   NPROCS 1
 }
 
-# Two RK4 iterations on the 21-zone grid. Iteration 2 advances the
-# fine level while its parent is idle, so the buffer is evolved.
-# phi.x.asc changes if that prolongation is put back.
+# 2:1 RK4 with use_tapered_grids = no. Width stays 9.
+TEST buffer_subcycling_legacy
+{
+  NPROCS 1
+}
+
+# Two RK4 iterations on the 21-zone grid. use_tapered_grids = yes,
+# use_time_interpolation = no, and use_final_copy = yes, so iteration 2
+# copies the parent time into the buffer. phi.x.asc changes if that
+# copy is removed.
 TEST buffer_subcycling_evolve
 {
   NPROCS 1

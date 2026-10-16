@@ -145,6 +145,7 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
       static Timers::Timer timer("Prolongate");
       timer.start();
       ProlongateGroupBoundaries(cctkGH, goodgroups);
+      NoteTaperHaloRefilled();
       timer.stop();
 
       if (sync_barriers) {
