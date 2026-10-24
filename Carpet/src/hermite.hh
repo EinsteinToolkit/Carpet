@@ -37,6 +37,28 @@ inline double value(double const theta, double const dt, double const y_start,
          dt * (w.slope_start * dy_start + w.slope_end * dy_end);
 }
 
+// Which right-hand-side time levels hold the endpoint derivatives after
+// the parent step and before the next cycle. RK4 keeps y'(t_n) on level 1
+// and y'(t_n+dt) on level 0. Multistep RK4 keeps y'(t_n) on level 0, because
+// that is the slope the next cycle must retain, and parks y'(t_n+dt) on
+// level 2. MoL's HermiteStorage.c uses these same two integers.
+struct SlopeLevels {
+  int start;
+  int end;
+};
+
+inline SlopeLevels slope_levels(bool const multistep) {
+  SlopeLevels levels;
+  if (multistep) {
+    levels.start = 0;
+    levels.end = 2;
+  } else {
+    levels.start = 1;
+    levels.end = 0;
+  }
+  return levels;
+}
+
 // dy/dt of the same polynomial. Used by the unit test to lock the slopes.
 inline double slope(double const theta, double const dt, double const y_start,
                     double const y_end, double const dy_start,

@@ -50,6 +50,21 @@ void check_cubic() {
   using Carpet::hermite::value;
   CHECK(near(value(theta, dt, y0, y1, dy0, dy1), 1.75));
   CHECK(near(slope(theta, dt, y0, y1, dy0, dy1), 4.25));
+  // RK4-2(2) evaluates a stage at c = -99/50. The cubic is not clamped.
+  double const outside[2] = {-1.98, 1.01};
+  for (int i = 0; i < 2; ++i) {
+    double const t = outside[i] * dt;
+    double const want = 1.0 + 2.0 * t + 3.0 * t * t + 4.0 * t * t * t;
+    CHECK(near(value(outside[i], dt, y0, y1, dy0, dy1), want));
+  }
+}
+
+void check_slope_levels() {
+  using Carpet::hermite::slope_levels;
+  CHECK(slope_levels(false).start == 1);
+  CHECK(slope_levels(false).end == 0);
+  CHECK(slope_levels(true).start == 0);
+  CHECK(slope_levels(true).end == 2);
 }
 
 } // namespace
@@ -57,6 +72,7 @@ void check_cubic() {
 int main() {
   check_endpoints();
   check_cubic();
+  check_slope_levels();
   if (failures != 0) {
     std::fprintf(stderr, "%d Hermite checks failed\n", failures);
     return EXIT_FAILURE;

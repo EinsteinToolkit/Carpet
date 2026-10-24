@@ -26,6 +26,7 @@ extern CCTK_INT *RHSVariableIndex __attribute__((weak));
 extern CCTK_INT MoLNumEvolvedVariables __attribute__((weak));
 extern CCTK_INT MoLNumEvolvedVariablesSlow __attribute__((weak));
 extern CCTK_INT MoLNumEvolvedArrayVariables __attribute__((weak));
+extern CCTK_INT MoL_MSRK_Active(void) __attribute__((weak));
 }
 
 namespace {
@@ -145,8 +146,13 @@ ggf *variable_ggf(int const vi, int const map) {
   return arrdata.AT(group).AT(map).data.AT(var);
 }
 
+bool multistep_slopes() {
+  return &MoL_MSRK_Active != nullptr and MoL_MSRK_Active() != 0;
+}
+
 void prepare_variable(vector<Slot> &slots, ggf *const evolved, int const rhs,
-                      int const map, CCTK_REAL const theta, CCTK_REAL const dt) {
+                      int const map, CCTK_REAL const theta, CCTK_REAL const dt,
+                      bool const multistep) {
   for (size_t s = 0; s < slots.size(); ++s) {
     if (slots.AT(s).evolved == evolved)
       return;
@@ -175,15 +181,17 @@ void prepare_variable(vector<Slot> &slots, ggf *const evolved, int const rhs,
   }
   ggf *const rhs_gv = variable_ggf(rhs, map);
   int const rhs_levels = rhs_gv->timelevels(mglevel, parent);
-  if (rhs_levels < 2) {
+  int const rhs_needed = multistep ? 3 : 2;
+  if (rhs_levels < rhs_needed) {
     char *const name = CCTK_FullName(rhs);
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
-                "Hermite dense output needs two time levels of %s. Found %d. "
-                "Set MoL::hermite_rhs_storage = yes and allocate them in the "
-                "evolution thorn.",
-                name ? name : "<unknown>", rhs_levels);
+                "Hermite dense output needs %d time levels of %s. Found %d. "
+                "Set MoL::hermite_rhs_storage = yes. Multistep RK4 also "
+                "needs MoL::msrk_rhs_storage = yes.",
+                rhs_needed, name ? name : "<unknown>", rhs_levels);
     free(name);
   }
+  hermite::SlopeLevels const slopes = hermite::slope_levels(multistep);
 
   Slot slot;
   slot.evolved = evolved;
@@ -195,8 +203,10 @@ void prepare_variable(vector<Slot> &slots, ggf *const evolved, int const rhs,
   for (int lc = 0; lc < nlc; ++lc) {
     gdata *const y_end = evolved->data_pointer(0, parent, lc, mglevel);
     gdata *const y_start = evolved->data_pointer(1, parent, lc, mglevel);
-    gdata *const dy_end = rhs_gv->data_pointer(0, parent, lc, mglevel);
-    gdata *const dy_start = rhs_gv->data_pointer(1, parent, lc, mglevel);
+    gdata *const dy_end =
+        rhs_gv->data_pointer(slopes.end, parent, lc, mglevel);
+    gdata *const dy_start =
+        rhs_gv->data_pointer(slopes.start, parent, lc, mglevel);
     if (y_end == NULL or y_start == NULL or dy_end == NULL or
         dy_start == NULL or not y_end->has_storage() or
         not y_start->has_storage() or not dy_end->has_storage() or
@@ -286,16 +296,29 @@ HermiteFill::HermiteFill(cGH const *const cctkGH, vector<int> const &groups,
                 parent, static_cast<double>(t_start),
                 static_cast<double>(t_end));
   }
+  bool const multistep = multistep_slopes();
   CCTK_REAL const tolerance =
       1.0e-10 * (1.0 + fabs(t_end) + fabs(t_start));
-  if (time < t_start - tolerance or time > t_end + tolerance) {
+  bool const outside =
+      time < t_start - tolerance or time > t_end + tolerance;
+  if (outside and not multistep) {
     CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
                 "Hermite dense output was asked for time %.17g outside the "
                 "parent interval [%.17g, %.17g] on level %d.",
                 static_cast<double>(time), static_cast<double>(t_start),
                 static_cast<double>(t_end), parent);
   }
+  if (not std::isfinite(static_cast<double>(time))) {
+    CCTK_ERROR("Hermite dense output was asked for a non-finite time.");
+  }
   CCTK_REAL const theta = (time - t_start) / dt;
+  static bool announced_outside = false;
+  if (outside and not announced_outside) {
+    CCTK_VInfo(CCTK_THORNSTRING,
+               "Hermite dense output is evaluating the cubic outside the "
+               "parent step for a multistep RK4 stage.");
+    announced_outside = true;
+  }
 
   static bool announced = false;
   if (not announced) {
@@ -322,7 +345,8 @@ HermiteFill::HermiteFill(cGH const *const cctkGH, vector<int> const &groups,
         int const rhs = rhs_for(first + v);
         if (rhs < 0)
           continue;
-        prepare_variable(state_->slots, evolved, rhs, map, theta, dt);
+        prepare_variable(state_->slots, evolved, rhs, map, theta, dt,
+                         multistep);
       }
     }
   }
