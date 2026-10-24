@@ -16,6 +16,7 @@
 #include <gh.hh>
 
 #include <carpet.hh>
+#include "modes.hh"
 #include "PreSync.hh"
 #include "hermite_fill.hh"
 
@@ -411,6 +412,30 @@ int EnableGroupComm(const cGH *cctkGH, const char *groupname) {
 int DisableGroupComm(const cGH *cctkGH, const char *groupname) {
   // Communication is always enabled
   return -1;
+}
+
+/* The caller may be inside one component. Leave that mode, sync every
+   component of this refinement level, then restore the caller. */
+extern "C" CCTK_INT Carpet_SyncVarIInLevelMode(CCTK_POINTER_TO_CONST cctkGH_,
+                                               CCTK_INT varindex) {
+  cGH const *const cctkGH = static_cast<cGH const *>(cctkGH_);
+  if (!cctkGH) {
+    CCTK_ERROR("Driver_SyncVarIInLevelMode has no grid hierarchy");
+  }
+  if (varindex < 0) {
+    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                "Driver_SyncVarIInLevelMode has variable index %d",
+                (int)varindex);
+  }
+  if (is_meta_mode() or is_global_mode()) {
+    CCTK_ERROR("Driver_SyncVarIInLevelMode needs a refinement level");
+  }
+  CCTK_INT ierr = -1;
+  BEGIN_LEVEL_MODE(cctkGH) {
+    ierr = ::CCTK_SyncGroupWithVarI(cctkGH, varindex);
+  }
+  END_LEVEL_MODE;
+  return ierr;
 }
 
 } // namespace Carpet
