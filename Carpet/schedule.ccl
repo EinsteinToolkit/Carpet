@@ -63,6 +63,18 @@ if (! CCTK_EQUALS(presync_mode, "off"))
   {
   } "Apply boundary conditions under driver control"
 }
+# CartGrid3D writes the coarse spacing in local mode, and only on the
+# coarsest level. A rank with no component there still runs Time and
+# would otherwise keep the placeholder spacing from SetupGH.
+if (use_csamr)
+{
+  schedule CarpetCsamrShareCoarseSpacing AT BASEGRID AFTER SpatialSpacings BEFORE TemporalSpacings
+  {
+    LANG: C
+    OPTIONS: singlemap
+  } "Publish the coarse spacing before Time sets the timestep"
+}
+
 if (poison_taper)
 {
   schedule CarpetPoisonTaper IN MoL_Step AFTER MoL_DecrementCounter BEFORE MoL_PostStep
@@ -70,4 +82,12 @@ if (poison_taper)
     LANG: C
     OPTIONS: LEVEL
   } "Set consumed taper shells to NaN"
+}
+
+if (hermite_dense_output && use_csamr)
+{
+  schedule Carpet_HermitePreStep AT CCTK_PRESTEP
+  {
+    LANG: C
+  } "Fill ghosts from Hermite output at the start of a non-tapered CSAMR step"
 }

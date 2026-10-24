@@ -119,4 +119,8 @@ vector<vector<arrdesc> > arrdata; // [group][map]
 MPI_Comm comm_universe = MPI_COMM_NULL;
 MPI_Comm comm_world = MPI_COMM_NULL;
 
+#ifdef _OPENMP
+#pragma omp threadprivate(CARPET_MODE_THREADPRIVATE_VARS)
+#endif
+
 } // namespace Carpet

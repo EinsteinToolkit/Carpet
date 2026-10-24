@@ -1780,6 +1780,11 @@ int CarpetReduceStartup() {
   CCTK_RegisterReductionArrayOperator(inorm2_arrays, "inorm2");
   CCTK_RegisterReductionArrayOperator(inorm_inf_arrays, "inorm_inf");
 
+  if (CCTK_RegisterReduceArraysGloballyOperator(Carpet_ReduceArraysGlobally) <
+      0) {
+    CCTK_ERROR("CarpetReduce could not register the global array reduction.");
+  }
+
   return 0;
 }
 

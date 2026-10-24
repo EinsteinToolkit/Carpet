@@ -40,6 +40,51 @@ void CarpetParamCheck(CCTK_ARGUMENTS) {
                    "max_refinement_levels=1.");
   }
 
+  // These fire for a single level as well. Buffer zones are named in
+  // the tapered-grid message because a tapered grid without them has
+  // only one ghost-width, which does not cover a multi-stage step.
+  if (use_csamr and not use_tapered_grids) {
+    CCTK_PARAMWARN(
+        "Carpet::use_csamr requires Carpet::use_tapered_grids. Tapered "
+        "grids and buffer zones stop an RK stage from prolongating out "
+        "of the parent during the step.");
+  }
+  if (use_csamr and not use_buffer_zones) {
+    CCTK_PARAMWARN(
+        "Carpet::use_csamr requires Carpet::use_buffer_zones. Without "
+        "buffer zones a refined grid has only one ghost-width, which "
+        "does not cover a multi-stage Runge-Kutta step.");
+  }
+  if (use_csamr and adaptive_stepsize) {
+    CCTK_PARAMWARN("Carpet::use_csamr does not support adaptive timesteps.");
+  }
+
+  // The serial schedule has no tapered step for Hermite to replace.
+  // The CSAMR schedule keeps the buffer on the first 2:1 fine step.
+  if (hermite_dense_output and not use_csamr and use_buffer_zones) {
+    CCTK_PARAMWARN("Carpet::hermite_dense_output on the serial schedule "
+                   "replaces buffer zones. Set Carpet::use_buffer_zones = no.");
+  }
+  if (hermite_dense_output and not use_csamr and use_tapered_grids) {
+    CCTK_PARAMWARN("Carpet::hermite_dense_output on the serial schedule "
+                   "replaces tapered buffers. Set Carpet::use_tapered_grids "
+                   "= no.");
+  }
+  if (hermite_dense_output and adaptive_stepsize) {
+    CCTK_PARAMWARN("Carpet::hermite_dense_output does not support adaptive "
+                   "timesteps.");
+  }
+  if (hermite_dense_output) {
+    int parameter_type = 0;
+    void const *const parameter =
+        CCTK_ParameterGet("hermite_rhs_storage", "MoL", &parameter_type);
+    if (parameter == NULL or parameter_type != PARAMETER_BOOLEAN or
+        *static_cast<CCTK_INT const *>(parameter) == 0) {
+      CCTK_PARAMWARN("Carpet::hermite_dense_output requires "
+                     "MoL::hermite_rhs_storage = yes.");
+    }
+  }
+
   if (max_refinement_levels > 1) {
 
     // InitBase

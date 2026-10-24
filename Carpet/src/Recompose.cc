@@ -39,6 +39,7 @@
 #include <vect.hh>
 
 #include <carpet.hh>
+#include "csamr.hh"
 #include <modes.hh>
 #include <variables.hh>
 
@@ -815,10 +816,15 @@ void OutputGridCoordinates(cGH const *const cctkGH, int const m,
 // TODO: this routine should go into CarpetRegrid (except maybe
 // SplitRegions_AlongZ for grid arrays)
 void SplitRegions(cGH const *const cctkGH, vector<region_t> &superregs,
-                  vector<region_t> &regs) {
+                  vector<region_t> &regs, int const csamr_level,
+                  int const csamr_nlevels) {
   DECLARE_CCTK_PARAMETERS;
 
   assert(regs.empty());
+  // Every rank owns every level. The two updates in a slot share that
+  // decomposition and run on separate OpenMP threads.
+  static_cast<void>(csamr_level);
+  static_cast<void>(csamr_nlevels);
   if (CCTK_EQUALS(processor_topology, "along-z")) {
     SplitRegions_AlongZ(cctkGH, superregs, regs);
   } else if (CCTK_EQUALS(processor_topology, "along-dir")) {
@@ -1267,13 +1273,16 @@ static void SplitRegions_AsSpecified(cGH const *const cctkGH,
 // SplitRegions_AlongZ for grid arrays)
 void SplitRegionsMaps(cGH const *const cctkGH,
                       vector<vector<region_t> > &superregss,
-                      vector<vector<region_t> > &regss) {
+                      vector<vector<region_t> > &regss, int const csamr_level,
+                      int const csamr_nlevels) {
   DECLARE_CCTK_PARAMETERS;
 
   assert(regss.size() == superregss.size());
   for (size_t m = 0; m < regss.size(); ++m) {
     assert(regss.AT(m).empty());
   }
+  static_cast<void>(csamr_level);
+  static_cast<void>(csamr_nlevels);
   if (CCTK_EQUALS(processor_topology, "along-z")) {
     assert(0);
     //       SplitRegionsMaps_AlongZ (cctkGH, superregss, regss);

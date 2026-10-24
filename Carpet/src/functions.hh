@@ -127,7 +127,8 @@ void OutputGridStatistics(cGH const *cctkGH);
 
 // Functions for recomposing the grid hierarchy
 void SplitRegions(cGH const *cctkGH, vector<region_t> &superregs,
-                  vector<region_t> &regs);
+                  vector<region_t> &regs, int csamr_level = -1,
+                  int csamr_nlevels = -1);
 void SplitRegions_AlongZ(cGH const *cctkGH, vector<region_t> &superregs,
                          vector<region_t> &regs);
 void SplitRegions_AlongDir(cGH const *cctkGH, vector<region_t> &superregs,
@@ -140,7 +141,8 @@ void SplitRegionsMaps_Recursively(cGH const *cctkGH,
                                   vector<vector<region_t> > &regss);
 
 void SplitRegionsMaps(cGH const *cctkGH, vector<vector<region_t> > &superregss,
-                      vector<vector<region_t> > &regss);
+                      vector<vector<region_t> > &regss, int csamr_level = -1,
+                      int csamr_nlevels = -1);
 void SplitRegionsMaps_Automatic(cGH const *cctkGH,
                                 vector<vector<region_t> > &superregss,
                                 vector<vector<region_t> > &regss,

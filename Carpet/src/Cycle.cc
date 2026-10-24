@@ -18,7 +18,7 @@ namespace Carpet {
 
 using namespace std;
 
-void CycleTimeLevels(cGH *const cctkGH) {
+void CycleTimeLevels(cGH *const cctkGH, bool const cycle_scalars) {
   DECLARE_CCTK_PARAMETERS;
 
   Timers::Timer timer("CycleTimeLevels");
@@ -92,7 +92,7 @@ void CycleTimeLevels(cGH *const cctkGH) {
 
         case CCTK_SCALAR:
         case CCTK_ARRAY:
-          if (do_global_mode) {
+          if (cycle_scalars and do_global_mode) {
             int const numtimelevels = CCTK_MaxActiveTimeLevelsVI(cctkGH, group);
             int const firstvarindex = CCTK_FirstVarIndexI(group);
             bool const use_psync = not CCTK_EQUALS(presync_mode, "off");
@@ -135,6 +135,46 @@ void CycleTimeLevels(cGH *const cctkGH) {
                "Errors in %d groups detected; aborting", errors);
   }
   timer.stop();
+}
+
+void CycleReplicatedLevels(cGH *const cctkGH) {
+  DECLARE_CCTK_PARAMETERS;
+
+  assert(is_level_mode());
+  assert(timelevel == 0);
+
+  for (int group = 0; group < CCTK_NumGroups(); ++group) {
+    if (not CCTK_QueryGroupStorageI(cctkGH, group))
+      continue;
+    int const grouptype = CCTK_GroupTypeI(group);
+    if (grouptype != CCTK_SCALAR and grouptype != CCTK_ARRAY)
+      continue;
+    int const activetimelevels = CCTK_ActiveTimeLevelsGI(cctkGH, group);
+    if (activetimelevels <= 1)
+      continue;
+
+    int const numtimelevels = CCTK_MaxActiveTimeLevelsVI(cctkGH, group);
+    int const firstvarindex = CCTK_FirstVarIndexI(group);
+    bool const use_psync = not CCTK_EQUALS(presync_mode, "off");
+    for (int var = 0; var < CCTK_NumVarsInGroupI(group); ++var) {
+      if (use_psync) {
+        int const vi = firstvarindex + var;
+        int const where = CCTK_VALID_EVERYWHERE;
+        Carpet_RequireValidData(cctkGH, &vi, &timelevel, 1, &where);
+      }
+      arrdata.AT(group).AT(0).data.AT(var)->cycle_all(0, mglevel);
+      int const varindex = firstvarindex + var;
+      for (int tl = 0; tl < numtimelevels; ++tl) {
+        if (tl < groupdata.AT(group).info.activetimelevels) {
+          ggf *const ff = arrdata.AT(group).AT(0).data.AT(var);
+          void *const ptr = ff->data_pointer(tl, 0, 0, 0)->storage();
+          cctkGH->data[varindex][tl] = ptr;
+        } else {
+          cctkGH->data[varindex][tl] = NULL;
+        }
+      }
+    }
+  }
 }
 
 void UncycleTimeLevels(cGH *const cctkGH) {

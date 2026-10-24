@@ -43,6 +43,8 @@ static void expect(int const time_substeps, int const integrator_substeps,
 int main() {
   // One RK4 step, 3 ghosts: the width Carpet used for every level.
   expect(1, 4, 3, 0, 9);
+  // CSAMR Hermite keeps a buffer only for the tapered fine step.
+  expect(Carpet::hermite_csamr_buffer_substeps, 4, 3, 0, 9);
   // Two RK4 steps (2:1 subcycling): the width that contains the error.
   expect(2, 4, 3, 0, 21);
   // Four fine steps per parent step, as in time factors [1, 4].

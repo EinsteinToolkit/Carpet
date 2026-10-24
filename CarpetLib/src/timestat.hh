@@ -83,6 +83,9 @@ private:
   ticks starttime;
 
 public:
+  // Drop start and stop while two CSAMR updates share these timers.
+  static void suppress(bool on);
+
   // Start the timer
   void start();
 

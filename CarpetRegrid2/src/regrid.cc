@@ -629,8 +629,10 @@ CarpetRegrid2_Regrid(CCTK_POINTER_TO_CONST const cctkGH_,
 
     // Make multiprocessor aware
     vector<vector<region_t> > regss(superregss.size());
+    int const csamr_nlevels = static_cast<int>(superregss.size());
     for (size_t rl = 0; rl < regss.size(); ++rl) {
-      SplitRegions(cctkGH, superregss.at(rl), regss.at(rl));
+      SplitRegions(cctkGH, superregss.at(rl), regss.at(rl),
+                   static_cast<int>(rl), csamr_nlevels);
     } // for rl
 
     // Make multigrid aware
@@ -905,7 +907,7 @@ CarpetRegrid2_RegridMaps(CCTK_POINTER_TO_CONST const cctkGH_,
           superregss.at(m) = superregsss.at(m).at(rl);
         }
         vector<vector<region_t> > regss(maps);
-        SplitRegionsMaps(cctkGH, superregss, regss);
+        SplitRegionsMaps(cctkGH, superregss, regss, rl, maxrl);
 
         for (int m = 0; m < maps; ++m) {
           superregsss.at(m).at(rl) = superregss.at(m);

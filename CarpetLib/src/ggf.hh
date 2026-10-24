@@ -121,6 +121,14 @@ public:
   void ref_bnd_prolongate_all(comm_state &state, int tl, int rl, int ml,
                               CCTK_REAL time);
 
+  // Prolongate one parent time level in space only. The source time label
+  // is ignored so a scratch field can sit in an unused time level.
+  void ref_bnd_prolongate_spatial(comm_state &state, int tl, int rl, int ml,
+                                  int src_tl, CCTK_REAL time);
+
+  // Swap one local component's time level. Returns the previous pointer.
+  gdata *exchange_data(int tl, int rl, int lc, int ml, gdata *replacement);
+
   // Restrict a multigrid level
   void mg_restrict_all(comm_state &state, int tl, int rl, int ml,
                        CCTK_REAL time);
@@ -156,7 +164,8 @@ protected:
                          vector<int> const &tl2s, int rl2, int ml2,
                          CCTK_REAL const &time, bool use_old_storage = false,
                          bool flip_send_recv = false,
-                         islab const *restrict slabinfo = NULL);
+                         islab const *restrict slabinfo = NULL,
+                         bool spatial_only = false);
 
   void transfer_from_all(comm_state &state, int tl1, int rl1, int ml1,
                          srpvect const dh::fast_dboxes::*sendrecvs, int tl2,

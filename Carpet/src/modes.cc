@@ -196,6 +196,11 @@ void enter_global_mode(cGH *const cctkGH, int const ml) {
     } // if grouptype
   }   // for group
 
+  // The finest update reads the replicated variables from before they
+  // were cycled. enter_global_mode has just pointed this cGH at the
+  // shared storage; put the snapshot back.
+  csamr_retarget_replicated(cctkGH);
+
   ftimer.stop();
 
   Timers::Timer timer("global mode", 1);
@@ -225,10 +230,15 @@ void leave_global_mode(cGH *const cctkGH) {
     cctkGH->cctk_delta_time = 0.0;
   }
   if (maps == 1) {
-    // Save and unset space delta
+    // Save and unset space delta. The coarse update thread has its own
+    // cGH and must not write the spacing the fine thread also stores.
+    if (not csamr_overlap_worker()) {
+      for (int d = 0; d < dim; ++d) {
+        origin_space.AT(0).AT(mglevel)[d] = cctkGH->cctk_origin_space[d];
+        delta_space.AT(mglevel)[d] = cctkGH->cctk_delta_space[d] / mglevelfact;
+      }
+    }
     for (int d = 0; d < dim; ++d) {
-      origin_space.AT(0).AT(mglevel)[d] = cctkGH->cctk_origin_space[d];
-      delta_space.AT(mglevel)[d] = cctkGH->cctk_delta_space[d] / mglevelfact;
       cctkGH->cctk_origin_space[d] = -424242.0;
       cctkGH->cctk_delta_space[d] = -424242.0;
     }
@@ -509,9 +519,12 @@ void leave_singlemap_mode(cGH *const cctkGH) {
     // Save space delta
     // (Do this early and often, so that interpolation has access to
     // the correct values right away.)
-    for (int d = 0; d < dim; ++d) {
-      origin_space.AT(map).AT(mglevel)[d] = cctkGH->cctk_origin_space[d];
-      delta_space.AT(map)[d] = cctkGH->cctk_delta_space[d] / mglevelfact;
+    // The coarse update thread must not write the shared spacing.
+    if (not csamr_overlap_worker()) {
+      for (int d = 0; d < dim; ++d) {
+        origin_space.AT(map).AT(mglevel)[d] = cctkGH->cctk_origin_space[d];
+        delta_space.AT(map)[d] = cctkGH->cctk_delta_space[d] / mglevelfact;
+      }
     }
     if (maps > 1) {
       // Unset space delta

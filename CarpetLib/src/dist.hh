@@ -30,6 +30,14 @@ namespace dist {
 
 extern MPI_Comm comm_;
 
+// Per-thread communicator used while two CSAMR updates run at once.
+// MPI_COMM_NULL means "use comm_". Rank numbers match the world
+// communicator because the override is a duplicate of it.
+#ifdef _OPENMP
+extern MPI_Comm thread_comm_;
+#pragma omp threadprivate(thread_comm_)
+#endif
+
 extern MPI_Datatype mpi_complex8;
 extern MPI_Datatype mpi_complex16;
 extern MPI_Datatype mpi_complex32;
@@ -140,8 +148,23 @@ void checkpoint(const char *file, int line);
 
 // Information about the communicator
 
-// Return the communicator
-inline MPI_Comm comm() { return comm_; }
+// Return the communicator. A CSAMR update thread may hold a duplicate
+// of the world communicator so its messages do not match the other update.
+inline MPI_Comm comm() {
+#ifdef _OPENMP
+  if (thread_comm_ != MPI_COMM_NULL)
+    return thread_comm_;
+#endif
+  return comm_;
+}
+
+inline void set_thread_comm(MPI_Comm const c) {
+#ifdef _OPENMP
+  thread_comm_ = c;
+#else
+  static_cast<void>(c);
+#endif
+}
 
 // Always return a good communicator
 inline MPI_Comm goodcomm() {

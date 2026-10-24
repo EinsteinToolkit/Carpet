@@ -783,6 +783,11 @@ void allocate_data_hierarchy(cGH const *const cctkGH, int const m) {
              use_time_interpolation ? "yes" : "no");
   CCTK_VInfo(CCTK_THORNSTRING, "Final copy: %s",
              use_final_copy ? "yes" : "no");
+  if (hermite_dense_output and use_csamr) {
+    CCTK_VInfo(CCTK_THORNSTRING,
+               "CSAMR Hermite dense output sizes the buffer for %d fine step.",
+               hermite_csamr_buffer_substeps);
+  }
   CCTK_INFO("Buffer zone counts (excluding ghosts):");
   vector<i2vect> buffers(maxreflevels);
   for (int rl = 0; rl < maxreflevels; ++rl) {
@@ -790,7 +795,12 @@ void allocate_data_hierarchy(cGH const *const cctkGH, int const m) {
     if (rl > 0 and use_tapered_grids) {
       assert(timereffacts.AT(rl - 1) > 0);
       assert(timereffacts.AT(rl) % timereffacts.AT(rl - 1) == 0);
-      time_substeps = timereffacts.AT(rl) / timereffacts.AT(rl - 1);
+      // The Hermite step refills when it lands on the parent, so the
+      // buffer only has to absorb the earlier tapered step.
+      if (hermite_dense_output and use_csamr)
+        time_substeps = hermite_csamr_buffer_substeps;
+      else
+        time_substeps = timereffacts.AT(rl) / timereffacts.AT(rl - 1);
     }
     i2vect const ghost = rl == 0 ? i2vect(ivect(0)) : ghosts.AT(rl);
     i2vect buffer;
@@ -1829,7 +1839,9 @@ void find_processor_decomposition(
 
       vector<vector<region_t> > regss(1);
 
-      // Distribute onto the processors
+      // The base grid stays on every rank. Recovery's BASEGRID runs
+      // before the initial regrid, and its reductions use the world
+      // communicator. The initial regrid applies the CSAMR groups.
       SplitRegions(cctkGH, superregsss.AT(m).AT(rl), regss.AT(rl));
 
       // Create all multigrid levels
@@ -1847,6 +1859,8 @@ void find_processor_decomposition(
     }
 
     vector<vector<region_t> > regss(maps);
+    // See the single-map split above. Do not claim process groups
+    // until the initial regrid has created every level.
     SplitRegionsMaps(cctkGH, superregss, regss);
 
     vector<vector<vector<region_t> > > regsss(maps);

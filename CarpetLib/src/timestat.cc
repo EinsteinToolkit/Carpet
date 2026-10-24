@@ -35,6 +35,12 @@ static ticks call_timer() { return getticks(); }
 // A global timer set
 static TimerSet *timerSet = NULL;
 
+// Written before a threaded pair and read inside it. The parallel
+// region synchronises that write.
+static bool timers_suppressed = false;
+
+void Timer::suppress(bool const on) { timers_suppressed = on; }
+
 // Add a timer
 void TimerSet::add(Timer *const timer) { timers.push_back(timer); }
 
@@ -110,6 +116,8 @@ void Timer::addstat(double const t, double const b) {
 
 // Start the timer
 void Timer::start() {
+  if (timers_suppressed)
+    return;
   DECLARE_CCTK_PARAMETERS;
   assert(not running);
   running = true;
@@ -121,6 +129,8 @@ void Timer::start() {
 
 // Stop the timer
 void Timer::stop(double const b) {
+  if (timers_suppressed)
+    return;
   DECLARE_CCTK_PARAMETERS;
   assert(running);
   running = false;

@@ -1,3 +1,4 @@
+#include <atomic>
 #include <cassert>
 
 #include <cctk.h>
@@ -17,6 +18,18 @@ using namespace std;
 TimerTree main_timer_tree;
 TimerTree mode_timer_tree;
 
+namespace {
+std::atomic<int> tree_suppressed{0};
+}
+
+void Timer::suppress_tree(bool const suppress) {
+  tree_suppressed.store(suppress ? 1 : 0, std::memory_order_seq_cst);
+}
+
+bool tree_is_suppressed() {
+  return tree_suppressed.load(std::memory_order_seq_cst) != 0;
+}
+
 /// Create a timer with a given name, but do not start it, and do
 /// not associate it with a point in the timer hierarchy.
 Timer::Timer(string name_p, int tree)
@@ -30,6 +43,8 @@ Timer::~Timer() {}
 /// the timer. This routine ensures a timer is created even if it is
 /// never started.
 void Timer::instantiate() {
+  if (tree_is_suppressed())
+    return;
   if (not d_tree->root)
     return; // do nothing if there is no root
   TimerNode *current_timer = d_tree->current;
@@ -40,6 +55,8 @@ void Timer::instantiate() {
 /// Start the timer and insert it into the tree of timers as a child
 /// of the most recently started timer that has not been stopped.
 void Timer::start() {
+  if (tree_is_suppressed())
+    return;
   if (not d_tree->root)
     return; // do nothing if there is no root
   TimerNode *current_timer = d_tree->current;
@@ -49,6 +66,8 @@ void Timer::start() {
 
 /// Stop the timer - it must be the most recently started timer
 void Timer::stop() {
+  if (tree_is_suppressed())
+    return;
   if (not d_tree->root)
     return; // do nothing if there is no root
   TimerNode *current_timer = d_tree->current;

@@ -18,6 +18,12 @@ namespace Carpet {
 //
 // One RK4 step with 3 ghosts is 9 zones. Two RK4 steps, the usual 2:1
 // subcycling ratio, is 21 zones.
+//
+// CSAMR with Hermite dense output tapers only the first of those two
+// fine steps. The step that lands on the parent time refills from the
+// Hermite polynomial, so its buffer is one integrator step wide.
+int const hermite_csamr_buffer_substeps = 1;
+
 inline int buffer_zone_width(int const time_substeps,
                              int const integrator_substeps, int const ghosts,
                              int const additional) {

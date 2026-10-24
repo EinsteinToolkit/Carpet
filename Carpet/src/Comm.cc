@@ -17,6 +17,7 @@
 
 #include <carpet.hh>
 #include "PreSync.hh"
+#include "hermite_fill.hh"
 
 namespace Carpet {
 
@@ -271,6 +272,7 @@ static void ProlongateGroupBoundaries(const cGH *cctkGH,
 
   vector<Timers::Timer *>::iterator ti = timers.begin();
   (*ti)->start();
+  HermiteFill hermite_fill(cctkGH, groups, time);
   for (comm_state state; not state.done(); state.step()) {
     (*ti)->stop();
     ++ti;
@@ -290,7 +292,13 @@ static void ProlongateGroupBoundaries(const cGH *cctkGH,
       for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
         for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
           ggf *const gv = arrdata.AT(g).AT(m).data.AT(v);
-          gv->ref_bnd_prolongate_all(state, tl, reflevel, mglevel, time);
+          int src_tl = -1;
+          if (hermite_fill.source_timelevel(gv, src_tl)) {
+            gv->ref_bnd_prolongate_spatial(state, tl, reflevel, mglevel, src_tl,
+                                           time);
+          } else {
+            gv->ref_bnd_prolongate_all(state, tl, reflevel, mglevel, time);
+          }
         }
       }
     }

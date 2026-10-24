@@ -60,6 +60,11 @@ public:
   static void outputTree(std::string name);
   static void outputTreeXML();
 
+  // Drop start, stop, and instantiate while two schedule traverses
+  // share one process. The timer tree is one global list, and a
+  // mismatched stop aborts.
+  static void suppress_tree(bool suppress);
+
 private:
   std::string d_name;
   TimerTree *d_tree;

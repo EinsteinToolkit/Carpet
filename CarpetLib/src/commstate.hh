@@ -101,6 +101,12 @@ private:
   static vector<MPI_Request> srequests;
   static vector<MPI_Request> rrequests;
 
+  // One comm_state at a time per thread. Two CSAMR updates each have
+  // their own buffers so their ghost exchanges do not share requests.
+#ifdef _OPENMP
+#pragma omp threadprivate(typebufs_busy, typebufs, srequests, rrequests)
+#endif
+
   static inline MPI_Request &push_back(vector<MPI_Request> &reqs) {
     reqs.push_back(MPI_REQUEST_NULL);
     return reqs.back();

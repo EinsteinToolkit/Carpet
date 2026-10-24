@@ -390,6 +390,33 @@ void ggf::ref_bnd_prolongate_all(comm_state &state, int const tl, int const rl,
   timer.stop(0);
 }
 
+void ggf::ref_bnd_prolongate_spatial(comm_state &state, int const tl,
+                                     int const rl, int const ml,
+                                     int const src_tl, CCTK_REAL const time) {
+  assert(rl >= 1);
+  if (transport_operator == op_none or transport_operator == op_sync or
+      transport_operator == op_restrict)
+    return;
+  assert(src_tl >= 0 and src_tl < timelevels(ml, rl - 1));
+  vector<int> const tl2s(1, src_tl);
+  transfer_from_all(state, tl, rl, ml,
+                    &dh::fast_dboxes::fast_ref_bnd_prol_sendrecv, tl2s, rl - 1,
+                    ml, time, false, false, NULL, true);
+}
+
+gdata *ggf::exchange_data(int const tl, int const rl, int const lc,
+                          int const ml, gdata *const replacement) {
+  assert(replacement != NULL);
+  assert(rl >= 0 and rl < h.reflevels());
+  assert(ml >= 0 and ml < h.mglevels());
+  assert(lc >= 0 and lc < h.local_components(rl));
+  assert(tl >= 0 and tl < timelevels(ml, rl));
+  gdata *&slot = storage.AT(ml).AT(rl).AT(lc).AT(tl);
+  gdata *const previous = slot;
+  slot = replacement;
+  return previous;
+}
+
 // Restrict a multigrid level
 void ggf::mg_restrict_all(comm_state &state, int const tl, int const rl,
                           int const ml, CCTK_REAL const time) {
@@ -504,7 +531,8 @@ void ggf::transfer_from_all(comm_state &state, int const tl1, int const rl1,
                             int const ml2, CCTK_REAL const &time,
                             bool const use_old_storage,
                             bool const flip_send_recv,
-                            islab const *restrict const slabinfo) {
+                            islab const *restrict const slabinfo,
+                            bool const spatial_only) {
   assert(rl1 >= 0 and rl1 < h.reflevels());
   assert(ml1 >= 0 and ml1 < h.mglevels());
   assert(tl1 >= 0 and tl1 < timelevels(ml1, rl1));
@@ -537,13 +565,22 @@ void ggf::transfer_from_all(comm_state &state, int const tl1, int const rl1,
     for (size_t j = 0; j < i; ++j) {
       assert(tl2s.AT(i) != tl2s.AT(j));
     }
-    times.AT(i) = t.get_time(ml2, rl2, tl2s.AT(i));
+    // A spatial-only transfer reads one scratch field. Its stored time
+    // label is not the fine stage time, so report the target time instead.
+    if (spatial_only) {
+      assert(tl2s.size() == 1);
+      times.AT(i) = time;
+    } else {
+      times.AT(i) = t.get_time(ml2, rl2, tl2s.AT(i));
+    }
   }
 
   // Interpolation orders
   assert(transport_operator != op_none);
   int const pos = d.prolongation_orders_space.AT(rl2);
-  int const pot = transport_operator == op_copy ? 0 : prolongation_order_time;
+  int const pot = spatial_only or transport_operator == op_copy
+                      ? 0
+                      : prolongation_order_time;
 
   vector<const gdata *> gsrcs(tl2s.size());
 

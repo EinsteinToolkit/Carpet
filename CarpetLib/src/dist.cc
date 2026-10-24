@@ -29,6 +29,11 @@ namespace dist {
 
 MPI_Comm comm_ = MPI_COMM_NULL;
 
+#ifdef _OPENMP
+MPI_Comm thread_comm_ = MPI_COMM_NULL;
+#pragma omp threadprivate(thread_comm_)
+#endif
+
 MPI_Datatype mpi_complex8 = MPI_DATATYPE_NULL;
 MPI_Datatype mpi_complex16 = MPI_DATATYPE_NULL;
 MPI_Datatype mpi_complex32 = MPI_DATATYPE_NULL;

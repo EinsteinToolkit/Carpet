@@ -172,6 +172,25 @@ extern vector<vector<arrdesc> > arrdata; // [group][map]
 extern MPI_Comm comm_universe;
 extern MPI_Comm comm_world;
 
+// Mode state written by enter/leave. Two CSAMR updates each need a
+// copy. Grid loops inside an update read the cGH, which is passed in,
+// rather than these variables: an inner OpenMP team does not copyin.
+// groupdata stays threadprivate, but it is not in this copyin list.
+// Job 218291 showed that copyin leaves the worker's vector empty.
+// The worker assigns the snapshot from csamr_share_groupdata instead.
+#define CARPET_MODE_THREADPRIVATE_SCALARS                                      \
+  reflevel, mglevel, mc_grouptype, map, component, local_component, timelevel, \
+      timelevel_offset, timereflevelfact, spacereflevelfact, mglevelfact,     \
+      carpetGH, do_meta_mode, do_early_meta_mode, do_late_meta_mode,           \
+      do_global_mode, do_early_global_mode, do_late_global_mode,               \
+      do_allow_past_timelevels, do_prolongate, do_taper
+#define CARPET_MODE_THREADPRIVATE_VARS                                         \
+  CARPET_MODE_THREADPRIVATE_SCALARS, groupdata
+
+#ifdef _OPENMP
+#pragma omp threadprivate(CARPET_MODE_THREADPRIVATE_VARS)
+#endif
+
 } // namespace Carpet
 
 #endif // !defined(VARIABLES_HH)

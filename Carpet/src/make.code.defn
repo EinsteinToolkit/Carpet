@@ -8,7 +8,10 @@ SRCS =	CallFunction.cc				\
 	Checksum.cc				\
 	Comm.cc					\
 	Cycle.cc				\
+	csamr_groups.cc				\
+	csamr_threads.cc			\
 	Evolve.cc				\
+	Hermite.cc				\
 	Hosts.cc				\
 	Initialise.cc				\
 	MultiModel.cc				\

@@ -530,6 +530,20 @@ int fine_thread_broadcast(lc_fine_thread_comm_t *const comm, int value) {
 
 } // namespace
 
+int LC_descr_slot(void) {
+#ifdef _OPENMP
+  // The CSAMR pair is an outer team of two. A loop that then opens
+  // its own parallel region is nested, and every thread of that
+  // region has the same ancestor.
+  if (omp_get_level() >= 2) {
+    int const slot = omp_get_ancestor_thread_num(1);
+    if (slot == 0 || slot == 1)
+      return slot;
+  }
+#endif
+  return 0;
+}
+
 void LC_descr_init(lc_descr_t **const descr_ptr, const char *const name,
                    const char *const file, const int line) {
   if (CCTK_BUILTIN_EXPECT(*descr_ptr != 0, true))
@@ -538,22 +552,27 @@ void LC_descr_init(lc_descr_t **const descr_ptr, const char *const name,
 #pragma omp barrier
 #pragma omp master
   {
-    lc_descr_t *const descr = new lc_descr_t(name, file, line);
-    all_descrs.push_back(descr);
-    *descr_ptr = descr;
-
-    // Determine number of SMT threads
-    if (CCTK_BUILTIN_EXPECT(num_smt_threads == 0, false)) {
-      if (CCTK_IsFunctionAliased("GetNumSMTThreads")) {
-        num_smt_threads = GetNumSMTThreads();
-      } else {
-        num_smt_threads = 1;
+#pragma omp critical(LoopControl_descr_init)
+    {
+      if (*descr_ptr == 0) {
+        lc_descr_t *const descr = new lc_descr_t(name, file, line);
+        all_descrs.push_back(descr);
+        *descr_ptr = descr;
       }
-    }
 
-    // Allocate fine thread communicators
-    if (CCTK_BUILTIN_EXPECT(lc_fine_thread_comm.empty(), false)) {
-      lc_fine_thread_comm.resize(omp_get_max_threads());
+      // Determine number of SMT threads
+      if (CCTK_BUILTIN_EXPECT(num_smt_threads == 0, false)) {
+        if (CCTK_IsFunctionAliased("GetNumSMTThreads")) {
+          num_smt_threads = GetNumSMTThreads();
+        } else {
+          num_smt_threads = 1;
+        }
+      }
+
+      // Allocate fine thread communicators
+      if (CCTK_BUILTIN_EXPECT(lc_fine_thread_comm.empty(), false)) {
+        lc_fine_thread_comm.resize(omp_get_max_threads());
+      }
     }
   }
 #pragma omp barrier

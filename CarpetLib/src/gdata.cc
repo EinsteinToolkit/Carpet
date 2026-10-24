@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
+#include <mutex>
 #include <sstream>
 #include <typeinfo>
 
@@ -73,6 +74,16 @@ template MPI_Datatype mpi_datatype(slab<int, dim> const &);
 
 set<gdata *> gdata::allgdata;
 
+// Sync allocates a temporary gdata on whichever thread is exchanging
+// that level. Both CSAMR updates do this at once. The set is a
+// red-black tree, so the insert and the erase have to be serialized.
+namespace {
+mutex &allgdata_mutex() {
+  static mutex registry;
+  return registry;
+}
+}
+
 // Constructors
 gdata::gdata(const int varindex_, const centering cent_,
              const operator_type transport_operator_)
@@ -81,7 +92,10 @@ gdata::gdata(const int varindex_, const centering cent_,
       comm_active(false) {
   DECLARE_CCTK_PARAMETERS;
 
-  allgdata.insert(this);
+  {
+    lock_guard<mutex> const lock(allgdata_mutex());
+    allgdata.insert(this);
+  }
 
   if (barriers) {
     dist::barrier(dist::comm(), 783988953, "CarpetLib::gdata::gdata");
@@ -92,7 +106,10 @@ gdata::gdata(const int varindex_, const centering cent_,
 gdata::~gdata() {
   DECLARE_CCTK_PARAMETERS;
 
-  allgdata.erase(this);
+  {
+    lock_guard<mutex> const lock(allgdata_mutex());
+    allgdata.erase(this);
+  }
 
   if (barriers) {
     dist::barrier(dist::comm(), 109687805, "CarpetLib::gdata::~gdata");
@@ -349,6 +366,7 @@ void gdata::find_source_timelevel(vector<CCTK_REAL> const &times,
 }
 
 size_t gdata::allmemory() {
+  lock_guard<mutex> const lock(allgdata_mutex());
   size_t mem = memoryof(allgdata);
   for (set<gdata *>::const_iterator gdatai = allgdata.begin();
        gdatai != allgdata.end(); ++gdatai) {

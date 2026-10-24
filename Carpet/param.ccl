@@ -158,6 +158,14 @@ STRING time_refinement_factors "Temporal refinement factors over the coarsest le
   "^[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\][[:space:]]*$" :: "[ <tfact>, ... ]"
 } ""
 
+BOOLEAN use_csamr "Schedule subcycled evolution with concurrent structured AMR (Loeffler, Cao, Brandt, and Du, Journal of Computational Science 16 (2016) 79-88) instead of stepping levels sequentially. Requires factor-of-two time refinement, use_tapered_grids, and use_buffer_zones. Does not support multigrid or adaptive timesteps. Every rank owns every level. With at least two OpenMP threads, a slot's two updates run together and each update uses half of those threads."
+{
+} "no"
+
+BOOLEAN hermite_dense_output "Fill fine ghost zones from a cubic Hermite dense output of the parent RK4 step. The polynomial uses y(t_n), y(t_n+dt), y'(t_n), and y'(t_n+dt). Requires MoL::hermite_rhs_storage. With use_csamr no, buffer zones and tapered grids stay off and every fine stage prolongates. With use_csamr yes, the fine step that ends before its parent has stepped keeps the tapered buffer, and the fine step that lands on the parent time prolongates through this polynomial. That combination sizes the buffer for one integrator step."
+{
+} "no"
+
 BOOLEAN refine_timestep "Correct Time::dtfac for spacings on finer grids"
 {
 } "no"

@@ -25,6 +25,7 @@
 // compilers not adding trailing _ to Fortran names but historically
 // LoopControl used all lowercase C identifiers which conflict
 #define lc_descr_init LC_descr_init
+#define lc_descr_slot LC_descr_slot
 #define lc_control_init LC_control_init
 #define lc_control_finish LC_control_finish
 #define lc_thread_init LC_thread_init
@@ -87,6 +88,9 @@ typedef struct {
 
 void LC_descr_init(struct lc_descr_t **descr, const char *name,
                    const char *file, int line);
+/* 0, or 1 when this call sits inside the second of two overlapped
+   OpenMP regions. A single region keeps 0. */
+int LC_descr_slot(void);
 void LC_control_init(lc_control_t *restrict control, struct lc_descr_t *descr,
                      ptrdiff_t imin, ptrdiff_t jmin, ptrdiff_t kmin,
                      ptrdiff_t imax, ptrdiff_t jmax, ptrdiff_t kmax,
@@ -242,8 +246,10 @@ void LC_selftest_set(const lc_control_t *restrict control, ptrdiff_t imin,
                                                                                \
     const ptrdiff_t lc_str0 CCTK_ATTRIBUTE_UNUSED = (istr_);                   \
                                                                                \
-    static struct lc_descr_t *lc_descr = NULL;                                 \
-    lc_descr_init(&lc_descr, #name, __FILE__, __LINE__);                       \
+    static struct lc_descr_t *lc_descrs[2] = {NULL, NULL};                     \
+    const int lc_slot = lc_descr_slot();                                       \
+    lc_descr_init(&lc_descrs[lc_slot], #name, __FILE__, __LINE__);             \
+    struct lc_descr_t *const lc_descr = lc_descrs[lc_slot];                    \
                                                                                \
     lc_control_t lc_control;                                                   \
     lc_control_init(&lc_control, lc_descr, (imin_), (jmin_), (kmin_), (imax_), \
