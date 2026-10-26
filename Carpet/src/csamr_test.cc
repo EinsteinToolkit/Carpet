@@ -2,6 +2,7 @@
 // Build: g++ -std=c++11 -Wall -Wextra -Werror -o csamr_test csamr_test.cc
 
 #include "csamr.hh"
+#include "csamr_ab3rk4.hh"
 
 #include <cstdio>
 #include <cstdlib>
@@ -389,6 +390,176 @@ void check_hybrid_refill() {
   CHECK(Carpet::csamr::taper_step(2, 4, false, true));
 }
 
+// Three levels, fraction 1/4, coarse dt 1. The six refined steps of one
+// cycle, in slot order. AB3 is the even step and is the shorter one.
+// The two children of a parent step sum to that parent step.
+void check_ab3rk4_durations() {
+  using Carpet::csamr::Ab3Rk4Step;
+  double const fraction = Carpet::csamr::ab3_parent_fraction;
+  CHECK(fraction == 0.25);
+  CHECK(Carpet::csamr::ab3rk4_fraction_ok(fraction));
+  CHECK(not Carpet::csamr::ab3rk4_fraction_ok(0.0));
+  CHECK(not Carpet::csamr::ab3rk4_fraction_ok(0.5));
+  CHECK(not Carpet::csamr::ab3rk4_fraction_ok(-0.1));
+  CHECK(not Carpet::csamr::ab3rk4_fraction_ok(0.75));
+
+  int const n_levels = 3;
+  double const coarse_dt = 1.0;
+  std::vector<Slot> const slots = Carpet::csamr::coarse_cycle(n_levels);
+  CHECK(slots.size() == 4);
+
+  struct Want {
+    int slot;
+    int level;
+    bool ab3;
+    double dt;
+    double end_offset;
+  };
+  Want const want[] = {
+      {0, 2, true, 0.0625, 0.0625}, {0, 1, true, 0.25, 0.25},
+      {1, 2, false, 0.1875, 0.25},  {1, 0, false, 1.0, 1.0},
+      {2, 2, true, 0.1875, 0.4375}, {2, 1, false, 0.75, 1.0},
+      {3, 2, false, 0.5625, 1.0},
+  };
+  int const nwant = 7;
+  int seen = 0;
+  for (int slot_index = 0; slot_index < static_cast<int>(slots.size());
+       ++slot_index) {
+    for (Action const &action : slots[static_cast<size_t>(slot_index)].steps) {
+      CHECK(seen < nwant);
+      int const ordinal =
+          Carpet::csamr::ab3rk4_ordinal(n_levels, slot_index, action.level);
+      Ab3Rk4Step const step = Carpet::csamr::ab3rk4_step(
+          action.level, ordinal, fraction, coarse_dt);
+      if (seen < nwant) {
+        Want const &row = want[seen];
+        CHECK(slot_index == row.slot);
+        CHECK(action.level == row.level);
+        CHECK(step.ab3 == row.ab3);
+        CHECK(step.dt == row.dt);
+        CHECK(step.end_offset == row.end_offset);
+        if (action.level == n_levels - 1)
+          CHECK(ordinal == slot_index);
+      }
+      ++seen;
+    }
+  }
+  CHECK(seen == nwant);
+
+  // Child pairs sum to the parent, and each AB3 step is shorter than the
+  // RK4 step that finishes the same parent interval.
+  CHECK(want[0].dt + want[2].dt == want[1].dt);
+  CHECK(want[4].dt + want[6].dt == want[3].dt - want[1].end_offset);
+  CHECK(want[4].dt + want[6].dt == want[5].dt);
+  CHECK(want[1].dt + want[5].dt == want[3].dt);
+  CHECK(want[0].dt < want[2].dt);
+  CHECK(want[4].dt < want[6].dt);
+  CHECK(want[1].dt < want[5].dt);
+
+  // A two-level cycle: L1 AB3, L0 RK4, then L1 RK4.
+  std::vector<Slot> const two = Carpet::csamr::coarse_cycle(2);
+  CHECK(two.size() == 2);
+  int two_seen = 0;
+  for (int slot_index = 0; slot_index < 2; ++slot_index) {
+    for (Action const &action : two[static_cast<size_t>(slot_index)].steps) {
+      int const ordinal =
+          Carpet::csamr::ab3rk4_ordinal(2, slot_index, action.level);
+      Ab3Rk4Step const step = Carpet::csamr::ab3rk4_step(
+          action.level, ordinal, fraction, coarse_dt);
+      CHECK(two_seen < 3);
+      if (two_seen == 0) {
+        CHECK(action.level == 1 and step.ab3 and step.dt == 0.25 and
+              step.end_offset == 0.25);
+      } else if (two_seen == 1) {
+        CHECK(action.level == 0 and not step.ab3 and step.dt == 1.0 and
+              step.end_offset == 1.0);
+      } else {
+        CHECK(action.level == 1 and not step.ab3 and step.dt == 0.75 and
+              step.end_offset == 1.0);
+      }
+      ++two_seen;
+    }
+  }
+  CHECK(two_seen == 3);
+
+  // The step that closes a cycle and the next cycle's first step meet
+  // at the same floating-point time. 288 coarse steps of dt = 1/18 are
+  // exactly t = 16.
+  double const eighteenth = 1.0 / 18.0;
+  Ab3Rk4Step const closing =
+      Carpet::csamr::ab3rk4_step(2, 3, fraction, eighteenth);
+  Ab3Rk4Step const opening =
+      Carpet::csamr::ab3rk4_step(2, 0, fraction, eighteenth);
+  double const closed =
+      Carpet::csamr::ab3rk4_absolute_end(0.0, 0, closing, eighteenth);
+  double const next_start =
+      Carpet::csamr::ab3rk4_absolute_end(0.0, 1, opening, eighteenth) -
+      opening.dt;
+  CHECK(closed == next_start);
+  CHECK(closed == eighteenth);
+  double const at_16 =
+      Carpet::csamr::ab3rk4_absolute_end(0.0, 287, closing, eighteenth);
+  CHECK(at_16 == 288.0 * eighteenth);
+  CHECK(at_16 == 16.0);
+
+  // The integrator dt is the gap between absolute times. Subtracting it
+  // from the end recovers the start, which is the previous step's end.
+  for (int cycle = 0; cycle < 288; ++cycle) {
+    for (int level = 1; level <= 2; ++level) {
+      int const nsteps = 1 << level;
+      double previous = Carpet::csamr::ab3rk4_absolute_start(
+          0.0, cycle,
+          Carpet::csamr::ab3rk4_step(level, 0, fraction, eighteenth),
+          eighteenth);
+      CHECK(previous == static_cast<double>(cycle) * eighteenth);
+      for (int ordinal = 0; ordinal < nsteps; ++ordinal) {
+        Ab3Rk4Step const step = Carpet::csamr::ab3rk4_step(
+            level, ordinal, fraction, eighteenth);
+        double const start = Carpet::csamr::ab3rk4_absolute_start(
+            0.0, cycle, step, eighteenth);
+        double const end = Carpet::csamr::ab3rk4_absolute_end(
+            0.0, cycle, step, eighteenth);
+        CHECK(start == previous);
+        double const gap = end - start;
+        CHECK(gap > 0.0);
+        CHECK(end - gap == start);
+        if (step.ab3) {
+          bool on_parent = start == static_cast<double>(cycle) * eighteenth;
+          int const parent_steps = 1 << (level - 1);
+          for (int parent_ordinal = 0; parent_ordinal < parent_steps;
+               ++parent_ordinal) {
+            Ab3Rk4Step const parent = Carpet::csamr::ab3rk4_step(
+                level - 1, parent_ordinal, fraction, eighteenth);
+            double const parent_start = Carpet::csamr::ab3rk4_absolute_start(
+                0.0, cycle, parent, eighteenth);
+            double const parent_end = Carpet::csamr::ab3rk4_absolute_end(
+                0.0, cycle, parent, eighteenth);
+            if (start == parent_start or start == parent_end)
+              on_parent = true;
+          }
+          CHECK(on_parent);
+        }
+        previous = end;
+      }
+      CHECK(previous == static_cast<double>(cycle + 1) * eighteenth);
+    }
+  }
+
+  // The step kind follows cctk_iteration. Iteration 1 is slot 0. Iteration
+  // 3 is slot 2, where level 1 is the long RK4 and level 2 is AB3.
+  // Passing iteration 1 for that later slot would call level 1 AB3.
+  CHECK(Carpet::csamr::ab3rk4_step_is_ab3(3, 1, 1));
+  CHECK(Carpet::csamr::ab3rk4_step_is_ab3(3, 1, 2));
+  CHECK(not Carpet::csamr::ab3rk4_step_is_ab3(3, 2, 2));
+  CHECK(not Carpet::csamr::ab3rk4_step_is_ab3(3, 2, 0));
+  CHECK(Carpet::csamr::ab3rk4_step_is_ab3(3, 3, 2));
+  CHECK(not Carpet::csamr::ab3rk4_step_is_ab3(3, 3, 1));
+  CHECK(not Carpet::csamr::ab3rk4_step_is_ab3(3, 4, 2));
+  CHECK(not Carpet::csamr::ab3rk4_step_is_ab3(3, 4, 0));
+  CHECK(Carpet::csamr::ab3rk4_step_is_ab3(3, 5, 1));
+  CHECK(not Carpet::csamr::ab3rk4_step_is_ab3(3, 7, 1));
+}
+
 void check_thread_teams() {
   Carpet::csamr::ThreadTeams const none = Carpet::csamr::thread_teams(0);
   CHECK(not none.parallel);
@@ -421,11 +592,125 @@ void check_thread_teams() {
   CHECK(nine.fine + nine.coarse == 9);
 }
 
+// Stock AB3 syncs ghosts at the step end. That sync runs during the step
+// only when the parent is idle and already at or past the end. The other
+// steps wait until the parent covers the end.
+void check_ab3_prefill() {
+  std::vector<int> factors(3);
+  factors[0] = 1;
+  factors[1] = 2;
+  factors[2] = 4;
+  std::vector<Carpet::csamr::Group> const groups =
+      Carpet::csamr::subcycling_groups(factors);
+  std::vector<Slot> const slots = Carpet::csamr::coarse_cycle(3);
+  int const expect_prefill[] = {1, 0, 0, 0, 1, 0, 0};
+  int seen = 0;
+  for (int slot_index = 0; slot_index < static_cast<int>(slots.size());
+       ++slot_index) {
+    for (Action const &step : slots[slot_index].steps) {
+      int const partner = step.other < 0 ? -1 : groups[step.other].first;
+      int const rl = groups[step.level].first;
+      CHECK(groups[step.level].first == groups[step.level].last);
+      bool const prefill = Carpet::csamr::ab3_fill_before_partner(rl, partner);
+      CHECK(seen < 7);
+      if (seen < 7 and prefill != (expect_prefill[seen] != 0)) {
+        std::fprintf(stderr, "AB3 prefill slot %d level %d partner %d\n",
+                     slot_index, rl, partner);
+      }
+      CHECK(seen >= 7 or prefill == (expect_prefill[seen] != 0));
+      ++seen;
+    }
+  }
+  CHECK(seen == 7);
+  CHECK(Carpet::csamr::ab3_fill_before_partner(1, 0));
+  CHECK(not Carpet::csamr::ab3_fill_before_partner(1, -1));
+  CHECK(not Carpet::csamr::ab3_fill_before_partner(0, 1));
+  CHECK(not Carpet::csamr::ab3_fill_before_partner(2, 0));
+}
+
+// During-step prolongation for [1,2,4], two coarse cycles. 1 means the
+// parent is idle and already covers the end. 0 means defer. -1 is the
+// coarse step. A deferred step whose parent finishes this slot is filled
+// immediately (after = 1). A deferred step whose parent is still behind
+// stays pending (after = 0).
+void check_ab3_end_fill() {
+  std::vector<int> factors(3);
+  factors[0] = 1;
+  factors[1] = 2;
+  factors[2] = 4;
+  std::vector<Carpet::csamr::Group> const groups =
+      Carpet::csamr::subcycling_groups(factors);
+  std::vector<Slot> const slots = Carpet::csamr::coarse_cycle(3);
+  int const nfine = 4;
+  int const expect_during[] = {0, 0, 1, -1, 0, 1, 1};
+  int const expect_after[] = {1, 0, -1, -1, 1, -1, -1};
+  std::vector<int> at(3, 0);
+  for (int cycle = 0; cycle < 2; ++cycle) {
+    int seen = 0;
+    for (int slot_index = 0; slot_index < static_cast<int>(slots.size());
+         ++slot_index) {
+      std::vector<int> const before = at;
+      std::vector<char> steps(3, 0);
+      std::vector<int> ends(3, -1);
+      for (Action const &step : slots[slot_index].steps) {
+        int const rl = groups[step.level].first;
+        CHECK(groups[step.level].first == groups[step.level].last);
+        CHECK(rl >= 0 and rl < 3);
+        steps[rl] = 1;
+        ends[rl] = cycle * nfine + step.end_time;
+      }
+      for (Action const &step : slots[slot_index].steps) {
+        int const rl = groups[step.level].first;
+        CHECK(seen < 7);
+        if (rl == 0) {
+          CHECK(expect_during[seen] < 0);
+          CHECK(expect_after[seen] < 0);
+        } else {
+          bool const during = Carpet::csamr::ab3_prolongate_during_step(
+              ends[rl], before[rl - 1], steps[rl - 1] != 0);
+          if (during != (expect_during[seen] != 0)) {
+            std::fprintf(stderr,
+                         "AB3 during cycle %d slot %d level %d end %d "
+                         "parent_before %d parent_steps %d\n",
+                         cycle, slot_index, rl, ends[rl], before[rl - 1],
+                         steps[rl - 1] ? 1 : 0);
+          }
+          CHECK(during == (expect_during[seen] != 0));
+          if (not during) {
+            int const parent_after =
+                steps[rl - 1] ? ends[rl - 1] : before[rl - 1];
+            bool const now = parent_after >= ends[rl];
+            CHECK(now == (expect_after[seen] != 0));
+          } else {
+            CHECK(expect_after[seen] < 0);
+          }
+        }
+        ++seen;
+      }
+      for (int rl = 0; rl < 3; ++rl) {
+        if (steps[rl])
+          at[rl] = ends[rl];
+      }
+    }
+    CHECK(seen == 7);
+    CHECK(at[0] == (cycle + 1) * nfine);
+    CHECK(at[1] == (cycle + 1) * nfine);
+    CHECK(at[2] == (cycle + 1) * nfine);
+  }
+  CHECK(not Carpet::csamr::ab3_prolongate_during_step(1, 0, true));
+  CHECK(not Carpet::csamr::ab3_prolongate_during_step(2, 0, false));
+  CHECK(Carpet::csamr::ab3_prolongate_during_step(2, 2, false));
+  CHECK(Carpet::csamr::ab3_prolongate_during_step(2, 4, false));
+}
+
 int main() {
   for (int level = 0; level < 8; ++level)
     CHECK(Carpet::csamr::time_factor(level) == (1 << level));
   check_grouped_factors();
   check_hybrid_refill();
+  check_ab3_prefill();
+  check_ab3_end_fill();
+  check_ab3rk4_durations();
   check_thread_teams();
   check_fixed_schedules();
   check_figure_8();

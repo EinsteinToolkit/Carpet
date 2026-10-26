@@ -278,13 +278,28 @@ void *clone_var_pointers(cGH const *const src, int const vi) {
   return raw;
 }
 
+// The coarse cGH is allocated once. Boundary keeps that pointer, so
+// freeing it each slot makes the next slot look like a new GH. The
+// pointer members stay as allocated. These scalars are the driver's
+// clock. enter_level_mode rewrites cctk_time from the time hierarchy
+// and enter_global_mode rewrites cctk_delta_time. Neither rewrites
+// cctk_iteration. AB3-RK4 classifies the step from that iteration, so
+// a frozen value repeats slot 0 on every later coarse update.
+void refresh_cached_coarse_clock(cGH *const dst, cGH const *const src) {
+  dst->cctk_iteration = src->cctk_iteration;
+  dst->cctk_time = src->cctk_time;
+  dst->cctk_delta_time = src->cctk_delta_time;
+}
+
 } // namespace
 
 cGH *csamr_clone_gh(cGH const *const src) {
   if (src == nullptr)
     CCTK_ERROR("CSAMR cGH clone was called without a GH.");
-  if (cached_coarse_gh != nullptr)
+  if (cached_coarse_gh != nullptr) {
+    refresh_cached_coarse_clock(cached_coarse_gh, src);
     return cached_coarse_gh;
+  }
   void *const raw = std::malloc(sizeof(cGH));
   if (raw == nullptr)
     CCTK_ERROR("CSAMR could not allocate a cGH clone.");

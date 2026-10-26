@@ -319,6 +319,13 @@ PROVIDES FUNCTION GetRefinementLevel \
     WITH Carpet_GetRefinementLevel   \
     LANGUAGE C
 
+CCTK_INT FUNCTION                              \
+    Carpet_AB3RK4_ThisStepAB3                  \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+PROVIDES FUNCTION Carpet_AB3RK4_ThisStepAB3 \
+    WITH Carpet_AB3RK4_ThisStepAB3          \
+    LANGUAGE C
+
 CCTK_INT FUNCTION                         \
     GetRefinementLevels                   \
         (CCTK_POINTER_TO_CONST IN cctkGH)

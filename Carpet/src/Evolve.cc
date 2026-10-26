@@ -10,6 +10,7 @@
 #include <string>
 
 #include <cctk.h>
+#include <cctk_Parameter.h>
 #include <cctk_Parameters.h>
 #include <cctk_Termination.h>
 #include <cctk_Timers.h>
@@ -25,6 +26,16 @@
 
 #include <carpet.hh>
 #include "csamr.hh"
+#include "csamr_ab3rk4.hh"
+#include "functions.hh"
+
+// C linkage, so these names are MoL's globals. A weak declaration stays
+// unresolved when MoL is not linked. Hermite.cc declares the same symbols.
+extern "C" {
+extern CCTK_INT *EvolvedVariableIndex __attribute__((weak));
+extern CCTK_INT MoLNumEvolvedVariables __attribute__((weak));
+extern CCTK_INT MoLNumEvolvedArrayVariables __attribute__((weak));
+}
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -335,9 +346,37 @@ void AdvanceTime(cGH *const cctkGH) {
   ++cctkGH->cctk_iteration;
 
   if (not adaptive_stepsize) {
-    // Avoid accumulation of errors
-    global_time = cctk_initial_time +
-                  cctkGH->cctk_iteration * delta_time / maxtimereflevelfact;
+    if (csamr_ab3_rk4) {
+      // The finest step's closed-form end. A uniform fine dt would label
+      // the unequal steps with the wrong time and fail CheckLevelTimes.
+      int const n_levels = reflevels;
+      int const nfine = maxtimereflevelfact;
+      int const expect = n_levels >= 1 and n_levels <= csamr::max_levels
+                             ? 1 << (n_levels - 1)
+                             : 0;
+      if (n_levels < 1 or nfine != expect or not(delta_time > 0.0)) {
+        CCTK_ERROR("AB3-RK4 clock needs a positive coarse dt and "
+                   "maxtimereflevelfact = 2^(levels-1).");
+      }
+      int const done = cctkGH->cctk_iteration - 1;
+      if (done < 0)
+        CCTK_ERROR("AB3-RK4 clock ran before the first iteration.");
+      int const slot = done % nfine;
+      int const cycle = done / nfine;
+      int const finest = n_levels - 1;
+      int const ordinal = csamr::ab3rk4_ordinal(n_levels, slot, finest);
+      if (ordinal != slot) {
+        CCTK_ERROR("AB3-RK4 finest step ordinal is not the slot index.");
+      }
+      csamr::Ab3Rk4Step const sized = csamr::ab3rk4_step(
+          finest, ordinal, csamr_ab3_fraction, delta_time);
+      global_time = csamr::ab3rk4_absolute_end(cctk_initial_time, cycle, sized,
+                                               delta_time);
+    } else {
+      // Avoid accumulation of errors
+      global_time = cctk_initial_time +
+                    cctkGH->cctk_iteration * delta_time / maxtimereflevelfact;
+    }
     cctkGH->cctk_time = global_time;
   } else {
     // Take varying step sizes into account
@@ -552,7 +591,13 @@ struct csamr_level_plan {
   int rl;
   int partner;
   CCTK_REAL end_time;
+  CCTK_REAL step_dt;
+  bool unequal;
   bool taper;
+  int end_index;
+  // The step end is not yet stored on the parent, or this slot updates
+  // the parent. Prolongation waits until the parent covers that end.
+  bool ab3_prefill;
   csamr_mode_flags flags;
 };
 
@@ -563,6 +608,35 @@ bool csamr_carpetlib_param(char const *const name) {
     CCTK_VERROR("CSAMR could not read CarpetLib::%s.", name);
   }
   return *static_cast<CCTK_INT const *>(ptr) != 0;
+}
+
+// Kind of the step this thread is inside. reflevel is threadprivate, so a
+// slot that runs AB3 beside RK4 does not share a flag. Returns 0 when the
+// mode is off or this level is coarse.
+extern "C" CCTK_INT
+Carpet_AB3RK4_ThisStepAB3(CCTK_POINTER_TO_CONST const cctkGH_) {
+  DECLARE_CCTK_PARAMETERS;
+  if (not csamr_ab3_rk4)
+    return 0;
+  if (cctkGH_ == nullptr)
+    CCTK_ERROR("AB3-RK4 step query has no grid hierarchy.");
+  cGH const *const cctkGH = static_cast<cGH const *>(cctkGH_);
+  if (reflevel <= 0)
+    return 0;
+  int const n_levels = reflevels;
+  int const nfine = maxtimereflevelfact;
+  int const expect =
+      n_levels >= 1 and n_levels <= csamr::max_levels ? 1 << (n_levels - 1) : 0;
+  if (n_levels < 2 or nfine != expect)
+    CCTK_ERROR("AB3-RK4 step query needs maxtimereflevelfact = 2^(levels-1).");
+  if (cctkGH->cctk_iteration < 1)
+    CCTK_ERROR("AB3-RK4 step query ran before the first iteration.");
+  // The coarse update runs on a cGH allocated on the first paired slot.
+  // That cGH has to carry this iteration. Slot 0's iteration makes the
+  // later long refined step look like the short AB3 step.
+  return csamr::ab3rk4_step_is_ab3(n_levels, cctkGH->cctk_iteration, reflevel)
+             ? 1
+             : 0;
 }
 
 // Rotate this level's grid functions and clock. Scalars stay put: the
@@ -579,6 +653,11 @@ void csamr_prepare_level(cGH *const cctkGH, int const ml,
       do_global_mode = plan.flags.global_mode;
       do_meta_mode = plan.flags.meta_mode;
 
+      if (plan.unequal) {
+        if (not(plan.step_dt > 0.0))
+          CCTK_ERROR("AB3-RK4 step dt is not positive.");
+        tt->set_delta(mglevel, reflevel, plan.step_dt);
+      }
       CycleTimeLevels(cctkGH, false);
       cctkGH->cctk_time = plan.end_time;
       tt->set_time(mglevel, reflevel, timelevel, cctkGH->cctk_time);
@@ -611,13 +690,27 @@ void csamr_traverse_level(cGH *const cctkGH, int const ml,
         CycleReplicatedLevels(cctkGH);
       cctkGH->cctk_time = plan.end_time;
       tt->set_time(mglevel, reflevel, timelevel, cctkGH->cctk_time);
+      if (plan.unequal) {
+        if (timereffacts.AT(reflevel) <= 0 or not(plan.step_dt > 0.0))
+          CCTK_ERROR("AB3-RK4 cannot set the level timestep.");
+        // CCTK_DELTA_TIME is cctk_delta_time / cctk_timefac. Level mode
+        // has already stored the level's time factor in cctk_timefac.
+        cctkGH->cctk_delta_time =
+            plan.step_dt * static_cast<CCTK_REAL>(timereffacts.AT(reflevel));
+      }
 
       Waypoint("Evolution I CSAMR at iteration %d time %g level %d "
-               "partner %d%s%s%s",
+               "partner %d%s%s%s%s",
                cctkGH->cctk_iteration, (double)cctkGH->cctk_time, reflevel,
                plan.partner, (do_global_mode ? " (global)" : ""),
                (do_meta_mode ? " (meta)" : ""),
-               (do_taper ? " (tapering)" : ""));
+               (plan.ab3_prefill ? " (AB3 ghosts deferred)"
+                                 : (do_taper ? " (tapering)" : "")),
+               (plan.unequal ? (reflevel > 0 and
+                                        Carpet_AB3RK4_ThisStepAB3(cctkGH)
+                                    ? " (AB3)"
+                                    : " (RK4)")
+                             : ""));
 
       CalculateChecksums(cctkGH, allbutcurrenttime);
       Poison(cctkGH, currenttimebutnotifonly);
@@ -638,19 +731,45 @@ void csamr_traverse_level(cGH *const cctkGH, int const ml,
   LEAVE_GLOBAL_MODE;
 }
 
+
 void csamr_check_parameters(cGH const *const cctkGH) {
   DECLARE_CCTK_PARAMETERS;
 
-  if (not use_tapered_grids) {
-    CCTK_ERROR("Carpet::use_csamr requires Carpet::use_tapered_grids. "
-               "Tapered grids and buffer zones stop an RK stage from "
-               "prolongating out of the parent during the step.");
-  }
-  if (not use_buffer_zones) {
-    CCTK_ERROR("Carpet::use_csamr requires Carpet::use_buffer_zones. "
-               "Without buffer zones a refined grid has only one "
-               "ghost-width, which does not cover a multi-stage "
-               "Runge-Kutta step.");
+  if (csamr_ab3_rk4) {
+    if (use_tapered_grids or use_buffer_zones) {
+      CCTK_ERROR("Carpet::csamr_ab3_rk4 does not use tapered grids or "
+                 "buffer zones. The short step is one right-hand side at "
+                 "the parent time.");
+    }
+    if (use_time_interpolation) {
+      CCTK_ERROR("Carpet::csamr_ab3_rk4 requires "
+                 "Carpet::use_time_interpolation = no.");
+    }
+    if (not use_final_copy or not hermite_dense_output) {
+      CCTK_ERROR("Carpet::csamr_ab3_rk4 requires Carpet::use_final_copy and "
+                 "Carpet::hermite_dense_output.");
+    }
+    if (not csamr::ab3rk4_fraction_ok(csamr_ab3_fraction)) {
+      CCTK_ERROR("Carpet::csamr_ab3_fraction must lie in (0, 0.5).");
+    }
+    for (int rl = 0; rl < reflevels; ++rl) {
+      if (timereffacts.AT(rl) != (1 << rl)) {
+        CCTK_ERROR("Carpet::csamr_ab3_rk4 requires time factors 1,2,4,... "
+                   "with one refinement level per factor.");
+      }
+    }
+    int type = 0;
+    void const *const method = CCTK_ParameterGet("ODE_Method", "MoL", &type);
+    if (method == nullptr or type != PARAMETER_KEYWORD) {
+      CCTK_ERROR("Carpet::csamr_ab3_rk4 could not read MoL::ODE_Method.");
+    }
+    char const *const ode = *static_cast<char const *const *>(method);
+    if (not CCTK_EQUALS(ode, "AB3-RK4")) {
+      CCTK_ERROR("Carpet::csamr_ab3_rk4 requires MoL::ODE_Method = "
+                 "\"AB3-RK4\".");
+    }
+  } else {
+    csamr_check_ab3_buffers(true);
   }
   if (adaptive_stepsize)
     CCTK_ERROR("Carpet::use_csamr does not support adaptive timesteps.");
@@ -743,6 +862,256 @@ void csamr_check_restricts(cGH const *const cctkGH, int const ml,
 
 } // namespace
 
+void csamr_fail(bool const fatal, char const *const message) {
+  if (fatal)
+    CCTK_ERROR(message);
+  else
+    CCTK_PARAMWARN(message);
+}
+
+bool csamr_mol_is(char const *const name, char const *const expected) {
+  int type = 0;
+  void const *const parameter = CCTK_ParameterGet(name, "MoL", &type);
+  if (parameter == nullptr or type != PARAMETER_KEYWORD) {
+    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                "Carpet could not read MoL::%s.", name);
+  }
+  char const *const value = *static_cast<char const *const *>(parameter);
+  return CCTK_EQUALS(value, expected);
+}
+
+int csamr_mol_int(char const *const name) {
+  int type = 0;
+  void const *const parameter = CCTK_ParameterGet(name, "MoL", &type);
+  if (parameter == nullptr or type != PARAMETER_INT) {
+    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                "Carpet could not read MoL::%s.", name);
+  }
+  return static_cast<int>(*static_cast<CCTK_INT const *>(parameter));
+}
+
+bool csamr_mol_bool(char const *const name) {
+  int type = 0;
+  void const *const parameter = CCTK_ParameterGet(name, "MoL", &type);
+  if (parameter == nullptr or type != PARAMETER_BOOLEAN) {
+    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                "Carpet could not read MoL::%s.", name);
+  }
+  return *static_cast<CCTK_INT const *>(parameter) != 0;
+}
+
+bool csamr_ab3_ode() {
+  DECLARE_CCTK_PARAMETERS;
+  if (csamr_ab3_rk4 or not CCTK_IsThornActive("MoL"))
+    return false;
+  return csamr_mol_is("ODE_Method", "AB") and csamr_mol_is("AB_Type", "3");
+}
+
+bool csamr_stock_ab3() {
+  if (not csamr_ab3_ode())
+    return false;
+  return csamr_mol_int("MoL_Intermediate_Steps") == 1;
+}
+
+bool csamr_ab3_unbuffered() {
+  DECLARE_CCTK_PARAMETERS;
+  return use_csamr and csamr_stock_ab3() and not use_buffer_zones and
+         not use_tapered_grids;
+}
+
+void csamr_check_ab3_buffers(bool const fatal) {
+  DECLARE_CCTK_PARAMETERS;
+  if (not use_csamr or csamr_ab3_rk4)
+    return;
+  if (csamr_stock_ab3()) {
+    if (use_buffer_zones or use_tapered_grids) {
+      csamr_fail(fatal,
+                 "Stock Adams-Bashforth 3 does not use buffer zones or "
+                 "tapered grids. Its one right-hand side is evaluated at "
+                 "the step start, and the ghost zones cover that "
+                 "evaluation.");
+    }
+    if (not use_time_interpolation or not use_final_copy) {
+      csamr_fail(fatal,
+                 "Stock Adams-Bashforth 3 refills ghosts by time "
+                 "interpolation between parent times and by a copy on the "
+                 "parent time.");
+    }
+    if (hermite_dense_output) {
+      csamr_fail(fatal, "Stock Adams-Bashforth 3 does not use Hermite "
+                        "dense output.");
+    }
+    if (not csamr_mol_bool("AB3_rhs_storage")) {
+      csamr_fail(fatal, "Stock Adams-Bashforth 3 needs "
+                        "MoL::AB3_rhs_storage = yes.");
+    }
+    if (csamr_mol_bool("skip_initial_copy")) {
+      csamr_fail(fatal,
+                 "Stock Adams-Bashforth 3 CSAMR needs "
+                 "MoL::skip_initial_copy = no. The ghost fill is rotated "
+                 "with the time levels and copied back onto the "
+                 "right-hand side.");
+    }
+    return;
+  }
+  if (csamr_ab3_ode() and (not use_buffer_zones or not use_tapered_grids)) {
+    csamr_fail(fatal, "Adams-Bashforth 3 without buffer zones needs "
+                      "MoL::MoL_Intermediate_Steps = 1.");
+  }
+  if (not use_tapered_grids) {
+    csamr_fail(fatal,
+               "Carpet::use_csamr requires Carpet::use_tapered_grids. "
+               "Tapered grids and buffer zones stop an RK stage from "
+               "prolongating out of the parent during the step.");
+  }
+  if (not use_buffer_zones) {
+    csamr_fail(fatal,
+               "Carpet::use_csamr requires Carpet::use_buffer_zones. "
+               "Without buffer zones a refined grid has only one "
+               "ghost-width, which does not cover a multi-stage "
+               "Runge-Kutta step.");
+  }
+}
+
+
+// Fine-step index whose ghosts still have to be written on this level.
+// -1 means the current time level is already filled.
+int &csamr_ab3_pending(int const rl) {
+  static int pending[csamr::max_levels];
+  static bool init = false;
+  if (not init) {
+    for (int i = 0; i < csamr::max_levels; ++i)
+      pending[i] = -1;
+    init = true;
+  }
+  if (rl < 0 or rl >= csamr::max_levels)
+    CCTK_ERROR("Stock AB3 ghost level is out of range.");
+  return pending[rl];
+}
+
+// Prolongate this level from its parent at the time currently stored on
+// the level. The parent already covers that time. MoL's initial copy
+// later puts these ghosts on the next right-hand side.
+void csamr_ab3_prefill_ghosts(cGH *const cctkGH, int const ml,
+                              csamr_level_plan const &plan) {
+  if (plan.rl <= 0)
+    CCTK_ERROR("Stock AB3 tried to pre-fill the coarse level.");
+  if (&EvolvedVariableIndex == nullptr or EvolvedVariableIndex == nullptr or
+      &MoLNumEvolvedVariables == nullptr or
+      &MoLNumEvolvedArrayVariables == nullptr) {
+    CCTK_ERROR("Stock AB3 ghost fill needs MoL's evolved-variable table.");
+  }
+  if (MoLNumEvolvedArrayVariables > 0)
+    CCTK_ERROR("Stock AB3 CSAMR does not support evolved grid arrays.");
+  if (MoLNumEvolvedVariables <= 0)
+    CCTK_ERROR("Stock AB3 ghost fill found no evolved variables.");
+
+  vector<int> groups;
+  for (int i = 0; i < MoLNumEvolvedVariables; ++i) {
+    int const vi = EvolvedVariableIndex[i];
+    int const group = CCTK_GroupIndexFromVarI(vi);
+    if (group < 0) {
+      CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Stock AB3 cannot find the group of evolved variable %d.",
+                  vi);
+    }
+    bool seen = false;
+    for (size_t g = 0; g < groups.size(); ++g) {
+      if (groups.AT(g) == group)
+        seen = true;
+    }
+    if (not seen)
+      groups.push_back(group);
+  }
+  if (groups.empty())
+    CCTK_ERROR("Stock AB3 ghost fill found no evolved groups.");
+
+  ENTER_GLOBAL_MODE(cctkGH, ml) {
+    ENTER_LEVEL_MODE(cctkGH, plan.rl) {
+      do_taper = false;
+      do_prolongate = true;
+      cctkGH->cctk_time = tt->get_time(mglevel, reflevel, 0);
+      int const status =
+          SyncGroupsByDirI(cctkGH, static_cast<int>(groups.size()),
+                           &groups.front(), NULL);
+      if (status < 0) {
+        CCTK_ERROR("Stock AB3 could not prolongate ghosts before the "
+                   "parent step.");
+      }
+      do_taper = false;
+    }
+    LEAVE_LEVEL_MODE;
+  }
+  LEAVE_GLOBAL_MODE;
+}
+
+// A previous step ended before its parent had stored that time. Fill
+// those ghosts once the parent has caught up, before this level steps.
+void csamr_ab3_catch_up_ghosts(cGH *const cctkGH, int const ml,
+                               vector<int> const &at_before) {
+  DECLARE_CCTK_PARAMETERS;
+  if (cctkGH->cctk_iteration <= 1) {
+    for (int rl = 0; rl < reflevels and rl < csamr::max_levels; ++rl)
+      csamr_ab3_pending(rl) = -1;
+  }
+  CCTK_REAL const fine_dt =
+      delta_time / static_cast<CCTK_REAL>(maxtimereflevelfact);
+  for (int rl = 1; rl < reflevels; ++rl) {
+    int const pending = csamr_ab3_pending(rl);
+    if (pending < 0)
+      continue;
+    if (rl - 1 >= static_cast<int>(at_before.size()) or
+        at_before.AT(rl - 1) < pending)
+      continue;
+    CCTK_REAL const expected =
+        cctk_initial_time + fine_dt * static_cast<CCTK_REAL>(pending);
+    CCTK_REAL const actual = tt->get_time(ml, rl, 0);
+    CCTK_REAL const scale = 1.0 + std::fabs(expected);
+    if (not(std::fabs(actual - expected) <= 1.0e-12 * scale))
+      CCTK_ERROR("Stock AB3 deferred ghost time does not match the "
+                 "level clock.");
+    csamr_level_plan plan;
+    plan.rl = rl;
+    csamr_ab3_prefill_ghosts(cctkGH, ml, plan);
+    csamr_ab3_pending(rl) = -1;
+  }
+}
+
+// Prolongate the steps that skipped their end sync. A parent that
+// stepped in this slot now holds its new time. A parent that is still
+// behind stays pending until a later slot.
+void csamr_ab3_close_slot_ghosts(cGH *const cctkGH, int const ml,
+                                 vector<csamr_level_plan> const &plans,
+                                 vector<int> const &at_after) {
+  DECLARE_CCTK_PARAMETERS;
+  CCTK_REAL const fine_dt =
+      delta_time / static_cast<CCTK_REAL>(maxtimereflevelfact);
+  for (csamr_level_plan const &plan : plans) {
+    if (not plan.ab3_prefill)
+      continue;
+    if (plan.rl <= 0)
+      CCTK_ERROR("Stock AB3 deferred the coarse level.");
+    if (plan.rl - 1 >= static_cast<int>(at_after.size()))
+      CCTK_ERROR("Stock AB3 deferred a level with no parent.");
+    int const parent_after = at_after.AT(plan.rl - 1);
+    if (parent_after >= plan.end_index) {
+      CCTK_REAL const expected =
+          cctk_initial_time + fine_dt * static_cast<CCTK_REAL>(plan.end_index);
+      CCTK_REAL const actual = tt->get_time(ml, plan.rl, 0);
+      CCTK_REAL const scale = 1.0 + std::fabs(expected);
+      if (not(std::fabs(actual - expected) <= 1.0e-12 * scale))
+        CCTK_ERROR("Stock AB3 end ghost time does not match the level "
+                   "clock.");
+      if (not(std::fabs(plan.end_time - expected) <= 1.0e-12 * scale))
+        CCTK_ERROR("Stock AB3 end ghost time does not match the step.");
+      csamr_ab3_prefill_ghosts(cctkGH, ml, plan);
+      csamr_ab3_pending(plan.rl) = -1;
+    } else {
+      csamr_ab3_pending(plan.rl) = plan.end_index;
+    }
+  }
+}
+
 void CallEvolCsamr(cGH *const cctkGH) {
   DECLARE_CCTK_PARAMETERS;
 
@@ -786,10 +1155,20 @@ void CallEvolCsamr(cGH *const cctkGH) {
 
   vector<int> at =
       csamr::fine_index_before_slot(groups, slots, slot_index, cycle);
+  vector<int> const at_before = at;
   CCTK_REAL const fine_dt =
       delta_time / static_cast<CCTK_REAL>(maxtimereflevelfact);
   vector<csamr_level_plan> plans;
   bool have_done_global_mode = false;
+  bool const ab3_unbuffered = csamr_ab3_unbuffered();
+  if (ab3_unbuffered) {
+    for (csamr::Group const &group : groups) {
+      if (group.first != group.last) {
+        CCTK_ERROR("Stock Adams-Bashforth 3 CSAMR requires one level per "
+                   "time factor.");
+      }
+    }
+  }
   // The finest group is listed first. Equal-timestep levels inside a
   // group are then listed coarse to fine, so a final copy sees its parent.
   for (csamr::Action const &step : slot.steps) {
@@ -797,15 +1176,68 @@ void CallEvolCsamr(cGH *const cctkGH) {
       CCTK_ERROR("CSAMR slot step is not a step.");
     csamr::Group const &group = groups.AT(step.level);
     int const fine_index = cycle * nfine + step.end_time;
-    CCTK_REAL const end_time =
+    CCTK_REAL const uniform_end =
         cctk_initial_time + fine_dt * static_cast<CCTK_REAL>(fine_index);
     int const partner = step.other < 0 ? -1 : groups.AT(step.other).first;
+    csamr::Ab3Rk4Step sized;
+    sized.ab3 = false;
+    sized.dt = 0.0;
+    sized.start_offset = 0.0;
+    sized.end_offset = 0.0;
+    if (csamr_ab3_rk4) {
+      if (group.first != group.last) {
+        CCTK_ERROR("Carpet::csamr_ab3_rk4 requires one level per "
+                   "subcycling group.");
+      }
+      int const ordinal = csamr::ab3rk4_ordinal(reflevels, slot_index, step.level);
+      sized = csamr::ab3rk4_step(group.first, ordinal, csamr_ab3_fraction,
+                                 delta_time);
+    }
     for (int rl = group.first; rl <= group.last; ++rl) {
       csamr_level_plan plan;
       plan.rl = rl;
       plan.partner = partner;
-      plan.end_time = end_time;
-      plan.taper = csamr_taper(rl, fine_index, at);
+      if (csamr_ab3_rk4) {
+        plan.end_time = csamr::ab3rk4_absolute_end(cctk_initial_time, cycle,
+                                                   sized, delta_time);
+        // MoL subtracts this from the step end. The offset span does not
+        // always invert to the absolute start, and that start is the
+        // parent timestamp the AB3 prolongate has to match.
+        CCTK_REAL const start_time = csamr::ab3rk4_absolute_start(
+            cctk_initial_time, cycle, sized, delta_time);
+        plan.step_dt = plan.end_time - start_time;
+        plan.unequal = true;
+        plan.taper = false;
+        plan.end_index = fine_index;
+        plan.ab3_prefill = false;
+      } else if (ab3_unbuffered) {
+        plan.end_time = uniform_end;
+        plan.step_dt = 0.0;
+        plan.unequal = false;
+        plan.end_index = fine_index;
+        if (rl == 0) {
+          plan.ab3_prefill = false;
+          plan.taper = false;
+        } else {
+          bool parent_steps = false;
+          for (csamr::Action const &other : slot.steps) {
+            csamr::Group const &other_group = groups.AT(other.level);
+            if (rl - 1 >= other_group.first and rl - 1 <= other_group.last)
+              parent_steps = true;
+          }
+          bool const during = csamr::ab3_prolongate_during_step(
+              fine_index, at_before.AT(rl - 1), parent_steps);
+          plan.ab3_prefill = not during;
+          plan.taper = plan.ab3_prefill;
+        }
+      } else {
+        plan.end_time = uniform_end;
+        plan.step_dt = 0.0;
+        plan.unequal = false;
+        plan.end_index = fine_index;
+        plan.taper = csamr_taper(rl, fine_index, at);
+        plan.ab3_prefill = false;
+      }
       plan.flags = csamr_flags_for_level(rl, coarsest_rl, ml);
       assert(not(have_done_global_mode and plan.flags.global_mode));
       have_done_global_mode = have_done_global_mode or plan.flags.global_mode;
@@ -868,11 +1300,21 @@ void CallEvolCsamr(cGH *const cctkGH) {
 
   // One level, one thread, or the solo finest slot: prepare and step
   // each level in plan order. That is the schedule that matched.
+  if (ab3_unbuffered) {
+    csamr_ab3_catch_up_ghosts(cctkGH, ml, at_before);
+    for (csamr_level_plan const &plan : plans) {
+      if (csamr_ab3_pending(plan.rl) >= 0)
+        CCTK_ERROR("Stock AB3 is stepping a level whose ghosts are still "
+                   "deferred.");
+    }
+  }
   if (not paired or not teams.parallel) {
     for (csamr_level_plan const &plan : plans) {
       csamr_prepare_level(cctkGH, ml, plan);
       csamr_traverse_level(cctkGH, ml, plan, plan.taper, true);
     }
+    if (ab3_unbuffered)
+      csamr_ab3_close_slot_ghosts(cctkGH, ml, plans, at);
     timer.stop();
     return;
   }
@@ -993,6 +1435,8 @@ void CallEvolCsamr(cGH *const cctkGH) {
   csamr_free_gh(coarse_gh);
   csamr_release_replicated();
   csamr_release_shared_groupdata();
+  if (ab3_unbuffered)
+    csamr_ab3_close_slot_ghosts(cctkGH, ml, plans, at);
   timer.stop();
 }
 

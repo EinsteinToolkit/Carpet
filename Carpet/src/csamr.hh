@@ -284,6 +284,28 @@ inline bool taper_step(int const end_index, int const parent_index,
   return not time_interpolation;
 }
 
+// Stock Adams-Bashforth 3 evaluates one right-hand side at the step
+// start. The ghost zones cover that evaluation, so the step does not
+// use buffer zones. The boundary sync runs at the step end, after MoL
+// has restored that end time. parent_before is the parent's fine-step
+// index at the start of the slot. parent_steps is true when this slot
+// updates the parent. The sync may run during the step only when the
+// parent stays idle and already stores that end. Otherwise it waits
+// until the parent has reached the end.
+inline bool ab3_prolongate_during_step(int const end_index,
+                                      int const parent_before,
+                                      bool const parent_steps) {
+  if (parent_steps)
+    return false;
+  return parent_before >= end_index;
+}
+
+// partner_rl is the carpet level evolved in parallel with rl, or -1
+// when rl steps alone. True when that partner is the parent.
+inline bool ab3_fill_before_partner(int const rl, int const partner_rl) {
+  return rl > 0 and partner_rl == rl - 1;
+}
+
 // Fine-step index of every carpet level at the start of this slot.
 // Indices are counted from the initial time. Levels in one group share
 // an index. slot_index counts from the start of this coarse cycle.

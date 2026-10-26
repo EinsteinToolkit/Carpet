@@ -12,6 +12,8 @@
 #include "hermite.hh"
 #include "hermite_fill.hh"
 
+extern "C" CCTK_INT Carpet_AB3RK4_ThisStepAB3(CCTK_POINTER_TO_CONST const);
+
 namespace Carpet {
 
 using namespace std;
@@ -384,9 +386,13 @@ bool HermiteFill::source_timelevel(ggf const *const evolved,
 // The first right-hand side of a CSAMR step is evaluated at the step
 // start. CallEvol has already stored the step end in cctk_time, and
 // SyncGroupsByDirI has no time argument, so the fill temporarily uses
-// the start. The level dt is delta_time / timereffacts[reflevel]. In
-// level mode that equals cctk_delta_time / cctk_timefac: global mode
-// stores the coarse dt, and level mode stores the level's time factor.
+// the start. Outside AB3-RK4 the level dt is
+// delta_time / timereffacts[reflevel]. In level mode that equals
+// cctk_delta_time / cctk_timefac: global mode stores the coarse dt, and
+// level mode stores the level's time factor. AB3-RK4 stores the unequal
+// step on the level. The short step's sync then copies the one parent
+// time that matches the start. The long step still builds the Hermite
+// polynomial.
 void Carpet_HermitePreStep(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -403,7 +409,9 @@ void Carpet_HermitePreStep(CCTK_ARGUMENTS) {
                 static_cast<double>(cctkGH->cctk_timefac));
   }
   CCTK_REAL const level_dt =
-      delta_time / static_cast<CCTK_REAL>(timereffacts.AT(reflevel));
+      csamr_ab3_rk4
+          ? tt->get_delta(mglevel, reflevel)
+          : delta_time / static_cast<CCTK_REAL>(timereffacts.AT(reflevel));
   CCTK_REAL const gh_dt = cctkGH->cctk_delta_time /
                           static_cast<CCTK_REAL>(cctkGH->cctk_timefac);
   CCTK_REAL const tolerance = 1.0e-10 * (1.0 + fabs(level_dt));

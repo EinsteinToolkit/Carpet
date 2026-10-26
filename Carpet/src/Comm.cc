@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 #include <vector>
 
 #include <cctk.h>
@@ -19,6 +20,8 @@
 #include "modes.hh"
 #include "PreSync.hh"
 #include "hermite_fill.hh"
+
+extern "C" CCTK_INT Carpet_AB3RK4_ThisStepAB3(CCTK_POINTER_TO_CONST const);
 
 namespace Carpet {
 
@@ -202,6 +205,95 @@ int SyncProlongateGroups(const cGH *cctkGH, const vector<int> &groups,
   return retval;
 }
 
+static bool prolongates_time(operator_type const op) {
+  return op != op_none and op != op_sync and op != op_restrict;
+}
+
+// Parent time level whose timestamp is this AB3 right-hand side. Both
+// clocks use the same closed form, so the comparison is exact. A single
+// stored time, or every stored time equal to the requested time, is time
+// level 0: at startup the older levels can share that timestamp and still
+// hold poison. Several matches with any other timestamp are fatal. No
+// match at the step end is the AB3 update itself: the parent has no value
+// there, and the right-hand side already ran at the shared start. No match
+// at any other time is fatal. Returns -1 when prolongation should be
+// skipped.
+static int ab3_parent_timelevel(const cGH *const cctkGH, int const g,
+                                ggf *const gv) {
+  if (tt == NULL)
+    CCTK_ERROR("AB3-RK4 prolongation has no Carpet time hierarchy.");
+  int const parent = reflevel - 1;
+  if (parent < 0)
+    CCTK_ERROR("AB3-RK4 prolongation has no parent level.");
+  int const parent_active =
+      groupdata.AT(g).activetimelevels.AT(mglevel).AT(parent);
+  if (parent_active <= 1)
+    return 0;
+  if (not prolongates_time(gv->transport_operator))
+    return 0;
+  if (parent_active > tt->timelevels) {
+    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                "AB3-RK4 group %d has %d active parent time levels and the "
+                "time hierarchy has %d.",
+                g, parent_active, tt->timelevels);
+    return -1;
+  }
+
+  CCTK_REAL const time = cctkGH->cctk_time;
+  int nmatch = 0;
+  int matched = -1;
+  bool all_equal = true;
+  for (int tl = 0; tl < parent_active; ++tl) {
+    CCTK_REAL const stored = tt->get_time(mglevel, parent, tl);
+    if (stored != time)
+      all_equal = false;
+    else {
+      if (nmatch == 0)
+        matched = tl;
+      ++nmatch;
+    }
+  }
+  if (all_equal)
+    return 0;
+  if (nmatch == 1) {
+    if (matched < 0 or matched >= parent_active) {
+      CCTK_ERROR("AB3-RK4 matched a parent time level this grid function "
+                 "does not store.");
+    }
+    return matched;
+  }
+
+  ostringstream times;
+  times.setf(ios::scientific);
+  times.precision(17);
+  for (int tl = 0; tl < parent_active; ++tl) {
+    if (tl > 0)
+      times << ", ";
+    times << "tl" << tl << "=" << tt->get_time(mglevel, parent, tl);
+  }
+  char *const fullname = CCTK_FullName(gv->varindex);
+  string const name = fullname ? fullname : "<unknown variable>";
+  free(fullname);
+  if (nmatch > 1) {
+    CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+                "AB3-RK4 found %d parent times equal to %.17g for %s on "
+                "level %d, and the stored times are not all that time (%s).",
+                nmatch, static_cast<double>(time), name.c_str(), parent,
+                times.str().c_str());
+    return -1;
+  }
+  CCTK_REAL const level_now = tt->get_time(mglevel, reflevel, 0);
+  if (time == level_now)
+    return -1;
+  CCTK_VError(__LINE__, __FILE__, CCTK_THORNSTRING,
+              "AB3-RK4 found no parent time equal to %.17g for %s on level "
+              "%d. This level's current time is %.17g. Stored parent times: "
+              "%s.",
+              static_cast<double>(time), name.c_str(), parent,
+              static_cast<double>(level_now), times.str().c_str());
+  return -1;
+}
+
 // Prolongate the boundaries of all CCTK_GF groups in the given set
 static void ProlongateGroupBoundaries(const cGH *cctkGH,
                                       const vector<int> &groups) {
@@ -273,39 +365,78 @@ static void ProlongateGroupBoundaries(const cGH *cctkGH,
 
   vector<Timers::Timer *>::iterator ti = timers.begin();
   (*ti)->start();
-  HermiteFill hermite_fill(cctkGH, groups, time);
-  for (comm_state state; not state.done(); state.step()) {
-    (*ti)->stop();
-    ++ti;
-    (*ti)->start();
-    for (int group = 0; group < (int)groups.size(); ++group) {
-      const int g = groups.AT(group);
-      const int grouptype = CCTK_GroupTypeI(g);
-      if (grouptype != CCTK_GF) {
-        continue;
-      }
-      assert(reflevel >= 0 and reflevel < reflevels);
-      const int active_tl =
-          groupdata.AT(g).activetimelevels.AT(mglevel).AT(reflevel);
-      assert(active_tl >= 0);
-      const int tl = active_tl > 1 ? timelevel : 0;
+  // The short step copies one parent time level. HermiteFill would read
+  // the parent's current and previous slots, and a zero Lagrange weight
+  // on a poisoned slot is NaN. The timer walk stays the same length.
+  bool const ab3_step = csamr_ab3_rk4 and hermite_prolongate and
+                        Carpet_AB3RK4_ThisStepAB3(cctkGH);
+  if (ab3_step) {
+    for (comm_state state; not state.done(); state.step()) {
+      (*ti)->stop();
+      ++ti;
+      (*ti)->start();
+      for (int group = 0; group < (int)groups.size(); ++group) {
+        const int g = groups.AT(group);
+        const int grouptype = CCTK_GroupTypeI(g);
+        if (grouptype != CCTK_GF) {
+          continue;
+        }
+        assert(reflevel >= 0 and reflevel < reflevels);
+        const int active_tl =
+            groupdata.AT(g).activetimelevels.AT(mglevel).AT(reflevel);
+        assert(active_tl >= 0);
+        const int tl = active_tl > 1 ? timelevel : 0;
 
-      for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
-        for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
-          ggf *const gv = arrdata.AT(g).AT(m).data.AT(v);
-          int src_tl = -1;
-          if (hermite_fill.source_timelevel(gv, src_tl)) {
-            gv->ref_bnd_prolongate_spatial(state, tl, reflevel, mglevel, src_tl,
-                                           time);
-          } else {
-            gv->ref_bnd_prolongate_all(state, tl, reflevel, mglevel, time);
+        for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
+          for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
+            ggf *const gv = arrdata.AT(g).AT(m).data.AT(v);
+            int const src_tl = ab3_parent_timelevel(cctkGH, g, gv);
+            if (src_tl < 0)
+              continue;
+            gv->ref_bnd_prolongate_spatial(state, tl, reflevel, mglevel,
+                                           src_tl, time);
           }
         }
       }
+      (*ti)->stop();
+      ++ti;
+      (*ti)->start();
     }
-    (*ti)->stop();
-    ++ti;
-    (*ti)->start();
+  } else {
+    HermiteFill hermite_fill(cctkGH, groups, time);
+    for (comm_state state; not state.done(); state.step()) {
+      (*ti)->stop();
+      ++ti;
+      (*ti)->start();
+      for (int group = 0; group < (int)groups.size(); ++group) {
+        const int g = groups.AT(group);
+        const int grouptype = CCTK_GroupTypeI(g);
+        if (grouptype != CCTK_GF) {
+          continue;
+        }
+        assert(reflevel >= 0 and reflevel < reflevels);
+        const int active_tl =
+            groupdata.AT(g).activetimelevels.AT(mglevel).AT(reflevel);
+        assert(active_tl >= 0);
+        const int tl = active_tl > 1 ? timelevel : 0;
+
+        for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
+          for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
+            ggf *const gv = arrdata.AT(g).AT(m).data.AT(v);
+            int src_tl = -1;
+            if (hermite_fill.source_timelevel(gv, src_tl)) {
+              gv->ref_bnd_prolongate_spatial(state, tl, reflevel, mglevel,
+                                             src_tl, time);
+            } else {
+              gv->ref_bnd_prolongate_all(state, tl, reflevel, mglevel, time);
+            }
+          }
+        }
+      }
+      (*ti)->stop();
+      ++ti;
+      (*ti)->start();
+    }
   }
   (*ti)->stop();
   ++ti;

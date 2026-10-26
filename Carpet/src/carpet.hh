@@ -87,6 +87,12 @@ void csamr_broadcast_evolved_scalars(cGH *cgh, int source_rank);
 // The scheduled NaN reset is global, so the process group that skips
 // PRESTEP would otherwise keep a stale count. Every rank calls this.
 void csamr_reset_nan_counter();
+// Stock MoL AB3 is ODE_Method AB, AB_Type 3, and one intermediate step.
+// Unbuffered CSAMR AB3 is that method with buffer zones and tapered grids off.
+bool csamr_stock_ab3();
+bool csamr_ab3_unbuffered();
+// fatal selects CCTK_ERROR. Otherwise this is a parameter warning.
+void csamr_check_ab3_buffers(bool fatal);
 // NaNChecker::NaNsFound on this rank, or -1 when that thorn is inactive.
 double csamr_nan_counter();
 void UncycleTimeLevels(cGH *cgh);

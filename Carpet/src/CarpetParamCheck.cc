@@ -40,20 +40,28 @@ void CarpetParamCheck(CCTK_ARGUMENTS) {
                    "max_refinement_levels=1.");
   }
 
-  // These fire for a single level as well. Buffer zones are named in
-  // the tapered-grid message because a tapered grid without them has
-  // only one ghost-width, which does not cover a multi-stage step.
-  if (use_csamr and not use_tapered_grids) {
-    CCTK_PARAMWARN(
-        "Carpet::use_csamr requires Carpet::use_tapered_grids. Tapered "
-        "grids and buffer zones stop an RK stage from prolongating out "
-        "of the parent during the step.");
+  // These fire for a single level as well. A multi-stage Runge-Kutta
+  // step needs buffer zones. Stock Adams-Bashforth 3 and csamr_ab3_rk4
+  // evaluate one right-hand side at a time the ghosts can cover.
+  if (use_csamr and not csamr_ab3_rk4)
+    csamr_check_ab3_buffers(false);
+  if (csamr_ab3_rk4 and not use_csamr) {
+    CCTK_PARAMWARN("Carpet::csamr_ab3_rk4 requires Carpet::use_csamr.");
   }
-  if (use_csamr and not use_buffer_zones) {
-    CCTK_PARAMWARN(
-        "Carpet::use_csamr requires Carpet::use_buffer_zones. Without "
-        "buffer zones a refined grid has only one ghost-width, which "
-        "does not cover a multi-stage Runge-Kutta step.");
+  if (csamr_ab3_rk4 and (use_tapered_grids or use_buffer_zones)) {
+    CCTK_PARAMWARN("Carpet::csamr_ab3_rk4 does not use tapered grids or "
+                   "buffer zones.");
+  }
+  if (csamr_ab3_rk4 and not hermite_dense_output) {
+    CCTK_PARAMWARN("Carpet::csamr_ab3_rk4 requires "
+                   "Carpet::hermite_dense_output.");
+  }
+  if (csamr_ab3_rk4 and not use_final_copy) {
+    CCTK_PARAMWARN("Carpet::csamr_ab3_rk4 requires Carpet::use_final_copy.");
+  }
+  if (csamr_ab3_rk4 and use_time_interpolation) {
+    CCTK_PARAMWARN("Carpet::csamr_ab3_rk4 requires "
+                   "Carpet::use_time_interpolation = no.");
   }
   if (use_csamr and adaptive_stepsize) {
     CCTK_PARAMWARN("Carpet::use_csamr does not support adaptive timesteps.");

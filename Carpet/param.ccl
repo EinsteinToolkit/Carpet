@@ -158,11 +158,20 @@ STRING time_refinement_factors "Temporal refinement factors over the coarsest le
   "^[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\][[:space:]]*$" :: "[ <tfact>, ... ]"
 } ""
 
-BOOLEAN use_csamr "Schedule subcycled evolution with concurrent structured AMR (Loeffler, Cao, Brandt, and Du, Journal of Computational Science 16 (2016) 79-88) instead of stepping levels sequentially. Requires factor-of-two time refinement, use_tapered_grids, and use_buffer_zones. Does not support multigrid or adaptive timesteps. Every rank owns every level. With at least two OpenMP threads, a slot's two updates run together and each update uses half of those threads."
+BOOLEAN use_csamr "Schedule subcycled evolution with concurrent structured AMR (Loeffler, Cao, Brandt, and Du, Journal of Computational Science 16 (2016) 79-88) instead of stepping levels sequentially. Requires factor-of-two time refinement. Requires use_tapered_grids and use_buffer_zones, except for csamr_ab3_rk4 and for stock Adams-Bashforth 3 (MoL ODE AB, AB_Type 3, one intermediate step). Stock AB3 fills ghosts at its single right-hand side and does not use buffer zones. Does not support multigrid or adaptive timesteps. Every rank owns every level. With at least two OpenMP threads, a slot's two updates run together and each update uses half of those threads."
 {
 } "no"
 
-BOOLEAN hermite_dense_output "Fill fine ghost zones from a cubic Hermite dense output of the parent step. The polynomial uses y(t_n), y(t_n+dt), y'(t_n), and y'(t_n+dt). Requires MoL::hermite_rhs_storage. RK4, RK4-2, and RK4-3 can all supply those endpoint slopes. A multistep stage outside the parent step evaluates the same cubic there. With use_csamr no, buffer zones and tapered grids stay off and every fine stage prolongates. With use_csamr yes, the fine step that ends before its parent has stepped keeps the tapered buffer, and the fine step that lands on the parent time prolongates through this polynomial. That combination sizes the buffer for one integrator step."
+BOOLEAN csamr_ab3_rk4 "CSAMR without tapered grids or buffer zones. The short refined step is variable-step Adams-Bashforth 3 and prolongates in space from the parent time that matches its start. The long refined step and the coarse step are classical RK4, and the long step fills ghosts with Hermite. Requires MoL::ODE_Method = \"AB3-RK4\", hermite_dense_output, and use_final_copy. The time factors must be 1,2,4,... with one level per factor."
+{
+} "no"
+
+REAL csamr_ab3_fraction "Fraction of each parent step taken by Adams-Bashforth 3. The RK4 step takes the rest. One quarter keeps the finest AB3 Courant at 1/12 and the finest RK4 Courant at 1/4 when the coarse Courant is 1/9."
+{
+  (0:0.5) :: "open interval, and strictly shorter than the RK4 piece"
+} 0.25
+
+BOOLEAN hermite_dense_output "Fill fine ghost zones from a cubic Hermite dense output of the parent step. The polynomial uses y(t_n), y(t_n+dt), y'(t_n), and y'(t_n+dt). Requires MoL::hermite_rhs_storage. RK4, RK4-2, RK4-3, and the RK4 half of AB3-RK4 can supply those endpoint slopes. A multistep stage outside the parent step evaluates the same cubic there. With use_csamr no, buffer zones and tapered grids stay off and every fine stage prolongates. With use_csamr yes and csamr_ab3_rk4 no, the fine step that ends before its parent has stepped keeps the tapered buffer, and the fine step that lands on the parent time prolongates through this polynomial. That combination sizes the buffer for one integrator step. With csamr_ab3_rk4 yes there is no buffer: the short step prolongates in space and the long step uses this polynomial."
 {
 } "no"
 
