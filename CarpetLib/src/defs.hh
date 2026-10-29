@@ -179,7 +179,9 @@ inline T align_up(T const x, T const align, T const offset = T(0)) {
 // Useful helpers
 template <class T> inline T square(const T x) { return x * x; }
 
-template <class T> T ipow(T x, int y) CCTK_ATTRIBUTE_CONST;
+// CCTK_ATTRIBUTE_PURE instead of CCTK_ATTRIBUTE_CONST: keeps optimizations (CSE)
+// while allowing template T to dereference pointers without GCC dropping init (ticket #2960).
+template <class T> T ipow(T x, int y) CCTK_ATTRIBUTE_PURE;
 
 template <class T> int ilog(T b, T x) CCTK_ATTRIBUTE_CONST;
 

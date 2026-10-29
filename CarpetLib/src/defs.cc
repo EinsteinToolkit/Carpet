@@ -21,8 +21,9 @@
 namespace CarpetLib {
 using namespace std;
 
+// CCTK_ATTRIBUTE_PURE instead of CCTK_ATTRIBUTE_CONST (see defs.hh).
 template <typename T>
-inline T ipow_helper(T x, unsigned int y) CCTK_ATTRIBUTE_CONST;
+inline T ipow_helper(T x, unsigned int y) CCTK_ATTRIBUTE_PURE;
 template <typename T> inline T ipow_helper(T x, unsigned int y) {
   T z = y & 1 ? x : T(1);
   while (y >>= 1) {
