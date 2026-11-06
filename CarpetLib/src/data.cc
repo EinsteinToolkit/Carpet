@@ -580,7 +580,7 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
 #if CARPET_DIM == 3
 
   switch (transport_operator) {
-
+    
   case op_copy:
   case op_Lagrange: {
     static Timer timer("prolongate_Lagrange");
@@ -642,6 +642,64 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
           static_cast<T const *>(src->storage()), src->padded_shape(),
           src->shape(), static_cast<T *>(this->storage()), this->padded_shape(),
           this->shape(), src->extent(), this->extent(), srcbox, dstbox, NULL);
+      break;
+    }
+    default:
+      assert(0);
+    }
+    timer.stop(0);
+    break;
+  }
+
+  case op_Lagrange_third_order_prolong: {
+    static Timer timer("prolongate_Lagrange_3o_prolong");
+    timer.start();
+    // enum centering { vertex_centered, cell_centered };
+    switch (cent) {
+    case vertex_centered: {
+      static void (*the_operators[])(
+          T const *restrict const src, ivect3 const &restrict srcpadext,
+          ivect3 const &restrict srcext, T *restrict const dst,
+          ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
+          ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
+          ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
+          void *const extraargs) = {
+          NULL, &prolongate_3d_rf2<T, 1>, NULL, &prolongate_3d_rf2<T, 3>,
+          NULL, &prolongate_3d_rf2<T, 5>, NULL, &prolongate_3d_rf2<T, 7>,
+          NULL, &prolongate_3d_rf2<T, 9>, NULL, &prolongate_3d_rf2<T, 11>,
+      };
+      call_operator<T>(
+          the_operators[3], static_cast<T const *>(src->storage()),
+          src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
+          this->padded_shape(), this->shape(), src->extent(), this->extent(),
+          srcbox, dstbox, NULL);
+      break;
+    }
+    case cell_centered: {
+      if (use_dgfe) {
+        // Don't use call_operator, because we parallelise ourselves
+        prolongate_3d_dgfe_rf2<T, 5>(
+            static_cast<T const *>(src->storage()), src->padded_shape(),
+            src->shape(), static_cast<T *>(this->storage()),
+            this->padded_shape(), this->shape(), src->extent(), this->extent(),
+            srcbox, dstbox, NULL);
+        break;
+      }
+      static void (*the_operators[])(
+          T const *restrict const src, ivect3 const &restrict srcpadext,
+          ivect3 const &restrict srcext, T *restrict const dst,
+          ivect3 const &restrict dstpadext, ivect3 const &restrict dstext,
+          ibbox3 const &restrict srcbbox, ibbox3 const &restrict dstbbox,
+          ibbox3 const &restrict srcregbbox, ibbox3 const &restrict dstregbbox,
+          void *const extraargs) = {
+          &prolongate_3d_cc_rf2<T, 0>, &prolongate_3d_cc_rf2<T, 1>,
+          &prolongate_3d_cc_rf2<T, 2>, &prolongate_3d_cc_rf2<T, 3>,
+          &prolongate_3d_cc_rf2<T, 4>, &prolongate_3d_cc_rf2<T, 5>};
+      call_operator<T>(
+          the_operators[3], static_cast<T const *>(src->storage()),
+          src->padded_shape(), src->shape(), static_cast<T *>(this->storage()),
+          this->padded_shape(), this->shape(), src->extent(), this->extent(),
+          srcbox, dstbox, NULL);
       break;
     }
     default:
@@ -928,6 +986,7 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
   switch (transport_operator) {
 
   case op_copy:
+  case op_Lagrange_third_order_prolong:
   case op_Lagrange: {
     static Timer timer("prolongate_Lagrange");
     timer.start();
@@ -944,7 +1003,7 @@ void data<T>::transfer_prolongate(data const *const src, ibbox const &dstbox,
         break;
       default:
         CCTK_ERROR("There is no vertex-centred stencil for op=\"LAGRANGE\" "
-                   "with order_space not in {1}");
+                   "with order_space not in {1}, and CARPET_DIM==4.");
         break;
       }
       break;
@@ -1029,6 +1088,7 @@ void data<T>::transfer_restrict(data const *const src, ibbox const &dstregbox,
 
   case op_copy:
   case op_Lagrange:
+  case op_Lagrange_third_order_prolong:
   case op_ENO:
   case op_WENO:
   case op_TVD:
@@ -1144,6 +1204,7 @@ void data<T>::transfer_restrict(data const *const src, ibbox const &dstregbox,
 
   case op_copy:
   case op_Lagrange:
+  case op_Lagrange_third_order_prolong:
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
     case vertex_centered:
@@ -1196,7 +1257,8 @@ void data<T>::time_interpolate(vector<data *> const &srcs, ibbox const &dstbox,
   case op_STAGGER101:
   case op_STAGGER110:
   case op_STAGGER111:
-  case op_Lagrange: {
+  case op_Lagrange:
+  case op_Lagrange_third_order_prolong: {
     static Timer timer("time_interpolate_Lagrange");
     timer.start();
     switch (order_time) {
